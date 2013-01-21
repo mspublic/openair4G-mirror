@@ -66,6 +66,7 @@ void openair_rrc_on(u8 Mod_id,u8 eNB_flag){
     eNB_rrc_inst[Mod_id].SI.Active=1;
     rrc_config_buffer(&eNB_rrc_inst[Mod_id].Srb0,CCCH,1);
     eNB_rrc_inst[Mod_id].Srb0.Active=1;
+ 
   } else{
     LOG_I(RRC,"[UE %d] OPENAIR RRC IN....\n", Mod_id);
     for(i=0;i<NB_eNB_INST;i++){
@@ -125,17 +126,17 @@ int rrc_init_global_param(void){
   DTCH_UL_LCHAN_DESC.Delay_class=1;
 
   Rlc_info_um.rlc_mode=RLC_UM;
-  Rlc_info_um.rlc.rlc_um_info.timer_reordering=0;
+  Rlc_info_um.rlc.rlc_um_info.timer_reordering=5;
   Rlc_info_um.rlc.rlc_um_info.sn_field_length=10;
   Rlc_info_um.rlc.rlc_um_info.is_mXch=0;
   //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;
 
   Rlc_info_am_config.rlc_mode=RLC_AM;
-  Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 255;
+  Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 50;
   Rlc_info_am_config.rlc.rlc_am_info.poll_pdu           = 8;
   Rlc_info_am_config.rlc.rlc_am_info.poll_byte          = 1000;
   Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit  = 15;
-  Rlc_info_am_config.rlc.rlc_am_info.t_reordering       = 5000;
+  Rlc_info_am_config.rlc.rlc_am_info.t_reordering       = 50;
   Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit  = 10;
 #ifndef NO_RRM
   if(L3_xface_init())
@@ -228,18 +229,40 @@ uint8_t rrc_find_free_SCell_index(u8 Mod_id, u16 index, u8 eNB_flag) {
 void openair_rrc_top_init(void){
   /*-----------------------------------------------------------------------------*/
 
+  int i;
+  uint8_t size;
+  OAI_UECapability_t *UECap;
+  //  uint8_t dummy_buffer[100];
 
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_eNB_INST=%d\n",NB_INST,NB_UE_INST,NB_eNB_INST);
-  LOG_D(RRC,"[OPENAIR][INIT] Init function start:Nb_INST=%d\n",NB_INST);
+  LOG_D(RRC,"[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n",
+	NB_UE_INST,NB_eNB_INST);
+  
+  if (NB_UE_INST>0){
+    UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
+    memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
+    LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
 
-  UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
-  memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
-  LOG_D(RRC,"ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
+    // fill UE capability
+    UECap = fill_ue_capability();
+    for (i=0;i<NB_UE_INST;i++) {
+      UE_rrc_inst[i].UECapability = UECap->sdu;
+      UE_rrc_inst[i].UECapability_size = UECap->sdu_size;
+    }
+    /*
+    do_UECapabilityEnquiry(0,
+			   dummy_buffer,
+			   0,
+			   0);*/
+  } else
+    UE_rrc_inst=NULL;
 
-  eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
-  memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
-  LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
 
+  if (NB_eNB_INST>0){
+    eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
+    memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
+    LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
+  }else
+    eNB_rrc_inst=NULL;
 #ifndef NO_RRM
 #ifndef USER_MODE
 
@@ -255,11 +278,13 @@ void openair_rrc_top_init(void){
 
 }
 
-int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
-  if(eNB_flag == 1)
-    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
-  else
-    return(UE_rrc_inst[Mod_id].Info[index].State);
+void rrc_top_cleanup(void){
+
+ if (NB_UE_INST>0)
+   free(UE_rrc_inst);
+ if (NB_eNB_INST>0)
+   free(eNB_rrc_inst);
+
 }
 
 u16 T300[8] = {100,200,300,400,600,1000,1500,2000};
@@ -282,6 +307,7 @@ rrc_t310_expiration(u32 frame,u8 Mod_id,u8 eNB_index) {
     
     if(UE_rrc_inst[Mod_id].Srb2[eNB_index].Active==1){
       msg("[RRC Inst %d] eNB_index %d, Remove RB %d\n ",Mod_id,eNB_index,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
+      rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_REMOVE, UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
       rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_REMOVE,UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
       UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
       UE_rrc_inst[Mod_id].Srb2[eNB_index].Status=IDLE;
@@ -311,11 +337,18 @@ RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
     }
-    if (UE_rrc_inst[Mod_id].sib2[index])
+    if (UE_rrc_inst[Mod_id].sib2[index]) {
       if (UE_rrc_inst[Mod_id].Info[index].N310_cnt==N310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n310]) {
 	UE_rrc_inst[Mod_id].Info[index].T310_active=1;
       }
-    
+    }
+    else { // in case we have not received SIB2 yet
+      if (UE_rrc_inst[Mod_id].Info[index].N310_cnt==100) {
+	UE_rrc_inst[Mod_id].Info[index].N310_cnt = 0;
+	return RRC_PHY_RESYNCH;
+      }
+    }
+
     if (UE_rrc_inst[Mod_id].Info[index].T310_active==1) {
       if (UE_rrc_inst[Mod_id].Info[index].N311_cnt ==
 	  N311[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.n311]) {

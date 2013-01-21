@@ -85,7 +85,10 @@ void rearange(){
                 int pos = msgLength - 4;
                 int count =0;
 	
-                storage *cur_ptr, *temp_ptr, *temp_pptr;
+                storage *cur_ptr = NULL;
+                storage *temp_ptr = NULL;
+                storage *temp_pptr = NULL;
+
                 cur_ptr = storageStart;
 	                while (count != pos && cur_ptr->next != NULL){
                         temp_pptr = cur_ptr;
@@ -400,13 +403,24 @@ void writeDouble(double value){
 
 storage* writePacket (unsigned char* packet, int length){
 
+        //printf("required length is %d \n",length);
+
         storage *recvpacket = NULL;
         storage *recvpacketStart= NULL;
-        int i = 0;
-        for(i; i < length; i++)
-        { 
+	storage *temp_  = NULL;
+        
+        int localSize = sizeof(storage); 
+        printf("size of storage is %d bytes \n",localSize);
 
-        storage *temp_ = (storage *)malloc(sizeof(storage));
+        int i = 0;
+        
+        for(i; i < length; i++) {
+
+        printf("in %d round \n",i);
+        //storage *temp_ = (storage *)malloc(sizeof(storage));
+        temp_ = (storage *)malloc(sizeof(storage));
+        
+
         if  (recvpacket == NULL){
                 recvpacket = temp_;
 		recvpacketStart = recvpacket;
@@ -425,11 +439,11 @@ storage* writePacket (unsigned char* packet, int length){
 }
 
 
-void writeStorage(){
+/*void writeStorage(){
   LOG_W(OMG, " writeStorage not implented \n");
   return;
 
-}
+}*/
 
 void freeStorage(storage * freePtr){
 

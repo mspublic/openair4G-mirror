@@ -46,10 +46,11 @@
 
 #include "log.h"
 #include "log_vars.h"
+#include "vcd_signal_dumper.h"
 
 #ifdef USER_MODE
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
+//#include "UTIL/OCG/OCG.h"
+//#include "UTIL/OCG/OCG_extern.h"
 #include <string.h>
 #include <time.h>
 #else
@@ -75,7 +76,7 @@ static int bypass_log_hdr;
 
 //extern MAC_xface *mac_xface;
 
-void logInit (void) {
+int logInit (void) {
   
 #ifdef USER_MODE
   int i;
@@ -84,7 +85,17 @@ void logInit (void) {
 #else
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
-    g_log->log_component[PHY].name = "PHY";
+  if (g_log == NULL) {
+#ifdef USER_MODE
+    perror ("cannot allocated memory for log generation modeul \n");
+    exit(-1);
+#else
+    printk("cannot allocated memory for log generation modeul \n");
+    return(-1);
+#endif
+  }
+  
+  g_log->log_component[PHY].name = "PHY";
     g_log->log_component[PHY].level = LOG_INFO;
     g_log->log_component[PHY].flag =  LOG_MED;
     g_log->log_component[PHY].interval =  1;
@@ -93,11 +104,11 @@ void logInit (void) {
     g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
     
     g_log->log_component[MAC].name = "MAC";
-    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].level = LOG_DEBUG;
     g_log->log_component[MAC].flag =  LOG_MED;
     g_log->log_component[MAC].interval =  1;
     g_log->log_component[MAC].fd = 0;
-    g_log->log_component[MAC].filelog = 1;
+    g_log->log_component[MAC].filelog = 0;
     g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
     
     g_log->log_component[OPT].name = "OPT";
@@ -131,7 +142,7 @@ void logInit (void) {
     g_log->log_component[RRC].fd = 0;
     g_log->log_component[RRC].filelog = 0;
     g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
-    
+
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED; 
@@ -153,8 +164,25 @@ void logInit (void) {
     g_log->log_component[OTG].flag =  LOG_MED;
     g_log->log_component[OTG].interval =  1;
     g_log->log_component[OTG].fd = 0;
-    g_log->log_component[OTG].filelog = 1;
+    g_log->log_component[OTG].filelog = 0;
     g_log->log_component[OTG].filelog_name = "/tmp/otg.log";
+
+    g_log->log_component[OTG_LATENCY].name = "OTG_LATENCY";
+    g_log->log_component[OTG_LATENCY].level = LOG_FILE;
+    g_log->log_component[OTG_LATENCY].flag =  LOG_MED;
+    g_log->log_component[OTG_LATENCY].interval =  1;
+    g_log->log_component[OTG_LATENCY].fd = 0;
+    g_log->log_component[OTG_LATENCY].filelog = 0;
+    g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
+
+
+    g_log->log_component[OTG_GP].name = "OTG_GP";
+    g_log->log_component[OTG_GP].level = LOG_FILE;
+    g_log->log_component[OTG_GP].flag =  LOG_MED;
+    g_log->log_component[OTG_GP].interval =  1;
+    g_log->log_component[OTG_GP].fd = 0;
+    g_log->log_component[OTG_GP].filelog = 0;
+    g_log->log_component[OTG_GP].filelog_name = "/tmp/otg_GP.dat";
 
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
@@ -193,7 +221,7 @@ void logInit (void) {
     g_log->log_component[MSC].flag =  LOG_MED;
     g_log->log_component[MSC].interval =  1;
     g_log->log_component[MSC].fd = 0;
-    g_log->log_component[MSC].filelog =  1;
+    g_log->log_component[MSC].filelog =  0;
     g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
  
     g_log->log_component[OCM].name = "OCM";
@@ -203,7 +231,23 @@ void logInit (void) {
     g_log->log_component[OCM].fd = 0;
     g_log->log_component[OCM].filelog =  0;
     g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
-       
+
+    g_log->log_component[S1AP].name = "S1AP";
+    g_log->log_component[S1AP].level = LOG_TRACE;
+    g_log->log_component[S1AP].flag = LOG_MED;
+    g_log->log_component[S1AP].interval = 1;
+    g_log->log_component[S1AP].fd = 0;
+    g_log->log_component[S1AP].filelog = 0;
+    g_log->log_component[S1AP].filelog_name = "/tmp/s1ap.log";
+
+    g_log->log_component[SCTP].name = "SCTP";
+    g_log->log_component[SCTP].level = LOG_TRACE;
+    g_log->log_component[SCTP].flag = LOG_MED;
+    g_log->log_component[SCTP].interval = 1;
+    g_log->log_component[SCTP].fd = 0;
+    g_log->log_component[SCTP].filelog = 0;
+    g_log->log_component[SCTP].filelog_name = "";
+
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
@@ -214,13 +258,13 @@ void logInit (void) {
     g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
     g_log->level2string[LOG_FILE]          = "F"; // file
     g_log->level2string[LOG_TRACE]         = "T"; // TRACE
-
+    
     g_log->onlinelog = 1; //online log file
     g_log->syslog = 0; 
     g_log->filelog   = 0;
     g_log->level  = LOG_TRACE;
     g_log->flag   = LOG_LOW;
- 
+    
 #ifdef USER_MODE  
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
@@ -248,8 +292,12 @@ void logInit (void) {
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
-  
 
+#ifdef USER_MODE  
+  printf("log init done\n");
+#else
+  printk("log init done\n");
+#endif
 
 }
 
@@ -258,7 +306,9 @@ void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
-  int len, i;
+ vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
+
+ int len, i;
   va_list args;
   log_component_t *c;
 #ifdef USER_MODE
@@ -278,6 +328,7 @@ void logRecord( const char *file, const char *func,
   // only log messages which are enabled and are below the global log level and component's level threshold
   if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
     //  || ((mac_xface->frame % c->interval) != 0)) { 
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
     return;
    }
    // adjust syslog level for TRACE messages
@@ -291,6 +342,8 @@ void logRecord( const char *file, const char *func,
   len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
   va_end(args);
 
+  //printf (g_buff_info);
+  //return; 
  // make sure that for log trace the extra info is only printed once, reset when the level changes
   if ((level == LOG_FILE) ||  (c->flag == LOG_NONE) ){
     bypass_log_hdr = 1;
@@ -374,11 +427,11 @@ void logRecord( const char *file, const char *func,
   if (len > MAX_LOG_TOTAL) {
     rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
   }
-  if (len <= 0) {
-    return ;
+  if (len > 0) {
+   rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
   }
-  rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
 #endif
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
 
 }
 int  set_log(int component, int level, int interval) {
@@ -417,7 +470,7 @@ int  set_comp_log(int component, int level, int verbosity, int interval) {
       g_log->log_component[component].flag = verbosity; 
     }
     if ((level <= LOG_TRACE) && (level >= LOG_EMERG)){
-      g_log->log_component[component].level = level;
+	 g_log->log_component[component].level = level;
     }
     if ((interval > 0) && (interval <= 0xFF)){
       g_log->log_component[component].interval = interval;
@@ -442,6 +495,14 @@ void set_glog_filelog(int enable) {
   g_log->filelog = enable;
 }
 
+void set_component_filelog(int comp){
+  
+  if (g_log->log_component[comp].filelog ==  0){
+    g_log->log_component[comp].filelog =  1;
+    if (g_log->log_component[comp].fd == 0)
+      g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  }
+}
 
 /*
  * for the two functions below, the passed array must have a final entry

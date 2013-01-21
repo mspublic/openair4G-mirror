@@ -13,6 +13,7 @@
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 
+#include "RRC/LITE/defs.h"
 
 /** 
 \brief Generate a default configuration for SIB1 (eNB).
@@ -23,7 +24,7 @@
 
 uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 		BCCH_DL_SCH_Message_t *bcch_message,
-		SystemInformationBlockType1_t *sib1);
+		SystemInformationBlockType1_t **sib1);
 
 /** 
 \brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
@@ -37,8 +38,9 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB23(uint8_t Mod_id,
+		 LTE_DL_FRAME_PARMS *frame_parms,
 		 uint8_t *buffer,
-		 SystemInformation_t *systemInformation,
+		 BCCH_DL_SCH_Message_t *systemInformation,
 		 SystemInformationBlockType2_t **sib2,
 		 SystemInformationBlockType3_t **sib3
 #ifdef Rel10
@@ -89,20 +91,42 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 /** 
 \brief Generate an RRCConnectionReconfiguration DL-DCCH-Message (eNB).  This routine configures SRBToAddMod (SRB2) and one DRBToAddMod 
 (DRB3).  PhysicalConfigDedicated is not updated.
+@param Mod_id Module ID of this eNB Instance
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
-@param SRB2_config Pointer (returned) to SRB_ToAddMod IE for this UE
-@param DRB_config Pointer (returned) to DRB_ToAddMod IE for this UE
-@param physicalConfigDedicated Pointer (returned void) to PhysicalConfigDedicated IE for this UE
+@param SRB_list Pointer to SRB List to be added/modified (NULL if no additions/modifications)
+@param DRB_list Pointer to DRB List to be added/modified (NULL if no additions/modifications)
+@param DRB_list2 Pointer to DRB List to be released      (NULL if none to be released)
+@param sps_Config Pointer to sps_Config to be modified (NULL if no modifications, or default if initial configuration)
+@param physicalConfigDedicated Pointer to PhysicalConfigDedicated to be modified (NULL if no modifications)
+@param SCellToAddMod_r10_t Pointer to Secondary CC Config
+@param MeasObj_list Pointer to MeasObj List to be added/modified (NULL if no additions/modifications)
+@param ReportConfig_list Pointer to ReportConfig List (NULL if no additions/modifications)
+@param QuantityConfig Pointer to QuantityConfig to be modified (NULL if no modifications)
+@param MeasId_list Pointer to MeasID List (NULL if no additions/modifications)
+@param mac_MainConfig Pointer to Mac_MainConfig(NULL if no modifications)
+@param measGapConfig Pointer to MeasGapConfig (NULL if no modifications)
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
-			      uint8_t UE_id,
-			      uint8_t Transaction_id,
-			      struct SRB_ToAddMod **SRB2_config,
-			      struct DRB_ToAddMod **DRB_config,
-			      struct PhysicalConfigDedicated  **physicalConfigDedicated,
-			      SCellToAddMod_r10_t **sCell_config);
+
+uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id,
+                                        uint8_t                          *buffer,
+                                        uint8_t                           UE_id,
+                                        uint8_t                           Transaction_id,
+                                        SRB_ToAddModList_t                *SRB_list,
+                                        DRB_ToAddModList_t                *DRB_list,
+                                        DRB_ToReleaseList_t               *DRB_list2,
+                                        struct SPS_Config                 *sps_Config,
+                                        struct PhysicalConfigDedicated    *physicalConfigDedicated,
+					SCellToAddMod_r10_t               **sCell_config,
+                                        MeasObjectToAddModList_t          *MeasObj_list,
+                                        ReportConfigToAddModList_t        *ReportConfig_list,
+                                        QuantityConfig_t                  *QuantityConfig,
+                                        MeasIdToAddModList_t              *MeasId_list,
+                                        MAC_MainConfig_t                  *mac_MainConfig,
+                                        MeasGapConfig_t                   *measGapConfig,
+                                        uint8_t                           *nas_pdu,
+                                        uint32_t                           nas_length);
 
 /**
 \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
@@ -110,5 +134,5 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 @returns Size of encoded bit stream in bytes*/
 uint8_t do_MCCHMessage(uint8_t *buffer);
 
-
+OAI_UECapability_t *fill_ue_capability();
 

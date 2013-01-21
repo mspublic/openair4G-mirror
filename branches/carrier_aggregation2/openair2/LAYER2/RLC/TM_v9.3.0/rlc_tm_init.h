@@ -70,7 +70,7 @@ typedef volatile struct {
  } rlc_tm_info_t;
 
 
-/*! \fn void config_req_rlc_tm (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_tm_info_t * config_tmP, u8_t rb_idP, rb_type_t rb_typeP)
+/*! \fn void config_req_rlc_tm (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_tm_info_t * config_tmP, rb_id_t rb_idP, rb_type_t rb_typeP)
 * \brief    Allocate memory for RLC TM instance, reset protocol variables, and set protocol parameters.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 * \param[in]  frame                     Frame index.
@@ -80,7 +80,7 @@ typedef volatile struct {
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
-public_rlc_tm_init(   void config_req_rlc_tm (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_tm_info_t * config_tmP, u8_t rb_idP, rb_type_t rb_typeP);)
+public_rlc_tm_init(   void config_req_rlc_tm (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_tm_info_t * config_tmP, rb_id_t rb_idP, rb_type_t rb_typeP);)
 
 /*! \fn void rlc_tm_init (rlc_tm_entity_t *rlcP)
 * \brief    Initialize a RLC TM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC TM protocol instance will be in RLC_NULL_STATE state.

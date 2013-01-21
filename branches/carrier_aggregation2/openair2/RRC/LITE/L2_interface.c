@@ -131,6 +131,30 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
       return (Sdu_size);
     }
+
+#ifdef Rel10
+    if((Srb_id & RAB_OFFSET) == MCCH){
+      if(eNB_rrc_inst[Mod_id].MCCH_MESS.Active==0) return 0; // this parameter can be set in rrc_common.c together with the SI.Active and SRB0.active
+                                                                                    // double check the declaration in defs.h??
+      if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE == 255) {
+	LOG_E(RRC,"[eNB %d] MAC Request for MCCH MESSAGE and MCCH MESSAGE is not initialized\n",Mod_id);
+	mac_xface->macphy_exit("");
+      }
+      memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].MCCH_MESSAGE,eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
+      
+#ifdef DEBUG_RRC
+      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE 1\n",Mod_id,frame);
+      for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE;i++)
+	msg("%x.",Buffer[i]);
+      msg("\n");
+#endif
+      
+      return (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
+      //      }
+      //else
+      //return(0);
+    }
+#endif //Rel10    
   }
 
   else{   //This is an UE
@@ -170,7 +194,7 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 
   if(eNB_flag == 0){
 
-    //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
+    //LOG_D(RRC,"[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
 
@@ -247,14 +271,14 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 }
 
 //------------------------------------------------------------------------------------------------------------------//
-void rlcrrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
+void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
   u8 DCCH_index = Srb_id % MAX_NUM_RB;
 
-  LOG_D(RRC,"RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
-      DCCH_index,UE_index,sdu_size);
+  LOG_D(RRC,"[SRB %d]RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
+	Srb_id-1, DCCH_index,UE_index,sdu_size);
   if (eNB_flag ==1)
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
@@ -283,20 +307,14 @@ void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
 
   UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt++;
 
-
-  
-
 }
 
-/*
-u8 get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index){
+int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
   if(eNB_flag == 1)
-    return(eNB_rrc_inst[Mod_id].Info.Status);
+    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
   else
-    return(UE_rrc_inst[Mod_id].Info[eNB_index].State);
+    return(UE_rrc_inst[Mod_id].Info[index].State);
 }
-*/
-
 
 
 

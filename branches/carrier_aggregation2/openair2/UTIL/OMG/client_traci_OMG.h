@@ -65,7 +65,7 @@ String_list arrived;  // string list of all vehicles leaving SUMO at the current
 extern storage *head;
 extern storage *storageStart;
 extern storage *tracker;
-extern descLen;
+extern int descLen;
 
 /**
  * \fn handshake(char *,int)

@@ -9,6 +9,7 @@ OMG_DIR=$(OPENAIR2_TOP)/UTIL/OMG
 OTG_DIR=$(OPENAIR2_TOP)/UTIL/OTG
 CLI_DIR=$(OPENAIR2_TOP)/UTIL/CLI
 OMV_DIR=$(OPENAIR2_TOP)/UTIL/OMV
+SCTP_DIR=$(OPENAIR2_TOP)/UTIL/SCTP
 
 LIST_OBJ =  $(LIST_DIR)/list.o
 LIST_OBJ +=  $(LIST_DIR)/list2.o
@@ -18,6 +19,7 @@ TIMER_OBJ +=  $(TIMER_DIR)/umts_timer.o
 MEM_OBJ +=  $(MEM_DIR)/mem_block.o
 
 LOG_OBJS =  $(LOG_DIR)/log.o
+LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
 
 OCG_OBJS  =  $(OCG_DIR)/OCG.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_create_dir.o
@@ -48,14 +50,18 @@ OTG_OBJS =  $(OTG_DIR)/otg_tx.o
 OTG_OBJS +=  $(OTG_DIR)/otg.o
 OTG_OBJS +=  $(OTG_DIR)/otg_rx.o
 OTG_OBJS +=  $(OTG_DIR)/otg_kpi.o
+OTG_OBJS +=  $(OTG_DIR)/otg_form.o
 
 MATH_OBJS  =  $(MATH_DIR)/oml.o
 
 CLI_OBJ  =  $(CLI_DIR)/cli_server.o
 CLI_OBJ  +=  $(CLI_DIR)/cli.o
 CLI_OBJ  +=  $(CLI_DIR)/cli_cmd.o
+ifdef $(USE_MME)
+SCTP_OBJS = $(SCTP_DIR)/sctp_primitives_client.o
+else
+SCTP_OBJS = 
+endif
+UTIL_OBJ = $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(LOG_OBJS) $(OCG_OBJS) $(MATH_OBJS) $(OTG_OBJS) $(CLI_OBJ) $(OMG_OBJS) $(OPT_OBJS) $(SCTP_OBJS)
 
-
-UTIL_OBJ = $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(LOG_OBJS) $(OCG_OBJS) $(MATH_OBJS) $(OTG_OBJS) $(CLI_OBJ) $(OMG_OBJS) $(OPT_OBJS)
-
-UTIL_incl = -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OMG_DIR) -I$(OTG_DIR) -I$(CLI_DIR) -I$(OPT_DIR) -I$(OMV_DIR)
+UTIL_incl = -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OMG_DIR) -I$(OTG_DIR) -I$(CLI_DIR) -I$(OPT_DIR) -I$(OMV_DIR) -I$(SCTP_DIR)

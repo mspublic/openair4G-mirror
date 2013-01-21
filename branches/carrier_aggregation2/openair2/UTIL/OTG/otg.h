@@ -51,6 +51,7 @@
 #include "otg_defs.h"
 #include "otg_config.h"
 
+
 #if STANDALONE==1
 	#define LOG_G(c, x...) printf(x)
 	#define LOG_A(c, x...) printf(x)
@@ -107,6 +108,15 @@ int get_ctime(void);
 */
 void free_otg(void);
 
+/*! \fn str_sub (const char *s, unsigned int start, unsigned int end);
+* \brief substract string
+* \param[in] const char *s
+* \param[in] unsigned int start
+*  \param[in] unsigned int end
+* \param[out]char *str_sub
+* @ingroup  _otg
+*/
+char *str_sub (const char *s, unsigned int start, unsigned int end);
 
 
 #endif

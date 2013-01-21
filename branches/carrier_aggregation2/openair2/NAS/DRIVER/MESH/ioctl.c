@@ -247,7 +247,8 @@ void nas_set_msg_rb_establishment_reply(struct nas_msg_rb_establishment_reply *m
 					struct nas_msg_rb_establishment_request *msgreq,
 					struct nas_priv *priv){
   //---------------------------------------------------------------------------
-  if ((msgreq->rab_id<3)||(msgreq->rab_id>127))
+  //  if ((msgreq->rab_id<3)||(msgreq->rab_id>127))
+  if ((msgreq->rab_id<3)||(msgreq->rab_id>MAX_RABS)) // navid : increase the number 
     msgrep->status=-NAS_ERROR_NOTCORRECTRABI;
   else
     {
@@ -461,6 +462,7 @@ void nas_set_msg_class_add_reply(struct nas_msg_class_add_reply *msgrep,
     gc->rab_id=msgreq->rab_id;
         
     gc->rb=nas_COMMON_search_rb(cx, gc->rab_id);
+    printk("NAS_SET_MSG_CLASS_ADD_REPLY: gc_rb %p %u \n", gc->rb, gc->rab_id);
   }else{
     if (msgreq->dir==NAS_DIRECTION_RECEIVE){
       gc=nas_CLASS_add_rclassifier(msgreq->dscp,
@@ -471,7 +473,7 @@ void nas_set_msg_class_add_reply(struct nas_msg_class_add_reply *msgrep,
 	return;
       }
     gc->rab_id=msgreq->rab_id;
-  
+
     }else{
       msgrep->status=-NAS_ERROR_NOTCORRECTDIR;
       return;

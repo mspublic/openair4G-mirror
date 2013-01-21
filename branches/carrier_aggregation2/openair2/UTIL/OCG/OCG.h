@@ -426,6 +426,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     Random_eNB_Distribution random_eNB_distribution;
     Hexagonal_eNB_Distribution hexagonal_eNB_distribution;
     Grid_eNB_Distribution grid_eNB_distribution;
+    Trace_Configuration trace_config;
   } eNB_Mobility;
 
   typedef struct
@@ -450,22 +451,52 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 /* @}*/
 
 
+/** @defgroup _Predefined_traffic Configuration
+ *  @ingroup _OSD_basic
+ *  @brief Including Application type, Source, destination, background, etc
+ * @{*/
   typedef struct
   {
     char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   } Predefined_Traffic;
+/* @}*/
 
+
+/*
   typedef struct
   {
+
+  } M2M_Traffic;*/
+/* @}*/
+
+/** @defgroup _customized_traffic Configuration
+ *  @ingroup _OSD_basic
+ *  @brief Including Application type, Source, destination, background, idt, packet size, etc
+ * @{*/
+  typedef struct
+  {
+	//int pu;
+	//double prob_off_pu;
+	//double prob_pu_ed;
+	//double holding_time_off_pu;
+	//int pe;
+	//double prob_off_ed;
+	//double prob_ed_pe;
+	//double holding_time_off_ed;
+	//int ed;
+	//double holding_time_off_pe;
+    
     char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *traffic[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *transport_protocol[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *ip_version[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    char *background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int idt_min_ms[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int idt_max_ms[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
@@ -482,7 +513,27 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     double size_shape[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int stream[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int destination_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		//unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  
+    //M2M_Traffic m2m_traffic;
+		double prob_off_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		double prob_off_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+  	double prob_off_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		double prob_pu_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		double prob_pu_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		double prob_ed_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		double prob_ed_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		unsigned int holding_time_off_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		unsigned int holding_time_off_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		unsigned int holding_time_off_pe[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];	
+		unsigned int holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		unsigned int pu_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+		unsigned int ed_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   } Customized_Traffic;
+/* @}*/
+
+
+
 
 /** @defgroup _app_config Application Configuration
  *  @ingroup _OSD_basic
@@ -490,6 +541,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  * @{*/
   typedef struct
   {
+    char *packet_gen_type;
     Predefined_Traffic predefined_traffic;
     Customized_Traffic customized_traffic;
   } Application_Config;
@@ -497,10 +549,11 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 
   typedef struct
   {
-    int throughput;
-    int latency;
-    int loss_rate;
+    char *throughput;
+    char *latency;
+    char *loss_rate;
     int signalling_overhead;
+    char *owd_radio_access;
   } Performance_Metrics;
 
   typedef struct
@@ -547,6 +600,8 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     Log_Emu log_emu;
     Packet_Trace packet_trace;
     Seed seed;
+    char * curve;
+    char * background_stats;
     // CLI tags are in Info 
     //char g_log_level[20];
   } Emulation_Config;
@@ -591,9 +646,12 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char ocg_enabled;
     unsigned char ocm_enabled;
     unsigned char opt_enabled;
+    unsigned char opt_mode; 
     unsigned char otg_enabled; 
     unsigned char omv_enabled;
+    unsigned char vcd_enabled;
     unsigned char otg_traffic;
+    unsigned char otg_bg_traffic_enabled;
     unsigned char omg_model_enb;
     unsigned char omg_model_ue;
     unsigned char omg_model_ue_current;	// when mixed mbility is used 
@@ -603,10 +661,12 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char cli_start_enb[NUMBER_OF_eNB_MAX];
     unsigned char cli_num_ue;
     unsigned char cli_start_ue[NUMBER_OF_UE_MAX];
+    unsigned char oai_ifup[NUMBER_OF_eNB_MAX+NUMBER_OF_UE_MAX];
     // emu related 
     unsigned int seed;
     unsigned int frame;
-    double time;
+    double time_s;
+    double time_ms;
     unsigned int g_log_level;
     unsigned int g_log_verbosity;
     // phy related params
@@ -621,6 +681,10 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 
     int max_predefined_traffic_config_index;
     int max_customized_traffic_config_index;
+
+    // MME related params
+    unsigned char mme_enabled;          ///< MME enabled ?
+    char          mme_ip_address[16];   ///< MME IP v4 address
 
   } Info;
 /* @}*/

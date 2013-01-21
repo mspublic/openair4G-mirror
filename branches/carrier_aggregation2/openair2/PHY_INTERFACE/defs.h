@@ -35,13 +35,13 @@ typedef struct
     
     // eNB functions
     /// Invoke dlsch/ulsch scheduling procedure for new subframe
-    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);
+    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);//, int calibration_flag);
 
     /// Fill random access response sdu, passing timing advance
-    u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL);
+    u16 (*fill_rar)(u8 Mod_id,u32 frame,u8 *dlsch_buffer,u16 N_RB_UL,u8 input_buffer_length);
 
     /// Terminate the RA procedure upon reception of l3msg on ulsch
-    void (*terminate_ra_proc)(u8 Mod_id,u32 frame,u16 UE_id, u8 *l3msg);
+    void (*terminate_ra_proc)(u8 Mod_id,u32 frame,u16 UE_id, u8 *l3msg,u16 l3msg_len);
 
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
     void (*initiate_ra_proc)(u8 Mod_id,u32 frame,u16 preamble,s16 timing_offset,u8 sect_id,u8 subframe,u8 f_id);
@@ -56,7 +56,7 @@ typedef struct
     u8* (*get_dlsch_sdu)(u8 Mod_id,u8 CC_id ,u32 frame,u16 rnti,u8 TB_index);
 
     /// Send ULSCH sdu to MAC for given rnti
-    void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu);
+    void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu,u16 sdu_len);
 
     /// Indicate failure to synch to external source
     void (*mrbch_phy_sync_failure) (u8 Mod_id,u32 frame, u8 Free_ch_index);
@@ -97,7 +97,10 @@ typedef struct
     /// Send a received DLSCH sdu to MAC
     void (*ue_send_sdu)(u8 Mod_id,u8 CC_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
-    /// Retrieve ULSCH sdu from MAC
+   /// Send a received MCH  sdu to MAC
+    //    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
+
+  /// Retrieve ULSCH sdu from MAC
     void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC
@@ -135,11 +138,21 @@ typedef struct
     void (*phy_config_sib2_ue)(u8 Mod_id, u8 CC_id,u8 CH_index,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
+
     /// Function to indicate failure of contention resolution or RA procedure
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
+    /// Function to indicate success of contention resolution or RA procedure
+    void (*ra_succeeded)(u8 Mod_id,u8 eNB_index);
+
+    /// Function to indicate the transmission of msg1/rach to MAC
+    void (*Msg1_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
+
     /// Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
     void (*Msg3_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
+
+    /// Function to pass inter-cell measurement parameters to PHY (cell Ids)
+    void (*phy_config_meas_ue)(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u32 *adj_cell_id);
 
     // PHY Helper Functions
 
@@ -156,7 +169,7 @@ typedef struct
     u16 (*get_nCCE_max)(u8 Mod_id, u8 CC_id);
 
     /// Function to retrieve number of PRB in an rb_alloc
-    u32 (*get_nb_rb)(u8 ra_header,u32 rb_alloc);
+    u32 (*get_nb_rb)(u8 ra_header,u32 rb_alloc,int N_RB_DL);
 
     /// Function to retrieve transmission mode for UE
     u8 (*get_transmission_mode)(u16 Mod_id,u16 rnti);
@@ -169,6 +182,12 @@ typedef struct
 
     /// Function for UE MAC to retrieve measured Path Loss
     s16 (*get_PL)(u8 Mod_id, u8 CC_id,u8 eNB_index);
+
+    /// Function for UE MAC to retrieve RSRP/RSRQ measurements
+    u8* (*get_RSRP)(u8 Mod_id,u8 eNB_index);
+
+    /// Function for UE MAC to retrieve RSRP/RSRQ measurements
+    u8* (*get_RSRQ)(u8 Mod_id,u8 eNB_index);
 
     /// Function for UE/eNB MAC to retrieve number of PRACH in TDD
     u8 (*get_num_prach_tdd)(LTE_DL_FRAME_PARMS *frame_parms);
@@ -186,8 +205,12 @@ typedef struct
     /// Function for UE/PHY to compute PUSCH transmit power in power-control procedure (deltaP_rampup parameter)
     s8 (*get_deltaP_rampup)(u8 Mod_id);
 
+    /// Function for UE/PHY to compute PHR
+    s8 (*get_PHR)(u8 Mod_id, u8 eNB_index);
 
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u8 CC_id, u16 rnti);
+
+    void (*process_timing_advance)(u8 Mod_id,s16 timing_advance);
 
     unsigned char is_cluster_head;
     unsigned char is_primary_cluster_head;

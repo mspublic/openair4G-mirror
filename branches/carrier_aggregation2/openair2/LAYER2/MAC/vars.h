@@ -42,9 +42,10 @@ MAC_xface *mac_xface;
 
 u8 Is_rrc_registered;
 
-#ifndef PHY_EMUL
-unsigned char NB_eNB_INST;
-unsigned char NB_UE_INST;
+#ifdef OPENAIR2
+unsigned char NB_eNB_INST=0;
+unsigned char NB_UE_INST=0;
+unsigned char NB_INST=0;
 #endif
 
 
@@ -56,6 +57,19 @@ DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
 
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI1_5MHz_TDD_t           DLSCH_alloc_pdu;
+#ifdef Rel10
+DCI1C_5MHz_t                 MCCH_alloc_pdu;
+#endif
+
+DCI0_5MHz_FDD_t       UL_alloc_pdu_fdd;
+
+DCI1A_5MHz_FDD_t      DLSCH_alloc_pdu1A_fdd;
+DCI1A_5MHz_FDD_t      RA_alloc_pdu_fdd;
+DCI1A_5MHz_FDD_t      BCCH_alloc_pdu_fdd;
+
+DCI1A_5MHz_FDD_t      CCCH_alloc_pdu_fdd;
+DCI1_5MHz_FDD_t       DLSCH_alloc_pdu_fdd;
+
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 

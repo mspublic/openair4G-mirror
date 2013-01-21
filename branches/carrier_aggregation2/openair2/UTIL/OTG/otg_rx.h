@@ -62,5 +62,20 @@
 */
 int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int size);
 
- short int fn(unsigned int a);
+
+/*! \fn void owd_const_gen(int src,int dst);
+*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
+*\param[in] the source 
+*\param[in] the destination
+*\param[out] void
+*\note 
+*@ingroup  _otg
+*/
+void owd_const_gen(int src,int dst, unsigned int flag);
+float owd_const_capillary();
+float owd_const_mobile_core();
+float owd_const_IP_backbone();
+float owd_const_application();
+
+
 #endif

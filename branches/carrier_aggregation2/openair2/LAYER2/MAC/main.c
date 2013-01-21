@@ -98,6 +98,9 @@ void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
     //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
+
+
+
 }
 
 /***********************************************************************/
@@ -135,7 +138,7 @@ int mac_top_init(void){
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
 
-  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d\n",NB_INST);
+  LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
@@ -144,15 +147,16 @@ int mac_top_init(void){
   }
   else
     UE_mac_inst = NULL;
+  LOG_I(MAC,"[MAIN] Init function start:Nb_eNB_INST=%d\n",NB_eNB_INST);
   if (NB_eNB_INST>0) {
     eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
-    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
     bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
   }
   else
     eNB_mac_inst = NULL;
 
-  for(Mod_id=0;Mod_id<NB_INST;Mod_id++){
+  for(Mod_id=0;Mod_id<NB_eNB_INST;Mod_id++){
 
 #ifdef PHY_EMUL
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
@@ -188,20 +192,30 @@ int mac_top_init(void){
 
     RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].RA_template[0];
     for (j=0;j<NB_RA_PROC_MAX;j++) {
-      memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      if (mac_xface->lte_frame_parms->frame_type == TDD) {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      }
+      else {
+	memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu_fdd,sizeof(DCI1A_5MHz_FDD_t));
+	memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A_fdd,sizeof(DCI1A_5MHz_FDD_t));
+	RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
+	RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_FDD_t;
+	RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_FDD_t;
+      }
       RA_template[j].RA_dci_fmt1        = format1A;
       RA_template[j].RA_dci_fmt2        = format1A;
     }
 
 
     UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
-    for (j=0;j<NB_CNX_eNB;j++) {
-      UE_template->rnti=0;
+    for (j=0;j<NUMBER_OF_UE_MAX;j++) {
+      UE_template[j].rnti=0;
     }
   }
 
@@ -302,7 +316,11 @@ void mac_top_cleanup(void){
 #ifndef USER_MODE
   pdcp_module_cleanup ();
 #endif
-
+  if (NB_UE_INST>0)
+    free (UE_mac_inst);
+  if (NB_eNB_INST>0)
+    free(eNB_mac_inst);
+  free( Mac_rlc_xface);
 }
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
@@ -340,16 +358,20 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_SB_size	       = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
+  mac_xface->Msg1_transmitted          = Msg1_tx;
   mac_xface->ra_failed                 = ra_failed;
+  mac_xface->ra_succeeded              = ra_succeeded;
 
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
+  //  mac_xface->ue_send_mch_sdu     = ue_send_mch_sdu;
   mac_xface->ue_get_SR                 = ue_get_SR;
   mac_xface->ue_get_sdu                = ue_get_sdu;
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;
+  mac_xface->process_timing_advance    = process_timing_advance;
 
 
   LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
@@ -371,12 +393,15 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
 
+  mac_xface->phy_config_meas_ue         = phy_config_meas_ue;
+
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
   mac_xface->phy_config_dedicated_scell_eNB = phy_config_dedicated_scell_eNB;
   mac_xface->phy_config_dedicated_scell_ue  = phy_config_dedicated_scell_ue;
 
+  mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
   mac_xface->macphy_init();
