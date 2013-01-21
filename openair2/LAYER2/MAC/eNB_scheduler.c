@@ -1379,8 +1379,8 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   //  printf("In schedule_ulsch ...\n");
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > (1<<aggregation));UE_id++) {
     //    printf("Checking UE_id %d/%d\n",UE_id,granted_UEs);
-    if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0))) //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
-    //if (((UE_id%2)==(sched_subframe%2)))
+    //if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0))) //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
+    if (((UE_id%2)==(sched_subframe%2)))
     { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
       // find next ue to schedule

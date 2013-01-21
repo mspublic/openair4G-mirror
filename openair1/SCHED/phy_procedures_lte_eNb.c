@@ -705,6 +705,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifndef OPENAIR2
   DCI_PDU DCI_pdu_tmp;
   u8 DLSCH_pdu_tmp[768*8];
+  u8 rar;
 #endif
   s8 UE_id;
   u8 num_pdcch_symbols=0;
@@ -1345,9 +1346,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       for (i=0;i<input_buffer_length;i++)
       	dlsch_input_buffer[i]= (unsigned char) i; //(taus()&0xff);
 
-      dlsch_input_buffer[0] = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
-      //LOG_I(PHY,"UE %d: timing_offset = %d\n",UE_id,dlsch_input_buffer[0]); 
-      ((RAR_PDU*) (dlsch_input_buffer+1))->Timing_Advance_Command = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
+      dlsch_input_buffer[1] = (phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset)>>(2+4); // 7 MSBs of timing advance + divide by 4
+      dlsch_input_buffer[2] = ((phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset)<<(4-2))&0xf0;  // 4 LSBs of timing advance + divide by 4
+      //LOG_I(PHY,"UE %d: timing_offset = %d\n",UE_id,phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset); 
 #endif
 
 #ifdef DEBUG_PHY_PROC
@@ -2020,7 +2021,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   if (preamble_energy_list[preamble_max] > 60) {
     UE_id = find_next_ue_index(phy_vars_eNB);
     if (UE_id>=0) {
-      phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max];
+      phy_vars_eNB->eNB_UE_stats[(u32)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
       //phy_vars_eNb->eNB_UE_stats[(u32)UE_id].mode = PRACH;
       phy_vars_eNB->eNB_UE_stats[(u32)UE_id].sector = 0;
       LOG_I(PHY,"[eNB %d][RAPROC] Initiating RA procedure with preamble %d, energy %d, delay %d\n",

@@ -91,8 +91,8 @@ unsigned short fill_rar(u8 Mod_id,
   */
   rar[4] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti>>8); 
   rar[5] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti&0xff);
-  rar[0] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset)>>(2+4); // 7 MSBs of timing advance
-  rar[1] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance
+  rar[0] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset>>(2+4)); // 7 MSBs of timing advance + divide by 4
+  rar[1] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance + divide by 4
   rballoc = mac_xface->computeRIV(N_RB_UL,0,1); // first PRB only for UL Grant
   rar[1] |= (rballoc>>7)&7; // Hopping = 0 (bit 3), 3 MSBs of rballoc
   rar[2] = ((uint8_t)(rballoc&0xff))<<1; // 7 LSBs of rballoc
@@ -133,7 +133,7 @@ uint16_t ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 p
   LOG_D(MAC,"[UE %d][RAPROC] rarh->RAPID %d\n",Mod_id,rarh->RAPID);
 
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->R %d\n",Mod_id,rar->R);
-  LOG_I(MAC,"[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",Mod_id,(((uint16_t)rar[0])<<5) + (rar[1]>>4));
+  LOG_I(MAC,"[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",Mod_id,(((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->hopping_flag %d\n",Mod_id,rar->hopping_flag);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->rb_alloc %d\n",Mod_id,rar->rb_alloc);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->mcs %d\n",Mod_id,rar->mcs);
@@ -148,7 +148,7 @@ uint16_t ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 p
     *t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;
     UE_mac_inst[Mod_id].crnti = *t_crnti;//rar->t_crnti;
     //return(rar->Timing_Advance_Command);
-    return((((uint16_t)rar[0])<<5) + (rar[1]>>4));
+    return((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
   }
   else {
     UE_mac_inst[Mod_id].crnti=0;
