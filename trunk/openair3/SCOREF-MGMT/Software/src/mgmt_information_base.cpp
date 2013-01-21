@@ -50,6 +50,11 @@ using namespace std;
 ManagementInformationBase::ManagementInformationBase(Logger& logger)
 	: itsKeyManager(logger), communicationProfileManager(logger), logger(logger) {
 	logger.info("Management Information Base has been created");
+
+	/**
+	 * Default configuration for IPv6 is OFF
+	 */
+	this->ipv6Enabled = false;
 }
 
 ManagementInformationBase::~ManagementInformationBase() {}
@@ -252,4 +257,12 @@ bool ManagementInformationBase::setNetworkFlags(const u_int8_t& networkFlags) {
 	this->networkFlags = networkFlags;
 
 	return true;
+}
+
+void ManagementInformationBase::enableIpv6() {
+	ipv6Enabled = true;
+}
+
+bool ManagementInformationBase::isIpv6Enabled() const {
+	return ipv6Enabled;
 }

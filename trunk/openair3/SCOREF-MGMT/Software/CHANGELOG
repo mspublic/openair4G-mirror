@@ -1,4 +1,9 @@
 
+v1.7.4
+* Communication profile selection document (by Michelle) has been added under Documents/
+* CONF_IPV6_ENABLED configuration file parameter has been added
+* CommunicationProfileManager::selectProfile() method is now implemented
+
 v1.7.3
 * ../Documentation/SCOREF\ Integration\ Test\ Specification added
 * Scenario for CONFIGURATION_NOTIFICATION is now for FAC as it should be

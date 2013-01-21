@@ -82,9 +82,9 @@ class Packet:
 		communicationProfileRequestPacket.append(0x00) # Priority=0
 		communicationProfileRequestPacket.append(0x03) # EventType=3
 		communicationProfileRequestPacket.append(0x17) # EventSubtype=17
-		communicationProfileRequestPacket.append(0xA0) # Latency (1-byte)
-		communicationProfileRequestPacket.append(0xB0) # Relevance (1-byte)
-		communicationProfileRequestPacket.append(0xC0) # Reliability (1-byte)
+		communicationProfileRequestPacket.append(0x01) # Latency (1-byte)
+		communicationProfileRequestPacket.append(0x05) # Relevance (1-byte)
+		communicationProfileRequestPacket.append(0x02) # Reliability (1-byte)
 		communicationProfileRequestPacket.append(random.randint(1, 100)) # Sequence number (1-byte)
 
 		# Create the socket to send to MGMT

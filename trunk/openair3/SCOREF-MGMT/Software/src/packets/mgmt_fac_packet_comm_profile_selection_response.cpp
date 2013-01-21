@@ -75,7 +75,9 @@ bool FacCommunicationProfileSelectionResponsePacket::serialize(vector<unsigned c
 	/**
 	 * Get the most suitable communication profile from CommunicationProfileManager...
 	 */
-	CommunicationProfileID communicationProfileId = mib.getCommunicationProfileManager().selectProfile(packet.latency, packet.relevance, packet.reliability);
+	CommunicationProfileID communicationProfileId = mib.getCommunicationProfileManager().selectProfile(mib.isIpv6Enabled(), packet.latency, packet.relevance, packet.reliability);
+	logger.debug(string("Ipv6 is ") + ((mib.isIpv6Enabled()) ? "enabled" : "disabled"));
+
 	/**
 	 * ...and encode it into the response packet
 	 */

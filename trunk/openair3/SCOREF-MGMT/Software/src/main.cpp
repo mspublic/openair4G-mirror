@@ -122,10 +122,6 @@ int main(int argc, char** argv) {
 	 * Create a Logger object
 	 */
 	Logger logger(logFileName, Logger::TRACE);
-	/**
-	 * Create the father
-	 */
-	ManagementInformationBase mib(logger);
 
 	/**
 	 * Prepare the list of FACilities configuration files by traversing
@@ -139,6 +135,12 @@ int main(int argc, char** argv) {
 	configurationFileVector.push_back(configurationFileName);
 	Configuration configuration(configurationFileVector, logger);
 	configuration.setFacilitiesConfigurationDirectory(facilitiesConfigurationFileDirectory);
+
+	/**
+	 * Create the father
+	 */
+	ManagementInformationBase mib(logger);
+
 	/**
 	 * Parse configuration file and create UDP server socket
 	 */
@@ -149,6 +151,12 @@ int main(int argc, char** argv) {
 		e.printStackTrace();
 		exit(-1);
 	}
+
+	/**
+	 * Update IPv6 configuration
+	 */
+	if (configuration.isIpv6Enabled())
+		mib.enableIpv6();
 
 	/**
 	 * Initialise MIB
