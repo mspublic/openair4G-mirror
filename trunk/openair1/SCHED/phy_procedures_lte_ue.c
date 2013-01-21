@@ -56,7 +56,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 //#endif
 
-//#define DEBUG_PHY_PROC 1
+#define DEBUG_PHY_PROC 1
 #define UE_TX_POWER (-10)
 
 #ifdef OPENAIR2
@@ -2080,10 +2080,11 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef DLSCH_THREAD
   u8 rx_pdsch_thread_index = 0;
 #endif
-
   u8 i_mod = 0;
   int i;
-
+#ifndef OPENAIR2
+  u8 *rar;
+#endif
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
   //msg("UE_RX 1 last_slot %d \n",last_slot);
 
@@ -2506,7 +2507,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
       if (phy_vars_ue->dlsch_ue_ra[eNB_id]->active == 1) {
 #ifdef DEBUG_PHY_PROC
-	//debug_LOG_D(PHY,"[UE  %d] Frame %d, slot %d: DLSCH (RA) demod symbols 10,11,12\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot);
+	LOG_I(PHY,"[UE  %d] Frame %d, slot %d: DLSCH (RA) demod symbols 10,11,12\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot);
 #endif
       
 	// process symbols 10,11,12 and trigger DLSCH decoding
@@ -2536,21 +2537,19 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
           vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 	  return;
 	}
-	/*
-#ifdef DEBUG_PHY_PROC
-	debug_LOG_D(PHY,"[UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot==0)?9 : (last_slot>>1)));
-	#endif*/
 
+#ifdef DEBUG_PHY_PROC
 	if (abstraction_flag==0) {
-	  printf("decoding RA (subframe %d): G %d,rnti %x\n" ,last_slot>>1,
-		 get_G(&phy_vars_ue->lte_frame_parms,
-		       phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
-		       phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc,
-		       get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),
-		       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
-		 phy_vars_ue->dlsch_ue_ra[eNB_id]->rnti
-		 );
-	  
+	  LOG_I(PHY,"[UE] decoding RA (subframe %d): G %d,rnti %x\n" ,last_slot>>1,
+		get_G(&phy_vars_ue->lte_frame_parms,
+		      phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
+		      phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc,
+		      get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),
+		      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
+		phy_vars_ue->dlsch_ue_ra[eNB_id]->rnti
+		);
+#endif
+
 	  dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
 			     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
 			     phy_vars_ue->dlsch_ue_ra[eNB_id],
@@ -2657,8 +2656,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  } // mode != PUSCH
 #else //OPENAIR2
 
-
-	  timing_advance = ((RAR_PDU*) (phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b+1))->Timing_Advance_Command;
+	  rar = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b+1;
+	  timing_advance = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
 	  //timing_advance = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b[0];
 	  process_timing_advance_rar(phy_vars_ue,timing_advance);
 #endif
@@ -2684,11 +2683,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	LOG_D(PHY,"[UE  %d] Frame %d, slot %d: Error in pdcch procedures\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot);
 #endif
 	return(-1);
-	      }
-      //printf("num_pdcch_symbols %d\n",phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
-      /*
-      if ((phy_vars_ue->frame&1) == 0)
-      oai_exit=1; */
+      }
+#ifdef DEBUG_PHY_PROC
+      LOG_D(PHY,"num_pdcch_symbols %d\n",phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
+#endif
     }
     
     if (abstraction_flag==0) {

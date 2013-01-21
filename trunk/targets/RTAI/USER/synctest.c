@@ -1115,7 +1115,7 @@ int main(int argc, char **argv) {
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
