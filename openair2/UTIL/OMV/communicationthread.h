@@ -54,7 +54,7 @@ class CommunicationThread : public QThread
         CommunicationThread(MyWindow* window);
 
     signals:
-        void newData(QString data);
+        void newData(QString data, int frame);
         void newPosition();
         void endOfTheSimulation();
 

@@ -208,7 +208,7 @@ int bringInterfaceUp(char *interfaceName, int up)
         if (ioctl(sock_fd, SIOCSIFFLAGS, (caddr_t)&ifr) == -1)
         {
             close(sock_fd);
-            LOG_E(OIP,"Bringing interface UP, for %s, failed UP ioctl\n", interfaceName);
+            LOG_E(OIP,"Bringing interface down, for %s, failed UP ioctl\n", interfaceName);
             return 2;
         }
     }

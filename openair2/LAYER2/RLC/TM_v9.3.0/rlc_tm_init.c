@@ -32,7 +32,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "rlc_tm.h"
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
-void config_req_rlc_tm (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_tm_info_t * config_tmP, u8_t rb_idP, rb_type_t rb_typeP)
+void config_req_rlc_tm (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_tm_info_t * config_tmP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
     rlc_tm_init(rlcP);

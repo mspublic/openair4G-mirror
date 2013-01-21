@@ -52,14 +52,14 @@ int handshake(char *hoststr,int portno){
    check_endianness(); // check endianness
    int i;
 
-   for(i = 0; i< 5; i++) {
+   for(i = 0; i< 10; i++) {
         if ( connection_(hoststr,portno) <0 ) {
            #ifdef STANDALONE  
             printf("connection error...trying again in 3 seconds\n");
           #else
             LOG_E(OMG, " Could not connect to TraCIServer - sleeping before trying again...\n");
          #endif
-            sleep(3);
+            sleep(5);
         }
         else {
         #ifdef STANDALONE  
@@ -338,7 +338,7 @@ int commandGetMaxSUMONodesVariable()
        	  int cmdId =readUnsignedByte();
           if (cmdId != (CMD_SCENARIO)) {
 		//LOG_E(OMG, " Wrong response recieved \n");
-            	return;
+            	return -1;
           }
 
  	  int flag = readUnsignedByte(); 
@@ -374,7 +374,12 @@ void GetPosition(NodePtr node, char * sumo_id)
 {    
     commandGetVehicleVariable(sumo_id, VAR_POSITION);
     double x_double = readDouble();
-    double y_double = readDouble();
+    if (x_double < 0.0)
+      x_double = 0.0;
+
+   double y_double = readDouble();
+    if (y_double < 0.0)
+      y_double = 0.0;
 
     node->X_pos = x_double;
     node->Y_pos = y_double;

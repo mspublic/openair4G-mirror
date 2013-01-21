@@ -56,7 +56,7 @@ ________________________________________________________________*/
 #include "openair_rrc_L2_interface.h"
  
 /********************************************************************************************************************/
-s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,s8 *Buffer,u8 eNB_flag,u8 eNB_index){
+s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
   return(rrc_L2_data_req_rx(Mod_id,Srb_id,Nb_tb,Buffer,eNB_index));
@@ -66,7 +66,7 @@ s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,s8 *Buffer,u8 eNB
 }   
    
 /********************************************************************************************************************/
-s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, s8 *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
+s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
 /********************************************************************************************************************/
 #ifdef CELLULAR
   return(rrc_L2_mac_data_ind_rx());
@@ -80,8 +80,9 @@ void rlcrrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, un
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_rlc_data_ind_rx();
-#else 
-  rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+#else  // now this is called from PDCP
+  //rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+  rrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
 #endif //CELLULAR
 }
 
@@ -131,7 +132,7 @@ int mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index) {
 #ifdef CELLULAR
   return (rrc_L2_get_rrc_status(Mod_id,eNB_flag,index));
 #else 
-  mac_get_rrc_lite_status(Mod_id, eNB_flag, index);
+  return mac_get_rrc_lite_status(Mod_id, eNB_flag, index);
 #endif //CELLULAR
 }
 

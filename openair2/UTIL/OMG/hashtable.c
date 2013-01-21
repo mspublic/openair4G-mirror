@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 // element operations
 /**
  * Function to create a now hash_table element
@@ -93,7 +94,7 @@ hash_table_t * hash_table_new(hash_table_mode_t mode)
         return NULL;
     }
     table->mode = mode;
-    table->key_num = 128;
+    table->key_num = 128; 
     table->key_ratio = 4;
     table->store_house = (hash_table_element_t **) calloc(table->key_num, sizeof(hash_table_element_t *));
     if (!table->store_house)

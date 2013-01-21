@@ -56,7 +56,7 @@
 #define NAS_INET6_ADDRSTRLEN 46
 #define NAS_INET_ADDRSTRLEN 16
 
-#define NAS_CX_MAX 32  //Identical to RRC constant
+#define NAS_CX_MAX 128 // 32  //Identical to RRC constant
 //#define NAS_CX_MULTICAST_ALLNODE 2
 
 #define NAS_RETRY_LIMIT_DEFAULT 5
@@ -172,7 +172,7 @@
 
 #define NAS_MPLS_VERSION_CODE 99
 
-#define NB_INSTANCES_MAX 16
+#define NB_INSTANCES_MAX 64 //16
 
 
 #endif

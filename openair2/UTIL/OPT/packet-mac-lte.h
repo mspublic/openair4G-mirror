@@ -1,8 +1,7 @@
-/*******************************************************************************/
 /* packet-mac-lte.h
  *
  * Martin Mathieson
- * $Id$
+ * $Id: packet-mac-lte.h 42240 2012-04-25 20:02:12Z pascal $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -49,18 +48,6 @@
  * SUCH DAMAGE
  */
 
-#ifndef guint8
-typedef unsigned char guint8;
-typedef unsigned short guint16;
-typedef unsigned int guint32;
-#endif
-#ifndef gboolean
-typedef unsigned int gboolean;
-#endif
-#ifndef nstime_t
-typedef time_t nstime_t;
-#endif
-
 /* radioType */
 #define FDD_RADIO 1
 #define TDD_RADIO 2
@@ -69,13 +56,15 @@ typedef time_t nstime_t;
 #define DIRECTION_UPLINK   0
 #define DIRECTION_DOWNLINK 1
 
-/* Wireshark rntiType */
-#define WS_NO_RNTI  0
-#define WS_P_RNTI   1
-#define WS_RA_RNTI  2
-#define WS_C_RNTI   3
-#define WS_SI_RNTI  4
-#define WS_SPS_RNTI 5
+/* rntiType */
+#define NO_RNTI  0
+#define P_RNTI   1
+#define RA_RNTI  2
+#define C_RNTI   3
+#define SI_RNTI  4
+#define SPS_RNTI 5
+#define M_RNTI   6
+
 
 typedef enum mac_lte_oob_event {
     ltemac_send_preamble,
@@ -108,21 +97,40 @@ typedef struct mac_lte_info
     /* Extra info to display */
     guint16         rnti;
     guint16         ueid;
+
+    /* Timing info */
+    guint16         sysframeNumber;
     guint16         subframeNumber;
+
+    /* Optional field. More interesting for TDD (FDD is always -4 subframeNumber) */
     gboolean        subframeNumberOfGrantPresent;
     guint16         subframeNumberOfGrant;
+
+    /* Flag set only if doing PHY-level data test - i.e. there may not be a
+       well-formed MAC PDU so just show as raw data */
     gboolean        isPredefinedData;
+
+    /* Length of DL PDU or UL grant size in bytes */
     guint16         length;
-    guint8          reTxCount;   /* UL */
+
+    /* UL only.  0=newTx, 1=first-retx, etc */
+    guint8          reTxCount;
+    guint8          isPHICHNACK; /* FALSE=PDCCH retx grant, TRUE=PHICH NACK */
+
+    /* UL only.  Indicates if the R10 extendedBSR-Sizes parameter is set */
+    gboolean        isExtendedBSRSizes;
+    
+    /* DL only.  Status of CRC check */
     mac_lte_crc_status   crcStatusValid;
 
+    /* DL only.  Is this known to be a retransmission? */
     mac_lte_dl_retx dl_retx;
 
-    /* More Physical layer info (direction-specific) */
+    /* More Physical layer info (see direction above for which side of union to use) */
     union {
         struct mac_lte_ul_phy_info
         {
-            guint8 present;
+            guint8 present;  /* Remaining UL fields are present and should be displayed */
             guint8 modulation_type;
             guint8 tbs_index;
             guint8 resource_block_length;
@@ -132,7 +140,7 @@ typedef struct mac_lte_info
         } ul_info;
         struct mac_lte_dl_phy_info
         {
-            guint8 present;
+            guint8 present; /* Remaining UL fields are present and should be displayed */
             guint8 dci_format;
             guint8 resource_allocation_type;
             guint8 aggregation_level;
@@ -142,14 +150,19 @@ typedef struct mac_lte_info
             mac_lte_crc_status crc_status;
             guint8 harq_id;
             gboolean ndi;
-            guint8   transport_block;  /* 1-2 */
+            guint8   transport_block;  /* 1..2 */
         } dl_info;
     } detailed_phy_info;
-    
+
     /* Relating to out-of-band events */
+    /* N.B. dissector will only look to these fields if length is 0... */
     mac_lte_oob_event  oob_event;
     guint8             rapid;
     guint8             rach_attempt_number;
+    #define MAX_SRs 20
+    guint16            number_of_srs;
+    guint16            oob_ueid[MAX_SRs];
+    guint16            oob_rnti[MAX_SRs];
 } mac_lte_info;
 
 
@@ -164,6 +177,7 @@ typedef struct mac_lte_tap_info {
     guint8   direction;
 
     guint8   isPHYRetx;
+    guint16  ueInTTI;
 
     nstime_t time;
 
@@ -177,20 +191,10 @@ typedef struct mac_lte_tap_info {
     guint16  padding_bytes;
     guint16  raw_length;
 } mac_lte_tap_info;
-/**
-*
-*
-*/
- void Init_OPT();
- void Terminate_OPT();
-int test_send_packet(int PDU_type);
-
-
 
 
 /* Accessor function to check if a frame was considered to be ReTx */
-
-//int is_mac_lte_frame_retx( packet_info *pinfo, guint8 direction);
+//int is_mac_lte_frame_retx(packet_info *pinfo, guint8 direction);
 
 /*****************************************************************/
 /* UDP framing format                                            */
@@ -235,7 +239,7 @@ int test_send_packet(int PDU_type);
 #define MAC_LTE_SUBFRAME_TAG        0x04
 /* 2 bytes, network order */
 
-#define MAC_LTE_PREDFINED_DATA_TAG  0x05
+#define MAC_LTE_PREDEFINED_DATA_TAG 0x05
 /* 1 byte */
 
 #define MAC_LTE_RETX_TAG            0x06
@@ -244,9 +248,30 @@ int test_send_packet(int PDU_type);
 #define MAC_LTE_CRC_STATUS_TAG      0x07
 /* 1 byte */
 
+#define MAC_LTE_EXT_BSR_SIZES_TAG   0x08
+/* 0 byte */
+
+#define MAC_LTE_OOB_EVENT_TAG   0x09
+/* 3 byte */
 
 /* MAC PDU. Following this tag comes the actual MAC PDU (there is no length, the PDU
    continues until the end of the frame) */
 #define MAC_LTE_PAYLOAD_TAG 0x01
 
 
+/* Set details of an LCID -> drb channel mapping.  To be called from
+   configuration protocol (e.g. RRC) */
+/*void set_mac_lte_channel_mapping(guint16 ueid, guint8 lcid,
+                                 guint8  srbid, guint8 drbid,
+                                 guint8  rlcMode, guint8 um_sn_length,
+                                 guint8  ul_priority);
+*/
+/* Functions to be called from outside this module (e.g. in a plugin, where mac_lte_info
+   isn't available) to get/set per-packet data */
+//mac_lte_info *get_mac_lte_proto_data(packet_info *pinfo);
+//void set_mac_lte_proto_data(packet_info *pinfo, mac_lte_info *p_mac_lte_info);
+
+/* Function to attempt to populate p_mac_lte_info using framing definition above */
+/*gboolean dissect_mac_lte_context_fields(struct mac_lte_info  *p_mac_lte_info, tvbuff_t *tvb,
+                                        gint *p_offset);
+*/

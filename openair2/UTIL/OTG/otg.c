@@ -63,10 +63,36 @@ void init_all_otg()  {
    		LOG_E(OTG,"Couldn't allocate memory for otg_info_t\n");
  	memset(otg_info, 0, sizeof(otg_info_t));
 
-
+        //set otg forms infos to 0
+	otg_forms_info=calloc(1, sizeof(otg_forms_info_t));
+	if (otg_forms_info == NULL)
+   	/* Memory could not be allocated */
+   		LOG_E(OTG,"Couldn't allocate memory for otg_forms_info_t\n");
+ 	memset(otg_forms_info, 0, sizeof(otg_forms_info_t));
 
 	LOG_I(OTG,"init done: init_all_otg\n");
 
+}
+
+char *str_sub (const char *s, unsigned int start, unsigned int end) {
+   
+  char *new_s = NULL;
+  int i;
+  
+  if (s != NULL && start < end)   {
+    new_s = malloc (sizeof (*new_s) * (end - start + 2));
+    if (new_s != NULL) {
+      for (i = start; i <= end; i++) {
+	new_s[i-start] = s[i];
+      }
+      new_s[i-start] = '\0';
+    }
+    else {
+	LOG_E(OTG,"Insufficient memory \n");
+	exit (-1);
+      }
+  }
+  return new_s;
 }
 
 // set the simulation time

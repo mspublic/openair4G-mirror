@@ -60,16 +60,16 @@ int save_XML(int copy_or_move, char *src_file, char *output_dir, char *filename)
 	strcat(dst_file, filename);
 	fs = fopen(src_file, "r");
 	ft = fopen(dst_file, "w");
-
-	while(1) {
-		ch = getc(fs);
-		if(ch == EOF) {
-			break;
-		} else {
-			putc(ch, ft);
-		}
+	if ((ft !=NULL)&&(fs!=NULL)){
+	  while(1) {
+	    ch = getc(fs);
+	    if(ch == EOF) {
+	      break;
+	    } else {
+	      putc(ch, ft);
+	    }
+	  }
 	}
-
 	fclose(fs);
 	fclose(ft);
 

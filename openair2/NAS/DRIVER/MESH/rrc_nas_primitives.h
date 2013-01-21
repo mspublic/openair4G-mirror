@@ -68,7 +68,7 @@
 #    define NAS_MAX_LENGTH 180  // maximum length of a NAS primitive
 #    define NAS_TL_SIZE	 4      // size of the Type+Length fields of the primitive
 #    define NAS_DATA_MAX_LENGTH NAS_MAX_LENGTH - NAS_TL_SIZE    //remaining bytes for the message
-#    define MAX_RABS 27         // = MAXURAB
+#    define MAX_RABS     8 * 64 //NB_RAB_MAX * MAX_MOBILES_PER_RG  //27   // = MAXURAB
 #    define MAX_MEASURE_NB  5
   
 //Connection Establishment status

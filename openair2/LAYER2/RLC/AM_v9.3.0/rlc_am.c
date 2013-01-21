@@ -44,7 +44,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 //#define TRACE_RLC_AM_TX_STATUS
 #define TRACE_RLC_AM_TX
 #define TRACE_RLC_AM_RX
-#define TRACE_RLC_AM_BO
+//#define TRACE_RLC_AM_BO
 //-----------------------------------------------------------------------------
 u32_t
 rlc_am_get_buffer_occupancy_in_bytes (rlc_am_entity_t *rlcP,u32 frame)
@@ -94,7 +94,7 @@ void rlc_am_release (rlc_am_entity_t *rlcP)
 
 }
 //-----------------------------------------------------------------------------
-void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
+void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_am_info_t * config_amP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d) --->][RLC_AM][MOD %02d][RB %02d]\n",
