@@ -357,6 +357,9 @@ void oaisim_config() {
     set_component_filelog(OTG);
     set_component_filelog(OTG_LATENCY);
     set_component_filelog(OTG_GP);
+    set_component_filelog(OTG_LATENCY_BG);
+    set_component_filelog(OTG_GP_BG);
+
     /* g_log->log_component[OTG].filelog=1;
     g_log->log_component[OTG_LATENCY].filelog=1;
     g_log->log_component[OTG_OWD].filelog = 1;*/
