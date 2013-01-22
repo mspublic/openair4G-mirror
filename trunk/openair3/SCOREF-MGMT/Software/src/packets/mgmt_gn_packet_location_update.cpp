@@ -75,6 +75,9 @@ bool GeonetLocationUpdateEventPacket::serialize(vector<unsigned char>& buffer) c
 	u_int8_t payloadIndex = sizeof(MessageHeader);
 	const LocationInformation& location = mib.getLocationInformation();
 
+	logger.info("Following Location Information will be encoded:");
+	logger.info(location.toString());
+
 	Util::encode4byteInteger(buffer, payloadIndex, location.timestamp); payloadIndex += 4;
 	Util::encode4byteInteger(buffer, payloadIndex, location.latitude); payloadIndex += 4;
 	Util::encode4byteInteger(buffer, payloadIndex, location.longitude); payloadIndex += 4;

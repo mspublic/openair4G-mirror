@@ -209,7 +209,8 @@ void ManagementServer::handleClientData() {
 
 	else if (result->getResult() == PacketHandlerResult::DISCARD_PACKET
 			|| result->getResult() == PacketHandlerResult::DELIVER_PACKET
-			|| result->getResult() == PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE) {
+			|| result->getResult() == PacketHandlerResult::SEND_CONFIGURATION_UPDATE_AVAILABLE
+			|| result->getResult() == PacketHandlerResult::RELAY_TO_GN) {
 		/**
 		 * Inform Client Manager of this sender
 		 */
@@ -224,7 +225,12 @@ void ManagementServer::handleClientData() {
 	/**
 	 * Do the necessary told by PacketHandler
 	 */
-	GeonetConfigurationAvailableEventPacket* packet;
+	GeonetConfigurationAvailableEventPacket* configurationAvailablePacket = NULL;
+	GeonetLocationUpdateEventPacket* locationUpdatePacket = NULL;
+	/**
+	 * Find the GN client as we might need to talk to it
+	 */
+	const ManagementClient* gnClient = clientManager.getClientByType(ManagementClient::GN);
 
 	switch (result->getResult()) {
 		case PacketHandlerResult::DISCARD_PACKET:
@@ -263,8 +269,6 @@ void ManagementServer::handleClientData() {
 			/**
 			 * Update GN client with new configuration information
 			 */
-			const ManagementClient* gnClient = clientManager.getClientByType(ManagementClient::GN);
-
 			if (!gnClient) {
 				logger.info("There is no GN client connected right now, so a CONFIGURATION_AVAILABLE won't be sent");
 				break;
@@ -274,12 +278,12 @@ void ManagementServer::handleClientData() {
 			 * Create a CONFIGURATION_UPDATE_AVAILABLE packet
 			 */
 			try {
-				packet = new GeonetConfigurationAvailableEventPacket(mib, logger);
+				configurationAvailablePacket = new GeonetConfigurationAvailableEventPacket(mib, logger);
 				/**
 				 * Serialize...
 				 */
 				txData.resize(TX_BUFFER_SIZE);
-				packet->serialize(txData);
+				configurationAvailablePacket->serialize(txData);
 			} catch (...) {
 				throw Exception("Cannot create a CONFIGURATION_UPDATE_AVAILABLE packet!", logger);
 			}
@@ -300,6 +304,46 @@ void ManagementServer::handleClientData() {
 			txData.resize(TX_BUFFER_SIZE);
 
 			delete result;
+			break;
+
+		case PacketHandlerResult::RELAY_TO_GN:
+			/**
+			 * Relay incoming LOCATION_UPDATE (from FAC-CM) to CM-GN
+			 */
+			if (!gnClient) {
+				logger.info("There is no GN client connected right now, so the LOCATION_UPDATE won't be relayed");
+				break;
+			}
+
+			/**
+			 * Create a LOCATION_UPDATE packet
+			 */
+			try {
+				locationUpdatePacket = new GeonetLocationUpdateEventPacket(mib, logger);
+				/**
+				 * Serialize...
+				 */
+				txData.resize(TX_BUFFER_SIZE);
+				locationUpdatePacket->serialize(txData);
+			} catch (...) {
+				throw Exception("Cannot create a LOCATION_UPDATE packet!", logger);
+			}
+
+			logger.info("A LOCATION_UPDATE packet is prepared, sending...");
+
+			/**
+			 * Send thru socket
+			 */
+			socket.async_send_to(ba::buffer(txData), udp::endpoint(udp::v4(), gnClient->getPort()),
+					boost::bind(&ManagementServer::handleSend, this,
+							ba::placeholders::error,
+							ba::placeholders::bytes_transferred));
+
+			delete result;
+			break;
+
+		default:
+			logger.warning("Something nasty happened, there's no such task for PacketHandler!");
 			break;
 	}
 

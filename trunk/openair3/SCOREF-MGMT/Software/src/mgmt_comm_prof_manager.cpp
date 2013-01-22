@@ -157,12 +157,12 @@ CommunicationProfileID CommunicationProfileManager::selectProfile(bool ipv6Enabl
 	else if (relevance == 3 && latency == 2 && reliability == 2)
 		return 1;
 	else if (relevance <= 3 && latency <= 2 && reliability <= 2)
-		return 3;
+		return 1; // This is 3 in Michelle's document, but changed later on
 	else if (relevance <= 7 && latency <= 3 && reliability <= 3) {
 		if (ipv6Enabled)
 			return 11;
 		else
-			return 3;
+			return 1; // This is 3 in Michelle's document, but changed later on
 	}
 
 	return 0;

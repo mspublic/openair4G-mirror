@@ -230,21 +230,6 @@ bool ManagementInformationBase::updateLocationTable(LocationTableItem* locationT
 }
 
 const LocationInformation& ManagementInformationBase::getLocationInformation() {
-	/**
-	 * Location information is no more sent through MGMT-CORE, see SCOREF-MGMT Progress file under
-	 * Documentation/ folder for further details
-	 */
-	srand(time(NULL));
-	location.latitude = rand() % 20 + 10;
-	location.longitude = rand() % 10 + 5;
-	location.speed = rand() % 20;
-	location.heading = 0;
-	location.altitude = rand() % 1000 + 10;
-	/**
-	 * Update time-stamp
-	 */
-	location.timestamp = time(NULL);
-
 	return location;
 }
 
