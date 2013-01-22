@@ -77,7 +77,7 @@ class PacketHandlerResult {
 			 */
 			INVALID_PACKET = 1,
 			/**
-			 * Deliver given packet
+			 * Deliver the packet given within this PacketHandlerResult object
 			 */
 			DELIVER_PACKET = 2,
 			/**
@@ -85,7 +85,12 @@ class PacketHandlerResult {
 			 * (meaning NET or FAC parameters) should be informed of new configuration
 			 * PS: This comment above is valid only for GN right now since it's the only "other" client than FAC
 			 */
-			SEND_CONFIGURATION_UPDATE_AVAILABLE = 3
+			SEND_CONFIGURATION_UPDATE_AVAILABLE = 3,
+			/**
+			 * Relays the packet as-is to GN
+			 * This case is used for LOCATION_UPDATE packet
+			 */
+			RELAY_TO_GN = 4
 		};
 
 	public:

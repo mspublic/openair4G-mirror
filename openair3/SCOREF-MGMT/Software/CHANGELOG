@@ -1,4 +1,10 @@
 
+v1.7.5
+* Bugfix LOCATION_UPDATE scenario should be for FAC, not for GN
+* Location updates are now not generated but `relayed' as we receive it from FAC-CM
+* A new task PacketHandlerResult::RELAY_TO_GN added
+* Now Communication Profile 3 is not offered to anybody (CP1 took over)
+
 v1.7.4
 * Communication profile selection document (by Michelle) has been added under Documents/
 * CONF_IPV6_ENABLED configuration file parameter has been added

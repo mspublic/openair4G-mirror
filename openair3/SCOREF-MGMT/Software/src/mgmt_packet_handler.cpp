@@ -263,7 +263,7 @@ PacketHandlerResult* PacketHandler::handleCommunicationProfileSelectionRequest(F
 PacketHandlerResult* PacketHandler::handleLocationUpdate(GeonetLocationUpdateEventPacket* packet) {
 	delete packet;
 	/*
-	 * Creation of a GeonetWirelessStateEventPacket is enough for processing...
+	 * Creation of a GeonetLocationUpdateEventPacket is enough for processing...
 	 */
-	return new PacketHandlerResult(PacketHandlerResult::DISCARD_PACKET, NULL);
+	return new PacketHandlerResult(PacketHandlerResult::RELAY_TO_GN, NULL);
 }
