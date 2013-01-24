@@ -528,14 +528,14 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 
 //-----------------------------------------------------------------------------
 void
-rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id){
+rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id, u8 security_mode){
 //-----------------------------------------------------------------------------
   /*
    * Initialize sequence number state variables of relevant PDCP entity
    */
   switch (action) {
   case ACTION_ADD:
-    pdcp_array[module_id][rb_id].instanciated_instance = 1;
+    pdcp_array[module_id][rb_id].instanciated_instance = module_id + 1;
     pdcp_array[module_id][rb_id].next_pdcp_tx_sn = 0;
     pdcp_array[module_id][rb_id].next_pdcp_rx_sn = 0;
     pdcp_array[module_id][rb_id].tx_hfn = 0;
@@ -557,16 +557,27 @@ rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  actio
   case ACTION_REMOVE:
     pdcp_array[module_id][rb_id].instanciated_instance = 0;
     pdcp_array[module_id][rb_id].next_pdcp_tx_sn = 0;
-  pdcp_array[module_id][rb_id].next_pdcp_rx_sn = 0;
-  pdcp_array[module_id][rb_id].tx_hfn = 0;
-  pdcp_array[module_id][rb_id].rx_hfn = 0;
-  pdcp_array[module_id][rb_id].last_submitted_pdcp_rx_sn = 4095;
-  pdcp_array[module_id][rb_id].seq_num_size = 0;
-  pdcp_array[module_id][rb_id].first_missing_pdu = -1;
-  LOG_D(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
+    pdcp_array[module_id][rb_id].next_pdcp_rx_sn = 0;
+    pdcp_array[module_id][rb_id].tx_hfn = 0;
+    pdcp_array[module_id][rb_id].rx_hfn = 0;
+    pdcp_array[module_id][rb_id].last_submitted_pdcp_rx_sn = 4095;
+    pdcp_array[module_id][rb_id].seq_num_size = 0;
+    pdcp_array[module_id][rb_id].first_missing_pdu = -1;
+    LOG_D(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rb_id);
 
     break;
+  case ACTION_SET_SECURITY_MODE:
+    if ((security_mode >= 0 ) && (security_mode <=0x77)) {
+      pdcp_array[module_id][rb_id].cipheringAlgorithm= security_mode & 0x0f;
+      pdcp_array[module_id][rb_id].integrityProtAlgorithm = (security_mode>>4) & 0xf;
+      LOG_D(PDCP,"[%s %d] Set security mode : ACTION_SET_SECURITY_MODE: Frame %d  cipheringAlgorithm %d integrityProtAlgorithm %d\n",
+	    (eNB_flag) ? "eNB" : "UE", module_id, frame, 
+	    pdcp_array[module_id][rb_id].cipheringAlgorithm,
+	    pdcp_array[module_id][rb_id].integrityProtAlgorithm );
+    }else
+      LOG_D(PDCP,"[%s %d] bad security mode %d", security_mode);
+      break;
   default:
     break;
   }

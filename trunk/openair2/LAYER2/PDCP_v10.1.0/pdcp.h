@@ -88,6 +88,10 @@ public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MA
 typedef struct pdcp_t {
   BOOL instanciated_instance;
   BOOL header_compression_active;
+  
+  u8 cipheringAlgorithm;
+  u8 integrityProtAlgorithm;
+  
   u8 seq_num_size;
 
   /*
@@ -210,7 +214,7 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \note None
 * @ingroup _pdcp
 */ 
-public_pdcp(void rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rab_id);)
+public_pdcp(void rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rab_id, u8 security_mode);)
 
 /*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused

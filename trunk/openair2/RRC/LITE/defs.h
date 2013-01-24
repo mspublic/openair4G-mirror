@@ -1,9 +1,41 @@
-/*________________________defs.h________________________
+/*******************************************************************************
 
- Authors : Raymond Knopp
- Company : EURECOM
- Emails  : knopp@eurecom.fr
-________________________________________________________________*/
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2010 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+
+/*! \file defs.h
+* \brief struct definitions and func prototypes
+* \author Raymond Knopp and Navid Nikaein
+* \date 2011, 2012, 2013
+* \version 1.0
+* \company Eurecom
+* \email: raymond.knopp@eurecom.fr and navid.nikaein@eurecom.fr
+*/
 
 
 #ifndef __OPENAIR_RRC_DEFS_H__
@@ -76,7 +108,8 @@ typedef enum  {
 
 #define PAYLOAD_SIZE_MAX 1024
 
-
+#define UNDEF_SECURITY_MODE 0xff
+#define NO_SECURITY_MODE 0x33
 
 
 typedef struct{
@@ -405,6 +438,13 @@ int decode_SIB1(u8 Mod_id,u8 CH_index);
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
 int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index);
+
+void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index);
+void rrc_eNB_generate_UESecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
+
+//void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index);
+//void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityModeCommand_t *securityModeCommand,uint8_t eNB_index);
+
 
 #endif
 

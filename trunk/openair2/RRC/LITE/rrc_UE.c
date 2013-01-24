@@ -334,7 +334,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", Mod_id,lchan_id,eNB_index);
 
-  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id);
+  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id,UNDEF_SECURITY_MODE);
   rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
@@ -358,7 +358,7 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",Mod_id,lchan_id,eNB_index);
 
-  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id);
+  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id, UNDEF_SECURITY_MODE);
   rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
@@ -384,7 +384,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
 	  Mod_id,frame,DRB_config->drb_Identity);
     rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
-			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
+			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
     rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
 		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
 		       RADIO_ACCESS_BEARER,Rlc_info_um);
@@ -759,6 +759,90 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 
 }
 
+void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityModeCommand_t *securityModeCommand,uint8_t eNB_index) {
+
+  asn_enc_rval_t enc_rval;
+
+  UL_DCCH_Message_t ul_dcch_msg;
+  // SecurityModeCommand_t SecurityModeCommand;
+  DL_DCCH_Message_t *dl_dcch_msg=NULL;
+  uint8_t buffer[200];
+  int i, securityMode;
+  
+  LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing securityModeCommand (eNB %d)\n",
+	Mod_id,frame,eNB_index);
+
+  switch (securityModeCommand->criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm){
+  case SecurityAlgorithmConfig__cipheringAlgorithm_eea0:
+    LOG_I(RRC,"[UE %d] Security algorithm is set to eea0\n",Mod_id);
+    securityMode= SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
+    break;
+  case SecurityAlgorithmConfig__cipheringAlgorithm_eea1:
+    LOG_I(RRC,"[UE %d] Security algorithm is set to eea1\n",Mod_id);
+    securityMode= SecurityAlgorithmConfig__cipheringAlgorithm_eea1;
+    break;
+  case SecurityAlgorithmConfig__cipheringAlgorithm_eea2:
+    LOG_I(RRC,"[UE %d] Security algorithm is set to eea2\n",Mod_id);
+    securityMode = SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
+    break;
+  default:
+    LOG_I(RRC,"[UE %d] Security algorithm is set to none\n",Mod_id);
+    securityMode = SecurityAlgorithmConfig__cipheringAlgorithm_spare1;
+    break;
+  }
+  switch (securityModeCommand->criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm){
+  case SecurityAlgorithmConfig__integrityProtAlgorithm_eia1:
+    LOG_I(RRC,"[UE %d] Integrity protection algorithm is set to eia1\n",Mod_id);
+    securityMode |= 1 << 5;
+    break;
+  case SecurityAlgorithmConfig__integrityProtAlgorithm_eia2:
+    LOG_I(RRC,"[UE %d] Integrity protection algorithm is set to eia2\n",Mod_id);
+    securityMode |= 1 << 6;
+    break;
+  default:
+    LOG_I(RRC,"[UE %d] Integrity protection algorithm is set to none\n",Mod_id);
+    securityMode |= 0x70 ;
+    break;
+  }
+  LOG_D(RRC,"[UE %d] security mode is %x \n",Mod_id, securityMode);
+  
+  memset((void *)&ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
+  //memset((void *)&SecurityModeCommand,0,sizeof(SecurityModeCommand_t));
+
+  ul_dcch_msg.message.present           = UL_DCCH_MessageType_PR_c1;
+  if (securityMode >= NO_SECURITY_MODE)
+    ul_dcch_msg.message.choice.c1.present = UL_DCCH_MessageType__c1_PR_securityModeComplete;
+  else 
+    ul_dcch_msg.message.choice.c1.present = UL_DCCH_MessageType__c1_PR_securityModeFailure;
+  
+  if (securityModeCommand->criticalExtensions.present == SecurityModeCommand__criticalExtensions_PR_c1) {
+    if (securityModeCommand->criticalExtensions.choice.c1.present == SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8) {
+    
+      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
+      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
+      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.choice.securityModeComplete_r8.nonCriticalExtension =NULL; 
+
+      LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d)\n",
+	    Mod_id,frame,eNB_index);
+
+      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				       (void*)&ul_dcch_msg,
+				       buffer,
+				       100);
+
+      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+	  
+#ifdef USER_MODE
+	  LOG_D(RRC,"securityModeComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+	  for (i=0;i<(enc_rval.encoded+7)/8;i++) 
+	    printf("%02x.",buffer[i]);
+	  printf("\n");
+	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,(enc_rval.encoded+7)/8,(char*)buffer,1);
+    }
+  }
+  
+}
 void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index) {
 
   asn_enc_rval_t enc_rval;
@@ -915,6 +999,8 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
       case DL_DCCH_MessageType__c1_PR_securityModeCommand:
+	LOG_D(RRC,"[UE %d] Received securityModeCommand (eNB %d)\n",Mod_id,eNB_index);
+	rrc_ue_process_securityModeCommand(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.securityModeCommand,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
 	LOG_D(RRC,"[UE %d] Received Capability Enquiry (eNB %d)\n",Mod_id,eNB_index);

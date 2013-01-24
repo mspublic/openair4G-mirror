@@ -1389,9 +1389,9 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
-  //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
   msg("[PHY] EMUL RRC eNB %d ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
-  //#endif
+#endif
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
       break;

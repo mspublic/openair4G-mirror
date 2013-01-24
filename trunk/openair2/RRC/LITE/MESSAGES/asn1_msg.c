@@ -1286,7 +1286,47 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   return((enc_rval.encoded+7)/8);
 }
+uint8_t do_SecurityModeCommand(uint8_t Mod_id,
+				 uint8_t *buffer,
+				 uint8_t UE_id,
+				 uint8_t Transaction_id) {
+ DL_DCCH_Message_t dl_dcch_msg;
+ asn_enc_rval_t enc_rval;
 
+ memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+
+ dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
+ dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_securityModeCommand;
+ 
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.rrc_TransactionIdentifier = Transaction_id;
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
+ 
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.present = SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
+ // the two following information could be based on the mod_id
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm=SecurityAlgorithmConfig__cipheringAlgorithm_spare1;
+  dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm=SecurityAlgorithmConfig__integrityProtAlgorithm_spare1;
+
+
+#ifdef USER_MODE
+  xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+				   (void*)&dl_dcch_msg,
+				   buffer,
+				   100);
+#ifdef USER_MODE
+  LOG_D(RRC,"[eNB %d] securityModeCommand for UE %d Encoded %d bits (%d bytes)\n",Mod_id,UE_id,enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  if (enc_rval.encoded==-1) {
+    LOG_E(RRC,"[eNB %d] ASN1 : securityModeCommand encoding failed for UE %d\n",Mod_id,UE_id);
+    return(-1);
+  }
+
+  //  rrc_ue_process_ueCapabilityEnquiry(0,1000,&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry,0);
+  //  exit(-1);
+  return((enc_rval.encoded+7)/8);
+}
 uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
 			       uint8_t *buffer,
 			       uint8_t UE_id,
