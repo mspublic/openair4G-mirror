@@ -472,7 +472,9 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
        rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
        break;
     case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+      LOG_D(RRC,"[eNB %d] Frame %d received ueCapabilityInformation on UL-DCCH %d from UE %d\n",
+	    Mod_id,  frame, DCCH, UE_index );
+       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(UECapabilityInformation) --->][RRC_eNB][MOD %02d][]\n",
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
