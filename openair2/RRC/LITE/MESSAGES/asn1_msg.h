@@ -134,3 +134,12 @@ uint8_t do_MCCHMessage(uint8_t *buffer);
 
 OAI_UECapability_t *fill_ue_capability();
 
+uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
+			       uint8_t *buffer,
+			       uint8_t UE_id,
+			       uint8_t Transaction_id);
+
+uint8_t do_SecurityModeCommand(uint8_t Mod_id,
+			       uint8_t *buffer,
+			       uint8_t UE_id,
+			       uint8_t Transaction_id);
