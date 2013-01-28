@@ -5,7 +5,7 @@
 
 #include <forms.h>
 
-/* Callbacks, globals and object handlers */
+extern void ia_receiver_on_off( FL_OBJECT *, long );
 
 extern void ia_receiver_on_off( FL_OBJECT *, long );
 
@@ -27,6 +27,7 @@ typedef struct {
     FL_OBJECT * ia_receiver_button;
     FL_OBJECT * demod_out;
     FL_OBJECT * tput;
+    FL_OBJECT *ia_receiver_button;
 } FD_lte_scope;
 
 extern FD_lte_scope * create_form_lte_scope( void );
