@@ -111,7 +111,7 @@ test:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) test RTAI=1 CBMIMO1=1)	
 	(cd ../openair2/RRC/LITE/MESSAGES && $(MAKE) test)
 
-clean: clean_l1 clean_asn1
+clean: clean_l1 
 
 clean_l1:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) clean RTAI=1 CBMIMO1=1)

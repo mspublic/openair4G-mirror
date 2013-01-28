@@ -8,7 +8,7 @@
 */ 
 
 
-#include "SCHED/defs.h"
+//#include "SCHED/defs.h"
 #include "proto.h"
 //#include "UTIL/OCG/OCG.h"
 
@@ -61,6 +61,7 @@ typedef struct  {
   u32 pucch_payload:21;        // ack/nak/cqi information
   u8 sr:1;
   u8 pusch_flag:1;  // 0=none,1=active
+  u8 pucch_sel:1; 
   u32 pusch_uci;     // uci information on pusch
   u8 pusch_ri:2;    // ri information on pusch
   u8 pusch_ack:2;   // ack/nak on pusch
@@ -93,11 +94,11 @@ typedef struct {
 typedef struct {
   UE_cntl cntl;
   u8 num_eNB;
-  u16 rnti[NUMBER_OF_eNB_MAX];
-  u8 eNB_id[NUMBER_OF_eNB_MAX]; 
-  u8 harq_pid[NUMBER_OF_eNB_MAX];
-  u16 tbs[NUMBER_OF_eNB_MAX];
-  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_eNB_MAX];
+  u16 rnti[NUMBER_OF_CONNECTED_eNB_MAX];
+  u8 eNB_id[NUMBER_OF_CONNECTED_eNB_MAX]; 
+  u8 harq_pid[NUMBER_OF_CONNECTED_eNB_MAX];
+  u16 tbs[NUMBER_OF_CONNECTED_eNB_MAX];
+  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_CONNECTED_eNB_MAX];
 } __attribute__ ((__packed__)) UE_transport_info_t ;
 
 /*! \brief */
@@ -119,7 +120,6 @@ typedef struct bypass_proto2multicast_header_t {
 
 /* // replaced to OCG.h
 #define NUMBER_OF_MASTER_MAX   20
-//#define NUMBER_OF_eNB_MAX 3
 //#define NUMBER_OF_UE_MAX 32
 
 

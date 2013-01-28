@@ -2,9 +2,11 @@
 #define __LTE_ESTIMATION_DEFS__H__
 
 #include "PHY/defs.h"
+/*
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
+*/
 
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
 * @{
@@ -76,6 +78,16 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 			      u8 l,
 			      u8 symbol);
 
+
+int lte_dl_msbfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+				    u8 eNB_id,
+					u8 eNB_offset,
+				    int subframe,
+				    unsigned char l,
+				    unsigned char symbol);
+
+
+/*
 #ifdef EMOS
 int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],
 				   int **rxdataF,
@@ -85,6 +97,7 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
 				   unsigned char l,
 				   unsigned char sector);
 #endif
+*/
 
 /*!
 \brief Frequency offset estimation for LTE
@@ -95,6 +108,11 @@ We estimate the frequency offset by calculating the phase difference between cha
 \param freq_offset pointer to the returned frequency offset
 */
 int lte_est_freq_offset(int **dl_ch_estimates,
+			LTE_DL_FRAME_PARMS *frame_parms,
+			int l,
+			int* freq_offset);
+
+int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			int l,
 			int* freq_offset);
@@ -120,10 +138,11 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned char N0_symbol,
 			 unsigned char abstraction_flag) __attribute__ ((force_align_arg_pointer));
 
+//! \brief This function performance RSRP/RSCP measurements
 void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 			 u8 slot,
 			 u8 abstraction_flag);
-
+ 
 void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id);
 
 /*! \brief Function to return the path-loss based on the UE cell-specific reference signal strength and transmission power of eNB
@@ -160,6 +179,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   unsigned char number_of_cards,
 			   short coef);
 
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,u8 UE_id,u8 subframe);
+
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
 			     unsigned char eNB_id,
 			     unsigned char clear);
@@ -181,6 +202,7 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 		       unsigned char symbol,
 		       unsigned short Msc_RS,
 		       unsigned char Qm);
+
 
 /** @} */ 
 #endif

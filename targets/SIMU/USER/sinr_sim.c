@@ -35,11 +35,15 @@
 
 #define PI 3.1416
 #define Am 20
-#define MCS_COUNT 23
+#define MCS_COUNT 24
 #define MCL (-70) /*minimum coupling loss (MCL) in dB*/
 //double sinr[NUMBER_OF_eNB_MAX][2*25];
-extern double sinr_bler_map[MCS_COUNT][2][9];
-
+extern double sinr_bler_map[MCS_COUNT][2][16];
+extern double sinr_bler_map_up[MCS_COUNT][2][16];
+double SINRpost_eff[301];
+extern double MI_map_4qam[3][162];
+extern double MI_map_16qam[3][197];
+extern double MI_map_64qam[3][227];
 
 // Extract the positions of UE and ENB from the mobility model 
 
@@ -49,12 +53,32 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
   for (i=0;i<nb_nodes;i++) {
     if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
       node_data[i]->x = input_node_list->node->X_pos;
+      if (node_data[i]->x <0.0)
+        node_data[i]->x = 0.0;
       node_data[i]->y = input_node_list->node->Y_pos;
+      if (node_data[i]->y <0.0)
+        node_data[i]->y = 0.0;
+      LOG_D(OCM, "extract_position: added node_data %d with position X: %f and Y: %f \n", i,input_node_list->node->X_pos, input_node_list->node->Y_pos );
       input_node_list = input_node_list->next;
     }
     else {
       LOG_E(OCM, "extract_position: Null pointer!!!\n");
       //exit(-1);
+    }
+  }
+}
+
+void extract_position_fixed_ue (node_desc_t **node_data, int nb_nodes) {    
+    
+  int i;
+  for (i=0;i<nb_nodes;i++) {
+    if (i==0) {
+      node_data[i]->x = 1856;
+      node_data[i]->y = 1813;
+    }
+    else {
+      node_data[i]->x = 2106;
+      node_data[i]->y = 1563;
     }
   }
 }
@@ -75,7 +99,7 @@ void init_enb(node_desc_t  *enb_data, eNB_Antenna enb_ant) {//changed from node_
   double sect_angle[3]={0,2*PI/3,4*PI/3};
 
   enb_data->n_sectors = enb_ant.number_of_sectors;
-  for (i=0;i<3;i++) 
+  for (i=0;i<enb_data->n_sectors;i++) 
     enb_data->alpha_rad[i] = sect_angle[i]; //enb_ant.alpha_rad[i]; 
   enb_data->phi_rad = enb_ant.beam_width_dB;
   enb_data->ant_gain_dBi = enb_ant.antenna_gain_dBi;
@@ -86,7 +110,7 @@ void init_enb(node_desc_t  *enb_data, eNB_Antenna enb_ant) {//changed from node_
 
 
 
-void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t *ch_desc, Environment_System_Config env_desc, double Shad_Fad) {  
+void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t *ch_desc, Environment_System_Config env_desc, double **Shad_Fad) {  
 
   double dist; 
   double path_loss;
@@ -100,7 +124,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   dist = sqrt(pow((enb_data->x - ue_data->x), 2) + pow((enb_data->y - ue_data->y), 2));
   
   path_loss = env_desc.fading.free_space_model_parameters.pathloss_0_dB - 
-		10*env_desc.fading.free_space_model_parameters.pathloss_exponent * log10(dist/1000); 
+                10*env_desc.fading.free_space_model_parameters.pathloss_exponent * log10(dist/1000); 
   //printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
 
   /* Calculating the angle in the range -pi to pi from the slope */
@@ -111,34 +135,40 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   ch_desc->aoa = alpha;
   ch_desc->random_aoa = 0;
       
-  gain_max = -1000;
-  for(count = 0; count < enb_data->n_sectors; count++) {
-    theta = enb_data->alpha_rad[count] - alpha;
-    /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
-    gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
-    if (gain_sec[count]>gain_max)
-      gain_max = gain_sec[count];
+  if (enb_data->n_sectors==1) //assume omnidirectional antenna
+    gain_max = 0;
+  else {
+    gain_max = -1000;
+    for(count = 0; count < enb_data->n_sectors; count++) {
+      theta = enb_data->alpha_rad[count] - alpha;
+      /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
+      gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
+      if (gain_sec[count]>gain_max)  //take the sector that we are closest too (or where the gain is maximum)
+        gain_max = gain_sec[count];
+    }
   }
 
   path_loss += enb_data->ant_gain_dBi + gain_max + ue_data->ant_gain_dBi;
-  path_loss += Shad_Fad;
+  if (Shad_Fad!=NULL)
+    path_loss += Shad_Fad[(int)ue_data->x][(int)ue_data->y];
 
   ch_desc->path_loss_dB = MCL < path_loss ?  MCL : path_loss;
-  //printf("x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
+  //LOG_D(OCM,"x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
 }
 
 
 
 
 
-void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0) {
+void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, u8 transmission_mode, u16 q) {
 
   int return_value;
   u16 nb_rb = 25; //No. of resource blocks
-  double thermal_noise;
+  double thermal_noise,abs_channel,channelx, channely,channelx_i, channely_i ;
   int count;
-  int aarx;
-      
+  int aarx,aatx;
+  u8 qq;
+    
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
   thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm 
 
@@ -146,23 +176,268 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
     *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
       
     LOG_D(OCM,"Path loss %lf, noise %lf, signal %lf, snr %lf\n", 
-	 eNB2UE->path_loss_dB, 
-	 thermal_noise + ue_data->rx_noise_level,
-	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
-	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
+         eNB2UE->path_loss_dB, 
+         thermal_noise + ue_data->rx_noise_level,
+         enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
+          enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
+    
+    switch(transmission_mode){
+    case 1:
+      //printf ("coupling factor is %lf\n", coupling); 
+      for (count = 0; count < (12 * nb_rb); count++) {
+        sinr_dB[count] = enb_data->tx_power_dBm 
+          + eNB2UE->path_loss_dB
+          - (thermal_noise + ue_data->rx_noise_level)  
+          + 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
+                        + pow(eNB2UE->chF[0][count].y, 2));
+        //printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+        //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
+      }
+    break;
+    case 2:
+      
+       for (count = 0; count < (12 * nb_rb); count++) {
+         abs_channel=0;
+         for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+           for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+             abs_channel += (pow(eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x, 2) + pow(eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y, 2));
+           }
+         }
+         sinr_dB[count] = enb_data->tx_power_dBm 
+           + eNB2UE->path_loss_dB
+           - (thermal_noise + ue_data->rx_noise_level)  
+           + 10 * log10 (abs_channel/2);
+         // printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+       }
+       break;
+    case 5:
+        for (count = 0; count < (12 * nb_rb); count++) {
+        channelx=0;
+        channely=0;
+        channelx_i=0;
+        channely_i=0;
+        qq = (q>>(((count/12)>>2)<<1))&3;
+        //printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
+        
+        
 
-    //printf ("coupling factor is %lf\n", coupling); 
-    for (count = 0; count < (2 * nb_rb); count++) {
-      sinr_dB[count] = enb_data->tx_power_dBm 
-	+ eNB2UE->path_loss_dB
-	- (thermal_noise + ue_data->rx_noise_level)  
-	+ 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
-		      + pow(eNB2UE->chF[0][count].y, 2));
-      //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
-    } 
+        //      qq = q;
+        for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+          for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+            switch(qq){
+            case 0:
+              if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channelx_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              break;
+            case 1:
+               if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channelx_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              break;
+            case 2:
+              if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channelx_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channely_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+
+              }
+              break;
+            case 3:
+              if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channelx_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely_i = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channelx_i -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channely_i += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+              }
+              break;
+
+            default:
+              msg("Problem in SINR Calculation for TM5 \n");
+              break;
+              
+            }//switch(q)
+            
+          }//aatx
+        }//aarx
+        sinr_dB[count] = enb_data->tx_power_dBm 
+           + eNB2UE->path_loss_dB
+          - (thermal_noise + ue_data->rx_noise_level)  
+          + 10 * log10 ((pow(channelx,2) + pow(channely,2))/2) - 10 * log10 ((pow(channelx_i,2) + pow(channely_i,2))/2);
+      
+        // printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+      }
+      break;
+    
+    case 6:
+      for (count = 0; count < (12 * nb_rb); count++) {
+        channelx=0;
+        channely=0;
+        qq = (q>>(((count/12)>>2)<<1))&3;
+        //printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
+        
+        
+
+        //      qq = q;
+        for (aarx=0;aarx<eNB2UE->nb_rx;aarx++) {
+          for (aatx=0;aatx<eNB2UE->nb_tx;aatx++) {
+            switch(qq){
+            case 0:
+              if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              break;
+            case 1:
+               if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              break;
+            case 2:
+              if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channely += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+              }
+              break;
+            case 3:
+              if (channelx==0 || channely==0){
+                channelx = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+                channely = eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+              }
+              else{
+                channelx += eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].y;
+                channely -= eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][count].x;
+              }
+              break;
+
+            default:
+              msg("Problem in SINR Calculation for TM6 \n");
+              break;
+              
+            }//switch(q)
+            
+          }//aatx
+        }//aarx
+        sinr_dB[count] = enb_data->tx_power_dBm 
+           + eNB2UE->path_loss_dB
+          - (thermal_noise + ue_data->rx_noise_level)  
+          + 10 * log10 ((pow(channelx,2) + pow(channely,2))/2);
+      
+        // printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
+      }
+      break;
+    default:
+      msg("Problem in SINR Initialization in sinr_sim.c\n");
+      break;
+    }//switch
 }//function ends
 
+void init_snr_up(channel_desc_t* UE2eNB, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0,u16 nb_rb,u16 fr_rb) {
 
+  int return_value;
+  double thermal_noise;
+  int count;
+  int aarx;
+
+ // nb_rb = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;    
+  /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
+  thermal_noise = -174 + 10*log10(UE2eNB->BW*1e6); //value in dBm 
+  *N0 = thermal_noise + enb_data->rx_noise_level;//? all the element have the same noise level?????
+  double lambda ;
+   double residual;
+   double sinrlin;
+   double residual_db;
+   residual = 0 ;
+   int ccc;
+  /*
+   for (count = (fr_rb*12) ; count < (12 * (fr_rb+nb_rb)); count++) 
+        {
+                residual +=  ( 1 / ( pow((UE2eNB -> chF[0][count].x),2) + pow((UE2eNB -> chF[0][count].y),2)));
+        }
+   *///sinreff(nn) = ((sum((1/p).*(snrm(nn,:)./(snrm(nn,:)+1)),2).^(-1) )-1).^-1;
+   
+   sinrlin = 0 ;
+   lambda = 0;
+   
+        ////First calculate SINRs of subcarriers just like OFDM 
+        for (count = (fr_rb*12) ; count < (12 * (fr_rb+nb_rb)); count++) 
+        {
+                sinr_dB[count] = ue_data->tx_power_dBm 
+          + UE2eNB->path_loss_dB
+          - (thermal_noise + enb_data->rx_noise_level)  
+          + 10 * log10 (pow(UE2eNB->chF[0][count].x, 2) 
+                        + pow(UE2eNB->chF[0][count].y, 2));
+                        
+            
+        }
+        //Then apply formula : 
+        if(nb_rb > 0)
+        {
+                //calculate lambdas and fill the same with all but just use one of them when necessary for abstraction
+                for (count = fr_rb*12; count < (12 * (fr_rb+nb_rb)); count++) 
+                {
+                        sinrlin = pow((sinr_dB[count]/10),10); // convert SINR to linear
+                        lambda += (sinrlin /  (sinrlin + 1)) ;
+                }
+                for (count = fr_rb*12; count < (12 * (fr_rb+nb_rb)); count++) 
+                {
+                        sinr_dB[count] = pow(lambda,2) /(((nb_rb)*lambda)-pow(lambda,2)) ;
+                        sinr_dB[count] = 10*log10(sinr_dB[count]) ; //save it in db
+                }
+                
+                printf("tx_power %g, path_loss %g, sinr_dB[0] %g\n",ue_data->tx_power_dBm ,UE2eNB->path_loss_dB,sinr_dB[count-1]);
+                  
+                for (ccc = 0; ccc < 301 ; ccc++ )
+                { 
+                        SINRpost_eff[ccc] = 0;
+                        SINRpost_eff[ccc] = sinr_dB[ccc];
+                }
+        }
+}//function ends
 
 
 
@@ -175,12 +450,12 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
   thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm 
 
-  for (count = 0; count < 2 * nb_rb; count++) {
+  for (count = 0; count < 12 * nb_rb; count++) {
     sir = enb_data->tx_power_dBm 
       + eNB2UE->path_loss_dB
       - (thermal_noise + ue_data->rx_noise_level)  
       + 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
-		    + pow(eNB2UE->chF[0][count].y, 2));
+                    + pow(eNB2UE->chF[0][count].y, 2));
     if (sir > 0)
       sinr_dB[count] -= sir;
     //printf("*****sinr% lf \n",sinr_dB[count]);
@@ -189,56 +464,174 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
 
 void get_beta_map() {
   char *file_path = NULL;
-  /*
-  char *file_name[] = {"bler_1.csv", "bler_2.csv", "bler_3.csv", "bler_4.csv", "bler_5.csv", "bler_6.csv", "bler_7.csv", "bler_8.csv",
-                    "bler_9.csv", "bler_10.csv", "bler_11.csv", "bler_12.csv", "bler_13.csv", "bler_14.csv", "bler_15.csv", "bler_16.csv",
-                    "bler_17.csv", "bler_18.csv", "bler_19.csv", "bler_20.csv", "bler_21.csv", "bler_22.csv"};
-  */
   int table_len = 0;
   int mcs = 0;
   char *sinr_bler;
-  char buffer[100];
+  char buffer[1000];
   FILE *fp;
 
-  /*
-  file_path_ptr = strcat(file_path_ptr,getenv("OPENAIR1_DIR"));
-  file_path_ptr = strcat(file_path_ptr,"/SIMULATION/LTE_PHY/Abstraction");
-  */
-  file_path = (char*) malloc(256);
+  file_path = (char*) malloc(512);
 
-  for (mcs = 0; mcs <= 4; mcs++) {
-    for (table_len = 0; table_len < 9; table_len++) {
-      sinr_bler_map[mcs][0][table_len] = 0.0;
-      sinr_bler_map[mcs][1][table_len] = 0.0;
-    }
-  }
-
-  for (mcs = 5; mcs < MCS_COUNT; mcs++) { 
-    // sprintf(file_path,"%s/SIMULATION/LTE_PHY/Abstraction/bler_%d.csv",getenv("OPENAIR1_DIR"),mcs); // navid 
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Real/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
-
+  for (mcs = 0; mcs < MCS_COUNT; mcs++) {
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/awgn_snr_bler_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      LOG_E(OCM,"ERROR: Unable to open the file %s\n", file_path);
+      LOG_W(OCM,"ERROR: Unable to open the file %s, try an alternative path\n", file_path);
+      memset(file_path, 0, 512);
+      sprintf(file_path,"AWGN/awgn_snr_bler_mcs%d.csv",mcs);
+      LOG_I(OCM,"Opening the alternative path %s\n", file_path);
+      fp = fopen(file_path,"r");
+      if (fp == NULL) {
+      LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
       exit(-1);
+      }
     }
-    else {
-      fgets(buffer, 100, fp);
+    // else {
+      fgets(buffer, 1000, fp);
       table_len=0;
       while (!feof(fp)) {
-        sinr_bler = strtok(buffer, ";");
+        sinr_bler = strtok(buffer, ",");
         sinr_bler_map[mcs][0][table_len] = atof(sinr_bler);
-        sinr_bler = strtok(NULL,";");
+        sinr_bler = strtok(NULL,",");
         sinr_bler_map[mcs][1][table_len] = atof(sinr_bler);
         table_len++;
-        fgets(buffer, 100, fp);
+        fgets(buffer, 1000, fp);
       }
       fclose(fp);
-    }
-    LOG_D(OCM," Print the table for mcs %d\n",mcs);
-    for (table_len = 0; table_len < 9; table_len++)
+      //   }
+    LOG_D(OCM,"Print the table for mcs %d\n",mcs);
+    for (table_len = 0; table_len < 16; table_len++)
       LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
   }
+  free(file_path);
+}
+
+void get_beta_map_up() {
+  char *file_path = NULL;
+  int table_len = 0;
+  int mcs = 0;
+  char *sinr_bler;
+  char buffer[1000];
+  FILE *fp;
+
+  file_path = (char*) malloc(512);
+
+  for (mcs = 0; mcs < MCS_COUNT; mcs++) {
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/awgn_snr_bler_mcs%d_up.csv",getenv("OPENAIR1_DIR"),mcs);
+    fp = fopen(file_path,"r");
+    if (fp == NULL) {
+      LOG_W(OCM,"ERROR: Unable to open the file %s, try an alternative path\n", file_path);
+      memset(file_path, 0, 512);
+      sprintf(file_path,"AWGN/awgn_snr_bler_mcs%d.csv",mcs);
+      LOG_I(OCM,"Opening the alternative path %s\n", file_path);
+      fp = fopen(file_path,"r");
+      if (fp == NULL) {
+      LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
+      exit(-1);
+      }
+    }
+    // else {
+      fgets(buffer, 1000, fp);
+      table_len=0;
+      while (!feof(fp)) {
+        sinr_bler = strtok(buffer, ",");
+        sinr_bler_map_up[mcs][0][table_len] = atof(sinr_bler);
+        sinr_bler = strtok(NULL,",");
+        sinr_bler_map_up[mcs][1][table_len] = atof(sinr_bler);
+        table_len++;
+        fgets(buffer, 1000, fp);
+      }
+      fclose(fp);
+      //   }
+    LOG_D(OCM,"Print the table for mcs %d\n",mcs);
+    for (table_len = 0; table_len < 16; table_len++)
+      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map_up[mcs][0][table_len],sinr_bler_map_up[mcs][1][table_len]);
+  }
+  free(file_path);
+}
+
+
+
+//this function reads and stores the Mutual information tables for the MIESM abstraction. 
+void get_MIESM_param() {
+  char *file_path = NULL;
+  char buffer[10000];
+  FILE *fp;
+  int qam[3] = {4,16,64};
+  int q,cnt;
+  char *result = NULL;
+  int table_length=0;
+  int table_len;
+  file_path = (char*) malloc(512);
+  for (q=0;q<3;q++)
+    {
+      sprintf(file_path,"%s/SIMU/USER/files/MI_%dqam.csv",getenv("OPENAIR_TARGETS"),qam[q]);
+      fp = fopen(file_path,"r");
+      if (fp == NULL) {
+        printf("ERROR: Unable to open the file %s\n", file_path);
+        exit(-1);
+      }
+      else {
+        cnt=-1;
+        switch(qam[q]) {
+        case 4:           
+          while (!feof(fp)) {
+            table_length =0;
+            cnt++;
+            fgets(buffer, 10000, fp);
+            result = strtok(buffer, ",");
+            while (result != NULL) {
+              MI_map_4qam[cnt][table_length]= atof(result);
+              result = strtok(NULL, ",");
+              table_length++;
+            }
+          }
+       fclose(fp);
+       for (table_len = 0; table_len < 162; table_len++)
+         printf("MIESM 4QAM Table: %lf  %lf  %1f\n ",MI_map_4qam[0][table_len],MI_map_4qam[1][table_len], MI_map_4qam[2][table_len]);
+       break;
+        case 16:
+           while (!feof(fp)) {
+            table_length =0;
+            cnt++;
+            fgets(buffer, 10000, fp);
+            result = strtok(buffer, ",");
+            while (result != NULL) {
+              MI_map_16qam[cnt][table_length]= atof(result);
+              result = strtok(NULL, ",");
+              table_length++;
+            }
+          }
+       fclose(fp);
+ for (table_len = 0; table_len < 197; table_len++)
+         printf("MIESM 16 QAM Table: %lf  %lf  %1f\n ",MI_map_16qam[0][table_len],MI_map_16qam[1][table_len], MI_map_16qam[2][table_len]);
+       break;
+        case 64:
+           while (!feof(fp)) {
+            table_length =0;
+            cnt++;
+            if(cnt==3)
+              break;
+            fgets(buffer, 10000, fp);
+            result = strtok(buffer, ",");
+            while (result != NULL) {
+              MI_map_64qam[cnt][table_length]= atof(result);
+              result = strtok(NULL, ",");
+              table_length++;
+            }
+          }
+       fclose(fp);
+ for (table_len = 0; table_len < 227; table_len++)
+         printf("MIESM 64QAM Table: %lf  %lf  %1f\n ",MI_map_64qam[0][table_len],MI_map_64qam[1][table_len], MI_map_64qam[2][table_len]);
+       break;
+       
+        default:
+          msg("Error, bad input, quitting\n");
+          break;
+        }
+
+      }
+    }
   free(file_path);
 }
 

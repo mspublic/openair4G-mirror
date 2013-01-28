@@ -220,7 +220,9 @@ void init_SI(u8 Mod_id) {
     rrc_mac_config_req(Mod_id,1,0,0,
 		       (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 		       (struct PhysicalConfigDedicated *)NULL,
+#ifdef Rel10
 		       (struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+#endif
 		       (MeasObjectToAddMod_t **)NULL,
 		       (MAC_MainConfig_t *)NULL,
 		       0,
@@ -707,8 +709,6 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 
   u8 buffer[100];
   u8 size;
-  uint8_t sCellIndexToAdd = (uint8_t)MAX_U8;
-  sCellIndexToAdd = rrc_find_free_SCell_index(Mod_id, UE_index, 1);
   int i;
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
@@ -740,6 +740,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 #if Rel10
   long * sr_ProhibitTimer_r9;
   struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
+  uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(Mod_id, UE_index, 1);
 #endif
 
   long *logicalchannelgroup,*logicalchannelgroup_drb;
@@ -1087,7 +1088,9 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
                                          NULL, // DRB2_list,
                                          NULL, //*sps_Config,
                                          physicalConfigDedicated[UE_index],
+#ifdef Rel10
 					 (sCellIndexToAdd != (uint8_t)MAX_U8 ? &eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd] : NULL),
+#endif
                                          MeasObj_list,
                                          ReportConfig_list,
                                          NULL, //*QuantityConfig,
@@ -1148,12 +1151,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   // Loop through DRBs and establish if necessary
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
 
+#ifdef Rel10
 	/* Rel 10 optional parameters - not sure what to do with these */
 	if(rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension != NULL) {
 		eNB_rrc_inst[Mod_id].rrcRel10IEs[0] = malloc(sizeof(RRCConnectionReconfigurationComplete_v1020_IEs_t));
 		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->logMeasAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->logMeasAvailable_r10;
 		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->rlf_InfoAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->rlf_InfoAvailable_r10;
 	}
+#endif
 
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
       LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
@@ -1213,7 +1218,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+#ifdef Rel10
 			   (eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] != NULL ? eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
+#endif
 			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
@@ -1247,7 +1254,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	rrc_mac_config_req(Mod_id,1,UE_index,0,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+#ifdef Rel10
 			   (eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] != NULL ? eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
+#endif
 			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 			   DRB2LCHAN[i],
@@ -1315,7 +1324,9 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
   rrc_mac_config_req(Mod_id,1,UE_index,0,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+#ifdef Rel10
 		     (PhysicalConfigDedicatedSCell_r10_t *)NULL,
+#endif
 		     (MeasObjectToAddMod_t **)NULL,
 		     eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 		     1,

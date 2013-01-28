@@ -6,7 +6,11 @@
 extern void randominit(void);
 extern double gaussdouble(double,double);
   //free(input_data);
+
+//extern int write_output(const char *,const char *,void *,int,int,char);
+//flag change
 extern int write_output(const char *,const char *,void *,int,int,char);
+
 //double pn[1024];
 
 //#define DEBUG_RF 1

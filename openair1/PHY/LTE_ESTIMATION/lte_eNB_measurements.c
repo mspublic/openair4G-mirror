@@ -19,6 +19,7 @@ s32 rx_power_avg_eNB[3][3];
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
 			     unsigned char eNB_id,
 			     unsigned char clear) {
+
   LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNb->lte_eNB_common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNb->lte_frame_parms;
   PHY_MEASUREMENTS_eNB *phy_measurements = &phy_vars_eNb->PHY_measurements_eNB[eNB_id];
@@ -64,6 +65,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
     phy_measurements->n0_power[aarx] = ((k1*signal_energy(&eNB_common_vars->rxdata[eNB_id][aarx][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size],
 							  frame_parms->ofdm_symbol_size))+k2*phy_measurements->n0_power[aarx])>>10;    
 #endif
+    phy_measurements->n0_power[aarx] = (phy_measurements->n0_power[aarx] * 12*frame_parms->N_RB_DL)/(frame_parms->ofdm_symbol_size);
     phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
     phy_measurements->n0_power_tot +=  phy_measurements->n0_power[aarx];
   }

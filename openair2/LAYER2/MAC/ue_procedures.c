@@ -287,7 +287,7 @@ void ue_send_sdu(u8 Mod_id,u8 CC_id, u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index)
 	    }
 	  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n");
 	  UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
-	  mac_xface->ra_succeeded(Mod_id,eNB_index);
+	  mac_xface->ra_succeeded(Mod_id,CC_id,eNB_index);
 	}
 	payload_ptr+=6;
 	break;
@@ -295,7 +295,7 @@ void ue_send_sdu(u8 Mod_id,u8 CC_id, u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index)
 #ifdef DEBUG_HEADER_PARSING
 	LOG_I(MAC,"[UE] CE %d : UE Timing Advance : %d\n",i,payload_ptr[0]);
 #endif
-	mac_xface->process_timing_advance(Mod_id,payload_ptr[0]);
+	mac_xface->process_timing_advance(Mod_id,CC_id,payload_ptr[0]);
 	payload_ptr++;
 	break;
       case DRX_CMD:
@@ -624,7 +624,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
 }
 
-void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
+void ue_get_sdu(u8 Mod_id, u8 CC_id, u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
   u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0;
@@ -779,10 +779,10 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   }
   // build PHR and update the timers 
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)){
-    phr_p->PH = get_phr_mapping(Mod_id,eNB_index);
+    phr_p->PH = get_phr_mapping(Mod_id,CC_id,eNB_index);
     phr_p->R  = 0;
      LOG_D(MAC,"[UE %d] Frame %d report PHR with mapping (%d->%d) for LCGID %d\n", 
-	   Mod_id,frame, mac_xface->get_PHR(Mod_id,eNB_index), phr_p->PH,POWER_HEADROOM);
+	   Mod_id,frame, mac_xface->get_PHR(Mod_id,CC_id,eNB_index), phr_p->PH,POWER_HEADROOM);
      update_phr(Mod_id);
   }else
     phr_p=NULL;
@@ -1228,16 +1228,16 @@ void update_phr(u8 Mod_id){
   UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer);
   // LOG_D(MAC,"phr %d %d\n ",UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF, UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF);
 }
-u8 get_phr_mapping (u8 Mod_id, u8 eNB_index){
+u8 get_phr_mapping (u8 Mod_id, u8 CC_id, u8 eNB_index){
 
 //power headroom reporting range is from -23 ...+40 dB, as described in 36313
 //note: mac_xface->get_Po_NOMINAL_PUSCH(Mod_id) is float
-  if (mac_xface->get_PHR(Mod_id,eNB_index) < -23)
+  if (mac_xface->get_PHR(Mod_id,CC_id,eNB_index) < -23)
     return 0;
-  else if (mac_xface->get_PHR(Mod_id,eNB_index) >= 40)
+  else if (mac_xface->get_PHR(Mod_id,CC_id,eNB_index) >= 40)
     return 63;
     else  // -23 to 40
-      return  (u8) mac_xface->get_PHR(Mod_id,eNB_index) + PHR_MAPPING_OFFSET;
+      return  (u8) mac_xface->get_PHR(Mod_id,CC_id,eNB_index) + PHR_MAPPING_OFFSET;
   
 }
 int get_sf_perioidicPHR_Timer(u8 perioidicPHR_Timer){

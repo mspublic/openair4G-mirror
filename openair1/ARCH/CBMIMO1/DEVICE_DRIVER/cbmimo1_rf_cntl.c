@@ -1,14 +1,6 @@
-#ifndef USER_MODE
-#define __NO_VERSION__
-
-//#include "rt_compat.h"
-
-#endif
-
-
-#include "cbmimo1_device.h"
 #include "defs.h"
 #include "extern.h"
+#include "cbmimo1_device.h"
 #include "cbmimo1_pci.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"

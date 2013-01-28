@@ -8,9 +8,6 @@
 #define __openair_SCHED_H__
 
 #include "PHY/defs.h"
-#ifdef EMOS
-#include "phy_procedures_emos.h"
-#endif //EMOS
 
 enum THREAD_INDEX { OPENAIR_THREAD_INDEX = 0,
 		    TOP_LEVEL_SCHEDULER_THREAD_INDEX,
@@ -97,12 +94,14 @@ typedef struct {
   u32  target_ue_dl_mcs;
   u32  target_ue_ul_mcs;
   u32  ue_ul_nb_rb;
+  u32  ue_dl_rb_alloc;
   u32  dlsch_rate_adaptation;
   u32  dlsch_transmission_mode;
   u32  ulsch_allocation_mode;
   u32  rx_total_gain_dB;
   u32  hw_frame;
   u32  get_frame_done;
+  u32  use_ia_receiver;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE
@@ -135,25 +134,27 @@ void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB **phy_vars_e
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id ID of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param mode calibration/debug mode
 */
-
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE **phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE **phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
 /*!
   \brief Scheduling for UE TX procedures in normal subframes.  
   @param next_slot Index of next slot (0-19)
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param mode calib/normal mode
 */
-void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
 /*!
   \brief Scheduling for UE RX procedures in normal subframes.  
   @param last_slot Index of last slot (0-19)
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
+  @param mode calibration/debug mode
 */
-int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode);
 
 /*!
   \brief Scheduling for UE TX procedures in TDD S-subframes.  
@@ -277,6 +278,12 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 current_subfra
  */
 void ra_failed(u8 Mod_id,u8 eNB_index);
 
+/** \brief Function to indicate success of contention resolution or RA procedure.
+    @param Mod_id Instance index of UE
+    @param eNB_index Index of eNB
+ */
+void ra_succeeded(u8 Mod_id,u8 CC_id, u8 eNB_index);
+
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
 
 /* \brief Get PDSCH subframe (n+k) from PDCCH subframe n using relationship from Table 8-2 from 36.213
@@ -358,7 +365,7 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
-void process_timing_advance(u8 Mod_id,u8 timing_advance);
+void process_timing_advance(u8 Mod_id,u8 CC_id,s16 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);
 
 
@@ -441,10 +448,13 @@ s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t p
     @param j index of type of PUSCH (SPS, Normal, Msg3)
     @returns Transmit power
  */
-void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j);
+void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,u8 j, u8 abstraction_flag);
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u8 CC_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u8 CC_id, u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);
+s8 get_PHR(u8 Mod_id, u8 CC_id, u8 eNB_index);
+
+void ulsch_decoding_procedures(unsigned char last_slot, unsigned int i, PHY_VARS_eNB *phy_vars_eNB, unsigned char abstraction_flag);
 
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid);
@@ -453,12 +463,6 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
 u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
 
-#else
-#ifdef EMOS
-void phy_procedures_emos(u8 last_slot);
-#else
-void phy_procedures(u8 last_slot,u8 abstraction_flag);
-#endif //EMOS
 /**@}*/
 #endif //OPENAIR_LTE
 
@@ -466,4 +470,4 @@ extern int slot_irq_handler(int irq, void *cookie);
 
 #endif
 
-/*@}*/
+

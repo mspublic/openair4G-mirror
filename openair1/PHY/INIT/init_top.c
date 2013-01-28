@@ -138,6 +138,8 @@ int init_signal_buffers(LTE_DL_FRAME_PARMS *frame_parms) {
     else {
       msg("[PHY][INIT] PCIe interface %d at %p\n",card_id,exmimo_pci_interface);
       //      openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
+      DAQ_MBOX = (unsigned int)bigmalloc16(16);
+      exmimo_pci_interface->rf.mbox        = (unsigned int)virt_to_phys((volatile void*)DAQ_MBOX);
       
       for (i=0;i<NB_ANTENNAS_RX;i++) {
 	exmimo_pci_interface->rf.adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
@@ -228,15 +230,15 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   init_signal_buffers(frame_parms);
 #endif
    
-#ifndef EXPRESSMIMO_TARGET
   // Initialize fft variables
   init_fft(NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev);   // TX/RX
   init_fft(4*NUMBER_OF_OFDM_CARRIERS,2+LOG2_NUMBER_OF_OFDM_CARRIERS,rev_times4);   // Synch
   init_fft(NUMBER_OF_OFDM_CARRIERS/2,LOG2_NUMBER_OF_OFDM_CARRIERS-1,rev_half);   // for interpolation of channel est
+
+  init_fft(4096,12,rev4096);
   init_fft(2048,11,rev2048);
   init_fft(1024,10,rev1024);
-#endif //EXPRESSMIMO_TARGET
-  
+  init_fft(512,9,rev512);
   
   twiddle_fft = (short *)malloc16(4095*4*2);
   twiddle_ifft = (short *)malloc16(4095*4*2);
@@ -290,6 +292,14 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
     memcpy(twiddle_fft_half,&twiddle_fft512[0],511*4*2);
     memcpy(twiddle_ifft_half,&twiddle_ifft512[0],511*4*2);
     break;
+  case 2048:
+    memcpy(twiddle_fft,&twiddle_fft2048[0],2047*4*2);
+    memcpy(twiddle_ifft,&twiddle_ifft2048[0],2047*4*2);
+    memcpy(twiddle_fft_times4,&twiddle_fft4096[0],4095*4*2);
+    memcpy(twiddle_ifft_times4,&twiddle_ifft4096[0],4095*4*2);
+    memcpy(twiddle_fft_half,&twiddle_fft1024[0],1023*4*2);
+    memcpy(twiddle_ifft_half,&twiddle_ifft1024[0],1023*4*2);
+    break;
   default:
     memcpy(twiddle_fft,&twiddle_fft64[0],63*4*2);
     memcpy(twiddle_ifft,&twiddle_ifft64[0],63*4*2);
@@ -299,6 +309,10 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
     //memcpy(twiddle_ifft_half,&twiddle_ifft32[0],31*4*2);
     break;
   }
+
+  frame_parms->twiddle_fft      = twiddle_fft;
+  frame_parms->twiddle_ifft     = twiddle_ifft;
+  frame_parms->rev              = rev;
 
   return(1);
 }

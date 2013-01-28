@@ -414,6 +414,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
    \param UE_index Index of UE transmitting the messages*/
 void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length);
 
+#ifdef Rel10
 /**\brief Find free SCell index for adding a new CC during RRCConnectionReconfiguration at eNB
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE transmitting the messages
@@ -424,6 +425,7 @@ uint8_t rrc_find_free_SCell_index(u8 Mod_id, u16 index, u8 eNB_flag);
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE transmitting the messages*/
 SCellToAddMod_r10_t* getSCellConfig(u8 Mod_id, u16 UE_index);
+#endif
 
 //L2_interface.c
 s8 mac_rrc_lite_data_req( u8 Mod_id, u32 frame, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);

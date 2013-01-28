@@ -282,7 +282,7 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *l3msg, u16 l3
 
 DCI_PDU *get_dci_sdu(u8 Mod_id, u8 CC_id, u32 frame, u8 subframe) {
 
-  return(&eNB_mac_inst[Mod_id].DCI_pdu);
+  return(&eNB_mac_inst[Mod_id].DCI_pdu[CC_id]);
 
 }
 
@@ -1335,7 +1335,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   DCI0_5MHz_FDD_t *ULSCH_dci_fdd;
 
   LTE_eNB_UE_stats* eNB_UE_stats;
-  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
+  DCI_PDU *DCI_pdu;
   u8 status=0;//,status0 = 0,status1 = 0;
   //  u8 k=0;
   u8 rb_table_index;
@@ -1345,7 +1345,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   u8 CC_id=0;
   u32 cqi_req,cshift,ndi,mcs,rballoc;
 
-  
+  DCI_pdu = &eNB_mac_inst[Mod_id].DCI_pdu[CC_id];  
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id,CC_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
@@ -1664,12 +1664,15 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   unsigned char round;
   unsigned char harq_pid;
   void *DLSCH_dci=NULL;
-  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
+  DCI_PDU *DCI_pdu;
   int i;
-  u8 CC_id;
+  u8 CC_id=0;
   //  u8 status=0;
 
-  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
+  //for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
+
+  DCI_pdu = &eNB_mac_inst[Mod_id].DCI_pdu[CC_id];
+
 #ifdef ICIC
   FILE *DCIi;
   DCIi = fopen("dci.txt","a");
@@ -1997,7 +2000,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   fclose(DCIi);
 #endif
 
-}//loop over CC_id
+  //}//loop over CC_id
 }
 
 //***************************PRE_PROCESSOR for MU-MIMO IN TM5*********************************//
@@ -2045,10 +2048,9 @@ void tm5_pre_processor (unsigned char Mod_id,
   u8 MIMO_mode_indicator[7]= {2,2,2,2,2,2,2};
   //  u8 total_DL_cqi_MUMIMO = 0,total_DL_cqi_SUMIMO = 0;
   u16 total_TBS_SUMIMO = 0,total_TBS_MUMIMO = 0; 
-  u8 CC_id;
+  u8 CC_id=0;
 
 
-  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
   /// Initialization
   for(i=0;i<256;i++)
     {
@@ -3864,8 +3866,7 @@ void tm5_pre_processor (unsigned char Mod_id,
 	}
     }
   }
-//for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
-{
+
   if((MIMO_mode_indicator[0] == 1)&& (MIMO_mode_indicator[1] == 1) && (MIMO_mode_indicator[2] == 1) && (MIMO_mode_indicator[3] == 1) &&
      (MIMO_mode_indicator[4] == 1)&& (MIMO_mode_indicator[5] == 1) && (MIMO_mode_indicator[6] == 1))
     PHY_vars_eNB_g[Mod_id][CC_id]->check_for_SUMIMO_transmissions = PHY_vars_eNB_g[Mod_id][CC_id]->check_for_SUMIMO_transmissions + 1;
@@ -3895,15 +3896,13 @@ void tm5_pre_processor (unsigned char Mod_id,
     LOG_D(PHY,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
   }
 }
-}//loop over CC_id
-}
 
 
 void update_ul_dci(u8 Mod_id,u16 rnti,u8 dai) {
 
-  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
-  int i;
+  int i,CC_id=0;
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci;
+  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu[CC_id];
 
   if (mac_xface->lte_frame_parms->frame_type == TDD) {
     for (i=0;i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci;i++) {
@@ -3939,7 +3938,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
   int mcs;
-  u8 CC_id;
+  u8 CC_id=0;
 
   if (mbsfn_flag>0)
     return;
@@ -3950,7 +3949,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   aggregation = 1; // set to the maximum aggregation level
 
 
-  for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
+  //for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) {
 
   // while frequency resources left and nCCE available
   //  for (UE_id=0;(UE_id<granted_UEs) && (nCCE > aggregation);UE_id++) {
@@ -4161,7 +4160,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
     
     // for TM5, limit the MCS to 16QAM    
-    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
+    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) {
       if (dl_pow_off[next_ue]==0) {
 	if (next_ue==0)
 	  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
@@ -4170,6 +4169,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
       else
 	eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
+    }
 
     // for EXMIMO, limit the MCS to 16QAM as well
 #ifdef EXMIMO
@@ -4594,7 +4594,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     }
     //printf("MAC nCCE : %d\n",*nCCE_used);
   }
-}//loop over CC_id
+  //}//loop over CC_id
 }
 
 #ifdef ICIC
@@ -4775,8 +4775,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   unsigned int nCCE=0;
   int mbsfn_status=0;
   u32 RBalloc=0;
+  int CC_id=0;
 
-  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
+  DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu[CC_id];
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
 
   // clear DCI and BCCH contents before scheduling

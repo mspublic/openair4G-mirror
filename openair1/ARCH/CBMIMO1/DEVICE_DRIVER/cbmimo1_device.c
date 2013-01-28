@@ -260,6 +260,9 @@ static int __init openair_init_module( void ) {
       printk("[openair][INIT_MODULE][FATAL] : Cannot get memory region 0, aborting\n");
       return(-1);
     }
+    else 
+	printk("[openair][INIT_MODULE][INFO] : Reserving memory region 0 : %x\n",mmio_start);
+
     request_mem_region(mmio_start,256,"openair_rf");
     
 
@@ -277,8 +280,10 @@ static int __init openair_init_module( void ) {
       release_mem_region(mmio_start,256);
       return(-1);
     }
-
-
+	iowrite32((1<<8) | (1<<9) | (1<<10),bar[0]);
+	udelay(1000);
+    readback = ioread32(bar[0]);
+	printk("CONTROL0 readback %x\n",readback);
 
   }
 #endif //NOCARD_TEST
@@ -397,7 +402,7 @@ static int __init openair_init_module( void ) {
   fifo_printf_init();
 
   //#ifdef OPENAIR2
-  logInit();
+  //logInit();
   //#endif
 
   printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
@@ -420,9 +425,10 @@ static int __init openair_init_module( void ) {
 static void __exit openair_cleanup_module(void) {
   printk("[openair][CLEANUP MODULE]\n");
 
-  if (vid == XILINX_VENDOR)
+  if (vid == XILINX_VENDOR) {
+    printk("[openair][CLEANUP_MODULE][INFO] Releasing mem_region %x\n",mmio_start);
     release_mem_region(mmio_start,256);
-
+  }
 
   openair_cleanup();
 
@@ -432,7 +438,7 @@ static void __exit openair_cleanup_module(void) {
    pci_printk_fifo_clean_up();
 
   //#ifdef OPENAIR2
-  logClean();
+  //logClean();
   //#endif
 
   

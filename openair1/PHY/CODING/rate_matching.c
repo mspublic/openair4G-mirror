@@ -27,7 +27,7 @@ inline void pset_taus_seed(unsigned int off) {
 
 }
 
-inline unsigned int ptaus() {
+inline unsigned int ptaus(void) {
 
   pb = (((ps0 << 13) ^ ps0) >> 19);
   ps0 = (((ps0 & 0xFFFFFFFE) << 12)^  pb);

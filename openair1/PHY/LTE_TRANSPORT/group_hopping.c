@@ -102,7 +102,7 @@ void generate_seqhop(LTE_DL_FRAME_PARMS *frame_parms) {
 
 void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms) {
 
-  u16 n;
+  u16 n=0;
   u8 reset=1;
   u32 x1, x2, s=0;
   // This is from Section 5.5.1.3

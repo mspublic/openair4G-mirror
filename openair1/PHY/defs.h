@@ -28,14 +28,14 @@
 *******************************************************************************/
 
 /*! \file PHY/defs.h
-* \brief Top-level defines and structure definitions
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
+ \brief Top-level defines and structure definitions
+ \author R. Knopp, F. Kaltenberger
+ \date 2011
+ \version 0.1
+ \company Eurecom
+ \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+ \note
+ \warning
 */
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
@@ -47,7 +47,11 @@
 #include <string.h>
 #include <math.h>
 //#include <complex.h>
+#ifdef MEX
+#define msg mexPrintf
+#else
 #define msg printf   
+#endif
 //use msg in the real-time thread context
 #define msg_nrt printf   
 //use msg_nrt in the non real-time context (for initialization, ...)
@@ -128,6 +132,7 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
+#ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
@@ -137,7 +142,13 @@
 
 #ifdef Rel10
 #define MAX_NUM_CCs 2
+#else 
+#define MAX_NUM_CCs 1
 #endif
+
+#define NUMBER_OF_eNB_SECTORS_MAX 3
+
+typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
 
 /// Top-level PHY Data Structure for eNB 
 typedef struct
@@ -149,7 +160,7 @@ typedef struct
   unsigned int rx_total_gain_eNB_dB;
   u32 frame;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
-  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
+  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH     lte_eNB_pbch;
@@ -164,9 +175,11 @@ typedef struct
 
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
-
   
-  s16 X_u[64][2*839];
+  /// mbsfn reference symbols
+  unsigned int lte_gold_mbsfn_table[10][3][42];
+  
+  u32 X_u[64][839];
 
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
@@ -177,6 +190,11 @@ typedef struct
   unsigned int max_peak_val; 
   int max_eNB_id, max_sync_pos;
 
+
+  /// sinr for all subcarriers of the current link (used only for abstraction)
+  double *sinr_dB;
+ /// N0 (used for abstraction)
+  double N0;
 
   unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
@@ -233,7 +251,7 @@ typedef struct
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 
   // Pointers for physicalConfigDedicated for SCell to be applied in current subframe
-  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10[NUMBER_OF_UE_MAX][MAX_NUM_CCs-1];
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10[NUMBER_OF_UE_MAX];
   
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
@@ -260,6 +278,10 @@ typedef struct
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 //#define debug_msg msg
 
+typedef enum {
+  max_gain=0,med_gain,byp_gain
+} rx_gain_t;
+
 /// Top-level PHY Data Structure for UE 
 typedef struct
 {
@@ -269,65 +291,77 @@ typedef struct
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  rx_gain_t rx_gain_mode[4];
+  unsigned int rx_gain_max[4];
+  unsigned int rx_gain_med[4];
+  unsigned int rx_gain_byp[4];
   s8 tx_power_dBm;
+  s8 tx_power_max_dBm;
   u32 frame;
+  u8 n_connected_eNB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_eNB_MAX+1];
-  LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_eNB_MAX];
-  LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
-  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_eNB_MAX][2];
-  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
+
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  // For abstraction-purposes only
   u8               sr[10];
+  u8               pucch_sel[10];
   u8               pucch_payload[22];
 
-  UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
-  s8               g_pucch[NUMBER_OF_eNB_MAX];
+  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  s8               g_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
   /// cell-specific reference symbols
-  unsigned int lte_gold_table[3][20][2][14];
+  unsigned int lte_gold_table[7][20][2][14];
 
+/// mbsfn reference symbols
+  unsigned int lte_gold_mbsfn_table[10][3][42];
+  
+  u32 X_u[64][839];
 
-  s16 X_u[64][2*839];
+  char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
-
-  unsigned char ulsch_ue_Msg3_active[NUMBER_OF_eNB_MAX];
-  unsigned int  ulsch_ue_Msg3_frame[NUMBER_OF_eNB_MAX];
-  unsigned char ulsch_ue_Msg3_subframe[NUMBER_OF_eNB_MAX];
-  //  unsigned char Msg3_timer[NUMBER_OF_eNB_MAX];
-  //unsigned char *Msg3_ptr[NUMBER_OF_eNB_MAX];
-  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_eNB_MAX];
+  unsigned char ulsch_ue_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int  ulsch_ue_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char ulsch_ue_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
+  //  unsigned char Msg3_timer[NUMBER_OF_CONNECTED_eNB_MAX];
+  //unsigned char *Msg3_ptr[NUMBER_OF_CONNECTED_eNB_MAX];
+  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
-  unsigned int total_TBS[NUMBER_OF_eNB_MAX];
-  unsigned int total_TBS_last[NUMBER_OF_eNB_MAX];
-  unsigned int bitrate[NUMBER_OF_eNB_MAX];
-  unsigned int total_received_bits[NUMBER_OF_eNB_MAX];
-  int dlsch_errors[NUMBER_OF_eNB_MAX];
-  int dlsch_errors_last[NUMBER_OF_eNB_MAX];
-  int dlsch_received[NUMBER_OF_eNB_MAX];
-  int dlsch_received_last[NUMBER_OF_eNB_MAX];
-  int dlsch_fer[NUMBER_OF_eNB_MAX];
-  int dlsch_SI_received[NUMBER_OF_eNB_MAX];
-  int dlsch_SI_errors[NUMBER_OF_eNB_MAX];
-  int dlsch_ra_received[NUMBER_OF_eNB_MAX];
-  int dlsch_ra_errors[NUMBER_OF_eNB_MAX];
-  int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
-  unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
+  unsigned int total_TBS[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int total_TBS_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int bitrate[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int total_received_bits[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_errors_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_received_last[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_fer[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_SI_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
   u8               generate_prach;
   u8               prach_cnt;
   u8               prach_PreambleIndex;
   //  u8               prach_timer;
-  int              rx_offset; // Timing offset
-
+  int              rx_offset; /// Timing offset
+  int              timing_advance; ///timing advance signalled from eNB
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue; 
   /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
@@ -347,56 +381,56 @@ typedef struct
   double N0;
   
   /// PDSCH Varaibles
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];
+  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_eNB_MAX];
+  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+ 
+  /// PUSCH contention-based access vars
+  PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
   /// PUCCH variables
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_eNB_MAX];
+
+  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   u8 ncs_cell[20][7];
 
   /// UL-POWER-Control
-  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_eNB_MAX];
+  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_eNB_MAX];
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_eNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_eNB_MAX];
+  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_eNB_MAX];
+  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_eNB_MAX];
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// Transmission mode per eNB
-  u8 transmission_mode[NUMBER_OF_eNB_MAX];
+  u8 transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// SCell PHY configuration Dedicated r10
   //PHY_CONFIG_DEDICATED_SCELL phy_config_dedicated_scell_r10[MAX_NUM_CCs-1];
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10[NUMBER_OF_CONNECTED_eNB_MAX];
 
 } PHY_VARS_UE;
+
+
 
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/MODULATION/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
-
-#ifndef OPENAIR_LTE
-#include "PHY/TRANSPORT/defs.h"
-#include "PHY/ESTIMATION/defs.h"
-#else //OPENAIR_LTE
 #include "PHY/LTE_ESTIMATION/defs.h"
-  //#include "PHY/LTE_REFSIG/defs.h"
-  //#include "PHY/LTE_TRANSPORT/defs.h"
-#endif //OPENAIR_LTE
-//#ifdef USER_MODE
+
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-  //#endif
+#endif //OPENAIR_LTE
+
 #endif //  __PHY_DEFS__H__
 
 

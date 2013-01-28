@@ -21,7 +21,7 @@ extern "C" {
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 //#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 }
-#include "PHY/vars.h"
+//#include "PHY/vars.h"
 //#include "PHY/CONFIG/vars.h"
 
 //#include "oarf_common.c"
@@ -138,7 +138,7 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   frame_parms->mode1_flag         = 1; //default == SISO
   frame_parms->tdd_config         = tdd_config;
   frame_parms->dual_tx            = dual_tx;
-  frame_parms->frame_type         = tdd;
+  frame_parms->frame_type         = TDD;
   frame_parms->freq_idx           = freq;
   
   init_frame_parms(frame_parms,1);
