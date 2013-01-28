@@ -907,7 +907,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
               not_found = 1;
               new_dft   = 1;
               preamble_index0 -= numshift;
-              (preamble_offset==0) ? (preamble_offset) : (preamble_offset++);
+              (preamble_offset==0 && numshift==0) ? (preamble_offset) : (preamble_offset++);
           while (not_found == 1) {
               // current root depending on rootSequenceIndex 
               u = prach_root_sequence_map[(rootSequenceIndex + preamble_offset)%N_ZC];
@@ -933,7 +933,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
               (numshift>0) ? (not_found = 0) : (preamble_offset++);
           }
           }
-          preamble_shift = -(d_start * (preamble_index0/n_shift_ra)) + ((preamble_index0%n_shift_ra)*NCS); // minus because the channel is h(t -\tau + Cv)
+          preamble_shift = -((d_start * (preamble_index0/n_shift_ra)) + ((preamble_index0%n_shift_ra)*NCS)); // minus because the channel is h(t -\tau + Cv)
           (preamble_shift < 0) ? (preamble_shift+=N_ZC) : preamble_shift;
           preamble_index0++;
           if (preamble_index == 0)
@@ -1096,7 +1096,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
           preamble_delay_list[preamble_index]   = (i*fft_size)>>log2_ifft_size;          
       } 
     }
-    // LOG_D(PHY,"[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,preamble_shift, NCS2,NCS,Ncp);
+    //    LOG_D(PHY,"[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,preamble_shift, NCS2,NCS,Ncp);
     //  exit(-1);
   }// preamble_index
 }
@@ -1232,8 +1232,9 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
 
     for (k=0;k<N_ZC;k++) {
-        X_u[i][k] = ((u32*)ru)[(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC];
-      //    printf("X_u[%d] (%d) : %d,%d\n",k,(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[k])[0],((s16*)&X_u[k])[1]);
+        // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
+        X_u[i][k] = ((u32*)ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
+        //        printf("X_u[%d][%d] (%d)(%d)(%d) : %d,%d\n",i,k,u*inv_u*k*(1+(inv_u*k)),u*inv_u*k*(1+(inv_u*k))/2,(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[i][k])[0],((s16*)&X_u[i][k])[1]);
     }
   }
 
