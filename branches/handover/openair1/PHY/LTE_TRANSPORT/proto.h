@@ -920,12 +920,14 @@ void dci_decoding(u8 DCI_LENGTH,
 not employ the complexity reducing procedure based on RNTI.
 @param phy_vars_ue UE variables
 @param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
+@param do_common If 1 perform search in common search-space else ue-specific search-space 
 @param eNB_id eNB Index on which to act
 @param subframe Index of subframe
 @returns bitmap of occupied CCE positions (i.e. those detected)
 */
 u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			   DCI_ALLOC_t *dci_alloc,
+			   int do_common,
 			   s16 eNB_id,
 			   u8 subframe);
 
@@ -973,7 +975,7 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti);
 @param rb_alloc Bitmap allocation from DCI (format 1,2) 
 @returns number of physical resource blocks
 */
-u32 conv_nprb(u8 ra_header,u32 rb_alloc);
+u32 conv_nprb(u8 ra_header,u32 rb_alloc,int N_RB_DL);
 
 u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
 
@@ -1200,8 +1202,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
 */
 u32 ulsch_encoding(u8 *a,
-		   LTE_DL_FRAME_PARMS *frame_parms,
-		   LTE_UE_ULSCH_t *ulsch,
+		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,
@@ -1414,9 +1415,9 @@ u8 get_num_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms);
   \brief Return the PRACH format as a function of the Configuration Index and Frame type.
   @param prach_ConfigIndex PRACH Configuration Index
   @param frame_type 0-FDD, 1-TDD
-  @returns 0-4 accordingly
+  @returns 0-1 accordingly
 */
-u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type);
+u8 get_prach_fmt(u8 prach_ConfigIndex,lte_frame_type_t frame_type);
 
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index

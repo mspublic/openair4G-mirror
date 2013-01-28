@@ -390,6 +390,7 @@ void generate_pucch(mod_sym_t **txdataF,
 #endif
     }
   }
+
 }
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,

@@ -377,7 +377,7 @@ __m128i *W6_12=(__m128i *)W6_12s;
 static __m128i norm128;
 
 static __m128i tmp_dft12[12];
-static inline void dft12f(__m128i *x0,
+void dft12f(__m128i *x0,
   __m128i *x1,
   __m128i *x2,
   __m128i *x3,

@@ -212,7 +212,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    ((s16*)&txdataF[aa][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
 	  *jj = *jj + 1;
 
-	  //	  	  	  printf("%d,%d\n",((s16*)&txdataF[0][tti_offset])[0],((s16*)&txdataF[0][tti_offset])[1]);
+	  //	  printf("%d,%d\n",((s16*)&txdataF[0][tti_offset])[0],((s16*)&txdataF[0][tti_offset])[1]);
 	  break;
 	  
 	case 4:  //16QAM
@@ -1193,7 +1193,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
 	    skip_half=2;
 	
-	  if (frame_parms->frame_type == 1) { // TDD
+	  if (frame_parms->frame_type == TDD) { // TDD
 	    //SSS TDD
 	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
 	      rb_alloc_ind = 0;
@@ -1243,18 +1243,29 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	}
 	else {  // EVEN N_RB_DL
 	  //PBCH
-	  if ((subframe_offset==0) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+	  if ((subframe_offset==0) && 
+	      (rb>=((frame_parms->N_RB_DL>>1)-3)) && 
+	      (rb<((frame_parms->N_RB_DL>>1)+3)) && 
+	      (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
 	    rb_alloc_ind = 0;
 	  skip_dc=0;
 	  skip_half=0;
-
-	  if (frame_parms->frame_type == 1) { // TDD
+	  
+	  if (frame_parms->frame_type == TDD) { // TDD
 	    //SSS
-	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	    if (((subframe_offset==0)||
+		 (subframe_offset==5)) && 
+		(rb>=((frame_parms->N_RB_DL>>1)-3)) && 
+		(rb<((frame_parms->N_RB_DL>>1)+3)) && 
+		(l==nsymb-1) ) {
 	      rb_alloc_ind = 0;
 	    }	    
 	    //PSS
-	    if (((subframe_offset==1)||(subframe_offset==6)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	    if (((subframe_offset==1)||
+		 (subframe_offset==6)) && 
+		(rb>=((frame_parms->N_RB_DL>>1)-3)) && 
+		(rb<((frame_parms->N_RB_DL>>1)+3)) && 
+		(l==2) ) {
 	      rb_alloc_ind = 0;
 	    }
 	  }

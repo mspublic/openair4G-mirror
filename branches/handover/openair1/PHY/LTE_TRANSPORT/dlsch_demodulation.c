@@ -230,7 +230,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   
     //  printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
-    msg("dlsch_modulation.c: nb_rb=0\n");
+    msg("dlsch_demodulation.c: nb_rb=0\n");
     return(-1);
   }
 
@@ -1608,14 +1608,30 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 		  printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
 		  printf("\n");
 	  */
-	  for (i=0;i<12;i++) {
-	    rxF_ext[i]=rxF[i<<1];
-	    //	      printf("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
-	    //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
+	  if (pilots==0) {
+	    for (i=0;i<12;i++) {
+	      rxF_ext[i]=rxF[i<<1];
+	      //	      printf("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
+	      //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
+	    }
+	    dl_ch0_ext+=12;
+	    rxF_ext+=12;
+	  }
+	  else {
+	    j=0;
+	    for (i=0;i<12;i++) {
+	      if ((i!=(frame_parms->nushift+poffset)) &&
+		  (i!=((frame_parms->nushift+poffset+6)%12))) {
+		rxF_ext[j]=rxF[i<<1];
+		//		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		dl_ch0_ext[j++]=dl_ch0[i];
+		
+		}
+	    }
+	    dl_ch0_ext+=10;
+	    rxF_ext+=10;
 	  }
 	  nb_rb++;
-	  dl_ch0_ext+=12;
-	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
 	rxF+=24;
@@ -2608,31 +2624,32 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
 
   unsigned int nsymb = (phy_vars_ue->lte_frame_parms.Ncp == 0) ? 14 : 12;
   char fname[32],vname[32];
-    
+  int N_RB_DL=phy_vars_ue->lte_frame_parms.N_RB_DL;
+
   sprintf(fname,"dlsch%d_rxF_ext0.m",eNB_id);
   sprintf(vname,"dl%d_rxF_ext0",eNB_id);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0],300*nsymb,1,1);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_ext[0],12*N_RB_DL*nsymb,1,1);
   sprintf(fname,"dlsch%d_ch_ext00.m",eNB_id);
   sprintf(vname,"dl%d_ch_ext00",eNB_id);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0],300*nsymb,1,1);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
   /*
-    write_output("dlsch%d_ch_ext01.m","dl01_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],300*nsymb,1,1);
-    write_output("dlsch%d_ch_ext10.m","dl10_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],300*nsymb,1,1);
-    write_output("dlsch%d_ch_ext11.m","dl11_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],300*nsymb,1,1);
-    write_output("dlsch%d_rho.m","dl_rho",lte_ue_pdsch_vars[eNB_id]->rho[0],300*nsymb,1,1);
+    write_output("dlsch%d_ch_ext01.m","dl01_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
+    write_output("dlsch%d_ch_ext10.m","dl10_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
+    write_output("dlsch%d_ch_ext11.m","dl11_ch0_ext",lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
+    write_output("dlsch%d_rho.m","dl_rho",lte_ue_pdsch_vars[eNB_id]->rho[0],12*N_RB_DL*nsymb,1,1);
   */
   sprintf(fname,"dlsch%d_rxF_comp0.m",eNB_id);
   sprintf(vname,"dl%d_rxF_comp0",eNB_id);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*nsymb,1,1);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],12*N_RB_DL*nsymb,1,1);
   sprintf(fname,"dlsch%d_rxF_llr.m",eNB_id);
   sprintf(vname,"dl%d_llr",eNB_id);
   write_output(fname,vname, phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],coded_bits_per_codeword,1,0);
   sprintf(fname,"dlsch%d_mag1.m",eNB_id);
   sprintf(vname,"dl%d_mag1",eNB_id);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,300*nsymb,1,1);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag[0],12*N_RB_DL*nsymb,1,1);
   sprintf(fname,"dlsch%d_mag2.m",eNB_id);
   sprintf(vname,"dl%d_mag2",eNB_id);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,300*nsymb,1,1);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb[0],12*N_RB_DL*nsymb,1,1);
 }
 #endif
 

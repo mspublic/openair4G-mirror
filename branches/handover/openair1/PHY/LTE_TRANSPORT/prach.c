@@ -225,9 +225,9 @@ u8 get_fid_prach_tdd(LTE_DL_FRAME_PARMS *frame_parms,u8 tdd_map_index) {
   return(tdd_preamble_map[frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][frame_parms->tdd_config].map[tdd_map_index].f_ra);
 }
 
-u8 get_prach_fmt(u8 prach_ConfigIndex,u8 frame_type) {
+u8 get_prach_fmt(u8 prach_ConfigIndex,lte_frame_type_t frame_type) {
 
-  if (frame_type == 0) // FDD
+  if (frame_type == FDD) // FDD
     return(prach_ConfigIndex>>4);
 
   else {
@@ -352,7 +352,7 @@ static short prach_tmp[45600*2] __attribute__((aligned(16)));
 
 s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
-  u8 frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
+  lte_frame_type_t frame_type         = phy_vars_ue->lte_frame_parms.frame_type;
   u8 tdd_config         = phy_vars_ue->lte_frame_parms.tdd_config;
   u16 rootSequenceIndex = phy_vars_ue->lte_frame_parms.prach_config_common.rootSequenceIndex; 
   u8 prach_ConfigIndex  = phy_vars_ue->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
@@ -514,9 +514,10 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   
   // now generate PRACH signal
 #ifdef PRACH_DEBUG
-  printf("Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d, N_ZC/NCS %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
-	 rootSequenceIndex,preamble_index,NCS,Ncs_config,N_ZC/NCS,n_ra_prb,
-	 preamble_offset,preamble_shift);
+  if (NCS>0)
+    printf("Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d, N_ZC/NCS %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
+	   rootSequenceIndex,preamble_index,NCS,Ncs_config,N_ZC/NCS,n_ra_prb,
+	   preamble_offset,preamble_shift);
 #endif
 
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -569,7 +570,26 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
     break;
   }
 
-  Ncp = (Ncp*phy_vars_ue->lte_frame_parms.N_RB_UL/100); 
+  switch (phy_vars_ue->lte_frame_parms.N_RB_UL) {
+  case 6:
+    Ncp>>=4;
+    prach+=4; // makes prach2 aligned to 128-bit
+    break;
+  case 15:
+    Ncp>>=3;
+    break;
+  case 25:
+    Ncp>>=2;
+    break;
+  case 50:
+    Ncp>>=1;
+    break;
+  case 75:
+    Ncp=(Ncp*3)>>2;
+    break;
+  }
+
+
   prach2 = prach+(Ncp<<1);
   // do IDFT
   switch (phy_vars_ue->lte_frame_parms.N_RB_UL) {
@@ -695,7 +715,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
 #else
 #ifdef EXMIMO
     overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_ue->lte_frame_parms.samples_per_tti;
-    LOG_I(PHY,"prach_start=%d, overflow=%d\n",prach_start,overflow);
+    LOG_D(PHY,"prach_start=%d, overflow=%d\n",prach_start,overflow);
     for (i=prach_start,j=0; i<min(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
       ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i] = prach[2*j]<<4;
       ((s16*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
@@ -722,7 +742,8 @@ s16 prach_ifft[4][1024*4];
 void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, u16 *preamble_delay_list, u16 Nf, u8 tdd_mapindex) {
 
   int i;
-  u8 frame_type         = phy_vars_eNB->lte_frame_parms.frame_type;
+  lte_frame_type_t frame_type         = phy_vars_eNB->lte_frame_parms.frame_type;
+
   u8 tdd_config         = phy_vars_eNB->lte_frame_parms.tdd_config;
   u16 rootSequenceIndex = phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex; 
   u8 prach_ConfigIndex  = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex; 
@@ -761,8 +782,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   s32 lev;
   s8 levdB;
   int fft_size,log2_ifft_size;
+  u8 nb_ant_rx = 1; //phy_vars_eNB->lte_frame_parms.nb_antennas_rx;
 
-  for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+  for (aa=0;aa<nb_ant_rx;aa++) {
       prach[aa] = (s16*)&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti];
     //    remove_625_Hz(phy_vars_eNB,prach[aa]);
   }
@@ -784,7 +806,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 
   n_ra_prb = n_ra_prboffset;
   
-  if (frame_type == 1) { // TDD
+  if (frame_type == TDD) { // TDD
       // adjust n_ra_prboffset for frequency multiplexing (p.36 36.211)
 
       f_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[tdd_mapindex].f_ra;
@@ -837,7 +859,24 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
     break;
   }
   
-  Ncp = (Ncp*phy_vars_eNB->lte_frame_parms.N_RB_UL/100); 
+  switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
+  case 6:
+    Ncp>>=4;
+    break;
+  case 15:
+    Ncp>>=3;
+    break;
+  case 25:
+    Ncp>>=2;
+    break;
+  case 50:
+    Ncp>>=1;
+    break;
+  case 75:
+    Ncp=(Ncp*3)>>2;
+    break;
+  }
+
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
   //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
 
@@ -868,7 +907,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
               not_found = 1;
               new_dft   = 1;
               preamble_index0 -= numshift;
-              (preamble_offset==0) ? (preamble_offset) : (preamble_offset++);
+              (preamble_offset==0 && numshift==0) ? (preamble_offset) : (preamble_offset++);
           while (not_found == 1) {
               // current root depending on rootSequenceIndex 
               u = prach_root_sequence_map[(rootSequenceIndex + preamble_offset)%N_ZC];
@@ -894,7 +933,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
               (numshift>0) ? (not_found = 0) : (preamble_offset++);
           }
           }
-          preamble_shift = -(d_start * (preamble_index0/n_shift_ra)) + ((preamble_index0%n_shift_ra)*NCS); // minus because the channel is h(t -\tau + Cv)
+          preamble_shift = -((d_start * (preamble_index0/n_shift_ra)) + ((preamble_index0%n_shift_ra)*NCS)); // minus because the channel is h(t -\tau + Cv)
           (preamble_shift < 0) ? (preamble_shift+=N_ZC) : preamble_shift;
           preamble_index0++;
           if (preamble_index == 0)
@@ -908,7 +947,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
         new_dft = 0;
         Xu=(s16*)phy_vars_eNB->X_u[preamble_offset-first_nonzero_root_idx];
         
-        for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+        for (aa=0;aa<nb_ant_rx;aa++) {
             prach2 = prach[aa] + (Ncp<<1);
 
             k = (12*n_ra_prb) - 6*phy_vars_eNB->lte_frame_parms.N_RB_UL;
@@ -1047,7 +1086,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
     preamble_energy_list[preamble_index] = 0;
     for (i=0;i<NCS2;i++) {
         lev = 0;
-        for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {            
+        for (aa=0; aa<nb_ant_rx; aa++) {            
             lev += (s32)prach_ifft[aa][(preamble_shift2+i)<<2]*prach_ifft[aa][(preamble_shift2+i)<<2] + (s32)prach_ifft[aa][1+((preamble_shift2+i)<<2)]*prach_ifft[aa][1+((preamble_shift2+i)<<2)];
         }
         levdB = dB_fixed(lev);        
@@ -1131,7 +1170,7 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
           NCS = NCS_unrestricted[prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig];
       }
       num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
-      num_preambles++;
+      if (NCS>0) num_preambles++;
       preamble_offset = 0;
   }
   else {
@@ -1178,7 +1217,8 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   }
 
 #ifdef PRACH_DEBUG
-  LOG_I(PHY,"Initializing %d preambles for PRACH (NCS_config %d, NCS %d, N_ZC/NCS %d)\n",num_preambles,prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig,NCS,N_ZC/NCS);
+  if (NCS>0)
+    LOG_I(PHY,"Initializing %d preambles for PRACH (NCS_config %d, NCS %d, N_ZC/NCS %d)\n",num_preambles,prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig,NCS,N_ZC/NCS);
 #endif
 
   for (i=0;i<num_preambles;i++) {
@@ -1186,16 +1226,14 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
         
       inv_u = ZC_inv[u]; // multiplicative inverse of u
     
-#ifdef PRACH_DEBUG
-    LOG_I(PHY,"compute_prach_seq: preamble %d => (%d,%d)\n",i,u,inv_u);
-#endif  
 
     // X_u[0] stores the first ZC sequence where the root u has a non-zero number of shifts
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
 
     for (k=0;k<N_ZC;k++) {
-        X_u[i][k] = ((u32*)ru)[(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC];
-      //    printf("X_u[%d] (%d) : %d,%d\n",k,(inv_u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[k])[0],((s16*)&X_u[k])[1]);
+        // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
+        X_u[i][k] = ((u32*)ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
+        //        printf("X_u[%d][%d] (%d)(%d)(%d) : %d,%d\n",i,k,u*inv_u*k*(1+(inv_u*k)),u*inv_u*k*(1+(inv_u*k))/2,(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[i][k])[0],((s16*)&X_u[i][k])[1]);
     }
   }
 }

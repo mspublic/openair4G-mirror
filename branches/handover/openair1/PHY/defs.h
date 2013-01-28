@@ -185,6 +185,11 @@ typedef struct
   int max_eNB_id, max_sync_pos;
 
 
+  /// sinr for all subcarriers of the current link (used only for abstraction)
+  double *sinr_dB;
+ /// N0 (used for abstraction)
+  double N0;
+
   unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 

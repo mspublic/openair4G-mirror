@@ -137,12 +137,12 @@ u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subf
 
   //first half of slot and TDD (no adjustments in first slot except for subframe 6 - PSS)
   if ((symbol<(nsymb>>1))&&
-      (frame_parms->frame_type == 1)&&
+      (frame_parms->frame_type == TDD)&&
       (subframe!=6))
     return(0);
 
   // after PBCH
-  if (frame_parms->frame_type==1) { //TDD 
+  if (frame_parms->frame_type==TDD) { //TDD 
     if ((symbol>((nsymb>>1)+3)) && 
 	(symbol!=(nsymb-1)))  ///SSS
       return(0);
@@ -311,7 +311,7 @@ u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u
 
   u16 G_adj = adjust_G(frame_parms,rb_alloc,mod_order,subframe);
 
-  //  printf("get_G subframe %d mod_order %d: rb_alloc %x, G_adj %d\n",subframe,mod_order,rb_alloc[0], G_adj);
+  //  printf("get_G subframe %d mod_order %d, nb_rb %d: rb_alloc %x,%x,%x,%x, G_adj %d\n",subframe,mod_order,nb_rb,rb_alloc[3],rb_alloc[2],rb_alloc[1],rb_alloc[0], G_adj);
   if (frame_parms->Ncp==0) { // normal prefix
   // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
   // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
