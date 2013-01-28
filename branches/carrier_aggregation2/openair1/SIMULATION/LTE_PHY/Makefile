@@ -12,7 +12,10 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
+#CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+
 CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+
 
 LFLAGS = -lm -lblas -lxml2 -lrt 
 
@@ -20,14 +23,9 @@ ifdef GPIB
 LFLAGS += -lgpib
 endif
 
-GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
-ifeq "$(GCCVERSION)"  "4.4.3"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-ifeq "$(GCCVERSION)" "4.5.2"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-ifeq "$(GCCVERSION)" "4.6.1"
+# Check if GCC version is greater or equal to 4.4
+GCCVERSIONGTEQ44 := $(shell expr `gcc -dumpversion | cut -f1,2 -d. --output-delimiter=""` \>= 44)
+ifeq "$(GCCVERSIONGTEQ44)" "1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
@@ -82,24 +80,6 @@ CFLAGS += -DNO_RRM -DOPENAIR1 #-DOPENAIR2 #-DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
-ifdef ENABLE_FXP
-CFLAGS += -DENABLE_FXP # Fxp only
-else
- ifdef ENABLE_FLP
- CFLAGS += -DENABLE_FLP # dual_stream_correlation(), channel_compensation_prec() and qam16_qam16_mu_mimo() are flp (independently)	
- else
-  ifdef ENABLE_FULL_FLP
-  CFLAGS += -DENABLE_FULL_FLP # Flp inside of rx_pdsch() (dlsch_detection_mrc(), dual_stream_correlation(), channel_compensation_prec(), qam16_qam16_mu_mimo() and dlsch_16qam_16qam_llr)
-  else
-  CFLAGS += -DENABLE_FXP # Fxp only by default
-  endif
- endif
-endif
-
-ifdef COMPARE_FLP_AND_FXP
-CFLAGS += -DCOMPARE_FLP_AND_FXP
-endif
-
 ifdef RTAI
 CFLAGS += -DRTAI_ENABLED  -D__IN_RTAI__ $(shell rtai-config --lxrt-cflags)
 LFLAGS += $(shell rtai-config --lxrt-ldflags) -llxrt
@@ -107,7 +87,7 @@ endif
 
 include $(TOP_DIR)/PHY/Makefile.inc
 SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o #$(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
-#include $(TOP_DIR)/SCHED/Makefile.inc
+include $(TOP_DIR)/SCHED/Makefile.inc
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
@@ -131,9 +111,7 @@ ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
-OBJ += openair_hw.o
-
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim mbmssim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
@@ -154,6 +132,10 @@ framegen: $(OBJ) framegen.c
 pbchsim : $(OBJ) pbchsim.c
 	@echo "Compiling pbchsim.c"
 	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas #-lm -lblas
+
+mbmssim : $(OBJ) mbmssim.c
+	@echo "Compiling mbmssim.c"
+	@$(CC) mbmssim.c  -o mbmssim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
 pdcchsim : $(OBJ) pdcchsim.c
 	@echo "Compiling pdcchsim.c"

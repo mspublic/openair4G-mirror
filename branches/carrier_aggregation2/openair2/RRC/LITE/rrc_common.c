@@ -209,6 +209,7 @@ void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role){
   Srb_info->Tx_buffer.payload_size = 0;
 }
 
+#ifdef Rel10
 uint8_t rrc_find_free_SCell_index(u8 Mod_id, u16 index, u8 eNB_flag) {
 	u8 cnt;
 	for(cnt=0;cnt<MAX_NUM_CCs-1;cnt++){
@@ -224,6 +225,7 @@ uint8_t rrc_find_free_SCell_index(u8 Mod_id, u16 index, u8 eNB_flag) {
 	LOG_E(RRC,"[eNB %d], Generate RRCConnectionReconfiguration - findFreeSCellIndex: No free SCell index for UE id %d\n",Mod_id,index);
 	return((uint8_t)MAX_U8);
 }
+#endif
 
 /*------------------------------------------------------------------------------*/
 void openair_rrc_top_init(void){

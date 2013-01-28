@@ -88,7 +88,7 @@ s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t p
     break;
   }
   if (pucch_fmt!=pucch_format1) {
-    msg("[PHY][UE  %d][PDSCH %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
+    LOG_D(PHY,"[UE  %d][PDSCH %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
 	phy_vars_ue->Mod_id,
 	phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,phy_vars_ue->frame,subframe,
 	Po_PUCCH,
@@ -97,7 +97,7 @@ s8 pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,u8 subframe,u8 eNB_id,PUCCH_FMT_t p
 	phy_vars_ue->g_pucch[eNB_id]);
   }
   else {
-    msg("[PHY][UE  %d][SR %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
+    LOG_D(PHY,"[UE  %d][SR %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
 	phy_vars_ue->Mod_id,
 	phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,phy_vars_ue->frame,subframe,
 	Po_PUCCH,

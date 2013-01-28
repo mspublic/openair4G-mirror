@@ -101,7 +101,7 @@ typedef struct
     //    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
   /// Retrieve ULSCH sdu from MAC
-    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+    void (*ue_get_sdu)(u8 Mod_id,u8 CC_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC
     PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);
@@ -143,7 +143,7 @@ typedef struct
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
     /// Function to indicate success of contention resolution or RA procedure
-    void (*ra_succeeded)(u8 Mod_id,u8 eNB_index);
+    void (*ra_succeeded)(u8 Mod_id,u8 CC_id,u8 eNB_index);
 
     /// Function to indicate the transmission of msg1/rach to MAC
     void (*Msg1_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
@@ -152,7 +152,7 @@ typedef struct
     void (*Msg3_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);
 
     /// Function to pass inter-cell measurement parameters to PHY (cell Ids)
-    void (*phy_config_meas_ue)(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,u32 *adj_cell_id);
+    void (*phy_config_meas_ue)(u8 Mod_id,u8 CC_id, u8 eNB_index,u8 n_adj_cells,u32 *adj_cell_id);
 
     // PHY Helper Functions
 
@@ -206,11 +206,11 @@ typedef struct
     s8 (*get_deltaP_rampup)(u8 Mod_id);
 
     /// Function for UE/PHY to compute PHR
-    s8 (*get_PHR)(u8 Mod_id, u8 eNB_index);
+    s8 (*get_PHR)(u8 Mod_id, u8 CC_id, u8 eNB_index);
 
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u8 CC_id, u16 rnti);
 
-    void (*process_timing_advance)(u8 Mod_id,s16 timing_advance);
+    void (*process_timing_advance)(u8 Mod_id,u8 CC_id,s16 timing_advance);
 
     unsigned char is_cluster_head;
     unsigned char is_primary_cluster_head;

@@ -1388,8 +1388,8 @@ main (int argc, char **argv)
 		 PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.tdd_config,
 		 PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.Nid_cell); 	
 	   
-	   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) 
-	     PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
+	   //for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) 
+	   //  PHY_vars_eNB_g[eNB_id][CC_id]->frame = frame;
 	   
 	   phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);	
 #ifdef PRINT_STATS
@@ -1424,8 +1424,8 @@ main (int argc, char **argv)
 
 	  if (PHY_vars_UE_g[UE_id][0]->UE_mode[0] != NOT_SYNCHED) {
 	    if (frame>0) {
-	     for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) 
-	       PHY_vars_UE_g[UE_id][CC_id]->frame = frame;
+	      //for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) 
+	      //  PHY_vars_UE_g[UE_id][CC_id]->frame = frame;
 	     phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
 	    }
 	  }
@@ -1472,7 +1472,7 @@ main (int argc, char **argv)
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
 	for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++)
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame,CC_id);
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
@@ -1481,7 +1481,7 @@ main (int argc, char **argv)
 	}
 	else {// UL part
 	  for (CC_id=0; CC_id < MAX_NUM_CCs; CC_id++)
-	    do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,CC_id);
+	    do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame,CC_id);
 	}
       }
 

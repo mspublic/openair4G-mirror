@@ -16,9 +16,9 @@ figure
 hold off
 legend_str = {};
 i=1;
-for mcs=0:25
+for mcs=10:16
     %file = fullfile(root_path,sprintf('awgn_bler_tx1_mcs%d.csv',mcs));
-    file = sprintf('awgn_bler_tx1_mcs%d.csv',mcs);
+    file = sprintf('awgn_bler_tx5_mcs%d_u0.csv',mcs);
     data = dlmread(file,';',1,0);
     snr = data(:,1);
     bler = data(:,5)./data(:,6); % round 1
@@ -45,15 +45,15 @@ xlabel 'SNR'
 ylim([0.001 1])
 grid on
 
-figure;
-plot(c_rate(1:10), snr_10p(1:10),'r-x');
-hold on
-grid on
-plot(c_rate(11:17), snr_10p(11:17),'b-x');
-plot(c_rate(18:26), snr_10p(18:26),'g-x');
-set(gca,'YTick',[-5:16])
-set(gca,'XTick',[0.1:0.05:1])
-title('SNR (dB) needed to achieve BLER of 10% in AWGN');
-ylabel 'SNR'
-xlabel 'code rate'
+%figure;
+%plot(c_rate(1:10), snr_10p(1:10),'r-x');
+%hold on
+%grid on
+%plot(c_rate(11:17), snr_10p(11:17),'b-x');
+%plot(c_rate(18:26), snr_10p(18:26),'g-x');
+%set(gca,'YTick',[-5:16])
+%set(gca,'XTick',[0.1:0.05:1])
+%title('SNR (dB) needed to achieve BLER of 10% in AWGN');
+%ylabel 'SNR'
+%xlabel 'code rate'
 

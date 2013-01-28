@@ -15,13 +15,13 @@
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 extern unsigned int   Master_list_rx;
-extern unsigned short NODE_ID[1];
+//extern unsigned short NODE_ID[1];
 extern unsigned char  NB_INST;
 //#define DEBUG_CONTROL 1
 
-/******************************************************************************************************/ 
 /*
 char is_node_local_neighbor(unsigned short Node_id){
   int i;
@@ -62,15 +62,27 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
   
   if (ethernet_flag == 0)
     return;
- 
+  
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT,1);
+
+  if ((frame_type == 1) &&  (direction == SF_S)){
+    if (next_slot%2==0)
+      emu_transport_DL(frame, last_slot,next_slot);
+    else 
+      emu_transport_UL(frame, last_slot , next_slot);
   //DL
-  if ( ( (frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
-    emu_transport_DL(frame, last_slot,next_slot);
+  }else {   
+    if (next_slot%2 == 0 )
+      if ( ((frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ){ 
+      emu_transport_DL(frame, last_slot,next_slot);
+    }
+    // UL
+    if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
+      emu_transport_UL(frame, last_slot , next_slot);
+    }
+    
   }
-  // UL
-  if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ){
-    emu_transport_UL(frame, last_slot , next_slot);
-  }
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT,0);
 }
 
 
@@ -87,11 +99,13 @@ void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int n
   }
   else { // I am the master
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-    bypass_rx_data(frame,last_slot, next_slot);
+   
     if (oai_emulation.info.nb_enb_local>0) // send in DL if 
       bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
+
+    bypass_rx_data(frame,last_slot, next_slot);
   }   
 
 }
@@ -105,15 +119,17 @@ void emu_transport_UL(unsigned int frame, unsigned int last_slot, unsigned int n
       bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
+    
     bypass_rx_data(frame,last_slot, next_slot);
   }
   else {  
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-    bypass_rx_data(frame,last_slot, next_slot);
     if (oai_emulation.info.nb_ue_local>0)
       bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
+
+    bypass_rx_data(frame,last_slot, next_slot);
   }
   
 }
@@ -227,7 +243,7 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
 	  memcpy(PHY_vars_eNB_g[enb_id]->dlsch_eNB_SI->harq_processes[0]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
-	  //  LOG_D(EMU, "SI eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
+	  //LOG_D(EMU, "SI eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	  break;
 	case 1: //RA:
 	  
@@ -240,12 +256,15 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
 	case 2://TB0:
 	  harq_pid  = eNB_transport_info[enb_id].harq_pid[n_dci_dl];
 	  ue_id = eNB_transport_info[enb_id].ue_id[n_dci_dl];
-	  PHY_vars_eNB_g[enb_id]->dlsch_eNB[ue_id][0]->rnti= eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti;
-	  //LOG_D(EMU, " enb_id %d ue id is %d rnti is %x \n", 
-	  //		enb_id, ue_id, eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti);
+	  PHY_vars_eNB_g[enb_id]->dlsch_eNB[ue_id][0]->rnti= eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti; 
 	  dlsch_eNB = PHY_vars_eNB_g[enb_id]->dlsch_eNB[ue_id][0];
-	  
-	  
+	  /*LOG_D(EMU, " enb_id %d ue id is %d rnti is %x dci index %d, harq_pid %d tbs %d \n", 
+		enb_id, ue_id, eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti,
+		n_dci_dl, harq_pid, eNB_transport_info[enb_id].tbs[n_dci_dl]);
+	   int i;
+	   for (i=0;i<eNB_transport_info[enb_id].tbs[n_dci_dl];i++)
+	    msg("%x.",(unsigned char) eNB_transport_info[enb_id].transport_blocks[payload_offset+i]);
+	    */	  
 	  memcpy(dlsch_eNB->harq_processes[harq_pid]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
@@ -267,7 +286,7 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
       }
       n_dci_dl++;
     }
-    LOG_I(EMU, "Fill phy eNB vars done !\n");
+    LOG_D(EMU, "Fill phy eNB vars done !\n");
   }
 }
 
@@ -282,63 +301,69 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
   LTE_UE_ULSCH_t *ulsch;
   PUCCH_FMT_t pucch_format;
   //  u8 ue_transport_info_index[NUMBER_OF_eNB_MAX];
-  u8 subframe = last_slot>>1;
+  u8 subframe = (last_slot+1)>>1;
  
-  memcpy (&ue_cntl_delay[(subframe+1)%2],
+  memcpy (&ue_cntl_delay[ue_id][(last_slot+1)%2],
   	  &UE_transport_info[ue_id].cntl,
   	  sizeof(UE_cntl));
 
    
-   LOG_D(EMU, "Fill phy UE %d vars PRACH is (%d, %d) preamble (%d,%d)!\n", 
-	ue_id,
+  /* LOG_D(EMU, "Last slot %d subframe %d Fill phy UE %d vars PRACH is (%d,%d) preamble (%d,%d) SR (%d,%d), pucch_sel (%d, %d)\n", 
+	 last_slot,subframe,ue_id,
 	UE_transport_info[ue_id].cntl.prach_flag,
-	 ue_cntl_delay[subframe%2].prach_flag,
+	 ue_cntl_delay[ue_id][last_slot%2].prach_flag,
 	 UE_transport_info[ue_id].cntl.prach_id,
-	 ue_cntl_delay[subframe%2].prach_id);
-
+	 ue_cntl_delay[ue_id][last_slot%2].prach_id,
+	 UE_transport_info[ue_id].cntl.sr,
+	 ue_cntl_delay[ue_id][last_slot%2].sr,
+	 UE_transport_info[ue_id].cntl.pucch_sel,
+	 ue_cntl_delay[ue_id][last_slot%2].pucch_sel );
+  */
    //ue_cntl_delay[subframe%2].prach_flag ;
-   PHY_vars_UE_g[ue_id]->generate_prach = UE_transport_info[ue_id].cntl.prach_flag; 
+   PHY_vars_UE_g[ue_id]->generate_prach = ue_cntl_delay[ue_id][last_slot%2].prach_flag;//UE_transport_info[ue_id].cntl.prach_flag; 
    if (PHY_vars_UE_g[ue_id]->generate_prach == 1) {
      //     if (PHY_vars_UE_g[ue_id]->prach_resources[enb_id] == NULL)
      //  PHY_vars_UE_g[ue_id]->prach_resources[enb_id] = malloc(sizeof(PRACH_RESOURCES_t));
      //ue_cntl_delay[subframe%2].prach_id;
-     PHY_vars_UE_g[ue_id]->prach_PreambleIndex = UE_transport_info[ue_id].cntl.prach_id; 
+     PHY_vars_UE_g[ue_id]->prach_PreambleIndex =  ue_cntl_delay[ue_id][last_slot%2].prach_id;
    }
 
+   pucch_format= ue_cntl_delay[ue_id][last_slot%2].pucch_flag;// UE_transport_info[ue_id].cntl.pucch_flag;
+   if ((last_slot+1) % 2  == 0 ) {
+     if (pucch_format == pucch_format1) // UE_transport_info[ue_id].cntl.sr;
+       PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[ue_id][last_slot%2].sr;
+     else if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
+       PHY_vars_UE_g[ue_id]->pucch_payload[0] = ue_cntl_delay[ue_id][last_slot%2].pucch_payload;//UE_transport_info[ue_id].cntl.pucch_payload;
+     } 
+     PHY_vars_UE_g[ue_id]->pucch_sel[subframe] = ue_cntl_delay[ue_id][last_slot%2].pucch_sel;
+   } 
+   
+
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
-    
-     //LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
-     
-     pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
-     
-     PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[subframe%2].sr;// UE_transport_info[ue_id].cntl.sr;
-     
-     //if (PHY_vars_UE_g[ue_id]->sr) LOG_I(EMU,"SR is %d \n", PHY_vars_UE_g[ue_id]->sr);
-     
-     if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
-       PHY_vars_UE_g[ue_id]->pucch_payload[0] = UE_transport_info[ue_id].cntl.pucch_payload;
-     }
-     
+     /* 
+     LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x harq pid is %d \n",
+	   ue_id, UE_transport_info[ue_id].rnti[n_enb],
+	   PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]);
+     */
      rnti = UE_transport_info[ue_id].rnti[n_enb];
      enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
-
-
-
      
      PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
-     
-     
+         
      harq_pid = UE_transport_info[ue_id].harq_pid[n_enb];
      
      ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
      
-     ulsch->o_RI[0]                          = ue_cntl_delay[subframe%2].pusch_ri & 0x1;
-     ulsch->o_RI[1]                          = (ue_cntl_delay[subframe%2].pusch_ri>>1) & 0x1;
+     ulsch->o_RI[0]                          = ue_cntl_delay[ue_id][last_slot%2].pusch_ri & 0x1;
+     ulsch->o_RI[1]                          = (ue_cntl_delay[ue_id][last_slot%2].pusch_ri>>1) & 0x1;
      
-     ulsch->o_ACK[0]                          = ue_cntl_delay[subframe%2].pusch_ack & 0x1;
-     ulsch->o_ACK[1]                          = (ue_cntl_delay[subframe%2].pusch_ack>>1) & 0x1;
-     
-     
+     ulsch->o_ACK[0]                          = ue_cntl_delay[ue_id][last_slot%2].pusch_ack & 0x1;
+     ulsch->o_ACK[1]                          = (ue_cntl_delay[ue_id][last_slot%2].pusch_ack>>1) & 0x1;
+
+     *(u32 *)ulsch->o                        = ue_cntl_delay[ue_id][last_slot%2].pusch_uci;
+
+     // LOG_D(EMU,"subframe %d get acks for ue %d: (%d, %d) \n",subframe, ue_id,  ulsch->o_ACK[0],  ulsch->o_ACK[1]   );
+
      memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
 	    UE_transport_info[ue_id].transport_blocks,
 	    UE_transport_info[ue_id].tbs[enb_id]);

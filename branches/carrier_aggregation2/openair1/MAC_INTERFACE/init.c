@@ -9,7 +9,7 @@ ________________________________________________________________*/
 
 #include "defs.h"
 #include "extern.h"
-
+#include "SCHED/defs.h"
 
 int mac_init(void)
 {

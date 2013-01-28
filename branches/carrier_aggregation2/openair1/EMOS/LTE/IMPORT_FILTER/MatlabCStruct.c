@@ -32,7 +32,7 @@ char *ClassIDText(const mxArray *pArray)
   case mxUNKNOWN_CLASS : return "UNKNOWN";
   case mxCELL_CLASS    : return "CELL";
   case mxFUNCTION_CLASS: return "FUNCTION";
-  case mxOBJECT_CLASS  : return "OBJECT";
+    //case mxOBJECT_CLASS  : return "OBJECT";
   case mxSTRUCT_CLASS  : return "STRUCT";
   case mxCHAR_CLASS    : return "CHAR";
   case mxLOGICAL_CLASS : return "LOGICAL";
@@ -119,7 +119,7 @@ ELEMENT_ATTRIBUTES MatlabCStruct(const mxArray *pArray, int MemoryAlignment, int
   {
   case mxUNKNOWN_CLASS :
   case mxFUNCTION_CLASS: 
-  case mxOBJECT_CLASS  : Attributes.StorageSize = 0; Attributes.Alignment = 1; return Attributes;
+    //case mxOBJECT_CLASS  : Attributes.StorageSize = 0; Attributes.Alignment = 1; return Attributes;
 
   case mxCELL_CLASS    : break; // Fall down to code below
   case mxSTRUCT_CLASS  : break; // Fall down to code below

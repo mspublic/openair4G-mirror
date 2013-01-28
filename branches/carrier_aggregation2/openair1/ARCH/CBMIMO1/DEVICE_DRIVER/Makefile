@@ -139,7 +139,8 @@ openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma
 ifeq ($(FIRMWARE2010),1)
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
 else
-openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_fw2011.o
+#openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_fw2011.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_user.o
 endif
 ifeq ($(OPENAIR1),1)
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
@@ -170,7 +171,7 @@ else
 openair_rf-objs += $(MAC_XFACE_OBJS)
 endif
 
-openair_rf-objs += $(LOG_OBJS)
+#openair_rf-objs += $(LOG_DIR)/log.o
 
 test:
 	echo $(openair_rf-objs)

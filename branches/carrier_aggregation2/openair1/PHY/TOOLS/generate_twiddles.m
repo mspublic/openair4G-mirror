@@ -246,3 +246,42 @@ end
 
 %fprintf(fid,"unsigned short rev4096[4096];\n")
 fclose(fid)
+
+k=0;
+
+for i=0:11,
+  for n=0:(2^i)-1,
+
+      twiddleFFT_8192(1+(4*k))  = fix(16384*cos(2*pi*n/(2^(i+1))));
+      twiddleIFFT_8192(1+(4*k))  = twiddleFFT_8192(1+(4*k));
+
+      twiddleFFT_8192(2+(4*k))  = fix(16384*sin(2*pi*n/(2^(i+1))));
+      twiddleIFFT_8192(2+(4*k))  = -twiddleFFT_8192(2+(4*k));
+
+      twiddleFFT_8192(3+(4*k))  = -twiddleFFT_8192(2+(4*k));
+      twiddleIFFT_8192(3+(4*k))  = twiddleFFT_8192(2+(4*k));
+
+      twiddleFFT_8192(4+(4*k))  = twiddleFFT_8192(1+(4*k));
+      twiddleIFFT_8192(4+(4*k))  = twiddleFFT_8192(1+(4*k));
+
+
+
+      k=k+1;
+  end
+end
+
+[fid, msg] = fopen("twiddle8192.h","w","ieee-le");
+
+      fprintf(fid,"short twiddle_fft8192[8191*4] = {");
+      fprintf(fid,"%d,%d,%d,%d,\n",twiddleFFT_8192(1:16376));
+      fprintf(fid,"%d,%d,%d,%d};\n\n",twiddleFFT_8192(16377:16380));
+
+      fprintf(fid,"short twiddle_ifft8192[8191*4] = {");
+      fprintf(fid,"%d,%d,%d,%d,\n",twiddleIFFT_8192(1:16376));
+      fprintf(fid,"%d,%d,%d,%d};\n\n",twiddleIFFT_8192(16377:16380));
+      
+
+
+
+%fprintf(fid,"unsigned short rev8192[8192];\n")
+fclose(fid)

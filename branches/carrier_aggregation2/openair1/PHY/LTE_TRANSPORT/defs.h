@@ -145,6 +145,8 @@ typedef struct {
   u32 TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
   u16 B;  
+  /// Length of ACK information (bits)
+  u8 O_ACK;
   /// Pointer to the payload
   u8 *b;             
   /// Pointers to transport block segments
@@ -179,10 +181,14 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-  /// DRMS field for this ULSCH
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   u8 n_DMRS;
+  /// n_DMRS2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
   /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
   u8 control_only;
+  /// Flag to indicate that this is a calibration ULSCH (i.e. no MAC SDU and filled with TDD calibration information)
+  //  int calibration_flag;
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
@@ -228,8 +234,12 @@ typedef struct {
   u8 Mdlharq;  
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   u8 Kmimo;
-  // downlink power offset field
+  /// downlink power offset field
   u8 dl_power_off;
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots 
+  s16 sqrt_rho_a;
+  /// amplitude of PDSCH (compared to RS) in symbols containing pilots
+  s16 sqrt_rho_b;
 } LTE_eNB_DLSCH_t;
 
 #define PUSCH_x 2
@@ -254,8 +264,6 @@ typedef struct {
   u8 O_RI;
   /// Pointer to ACK
   u8 o_ACK[4];
-  /// Length of ACK information (bits)
-  u8 O_ACK;
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
   u8 O_CQI_MIN;
   /// ACK/NAK Bundling flag
@@ -290,8 +298,6 @@ typedef struct {
   u16 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
-  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
-  u8 n_DMRS2;
   // for cooperative communication
   u8 cooperation_flag;
   /// RNTI attributed to this ULSCH
@@ -300,6 +306,8 @@ typedef struct {
   s16 f_pusch;
   /// Po_PUSCH - target output power for PUSCH
   s16 Po_PUSCH;
+  /// PHR - current power headroom (based on last PUSCH transmission)
+  s16 PHR;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -327,6 +335,8 @@ typedef struct {
   u32 TBS;
   /// The payload + CRC size in bits  
   u16 B; 
+  /// Length of ACK information (bits)
+  u8 O_ACK;
   /// Pointer to the payload
   u8 *b;  
   /// Pointers to transport block segments
@@ -335,7 +345,7 @@ typedef struct {
   u32 RTC[8]; 
   /// Index of current HARQ round for this ULSCH
   u8 round; 
-  /// MCS format for this DLSCH
+  /// MCS format for this ULSCH
   u8 mcs; 
   /// Redundancy-version of the current sub-frame
   u8 rvidx;
@@ -361,8 +371,12 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-  /// DRMS field for this ULSCH
+  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
   u8 n_DMRS;
+  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
+  /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
+  //  int calibration_flag;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {
@@ -394,8 +408,6 @@ typedef struct {
   u8 O_RI;
   /// Pointer to ACK
   u8 o_ACK[4];
-  /// Length of ACK information (bits)
-  u8 O_ACK;
   /// ACK/NAK Bundling flag
   u8 bundling;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
@@ -426,8 +438,6 @@ typedef struct {
   u32 Msg3_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
-  u8 n_DMRS2;
   /// cyclic shift for DM RS
   u8 cyclicShift;
   /// cooperation flag
@@ -459,6 +469,8 @@ typedef struct {
   MIMO_mode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
   s16 w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
+  /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  double w_abs[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
   s16 *d[MAX_NUM_DLSCH_SEGMENTS];
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
@@ -495,8 +507,10 @@ typedef struct {
   u8 rank;
   /// CRNTI of UE
   u16 crnti; ///user id (rnti) of connected UEs
-  /// Timing offset
-  s32 UE_timing_offset; ///timing offset of connected UEs (for timing advance signalling)
+  /// Initial timing offset estimate from PRACH for RAR
+  s32 UE_timing_offset; 
+  /// Timing advance estimate from PUSCH for MAC timing advance signalling
+  s32 timing_advance_update; 
   /// Current mode of UE (NOT SYCHED, RAR, PUSCH)
   UE_MODE_t mode;
   /// Current sector where UE is attached
@@ -504,31 +518,32 @@ typedef struct {
   /// 
   u32 dlsch_sliding_cnt;
   ///
+  u32 dlsch_ACK[8];
   u32 dlsch_NAK[8];
   ///
   u32 dlsch_l2_errors;
   ///
-  u32 dlsch_trials[4];
+  u32 dlsch_trials[8];
   ///
   u32 ulsch_errors[3];
   ///
   u32 ulsch_consecutive_errors[3];
   ///
-  u32 ulsch_decoding_attempts[3][4];
+  u32 ulsch_decoding_attempts[3][8];
   ///
-  u32 ulsch_round_errors[3][4];
-  u32 ulsch_decoding_attempts_last[3][4];
-  u32 ulsch_round_errors_last[3][4];
-  u32 ulsch_round_fer[3][4];
+  u32 ulsch_round_errors[3][8];
+  u32 ulsch_decoding_attempts_last[3][8];
+  u32 ulsch_round_errors_last[3][8];
+  u32 ulsch_round_fer[3][8];
   s8 dlsch_mcs_offset;
   /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
   u8 dlsch_mcs1;
   /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
   u8 dlsch_mcs2;
   //  SRS_param_t SRS_parameters;
-  unsigned int total_TBS;
+  int total_TBS;
   //
-  unsigned int total_TBS_last;
+  int total_TBS_last;
   //
   unsigned int dlsch_bitrate;
   //
@@ -553,8 +568,14 @@ typedef struct {
   u8 active;
   /// Transmission mode
   u8 mode1_flag;
-  // downlink power offset field
+  /// downlink power offset field
   u8 dl_power_off;
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots
+  s16 sqrt_rho_a;
+  /// amplitude of PDSCH (compared to RS) in symbols containing pilots
+  s16 sqrt_rho_b;
+  /// ratio sqrt_rho_a/sqrt_rho_b
+  s16 sqrt_rho_aob;
   /// Current HARQ process id
   u8 current_harq_pid;
   /// Current RB allocation
@@ -612,7 +633,7 @@ typedef enum {
 } PDSCH_t;
 
 typedef enum {
-  pucch_format1,
+  pucch_format1=0,
   pucch_format1a,
   pucch_format1b,
   pucch_format2,
@@ -626,6 +647,8 @@ typedef struct {
   u8 dci_length;
   /// Aggregation level 
   u8 L;
+  /// Position of first CCE of the dci
+  unsigned int nCCE;
   /// flag to indicate that this is a RA response
   u8 ra_flag;
   /// rnti

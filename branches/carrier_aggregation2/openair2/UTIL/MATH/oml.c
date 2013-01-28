@@ -177,7 +177,7 @@ shape_int=ceil(shape);
 	gamma_rn= (-1/scale)*log(mult_var);
 	LOG_D(OTG,"Gamma Random Nb = %lf (scale=%.2f, shape=%.2f)\n", gamma_rn, scale, shape);	
 	return gamma_rn;
-	
+
 }
 
 double cauchy_dist(double scale, double shape ) {
@@ -201,6 +201,12 @@ double cauchy_rn;
 
 }
 
+
+double lognormal_dist(double mean, double std_dev){
+  double lognormal_rn;
+  lognormal_rn= exp(gaussian_dist(mean, std_dev));
+return lognormal_rn;
+}
 
 
 

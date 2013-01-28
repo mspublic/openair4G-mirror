@@ -26,10 +26,9 @@ short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 short conjugate75_2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 short negate[8]__attribute__((aligned(16))) = {-1,-1,-1,-1,-1,-1,-1,-1};
 
-void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
+void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,s32*txdata,u8 slot) {
 
 
-  s32 **txdata=phy_vars_ue->lte_ue_common_vars.txdata;
   u16 len;
   u32 *kHz7_5ptr;
   __m128i *txptr128,*kHz7_5ptr128,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
@@ -68,8 +67,8 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
   //    slot_offset += (len/4);
   len = phy_vars_ue->lte_frame_parms.samples_per_tti/2;
 
-  for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
-    txptr128 = (__m128i *)&txdata[aa][slot_offset];
+  //for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++) {
+    txptr128 = (__m128i *)&txdata[slot_offset];
     kHz7_5ptr128 = (__m128i *)kHz7_5ptr;
       // apply 7.5 kHz
     
@@ -119,7 +118,7 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 slot) {
       txptr128++;
       kHz7_5ptr128++;
     }
-  }
+    //}
 }
 
 
