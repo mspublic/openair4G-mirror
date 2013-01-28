@@ -32,8 +32,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   ncoef = 32767 - coef;
 
 #ifdef DEBUG_PHY
-  if (phy_vars_ue->frame%1 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset);
+  LOG_D(PHY,"frame %d: rx_offset (before) = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset);
 #endif //DEBUG_PHY
 
 
@@ -74,8 +73,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 #ifdef DEBUG_PHY
-  if (phy_vars_ue->frame%1 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
+  LOG_D(PHY,"frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",phy_vars_ue->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
 #endif //DEBUG_PHY
 
 #ifdef CBMIMO1
@@ -84,9 +82,6 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
-int max_val;
-
-#undef DEBUG_PHY
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   LTE_eNB_SRS *lte_eNb_srs,
@@ -99,6 +94,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
   static int max_pos_fil2 = 0;
   int temp, i, aa, max_pos = 0,ind;
+  int max_val=0;
   short Re,Im,ncoef;
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
@@ -157,9 +153,60 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
   
 #ifdef DEBUG_PHY
-  if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
+  //LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
 #endif //DEBUG_PHY
   
   return(max_pos_fil2);
+}
+
+
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,u8 UE_id,u8 subframe)
+{
+  static int first_run=1;
+  static int max_pos_fil2=0;
+  int temp, i, aa, max_pos=0, max_val=0;
+  short Re,Im,coef=24576;
+  short ncoef = 32768 - coef;
+
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  LTE_eNB_PUSCH *eNB_pusch_vars = phy_vars_eNB->lte_eNB_pusch_vars[UE_id];
+  s32 **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time[0];
+
+  u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
+  u8 Ns = 1; //we take the estimate from the second slot
+  u8 cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+		     phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
+		     frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
+
+  cyclic_shift = 0;
+  int sync_pos = frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12;
+
+
+  for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
+      temp = 0;
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	Re = ((s16*)ul_ch_estimates_time[aa])[(i<<2)];
+	Im = ((s16*)ul_ch_estimates_time[aa])[1+(i<<2)];
+	temp += (Re*Re/2) + (Im*Im/2);
+      }
+      if (temp > max_val) {
+	max_pos = i; 
+	max_val = temp;
+      }
+  }
+
+
+  // filter position to reduce jitter
+  if (first_run == 1){
+    first_run=0;
+    max_pos_fil2 = max_pos;
+  }
+  else
+    max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
+  
+#ifdef DEBUG_PHY
+  LOG_I(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",phy_vars_eNB->frame,max_pos,max_pos_fil2,sync_pos);
+#endif //DEBUG_PHY
+
+  return(max_pos_fil2-sync_pos);
 }

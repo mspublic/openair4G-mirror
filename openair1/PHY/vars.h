@@ -9,7 +9,9 @@ unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 unsigned int DAQ_MBOX;
 #endif
-
+char* namepointer_chMag ;
+char fmageren_name2[512];
+char* namepointer_log2;
 //PHY_CONFIG *PHY_config;
 
 #include "PHY/TOOLS/twiddle64.h"
@@ -41,7 +43,7 @@ short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twidd
 CHBCH_RX_t rx_mode = ML;
 #endif //OPENAIR_LTE
 
-unsigned short rev[1024],rev_times4[4096],rev_half[512];
+unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 u16 rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048];
 
 #ifdef OPENAIR_LTE
@@ -61,12 +63,12 @@ unsigned char NB_UE_INST=0;
 unsigned char NB_INST=0;
 #endif
 
-
+int flagMag;
 //extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 //extern  double ABS_SINR_eff_BLER_table[MCS_COUNT][9][9];
 //extern  double ABS_beta[MCS_COUNT];odi
 double sinr_bler_map[MCS_COUNT][2][16];
-
+double sinr_bler_map_up[MCS_COUNT][2][16];
 
 //for MU-MIMO abstraction using MIESM
 //this 2D arrarays contains SINR, MI and RBIR in rows 1, 2, and 3 respectively

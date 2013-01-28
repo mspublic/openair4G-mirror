@@ -47,14 +47,18 @@ __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 s16 get_PL(u8 Mod_id,u8 eNB_index) {
 
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
-
+  int RSoffset;
   /*  
     msg("get_PL : rssi %d, eNB power %d\n",
 	dB_fixed(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,
     phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower);
   */
+  if (phy_vars_ue->lte_frame_parms.mode1_flag == 1)
+    RSoffset = 6;
+  else
+    RSoffset = 3;
 
-  return((s16)(phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->PHY_measurements.rssi) + 
+  return((s16)(phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->PHY_measurements.rssi/RSoffset) + 
   	       phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower));
 }
 
@@ -104,7 +108,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
       for (l=0,nu=0;l<=(4-phy_vars_ue->lte_frame_parms.Ncp);l+=(4-phy_vars_ue->lte_frame_parms.Ncp),nu=3) {
 	k = (nu + nushift)%6;
-	LOG_D(PHY,"[UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
+	//LOG_D(PHY,"[UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
 	for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
 	  
@@ -128,7 +132,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 		  off = (1+k)<<2;
 	      }
 	  
-
+	      /*
 	      if ((eNB_offset==0)&&(l==0)) {
 		for (i=0;i<6;i++,off2+=4)
 		  phy_vars_ue->PHY_measurements.rssi += ((rxF[off2]*rxF[off2])+(rxF[off2+1]*rxF[off2+1]));
@@ -137,6 +141,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 		for (i=0;i<6;i++,off2+=4)
 		  phy_vars_ue->PHY_measurements.rssi += ((rxF[off2]*rxF[off2])+(rxF[off2+1]*rxF[off2+1]));
 	      }
+	      */
 	      //	  printf("slot %d, rb %d => rsrp %d, rssi %d\n",slot,rb,phy_vars_ue->PHY_measurements.rsrp[eNB_offset],phy_vars_ue->PHY_measurements.rssi);
 	    }
 	}
@@ -149,8 +154,9 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
       //      phy_vars_ue->PHY_measurements.rsrp[eNB_offset] = phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_offset][0][0]/(2*phy_vars_ue->lte_frame_parms.N_RB_DL);
       if (eNB_offset == 0) {
-	phy_vars_ue->PHY_measurements.rssi/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
-	phy_vars_ue->PHY_measurements.rssi*=rx_power_correction;
+	//	phy_vars_ue->PHY_measurements.rssi/=(24*phy_vars_ue->lte_frame_parms.N_RB_DL);
+	//	phy_vars_ue->PHY_measurements.rssi*=rx_power_correction;
+	phy_vars_ue->PHY_measurements.rssi=phy_vars_ue->PHY_measurements.rsrp[0]*24/2;
       }
       if (phy_vars_ue->PHY_measurements.rssi>0)
 	phy_vars_ue->PHY_measurements.rsrq[eNB_offset] = 100*phy_vars_ue->PHY_measurements.rsrp[eNB_offset]*phy_vars_ue->lte_frame_parms.N_RB_DL/phy_vars_ue->PHY_measurements.rssi;
@@ -163,21 +169,18 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
       phy_vars_ue->PHY_measurements.rssi = phy_vars_ue->PHY_measurements.rx_power_avg[0];
 
     }
-    if (((phy_vars_ue->frame %100) == 0) && (slot == 1)) {
-
-
-
-
+    if (((phy_vars_ue->frame %10) == 0) && (slot == 1)) {
 
       if (eNB_offset == 0)
-	LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rssi %3.1f dBm\n",phy_vars_ue->Mod_id,
-	      phy_vars_ue->frame,slot,10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB);
-      LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rsrp/rsrq[%d][%d] %3.1f (%3.1f) dBm %3.1f dB\n",
+	LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB)\n",phy_vars_ue->Mod_id,
+	      phy_vars_ue->frame,slot,10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,
+	      10*log10(phy_vars_ue->PHY_measurements.rssi));
+      LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f (%3.1f) dBm, rsrq: %3.1f dB\n",
 	    phy_vars_ue->Mod_id,
 	    phy_vars_ue->frame,slot,eNB_offset,
 	    (eNB_offset>0) ? phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1] : phy_vars_ue->lte_frame_parms.Nid_cell,
 	    (dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12),
-	    (10*log10(phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_offset][0][0])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12)-6.02,
+	    (10*log10(phy_vars_ue->PHY_measurements.rx_power_avg[0])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms.N_RB_DL*12),
 	    (10*log10(phy_vars_ue->PHY_measurements.rsrq[eNB_offset]))-20);
     
     }

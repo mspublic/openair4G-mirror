@@ -230,15 +230,12 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   init_signal_buffers(frame_parms);
 #endif
    
-#ifndef EXPRESSMIMO_TARGET
   // Initialize fft variables
   init_fft(NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev);   // TX/RX
   init_fft(4*NUMBER_OF_OFDM_CARRIERS,2+LOG2_NUMBER_OF_OFDM_CARRIERS,rev_times4);   // Synch
   init_fft(NUMBER_OF_OFDM_CARRIERS/2,LOG2_NUMBER_OF_OFDM_CARRIERS-1,rev_half);   // for interpolation of channel est
   init_fft(2048,11,rev2048);
   init_fft(1024,10,rev1024);
-#endif //EXPRESSMIMO_TARGET
-  
   
   twiddle_fft = (short *)malloc16(4095*4*2);
   twiddle_ifft = (short *)malloc16(4095*4*2);
@@ -291,6 +288,14 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
     memcpy(twiddle_ifft_times4,&twiddle_ifft4096[0],4095*4*2);
     memcpy(twiddle_fft_half,&twiddle_fft512[0],511*4*2);
     memcpy(twiddle_ifft_half,&twiddle_ifft512[0],511*4*2);
+    break;
+  case 2048:
+    memcpy(twiddle_fft,&twiddle_fft2048[0],2047*4*2);
+    memcpy(twiddle_ifft,&twiddle_ifft2048[0],2047*4*2);
+    memcpy(twiddle_fft_times4,&twiddle_fft4096[0],4095*4*2);
+    memcpy(twiddle_ifft_times4,&twiddle_ifft4096[0],4095*4*2);
+    memcpy(twiddle_fft_half,&twiddle_fft1024[0],1023*4*2);
+    memcpy(twiddle_ifft_half,&twiddle_ifft1024[0],1023*4*2);
     break;
   default:
     memcpy(twiddle_fft,&twiddle_fft64[0],63*4*2);
