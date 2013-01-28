@@ -123,11 +123,17 @@ void Logger::error(const string& message, bool logFormatting) {
 
 void Logger::log(const string& message, LOG_LEVEL level, bool logFormatting) {
 	/**
-	 * Return immediately if we are asked not to log at all
+	 * Quit if we are asked not to log at all
 	 */
 	if (logOutputChannel == Logger::NONE)
 		return;
 
+	/**
+	 * Quit if requested logging level is not allowed in the configuration
+	 */
+	if (logLevel > level)
+		return;
+ 
 	/**
 	 * Ensure that there is only one here at any given time
 	 */
@@ -158,6 +164,10 @@ void Logger::log(const string& message, LOG_LEVEL level, bool logFormatting) {
 
 void Logger::setLogLevel(Logger::LOG_LEVEL logLevel) {
 	this->logLevel = logLevel;
+}
+
+string Logger::getCurrentLogLevelName() {
+	return logLevelString[logLevel];
 }
 
 void Logger::setLogOutputChannel(Logger::LOG_OUTPUT_CHANNEL logOutputChannel) {
