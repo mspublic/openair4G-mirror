@@ -55,6 +55,7 @@ const string Configuration::CONF_SERVER_PORT_PARAMETER("CONF_SERVER_PORT");
 const string Configuration::CONF_WIRELESS_STATE_UPDATE_INTERVAL("CONF_WIRELESS_STATE_UPDATE_INTERVAL");
 const string Configuration::CONF_LOCATION_UPDATE_INTERVAL("CONF_LOCATION_UPDATE_INTERVAL");
 const string Configuration::CONF_IPV6_ENABLED("CONF_IPV6_ENABLED");
+const string Configuration::CONF_LOG_LEVEL("CONF_LOG_LEVEL");
 
 Configuration::Configuration(const vector<string>& configurationFileNameVector, Logger& logger)
 	: configurationFileNameVector(configurationFileNameVector), logger(logger) {
@@ -276,10 +277,19 @@ bool Configuration::parseParameterId(const string& param, string& parameterStrin
 }
 
 bool Configuration::setValue(const string& parameter, const string& value) {
+	/**
+	 * Parse CONF_SERVER_PORT parameter
+	 */
 	if (!parameter.compare(0, CONF_SERVER_PORT_PARAMETER.length(), CONF_SERVER_PORT_PARAMETER)) {
 		setServerPort(atoi(value.c_str()));
+	/**
+	 * Parse CONF_WIRELESS_STATE_UPDATE_INTERVAL parameter
+	 */
 	} else if (!parameter.compare(0, CONF_WIRELESS_STATE_UPDATE_INTERVAL.length(), CONF_WIRELESS_STATE_UPDATE_INTERVAL)) {
 		setWirelessStateUpdateInterval(atoi(value.c_str()));
+	/**
+	 * Parse CONF_LOCATION_UPDATE_INTERVAL parameter
+	 */
 	} else if (!parameter.compare(0, CONF_LOCATION_UPDATE_INTERVAL.length(), CONF_LOCATION_UPDATE_INTERVAL)) {
 		/**
 		 * This configuration parameter is removed because Location Update is now sent by
@@ -290,15 +300,29 @@ bool Configuration::setValue(const string& parameter, const string& value) {
 		 * CONF_LOCATION_UPDATE_INTERVAL = 30
 		 */
 		setLocationUpdateInterval(atoi(value.c_str()));
+	/**
+	 * Parse CONF_IPV6_ENABLED parameter
+	 */
 	} else if (!parameter.compare(0, CONF_IPV6_ENABLED.length(), CONF_IPV6_ENABLED)) {
 		if (atoi(value.c_str()) == 1)
 			ipv6Enabled = true;
 		else if (atoi(value.c_str()) == 0)
 			ipv6Enabled = false;
 		else
-			throw Exception(CONF_IPV6_ENABLED + " can be 1 or 0, invalid value inserted", logger);
+			throw Exception(CONF_IPV6_ENABLED + " can be 0 or 1, invalid value (" + value + ") provided", logger);
 
 		logger.info(string("IPv6 is ") + ((ipv6Enabled) ? "enabled" : "disabled"));
+	/**
+	 * Parse CONF_LOG_LEVEL parameter
+	 */
+	} else if (!parameter.compare(0, CONF_LOG_LEVEL.length(), CONF_LOG_LEVEL)) {
+		if (atoi(value.c_str()) < 0 || atoi(value.c_str()) > 4)
+			throw Exception(CONF_LOG_LEVEL + " can be 0 to 4, invalid value (" + value + ") provided", logger);
+		/**
+		 * Update the log level
+		 */
+		logger.setLogLevel(static_cast<Logger::LOG_LEVEL>(atoi(value.c_str())));
+		logger.info("Log level is updated to " + logger.getCurrentLogLevelName());
 	}
 
 	return true;
@@ -324,7 +348,7 @@ void Configuration::setServerPort(int serverPort) {
 	if (serverPort > 0 && serverPort < 65535)
 		this->serverPort = serverPort;
 	/**
-	 * Keep default value otherwise
+	 * Do nothing and so keep the default value otherwise
 	 */
 }
 

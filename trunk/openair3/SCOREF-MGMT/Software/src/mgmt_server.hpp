@@ -48,6 +48,7 @@
 #include "mgmt_packet_handler.hpp"
 #include "mgmt_client_manager.hpp"
 #include "mgmt_configuration.hpp"
+#include <boost/thread/mutex.hpp>
 #include "util/mgmt_log.hpp"
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -120,21 +121,28 @@ class ManagementServer : public IManagementPacketSender {
 		 * @param size Amount of data to be sent
 		 */
 		void handleSend(const boost::system::error_code& errorCode, size_t size);
+		/**
+		 * Sends given buffer over the socket
+		 *
+		 * @param buffer Buffer to be sent of type unsigned char vector
+		 * @param recipient Destination of type udp::endpoint
+		 */
+		bool send(const vector<unsigned char>& buffer, const boost::asio::ip::udp::endpoint& recipient);
 
 	private:
 		/**
 		 * The io_service object that the datagram socket will use to dispatch
 		 * handlers for any asynchronous operation performed on the socket
 		 */
-		boost::asio::io_service& ioService;
+		ba::io_service& ioService;
 		/**
 		 * udp::socket object
 		 */
-		boost::asio::ip::udp::socket socket;
+		ba::ip::udp::socket socket;
 		/**
 		 * UDP connection's recipient
 		 */
-		boost::asio::ip::udp::endpoint recipient;
+		ba::ip::udp::endpoint recipient;
 		/**
 		 * RX buffer
 		 */
@@ -171,6 +179,10 @@ class ManagementServer : public IManagementPacketSender {
 		 * Response packets are generated using PacketHandler class
 		 */
 		PacketHandler packetHandler;
+		/**
+		 * Mutex to control data transmission
+		 */
+		boost::mutex txMutex;
 };
 
 #endif /* MGMT_SERVER_H_ */

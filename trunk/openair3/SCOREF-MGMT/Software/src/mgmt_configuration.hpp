@@ -95,6 +95,10 @@ class Configuration : public IPv6Configuration {
 		 * Parameter string for IPv6 enabling
 		 */
 		static const string CONF_IPV6_ENABLED;
+		/**
+		 * Parameter string for log level
+		 */
+		static const string CONF_LOG_LEVEL;
 
 	public:
 		/**
@@ -234,6 +238,10 @@ class Configuration : public IPv6Configuration {
 		 * Location Update interval (in seconds)
 		 */
 		u_int8_t locationUpdateInterval;
+		/**
+		 * Log level configuration
+		 */
+		Logger::LOG_LEVEL logLevel;
 		/**
 		 * Logger object reference
 		 */

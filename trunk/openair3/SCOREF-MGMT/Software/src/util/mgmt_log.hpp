@@ -134,6 +134,10 @@ class Logger {
 		 */
 		void setLogLevel(Logger::LOG_LEVEL logLevel);
 		/**
+		 * Returns the string name of current log level integer
+		 */
+		string getCurrentLogLevelName();
+		/**
 		 * Updates configured log output channel with given value
 		 *
 		 * @param logOutputChannel New log output channel of type Logger::LOG_OUTPUT_CHANNEL

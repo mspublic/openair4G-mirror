@@ -1,4 +1,9 @@
 
+v1.8.1
+* CONF_LOG_LEVEL parameter added to MGMT.conf file with levels from 0 to 4
+* ManagementServer::send() method added to add a boost::lock_guard easier
+* Bugfix Logger::log() was not checking against log levels before printing out given message
+
 v1.8.0 (released on January 23, 2013)
 * No changes on anything but version number
 

@@ -117,10 +117,7 @@ bool ManagementServer::sendWirelessStateRequest() {
 	/**
 	 * Send serialized data thru socket
 	 */
-	socket.async_send_to(ba::buffer(txData), recipient,
-			boost::bind(&ManagementServer::handleSend, this,
-					ba::placeholders::error,
-					ba::placeholders::bytes_transferred));
+	this->send(txData, recipient);
 
 	geoNetworkingClient->waitingForReply();
 
@@ -160,7 +157,7 @@ void ManagementServer::handleReceive(const boost::system::error_code& error, siz
 		rxData.resize(size);
 
 		if (!error) {
-			logger.info("Following " + boost::lexical_cast<string>(size) + " byte(s) received from " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
+			logger.debug("Following " + boost::lexical_cast<string>(size) + " byte(s) received from " + recipient.address().to_string() + ":" + boost::lexical_cast<string>(recipient.port()));
 			Util::printHexRepresentation(rxData.data(), size, logger);
 
 			/**
@@ -252,10 +249,7 @@ void ManagementServer::handleClientData() {
 			/**
 			 * Send serialized data thru socket
 			 */
-			socket.async_send_to(ba::buffer(txData), recipient,
-					boost::bind(&ManagementServer::handleSend, this,
-							ba::placeholders::error,
-							ba::placeholders::bytes_transferred));
+			this->send(txData, recipient);
 
 			/**
 			 * Reset TX buffer
@@ -293,10 +287,7 @@ void ManagementServer::handleClientData() {
 			/**
 			 * Send serialized data thru socket
 			 */
-			socket.async_send_to(ba::buffer(txData), udp::endpoint(udp::v4(), gnClient->getPort()),
-					boost::bind(&ManagementServer::handleSend, this,
-							ba::placeholders::error,
-							ba::placeholders::bytes_transferred));
+			this->send(txData, udp::endpoint(udp::v4(), gnClient->getPort()));
 
 			/**
 			 * Reset TX buffer
@@ -334,10 +325,7 @@ void ManagementServer::handleClientData() {
 			/**
 			 * Send thru socket
 			 */
-			socket.async_send_to(ba::buffer(txData), udp::endpoint(udp::v4(), gnClient->getPort()),
-					boost::bind(&ManagementServer::handleSend, this,
-							ba::placeholders::error,
-							ba::placeholders::bytes_transferred));
+			this->send(txData, udp::endpoint(udp::v4(), gnClient->getPort()));
 
 			delete result;
 			break;
@@ -372,10 +360,7 @@ void ManagementServer::handleClientData() {
 			 * Send serialized data thru socket
 			 */
 			logger.info("Sending a LOCATION_TABLE_REQUEST packet");
-			socket.async_send_to(ba::buffer(txData), recipient,
-					boost::bind(&ManagementServer::handleSend, this,
-							ba::placeholders::error,
-							ba::placeholders::bytes_transferred));
+			this->send(txData, recipient);
 
 			break;
 
@@ -389,6 +374,21 @@ void ManagementServer::handleSend(const boost::system::error_code& errorCode, si
 	/**
 	 * Just print information about the data that has just been sent
 	 */
-	logger.info("Following content (size=" + boost::lexical_cast<string>(size) + ") has been written onto the socket");
+	logger.debug("Following content (size=" + boost::lexical_cast<string>(size) + ") has been written onto the socket");
 	Util::printHexRepresentation(txData.data(), size, logger);
 }
+
+bool ManagementServer::send(const vector<unsigned char>& buffer, const boost::asio::ip::udp::endpoint& recipient) {
+	/**
+	 * Ensure that there's only one entering here at any given time
+	 */
+	boost::lock_guard<boost::mutex> lock(txMutex);
+
+	socket.async_send_to(ba::buffer(buffer), recipient,
+			boost::bind(&ManagementServer::handleSend, this,
+					ba::placeholders::error,
+					ba::placeholders::bytes_transferred));
+
+	return true;
+}
+
