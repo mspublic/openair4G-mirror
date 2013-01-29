@@ -336,7 +336,7 @@ u16 attach_ue2(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu) {
   mac_rrc_lite_data_ind(0,132,0,dcch_sdu_eNB,dcch_sdu_eNB_len,0,0);
   
   // simulate transmission of RRCConnectionSetupComplete
-  rlc_status = mac_rlc_status_ind(1,134,
+  rlc_status = mac_rlc_status_ind(1,134,0,
 				  DCCH,
 				  100);
   sdu_len = mac_rlc_data_req(1,133,
@@ -363,7 +363,7 @@ u16 attach_ue3(char *dcch_sdu_ue, char dcch_sdu_ue_len, char *dcch_sdu_eNB) {
 
   /// ... and generation of RRCConnectionReconfiguration
   /// First RLC-AM Control SDU (ACK)
-  rlc_status = mac_rlc_status_ind(0,135,
+  rlc_status = mac_rlc_status_ind(0,135,1,
 				  DCCH,
 				  100);
 
@@ -379,7 +379,7 @@ u16 attach_ue3(char *dcch_sdu_ue, char dcch_sdu_ue_len, char *dcch_sdu_eNB) {
 		   NULL);
 
   // now RRC message
-  rlc_status = mac_rlc_status_ind(0,136,
+  rlc_status = mac_rlc_status_ind(0,136,1,	
 				  DCCH,
 				  100);
 
@@ -408,7 +408,7 @@ u16 attach_ue4(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu_ue) {
   // ... and generation of RRCConnectionReconfigurationComplete
 
 
-  rlc_status = mac_rlc_status_ind(1,135,
+  rlc_status = mac_rlc_status_ind(1,135,0,
 				  DCCH,
 				  100);
 
@@ -416,7 +416,7 @@ u16 attach_ue4(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu_ue) {
 			     DCCH,
 			     dcch_sdu_ue);
 
-  rlc_status = mac_rlc_status_ind(1,136,
+  rlc_status = mac_rlc_status_ind(1,136,0,
 				  DCCH,
 				  100);
 
@@ -477,8 +477,7 @@ int main (int argc, char **argv) {
 
   // Generate eNB SI
   if (args.input_sib == 0) {
-    init_SI(0);
-    openair_rrc_on(0,1);
+    openair_rrc_lite_eNB_init(0);
   }
   else {
     printf("Got SI from files (%d,%d,%d,%d,%d)\n",args.input_sib,args.input1_sdu_flag,args.input2_sdu_flag);
@@ -491,28 +490,28 @@ int main (int argc, char **argv) {
     if (args.RRCmessage == RRCSIB1) {
       if (args.input1_sdu_flag == 1) {
 	for (i=0;i<args.input1_sdu_len;i++)
-	  printf("%02x ",args.input1_sdu[i]);
+	  printf("%02x",args.input1_sdu[i]);
 	printf("\n");
        	ue_decode_si(0,142,0,args.input1_sdu,args.input1_sdu_len);
       }
       else {
 	printf("\n\nSIB1\n\n");
 	for (i=0;i<eNB_rrc_inst[0].sizeof_SIB1;i++)
-	  printf("%02x ",eNB_rrc_inst[0].SIB1[i]);
+	  printf("%02x",eNB_rrc_inst[0].SIB1[i]);
 	printf("\n");
       }
     }
     else if (args.RRCmessage == RRCSIB2_3) {
       if (args.input1_sdu_flag == 1) {
 	for (i=0;i<args.input2_sdu_len;i++)
-	  printf("%02x ",args.input2_sdu[i]);
+	  printf("%02x",args.input2_sdu[i]);
 	printf("\n");
 	ue_decode_si(0,149,0,args.input1_sdu,args.input1_sdu_len);
       }
       else {
 	printf("\n\nSIB2_3\n\n");
 	for (i=0;i<eNB_rrc_inst[0].sizeof_SIB23;i++)
-	  printf("%02x ",eNB_rrc_inst[0].SIB23[i]);
+	  printf("%02x",eNB_rrc_inst[0].SIB23[i]);
 	printf("\n");
       }
     }
