@@ -239,6 +239,12 @@ typedef struct {
 #define DRX_CMD 30
 #define SHORT_PADDING 31
 
+#ifdef Rel10
+// MCH LCHAN IDs (table6.2.1-4 TS36.321)
+#define MCCH_LCHANID 0
+#define MCH_SCHDL_INFO 30
+#endif
+
 // ULSCH LCHAN IDs
 #define EXTENDED_POWER_HEADROOM 25
 #define POWER_HEADROOM 26
@@ -665,7 +671,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 @param nCCE Pointer to current nCCE count
 @param mcch_flag indicates the  MCCH subframe
 */
-void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned int *nCCE, u8 mcch_flag); 
+void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb, u8 mcch_flag); 
 
 /** \brief ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
