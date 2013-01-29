@@ -757,6 +757,119 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }
+
+/*
+#ifdef Rel10
+unsigned char generate_mch_header( unsigned char *mac_header,
+				   unsigned char num_sdus,
+				   unsigned short *sdu_lengths,
+				   unsigned char *sdu_lcids,
+				   unsigned char msi,
+				   unsigned char short_padding,
+				   unsigned short post_padding) {
+
+  SCH_SUBHEADER_FIXED *mac_header_ptr = (SCH_SUBHEADER_FIXED *)mac_header;
+  u8 first_element=0,last_size=0,i;
+  u8 mac_header_control_elements[2*num_sdus],*ce_ptr;
+
+  ce_ptr = &mac_header_control_elements[0];
+
+  if ((short_padding == 1) || (short_padding == 2)) {
+    mac_header_ptr->R    = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_PADDING;
+    first_element=1;
+    last_size=1;
+  }
+  if (short_padding == 2) {
+    mac_header_ptr->E = 1;
+    mac_header_ptr++;
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_PADDING;
+    last_size=1;
+  }
+
+  // SUBHEADER for MSI CE
+  if (msi != 0) {// there is MSI MAC Control Element
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      mac_header_ptr+=last_size;
+    }
+    else {
+      first_element = 1;
+    }
+    if (num_sdus*2 < 128) {
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = MCH_SCHDL_INFO;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = num_sdus*2;
+      last_size=2;
+    }
+    else {
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = MCH_SCHDL_INFO;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = (num_sdus*2)&0x7fff;
+      last_size=3;
+    }
+    // Create the MSI MAC Control Element here
+  }
+ 
+  // SUBHEADER for MAC SDU (MCCH+MTCHs)
+  for (i=0;i<num_sdus;i++) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      mac_header_ptr+=last_size;
+    }
+    else {
+      first_element = 1;
+    }
+    if (sdu_lengths[i] < 128) {
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
+      last_size=2;
+    }
+    else {
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = (unsigned short) sdu_lengths[i]&0x7fff;
+      last_size=3;
+    }
+  }
+
+  if (post_padding>0) {// we have lots of padding at the end of the packet
+    mac_header_ptr->E = 1;
+    mac_header_ptr+=last_size;
+    // add a padding element
+    mac_header_ptr->R    = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_PADDING;
+    mac_header_ptr++;
+  }
+  else { // no end of packet padding
+    // last SDU subhead is of fixed type (sdu length implicitly to be computed at UE)
+    mac_header_ptr++;
+  }
+
+  // Copy MSI Control Element to the end of the MAC Header if it presents
+  if ((ce_ptr-mac_header_control_elements) > 0) {
+    // printf("Copying %d bytes for control elements\n",ce_ptr-mac_header_control_elements);
+    memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
+    mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
+  }
+
+  return((unsigned char*)mac_header_ptr - mac_header);
+}
+#endif
+*/
 void add_common_dci(DCI_PDU *DCI_pdu,
 		    void *pdu,
 		    u16 rnti,
@@ -800,7 +913,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 				     1,
 				     Mod_id);
   if (bcch_sdu_length > 0) {
-    LOG_D(MAC,"[eNB %d] Frame %d : BCCH->BCH, Received %d bytes \n",Mod_id,frame,bcch_sdu_length);
+    LOG_I(MAC,"[eNB %d] Frame %d : BCCH->BCH, Received %d bytes \n",Mod_id,frame,bcch_sdu_length);
 
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
       if (bcch_sdu_length <= (mac_xface->get_TBS(0,3)))
@@ -817,6 +930,10 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 	BCCH_alloc_pdu.mcs=5;
       else if (bcch_sdu_length <= (mac_xface->get_TBS(6,3)))
 	BCCH_alloc_pdu.mcs=6;
+      else if (bcch_sdu_length <= (mac_xface->get_TBS(7,3)))
+	BCCH_alloc_pdu.mcs=7;
+      else if (bcch_sdu_length <= (mac_xface->get_TBS(8,3)))
+	BCCH_alloc_pdu.mcs=8;
       
     }
     else {
@@ -834,6 +951,10 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 	BCCH_alloc_pdu_fdd.mcs=5;
       else if (bcch_sdu_length <= (mac_xface->get_TBS(6,3)))
 	BCCH_alloc_pdu_fdd.mcs=6;
+      else if (bcch_sdu_length <= (mac_xface->get_TBS(7,3)))
+	BCCH_alloc_pdu_fdd.mcs=7;
+      else if (bcch_sdu_length <= (mac_xface->get_TBS(8,3)))
+	BCCH_alloc_pdu_fdd.mcs=8;
     }
 
 #if defined(USER_MODE) && defined(OAI_EMU)
@@ -845,7 +966,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 #endif
 
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
-      LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->BCH (TDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
+      LOG_I(MAC,"[eNB] Frame %d : Scheduling BCCH->BCH (TDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
 	    frame,
 	    bcch_sdu_length,
 	    BCCH_alloc_pdu.mcs,
@@ -878,7 +999,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
   int mbsfn_period = 1<<(eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
   int mcch_period = 32<<(eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
 
-  //  LOG_D(MAC,"mbsfn_offset is %d\n", eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset);
+  //LOG_D(MAC,"DUY: offset is %d\n", eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset);
 
   if (frame %  mbsfn_period == eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset){ // MBMS is transmitted in this frame
 
@@ -892,7 +1013,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF1) == MBSFN_FDD_SF1) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -906,7 +1027,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF2) == MBSFN_FDD_SF2) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -921,7 +1042,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF3) == MBSFN_TDD_SF3) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -933,7 +1054,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF3) == MBSFN_FDD_SF3) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -948,7 +1069,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF4) == MBSFN_TDD_SF4) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -963,7 +1084,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF6) == MBSFN_FDD_SF6) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -978,7 +1099,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF7) == MBSFN_TDD_SF7) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -990,7 +1111,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF7) == MBSFN_FDD_SF7) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -1005,7 +1126,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF8) == MBSFN_TDD_SF8) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -1017,7 +1138,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_FDD_SF8) == MBSFN_FDD_SF8) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb, mcch_flag);
 	  return 1;
 	}
       }
@@ -1032,7 +1153,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
 	       ((eNB_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.sf_AllocInfo_r9.buf[0] & MBSFN_TDD_SF9) == MBSFN_TDD_SF9) )
 	    mcch_flag = 1; // MCCH subframe.
 	  else mcch_flag = 0;
-	  MCH_schedule(Mod_id, frame, nprb, nCCE,mcch_flag);
+	  MCH_schedule(Mod_id, frame, nprb,mcch_flag);
 	  return 1;
 	}
       }
@@ -1042,9 +1163,11 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *np
       return 0;
     }
   }
+  else
+    return 0;
 }
 
-void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned int *nCCE, u8 mcch_flag) {
+void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb, u8 mcch_flag) {
   //1. get MCCH from RRC (similar to BCCH ) 
   //2. get MTCHs from RLC (similar to DTCHs?) 
   unsigned char mcch_sdu_length;
@@ -1379,8 +1502,8 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   //  printf("In schedule_ulsch ...\n");
   for (UE_id=0;UE_id<granted_UEs && (nCCE_available > (1<<aggregation));UE_id++) {
     //    printf("Checking UE_id %d/%d\n",UE_id,granted_UEs);
-    //if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0))) //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
-    if (((UE_id%2)==(sched_subframe%2)))
+    if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0))) //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))
+    //if (((UE_id%2)==(sched_subframe%2)))
     { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
       // find next ue to schedule
