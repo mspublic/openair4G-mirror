@@ -16,7 +16,7 @@ endif
 
 obj-m += openair_rf.o
 
-openair_rf-objs += main_module.o irq.o fileops.o exmimo_fw.o
+openair_rf-objs += module_main.o irq.o fileops.o exmimo_fw.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
