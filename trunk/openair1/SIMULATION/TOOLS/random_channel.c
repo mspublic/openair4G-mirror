@@ -81,9 +81,9 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 
   LOG_D(OCM,"[CHANNEL] Doing R_sqrt ...\n");
   if (R_sqrt == NULL) {
-    chan_desc->R_sqrt         = (struct complex**) calloc(nb_taps*sizeof(struct complex*));
+      chan_desc->R_sqrt         = (struct complex**) calloc(nb_taps,sizeof(struct complex*));
     for (i = 0; i<nb_taps; i++) {
-      chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+        chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
       for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
 	chan_desc->R_sqrt[i][j].x = 1.0;
 	chan_desc->R_sqrt[i][j].y = 0.0;
