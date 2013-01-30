@@ -181,6 +181,24 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   //}
   */
 
+  // rx sig 0
+  if (rx_sig != NULL) { 
+    if  (rx_sig[0] != NULL)
+      {
+	//for (i=30720; i<38400; i++)
+	//for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)
+	  {
+          sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
+          //sig2[i] = 10*log10(1.0+(double) ((rx_sig[1][2*i])*(rx_sig[1][2*i])+(rx_sig[1][2*i+1])*(rx_sig[1][2*i+1])));
+	    //sig2[i] = (float) ((rx_sig[0][2*i]));
+	    time2[i] = (float) i;
+	  }
+	fl_set_xyplot_ybounds(form->channel_t_re,30,70);
+	//fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
+	fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+      }
+  }
 
   // PBCH LLR
   if (pbch_llr!=NULL) {
@@ -487,7 +505,7 @@ FILE *csv_fdUL;
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:c:r:i:f:c:oA:C:R:g:N:l:S:T:Q")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:Q")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -571,6 +589,9 @@ FILE *csv_fdUL;
     case 's':
       snr0 = atoi(optarg);
       break;
+    case 'y':
+      n_rx = atoi(optarg);
+      break;
        case 'S':
       subframe = atoi(optarg);
       break;
@@ -640,7 +661,7 @@ FILE *csv_fdUL;
     }
   }
   
-  lte_param_init(1,1,1,extended_prefix_flag,N_RB_DL,frame_type,tdd_config,osf);  
+  lte_param_init(1,n_rx,1,extended_prefix_flag,N_RB_DL,frame_type,tdd_config,osf);  
   printf("Setting mcs = %d\n",mcs);
   printf("n_frames = %d\n",	n_frames);
 
@@ -813,12 +834,12 @@ FILE *csv_fdUL;
   
   printf("PUSCH Beta : ACK %f, RI %f, CQI %f\n",(double)beta_ack[beta_ACK]/8,(double)beta_ri[beta_RI]/8,(double)beta_cqi[beta_CQI]/8);
 
-  UE2eNB = new_channel_desc_scm(1,//PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
-				1,//PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				channel_model,
-				BW,
-				forgetting_factor,
-				0,
+  UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
+                                PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+                                channel_model,
+                                BW,
+                                forgetting_factor,
+                                0,
 				0);
   PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,0);
   PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,0);
@@ -984,7 +1005,7 @@ FILE *csv_fdUL;
 	  break;
       }
       printf("Read in %d samples\n",i/4);
-     // write_output("txsig0UL.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
+      //      write_output("txsig0UL.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
       //    write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       tx_lev = signal_energy(&txdata[0][0],
 			     OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
@@ -1055,8 +1076,7 @@ FILE *csv_fdUL;
 	  }
 
 	  if (ulsch_encoding(input_buffer,
-			     &PHY_vars_UE->lte_frame_parms,
-			     PHY_vars_UE->ulsch_ue[0],
+                         PHY_vars_UE,
 			     harq_pid,
 			     2, // transmission mode
 			     control_only_flag,
@@ -1079,7 +1099,6 @@ FILE *csv_fdUL;
 #ifdef IFFT_FPGA_UE
 	  if (n_frames==1)
 	//    write_output("txsigF0UL.m","txsF0", &PHY_vars_UE->lte_ue_common_vars.txdataF[0][frame_parms->ofdm_symbol_size*nsymb*subframe],frame_parms->ofdm_symbol_size*nsymb,1,4);
-	  
 	  //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
 	  
 	  // do talbe lookup and write results to txdataF2
@@ -1120,8 +1139,8 @@ FILE *csv_fdUL;
 	  
 #else
 	  if (n_frames==1) {
-	  //  write_output("txsigF0UL.m","txsF0", &PHY_vars_UE->lte_ue_common_vars.txdataF[0][512*nsymb*subframe],512*nsymb,1,1);
-	    //write_output("txsigF1.m","txsF1", PHY_vars_UE->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+          write_output("txsigF0UL.m","txsF0", &PHY_vars_UE->lte_ue_common_vars.txdataF[0][512*nsymb*subframe],512*nsymb,1,1);
+	    //write_output("txsigF1.m","txsF1", PHY_vars_UE->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);          
 	  }
 	  tx_lev=0;
 	  for (aa=0; aa<1; aa++) {
@@ -1155,9 +1174,10 @@ FILE *csv_fdUL;
 
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	
-	
-    
-		
+    if (n_frames==1) {	
+        write_output("txsig0UL.m","txs0", &txdata[0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
+        //        write_output("txsig1UL.m","txs1", &txdata[1][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
+    }
 		
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
 	//Set target wideband RX noise level to N0
@@ -1192,11 +1212,11 @@ FILE *csv_fdUL;
 	// multipath channel
       
 	for (i=0;i<PHY_vars_eNB->lte_frame_parms.samples_per_tti;i++) {
-	  for (aa=0;aa<1;aa++) {
-	    s_re[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)]);
-	    s_im[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
-	  }
-	}
+        for (aa=0;aa<1;aa++) {
+                s_re[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)]);
+                s_im[aa][i] = ((double)(((short *)&txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
+        }
+    }
       
       
     	  if (awgn_flag == 0) {	
@@ -1239,13 +1259,14 @@ if(abstx){
 	
 	if (n_frames==1)
 	  printf("Sigma2 %f (sigma2_dB %f), tx_gain %f (%f dB)\n",sigma2,sigma2_dB,tx_gain,20*log10(tx_gain));
+
 	for (i=0; i<PHY_vars_eNB->lte_frame_parms.samples_per_tti; i++) {
 	  for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 	    ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe])[2*i] = (short) ((tx_gain*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	    ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe])[2*i+1] = (short) ((tx_gain*r_im[aa][i]) + (iqim*tx_gain*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	  }
 	}    
-      
+
 	if (n_frames==1) {
 	  printf("rx_level Null symbol %f\n",10*log10((double)signal_energy((int*)&PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][(PHY_vars_eNB->lte_frame_parms.samples_per_tti<<1) -PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	  printf("rx_level data symbol %f\n",10*log10(signal_energy((int*)&PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][160+(PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
@@ -1256,7 +1277,7 @@ if(abstx){
 	if (n_frames==1) {
 	  printf("SNRmeas %f\n",SNRmeas);
       
-	  //write_output("rxsig0UL.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
+      //	  write_output("rxsig0UL.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
 	  //write_output("rxsig1UL.m","rxs1", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
 	}
 #ifndef OFDMA_ULSCH
@@ -1357,7 +1378,7 @@ if(abstx){
 	    printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
 	    if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
 	      print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
-	    dump_ulsch(PHY_vars_eNB,subframe,0);
+        dump_ulsch(PHY_vars_eNB,subframe,0);
 	    exit(-1);
 	  }
 	  round=5;
@@ -1366,7 +1387,7 @@ if(abstx){
 	  errs[round]++;
 	  if (n_frames==1) {
 	    printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
-	    dump_ulsch(PHY_vars_eNB,subframe,0);
+        dump_ulsch(PHY_vars_eNB,subframe,0);
 	    exit(-1);
 	  }
 	  //	    printf("round %d errors %d/%d\n",round,errs[round],trials);
