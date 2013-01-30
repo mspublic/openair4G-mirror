@@ -59,7 +59,7 @@ create_form_lte_scope( void )
     fdui->ia_receiver_button = obj = fl_add_button( FL_PUSH_BUTTON, 620, 660, 130, 40, "IA receiver OFF" );
     fl_set_object_lalign( obj, FL_ALIGN_CENTER );
     fl_set_object_color( obj, FL_RED, FL_BLACK);
-    fl_set_object_callback( obj, ia_receiver_on_off, 0 );
+    //    fl_set_object_callback( obj, ia_receiver_on_off, 0 );
 
     fdui->demod_out = obj = fl_add_xyplot( FL_POINTS_XYPLOT, 20, 400, 570, 140, "PDSCH/PUSCH Decoder Input" );
     fl_set_object_boxtype( obj, FL_EMBOSSED_BOX );
