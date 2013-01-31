@@ -223,7 +223,7 @@ uint8_t do_MIB(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t *buffer)
     break;
   }
 
-  printf("systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  mib.message.dl_Bandwidth,frame_parms->phich_config_common.phich_duration,mib.message.phich_Config.phich_Resource,sfn);
+  printf("[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  mib.message.dl_Bandwidth,frame_parms->phich_config_common.phich_duration,mib.message.phich_Config.phich_Resource,sfn);
   mib.message.phich_Config.phich_Duration = frame_parms->phich_config_common.phich_duration;
   mib.message.systemFrameNumber.buf = &sfn;
   mib.message.systemFrameNumber.size = 1;
@@ -890,7 +890,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[4] = rv[4];
 
 
-  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_mo_Data;
+  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_mo_Signalling; //EstablishmentCause_mo_Data;
 
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.buf = &buf2;
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.size=1;
