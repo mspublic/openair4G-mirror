@@ -57,16 +57,16 @@ end
 
 struct_template_new;
 
-%gps_fix_t_size = gps_data_struct_a.size;
+gps_fix_t_size = gps_data_struct_a.size;
 fifo_dump_emos_UE_size = fifo_dump_emos_struct_UE_a.size;
 fifo_dump_emos_eNb_size = fifo_dump_emos_struct_eNb_a.size;
 
 
 NO_ESTIMATES_DISK = 100;
 if (is_eNb)
-    CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_eNb_size;
+    CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_eNb_size + gps_fix_t_size;
 else
-    CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_UE_size;
+    CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_UE_size  + gps_fix_t_size;
 end    
 
 if (mod(NO_ESTIMATES_DISK,decimation) ~= 0)
