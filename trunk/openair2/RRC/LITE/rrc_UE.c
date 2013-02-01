@@ -381,10 +381,10 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     break;
   case RLC_Config_PR_um_Bi_Directional :
 
-    LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
-	  Mod_id,frame,DRB_config->drb_Identity);
     rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
 			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
+    LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
+	  Mod_id,frame,DRB_config->drb_Identity);
     rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
 		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
 		       RADIO_ACCESS_BEARER,Rlc_info_um);
