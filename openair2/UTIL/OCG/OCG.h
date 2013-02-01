@@ -642,6 +642,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     char local_server[128];	// for the oaisim -c option : 0 = EURECOM web portal; -1 = local; 1 - N or filename = running a specific XML configuration file 
     unsigned char ethernet_flag;
     unsigned char multicast_group;
+    char *multicast_ifname;
     // status
     unsigned char ocg_enabled;
     unsigned char ocm_enabled;

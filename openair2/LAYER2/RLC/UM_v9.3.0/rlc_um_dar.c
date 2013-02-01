@@ -349,8 +349,8 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             }
                             rlcP->reassembly_missing_sn_detected = 0;
                             break;
-#ifdef USER_MODE
                         default:
+#ifdef USER_MODE
                             assert(1 != 1);
 #endif
                             LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
@@ -383,7 +383,7 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_
     signed int in_window;
     u16_t      old_vr_ur;
     if ((rlcP->timer_reordering_running)) {
-        if ((rlcP->timer_reordering  + rlcP->timer_reordering_init)   <= frame) {
+        if ((u32_t)((u32_t)rlcP->timer_reordering  + (u32_t)rlcP->timer_reordering_init)   <= frame) {
             // 5.1.2.2.4   Actions when t-Reordering expires
             //  When t-Reordering expires, the receiving UM RLC entity shall:
             //  -update VR(UR) to the SN of the first UMD PDU with SN >= VR(UX) that has not been received;

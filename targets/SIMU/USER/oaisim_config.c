@@ -314,7 +314,8 @@ void init_oai_emulation() {
   
    oai_emulation.info.nb_master =0;
    oai_emulation.info.ethernet_id=0;
-   oai_emulation.info.multicast_group=0;
+   oai_emulation.info.multicast_group=0; 
+   oai_emulation.info.multicast_ifname=NULL;
    oai_emulation.info.g_log_level= LOG_DEBUG;
    oai_emulation.info.g_log_verbosity= LOG_LOW;
     

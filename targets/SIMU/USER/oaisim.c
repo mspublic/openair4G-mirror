@@ -129,7 +129,7 @@ void exit_fun(const char* s);
 void 
 help (void) {
   printf
-    ("Usage: oaisim -h -a -F -C tdd_config -V -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model\n");
+    ("Usage: oaisim -h -a -F -C tdd_config -V -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model -D multicast network device\n");
 
   printf ("-h provides this help message!\n");
   printf ("-a Activates PHY abstraction mode\n");
@@ -858,6 +858,10 @@ main (int argc, char **argv)
       break;
     case 'g':
       oai_emulation.info.multicast_group = atoi (optarg);
+      break;
+    case 'D':
+      oai_emulation.info.multicast_ifname = malloc(4*sizeof(char)); // allocate 4 byte for the interface name
+      oai_emulation.info.multicast_ifname=optarg;
       break;
     case 'B':
       oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = optarg;
