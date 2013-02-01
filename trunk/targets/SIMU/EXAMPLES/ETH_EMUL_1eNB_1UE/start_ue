@@ -13,6 +13,16 @@ sudo ifconfig oai0 10.0.1.2 netmask 255.255.255.0 broadcast 10.0.1.255
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.2 -t 10.0.1.1 -r 3
 
 echo "to see UE stats, pleasae run : watch_ue script"
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2  > /dev/null"
+if   [ -z $1 ]; then 
+echo "nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3 > /dev/null"
 nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3 > /dev/null
+else
+    if [ $1 = "all" ]; then 
+	echo "nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim -b0 -M1 -p2 -g3 -l7"
+	nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l7 
+    else
+	echo "nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim -b0 -M1 -p2 -g3 -l7 | grep -i $1" 
+	nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l7 | grep -i $1
+    fi	
+fi
 echo "End"
