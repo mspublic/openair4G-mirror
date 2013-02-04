@@ -1641,17 +1641,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if ( ((((unsigned int *)arg)[0]) > 0) && 
 	 ((((unsigned int *)arg)[0]) < 7) ) {
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
-#ifdef OPENAIR2
-      transmission_mode_rrc = (int)(((unsigned int *)arg)[0]);
-#endif
     }
-    if  ((PHY_vars_eNB_g != NULL) && (PHY_vars_eNB_g[0] != NULL))
-      // if eNb is already configured, frame parms are local to it
-      PHY_vars_eNB_g[0]->lte_frame_parms.mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
-    else
-      // global frame parms have not been copied yet to eNB vars
-      frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
-    break;
 
   case openair_SET_ULSCH_ALLOCATION_MODE:
 
@@ -1659,23 +1649,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	 ((((unsigned int *)arg)[0]) <2) )
       openair_daq_vars.ulsch_allocation_mode = (unsigned char)(((unsigned int *)arg)[0]);
     break;
-
-  case openair_SET_RRC_CONN_SETUP:
-#ifdef OPENAIR2
-    RRC_CONNECTION_FLAG = 1;
-    printk("[IOCTL] Setting RRC_CONNECTION_FLAG\n");
-#endif
-  break;
-
-  case openair_SET_COOPERATION_FLAG:
-    if (PHY_vars_eNB_g && PHY_vars_eNB_g[0]) {
-      PHY_vars_eNB_g[0]->cooperation_flag = ((unsigned int *)arg)[0];
-      printk("[IOCTL] Setting cooperation flag to %d\n",PHY_vars_eNB_g[0]->cooperation_flag);
-    }
-    else
-      printk("[IOCTL] Cooperation flag not set, PHY_vars_eNB_g not allocated!!!\n");
-    break;
-
 
   case openair_SET_RX_OFFSET:
     for (i=0;i<number_of_cards;i++) 

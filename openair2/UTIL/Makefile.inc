@@ -50,8 +50,9 @@ OTG_OBJS =  $(OTG_DIR)/otg_tx.o
 OTG_OBJS +=  $(OTG_DIR)/otg.o
 OTG_OBJS +=  $(OTG_DIR)/otg_rx.o
 OTG_OBJS +=  $(OTG_DIR)/otg_kpi.o
+ifeq ($(XFORMS),1)
 OTG_OBJS +=  $(OTG_DIR)/otg_form.o
-
+endif
 MATH_OBJS  =  $(MATH_DIR)/oml.o
 
 CLI_OBJ  =  $(CLI_DIR)/cli_server.o

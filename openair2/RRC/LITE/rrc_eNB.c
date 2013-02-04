@@ -319,7 +319,7 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
 
 #ifdef Rel10
   // This has to come from some top-level configuration
-  eNB_rrc_inst[Mod_id].MBMS_flag = 1;
+  eNB_rrc_inst[Mod_id].MBMS_flag = 0;
   /// MCCH INIT
   init_MCCH(Mod_id);
 #endif

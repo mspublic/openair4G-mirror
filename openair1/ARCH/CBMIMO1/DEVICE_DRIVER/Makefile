@@ -135,17 +135,6 @@ openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/register.o
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/init.o
 
-# Sched 
-ifeq ($(FIRMWARE2010),1)
-openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
-else
-#openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_fw2011.o
-openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_user.o
-endif
-ifeq ($(OPENAIR1),1)
-openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
-endif
-
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/lte_parms.o
