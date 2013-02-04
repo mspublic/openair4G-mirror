@@ -162,12 +162,14 @@ char * hdr_payload=NULL;
 	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %.2f, RTT MAX(one way) ms: %.2f \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 
 	/* xforms part: add metrics  */	
+#ifdef XFORMS
 	if (g_otg->curve==1){ 
   	if (g_otg->owd_radio_access==0)
     	add_tab_metric(src, dst, otg_info->rx_pkt_owd[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);
-    else
+	else
     	add_tab_metric(src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst],  otg_hdr_rx->time);    
-  }
+	}
+#endif
 
 
   

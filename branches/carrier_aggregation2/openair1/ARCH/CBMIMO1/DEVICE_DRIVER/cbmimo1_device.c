@@ -100,10 +100,12 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
          openair_daq_vars.hw_frame,
          openair_daq_vars.slot_count);
 
+  /*
   if (PHY_vars_eNB_g!=NULL)
     dump_frame_parms(&PHY_vars_eNB_g[0]->lte_frame_parms);
   else if (PHY_vars_UE_g!=NULL)
     dump_frame_parms(&PHY_vars_UE_g[0]->lte_frame_parms);
+  */
 
   openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
 

@@ -13,7 +13,7 @@ CFLAGS += -O2
 
 SRC = synctest.c condtest.c
 
-RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
+RTAI_OBJ = synctest.o #sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
 OBJ = $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
 
 TOP_DIR = $(OPENAIR1_DIR)
@@ -55,7 +55,7 @@ endif
 CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
 CFLAGS += -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
-CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
+CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 #-DDLSCH_THREAD #-DULSCH_THREAD
 
 #only for CBMIMO1
 ifdef CBMIMO1
@@ -80,6 +80,8 @@ endif
 
 RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
 LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
+
+CFLAGS += -DRel10
 
 all: condtest synctest
 
