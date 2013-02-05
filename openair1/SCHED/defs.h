@@ -191,6 +191,8 @@ void phy_procedures_eNB_TX(u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstractio
 */
 void phy_procedures_eNB_RX(u8 last_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
+void mrpsch_procedures_ue(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+
 /*!
   \brief Scheduling for eNB TX procedures in TDD S-subframes.  
   @param next_slot Index of next slot (0-19)

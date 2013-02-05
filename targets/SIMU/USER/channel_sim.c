@@ -405,7 +405,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 }
 
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms,u8 measure_symbol) {
 
   s32 **txdata,**rxdata;
 
@@ -458,6 +458,13 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	frame_parms = PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id];
 	slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 	slot_offset_meas = ((next_slot&1)==0) ? slot_offset : (slot_offset-(frame_parms->samples_per_tti>>1));
+        for(i = 0; i < measure_symbol; i++) {
+          if(i % (frame_parms->symbols_per_tti>>1) == 0)
+            slot_offset_meas += frame_parms->nb_prefix_samples0;
+          else
+            slot_offset_meas += frame_parms->nb_prefix_samples;
+          slot_offset_meas += frame_parms->ofdm_symbol_size;
+        }
 
 	if (((double)PHY_vars_UE_g[UE_id]->tx_power_dBm + 	
 	     UE2eNB[UE_id][eNB_id]->path_loss_dB) <= -125.0) {
@@ -466,6 +473,9 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
 	else {
 	  
+	  printf("[SIM][UL] UE %d tx_pwr %d dBm for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",
+	      UE_id, PHY_vars_UE_g[UE_id]->tx_power_dBm, next_slot, next_slot>>1, slot_offset, slot_offset_meas);
+
 	  tx_pwr = dac_fixed_gain(s_re,
 				  s_im,
 				  txdata,
@@ -476,7 +486,6 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 				  frame_parms->ofdm_symbol_size,
 				  14,
 				  PHY_vars_UE_g[UE_id]->tx_power_dBm);
-	                          //ue_data[UE_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
 	  printf("[SIM][UL] UE %d tx_pwr %f dBm for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",UE_id,10*log10(tx_pwr),next_slot,next_slot>>1,slot_offset,slot_offset_meas);
 #endif

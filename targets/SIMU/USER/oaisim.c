@@ -13,6 +13,7 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
+#include "RRC/NAS/nas_config.h"
 
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
@@ -60,6 +61,9 @@ extern unsigned char NB_UE_INST;
 #define RF
 
 //#define DEBUG_SIM
+//#define DEBUG_SIGNALS
+
+const char* debug_signals_dir = "debug";
 
 #define MCS_COUNT 24//added for PHY abstraction
 #define N_TRIALS 1
@@ -677,6 +681,8 @@ main (int argc, char **argv)
   char UE_stats_filename[255];
  
   int len;
+  bool synched_to_any_enb;
+
 #ifdef ICIC
   remove ("dci.txt");
 #endif
@@ -1154,12 +1160,34 @@ main (int argc, char **argv)
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
     // update UE_mode for each eNB_id not just 0
-    for (eNB_id=0; eNB_id < NB_eNB_INST ; eNB_id ++){ 
+    for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ 
       PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED; 
       PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id]->current_dlsch_cqi[eNB_id] = 10;
       LOG_I(EMU, "UE %d mode to eNB %d, is initialized to %d\n", UE_id, eNB_id, PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] );
     }
+  }
+  for(eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+    if(eNB_id == 0) {
+      PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_MASTER;
+      LOG_I(EMU, "[eNB%d]State initialized to MASTER\n", eNB_id);
+    }
+    else {
+      if(abstraction_flag == 0) {
+	PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_UNSYNCHED;
+	LOG_I(EMU, "[eNB%d]State initialized to UNSYNCHED\n", eNB_id);
+      }
+      else {
+	PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_SYNCHED;
+	LOG_I(EMU, "[eNB%d]State initialized to SYNCHED\n", eNB_id);
+      }
+    }
+  }
+
+  for(UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+    PHY_vars_UE_g[UE_id]->mrpsch_period = 1;
+    PHY_vars_UE_g[UE_id]->mrpsch_index = UE_id;
+    PHY_vars_UE_g[UE_id]->mrpsch_power_dbm = 0;
   }
   
   
@@ -1405,20 +1433,45 @@ main (int argc, char **argv)
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
 
       for (eNB_id=oai_emulation.info.first_enb_local;
-	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && 
-	     (oai_emulation.info.cli_start_enb[eNB_id]==1);
-	   eNB_id++) {							
-	frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
-	//printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
-                    //printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
-	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
-	      eNB_id, frame, slot, next_slot >> 1,last_slot>>1,
-	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
-	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
-	
-	//PHY_vars_eNB_g[eNB_id]->frame = frame;
-	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
-	
+	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
+	   eNB_id++) {
+        PHY_vars_eNB_g[eNB_id]->frame = frame;
+        switch(PHY_vars_eNB_g[eNB_id]->mesh_state)
+        {
+          case MESH_STATE_MASTER:
+            LOG_D(EMU,"[eNB%d]PHY procedures for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
+                  eNB_id, frame, slot, next_slot >> 1,
+                  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
+                  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+            
+            phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
+	    break;
+          case MESH_STATE_SYNCHED:
+            LOG_D(EMU,"[eNB%d]PHY procedures for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
+                  eNB_id, frame, slot, next_slot >> 1,
+                  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
+                  PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+            
+            phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
+	    if(slot == 19) {
+	      LOG_D(EMU, "[eNB%d]Updating MRPSCH synch\n", eNB_id);
+	      if(mrpsch_update_sync(PHY_vars_eNB_g[eNB_id], 16) == -1) {
+                PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_UNSYNCHED;
+		LOG_D(EMU, "[eNB%d]MRPSCH lost, changed state SYNCHED->UNSYNCHED\n", eNB_id);
+	      }
+	    }
+            break;
+          case MESH_STATE_UNSYNCHED:
+	    if(slot == 19) {
+              LOG_D(EMU,"[eNB%d]Attempting MRPSCH synch\n", eNB_id);
+              if(mrpsch_sync(PHY_vars_eNB_g[eNB_id]) >= 0) {
+                PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_SYNCHED;
+                LOG_D(EMU,"[eNB%d]Changed state UNSYNCHED->SYNCHED\n", eNB_id);
+              }
+            }
+            break;
+        }
+
 #ifdef PRINT_STATS
 	if (eNB_stats) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
@@ -1447,9 +1500,10 @@ main (int argc, char **argv)
 
 	  LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
 		UE_id, frame, slot, next_slot >> 1,last_slot>>1);
+	  synched_to_any_enb = false;
 	  for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++)	{ 
-	    //frame_parms = PHY_vars_UE_g[UE_id]->frame_parms[eNB_id];
 	    if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] != NOT_SYNCHED){ 
+	      synched_to_any_enb = true;
 	      if (frame>= (eNB_id+UE_id) * 20 ) { // activate UE proc for multiple eNB only after 20*eNB_id frames so that different UEs start the proc separately
 		PHY_vars_UE_g[UE_id]->frame = frame;
 		phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag, normal_txrx);
@@ -1460,22 +1514,14 @@ main (int argc, char **argv)
 		for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id ++){ 
 		  initial_sync(PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag, normal_txrx);
 		}
-		/*
-	  write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
-		write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      write_output("dlchan10.m","dlch10",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][2][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
-		write_output("dlchan11.m","dlch11",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][3][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      write_output("rxsig.m","rxs",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,1,1);
-	      write_output("rxsigF.m","rxsF",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],2*PHY_vars_UE_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size,2,1);
-	      write_output("pbch_rxF_ext0.m","pbch_ext0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],6*12*4,1,1);
-	      write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);
-	      write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
-	      */
+	      }
 	    }
- 	  }
-   }
+	  }
+	  if(synched_to_any_enb) {
+	    for(eNB_id = 0; eNB_id < nb_connected_eNB; eNB_id++) {
+	      mrpsch_procedures_ue(next_slot, PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag);
+	    }
+	  }
 #ifdef PRINT_STATS
 	  if (UE_stats[UE_id]) {
 	    len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
@@ -1492,7 +1538,7 @@ main (int argc, char **argv)
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,0);
       }
       if ((direction == SF_S)) {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
@@ -1505,7 +1551,7 @@ main (int argc, char **argv)
 	  */
 	}
 	else {// UL part
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame_parms->symbols_per_tti-1);
 	}
       }
       if ((last_slot == 1) && (frame == 0)
@@ -1557,6 +1603,58 @@ main (int argc, char **argv)
 
      }				//end of slot
     
+#ifdef DEBUG_SIGNALS
+    if(abstraction_flag == 0) {
+      for(i = 0; i < NB_eNB_INST; i++) {
+	snprintf(fname, 64, "%s/enb%d_f%d_txf_v.m", debug_signals_dir, i, frame);
+	snprintf(vname, 64, "enb%d_f%d_txf", i, frame);
+	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.txdataF[0][0],
+	    PHY_vars_eNB_g[i]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[i]->lte_frame_parms.ofdm_symbol_size, 1, 1);
+
+	snprintf(fname, 64, "%s/enb%d_f%d_tx_v.m", debug_signals_dir, i, frame);
+	snprintf(vname, 64, "enb%d_f%d_tx", i, frame);
+	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.txdata[0][0], 
+	    FRAME_LENGTH_COMPLEX_SAMPLES, 1, 1);
+
+	snprintf(fname, 64, "%s/enb%d_f%d_rxf_v.m", debug_signals_dir, i, frame);
+	snprintf(vname, 64, "enb%d_f%d_rxf", i, frame);
+	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.rxdataF[0][0],
+	    PHY_vars_eNB_g[i]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[i]->lte_frame_parms.ofdm_symbol_size, 1, 1);
+
+	snprintf(fname, 64, "%s/enb%d_f%d_rx_v.m", debug_signals_dir, i, frame);
+	snprintf(vname, 64, "enb%d_f%d_rx", i, frame);
+	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.rxdata[0][0], 
+	    FRAME_LENGTH_COMPLEX_SAMPLES, 1, 1);
+      }
+
+      for(i = 0; i < NB_UE_INST; i++) {
+        for(eNB_id = 0; eNB_id < PHY_vars_UE_g[i]->n_connected_eNB; eNB_id++) {
+          snprintf(fname, 64, "%s/ue%d_enb%d_f%d_txf_v.m", debug_signals_dir, i, eNB_id, frame);
+          snprintf(vname, 64, "ue%d_enb%d_f%d_txf", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->txdataF[0],
+              PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->symbols_per_tti*
+	      PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
+
+          snprintf(fname, 64, "%s/ue%d_enb%d_f%d_tx_v.m", debug_signals_dir, i, eNB_id, frame);
+          snprintf(vname, 64, "ue%d_enb%d_f%d_tx", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->txdata[0],
+              FRAME_LENGTH_COMPLEX_SAMPLES, 1, 1);
+
+          snprintf(fname, 64, "%s/ue%d_enb%d_f%d_rxf_v.m", debug_signals_dir, i, eNB_id, frame);
+          snprintf(vname, 64, "ue%d_enb%d_f%d_rxf", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->rxdataF[0],
+              PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->symbols_per_tti*
+	      PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
+
+          snprintf(fname, 64, "%s/ue%d_enb%d_f%d_rx_v.m", debug_signals_dir, i, eNB_id, frame);
+          snprintf(vname, 64, "ue%d_enb%d_f%d_rx", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->rxdata[0], 
+              FRAME_LENGTH_COMPLEX_SAMPLES, 1, 1);
+	}
+      }
+    }
+#endif
+
     if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
   		for (eNB_id = 0; eNB_id < nb_connected_eNB; eNB_id++){ 
      	 write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars[eNB_id]->txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1); 
@@ -1742,3 +1840,4 @@ void exit_fun(const char* s)
   fprintf(stderr, "Error: %s. Exiting!\n",s);
   exit (-1);
 }
+

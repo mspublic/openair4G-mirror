@@ -143,6 +143,8 @@
 
 #define NUMBER_OF_eNB_SECTORS_MAX 3
 
+typedef enum { MESH_STATE_MASTER, MESH_STATE_UNSYNCHED, MESH_STATE_SYNCHED } mesh_state_t;
+
 #define MAX_VLINK_PER_CH 4
 #define MAX_VLINK_PER_MR 4
 
@@ -194,6 +196,8 @@ typedef struct
   unsigned char first_run_I0_measurements;
 
   unsigned char cooperation_flag; // for cooperative communication
+
+  mesh_state_t mesh_state; // Synchronization state of the eNB in the lola mesh
 
   unsigned char    is_secondary_eNB; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
@@ -407,6 +411,14 @@ typedef struct
   /// Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  /// Periodicity of MRPSCH generation, in LTE frames
+  u8 mrpsch_period;
+
+  /// Index of this UE: generate MRPSCH when (frame%mrpsch_period) == mrpsch_index
+  u8 mrpsch_index;
+
+  /// MRPSCH transmit power in dBm
+  s8 mrpsch_power_dbm;
 
 } PHY_VARS_UE;
 
