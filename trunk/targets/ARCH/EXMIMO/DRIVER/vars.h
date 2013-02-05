@@ -1,10 +1,6 @@
 #ifndef __VARS_H__
 #define __VARS_H__
 
-#ifndef USER_MODE
-#define __NO_VERSION__
-// TODO: Check: What is USER_MODE and what is it used for?
-
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/pci.h>
@@ -28,8 +24,6 @@ resource_size_t mmio_length[MAX_CARDS];
 unsigned int    mmio_flags[MAX_CARDS];
 
 int major;
-
-#endif
 
 char number_of_cards;
 

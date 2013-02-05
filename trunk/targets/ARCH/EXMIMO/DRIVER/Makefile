@@ -7,12 +7,7 @@ IS_KERNEL_SUBVERSION_GREATER_THAN_20=$(shell if [ $(SUBVERSION) -ge 20 ] ; then 
 
 EXTRA_CFLAGS = -ggdb -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h 
 
-ifndef OPENAIR0_DIR
-  $(error Environment variable OPENAIR0_DIR must be set!)
-else
-  EXTRA_CFLAGS += -I$(OPENAIR0_DIR)/express-mimo/software/pcie
-endif
-
+EXTRA_CFLAGS += -I$(PWD)/../DEFS
 
 obj-m += openair_rf.o
 

@@ -1,4 +1,4 @@
-/** module_main.c
+/** module_main.c (was: device.c)
  * 
  *  Main Kernel module functions for load/init and cleanup of the kernel driver
  * 
@@ -14,10 +14,6 @@
  *  24.01.2013: restructured interfaces & structures of how physical and virtual pointers are handled
  */
 
-#ifndef USER_MODE
-#define __NO_VERSION__
-#endif
-
 #include "openair_device.h"
 #include "defs.h"
 #include "vars.h"
@@ -26,6 +22,7 @@
 #include <linux/interrupt.h>
 #include <linux/aer.h>
 #include <linux/pci_regs.h>
+#include <linux/delay.h>
 
 static void openair_cleanup(void);
 
@@ -34,11 +31,10 @@ extern irqreturn_t openair_irq_handler(int irq, void *cookie);
 
 static struct file_operations openair_fops = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
-    unlocked_ioctl:openair_device_ioctl
+    unlocked_ioctl:openair_device_ioctl,
 #else
-    ioctl:  openair_device_ioctl
+    ioctl:  openair_device_ioctl,
 #endif
-    ,
     open:   openair_device_open,
     release:openair_device_release,
     mmap:   openair_device_mmap
@@ -51,7 +47,7 @@ static int __init openair_init_module( void )
     unsigned int card, j;
     
     unsigned int vid,did;
-    unsigned short subid;
+    unsigned short vendor, subid;
     exmimo_id_t exmimo_id_tmp[MAX_CARDS];
 
     //------------------------------------------------
@@ -61,14 +57,15 @@ static int __init openair_init_module( void )
     card = 0;
     
     pdev[card] = pci_get_device(XILINX_VENDOR, XILINX_ID, NULL);
-    
+
     if( pdev[card] )
     {
         printk("[openair][INIT_MODULE][INFO]:  openair card (ExpressMIMO) %d found, bus 0x%x, primary 0x%x, secondary 0x%x\n",card,
                  pdev[card]->bus->number, pdev[card]->bus->primary,pdev[card]->bus->secondary);
 
         pci_read_config_word(pdev[card], PCI_SUBSYSTEM_ID, &subid);
-        pci_read_config_word(pdev[card], PCI_SUBSYSTEM_VENDOR_ID, &exmimo_id_tmp[card].board_vendor);
+        pci_read_config_word(pdev[card], PCI_SUBSYSTEM_VENDOR_ID, &vendor);
+        exmimo_id_tmp[card].board_vendor = vendor;
         
         if ( exmimo_id_tmp[card].board_vendor == XILINX_VENDOR )
             exmimo_id_tmp[card].board_vendor = EURECOM_VENDOR; // set default to EURECOM
@@ -99,7 +96,9 @@ static int __init openair_init_module( void )
                     pdev[card]->bus->number,pdev[card]->bus->primary,pdev[card]->bus->secondary);
 
             pci_read_config_word(pdev[card], PCI_SUBSYSTEM_ID, &subid);
-            pci_read_config_word(pdev[card], PCI_SUBSYSTEM_VENDOR_ID, &(exmimo_id_tmp[card].board_vendor));
+            pci_read_config_word(pdev[card], PCI_SUBSYSTEM_VENDOR_ID, &vendor);
+            exmimo_id_tmp[card].board_vendor = vendor;
+            
             if ( exmimo_id_tmp[card].board_vendor == XILINX_VENDOR )
                 exmimo_id_tmp[card].board_vendor = EURECOM_VENDOR;     // default (for old bitstreams) is EURECOM_VENDOR
             
@@ -155,7 +154,7 @@ static int __init openair_init_module( void )
             return -EBUSY;
         }
         else 
-            printk("[openair][INIT_MODULE][INFO] : Reserving memory region 0 : mmio_start = 0x%x\n",mmio_start[card]);
+            printk("[openair][INIT_MODULE][INFO] : Reserving memory region 0 : mmio_start = 0x%x\n",(unsigned int)mmio_start[card]);
 
         request_mem_region(mmio_start[card], 256, "openair_rf");
 
@@ -179,7 +178,6 @@ static int __init openair_init_module( void )
         readback = ioread32( bar[card] );
         printk("CONTROL0 readback %x\n",readback);
 
-
         if ( exmimo_firmware_init( card ) ) {
             printk("[openair][MODULE][ERROR] exmimo_firmware_init failed!\n");
             openair_cleanup();
@@ -190,11 +188,11 @@ static int __init openair_init_module( void )
         exmimo_pci_kvirt[card].exmimo_id_ptr->board_exmimoversion = exmimo_id_tmp[card].board_exmimoversion;
         exmimo_pci_kvirt[card].exmimo_id_ptr->board_hwrev = exmimo_id_tmp[card].board_hwrev;
         exmimo_pci_kvirt[card].exmimo_id_ptr->board_swrev = exmimo_id_tmp[card].board_swrev;
-
+        
         printk("[OPENAIR][SCHED][INIT] card %d: Trying to get IRQ %d\n", card, pdev[card]->irq);
 
         openair_irq_enabled[card] = 0;
-      
+
         if ( (res = request_irq(pdev[card]->irq, openair_irq_handler, 
                         IRQF_SHARED , "openair_rf", pdev[card] )) == 0)
         {
@@ -205,9 +203,6 @@ static int __init openair_init_module( void )
             openair_cleanup();
             return -EBUSY;
         }
-        
-        msleep(200); // wait to give the card some time to initialize
-        
     } // for (i=0; i<number_of_cards; i++)
     
     //------------------------------------------------
@@ -271,7 +266,7 @@ static void  openair_cleanup(void)
         }
 
         if ( mmio_start[card] ) {
-            printk("release mem[%d] %x\n", card, mmio_start[card]);
+            printk("release mem[%d] %x\n", card, (unsigned int)mmio_start[card]);
             release_mem_region(mmio_start[card],256);
         }
         
