@@ -2,6 +2,11 @@
 #define OPENAIR_DEVICE_H
 
 
+// Maximum number of concurrently supported cards
+//
+#define MAX_CARDS   4
+#define INIT_ZEROS {0, 0, 0, 0}
+
 // Vendor and System IDs
 //
 #define XILINX_VENDOR 0x10ee
@@ -34,14 +39,16 @@
 
 #define openair_IOC_MAGIC         'm'
 
-#define openair_GET_BIGSHMTOP_KVIRT          _IOR(openair_IOC_MAGIC,1,int)
-#define openair_GET_PCI_INTERFACE_BOT_KVIRT  _IOR(openair_IOC_MAGIC,2,int)
-#define openair_DUMP_CONFIG                  _IOR(openair_IOC_MAGIC,3,int)
-#define openair_GET_FRAME                    _IOR(openair_IOC_MAGIC,4,int)
-#define openair_START_TX_SIG                 _IOR(openair_IOC_MAGIC,5,int)
-#define openair_STOP                         _IOR(openair_IOC_MAGIC,6,int)
-#define openair_UPDATE_FIRMWARE              _IOR(openair_IOC_MAGIC,7,int)
-//#define openair_MAXNR         7
+#define openair_GET_BIGSHMTOPS_KVIRT         _IOR(openair_IOC_MAGIC,1,int)
+#define openair_GET_PCI_INTERFACE_BOTS_KVIRT _IOR(openair_IOC_MAGIC,2,int)
+#define openair_GET_NUM_DETECTED_CARDS       _IOR(openair_IOC_MAGIC,3,int)
+
+#define openair_DUMP_CONFIG                  _IOR(openair_IOC_MAGIC,18,int)
+#define openair_GET_FRAME                    _IOR(openair_IOC_MAGIC,6,int)
+#define openair_START_TX_SIG                 _IOR(openair_IOC_MAGIC,28,int)
+#define openair_STOP                         _IOR(openair_IOC_MAGIC,5,int)
+#define openair_UPDATE_FIRMWARE              _IOR(openair_IOC_MAGIC,40,int)
+
 
 /* Update firmware commands */
 #define UPDATE_FIRMWARE_TRANSFER_BLOCK    0x1
@@ -51,12 +58,19 @@
 #define UPDATE_FIRMWARE_TEST_GOK          0x5
 
 
-// mmap page offsets, used as indicator which memory block to map
-#define openair_mmap_BIGSHM          0
+// mmap page offset vg_pgoff is used to pass arguments to kernel
+// bit0..3: memory block: BIGSHM:0, RX:1,3,5,7, TX:2,4,6,8
+// bit4..7: card_id
+#define openair_mmap_BIGSHM            0
 #define openair_mmap_RX(ant) (((ant)<<1)+1)
 #define openair_mmap_TX(ant) (((ant)<<1)+2)
-#define openair_mmap_getAntRX(x) (((x)-1)>>1)
-#define openair_mmap_getAntTX(x) (((x)-2)>>1)
+
+#define openair_mmap_getMemBlock(o)  ((o)&0xF)
+#define openair_mmap_getAntRX(o) (((o)-1)>>1)
+#define openair_mmap_getAntTX(o) (((o)-2)>>1)
+
+#define openair_mmap_Card(c)    ( ((c)&0xF)<<4 )
+#define openair_mmap_getCard(o) ( ((o)>>4)&0xF )
 
 
 #endif /* OPENAIR_DEVICE_H */
