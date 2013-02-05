@@ -148,6 +148,7 @@ void setBroadcastAddress (char* baseAddr);
 */
 char* getBroadcastAddress  ();
 
+int bringInterfaceUp(char *interfaceName, int up);
 
 int rb_validate_config_ipv4(int cx, int inst, int rb);
 int rb_conf_ipv4(int action,int cx, int inst, int rb,int dscp, in_addr_t saddr_ipv4, in_addr_t daddr_ipv4);

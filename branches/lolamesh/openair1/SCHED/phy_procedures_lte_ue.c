@@ -42,6 +42,7 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "PHY/TOOLS/sigref.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
@@ -1236,8 +1237,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 }
 
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
-  int i,aa;
+
   LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id];
+  int i,aa;
 
   if (abstraction_flag==0) {
     if (phy_vars_ue->frame%100==1) {
@@ -1258,6 +1260,55 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
 	     (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti)*sizeof(s32));
 #endif //else EXMIMO
 #endif //else CBMIMO1
+    }
+  }
+}
+
+void mrpsch_procedures_ue(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
+
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id];
+  int subframe;
+  int antenna;
+  int* slot_data_f;
+  int* slot_data;
+  const int slot_len = get_slot_length_f(frame_parms);
+
+  if (abstraction_flag == 0) {
+    // Generate MRPSCH in last symbol of slot 3
+    if(next_slot == 3) {
+#ifdef DEBUG_PHY_PROC
+      LOG_D(PHY,"[UE %d]Frame %d, slot %d: Generating MRPSCH for eNB %d\n",
+	  phy_vars_ue->Mod_id, phy_vars_ue->frame, next_slot, eNB_id);
+#endif
+      for(antenna = 0; antenna < frame_parms->nb_antennas_tx; antenna++) {
+	slot_data_f = get_ue_slot_ref_f(phy_vars_ue, eNB_id, antenna, next_slot);
+
+	memset(slot_data_f, 0, slot_len*sizeof(mod_sym_t));
+#ifndef IFFT_FPGA
+	slot_data = get_ue_slot_ref(phy_vars_ue, eNB_id, antenna, next_slot);
+	memset(slot_data, 0, frame_parms->samples_per_tti*sizeof(int));
+#endif
+      }
+
+      generate_mrpsch(phy_vars_ue, eNB_id, AMP, next_slot, (frame_parms->symbols_per_tti >> 1)-1);
+
+      phy_vars_ue->tx_power_dBm = phy_vars_ue->mrpsch_power_dbm;
+
+      for (antenna = 0; antenna < 1; antenna++) {
+	slot_data_f = get_ue_slot_ref_f(phy_vars_ue, eNB_id, antenna, next_slot);
+	slot_data = get_ue_slot_ref(phy_vars_ue, eNB_id, antenna, next_slot);
+
+        if (frame_parms->Ncp == 1) 
+	  PHY_ofdm_mod(slot_data_f, slot_data, frame_parms->log2_symbol_size,
+                       frame_parms->symbols_per_tti >> 1, frame_parms->nb_prefix_samples,
+                       frame_parms->twiddle_ifft, frame_parms->rev, CYCLIC_PREFIX);
+        else
+          normal_prefix_mod(slot_data_f, slot_data, frame_parms->symbols_per_tti >> 1, frame_parms);
+
+#ifndef OFDMA_ULSCH
+	apply_7_5_kHz(phy_vars_ue,next_slot);
+#endif
+      }
     }
   }
 }
@@ -2479,7 +2530,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_E(PHY,"[UE %d] Frame %d, subframe %d: FATAL, prach_resources is NULL\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
 	  mac_xface->macphy_exit("");
           vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  return;
+	  return -1;
 	}
 	/*
 #ifdef DEBUG_PHY_PROC
@@ -2772,6 +2823,7 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
   }
   if ((subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],last_slot>>1)==SF_S) &&
       ((last_slot&1)==0)) {
+    //phy_procedures_UE_S_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag);
     phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
   }
 

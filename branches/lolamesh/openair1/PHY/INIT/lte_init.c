@@ -479,6 +479,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 
 #ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);
+  mrpsch_sync_init(lte_frame_parms);
 #else
   // lte_sync_time_init(lte_frame_parms) has to be called from the real-time thread, since it uses SSE instructions.
 #endif
@@ -1016,7 +1017,6 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
       ue_pdcch_vars[eNB_id]->llr = (unsigned short *)malloc16(4*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned short));
       ue_pdcch_vars[eNB_id]->llr16 = (unsigned short *)malloc16(2*4*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned short));
       ue_pdcch_vars[eNB_id]->wbar = (unsigned short *)malloc16(4*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned short));
-      
       ue_pdcch_vars[eNB_id]->e_rx = (s8 *)malloc16(4*2*frame_parms[eNB_id]->N_RB_DL*12*sizeof(unsigned char));
       
       // PBCH

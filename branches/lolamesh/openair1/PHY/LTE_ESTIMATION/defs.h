@@ -198,6 +198,8 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 		       unsigned short Msc_RS,
 		       unsigned char Qm);
 
+int mrpsch_sync_init(LTE_DL_FRAME_PARMS *frame_parms );
+void mrpsch_sync_free(void);
 
 /** @} */ 
 #endif

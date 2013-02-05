@@ -246,6 +246,8 @@ s32 generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,u8 *pbch_pdu);
 
+int generate_mrpsch(PHY_VARS_UE* phy_vars_ue, int eNB_id, short amp, unsigned short symbol, unsigned short slot);
+
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
@@ -1191,6 +1193,9 @@ parameters are know, the routine calls some basic initialization routines (cell-
   
 */
 int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_index, u8 abstraction_flag, runmode_t mode); 
+
+int mrpsch_sync(PHY_VARS_eNB *phy_vars_enb);
+int mrpsch_update_sync(PHY_VARS_eNB* phy_vars_enb, int search_range);
 
 int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8 eNB_index, runmode_t mode);
 
