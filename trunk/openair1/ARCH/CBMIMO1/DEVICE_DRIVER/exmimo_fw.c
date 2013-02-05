@@ -32,10 +32,10 @@ void exmimo_firmware_init() {
   printk("Intializing EXMIMO firmware support (exmimo_pci_bot at %p)\n",exmimo_pci_bot);
   exmimo_pci_bot->firmware_block_ptr = virt_to_phys((unsigned int*)bigphys_malloc(262144));
   printk("firmware_code_block_ptr : %x\n",exmimo_pci_bot->firmware_block_ptr);
-  exmimo_pci_bot->printk_buffer_ptr = virt_to_phys((unsigned int*)bigphys_malloc(1024));
+  exmimo_pci_bot->printk_buffer_ptr = virt_to_phys((unsigned int*)bigphys_malloc(4096));
   printk("printk_buffer_ptr : %x\n",exmimo_pci_bot->printk_buffer_ptr);
 
-  exmimo_pci_interface = (exmimo_pci_interface_t *)bigphys_malloc(sizeof(exmimo_pci_interface_t)); 
+  exmimo_pci_interface = (exmimo_pci_interface_t *)bigphys_malloc(sizeof(exmimo_pci_interface_t)+64*4/*overhead to allow DMA transfers of 64 DW*/); 
   exmimo_pci_bot->pci_interface_ptr = virt_to_phys((unsigned int*)exmimo_pci_interface);
   printk("pci_interface_ptr : %x\n",exmimo_pci_bot->pci_interface_ptr);  
 
