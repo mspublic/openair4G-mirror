@@ -1,4 +1,8 @@
 
+v1.9.0 (released on February 5, 2013)
+* SCOREF-MGMT.doxyfile has been updated
+* Doxygen documentation as a single PDF file has been added
+
 v1.8.1
 * CONF_LOG_LEVEL parameter added to MGMT.conf file with levels from 0 to 4
 * ManagementServer::send() method added to add a boost::lock_guard easier
