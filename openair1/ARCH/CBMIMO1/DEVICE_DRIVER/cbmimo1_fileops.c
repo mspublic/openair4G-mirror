@@ -111,14 +111,14 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   for (i=0;i<16;i++)
     printk("[openair][MMAP] rxsig %d = %x\n",i,((unsigned int*)RX_DMA_BUFFER[0][0])[i]);
   */
-
+/*
   for (i=0;i<16;i++)
     ((unsigned int*)RX_DMA_BUFFER[0][0])[i] = i;
 
   for (i=0;i<16;i++)
     ((unsigned int*)TX_DMA_BUFFER[0][0])[i] = i;
 
-
+*/
 #endif //BIGPHYSAREA
   return 0; 
 }
@@ -985,13 +985,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("calling openair_dma(0,EXMIMO_GET_FRAME);\n");
       openair_dma(0,EXMIMO_GET_FRAME);
       
-      while ((get_frame_cnt<30) &&
-	     (openair_daq_vars.get_frame_done == 0)) {
-	udelay(1000);
-	get_frame_cnt++;
+      while ((get_frame_cnt<100) &&
+             (openair_daq_vars.get_frame_done == 0)) {
+        udelay(1000);
+        get_frame_cnt++;
       }
-      if (get_frame_cnt==30)
-	printk("Get frame error\n");
+      if (get_frame_cnt==100)
+        printk("TIMEOUT: GET_FRAME_DONE didn't arrive within 100ms.\n");
       rt_disable_irq(pdev[0]->irq);
 
       pci_dma_sync_single_for_cpu(pdev[0], 
