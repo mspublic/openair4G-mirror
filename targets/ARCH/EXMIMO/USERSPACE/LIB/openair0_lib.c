@@ -15,9 +15,9 @@
 #include <stdio.h>
 
 #include "openair0_lib.h"
-#include "../openair_device.h"
+#include "openair_device.h"
 
-exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS]; // contains userspace pointers for each card
+exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS] = INIT_ZEROS; // contains userspace pointers for each card
 
 char *bigshm_top[MAX_CARDS] = INIT_ZEROS;
 
@@ -92,7 +92,7 @@ int openair0_open(void)
         if ( openair0_exmimo_pci[card].exmimo_id_ptr->board_exmimoversion == 2)
             openair0_num_antennas[card] = 4;
 
-printf("card%d: %d Antennas\n", card, openair0_num_antennas[card]);
+        //printf("card%d: %d Antennas\n", card, openair0_num_antennas[card]);
             
         for (ant=0; ant<openair0_num_antennas[card]; ant++)
         {

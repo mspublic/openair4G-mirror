@@ -13,7 +13,9 @@
 #include "pcie_interface.h"
 #include "openair_device.h"
 
-extern exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS] = INIT_ZEROS;   // contains userspace pointers
+// Use this to access shared memory (configuration structures, adc/dac data buffers, ...)
+// contains userspace pointers
+extern exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS];
 
 extern int openair0_fd;
 
@@ -21,7 +23,7 @@ extern int openair0_num_antennas[MAX_CARDS];
 
 extern int openair0_num_detected_cards;
 
-// opens device and mmaps kernel memory and initializes interface and system_id pointers
+// opens device and mmaps kernel memory and calculates interface and system_id userspace pointers
 // return 0 on success
 int openair0_open(void);
 
