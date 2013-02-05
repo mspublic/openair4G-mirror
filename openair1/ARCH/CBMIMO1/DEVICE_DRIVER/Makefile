@@ -173,6 +173,15 @@ endif
 
 #openair_rf-objs += $(LOG_DIR)/log.o
 
+openair_rf_cbmimo1_softmodem.ko:  
+	(cd $(OPENAIR1_TOP) ; make openair_rf_cbmimo1_softmodem.ko)
+
+oai_user_cbmimo1.ko:
+	(cd $(OPENAIR1_TOP) ; make oai_user_cbmimo1.ko)
+
+oai_user_exmimo:
+	(cd $(OPENAIR1_TOP) ; make oai_user_exmimo.ko)
+
 test:
 	echo $(openair_rf-objs)
 	echo $(obj-m)
@@ -181,3 +190,8 @@ test:
 
 clean:
 	rm -f $(openair_rf-objs) $(obj-m)
+	rm -f openair_rf.mod.c .*.cmd *.o modules.order Module.symvers 
+	rm -rf .tmp_versions/
+
+ultraclean: clean
+	rm -f *.ko
