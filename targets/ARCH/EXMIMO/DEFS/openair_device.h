@@ -45,7 +45,7 @@
 
 #define openair_DUMP_CONFIG                  _IOR(openair_IOC_MAGIC,18,int)
 #define openair_GET_FRAME                    _IOR(openair_IOC_MAGIC,6,int)
-#define openair_START_TX_SIG                 _IOR(openair_IOC_MAGIC,28,int)
+#define openair_START_RT_ACQUISITION         _IOR(openair_IOC_MAGIC,28,int)
 #define openair_STOP                         _IOR(openair_IOC_MAGIC,5,int)
 #define openair_UPDATE_FIRMWARE              _IOR(openair_IOC_MAGIC,40,int)
 

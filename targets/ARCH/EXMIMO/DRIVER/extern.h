@@ -1,7 +1,5 @@
 #ifndef __EXTERN_H__
 #define __EXTERN_H__
-#ifndef USER_MODE
-#define __NO_VERSION__
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -29,5 +27,4 @@ extern dma_addr_t                      pphys_exmimo_pci_phys[MAX_CARDS];
 extern exmimo_pci_interface_bot_t         *p_exmimo_pci_phys[MAX_CARDS];
 extern exmimo_pci_interface_bot_virtual_t    exmimo_pci_kvirt[MAX_CARDS];
 
-#endif // USER_MODE
 #endif // __EXTERN_H__

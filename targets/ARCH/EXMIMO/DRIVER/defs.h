@@ -1,9 +1,6 @@
 #ifndef __DEFS_H__
 #define __DEFS_H__
 
-#ifndef USER_MODE
-#define __NO_VERSION__
-
 #include <asm/io.h>
 #include <asm/bitops.h>
 #include <asm/uaccess.h>
@@ -34,17 +31,11 @@
 #include "linux/moduleparam.h"
 
 
-// Maximum number of concurrently supported cards
-//
-#define MAX_CARDS   4
-#define INIT_ZEROS {0, 0, 0, 0}
-
-
 /*------------------------------------------------*/
 /*   Prototypes                                   */
 /*------------------------------------------------*/
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
-int openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg); 
+long openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg); 
 #else
 int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg); 
 #endif
@@ -58,6 +49,4 @@ int exmimo_firmware_cleanup(int card_id);
 
 int exmimo_send_pccmd(int card_id, unsigned int cmd);
 
-
-#endif
 #endif
