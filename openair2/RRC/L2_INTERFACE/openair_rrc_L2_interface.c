@@ -69,7 +69,7 @@ s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,char *Buffer,u8 e
 s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
 /********************************************************************************************************************/
 #ifdef CELLULAR
-  return(rrc_L2_mac_data_ind_rx());
+  return(rrc_L2_mac_data_ind_rx(Mod_id, Srb_id, Sdu, Sdu_len, eNB_index));
 #else 
   return(mac_rrc_lite_data_ind(Mod_id,frame,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index));
 #endif //CELLULAR
@@ -79,7 +79,18 @@ s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu,u16 Sdu_len,u8 e
 void rlcrrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer){
 /********************************************************************************************************************/
 #ifdef CELLULAR
-  rrc_L2_rlc_data_ind_rx();
+  rrc_L2_rlc_data_ind_rx(Mod_id,Srb_id, Sdu_size, Buffer);
+#else  // now this is called from PDCP
+  //rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+  rrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+#endif //CELLULAR
+}
+
+/********************************************************************************************************************/
+void pdcp_rrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer){
+/********************************************************************************************************************/
+#ifdef CELLULAR
+  rrc_L2_rlc_data_ind_rx(Mod_id,Srb_id, Sdu_size, Buffer);
 #else  // now this is called from PDCP
   //rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
   rrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
@@ -100,7 +111,7 @@ void mac_rrc_meas_ind(u8 Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry){
 void mac_sync_ind(u8 Mod_id,u8 Status){
 /********************************************************************************************************************/
 #ifdef CELLULAR
-  rrc_L2_sync_ind_rx();
+  rrc_L2_sync_ind_rx(Mod_id);
 #else 
   mac_lite_sync_ind(Mod_id,Status);
 #endif //CELLULAR
@@ -110,7 +121,7 @@ void mac_sync_ind(u8 Mod_id,u8 Status){
 void mac_in_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
-  rrc_L2_sync_ind_rx();
+  rrc_L2_sync_ind_rx(Mod_id);
 #else
   rrc_lite_in_sync_ind(Mod_id,frame,eNB_index);
 #endif
