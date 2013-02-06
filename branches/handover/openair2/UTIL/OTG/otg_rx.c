@@ -192,15 +192,17 @@ else
 		else
       otg_info->nb_loss_pkts_ul[src][dst]=nb_loss_pkts;		
 
-/*Plots of latency and goodput are only plotted for the data traffic */
-		if (g_otg->latency_metric) 
+/*Plots of latency and goodput are only plotted for the data traffic*/
+/*measurements are done for the data and background traffic */
+
+		if (g_otg->latency_metric) {
 			if (g_otg->owd_radio_access==0)
   			add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY); 
 			else
 				add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY); 
-
+		}
   		if (g_otg->throughput_metric)
-  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst], OTG_GP);
+  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst], OTG_GP);
         }
 	else{
 	  otg_info->rx_num_pkt_background[src][dst]+=1;
@@ -210,6 +212,15 @@ else
     	otg_info->nb_loss_pkts_background_dl[src][dst]=nb_loss_pkts;
 		else
       otg_info->nb_loss_pkts_background_ul[src][dst]=nb_loss_pkts;
+
+		if (g_otg->latency_metric) {
+			if (g_otg->owd_radio_access==0)
+  			add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY_BG); 
+			else
+				add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY_BG); 
+		}
+  		if (g_otg->throughput_metric)
+  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size/otg_info->rx_pkt_owd[src][dst], OTG_GP_BG);
 	}
 
       if (is_size_ok == 0) {
@@ -231,7 +242,7 @@ else
 
 
 void owd_const_gen(int src, int dst, unsigned int flag){
-  otg_info->owd_const[src][dst]=owd_const_capillary()+owd_const_mobile_core()+owd_const_IP_backbone();
+  otg_info->owd_const[src][dst]=(owd_const_capillary()+owd_const_mobile_core()+owd_const_IP_backbone())/2;
 }
 
 

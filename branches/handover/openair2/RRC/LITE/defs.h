@@ -1,9 +1,41 @@
-/*________________________defs.h________________________
+/*******************************************************************************
 
- Authors : Raymond Knopp
- Company : EURECOM
- Emails  : knopp@eurecom.fr
-________________________________________________________________*/
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2010 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
+*******************************************************************************/
+
+
+/*! \file defs.h
+* \brief struct definitions and func prototypes
+* \author Raymond Knopp and Navid Nikaein
+* \date 2011, 2012, 2013
+* \version 1.0
+* \company Eurecom
+* \email: raymond.knopp@eurecom.fr and navid.nikaein@eurecom.fr
+*/
 
 
 #ifndef __OPENAIR_RRC_DEFS_H__
@@ -37,6 +69,7 @@ ________________________________________________________________*/
 #include "BCCH-BCH-Message.h"
 #include "AS-Config.h"
 #include "AS-Context.h"
+#include "UE-EUTRA-Capability.h"
 
 //#include "L3_rrc_defs.h"
 #ifndef NO_RRM
@@ -75,6 +108,8 @@ typedef enum  {
 
 #define PAYLOAD_SIZE_MAX 1024
 #define RRC_BUF_SIZE 140
+#define UNDEF_SECURITY_MODE 0xff
+#define NO_SECURITY_MODE 0x33
 
 
 
@@ -112,7 +147,7 @@ union{
  }Info;
 }RRC_INFO;
 
-/* Intermediate structure for Hanodver management. Associated per-UE in RRC */
+/* Intermediate structure for Hanodver management. Associated per-UE in eNB_RRC_INST */
 typedef struct{
 	u8 ho_prepare;
 	u8 ho_complete;
@@ -123,7 +158,7 @@ typedef struct{
 	AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
 	AS_Context_t as_context; /* They are mandatory for HO */
 	uint8_t buf[RRC_BUF_SIZE];	/* ASN.1 encoded handoverCommandMessage */
-	int size;		/* size of above message in bytes(I think..) */
+	int size;		/* size of above message in bytes */
 }HANDOVER_INFO;
 
 #define RRC_HEADER_SIZE_MAX 64
@@ -183,7 +218,8 @@ typedef struct{
   uint16_t                          physCellId;
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
-  SystemInformation_t               systemInformation;
+  BCCH_DL_SCH_Message_t             systemInformation;
+  //  SystemInformation_t               systemInformation;
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
   SystemInformationBlockType3_t     *sib3;
@@ -214,8 +250,16 @@ typedef struct{
 //#endif
 } eNB_RRC_INST;
 
+#define MAX_UE_CAPABILITY_SIZE 255
+typedef struct{
+  uint8_t sdu[MAX_UE_CAPABILITY_SIZE];
+  uint8_t sdu_size;
+  UE_EUTRA_Capability_t *UE_EUTRA_Capability;
+} OAI_UECapability_t;
 
 typedef struct{
+  uint8_t *UECapability;
+  uint8_t UECapability_size;
   UE_RRC_INFO Info[NB_SIG_CNX_UE];
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
@@ -413,6 +457,13 @@ int decode_SIB1(u8 Mod_id,u8 CH_index);
 int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 
 int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index);
+
+void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index);
+void rrc_eNB_generate_UESecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
+
+//void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index);
+//void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityModeCommand_t *securityModeCommand,uint8_t eNB_index);
+
 
 #endif
 

@@ -22,11 +22,33 @@
   </TOPOLOGY_CONFIG>
 
   <APPLICATION_CONFIG>
-    <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>1</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
-      <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
-    </PREDEFINED_TRAFFIC>
+    <CUSTOMIZED_TRAFFIC>  	
+      <SOURCE_ID>0</SOURCE_ID>		
+      <TRANSPORT_PROTOCOL>udp</TRANSPORT_PROTOCOL>  <!-- option: no_proto, tcp, udp -->
+      <IP_VERSION>ipv4</IP_VERSION>    <!-- option: no_ip, ipv4, ipv6  -->
+  	  <DESTINATION_ID>1</DESTINATION_ID>
+      <IDT_DIST>uniform</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <IDT_MIN_ms>20</IDT_MIN_ms>
+      <IDT_MAX_ms>40</IDT_MAX_ms>
+      <SIZE_DIST>log_normal</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <SIZE_MIN_byte>20</SIZE_MIN_byte>
+      <SIZE_MAX_byte>80.078</SIZE_MAX_byte>
+      <SIZE_STANDARD_DEVIATION>10.47</SIZE_STANDARD_DEVIATION> 
+ </CUSTOMIZED_TRAFFIC>  
+ 
+ <CUSTOMIZED_TRAFFIC>	 
+      <SOURCE_ID>1</SOURCE_ID> 		
+      <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL>  <!-- option: no_proto, tcp, udp -->
+      <IP_VERSION>ipv4</IP_VERSION>   <!-- option: no_ip, ipv4, ipv6  -->
+      <DESTINATION_ID>0</DESTINATION_ID>   
+      <IDT_DIST>uniform</IDT_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <IDT_MIN_ms>29</IDT_MIN_ms>
+      <IDT_MAX_ms>69</IDT_MAX_ms>
+      <SIZE_DIST>uniform</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <SIZE_MIN_byte>10</SIZE_MIN_byte>
+      <SIZE_MAX_byte>20</SIZE_MAX_byte>
+      <SIZE_STANDARD_DEVIATION>4.6</SIZE_STANDARD_DEVIATION>
+ </CUSTOMIZED_TRAFFIC>
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>

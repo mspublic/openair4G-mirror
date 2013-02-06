@@ -63,7 +63,7 @@
 * \note 
 * @ingroup  _otg
 */
-int time_dist(int src, int dst, int state);
+int time_dist(int src, int dst, int application, int state);
 
 /*! \fn int size_dist(int src, int dst, int state)
 * \brief compute the payload size, in bytes 
@@ -72,7 +72,7 @@ int time_dist(int src, int dst, int state);
 * \note 
 * @ingroup  _otg
 */
-int size_dist(int src, int dst, int state);
+int size_dist(int src, int dst, int application, int state);
 
 /*! \fn char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type);
 * \brief return a random string[size]
@@ -153,7 +153,7 @@ int adjust_size(int size);
 * \note 
 * @ingroup  _otg
 */
-int header_size_gen(int src, int dst);
+int header_size_gen(int src, int dst, int application);
 
 
 /*! \fn void init_predef_traffic();
@@ -182,7 +182,7 @@ int background_gen(int src, int dst, int ctime);
 
 int header_size_gen_background(int src, int dst);
 
-void state_management(int src, int dst,int ctime);
+void state_management(int src, int dst,int application, int ctime);
 
 
 #endif

@@ -279,6 +279,12 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 current_subfra
  */
 void ra_failed(u8 Mod_id,u8 eNB_index);
 
+/** \brief Function to indicate success of contention resolution or RA procedure.
+    @param Mod_id Instance index of UE
+    @param eNB_index Index of eNB
+ */
+void ra_succeeded(u8 Mod_id,u8 eNB_index);
+
 u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
 
 /* \brief Get PDSCH subframe (n+k) from PDCCH subframe n using relationship from Table 8-2 from 36.213
@@ -360,7 +366,7 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
-void process_timing_advance(u8 Mod_id,u8 timing_advance);
+void process_timing_advance(u8 Mod_id,s16 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);
 
 

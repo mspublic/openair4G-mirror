@@ -50,7 +50,9 @@
 
 
 unsigned int start_log_latency=0;
+unsigned int start_log_latency_bg=0;
 unsigned int start_log_GP=0;
+unsigned int start_log_GP_bg=0;
 
 /*! \fn void tx_throughput( int src, int dst)
 * \brief compute the transmitter throughput in bytes per seconds

@@ -443,9 +443,11 @@ int main (int argc, char **argv) {
   u8 payload_offset;
   int i,comp;
 
+  logInit();
+
   NB_UE_INST  = 1;
   NB_eNB_INST = 1;
-
+  NB_INST=2;
 
   // Parse arguments
   if(parse_args(argc, argv, &args) > 0) {

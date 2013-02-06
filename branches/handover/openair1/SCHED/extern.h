@@ -49,9 +49,11 @@ extern int synch_wait_cnt;
 
 extern OPENAIR_DAQ_VARS openair_daq_vars;
 
+/*
 #ifdef EMOS
 extern fifo_dump_emos_UE emos_dump_UE;
 extern fifo_dump_emos_eNB emos_dump_eNB;
 #endif
+*/
 
 #endif /*__SCHED_EXTERN_H__ */

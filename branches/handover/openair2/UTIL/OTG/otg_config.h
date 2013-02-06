@@ -46,9 +46,11 @@
 /*!\brief It indicates that: the payload and the transport header (not otg header) are copied from static strings (HEADER_STRING and PAYLOAD_STRING) */
 #define STRING_STATIC 1
 
-/*!\brief Define the number of states*/
+/*!\brief Define the max number of states*/
 #define MAX_NUM_TRAFFIC_STATE 4 //  we have 4 state: OFF, PU, ED, PE
 
+/*!\brief Define the max number of application runing in the  same time*/
+#define MAX_NUM_APPLICATION 5 
 
 #define OTG_FLAG_SIZE 3
 #define OTG_FLAG "OTG"
@@ -62,7 +64,7 @@
 #define MAX_BUFF_TX 10000
  
 /*!\brief Define the min size of the payload*/ 
-#define PAYLOAD_MIN 46    //http://tools.ietf.org/html/rfc894
+#define PAYLOAD_MIN  1 /*46*/    //http://tools.ietf.org/html/rfc894
 
 /*!\brief Define the min size of the payload, according to the Jumbo frame*/ 
 #ifdef JUMBO_FRAME
