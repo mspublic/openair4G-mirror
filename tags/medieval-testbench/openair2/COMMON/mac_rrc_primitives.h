@@ -317,6 +317,7 @@ typedef struct {
 
 typedef struct{   //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
+  /*
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
   u8  eNB_id[NB_MODULES_MAX][NB_CNX_UE];
 #ifndef CELLULAR
@@ -334,6 +335,7 @@ typedef struct{   //RRC_INTERFACE_FUNCTIONS
   void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*);
   void (*fn_rrc)  (void);
   u8 (*get_rrc_status)(u8 Mod_id,u8 eNB_flag,u8 eNB_index);  
+  */
 }RRC_XFACE;
 
 
