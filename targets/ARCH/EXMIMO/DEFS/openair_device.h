@@ -16,7 +16,7 @@
 #define EURECOM_VENDOR           0x0001
 #define TELECOM_PARISTECH_VENDOR 0x0002
 //
-// PCIe Subsystem ID = Board ID.ExMIMO-x (4 bits) | Board ID.HWRev (4 bits) | SW/Protocol Revision (8 bits)
+// PCIe Subsystem ID = exmimo_id.board_exmimoversion(1,2) (4 bits) | exmimo_id.board_hwrev (4 bits) | exmimo_id.board_swrev (Protocol Revision, 8 bits)
 // Board IDs:
 //   0x11 => ExpressMIMO-1, first run/HW revision
 //   0x12 => ExpressMIMO-1, second run
@@ -26,7 +26,6 @@
 // SW/Protocol revision:
 #define BOARD_SWREV_LEGACY   0x07
 #define BOARD_SWREV_CMDFIFOS 0x11
-
 
 
 // Device IO definitions and operations
