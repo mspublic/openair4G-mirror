@@ -112,20 +112,35 @@ typedef struct {
   u8 T:1;
   u8 E:1;
 } __attribute__((__packed__))RA_HEADER_BI;
+/*
+typedef struct {
+  uint64_t padding:16;
+  uint64_t t_crnti:16;
+  uint64_t hopping_flag:1;
+  uint64_t rb_alloc:10;
+  uint64_t mcs:4;
+  uint64_t TPC:3;
+  uint64_t UL_delay:1;
+  uint64_t cqi_req:1;
+  uint64_t Timing_Advance_Command:11;  // first/2nd octet LSB
+  uint64_t R:1;                        // octet MSB
+  } __attribute__((__packed__))RAR_PDU;
 
 typedef struct {
-  u64 t_crnti:16;
-  u64 hopping_flag:1;
-  u64 rb_alloc:10;
-  u64 mcs:4;
-  u64 TPC:3;
-  u64 UL_delay:1;
-  u64 cqi_req:1;
-  u64 Timing_Advance_Command:11;  // first/2nd octet LSB
-  u64 R:1;                        // octet MSB
-  u64 padding:16;
-} __attribute__((__packed__))RAR_PDU;
+  uint64_t padding:16;
+  uint64_t R:1;                        // octet MSB
+  uint64_t Timing_Advance_Command:11;  // first/2nd octet LSB
+  uint64_t cqi_req:1;
+  uint64_t UL_delay:1;
+  uint64_t TPC:3;
+  uint64_t mcs:4;
+  uint64_t rb_alloc:10;
+  uint64_t hopping_flag:1;
+  uint64_t t_crnti:16;
+  } __attribute__((__packed__))RAR_PDU;
+
 #define sizeof_RAR_PDU 6
+*/
 
 typedef struct {
   u8 LCID:5;  // octet 1 LSB
@@ -532,7 +547,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned short *sdu_lengths,
 				    unsigned char *sdu_lcids,
 				    unsigned char drx_cmd,
-				    unsigned char timing_advance_cmd,
+				    short timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
 				    unsigned char short_padding,
 				    unsigned short post_padding);
@@ -602,8 +617,9 @@ void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, 
 @param subframe Index of subframe
 @param rballoc Bitmask for allowable subband allocations
 @param RA_scheduled RA was scheduled in this subframe
+@param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
-void fill_DLSCH_dci(u8 Mod_id,u32 frame,u8 subframe,u32 rballoc,u8 RA_scheduled);
+void fill_DLSCH_dci(u8 Mod_id,u32 frame,u8 subframe,u32 rballoc,u8 RA_scheduled,int mbsfn_flag);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB
@@ -611,8 +627,9 @@ void fill_DLSCH_dci(u8 Mod_id,u32 frame,u8 subframe,u32 rballoc,u8 RA_scheduled)
 @param subframe Subframe on which to act
 @param nb_rb_used0 Number of PRB used by SI/RA
 @param nCCE_used Number of CCE used by SI/RA
+@param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
-void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,unsigned int *nCCE_used);
+void schedule_ue_spec(u8 Mod_id,u32 frame,u8 subframe,u16 nb_rb_used0,unsigned int *nCCE_used,int mbsfn_flag);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE

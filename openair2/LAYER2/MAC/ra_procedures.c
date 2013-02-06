@@ -201,6 +201,7 @@ void Msg1_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 void Msg3_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 
   // start contention resolution timer
+  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Setting contention resolution timer\n",Mod_id,frame);
   UE_mac_inst[Mod_id].RA_contention_resolution_cnt = 0;
   UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 1;
 
@@ -225,15 +226,6 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
   s32 frame_diff=0;
 
-  mac_rlc_status_resp_t rlc_status;
-  u8 dcch_header_len=0;
-  u8 dcch_header_len_tmp=0;
-  //  u8 bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
-  //  u8 phr_header_len=0, phr_ce_len=0,phr_len=0;
-  u16 sdu_lengths[8];
-  u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
-  u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
-  u16 sdu_length_total=0;
 
   if (UE_mode == PRACH) {
     if (UE_mac_inst[Mod_id].radioResourceConfigCommon)
@@ -245,20 +237,22 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 
       if (UE_mac_inst[Mod_id].RA_active == 0) {
 	// check if RRC is ready to initiate the RA procedure
-    	  //check for HO
-	if ((Size = mac_rrc_data_req(Mod_id,
-				     frame,
-				     CCCH,1,
-				     (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_FIXED)],0,
-				     eNB_index) > 0)) {
-
-	  Size16 = (u16)Size;
+	Size = mac_rrc_data_req(Mod_id,
+				frame,
+				CCCH,1,
+				(char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_FIXED)],0,
+				eNB_index);
+	Size16 = (u16)Size;
 	
-	  //	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
-	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
-		frame, Mod_id, eNB_index, Mod_id);
-	  LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
-	  
+	//	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
+	      frame, Mod_id, eNB_index, Mod_id);
+	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,frame,Size);
+
+	if (Size>0) {
+
+
+
 	  UE_mac_inst[Mod_id].RA_active                        = 1;
 	  UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
 	  UE_mac_inst[Mod_id].RA_Msg3_size                     = Size+sizeof(SCH_SUBHEADER_FIXED);

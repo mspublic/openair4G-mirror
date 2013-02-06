@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cblas.h>
+#include <execinfo.h>
 
 
 #include "SIMULATION/RF/defs.h"
@@ -42,9 +43,9 @@
 #include "cor_SF_sim.h"
 #include "UTIL/OMG/omg_constants.h"
 
-#ifdef VAL_PROFILING // Ensure that you have valgrind in the following path in your system or change it otherwise
-#include </usr/local/include/valgrind/callgrind.h>
-#endif
+//#ifdef VAL_PROFILING // Ensure that you have valgrind in the following path in your system or change it otherwise
+#include </usr/include/valgrind/callgrind.h>
+//#endif
 
 //#ifdef PROC
 #include "../PROC/interface.h"
@@ -94,28 +95,33 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
-
+double sinr_bler_map_up[MCS_COUNT][2][16];
+extern double SINRpost_eff[301];
+extern int mcsPost; 
+extern int  nrbPost; 
+extern int frbPost;
 extern void kpi_gen();
 
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
-    {"custom", 0},
-    {"SCM_A", 1},
-    {"SCM_B", 2},
-    {"SCM_C", 3},
-    {"SCM_D", 4},
-    {"EPA", 5},
-    {"EVA", 6},
-    {"ETU", 7},
-    {"Rayleigh8", 8},
-    {"Rayleigh1", 9},
-    {"Rayleigh1_corr", 10},
-    {"Rayleigh1_anticorr", 11},
-    {"Rice8", 12},
-    {"Rice1", 13},
-    {"Rice1_corr", 14},
-    {"Rice1_anticorr", 15},
-    {"AWGN", 16},
+    {"custom", custom},
+    {"SCM_A", SCM_A},
+    {"SCM_B", SCM_B},
+    {"SCM_C", SCM_C},
+    {"SCM_D", SCM_D},
+    {"EPA", EPA},
+    {"EVA", EVA},
+    {"ETU", ETU},
+    {"Rayleigh8", Rayleigh8},
+    {"Rayleigh1", Rayleigh1},
+    {"Rayleigh1_800", Rayleigh1_800},
+    {"Rayleigh1_corr", Rayleigh1_corr},
+    {"Rayleigh1_anticorr", Rayleigh1_anticorr},
+    {"Rice8", Rice8},
+    {"Rice1", Rice1},
+    {"Rice1_corr", Rice1_corr},
+    {"Rice1_anticorr", Rice1_anticorr},
+    {"AWGN", AWGN},
     {NULL, -1}
 };
 
@@ -274,7 +280,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   if (channel_f != NULL) {
     cum_avg = 0;
     ind = 0;
-    for (j=0; j<4; j++) { 
+    for (j=0; j<frame_parms->nb_antennas_tx_eNB; j++) { 
       for (i=0;i<frame_parms->nb_antennas_rx;i++) {
 	for (k=0;k<NUMBER_OF_OFDM_CARRIERS*7;k++){
 	  sig_time[ind] = (float)ind;
@@ -345,7 +351,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
     cum_avg = 0;
     ind = 0;
     memset(sig_time,0,100*sizeof(float));
-    fl_set_xyplot_ybounds(form->channel_t_im,-22,-10);
+    fl_set_xyplot_ybounds(form->channel_t_im,-22,10);
     
     for (i=0;i<100;i++){
       sig_time[i] = (float)i;
@@ -539,8 +545,20 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
+void ia_receiver_on_off( FL_OBJECT *button, long arg) {
+  if (fl_get_button(button)) {
+      fl_set_object_label(button, "IA Receiver ON");
+      openair_daq_vars.use_ia_receiver = 1;
+      fl_set_object_color(button, FL_GREEN, FL_GREEN);
+  }
+  else {
+      fl_set_object_label(button, "IA Receiver OFF");
+      openair_daq_vars.use_ia_receiver = 0;
+      fl_set_object_color(button, FL_RED, FL_RED);
+  }
+}
 #endif //XFORMS
-
+#ifdef OPENAIR2
 int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data){
   int i,j;
   omv_data.end=0;
@@ -605,7 +623,7 @@ void omv_end (int pfd, Data_Flow_Unit omv_data) {
   if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
     perror( "write omv failed" );
 }
-
+#endif 
 int
 main (int argc, char **argv)
 {
@@ -622,6 +640,10 @@ main (int argc, char **argv)
   // Framing variables
   s32 slot, last_slot, next_slot;
 
+  FILE *SINRpost;
+  char SINRpost_fname[512];
+  sprintf(SINRpost_fname,"postprocSINR.m");
+  SINRpost = fopen(SINRpost_fname,"w");
   // variables/flags which are set by user on command-line
   double snr_dB, sinr_dB,snr_direction;//,sinr_direction;
   u8 set_sinr=0;//,set_snr=0;
@@ -643,7 +665,7 @@ main (int argc, char **argv)
   int td, td_avg, sleep_time_us;
 
   lte_subframe_t direction;
-
+#ifdef OPENAIR2
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -656,11 +678,11 @@ main (int argc, char **argv)
   char x_area[20];
   char y_area[20];  
   char z_area[20];
-  char fname[64],vname[64];
   char nb_antenna[20];
   char frame_type[10];
   char tdd_config[10];
-  
+#endif   
+  char fname[64],vname[64];
   // u8 awgn_flag = 0;
 #ifdef XFORMS
   FD_lte_scope *form_dl[NUMBER_OF_UE_MAX];
@@ -670,9 +692,9 @@ main (int argc, char **argv)
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
 
-  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
+  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats[NUMBER_OF_eNB_MAX], *eNB_avg_thr;
   
-  char UE_stats_filename[255];
+  char UE_stats_filename[255],eNB_stats_filename[255];
  
   int len;
 #ifdef ICIC
@@ -684,8 +706,9 @@ main (int argc, char **argv)
   // Added for PHY abstraction
   Node_list ue_node_list = NULL;
   Node_list enb_node_list = NULL;
+#ifdef OPENAIR2
   Data_Flow_Unit omv_data ;
-//ALU
+#endif //ALU
 
   int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
   //double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
@@ -977,7 +1000,7 @@ main (int argc, char **argv)
 
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
-
+#ifdef OPENAIR2
   if (oai_emulation.info.omv_enabled == 1) {
     
     if(pipe(pfd) == -1)
@@ -1011,16 +1034,18 @@ main (int argc, char **argv)
     if(close( pfd[0] ) == -1 ) /* we close the write desc. */
       perror("close on read\n" );
   }
-
+#endif 
 #ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
     UE_stats[UE_id] = fopen (UE_stats_filename, "w");
   }
-  eNB_stats = fopen ("eNB_stats.txt", "w");
-  printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
 
- eNB_avg_thr = fopen ("eNB_stats_th.txt", "w");
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+    sprintf(eNB_stats_filename,"eNB_stats%d.txt",eNB_id);
+    eNB_stats[eNB_id] = fopen (eNB_stats_filename, "w");
+  }
+  eNB_avg_thr = fopen ("eNB_stats_th.txt", "w");
  
 #endif
       
@@ -1029,13 +1054,13 @@ main (int argc, char **argv)
   LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
   	 oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
   
-  if(set_seed){
+  // if(set_seed){
     randominit (oai_emulation.info.seed);
     set_taus_seed (oai_emulation.info.seed);
-  } else {
-    randominit (0);
-    set_taus_seed (0);
-  }
+    //  } else {
+    //  randominit (0);
+    // set_taus_seed (0);
+    // }
   // change the nb_connected_eNB
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
@@ -1046,8 +1071,14 @@ main (int argc, char **argv)
 
 
   /* Added for PHY abstraction */
-  if (abstraction_flag) 
+  if (abstraction_flag) {
     get_beta_map();
+#ifdef PHY_ABSTRACTION_UL
+        get_beta_map_up();
+#endif
+          get_MIESM_param();
+        }
+
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
@@ -1131,7 +1162,7 @@ main (int argc, char **argv)
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
-  openair_daq_vars.ue_ul_nb_rb = 2;
+  openair_daq_vars.ue_ul_nb_rb = 8;
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
@@ -1221,13 +1252,13 @@ main (int argc, char **argv)
 
 
   if (ue_connection_test == 1) {
-    snr_direction = -1;
-    snr_dB=20;
-    sinr_dB=-20;
+    snr_direction = -2;
+    snr_dB=30;
+    sinr_dB=-10;
   }
-#ifdef VAL_PROFILING
+//#ifdef VAL_PROFILING
   CALLGRIND_START_INSTRUMENTATION;
-#endif
+//#endif
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
     // Handling the cooperation Flag
@@ -1242,11 +1273,11 @@ main (int argc, char **argv)
 	snr_dB += snr_direction;
 	sinr_dB -= snr_direction;
       }
-      if (snr_dB == -20) {
-	snr_direction=1;
+      if (snr_dB == -10) {
+	snr_direction=2;
       }
-      else if (snr_dB==20) {
-	snr_direction=-1;
+      else if (snr_dB==30) {
+	snr_direction=-2;
       }
     }
       
@@ -1258,7 +1289,7 @@ main (int argc, char **argv)
       frame %=(oai_emulation.info.n_frames-1);
     } 
     
-    if ((frame % 1) == 0 ) { // call OMG every 10ms 
+    if ((frame % 10) == 0 ) { // call OMG every 10ms 
       update_nodes(oai_emulation.info.time_s); 
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
@@ -1281,11 +1312,12 @@ main (int argc, char **argv)
     }
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time_s);
     ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time_s);
+#ifdef OPENAIR2
     // check if pipe is still open
     if ((oai_emulation.info.omv_enabled == 1) ){
       omv_write(pfd[1], enb_node_list, ue_node_list, omv_data);
     }
-    
+#endif    
 #ifdef DEBUG_OMG
     if ((((int) oai_emulation.info.time_s) % 100) == 0) {
       for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
@@ -1312,7 +1344,8 @@ main (int argc, char **argv)
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
 	  //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+	  LOG_D(OCM,"[Frame %d]Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+		frame,
 		eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
 		eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
 	}
@@ -1372,12 +1405,15 @@ main (int argc, char **argv)
 	check_handovers(eNB_id,PHY_vars_eNB_g[eNB_id]);
 
 #ifdef PRINT_STATS
-	if (eNB_stats) {
-	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
-	  rewind (eNB_stats);
-	  fwrite (stats_buffer, 1, len, eNB_stats);
-	  fflush(eNB_stats);
+	for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+		if (eNB_stats[eNB_id]) {
+		  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
+		  rewind (eNB_stats[eNB_id]);
+		  fwrite (stats_buffer, 1, len, eNB_stats[eNB_id]);
+		  fflush(eNB_stats[eNB_id]);
+		}
 	}
+
                     /*
 	  printf("[eNBPRINT] Average System Throughput %dKbps\n",(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
 	  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) 
@@ -1423,8 +1459,9 @@ main (int argc, char **argv)
 
 	      if(PHY_vars_UE_g[UE_id]->lte_handover_params.ho_triggered == 1) {
 			  PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH; //Find a way to obtain the correct eNB index
+			  
 	      }
-
+		  ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id]->tx_power_dBm;
 
 	    }
 	  }
@@ -1463,24 +1500,39 @@ main (int argc, char **argv)
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
       }
-      if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
+      if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){//if ((subframe<2) || (subframe>4))
+        do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
+        
+                int ccc;
+                fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
+                for(ccc = 0 ; ccc<301; ccc++)
+                {
+                        fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
+                }
+                fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
       }
       if ((direction == SF_S)) {//it must be a special subframe
-	if (next_slot%2==0) {//DL part
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
-	  /*
-	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	    printf("SB(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	  */
-	}
-	else {// UL part
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
-	}
+        if (next_slot%2==0) {//DL part
+          do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms);
+          /*
+            for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
+            for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
+            for (k=0;k<UE2eNB[1][0]->channel_length;k++)
+            printf("SB(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
+          */
+        }
+        else {// UL part
+          do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
+            
+            int ccc;
+                fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
+                for(ccc = 0 ; ccc<301; ccc++)
+                {
+                        fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
+                }
+                fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
+        }
       }
-    
       if ((last_slot == 1) && (frame == 0)
 	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
@@ -1589,11 +1641,11 @@ main (int argc, char **argv)
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame
-  
-#ifdef VAL_PROFILING
+  fclose(SINRpost);
+//#ifdef VAL_PROFILING
   CALLGRIND_STOP_INSTRUMENTATION;
   CALLGRIND_DUMP_STATS;
-#endif
+//#endif
 
 
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
@@ -1651,17 +1703,19 @@ main (int argc, char **argv)
   for(UE_id=0;UE_id<NB_UE_INST;UE_id++) 
     if (UE_stats[UE_id]) 
       fclose (UE_stats[UE_id]);
-  if (eNB_stats)
-    fclose (eNB_stats);
+  for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++)
+	  if (eNB_stats)
+		  fclose (eNB_stats[eNB_id]);
   if (eNB_avg_thr)
     fclose (eNB_avg_thr);
 #endif
 
   // stop OMG
   stop_mobility_generator(oai_emulation.info.omg_model_ue);//omg_param_list.mobility_type
+#ifdef OPENAIR2
   if (oai_emulation.info.omv_enabled == 1)
     omv_end(pfd[1],omv_data);
-
+#endif
   if ((oai_emulation.info.ocm_enabled == 1) && (ethernet_flag == 0) && (ShaF != NULL)) 
     destroyMat(ShaF,map1, map2);
 
@@ -1714,6 +1768,10 @@ void terminate(void) {
 
 void exit_fun(const char* s)
 {
+  void *array[10];
+  size_t size;
+  size = backtrace(array, 10);
+  backtrace_symbols_fd(array, size, 2);
   fprintf(stderr, "Error: %s. Exiting!\n",s);
   exit (-1);
 }

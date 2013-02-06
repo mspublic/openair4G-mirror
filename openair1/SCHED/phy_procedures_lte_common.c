@@ -53,7 +53,7 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 
   // Fill in other TDD Configuration!!!!
 
-  if (frame_parms->frame_type == 0) {
+  if (frame_parms->frame_type == FDD) {
     *subframe = current_subframe+6;
     if (*subframe>9) {
       *subframe = *subframe-10;
@@ -63,7 +63,7 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
       *frame=current_frame;
     }
   }
-  else {
+  else { // TDD
     if (frame_parms->tdd_config == 1) {
       switch (current_subframe) {
 	
