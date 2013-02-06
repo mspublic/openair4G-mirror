@@ -93,14 +93,11 @@
  */
 typedef struct
 {
-    uint16_t bitstream_vendor_id;
-    uint16_t bitstream_id;
+    uint32_t bitstream_id;
     uint32_t bitstream_build_date;
-    uint16_t software_vendor_id;
-    uint16_t software_id;
+    uint32_t software_id;
     uint32_t software_build_date;
-    uint16_t dsp_bitstream_vendor_id;
-    uint16_t dsp_bitstream_id;
+    uint32_t dsp_bitstream_id;
     uint32_t dsp_bitstream_build_date;
 } exmimo_system_id_t;
 
@@ -199,6 +196,9 @@ typedef struct
 #define DMAMODE_RX      (1<<23)
 #define DMAMODE_TX      (2<<23)
 
+#define ADACLOOP_MASK   (1<<25)
+#define ADACLOOP_EN     (1<<25)
+
 // register values and masks for rf_local
 #define TXLOIMASK   63
 #define TXLOQMASK  (63<<6)
@@ -245,55 +245,45 @@ typedef struct
 
 } exmimo_rf_t;
 
-
-// defines for synchronization mode (framing.sync_mode) when using multiple cards
-#define SYNCMODE_INDIVIDUAL 0
+// ** multicard synchronization mode (framing.multicard_syncmode)
+//
+//    slave: take sync_newframe & sync_getframe from IO_SYNC header pin
+//    master: enable IO_SYNC header OUTPUT (do this only on a single card!) for sync_newframe & sync_getframe
+#define SYNCMODE_INDEPENDANT 0
 #define SYNCMODE_MASTER     1
 #define SYNCMODE_SLAVE      2
 
-// register values and masks for tdd_config
-#define DUALTXMASK       (1<<1)
-#define DUALTXDIS         0
-#define DUALTXEN         (1<<1)
-#define DUPLEXMASK      (1<<2)
-#define DUPLEXFDD       (0<<2)
-#define DUPLEXTDD       (1<<2)
-#define SWITCHSTATEMASK (1<<3)
-#define SWITCHSTATENEG   0
-#define SWITCHSTATEPOS  (1<<3)
+// ** register values and masks for tdd_config
+//
+//    In TDD mode, there are two ways to control the RX/TX switch:
+//    1. using the LSB from the TX data (TXRXSWITCH_LSB)
+//    2. using FPGA logic, based on switch_offset[0..3]
+#define DD_MASK           (1<<0)
+#define DD_FDD             0
+#define DD_TDD            (1<<0)
+#define TXRXSWITCH_MASK   (3<<1)
+#define TXRXSWITCH_LSB     0
+#define TXRXSWITCH_FPGA   (1<<1)
+#define TXRXSWITCH_TESTRX (2<<1)
+#define TXRXSWITCH_TESTTX (3<<1)
+#define SWITCHSTATE_MASK  (1<<3)
+#define SWITCHSTATE_0      0
+#define SWITCHSTATE_1     (1<<3)
 
-//rf_front_end_rx_tx_sw_set( unsigned int rx, unsigned int chain );
-//rf_front_end_rx_tx_sw_selectsource( int mode );
-
-
-/* multicard sync:
- * slave=1: set input MUX for newframe & getframe to take from pin
- * mast=1:  iosync OUTenable f. newframe & getframe
- * mast=0&slave=0: default, iosyncs are input, but internal signals are used
- * 
- * 
- * tdd_config:
- * Bit 0:  TDD/FDD mode: 0=FDD  1=TDD
- * Bit 1:  TX/RX switch: 0=LSB  1=Logic
- * Bit 2:  Switch_State (selects whether 1 or 0 is RX)
- */
 typedef struct
 {
-    uint32_t tdd_config;
+    uint32_t multicard_syncmode;
     
     uint32_t eNB_flag;
 
-    uint32_t multicard_sync_mode; // 0:INDEPENDANT, 1:MASTER, 2:SLAVE
-    
-    uint32_t frame_length;  // e.g. 76800
-    uint32_t frame_start;   // e.g. 18
+    uint32_t tdd_config;
+
+    uint32_t frame_length;          // e.g. 76800
+    uint32_t frame_start;           // e.g. 18
     uint32_t adac_buffer_period;    // e.g. 2048
     uint32_t adac_intr_period;      // e.g. 1024
     
-    uint32_t switch_offset0;
-    uint32_t switch_offset1;
-    uint32_t switch_offset2;
-    uint32_t switch_offset3;
+    uint32_t switch_offset[4];      // sample offsets (relative to start of frame) used to control the RX/TX switch in TDD mode
 
 } exmimo_framing_t;
 
