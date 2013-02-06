@@ -184,6 +184,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     case openair_GET_FRAME:
 
         get_frame_cnt=0;
+        get_frame_done = 0;
         printk("calling exmimo_send_pccmd(%d, EXMIMO_GET_FRAME)\n", (int)arg);
         if ( is_card_num_invalid((int)arg) )
             return -EINVAL;
