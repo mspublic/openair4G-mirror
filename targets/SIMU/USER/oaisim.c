@@ -17,7 +17,9 @@
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
+#ifndef CELLULAR
 #include "RRC/LITE/vars.h"
+#endif
 #include "PHY_INTERFACE/vars.h"
 //#endif
 
@@ -1333,8 +1335,8 @@ main (int argc, char **argv)
       for (eNB_id=oai_emulation.info.first_enb_local;
 	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
 	   eNB_id++) {
-	printf ("debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
-	printf ("debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
+	LOG_D(EMU,"debug: Nid_cell %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+	LOG_D(EMU,"debug: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config);
 	LOG_D(EMU,"PHY procedures eNB %d for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
 	      eNB_id, frame, slot, next_slot >> 1,
 	      PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
