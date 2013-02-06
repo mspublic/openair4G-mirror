@@ -82,7 +82,7 @@ void rrc_ue_bch_process_MIB (PERParms * pParms){
       // check sib_ref information
     }
   } else {
-    #ifdef DEBUG_RRC_BROADCAST
+    #ifdef DEBUG_RRC_BROADCAST_DETAILS
      msg ("[RRC_BCH-UE] Ignore information from MIB %d , %d.\n", (int) protocol_ms->rrc.ue_bch_blocks.encoded_currMIB[1], protocol_ms->rrc.ue_bch_blocks.bch_ue_vts.mib_vt);
      // rrc_print_buffer (protocol_ms->rrc.ue_bch_blocks.encoded_currMIB,20);
     #endif
@@ -154,7 +154,7 @@ void rrc_ue_bch_process_SIB5 (PERParms * pParms){
   if (protocol_ms->rrc.ue_bch_blocks.currMIB.sibSb_ReferenceList.sib_ref[2].sibSb_Type.type_tag.sysInfoType5 != protocol_ms->rrc.ue_bch_blocks.bch_ue_vts.sib5_vt) {
     // skip segment decoding, 1st step works on bytes only
     status = rrc_PERDec_SysInfoType5 (pParms, &(protocol_ms->rrc.ue_bch_blocks.currSIB5));
-    #ifdef DEBUG_RRC_BROADCAST
+    #ifdef DEBUG_RRC_STATE
      msg ("[RRC_BCH-UE] Decode SIB5 status %d.\n", status);
     #endif
     if (status == P_SUCCESS) {
@@ -185,9 +185,11 @@ void rrc_ue_bch_process_SIB5 (PERParms * pParms){
 */
 
       //  w NAS : Forward broadcast to NAS -
+      #ifdef DEBUG_RRC_STATE
       msg ("[RRC_BCH-UE] DEBUG SIB5 ue_wait_establish_req = %d.\n", protocol_ms->rrc.ue_wait_establish_req );
+      #endif
       if (protocol_ms->rrc.ue_wait_establish_req == 0) {
-        msg ("\n[RRC]-FSM can start - SIB5 received - \n\n");
+        msg ("\n\n [RRC]-FSM can start - SIB5 with Common Configuration received - \n\n");
         protocol_ms->rrc.ue_wait_establish_req = 1;
         protocol_ms->rrc.ue_broadcast_counter = 1;
       } else {
@@ -236,13 +238,13 @@ void rrc_ue_bch_process_SIB14 (PERParms * pParms){
 
   // skip segment decoding, 1st step works on bytes only
   status = rrc_PERDec_SysInfoType14 (pParms, &(protocol_ms->rrc.ue_bch_blocks.currSIB14));
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] Decode SIB14 status %d.\n", status);
   #endif
   if (status == P_SUCCESS) {
     if (protocol_ms->rrc.ue_bch_blocks.SIB14_timeout == TRUE) {
       numslots = protocol_ms->rrc.ue_bch_blocks.currSIB14.individualTS_InterferenceList.numSlots;
-      #ifdef DEBUG_RRC_BROADCAST
+      #ifdef DEBUG_RRC_BROADCAST_DETAILS
       msg ("[RRC_BCH-UE] Process information from System Information Block 14.\n");
       msg ("[RRC_BCH-UE] Expiration Time factor : %d,  Number of slots: %d \n", protocol_ms->rrc.ue_bch_blocks.currSIB14.expirationTimeFactor, numslots);
       for (i = 0; i < numslots; i++) {
