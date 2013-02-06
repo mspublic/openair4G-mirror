@@ -37,7 +37,7 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   mem_block_t *p;
   int i;
 
-  protocol_bs->rrc.current_SFN = frame;
+  //protocol_bs->rrc.current_SFN = frame;
   //  if (protocol_bs->rrc.current_SFN % 50 == 0) {
   #ifdef DEBUG_RRC_DETAILS
   if (protocol_bs->rrc.current_SFN % 5 == 0) {
@@ -97,7 +97,7 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
         #endif
       }
       if (protocol_bs->rrc.current_SFN > 0)
-        rrc_rg_sync_measures (Mac_rlc_xface->frame);
+        rrc_rg_sync_measures (protocol_bs->rrc.current_SFN);
       //
       #ifdef ALLOW_MBMS_PROTOCOL
         rrc_rg_mbms_MCCH_tx();

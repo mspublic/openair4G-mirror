@@ -55,7 +55,7 @@ extern void rrc_ue_broadcast_encode_nas_sib1 (void);
 extern void rrc_ue_broadcast_encode_nas_sib18 (void);
 extern void rrc_ue_read_neighboring_cells_info (void);
 extern int  rrc_ue_read_DCin_FIFO (void);
-extern void rrc_ue_t300_timeout (void *protoP, void *timer_idP);
+extern void rrc_ue_t300_timeout (void);
 //extern void rrc_ue_srb0_decode (u8 * dataP, u16 length);
 //       void rrc_ue_srb0_decode (mem_block_t * sduP, int length);
 extern void rrc_ue_srb0_decode (char * sduP, int length);
@@ -67,7 +67,9 @@ extern void RRC_UE_O_NAS_DATA_IND (void);
 extern void RRC_UE_O_NAS_MEASUREMENT_IND (void);
 extern void RRC_UE_SEND_AM_SRB3 (int msgId);
 
+// L2 Frontend
 int rrc_ue_send_to_srb_rlc (int rb_id, char * data_buffer, int data_length);
+
 //rrc_ue_control.c
 void rrc_ue_L1_check (void);
 void rrc_ue_print_meas_control (struct rrc_ue_meas_cmd *p);

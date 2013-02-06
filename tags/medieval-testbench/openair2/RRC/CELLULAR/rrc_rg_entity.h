@@ -18,6 +18,7 @@
 #include "rrc_rg_variables.h"
 #include "rrc_rg_rrm_variables.h"
 #include "rrc_rg_mbms_variables.h"
+#include "rrc_rg_L2_intf_variables.h"
 //-----------------------------------------------------------------------------
 #include "rrm_config_structs.h"
 // #include "rrc_rg_data.h"
@@ -59,6 +60,15 @@ struct rrc_rg_entity {
   u8  rrc_rg_cctrch_outsynch[maxCCTrCH_rg];
   int rrc_rg_cctrch_crnti[maxCCTrCH_rg];
 
+  /* ** OAI compatible part - begin **/
+  // Control block for Broadcast asn1-compliant
+  struct rrc_rg_bch_asn1 rg_bch_asn1;
+
+  // Control block for srb-drb asn1-compliant
+  struct rrc_rg_srb_drb_asn1 rg_rb_asn1;
+  int mod_id;
+  /* ** OAI compatible part - end **/
+
   // Control block for Broadcast
   struct rrc_rg_bch_blocks rg_bch_blocks;
   int rg_broadcast_counter;
@@ -70,6 +80,8 @@ struct rrc_rg_entity {
   // RG configuration
   u16 rg_cell_id;
   int num_cells;
+  char ccch_buffer[100];
+  int ccch_buffer_size;
 
   // RG measures
   struct rrc_rg_meas_blocks rg_meas_blocks;

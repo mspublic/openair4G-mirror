@@ -123,14 +123,16 @@ void rrc_ue_read_neighboring_cells_info (void){
       protocol_ms->rrc.rg_ngbr_list.cell_info[i].cell_id = i + 1;
       protocol_ms->rrc.rg_ngbr_list.cell_info[i].pccpch_code_group = protocol_ms->rrc.ue_bch_blocks.currSIB18.cellCodegroups.data[i];
     }
-    #ifdef DEBUG_RRC_BROADCAST
+    #ifdef DEBUG_RRC_STATE
      msg ("[RRC_UE][SIB18] Neighbor cells. Number %d \n", protocol_ms->rrc.rg_ngbr_list.num_cells);
+    #endif
+    #ifdef DEBUG_RRC_BROADCAST
      for (i = 0; i < p->num_rg; i++)
        msg ("[RRC_UE][SIB18] Cell %d #%d , codegroup  %d\n", i + 1, protocol_ms->rrc.rg_ngbr_list.cell_info[i].cell_id, protocol_ms->rrc.rg_ngbr_list.cell_info[i].pccpch_code_group);
     #endif
   } else {
     protocol_ms->rrc.rg_ngbr_list.num_cells = 1;        // Error in config, force standalone cell
-    msg ("\n\n ERROR IN CONFIGURATION - RG num cells > Max Number of cells \n\n");
+    msg ("\n\n ERROR IN RT CONFIGURATION - RG num cells > Max Number of cells \n\n");
   }
 }
 // TEMP OPEMAIR : The next 4 functions provide some dummy values for L1 and L2 measurements.

@@ -45,21 +45,24 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 //     {sleep(2);}
 
 //  protocol_ms->rrc.current_SFN = Mac_rlc_xface->frame;
-  protocol_ms->rrc.current_SFN = frame;
+ // protocol_ms->rrc.current_SFN = frame;
   /*************/
   // TODO TO BE REMOVED TEMP -- stop the loop 
   if (protocol_ms->rrc.current_SFN > 50000)
    exit(1);
   //if (Mac_rlc_xface->frame < 100)
   //s return;
-  if (protocol_ms->rrc.current_SFN == 100)
-   msg("\n\n[RRC] [TEMP-OPENAIR-DEBUG] RRC-UE resuming its operation at frame %d\n\n ", protocol_ms->rrc.current_SFN);
+  //if (protocol_ms->rrc.current_SFN == 100)
+   //msg("\n\n[RRC] [TEMP-OPENAIR-DEBUG] RRC-UE resuming its operation at frame %d\n\n ", protocol_ms->rrc.current_SFN);
 
   /*************/
 
   #ifdef DEBUG_RRC_DETAILS
   if (protocol_ms->rrc.current_SFN % 5 == 0) {
      msg ("\n\n[RRC][MSG_TEST] System Time : %d\n", protocol_ms->rrc.current_SFN);
+     #ifdef  DEBUG_RRC_BROADCAST
+     msg ("[RRC_BCH-UE] DEBUG ue_wait_establish_req = %d.\n", protocol_ms->rrc.ue_wait_establish_req );
+     #endif
   }
   #endif
 
@@ -71,7 +74,7 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 
   if (rrc_release_all_ressources) {
   #ifdef DEBUG_RRC_STATE
-    msg ("[RRC_UE]rrc_ue_rxtx : release_radio_resources() \n");
+    msg ("[RRC_UE]rrc_ue_main_scheduler : release_radio_resources() \n");
   #endif
     //mac_remove_all ();
     //rb_remove_all ();
@@ -106,12 +109,27 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 
   // check for a time-out event
   // umts_timer_check_time_out (&protocol_ms->rrc.rrc_timers, protocol_ms->frame_tick_milliseconds);
-  umts_timer_check_time_out (&protocol_ms->rrc.rrc_timers, Mac_rlc_xface->frame/RRC_FRAME_DURATION);
+  //umts_timer_check_time_out (&protocol_ms->rrc.rrc_timers, Mac_rlc_xface->frame/RRC_FRAME_DURATION);
+  if (protocol_ms->rrc.rrc_ue_t300_target >0){
+  #ifdef DEBUG_RRC_STATE
+    msg ("[RRC_UE][DEBUG]rrc_ue_main_scheduler: T300 running at frame %d , target %d, msg length %d\n", 
+                     protocol_ms->rrc.current_SFN, protocol_ms->rrc.rrc_ue_t300_target, protocol_ms->rrc.ue_msg_infos.msg_length);
+  #endif
+  }
+
+  if (protocol_ms->rrc.rrc_ue_t300_target == protocol_ms->rrc.current_SFN){
+     rrc_ue_t300_timeout();
+  }
 
   // Measurements
   //rrc_ue_meas_loop();   // for test only
   //check if report of measure needed in UE
   rrc_ue_sync_measures (protocol_ms->rrc.current_SFN, &Message_Id);
+
+   // TEMP - 06/02/2013
+   // PDCP does not returm ack in AM mode, so it is simulated here to process with the FSM
+  if (protocol_ms->rrc.rrc_ue_ackSimu_flag ==1)
+     rrc_ue_simu_receive_ack_from_rlc();
 
   //Force Uplink RLC communication
   rrc_ue_force_uplink ();

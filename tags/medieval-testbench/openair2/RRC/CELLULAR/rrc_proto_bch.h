@@ -108,8 +108,8 @@ int  rrc_PERDec_MasterInformationBlock (PERParms * pParms, MasterInformationBloc
 int  rrc_PEREnc_MIB_ValueTag (PERParms * pParms, MIB_ValueTag value);
 int  rrc_PERDec_MIB_ValueTag (PERParms * pParms, MIB_ValueTag * pvalue);
 
-int  rrc_PEREnc_PLMN_Identity (PERParms * pParms, PLMN_Identity * pvalue);
-int  rrc_PERDec_PLMN_Identity (PERParms * pParms, PLMN_Identity * pvalue);
+int  rrc_PEREnc_PLMN_Identity (PERParms * pParms, RCELL_PLMN_Identity * pvalue);
+int  rrc_PERDec_PLMN_Identity (PERParms * pParms, RCELL_PLMN_Identity * pvalue);
 
 int  rrc_PEREnc_SIBSb_ReferenceList (PERParms * pParms, SIBSb_ReferenceList * pvalue);
 int  rrc_PERDec_SIBSb_ReferenceList (PERParms * pParms, SIBSb_ReferenceList * pvalue);
@@ -121,8 +121,8 @@ int  rrc_PERDec_SysInfoType1 (PERParms * pParms, SysInfoType1 * pvalue);
 int  rrc_PEREnc_NAS_SystemInformation (PERParms * pParms, NAS_SystemInformation value);
 int  rrc_PERDec_NAS_SystemInformation (PERParms * pParms, NAS_SystemInformation * pvalue);
 
-int  rrc_PEREnc_UE_TimersAndConstants (PERParms * pParms, UE_TimersAndConstants value);
-int  rrc_PERDec_UE_TimersAndConstants (PERParms * pParms, UE_TimersAndConstants * pvalue);
+int  rrc_PEREnc_UE_TimersAndConstants (PERParms * pParms, RCELL_UE_TimersAndConstants value);
+int  rrc_PERDec_UE_TimersAndConstants (PERParms * pParms, RCELL_UE_TimersAndConstants * pvalue);
 
 /**************************************************************/
 int  rrc_PEREnc_SysInfoType2 (PERParms * pParms, SysInfoType2 * pvalue);

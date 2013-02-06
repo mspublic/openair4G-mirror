@@ -27,12 +27,12 @@ void rrc_ue_read_Seg10 (PERParms * pParms){
   int status = P_SUCCESS;
   unsigned int  SIB_type;
 
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] Get information from Complete SIB.\n");
   #endif
   /* decode sib_Type */
   status = rrc_PERDec_SIB_Type (pParms, &SIB_type);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] SI-BCH, SIB_type %d, status %d\n", SIB_type, status);
   #endif
   protocol_ms->rrc.ue_bch_blocks.curr_block_type = SIB_type;
@@ -74,19 +74,19 @@ void rrc_ue_read_Seg2 (PERParms * pParms){
   unsigned int SIB_type;
   int SEG_count;
 
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] Get information from First Segment.\n");
   #endif
   /* decode sib_Type */
   status = rrc_PERDec_SIB_Type (pParms, &SIB_type);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] SI-BCH, SIB_type %d , status %d\n", SIB_type, status);
   #endif
   protocol_ms->rrc.ue_bch_blocks.curr_block_type = SIB_type;
 
   /* decode seg_Count */
   status = rrc_PERDec_SegCount (pParms, &SEG_count);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    //msg("[RRC_BCH-UE] SI-BCH, SEG_count, status %d \n", SEG_count, status);
   #endif
   protocol_ms->rrc.ue_bch_blocks.curr_segment_count = SEG_count;
@@ -124,18 +124,18 @@ void rrc_ue_read_Seg3 (PERParms * pParms){
   unsigned int SIB_type;
   int SEG_index;
 
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] Get information from Subsequent Segment.\n");
   #endif
   /* decode sib_Type */
   status = rrc_PERDec_SIB_Type (pParms, &SIB_type);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] SI-BCH, SIB_type %d , status %d\n", SIB_type, status);
   #endif
 
   /* decode seg_Index */
   status = rrc_PERDec_SegmentIndex (pParms, &SEG_index);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    //msg("[RRC_BCH-UE] SI-BCH, SEG_index %d , status %d \n", SEG_index, status);
   #endif
   // check valid segment
@@ -183,18 +183,18 @@ void rrc_ue_read_Seg11 (PERParms * pParms){
   unsigned int SIB_type;
   int SEG_index;
 
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] Get information from Last Segment.\n");
   #endif
   /* decode sib_Type */
   status = rrc_PERDec_SIB_Type (pParms, &SIB_type);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
    msg ("[RRC_BCH-UE] SI-BCH, SIB_type %d, status %d.\n", SIB_type, status);
   #endif
 
   /* decode seg_Index */
   status = rrc_PERDec_SegmentIndex (pParms, &SEG_index);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
   //msg("[RRC_BCH-UE] SI-BCH, SEG_index %d, status %d \n", SEG_index, status);
   #endif
   // check valid segment
@@ -274,7 +274,7 @@ int rrc_ue_get_SIBCH_info (PERParms * pParms){
   unsigned int payload_type;
   int status = P_SUCCESS;
 
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
   //  msg("[RRC_BCH-UE] Get main information from SI-BCH \n");
   #endif
   pBuffer = (char *) &(protocol_ms->rrc.ue_bch_blocks.encoded_currSIBCH);
@@ -286,14 +286,14 @@ int rrc_ue_get_SIBCH_info (PERParms * pParms){
 
   /* decode sfn_Prime */
   status = rrc_PERDec_SFN_Prime (pParms, &protocol_ms->rrc.ue_bch_blocks.currSI_BCH.sfn_Prime);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
   if (status != P_SUCCESS)
     msg ("[RRC_BCH-UE] Decode SFN_Prime, status %d.\n", status);
   #endif
 
   /* decode payload_type */
   status = rrc_PERDec_ConsUnsigned (pParms, &payload_type, 0, 15);
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
   if (status != P_SUCCESS)
     msg ("[RRC_BCH-UE] Decode payload_type, status %d.\n", status);
   #endif
@@ -313,7 +313,7 @@ int rrc_ue_get_SIBCH_info (PERParms * pParms){
       rrc_ue_read_Seg11 (pParms);
       break;
     case BCH_noSegment:
-      #ifdef DEBUG_RRC_BROADCAST
+      #ifdef DEBUG_RRC_BROADCAST_DETAILS
       msg ("[RRC_BCH-UE] payload type is noSegment, SFN %d.\n", protocol_ms->rrc.ue_bch_blocks.currSI_BCH.sfn_Prime);
       #endif
       // Nothing else to do
@@ -335,7 +335,7 @@ void rrc_ue_read_next_segment (void){
   // Get main info and decode SI_BCH
   rrc_ue_get_SIBCH_info (pParms);
   //status = rrc_PERDec_SI_BCH (pParms, &(protocol_ms->rrc.ue_bch_blocks.currSI_BCH));
-  #ifdef DEBUG_RRC_BROADCAST
+  #ifdef DEBUG_RRC_BROADCAST_DETAILS
   // msg("[RRC_BCH] Decode Broadcast  - status : %d\n", status);
   #endif
 }
