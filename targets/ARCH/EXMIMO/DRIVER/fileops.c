@@ -65,12 +65,12 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma)
     memblock_ind = openair_mmap_getMemBlock( vma->vm_pgoff );
     card         = openair_mmap_getCard( vma->vm_pgoff );
 
-/*    printk("[openair][MMAP] called (start %lx, end %lx, pg_off %lx, size %lx)\n", 
+    printk("[openair][MMAP] called (start %lx, end %lx, pg_off %lx, size %lx)\n", 
         vma->vm_start, 
         vma->vm_end,
         vma->vm_pgoff,
         size);
-*/
+
     vma->vm_pgoff = 0;
     vma->vm_flags |= VM_RESERVED;
         
@@ -172,7 +172,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     switch(cmd)
     {
     case openair_STOP:
-        //----------------------
+        
         printk("[openair][IOCTL]     openair_STOP(card%d)\n", (int)arg);
         if ( is_card_num_invalid((int)arg) )
             return -EINVAL;
@@ -204,43 +204,25 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 
     case openair_GET_BIGSHMTOPS_KVIRT:
-            printk("id[card1]-openair_GET_BIGSHMTOPS_KVIRT/1: vendor %x, exmimo %x, hwrev %x, swrev %x\n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
-
+    
         printk("[IOCTL] : openair_GET_BIGSHMTOPS_KVIRT  (0x%p)[0] = %p[0] (bigshm_head) for 0..3 (sizeof %d) \n", (void *)arg, bigshm_head[0], sizeof(bigshm_head));
         copy_to_user((void *)arg, bigshm_head, sizeof(bigshm_head));
-            printk("id[card1]-openair_GET_BIGSHMTOPS_KVIRT/2: vendor %x, exmimo %x, hwrev %x, swrev %x\n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
 
         break;
         
         
     case openair_GET_PCI_INTERFACE_BOTS_KVIRT:
-            printk("id[card1]-openair_GET_PCI_INTERFACE_BOTS_KVIRT/1: vendor %x, exmimo %x, hwrev %x, swrev %x\n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
-  
+        
         printk("[IOCTL] : openair_GET_PCI_INTERFACE_BOTS_KVIRT: copying exmimo_pci_kvirt(@%8p) to %lx (sizeof %d)\n", &exmimo_pci_kvirt[0], arg, sizeof(exmimo_pci_kvirt));
         copy_to_user((void *)arg, exmimo_pci_kvirt, sizeof(exmimo_pci_kvirt));
-             printk("id[card1]-openair_GET_PCI_INTERFACE_BOTS_KVIRT/1: vendor %x, exmimo %x, hwrev %x, swrev %x\n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
    
         break;
     
         
     case openair_GET_NUM_DETECTED_CARDS:
-            printk("id[card1]-openair_GET_NUM_DETECTED_CARDS/1: vendor %x, exmimo %x, hwrev %x, swrev %x\n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
-   
+
         printk("[IOCTL] : openair_GET_NUM_DETECTED_CARDS: *(0x%p) = %d\n", (void *)arg, number_of_cards);
         copy_to_user((void *)arg, &number_of_cards, sizeof(number_of_cards));
-              printk("id[card1]-openair_GET_PCI_INTERFACE_BOTS_KVIRT/1: vendor %x, exmimo %x, hwrev %x, swrev %x\n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
    
         break;
 
