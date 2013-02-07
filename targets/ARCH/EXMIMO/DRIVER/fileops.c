@@ -77,11 +77,6 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma)
     if ( is_card_num_invalid(card) )
         return -EINVAL;
 
-        printk("id[card1]-mmap: vendor %x, exmimo %x, hwrev %x, swrev %x, \n", exmimo_pci_kvirt[1].exmimo_id_ptr->board_vendor,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_exmimoversion, exmimo_pci_kvirt[1].exmimo_id_ptr->board_hwrev,
-                exmimo_pci_kvirt[1].exmimo_id_ptr->board_swrev );
-
-
     if (memblock_ind == openair_mmap_BIGSHM)
     {
         // map a buffer from bigshm
