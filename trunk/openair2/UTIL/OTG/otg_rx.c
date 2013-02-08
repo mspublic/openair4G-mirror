@@ -152,16 +152,17 @@ char * hdr_payload=NULL;
 
 	LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %.2f (tx time %d, ctime %d), OWD:%.2f (ms):\n", src, dst, otg_info->radio_access_delay[src][dst], otg_hdr_rx->time, ctime , otg_info->rx_pkt_owd[src][dst]);
 
-
-	if (otg_info->rx_owd_max[src][dst]==0){
-	  otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
-	  otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
+	if (otg_hdr_info_rx->flag == 0xffff){
+		if (otg_info->rx_owd_max[src][dst]==0){
+	  	otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
+	  	otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
+		}		
+		else {
+	  	otg_info->rx_owd_max[src][dst]=MAX(otg_info->rx_owd_max[src][dst],otg_info->rx_pkt_owd[src][dst] );
+	  	otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
+		}
 	}
-	else {
-	  otg_info->rx_owd_max[src][dst]=MAX(otg_info->rx_owd_max[src][dst],otg_info->rx_pkt_owd[src][dst] );
-	  otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
-	}
-	LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %.2f, RTT MAX(one way) ms: %.2f \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
+	//LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %.2f, RTT MAX(one way) ms: %.2f \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
 
 	/* xforms part: add metrics  */	
 	if (g_otg->curve==1){ 

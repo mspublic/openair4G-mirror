@@ -282,7 +282,7 @@ if (background_ok==0){
   if (size!=strlen(payload))
     LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, size, strlen(payload), seq_num, header, payload);
   else 
-    LOG_T(OTG,"[%d][%d] [0x %x] [Aggre %d] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, appli_aggregation, ctime,  size, seq_num,state, header, payload);
+    LOG_T(OTG,"[%d][%d] [0x %x] [Aggre %d] TX INFO pkt at time %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, appli_aggregation, ctime,  size, seq_num,state, header, payload);
   
  } else {
 
@@ -303,7 +303,7 @@ if (background_ok==0){
   if (otg_info->size_background[src][dst]!=strlen(payload))
     LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", src, dst, flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
   else
-    LOG_T(OTG,"[%d][%d][0x %x] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime, otg_info->size_background[src][dst], seq_num, state, header, payload);
+    LOG_T(OTG,"[%d][%d][0x %x] TX INFO pkt at time %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime, otg_info->size_background[src][dst], seq_num, state, header, payload);
 }
  
  buffer_size = hdr_size + strlen(header) + strlen(payload);
