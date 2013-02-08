@@ -1,3 +1,4 @@
+# compiles the example
 
 OPENAIRTARGETS_DIR ?=../../../..
 

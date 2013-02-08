@@ -36,6 +36,9 @@ void main(void)
     int ret, card, ant;
     unsigned int my_rf_mode;
     
+    unsigned int *p_rx_ant0, *p_tx_ant0;
+    
+    
     ret = openair0_open();
     
     if ( ret != 0 )
@@ -65,6 +68,14 @@ void main(void)
     printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", card, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
 
     test_config( card, ant, my_rf_mode);
+    
+    // pointer to data
+    
+    p_rx_ant0 = openair0_exmimo_pci[ card ].adc_head[ ant ];
+    p_tx_ant0 = openair0_exmimo_pci[ card ].dac_head[ ant ];
+    
+    // do something with the data here
+    
     
     openair0_close();
 }
