@@ -25,7 +25,7 @@ static bool any_bad_argument(const octave_value_list &args)
     {
         error(FCNNAME);
         if (args.length()==11)
-            error("Wrong number of parameters! Did you add the card number?");
+            error("Wrong number of parameters! Did you add the card number as first parameter?");
         error("syntax: oarf_config_exmimo(card,freqrx,freq_tx,tdd_config,dual_tx,rxgain,txgain,eNB_flag,rf_mode,rx_dc,rf_local,rf_vcolocal)");
         return true;
     }
@@ -64,7 +64,7 @@ static bool any_bad_argument(const octave_value_list &args)
     if ((!args(4).is_real_scalar()))
     {
         error(FCNNAME);
-        error("dual_tx must be 0 or 1.");
+        error("multicard_syncmode must be an integer.");
         return true;
     }
 
@@ -73,10 +73,10 @@ static bool any_bad_argument(const octave_value_list &args)
     {
         for (i=0;i<v.columns();i++)
         {
-            if ((real(args(5).row_vector_value()(i))<0.0) || (real(args(5).row_vector_value()(i))>50.0))
+            if ((real(args(5).row_vector_value()(i))<0.0) || (real(args(5).row_vector_value()(i))>63.0))
             {
                 error(FCNNAME);
-                error("rx gain must be between 0 and 50. (got %f).",args(5).row_vector_value()(i));
+                error("rx gain must be between 0 and 63. (got %f).",args(5).row_vector_value()(i));
                 return true;
             }
         }
@@ -91,10 +91,10 @@ static bool any_bad_argument(const octave_value_list &args)
     {
         for (i=0;i<v.columns();i++)
         {
-            if ((real(args(6).row_vector_value()(i))<0.0) || (real(args(6).row_vector_value()(i))>50.0))
+            if ((real(args(6).row_vector_value()(i))<0.0) || (real(args(6).row_vector_value()(i))>63.0))
             {
                 error(FCNNAME);
-                error("tx gain must be between 0 and 50. (got %f).",args(6).row_vector_value()(i));
+                error("tx gain must be between 0 and 63. (got %f).",args(6).row_vector_value()(i));
                 return true;
             }
         }
@@ -116,9 +116,9 @@ static bool any_bad_argument(const octave_value_list &args)
     {
         for (i=0;i<v.columns();i++)
         {
-            if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>(double)((uint32_t)(1<<25)))) {
+            if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>(double)((uint32_t)(1<<31)))) {
                 error(FCNNAME);
-                error("rf_mode %d must be between 0 and 2^25 (got %f).",i,v.row_vector_value()(i));
+                error("rf_mode %d must be between 0 and 2^31 (got %f).",i,v.row_vector_value()(i));
                 return true;
             }
         }
@@ -182,7 +182,7 @@ static bool any_bad_argument(const octave_value_list &args)
     if ( !args(0).is_real_scalar() )
     {
         error(FCNNAME);
-        error("card_id must be scalar (count starting from 0).\nUse card_id = -1 to configure all cards");
+        error("card_id must be scalar (count starting from 0).\nUse card_id = -1 to send command to all cards");
         return true;
     }
 
@@ -203,7 +203,7 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
     RowVector freqrx     = args(1).row_vector_value();
     RowVector freqtx     = args(2).row_vector_value();
     const int tdd_config = args(3).int_value();
-    const int dual_tx    = args(4).int_value();
+    const int multicard_syncmode = args(4).int_value();
     RowVector rxgain     = args(5).row_vector_value();
     RowVector txgain     = args(6).row_vector_value();
     const int eNB_flag   = args(7).int_value();
@@ -230,8 +230,10 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
         return octave_value(ret);
     }
 
-    if (card <-1 || card >= openair0_num_detected_cards)
-        error("Invalid card number!");
+    if (card <-1 || card >= openair0_num_detected_cards) {
+        warning("Invalid card number %d! Must be between -1 and %d. Will assume -1.", openair0_num_detected_cards-1);
+        card = -1;
+    }
 
     if (card == -1) {
         a = 0;
@@ -241,6 +243,8 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
         b = card+1;
     }
     
+    //printf("Number of cards: %d\n", openair0_num_detected_cards);
+    
     for (card = a; card < b; card++)
     {
         p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
@@ -248,6 +252,7 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
             
         p_exmimo_config->framing.eNB_flag   = eNB_flag;
         p_exmimo_config->framing.tdd_config = tdd_config;
+        p_exmimo_config->framing.multicard_syncmode = multicard_syncmode;
         
         for (ant=0; ant<4; ant++)
         {
@@ -264,7 +269,9 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
 
         returnvalue = openair0_dump_config( card );
         
-        printf("Card %d: ExpressMIMO %d, SW Rev 0x%d\n", card, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_swrev);
+        printf("Card %d: ExpressMIMO %d, HW Rev. 0x%d, SW Rev 0x%d, SVN Rev %d, Timestamp %d\n", card, p_exmimo_id->board_exmimoversion,
+            p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev,
+            p_exmimo_id->system_id.bitstream_id, p_exmimo_id->system_id.bitstream_build_date);
     }
     
     openair0_close();
