@@ -81,6 +81,7 @@ struct em1_file_s
 
 struct	em1_private_s
 {
+        struct pci_dev *pdev;
 	struct device *dev;
         spinlock_t lock;
 
@@ -140,11 +141,13 @@ int em1_fifo_read(struct em1_private_s *pv, uint32_t *buf, size_t count);
 int em1_ioctl(struct inode *inode, struct file *file,
 	      unsigned int cmd, unsigned long arg);
 
+/* em1_mmap.c */
+int em1_mmap(struct file *filp, struct vm_area_struct *vma);
+
 enum em1_ioctl_cmd
 {
 	EM1_IOCTL_FIFO_WRITE,
 	EM1_IOCTL_FIFO_READ,
-	EM1_IOCTL_ALLOC,
 };
 
 struct em1_ioctl_fifo_params
