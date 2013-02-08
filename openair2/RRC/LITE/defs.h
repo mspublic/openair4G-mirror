@@ -67,8 +67,10 @@
 #include "RRCConnectionRequest.h"
 #include "BCCH-DL-SCH-Message.h"
 #include "BCCH-BCH-Message.h"
+#ifdef Rel10
 #include "MCCH-Message.h"
 #include "MBSFNAreaConfiguration-r9.h"
+#endif
 #include "UE-EUTRA-Capability.h"
 
 //#include "L3_rrc_defs.h"
