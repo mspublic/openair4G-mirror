@@ -1,3 +1,7 @@
+% Octave defines, according to pcie_interface.h
+
+% Parameters for rf_mode in structure exmimo_rf_t
+
 RXEN=1;
 TXEN=2;
 
@@ -78,3 +82,24 @@ DMAMODE_TX      =2*(2^23);
 rf_local  = 31 + 31*(2^6) + 31*(2^12) + 31*(2^18);
 rf_rxdc   = 128 + 128*(2^8); % DC offset ( DCOFF_I_RXFE [6:0], DCOFF_Q_RXFE[14:8] )
 rf_vcocal = ((0xE)*(2^6)) + (0xE); % VCO calibration values for 1.9 GHz
+
+
+% register values and masks for tdd_config
+DUPLEXMODE_MASK   = 1*(2^0);
+DUPLEXMODE_FDD    =  0;
+DUPLEXMODE_TDD    = 2*(2^0);
+TXRXSWITCH_MASK   = 3*(2^1);
+TXRXSWITCH_LSB    =  0;
+TXRXSWITCH_FPGA   = 1*(2^1);
+TXRXSWITCH_TESTRX = 2*(2^1);
+TXRXSWITCH_TESTTX = 3*(2^1);
+SWITCHSTATE_MASK  = 1*(2^3);
+SWITCHSTATE_0     =  0;
+SWITCHSTATE_1     = 1*(2^3);
+TEST_ADACLOOP_MASK= 1*(2^4);
+TEST_ADACLOOP_EN  = 1*(2^4);
+
+% multicard synchronization mode (multicard_syncmode)
+SYNCMODE_INDEPENDANT = 0;
+SYNCMODE_MASTER      = 1;
+SYNCMODE_SLAVE       = 2;
