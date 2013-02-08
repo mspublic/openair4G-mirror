@@ -90,6 +90,7 @@ static const struct file_operations em1_fops = {
 	.open		= em1_open,
 	.release	= em1_release,
 	.ioctl		= em1_ioctl,
+	.mmap		= em1_mmap,
 };
 
 /* Supported devices */

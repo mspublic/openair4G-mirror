@@ -37,10 +37,6 @@ static int em1_ioctl_fifo_read(struct em1_private_s *pv,
 	return res;
 }
 
-static int em1_ioctl_alloc(struct em1_private_s *pv, void **buf)
-{
-	return -ENOMEM;
-}
 
 int em1_ioctl(struct inode *inode, struct file *file,
 	      unsigned int cmd, unsigned long arg)
@@ -49,27 +45,21 @@ int em1_ioctl(struct inode *inode, struct file *file,
 
 	switch ((enum em1_ioctl_cmd)cmd)
 	{
-	case EM1_IOCTL_FIFO_WRITE: {
+          case EM1_IOCTL_FIFO_WRITE: {
 		struct em1_ioctl_fifo_params p;
 		if (copy_from_user(&p, (void*)arg, sizeof(p)))
 			return -EFAULT;
 		return em1_ioctl_fifo_write(pv, &p);
-	}
+	  }
 
-	case EM1_IOCTL_FIFO_READ: {
+	  case EM1_IOCTL_FIFO_READ: {
 		struct em1_ioctl_fifo_params p;
 		if (copy_from_user(&p, (void*)arg, sizeof(p)))
 			return -EFAULT;		
 		return em1_ioctl_fifo_read(pv, &p);
-	}
-
-	case EM1_IOCTL_ALLOC: {
-		return em1_ioctl_alloc(pv, (void**)arg);
-	}
-
-	default:
-		return -EINVAL;
-	}
+	  }
+        } 
+	return 0; 
 }
 
 
