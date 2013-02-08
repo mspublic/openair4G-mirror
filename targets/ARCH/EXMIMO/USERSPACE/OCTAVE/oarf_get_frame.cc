@@ -30,10 +30,10 @@ static bool any_bad_argument(const octave_value_list &args)
     }
 
     v=args(0);
-    if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
+    if ((!v.is_real_scalar()) || (v.scalar_value() < 0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
     {
         error(FCNNAME);
-        error("card must be 0-3.\nTo get frame from all cards, use card = -1.\nConfigure framing.sync_mode (master resp. slave) for each card.\n");
+        error("card must be 0-3.\nTo get frame from all cards, set SYNCMODE_MASTER in framing.\nConfigure framing.sync_mode (master resp. slave) for each card.\n");
         return true;
     }
     return false;
