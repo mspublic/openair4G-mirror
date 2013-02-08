@@ -196,8 +196,6 @@ typedef struct
 #define DMAMODE_RX      (1<<23)
 #define DMAMODE_TX      (2<<23)
 
-#define ADACLOOP_MASK   (1<<25)
-#define ADACLOOP_EN     (1<<25)
 
 // register values and masks for rf_local
 #define TXLOIMASK   63
@@ -258,9 +256,9 @@ typedef struct
 //    In TDD mode, there are two ways to control the RX/TX switch:
 //    1. using the LSB from the TX data (TXRXSWITCH_LSB)
 //    2. using FPGA logic, based on switch_offset[0..3]
-#define DD_MASK           (1<<0)
-#define DD_FDD             0
-#define DD_TDD            (1<<0)
+#define DUPLEXMODE_MASK   (1<<0)
+#define DUPLEXMODE_FDD     0
+#define DUPLEXMODE_TDD    (1<<0)
 #define TXRXSWITCH_MASK   (3<<1)
 #define TXRXSWITCH_LSB     0
 #define TXRXSWITCH_FPGA   (1<<1)
@@ -269,6 +267,8 @@ typedef struct
 #define SWITCHSTATE_MASK  (1<<3)
 #define SWITCHSTATE_0      0
 #define SWITCHSTATE_1     (1<<3)
+#define TEST_ADACLOOP_MASK  (1<<4)
+#define TEST_ADACLOOP_EN    (1<<4)
 
 typedef struct
 {
