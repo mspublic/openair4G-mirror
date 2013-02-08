@@ -65,12 +65,12 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma)
     memblock_ind = openair_mmap_getMemBlock( vma->vm_pgoff );
     card         = openair_mmap_getCard( vma->vm_pgoff );
 
-    printk("[openair][MMAP] called (start %lx, end %lx, pg_off %lx, size %lx)\n", 
+    /*printk("[openair][MMAP] called (start %lx, end %lx, pg_off %lx, size %lx)\n", 
         vma->vm_start, 
         vma->vm_end,
         vma->vm_pgoff,
         size);
-
+    */
     vma->vm_pgoff = 0;
     vma->vm_flags |= VM_RESERVED;
         
