@@ -124,10 +124,10 @@ u16 get_TBS(u8 mcs,u16 nb_rb) {
   }
 }
 
-u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol) {
+int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol) {
 
-  u16 rb,re_pbch_sss=0;
-  u8 rb_alloc_ind,nsymb;
+  int rb,re_pbch_sss=0;
+  int rb_alloc_ind,nsymb;
 
   nsymb = (frame_parms->Ncp==0) ? 14 : 12;
 
@@ -216,9 +216,9 @@ u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subf
   return(re_pbch_sss);
 }
 
-u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe) {
+int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe) {
 
-  u16 rb,re_pbch_sss=0;
+  int rb,re_pbch_sss=0;
   u8 rb_alloc_ind;
 
   if ((subframe!=0) && (subframe!=5) && (subframe!=6))  // if not PBCH/SSS/PSS or SSS/PSS
@@ -305,11 +305,11 @@ u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
   return(0);
 }
 
-u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe) {
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe) {
 
   
 
-  u16 G_adj = adjust_G(frame_parms,rb_alloc,mod_order,subframe);
+  int G_adj = adjust_G(frame_parms,rb_alloc,mod_order,subframe);
 
   //  printf("get_G subframe %d mod_order %d, nb_rb %d: rb_alloc %x,%x,%x,%x, G_adj %d\n",subframe,mod_order,nb_rb,rb_alloc[3],rb_alloc[2],rb_alloc[1],rb_alloc[0], G_adj);
   if (frame_parms->Ncp==0) { // normal prefix
@@ -317,18 +317,18 @@ u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u
   // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
   // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
     if (frame_parms->mode1_flag==0) // SISO 
-      return((nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj);
+      return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj);
     else
-      return((nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+      return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);
   }
   else {
   // PDDPDD PDDPDD - 11 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
   // PCDPDD PDDPDD - 10 PDSCH symbols, 7 full, 3 w/ pilots = 7*12 + 3*8
   // PCCPDD PDDPDD - 9 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
     if (frame_parms->mode1_flag==0)
-      return((nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj);
+      return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj);
     else
-      return((nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+      return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*10)) - G_adj);
   }
 }
 // following function requires dlsch_tbs_full.h

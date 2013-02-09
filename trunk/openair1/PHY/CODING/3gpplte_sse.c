@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include "smmintrin.h"
 
-#define DEBUG_TURBO_ENCODER 1
-
+//#define DEBUG_TURBO_ENCODER 1
+#define CALLGRIND 1
 unsigned short threegpplte_interleaver_output;
 unsigned long long threegpplte_interleaver_tmp;
 
@@ -70,29 +70,30 @@ void treillis_table_init() {
   return ;
 }
 
+
 char interleave_compact_byte(short * base_interleaver,unsigned char * input, unsigned char * output, int n) {
  
   char expandInput[768*8] __attribute__((aligned(16)));
   int i,loop=n>>4;
   __m128i *i_128=(__m128i *)input, *o_128=(__m128i*)expandInput;
-  __m128i tmp1, tmp2, tmp3, tmp4;
-  __m128i BIT_MASK=_mm_set_epi8(
-				0b00000001,
-				0b00000010,
-				0b00000100,
-				0b00001000,
-				0b00010000,
-				0b00100000,
-				0b01000000,
-				0b10000000,
-				0b00000001,
-				0b00000010,
-				0b00000100,
-				0b00001000,
-				0b00010000,
-				0b00100000,
-				0b01000000,
-				0b10000000);
+  __m128i tmp1, tmp2, tmp3, tmp4; 
+  __m128i BIT_MASK = _mm_set_epi8(  0b00000001,
+				    0b00000010,
+				    0b00000100,
+				    0b00001000,
+				    0b00010000,
+				    0b00100000,
+				    0b01000000,
+				    0b10000000,
+				    0b00000001,
+				    0b00000010,
+				    0b00000100,
+				    0b00001000,
+				    0b00010000,
+				    0b00100000,
+				    0b01000000,
+				    0b10000000);
+
   for (i=0; i<loop ; i++ ) {
     /* int cur_byte=i<<3; */
     /* for (b=0;b<8;b++) */
@@ -135,8 +136,9 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   unsigned short * systematic2_ptr=(unsigned short *) output;
   int j;
   for ( i=0; i<  input_length_words ; i ++ ) {
-    for (j=0;j<16;j++) printf("%d(%d).",ptr_intl[j],expandInput[ptr_intl[j]]);
-    printf("\n");
+
+    //    for (j=0;j<16;j++) printf("%d(%d).",ptr_intl[j],expandInput[ptr_intl[j]]);
+    //    printf("\n");
     tmp=_mm_insert_epi8(tmp,expandInput[*ptr_intl++],7);
     tmp=_mm_insert_epi8(tmp,expandInput[*ptr_intl++],6);
     tmp=_mm_insert_epi8(tmp,expandInput[*ptr_intl++],5);

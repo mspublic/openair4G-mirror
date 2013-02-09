@@ -330,8 +330,8 @@ u32 ulsch_encoding(u8 *a,
 				  Kr>>3, 
 				  &ulsch->harq_processes[harq_pid]->d[r][96],
 				  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-				  f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-				  f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				  f1f2mat_old[iind*2],   // f1 (see 36212-820, page 14)
+				  f1f2mat_old[(iind*2)+1]  // f2 (see 36212-820, page 14)
 				  );
 #ifdef DEBUG_ULSCH_CODING
 	if (r==0)

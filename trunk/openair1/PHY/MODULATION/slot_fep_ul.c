@@ -18,6 +18,29 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   //  unsigned int subframe_offset; 
   unsigned int slot_offset;
 
+  void *(*dft)(int16_t *,int16_t *, int);
+
+  switch (frame_parms->log2_symbol_size) {
+  case 7:
+    dft = dft128;
+    break;
+  case 8:
+    dft = dft256;
+    break;
+  case 9:
+    dft = dft512;
+    break;
+  case 10:
+    dft = dft1024;
+    break;
+  case 11:
+    dft = dft2048;
+    break;
+  default:
+    dft = dft512;
+    break;
+  }
+
   if (no_prefix) {
     //    subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
     slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_tti>>1) * (Ns%2);
@@ -44,7 +67,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 
     if (l==0) {
 
-
+#ifndef NEW_FFT
       fft(
 #ifndef OFDMA_ULSCH	     
 	  (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
@@ -59,22 +82,46 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	  frame_parms->log2_symbol_size,
 	  frame_parms->log2_symbol_size>>1,
 	  0);
+#else
+      dft(
+#ifndef OFDMA_ULSCH	     
+	  (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+							       nb_prefix_samples0],
+#else
+	  (int16_t *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+							nb_prefix_samples0],
+#endif
+	  (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+
+#endif
     }
     else {
+#ifndef NEW_FFT
       fft(
 #ifndef OFDMA_ULSCH
 	  (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
 #else
-          (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+	  (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
 #endif
-							       (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
-							       (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
+							(frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
+							(frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
 	  (short*)&eNB_common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
 	  frame_parms->log2_symbol_size,
 	  frame_parms->log2_symbol_size>>1,
 	  0);
+#else
+	  dft(
+#ifndef OFDMA_ULSCH
+	      (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+#else
+	      (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+#endif
+							    (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
+							    (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
+	      (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+#endif
     }
   }
 

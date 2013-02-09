@@ -138,6 +138,7 @@
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "PHY/LTE_TRANSPORT/defs.h"
+#include "PHY/TOOLS/time_meas.h"
 
 #define NUM_DCI_MAX 32
 
@@ -265,6 +266,24 @@ typedef struct
   unsigned int total_dlsch_bitrate;
   unsigned int total_transmitted_bits;
   unsigned int total_system_throughput;
+
+  time_stats_t ofdm_mod_stats;
+  time_stats_t dlsch_encoding_stats;
+  time_stats_t dlsch_modulation_stats;
+  time_stats_t dlsch_rate_matching_stats;
+  time_stats_t dlsch_turbo_encoding_stats;
+  time_stats_t dlsch_interleaving_stats;
+
+  time_stats_t ofdm_demod_stats;
+  time_stats_t rx_dft_stats;
+  time_stats_t ulsch_channel_estimation_stats;
+  time_stats_t ulsch_freq_offset_estimation_stats;
+  time_stats_t ulsch_decoding_stats;
+  time_stats_t ulsch_demodulation_stats;
+  time_stats_t ulsch_rate_unmatching_stats;
+  time_stats_t ulsch_turbo_decoding_stats;
+  time_stats_t ulsch_deinterleaving_stats;
+  time_stats_t ulsch_llr_stats;
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
@@ -405,7 +424,23 @@ typedef struct
   /// Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  time_stats_t ofdm_mod_stats;
+  time_stats_t ulsch_encoding_stats;
+  time_stats_t ulsch_modulation_stats;
+  time_stats_t ulsch_rate_matching_stats;
+  time_stats_t ulsch_turbo_encoding_stats;
+  time_stats_t ulsch_interleaving_stats;
 
+  time_stats_t ofdm_demod_stats;
+  time_stats_t rx_dft_stats;
+  time_stats_t dlsch_channel_estimation_stats;
+  time_stats_t dlsch_freq_offset_estimation_stats;
+  time_stats_t dlsch_decoding_stats;
+  time_stats_t dlsch_demodulation_stats;
+  time_stats_t dlsch_rate_unmatching_stats;
+  time_stats_t dlsch_turbo_decoding_stats;
+  time_stats_t dlsch_deinterleaving_stats;
+  time_stats_t dlsch_llr_stats;
 } PHY_VARS_UE;
 
 
@@ -418,6 +453,7 @@ typedef struct
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
+
 
 #endif //  __PHY_DEFS__H__
 

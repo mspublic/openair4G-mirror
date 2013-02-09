@@ -810,7 +810,10 @@ int main(int argc, char **argv) {
 				 &PHY_vars_eNB->lte_frame_parms,
 				 num_pdcch_symbols,
 				 PHY_vars_eNB->dlsch_eNB[k][0],
-				 subframe)<0)
+				 subframe,
+				 &PHY_vars_eNB->dlsch_rate_matching_stats,
+				 &PHY_vars_eNB->dlsch_turbo_encoding_stats,
+				 &PHY_vars_eNB->dlsch_interleaving_stats)<0)
 		exit(-1);
 	      
 	      // printf("Did not Crash here 1\n");

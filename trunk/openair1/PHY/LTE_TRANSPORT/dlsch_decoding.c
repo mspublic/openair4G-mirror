@@ -114,7 +114,10 @@ u32  dlsch_decoding(short *dlsch_llr,
 		    LTE_UE_DLSCH_t *dlsch,
 		    u8 subframe,
 		    u8 num_pdcch_symbols,
-		    u8 is_crnti){
+		    u8 is_crnti,
+		    time_stats_t *dlsch_rate_unmatching_stats,
+		    time_stats_t *dlsch_turbo_decoding_stats,
+		    time_stats_t *dlsch_deinterleaving_stats){
   
   
 
@@ -126,7 +129,7 @@ u32  dlsch_decoding(short *dlsch_llr,
   u32 ret,offset;
   u16 iind;
   //  u8 dummy_channel_output[(3*8*block_length)+12];
-  short dummy_w[8][3*(6144+64)];
+  short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   u32 r,r_offset=0,Kr,Kr_bytes,err_flag=0;
   u8 crc_type;
 #ifdef DEBUG_DLSCH_DECODING
@@ -248,6 +251,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 	   dlsch->harq_processes[harq_pid]->Nl);
 #endif    
 
+    start_meas(dlsch_rate_unmatching_stats);
     if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
 				   G,
 				   dlsch->harq_processes[harq_pid]->w[r],
@@ -263,9 +267,12 @@ u32  dlsch_decoding(short *dlsch_llr,
 				   dlsch->harq_processes[harq_pid]->Nl,
 				   r,
 				   &E)==-1) {
+      stop_meas(dlsch_rate_unmatching_stats);
       msg("dlsch_decoding.c: Problem in rate_matching\n");
       return(MAX_TURBO_ITERATIONS);
     }
+    else
+      stop_meas(dlsch_rate_unmatching_stats);
     r_offset += E;
 
     /*
@@ -273,12 +280,12 @@ u32  dlsch_decoding(short *dlsch_llr,
 	   dlsch->harq_processes[harq_pid]->d[r],
 	   dlsch->harq_processes[harq_pid]->w);
     */
-
+    start_meas(dlsch_deinterleaving_stats);
     sub_block_deinterleaving_turbo(4+Kr, 
 				   &dlsch->harq_processes[harq_pid]->d[r][96], 
 
 				   dlsch->harq_processes[harq_pid]->w[r]); 
-
+    stop_meas(dlsch_deinterleaving_stats);
     
 #ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
@@ -311,12 +318,14 @@ u32  dlsch_decoding(short *dlsch_llr,
     */
 
     if (err_flag == 0) {
+
+      start_meas(dlsch_turbo_decoding_stats);      
 #ifdef TURBO_S
-      ret = phy_threegpplte_turbo_decoder_scalar(
+      ret = phy_threegpplte_turbo_decoder_scalar
 #else
-      ret = phy_threegpplte_turbo_decoder(
+      ret = phy_threegpplte_turbo_decoder
 #endif
-					  &dlsch->harq_processes[harq_pid]->d[r][96],
+					  (&dlsch->harq_processes[harq_pid]->d[r][96],
 					  dlsch->harq_processes[harq_pid]->c[r],
 					  Kr,
 					  f1f2mat_old[iind*2],   
@@ -327,10 +336,12 @@ u32  dlsch_decoding(short *dlsch_llr,
 					  is_crnti); //(is_crnti==0)?harq_pid:harq_pid+1);
 
 
-      
-   }
+      stop_meas(dlsch_turbo_decoding_stats);            
+    }
 
-    if (ret>=(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
+
+      
+    if ((err_flag == 0) && (ret>=(1+MAX_TURBO_ITERATIONS))) {// a Code segment is in error so break;
       //      msg("CRC failed\n");
       err_flag = 1;
     }

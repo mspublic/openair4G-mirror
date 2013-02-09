@@ -12,6 +12,8 @@ extern short twiddle_fft2048[];
 extern short twiddle_ifft2048[];
 extern short twiddle_fft4096[];
 extern short twiddle_ifft4096[];
+extern short twiddle_fft8192[];
+extern short twiddle_ifft8192[];
 extern short twiddle_fft32768[];
 
 

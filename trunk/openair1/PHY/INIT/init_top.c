@@ -235,6 +235,7 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   init_fft(4*NUMBER_OF_OFDM_CARRIERS,2+LOG2_NUMBER_OF_OFDM_CARRIERS,rev_times4);   // Synch
   init_fft(NUMBER_OF_OFDM_CARRIERS/2,LOG2_NUMBER_OF_OFDM_CARRIERS-1,rev_half);   // for interpolation of channel est
 
+  init_fft(8192,13,rev8192); 
   init_fft(4096,12,rev4096);
   init_fft(2048,11,rev2048);
   init_fft(1024,10,rev1024);
@@ -295,8 +296,8 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
   case 2048:
     memcpy(twiddle_fft,&twiddle_fft2048[0],2047*4*2);
     memcpy(twiddle_ifft,&twiddle_ifft2048[0],2047*4*2);
-    memcpy(twiddle_fft_times4,&twiddle_fft4096[0],4095*4*2);
-    memcpy(twiddle_ifft_times4,&twiddle_ifft4096[0],4095*4*2);
+    memcpy(twiddle_fft_times4,&twiddle_fft8192[0],8191*4*2);
+    memcpy(twiddle_ifft_times4,&twiddle_ifft8192[0],8191*4*2);
     memcpy(twiddle_fft_half,&twiddle_fft1024[0],1023*4*2);
     memcpy(twiddle_ifft_half,&twiddle_ifft1024[0],1023*4*2);
     break;

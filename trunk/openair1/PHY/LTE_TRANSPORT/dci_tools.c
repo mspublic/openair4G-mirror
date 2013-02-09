@@ -2660,8 +2660,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
 
-    if (ulsch->harq_processes[harq_pid]->Ndi == 1)
-      ulsch->harq_processes[harq_pid]->status = ACTIVE;
+    //    if (ulsch->harq_processes[harq_pid]->Ndi == 1)
+    //    ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
 
     if (cqi_req == 1) {

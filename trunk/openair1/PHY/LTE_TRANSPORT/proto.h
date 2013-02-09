@@ -101,13 +101,19 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
     @param dlsch Pointer to dlsch to be encoded
     @param subframe Subframe number
+    @param rm_stats Time statistics for rate-matching
+    @param te_stats Time statistics for turbo-encoding
+    @param i_stats Time statistics for interleaving
     @returns status
 */
 s32 dlsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
 		   LTE_eNB_DLSCH_t *dlsch,
-		   u8 subframe);
+		   u8 subframe,
+		   time_stats_t *rm_stats,
+		   time_stats_t *te_stats,
+		   time_stats_t *i_stats);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
@@ -127,6 +133,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     u8 mod_order,
     u8 precoder_index,
     s16 amp,
+    int16_t *qam_table_s,
     u32 *re_allocated,
     u8 skip_dc,
     u8 skip_half,
@@ -145,6 +152,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     \param mod_order 2=QPSK, 4=16QAM, 6=64QAM
     \param precoder_index 36-211 W precoder column (1 layer) or matrix (2 layer) selection index
     \param amp Amplitude for symbols
+    \param qam_table_s pointer to scaled QAM table (by rho_a or rho_b)
     \param re_allocated pointer to allocation counter
     \param skip_dc offset for positive RBs
     \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
@@ -163,6 +171,7 @@ s32 allocate_REs_in_RB(mod_sym_t **txdataF,
 		       u8 mod_order,
 		       u8 precoder_index,
 		       s16 amp,
+		       int16_t *qam_table_s,
 		       u32 *re_allocated,
 		       u8 skip_dc,
 		       u8 skip_half,
@@ -765,7 +774,10 @@ u32 dlsch_decoding(s16 *dlsch_llr,
 		   LTE_UE_DLSCH_t *dlsch,
 		   u8 subframe,
 		   u8 num_pdcch_symbols,
-		   u8 is_crnti);
+		   u8 is_crnti,
+		   time_stats_t *dlsch_rate_unmatching_stats,
+		   time_stats_t *dlsch_turbo_decoding_stats,
+		   time_stats_t *dlsch_deinterleaving_stats);
 
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
@@ -977,10 +989,10 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti);
 */
 u32 conv_nprb(u8 ra_header,u32 rb_alloc,int N_RB_DL);
 
-u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
 
-u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe);
-u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol);
+int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe);
+int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol);
 
 
 #ifndef modOrder

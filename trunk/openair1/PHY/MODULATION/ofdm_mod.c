@@ -10,10 +10,11 @@ This section deals with basic functions for OFDM Modulation.
 
 #include "PHY/defs.h"
 
-static short temp[2048*4] __attribute__((aligned(16)));
+
 //static short temp2[2048*4] __attribute__((aligned(16)));
 
 //#define DEBUG_OFDM_MOD
+#define NEW_FFT
 
 void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -65,7 +66,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 		  Extension_t etype                /// type of extension
 ) {
 
-
+  static short temp[2048*4] __attribute__((aligned(16)));
   unsigned short i,j;
   short k;
 #ifdef BIT8_TX
@@ -74,7 +75,28 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   volatile int *output_ptr=(int*)0;
 #endif
   int *temp_ptr=(int*)0;
+  void *(*idft)(int16_t *,int16_t *, int);
 
+  switch (log2fftsize) {
+  case 7:
+    idft = &idft128;
+    break;
+  case 8:
+    idft = &idft256;
+    break;
+  case 9:
+    idft = &idft512;
+    break;
+  case 10:
+    idft = &idft1024;
+    break;
+  case 11:
+    idft = &idft2048;
+    break;
+  default:
+    idft = &idft512;
+    break;
+  }
 
 #ifdef DEBUG_OFDM_MOD
   msg("[PHY] OFDM mod (size %d,prefix %d) Symbols %d, input %p, output %p\n",
@@ -87,6 +109,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     msg("[PHY] symbol %d/%d (%p,%p -> %p)\n",i,nb_symbols,input,&input[i<<log2fftsize],&output[(i<<log2fftsize) + ((i)*nb_prefix_samples)]);
 #endif
 
+#ifndef NEW_FFT
     fft((short *)&input[i<<log2fftsize],
 	temp,
 	twiddle_ifft,
@@ -94,7 +117,11 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 	log2fftsize,
 	log2fftsize/2,     // normalized FFT (i.e. 1/sqrt(N) multiplicative factor)
 	0);
-
+#else
+    idft((int16_t *)&input[i<<log2fftsize],
+	 (log2fftsize==7) ? (int16_t *)temp : (int16_t *)&output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)],
+	 1);
+#endif
     //    write_output("fft_out.m","fftout",temp,(1<<log2fftsize)*2,1,1);
 
     //memset(temp,0,1<<log2fftsize);
@@ -122,29 +149,40 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
       //      msg("Doing cyclic prefix method\n");
 
+#ifndef NEW_FFT
       for (j=0;j<((1<<log2fftsize)) ; j++) {
 #ifdef BIT8_TX
 	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
 	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
 #else
+	output_ptr[j] = temp_ptr[j];
+
 	output_ptr[j] = temp_ptr[2*j];
 #endif
       }
-
+#else
+      if (log2fftsize==7) {
+	for (j=0;j<((1<<log2fftsize)) ; j++) {
+	  output_ptr[j] = temp_ptr[j];
+	}
+      }
+      j=(1<<log2fftsize);
+#endif
+      
       for (k=-1;k>=-nb_prefix_samples;k--) {
 	output_ptr[k] = output_ptr[--j];
       }
       break;
-
+      
     case CYCLIC_SUFFIX:
-
-
+      
+      
 #ifdef BIT8_TX
       output_ptr = &(((short*)output)[(i<<log2fftsize)+ (i*nb_prefix_samples)]);
 #else
       output_ptr = &output[(i<<log2fftsize)+ (i*nb_prefix_samples)];
 #endif
-
+      
       temp_ptr = (int *)temp;
       
       //      msg("Doing cyclic suffix method\n");

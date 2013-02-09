@@ -21,6 +21,7 @@ char* namepointer_log2;
 #include "PHY/TOOLS/twiddle1024.h"
 #include "PHY/TOOLS/twiddle2048.h"
 #include "PHY/TOOLS/twiddle4096.h"
+#include "PHY/TOOLS/twiddle8192.h"
 #include "PHY/TOOLS/twiddle32768.h"
 
 #ifdef OPENAIR_LTE
@@ -44,7 +45,7 @@ CHBCH_RX_t rx_mode = ML;
 #endif //OPENAIR_LTE
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
-u16 rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048];
+unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
 
 #ifdef OPENAIR_LTE
 char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};

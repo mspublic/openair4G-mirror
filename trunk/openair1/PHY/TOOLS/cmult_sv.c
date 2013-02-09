@@ -1,3 +1,5 @@
+#include "emmintrin.h"
+#include "smmintrin.h"
 #include "defs.h"
 
 #ifndef EXPRESSMIMO_TARGET
@@ -43,8 +45,8 @@ void multadd_real_vector_complex_scalar(s16 *x,
 
 
   //  printf("alpha = %d,%d\n",alpha[0],alpha[1]);
-  alpha_r_128 = _mm_set1_epi16(alpha[0]);
-  alpha_i_128 = _mm_set1_epi16(alpha[1]);
+  alpha_r_128 = _mm_set_epi16(alpha[0],alpha[0],alpha[0],alpha[0],alpha[0],alpha[0],alpha[0],alpha[0]);
+  alpha_i_128 = _mm_set_epi16(alpha[1],alpha[1],alpha[1],alpha[1],alpha[1],alpha[1],alpha[1],alpha[1]);
 
 
   j=0;
