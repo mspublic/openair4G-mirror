@@ -9,20 +9,22 @@ This section deals with basic functions for OFDM Modulation.
 */
 
 #include "PHY/defs.h"
-
-
+#include <omp.h>
+ 
 //static short temp2[2048*4] __attribute__((aligned(16)));
 
 //#define DEBUG_OFDM_MOD
-#define NEW_FFT
+//#define DEBUG_OMP
 
 void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *frame_parms) {
 
   u8 i;
   //  printf("nsymb %d\n",nsymb);
   for (i=0;i<2*nsymb/frame_parms->symbols_per_tti;i++) {
-    //    printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
-    //    	   txdata+(i*(frame_parms->samples_per_tti>>1)));
+#ifdef DEBUG_OMP
+        printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
+	       txdata+(i*(frame_parms->samples_per_tti>>1)));
+#endif
     
     PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
 #ifdef BIT8_TX
@@ -36,8 +38,9 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 frame_parms->rev,           // bit-reversal permutation
 		 CYCLIC_PREFIX);
-    //    printf("slot i %d (txdata offset %d)\n",i,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*frame_parms->samples_per_tti>>1));
-    
+#ifdef DEBUG_OMP
+        printf("slot i %d (txdata offset %d)\n",i,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*frame_parms->samples_per_tti>>1));
+#endif    
 
     PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS+(i*NUMBER_OF_OFDM_CARRIERS*(frame_parms->symbols_per_tti>>1)),        // input
 #ifdef BIT8_TX
@@ -69,6 +72,10 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   static short temp[2048*4] __attribute__((aligned(16)));
   unsigned short i,j;
   short k;
+#ifdef DEBUG_OMP
+  int nthreads,tid;
+#endif
+
 #ifdef BIT8_TX
   volatile short *output_ptr=(short*)0;
 #else
@@ -103,8 +110,25 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
       1<<log2fftsize,nb_prefix_samples,nb_symbols,input,output);
 #endif
 
+#ifdef DEBUG_OMP
+#pragma omp parallel shared(input,log2fftsize,temp,output,nb_prefix_samples,nb_symbols) private(i,nthreads,tid)
+#else
+#pragma omp parallel shared(input,log2fftsize,temp,output,nb_prefix_samples,nb_symbols) private(i)
+#endif
+  {
+#pragma omp for schedule(dynamic,1) nowait
+
   for (i=0;i<nb_symbols;i++){
 
+#ifdef DEBUG_OMP
+    tid=omp_get_thread_num();
+
+    printf("In thread %d, i=%d,nb_symbols %d\n",tid,i,nb_symbols);
+    if (tid==0) {
+      nthreads=omp_get_num_threads();
+      printf("Number of threads = %d\n",nthreads);
+    }
+#endif
 #ifdef DEBUG_OFDM_MOD
     msg("[PHY] symbol %d/%d (%p,%p -> %p)\n",i,nb_symbols,input,&input[i<<log2fftsize],&output[(i<<log2fftsize) + ((i)*nb_prefix_samples)]);
 #endif
@@ -125,7 +149,8 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     //    write_output("fft_out.m","fftout",temp,(1<<log2fftsize)*2,1,1);
 
     //memset(temp,0,1<<log2fftsize);
-    
+    }
+ 
 #ifdef DEBUG_OFDM_MOD
     for (j=0;j<(1<<log2fftsize);j++) {
       msg("twiddle_ifft(%d) = (%d, %d),rev(%d) = %d\n", j, twiddle_ifft[2*j], twiddle_ifft[2*j+1],j,rev[j]);
