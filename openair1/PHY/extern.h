@@ -12,7 +12,7 @@ extern char* namepointer_log2;
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
-extern unsigned short rev[2048],rev_times4[8192],rev_half[1024],rev1024[1024],rev256[256],rev512[512],rev2048[2048],rev4096[4096];
+extern unsigned short rev[2048],rev_times4[8192],rev_half[1024],rev1024[1024],rev256[256],rev512[512],rev2048[2048],rev4096[4096],rev8192[8192];
 
 #ifdef OPENAIR_LTE
 #include "PHY/LTE_TRANSPORT/extern.h"

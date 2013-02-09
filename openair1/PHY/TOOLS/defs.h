@@ -30,6 +30,7 @@
 #include <tmmintrin.h>
 #endif
 
+
 //defined in rtai_math.h
 #ifndef _RTAI_MATH_H
 struct complex
@@ -538,22 +539,34 @@ s32 dot_product(s16 *x,
 		u8 output_shift) __attribute__ ((force_align_arg_pointer));
 
 
-void dft24(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft36(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft48(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft60(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft72(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft96(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft108(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft120(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft144(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft180(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft192(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft216(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft240(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft288(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft300(s32 *x,s32 *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft24(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft36(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft48(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft60(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft72(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft96(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft108(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft120(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft144(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft180(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft192(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft216(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft240(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft288(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft300(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
 
+void dft64(int16_t *x,int16_t *y,int scale);
+void dft128(int16_t *x,int16_t *y,int scale);
+void dft256(int16_t *x,int16_t *y,int scale);
+void dft512(int16_t *x,int16_t *y,int scale);
+void dft1024(int16_t *x,int16_t *y,int scale);
+void dft2048(int16_t *x,int16_t *y,int scale);
+void idft64(int16_t *x,int16_t *y,int scale);
+void idft128(int16_t *x,int16_t *y,int scale);
+void idft256(int16_t *x,int16_t *y,int scale);
+void idft512(int16_t *x,int16_t *y,int scale);
+void idft1024(int16_t *x,int16_t *y,int scale);
+void idft2048(int16_t *x,int16_t *y,int scale);
 /** @} */ 
 
 

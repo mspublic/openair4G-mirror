@@ -329,7 +329,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_top(lte_frame_parms);
   dump_frame_parms(lte_frame_parms);
 
-  PHY_vars_UE->PHY_measurements.n_adj_cells=2;
+  PHY_vars_UE->PHY_measurements.n_adj_cells=0;
   PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
   PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
 
@@ -504,13 +504,13 @@ int main(int argc, char **argv) {
   int n_frames;
   int n_ch_rlz = 1;
   channel_desc_t *eNB2UE[4];
-  u8 num_pdcch_symbols=3,num_pdcch_symbols_2=0;
+  u8 num_pdcch_symbols=1,num_pdcch_symbols_2=0;
   u8 pilot1,pilot2,pilot3;
   u8 rx_sample_offset = 0;
   //char stats_buffer[4096];
   //int len;
   u8 num_rounds = 4,fix_rounds=0;
-  u8 subframe=6;
+  u8 subframe=7;
   int u;
   int n=0;
   int abstx=0;
@@ -537,6 +537,18 @@ int main(int argc, char **argv) {
   int dci_length_bytes,dci_length;
   double BW = 7.68;
   int common_flag=0,TPC;
+
+  double cpu_freq_GHz;
+  time_stats_t ts;
+  int avg_iter,iter_trials;
+
+  reset_meas(&ts);
+  start_meas(&ts);
+  sleep(1);
+  stop_meas(&ts);
+  cpu_freq_GHz = (double)ts.diff/1000000000;
+
+  printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
   signal(SIGSEGV, handler); 
 
@@ -1428,8 +1440,21 @@ int main(int argc, char **argv) {
       avg_ber = 0;
 
       round=0;
-
-      
+      avg_iter = 0; iter_trials=0;
+      reset_meas(&PHY_vars_eNB->ofdm_mod_stats);
+      reset_meas(&PHY_vars_eNB->dlsch_modulation_stats);
+      reset_meas(&PHY_vars_eNB->dlsch_encoding_stats);
+      reset_meas(&PHY_vars_eNB->dlsch_interleaving_stats);
+      reset_meas(&PHY_vars_eNB->dlsch_rate_matching_stats);
+      reset_meas(&PHY_vars_eNB->dlsch_turbo_encoding_stats);
+      reset_meas(&PHY_vars_UE->ofdm_demod_stats);
+      reset_meas(&PHY_vars_UE->dlsch_channel_estimation_stats);
+      reset_meas(&PHY_vars_UE->dlsch_freq_offset_estimation_stats);
+      reset_meas(&PHY_vars_UE->rx_dft_stats);
+      reset_meas(&PHY_vars_UE->dlsch_decoding_stats);
+      reset_meas(&PHY_vars_UE->dlsch_turbo_decoding_stats);
+      reset_meas(&PHY_vars_UE->dlsch_deinterleaving_stats);
+      reset_meas(&PHY_vars_UE->dlsch_rate_unmatching_stats);
       for (trials = 0;trials<n_frames;trials++) {
 	//  printf("Trial %d\n",trials);
 	fflush(stdout);
@@ -1663,7 +1688,8 @@ int main(int argc, char **argv) {
 		       num_pdcch_symbols,
 		       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi,
 		       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx);
-	      
+
+	     
 	      /*
 	      // generate channel here
 	      random_channel(eNB2UE);
@@ -1687,14 +1713,18 @@ int main(int argc, char **argv) {
 		}
 		*/		
 	      }
-	      
+	      start_meas(&PHY_vars_eNB->dlsch_encoding_stats);	      
 	      if (dlsch_encoding(input_buffer[k],
 				 &PHY_vars_eNB->lte_frame_parms,
 				 num_pdcch_symbols,
 				 PHY_vars_eNB->dlsch_eNB[k][0],
-				 subframe)<0)
+				 subframe,
+				 &PHY_vars_eNB->dlsch_rate_matching_stats,
+				 &PHY_vars_eNB->dlsch_turbo_encoding_stats,
+				 &PHY_vars_eNB->dlsch_interleaving_stats
+				 )<0)
 		exit(-1);
-	      
+	      stop_meas(&PHY_vars_eNB->dlsch_encoding_stats);  
 	      // printf("Did not Crash here 1\n");
 	      PHY_vars_eNB->dlsch_eNB[k][0]->rnti = (common_flag==0) ? n_rnti+k : SI_RNTI;	  
 	      dlsch_scrambling(&PHY_vars_eNB->lte_frame_parms,
@@ -1719,14 +1749,14 @@ int main(int argc, char **argv) {
 	      // printf("Did not Crash here 2\n");
 	  
 	      //	      if (k==1)
-
+	      start_meas(&PHY_vars_eNB->dlsch_modulation_stats);	      
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 					      AMP,
 					      subframe,
 					      &PHY_vars_eNB->lte_frame_parms,
 					      num_pdcch_symbols,
 					      PHY_vars_eNB->dlsch_eNB[k][0]);
-
+	      stop_meas(&PHY_vars_eNB->dlsch_modulation_stats);	      
 	      // printf("Did not Crash here 3\n");
 	      if (trials==0 && round==0)
 		printf("RE count %d\n",re_allocated);
@@ -1746,7 +1776,7 @@ int main(int argc, char **argv) {
 			    1024,
 			    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 	  
-
+	    start_meas(&PHY_vars_eNB->ofdm_mod_stats);
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
 			(subframe*2),
@@ -1755,6 +1785,8 @@ int main(int argc, char **argv) {
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
 			(subframe*2)+1,
 			&PHY_vars_eNB->lte_frame_parms);
+	    stop_meas(&PHY_vars_eNB->ofdm_mod_stats);
+
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
 			(subframe*2)+2,
@@ -1999,12 +2031,13 @@ int main(int argc, char **argv) {
 		no_prefix 	if 1 prefix is removed by HW 
 	      
 	      */
+	      start_meas(&PHY_vars_UE->ofdm_demod_stats);
 	      slot_fep(PHY_vars_UE,
 		       l,
 		       Ns%20,
 		       0,
 		       0);
-
+	      stop_meas(&PHY_vars_UE->ofdm_demod_stats);
 #ifdef PERFECT_CE
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
@@ -2208,6 +2241,8 @@ int main(int argc, char **argv) {
 	      if (dlsch_active == 1) {
 		if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
+		  start_meas(&PHY_vars_UE->dlsch_llr_stats);
+
 		  for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 		       m<pilot2;
 		       m++) 
@@ -2226,10 +2261,12 @@ int main(int argc, char **argv) {
 			  break;
 			}
 		    }
+		  stop_meas(&PHY_vars_UE->dlsch_llr_stats);
 		}
 		  
 		if ((Ns==(1+(2*subframe))) && (l==pilot1))
 		  {// process symbols (6 Extended Prefix),7,8,9 
+		    start_meas(&PHY_vars_UE->dlsch_llr_stats);
 		    for (m=pilot2;
 			 m<pilot3;
 			 m++)
@@ -2248,10 +2285,12 @@ int main(int argc, char **argv) {
 			    break;
 			  }
 		      }
+		    stop_meas(&PHY_vars_UE->dlsch_llr_stats);
 		  }
 		
 		if ((Ns==(2+(2*subframe))) && (l==0))  // process symbols 10,11,(12,13 Normal Prefix) do deinterleaving for TTI
 		  {
+		    start_meas(&PHY_vars_UE->dlsch_llr_stats);
 		    for (m=pilot3;
 			 m<PHY_vars_UE->lte_frame_parms.symbols_per_tti;
 			 m++)
@@ -2270,6 +2309,7 @@ int main(int argc, char **argv) {
 			    break;
 			  }
 		      }
+		    stop_meas(&PHY_vars_UE->dlsch_llr_stats);
 		  }
 		
 		if ((n_frames==1) && (Ns==(2+(2*subframe))) && (l==0))  {
@@ -2380,13 +2420,17 @@ int main(int argc, char **argv) {
 	  for (i=0;i<coded_bits_per_codeword;i++) 
 	    PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i] = (short)quantize(100,PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i],4);
 	  */
-
+	  start_meas(&PHY_vars_UE->dlsch_decoding_stats);
 	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],		 
 			       &PHY_vars_UE->lte_frame_parms,
 			       PHY_vars_UE->dlsch_ue[0][0],
 			       subframe,
 			       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-			       1);
+			       1,
+			       &PHY_vars_UE->dlsch_rate_unmatching_stats,
+			       &PHY_vars_UE->dlsch_turbo_decoding_stats,
+			       &PHY_vars_UE->dlsch_deinterleaving_stats);
+	  stop_meas(&PHY_vars_UE->dlsch_decoding_stats);
  
 #ifdef XFORMS
 	  do_forms(form,
@@ -2412,6 +2456,8 @@ int main(int argc, char **argv) {
 
 	  if (ret <= MAX_TURBO_ITERATIONS) {
 		
+	    avg_iter += ret;
+	    iter_trials++;
 	    if (n_frames==1) 
 	      printf("No DLSCH errors found\n");
 	    //	    exit(-1);
@@ -2422,6 +2468,9 @@ int main(int argc, char **argv) {
 	  }	
 	  else {
 	    errs[round]++;
+
+	    avg_iter += ret-1;
+	    iter_trials++;
 		
 	    if (n_frames==1) {
 	      //if ((n_frames==1) || (SNR>=30)) {
@@ -2518,8 +2567,28 @@ int main(int argc, char **argv) {
 	     rate,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
-    
-      
+      printf("eNB TX function statistics (per 1ms subframe)\n\n");
+      printf("OFDM_mod time                     :%f us (%d trials)\n",(double)PHY_vars_eNB->ofdm_mod_stats.diff/PHY_vars_eNB->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ofdm_mod_stats.trials);
+      printf("DLSCH modulation time             :%f us (%d trials)\n",(double)PHY_vars_eNB->dlsch_modulation_stats.diff/PHY_vars_eNB->dlsch_modulation_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_modulation_stats.trials);
+      printf("DLSCH encoding time               :%f us (%d trials)\n",(double)PHY_vars_eNB->dlsch_encoding_stats.diff/PHY_vars_eNB->dlsch_encoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_modulation_stats.trials);
+      printf("|__ DLSCH turbo encoding time         :%f us (%d trials)\n",((double)PHY_vars_eNB->dlsch_turbo_encoding_stats.trials/PHY_vars_eNB->dlsch_encoding_stats.trials)*(double)PHY_vars_eNB->dlsch_turbo_encoding_stats.diff/PHY_vars_eNB->dlsch_turbo_encoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_turbo_encoding_stats.trials);
+      printf("|__ DLSCH rate-matching time          :%f us (%d trials)\n",((double)PHY_vars_eNB->dlsch_turbo_encoding_stats.trials/PHY_vars_eNB->dlsch_encoding_stats.trials)*(double)PHY_vars_eNB->dlsch_rate_matching_stats.diff/PHY_vars_eNB->dlsch_rate_matching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_rate_matching_stats.trials);
+      printf("|__ DLSCH sub-block interleaving time :%f us (%d trials)\n",((double)PHY_vars_eNB->dlsch_turbo_encoding_stats.trials/PHY_vars_eNB->dlsch_encoding_stats.trials)*(double)PHY_vars_eNB->dlsch_interleaving_stats.diff/PHY_vars_eNB->dlsch_interleaving_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_interleaving_stats.trials);
+      printf("\n\nUE RX function statistics (per 1ms subframe)\n\n");
+      printf("DLSCH OFDM demodulation and channel_estimation time :%f us (%d trials)\n",(nsymb)*(double)PHY_vars_UE->ofdm_demod_stats.diff/PHY_vars_UE->ofdm_demod_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->ofdm_demod_stats.trials*2/3);
+      printf("|__ DLSCH rx dft                                        :%f us (%d trials)\n",(nsymb*PHY_vars_UE->lte_frame_parms.nb_antennas_rx)*(double)PHY_vars_UE->rx_dft_stats.diff/PHY_vars_UE->rx_dft_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->rx_dft_stats.trials*2/3);
+      printf("|__ DLSCH channel estimation time                       :%f us (%d trials)\n",(4.0)*(double)PHY_vars_UE->dlsch_channel_estimation_stats.diff/PHY_vars_UE->dlsch_channel_estimation_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_channel_estimation_stats.trials*2/3);
+      printf("|__ DLSCH frequency offset estimation time              :%f us (%d trials)\n",(4.0)*(double)PHY_vars_UE->dlsch_freq_offset_estimation_stats.diff/PHY_vars_UE->dlsch_freq_offset_estimation_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_freq_offset_estimation_stats.trials*2/3);
+      printf("DLSCH Channel Compensation and LLR generation time  :%f us (%d trials)\n",(3)*(double)PHY_vars_UE->dlsch_llr_stats.diff/PHY_vars_UE->dlsch_llr_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_llr_stats.trials/3);
+      printf("DLSCH Decoding time (%.2f Mbit/s, avg iter %f)      :%f us (%d trials, max %f)\n",
+	     PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS/1000.0,(double)avg_iter/iter_trials,
+	     (double)PHY_vars_UE->dlsch_decoding_stats.diff/PHY_vars_UE->dlsch_decoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_decoding_stats.trials, 
+	     (double)PHY_vars_UE->dlsch_decoding_stats.max/cpu_freq_GHz/1000.0);
+      printf("|__ DLSCH Turbo Decoding                                :%f us (%d trials)\n",(PHY_vars_UE->dlsch_turbo_decoding_stats.trials/PHY_vars_UE->dlsch_decoding_stats.trials)*(double)PHY_vars_UE->dlsch_turbo_decoding_stats.diff/PHY_vars_UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_turbo_decoding_stats.trials);
+      printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",(PHY_vars_UE->dlsch_rate_unmatching_stats.trials/PHY_vars_UE->dlsch_decoding_stats.trials)*(double)PHY_vars_UE->dlsch_rate_unmatching_stats.diff/PHY_vars_UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_rate_unmatching_stats.trials);
+	     
+
+
       fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
 	      SNR,
 	      mcs,

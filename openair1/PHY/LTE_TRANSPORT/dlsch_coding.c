@@ -189,7 +189,10 @@ int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
 		   LTE_eNB_DLSCH_t *dlsch,
-		   u8 subframe) {
+		   u8 subframe,
+		   time_stats_t *rm_stats,
+		   time_stats_t *te_stats,
+		   time_stats_t *i_stats) {
   
   unsigned int G;
   unsigned int crc=1;
@@ -273,7 +276,7 @@ int dlsch_encoding(unsigned char *a,
 #ifdef DEBUG_DLSCH_CODING    
       msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
-      
+      start_meas(te_stats);
       threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
 				Kr>>3, 
 				&dlsch->harq_processes[harq_pid]->d[r][96],
@@ -281,16 +284,17 @@ int dlsch_encoding(unsigned char *a,
 				f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
 				f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
 				);
+      stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING
       if (r==0)
 	write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 #endif
-      
+      start_meas(i_stats);
       dlsch->harq_processes[harq_pid]->RTC[r] = 
 	sub_block_interleaving_turbo(4+(Kr_bytes*8), 
 				     &dlsch->harq_processes[harq_pid]->d[r][96], 
 				     dlsch->harq_processes[harq_pid]->w[r]);
-      
+      stop_meas(i_stats);
     }
     
   }
@@ -307,7 +311,7 @@ int dlsch_encoding(unsigned char *a,
 	   mod_order,nb_rb);
 #endif
 
-
+    start_meas(rm_stats);
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
 					G,  //G
 					dlsch->harq_processes[harq_pid]->w[r],
@@ -322,6 +326,7 @@ int dlsch_encoding(unsigned char *a,
 					r,
 					nb_rb,
 					m);                       // r
+    stop_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
     if (r==dlsch->harq_processes[harq_pid]->C-1)
       write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);

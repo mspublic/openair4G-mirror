@@ -166,11 +166,7 @@ u8 extract_cqi_crc(u8 *cqi,u8 CQI_LENGTH) {
 
 }
 
-s16 dummy_w[8][3*(6144+64)];
-u8 dummy_w_cc[3*(MAX_CQI_BITS+8+32)];
-s16 y[6*14*1200];
-u8 ytag[14*1200];
-u8 ytag2[6*14*1200];
+
 
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 			     u8 UE_id,
@@ -205,12 +201,18 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   u8 reset = 1,c,c_prev=0;
   s16 ys;
   u32 wACK_idx;
+  s16 dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+  u8 dummy_w_cc[3*(MAX_CQI_BITS+8+32)];
+  s16 y[6*14*1200];
+  u8 ytag[14*1200];
+  u8 ytag2[6*14*1200];
+
 
   // x1 is set in lte_gold_generic
   x2 = ((u32)ulsch->rnti<<14) + ((u32)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   
   //  harq_pid = (ulsch->RRCConnRequest_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
-  harq_pid = subframe2harq_pid(frame_parms,phy_vars_eNB->frame,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,(((subframe)==9)?-1:0)+phy_vars_eNB->frame,subframe);
 
   if (harq_pid==255) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
@@ -272,8 +274,9 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
   if (sumKr==0) {
     msg("[PHY][eNB %d] ulsch_decoding.c: FATAL sumKr is 0!\n",phy_vars_eNB->Mod_id);
-    msg("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): Ndi %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+    msg("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): harq_pid %d Ndi %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
 	frame_parms->Nid_cell,ulsch->rnti,x2,
+	harq_pid,
 	ulsch->harq_processes[harq_pid]->Ndi,
 	ulsch->harq_processes[harq_pid]->rvidx,
 	ulsch->harq_processes[harq_pid]->mcs,

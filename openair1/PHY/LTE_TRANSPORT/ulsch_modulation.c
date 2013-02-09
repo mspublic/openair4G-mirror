@@ -103,6 +103,11 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, u16 Msc_PUSCH, u8 Nsymb) {
 
   switch (Msc_PUSCH) {
   case 12:
+    dft12((__m128i *)dft_in0,(__m128i *)dft_out0);
+    dft12((__m128i *)dft_in1,(__m128i *)dft_out1);
+    dft12((__m128i *)dft_in2,(__m128i *)dft_out2);
+
+    /*
     dft12f(&((__m128i *)dft_in0)[0],&((__m128i *)dft_in0)[1],&((__m128i *)dft_in0)[2],&((__m128i *)dft_in0)[3],&((__m128i *)dft_in0)[4],&((__m128i *)dft_in0)[5],&((__m128i *)dft_in0)[6],&((__m128i *)dft_in0)[7],&((__m128i *)dft_in0)[8],&((__m128i *)dft_in0)[9],&((__m128i *)dft_in0)[10],&((__m128i *)dft_in0)[11],
 	  &((__m128i *)dft_out0)[0],&((__m128i *)dft_out0)[1],&((__m128i *)dft_out0)[2],&((__m128i *)dft_out0)[3],&((__m128i *)dft_out0)[4],&((__m128i *)dft_out0)[5],&((__m128i *)dft_out0)[6],&((__m128i *)dft_out0)[7],&((__m128i *)dft_out0)[8],&((__m128i *)dft_out0)[9],&((__m128i *)dft_out0)[10],&((__m128i *)dft_out0)[11]);
 
@@ -111,7 +116,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, u16 Msc_PUSCH, u8 Nsymb) {
 
     dft12f(&((__m128i *)dft_in2)[0],&((__m128i *)dft_in2)[1],&((__m128i *)dft_in2)[2],&((__m128i *)dft_in2)[3],&((__m128i *)dft_in2)[4],&((__m128i *)dft_in2)[5],&((__m128i *)dft_in2)[6],&((__m128i *)dft_in2)[7],&((__m128i *)dft_in2)[8],&((__m128i *)dft_in2)[9],&((__m128i *)dft_in2)[10],&((__m128i *)dft_in2)[11],
 	  &((__m128i *)dft_out2)[0],&((__m128i *)dft_out2)[1],&((__m128i *)dft_out2)[2],&((__m128i *)dft_out2)[3],&((__m128i *)dft_out2)[4],&((__m128i *)dft_out2)[5],&((__m128i *)dft_out2)[6],&((__m128i *)dft_out2)[7],&((__m128i *)dft_out2)[8],&((__m128i *)dft_out2)[9],&((__m128i *)dft_out2)[10],&((__m128i *)dft_out2)[11]);
-
+    */
     norm128 = _mm_set1_epi16(9459);
     
     for (i=0;i<12;i++) {

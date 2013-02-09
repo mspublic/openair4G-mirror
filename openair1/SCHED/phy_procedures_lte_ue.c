@@ -236,7 +236,7 @@ void ra_failed(u8 Mod_id,u8 eNB_index) {
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index] = PRACH;
   LOG_I(PHY,"[UE %d] Frame %d Random-access procedure fails, going back to PRACH\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame);
-  mac_xface->macphy_exit("");
+  //mac_xface->macphy_exit("");
   //  exit(-1);
 }
 
@@ -364,6 +364,7 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 
   if (frame_parms->frame_type == FDD ) { // FDD
     sf = (subframe<4)? subframe+6 : subframe-4;
+    printf("n1_pucch_UE: subframe %d, nCCE %d\n",sf,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
     if (SR == 0) 
       return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
     else
@@ -1743,7 +1744,9 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	     phy_vars_ue->is_secondary_ue);
 
     dci_cnt = dci_decoding_procedure(phy_vars_ue,
-				     dci_alloc_rx,1,
+				     dci_alloc_rx,
+				     (phy_vars_ue->UE_mode[eNB_id] < PUSCH)? 1 : 0,  // if we're in PUSCH don't listen to common search space, 
+				                                                    // later when we need paging or RA during connection, update this ...
 				     eNB_id,last_slot>>1);
     //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
  
@@ -1871,10 +1874,11 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     if((dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) &&
        (dci_alloc_rx[i].format != format0)) {
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] frame %d, subframe %d: format %d\n",
+      LOG_D(PHY,"[UE  %d][DCI][PDSCH %x] frame %d, subframe %d: format %d,nCCE %d\n",
 	    phy_vars_ue->Mod_id,dci_alloc_rx[i].rnti,
 	    phy_vars_ue->frame,last_slot>>1,
-	    dci_alloc_rx[i].format);
+	    dci_alloc_rx[i].format,
+	    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[last_slot>>1]);
 
       /*
       if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
@@ -1933,7 +1937,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       
 #ifdef DEBUG_PHY_PROC
       //LOG_I(PHY,"[PHY][UE  %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
-      LOG_D(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
+      LOG_D(PHY,"[UE  %d] Frame %d subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].rnti,i);
       /*
 	if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
 	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -2263,7 +2267,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				 phy_vars_ue->dlsch_ue[eNB_id][0],
 				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-				 1);
+				 1,
+				 &phy_vars_ue->dlsch_rate_unmatching_stats,
+				 &phy_vars_ue->dlsch_turbo_decoding_stats,
+				 &phy_vars_ue->dlsch_deinterleaving_stats);
 	  }
 
 	  else {
@@ -2437,7 +2444,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				 phy_vars_ue->dlsch_ue_SI[eNB_id],
 				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-				 0);
+				 0,
+				 &phy_vars_ue->dlsch_rate_unmatching_stats,
+				 &phy_vars_ue->dlsch_turbo_decoding_stats,
+				 &phy_vars_ue->dlsch_deinterleaving_stats);
 	    //ret = 1+MAX_TURBO_ITERATIONS;
 	    /*
 	      #ifdef DEBUG_PHY_PROC
@@ -2566,7 +2576,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       phy_vars_ue->dlsch_ue_ra[eNB_id],
 			       (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),  // subframe
 			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			       0);
+			       0,
+			       &phy_vars_ue->dlsch_rate_unmatching_stats,
+			       &phy_vars_ue->dlsch_turbo_decoding_stats,
+			       &phy_vars_ue->dlsch_deinterleaving_stats);
 	}
 
 #ifdef PHY_ABSTRACTION

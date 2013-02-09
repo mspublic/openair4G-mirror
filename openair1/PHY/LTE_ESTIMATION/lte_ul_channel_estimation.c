@@ -45,8 +45,6 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   s32 *ul_ch1_0=NULL,*ul_ch2_0=NULL,*ul_ch1_1=NULL,*ul_ch2_1=NULL;
   s16 ul_ch_estimates_re,ul_ch_estimates_im;
   s32 rx_power_correction;
-
-
   u8 cyclic_shift; 
 
   u32 alpha_ind;
@@ -64,7 +62,12 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
     *temp_out_fft_0_ptr = (s32*)0,*out_fft_ptr_0 = (s32*)0,
     *temp_out_fft_1_ptr = (s32*)0,*out_fft_ptr_1 = (s32*)0,
     *temp_in_ifft_ptr = (s32*)0;
-  
+
+#ifdef NEW_FFT
+  __m128i *rxdataF128,*ul_ref128,*ul_ch128;
+  __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
+ #endif
+
   Msc_RS = N_rb_alloc*12;
 
   cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
@@ -87,7 +90,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
       Msc_RS_idx = b;
 #endif
 
- #ifdef DEBUG_CH
+#ifdef DEBUG_CH
   msg("lte_ul_channel_estimation: subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
 #ifdef USER_MODE
   if (Ns==0)
@@ -97,11 +100,15 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 #endif
 #endif
 
+#ifndef NEW_FFT
   if ( (frame_parms->ofdm_symbol_size == 128) ||
        (frame_parms->ofdm_symbol_size == 512) )
     rx_power_correction = 2;
   else
     rx_power_correction = 1;
+#else
+  rx_power_correction = 1;
+#endif
 
   if (l == (3 - frame_parms->Ncp)) {
 
@@ -109,12 +116,68 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
       //           msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
+
+#ifndef NEW_FFT
       mult_cpx_vector_norep2((s16*) &rxdataF_ext[aa][symbol_offset<<1],
 			     (s16*) ul_ref_sigs_rx[u][v][Msc_RS_idx],
 			     (s16*) &ul_ch_estimates[aa][symbol_offset],
 			     Msc_RS,
 			     15);
+#else
+      rxdataF128 = (__m128i *)&rxdataF_ext[aa][symbol_offset];
+      ul_ch128   = (__m128i *)&ul_ch_estimates[aa][symbol_offset];
+      ul_ref128  = (__m128i *)ul_ref_sigs_rx[u][v][Msc_RS_idx];
 
+      for (i=0;i<Msc_RS/12;i++) {
+      // multiply by conjugated channel
+	mmtmpU0 = _mm_madd_epi16(ul_ref128[0],rxdataF128[0]);
+	// mmtmpU0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpU1 = _mm_shufflelo_epi16(ul_ref128[0],_MM_SHUFFLE(2,3,0,1));
+	mmtmpU1 = _mm_shufflehi_epi16(mmtmpU1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpU1 = _mm_sign_epi16(mmtmpU1,*(__m128i*)&conjugate[0]);
+	mmtmpU1 = _mm_madd_epi16(mmtmpU1,rxdataF128[0]);
+	// mmtmpU1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpU0 = _mm_srai_epi32(mmtmpU0,15);
+	mmtmpU1 = _mm_srai_epi32(mmtmpU1,15);
+	mmtmpU2 = _mm_unpacklo_epi32(mmtmpU0,mmtmpU1);
+	mmtmpU3 = _mm_unpackhi_epi32(mmtmpU0,mmtmpU1);
+
+	ul_ch128[0] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
+	//	printf("rb %d ch: %d %d\n",i,((int16_t*)ul_ch128)[0],((int16_t*)ul_ch128)[1]);
+	// multiply by conjugated channel
+	mmtmpU0 = _mm_madd_epi16(ul_ref128[1],rxdataF128[1]);
+	// mmtmpU0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpU1 = _mm_shufflelo_epi16(ul_ref128[1],_MM_SHUFFLE(2,3,0,1));
+	mmtmpU1 = _mm_shufflehi_epi16(mmtmpU1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpU1 = _mm_sign_epi16(mmtmpU1,*(__m128i*)conjugate);
+	mmtmpU1 = _mm_madd_epi16(mmtmpU1,rxdataF128[1]);
+	// mmtmpU1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpU0 = _mm_srai_epi32(mmtmpU0,15);
+	mmtmpU1 = _mm_srai_epi32(mmtmpU1,15);
+	mmtmpU2 = _mm_unpacklo_epi32(mmtmpU0,mmtmpU1);
+	mmtmpU3 = _mm_unpackhi_epi32(mmtmpU0,mmtmpU1);
+	
+	ul_ch128[1] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
+
+	mmtmpU0 = _mm_madd_epi16(ul_ref128[2],rxdataF128[2]);
+	// mmtmpU0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpU1 = _mm_shufflelo_epi16(ul_ref128[2],_MM_SHUFFLE(2,3,0,1));
+	mmtmpU1 = _mm_shufflehi_epi16(mmtmpU1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpU1 = _mm_sign_epi16(mmtmpU1,*(__m128i*)conjugate);
+	mmtmpU1 = _mm_madd_epi16(mmtmpU1,rxdataF128[2]);
+	// mmtmpU1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpU0 = _mm_srai_epi32(mmtmpU0,15);
+	mmtmpU1 = _mm_srai_epi32(mmtmpU1,15);
+	mmtmpU2 = _mm_unpacklo_epi32(mmtmpU0,mmtmpU1);
+	mmtmpU3 = _mm_unpackhi_epi32(mmtmpU0,mmtmpU1);
+	
+	ul_ch128[2] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
+	
+	ul_ch128+=3;
+	ul_ref128+=3;
+	rxdataF128+=3;
+      }
+#endif
       memset(temp_in_ifft_0,0,frame_parms->ofdm_symbol_size*sizeof(s32)*2);   
       // Convert to time domain for visualization
       for(i=0;i<Msc_RS;i++)
@@ -130,7 +193,6 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	   0);
 
 #ifdef DEBUG_CH      
-#ifdef USER_MODE
       if (aa==0) {
 	if (Ns == 0) {
 	  write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset<<1],512*2,2,1);
@@ -140,7 +202,6 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	else
 	  write_output("drs_est1.m","drs1",ul_ch_estimates_time[aa],512*2,2,1);
       }
-#endif
 #endif
       alpha_ind = 0;
       if((cyclic_shift != 0)){
@@ -201,7 +262,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	    alpha_ind-=12;
 	}
 	
-	  //Extracting Channel Estimates for Distributed Alamouti Receiver Combining
+	//Extracting Channel Estimates for Distributed Alamouti Receiver Combining
 	
 	temp_in_ifft_ptr = &temp_in_ifft_1[0];
 	
@@ -232,78 +293,78 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
 
 
-	  // because the ifft is not power preserving, we should apply the factor sqrt(power_correction) here, but we rather apply power_correction here and nothing after the next fft
-	  in_fft_ptr_0 = &temp_in_fft_0[0];
-	  in_fft_ptr_1 = &temp_in_fft_1[0];
+	// because the ifft is not power preserving, we should apply the factor sqrt(power_correction) here, but we rather apply power_correction here and nothing after the next fft
+	in_fft_ptr_0 = &temp_in_fft_0[0];
+	in_fft_ptr_1 = &temp_in_fft_1[0];
 	 
-	  for(j=0;j<(1<<(frame_parms->log2_symbol_size))/12;j++)
-	    {
-	      if (j>19) {
-		((s16*)in_fft_ptr_0)[-40+(2*j)] = ((s16*)temp_out_ifft_0)[-80+(4*j)]*rx_power_correction;
-		((s16*)in_fft_ptr_0)[-40+(2*j)+1] = ((s16*)temp_out_ifft_0)[-80+(4*j+1)]*rx_power_correction;
-		((s16*)in_fft_ptr_1)[-40+(2*j)] = ((s16*)temp_out_ifft_1)[-80+(4*j)]*rx_power_correction;
-		((s16*)in_fft_ptr_1)[-40+(2*j)+1] = ((s16*)temp_out_ifft_1)[-80+(4*j)+1]*rx_power_correction;
-	      }
-	      else {
-		((s16*)in_fft_ptr_0)[2*(frame_parms->ofdm_symbol_size-20+j)] = ((s16*)temp_out_ifft_0)[4*(frame_parms->ofdm_symbol_size-20+j)]*rx_power_correction;
-		((s16*)in_fft_ptr_0)[2*(frame_parms->ofdm_symbol_size-20+j)+1] = ((s16*)temp_out_ifft_0)[4*(frame_parms->ofdm_symbol_size-20+j)+1]*rx_power_correction;
-		((s16*)in_fft_ptr_1)[2*(frame_parms->ofdm_symbol_size-20+j)] = ((s16*)temp_out_ifft_1)[4*(frame_parms->ofdm_symbol_size-20+j)]*rx_power_correction;
-		((s16*)in_fft_ptr_1)[2*(frame_parms->ofdm_symbol_size-20+j)+1] = ((s16*)temp_out_ifft_1)[4*(frame_parms->ofdm_symbol_size-20+j)+1]*rx_power_correction;
-	      }
+	for(j=0;j<(1<<(frame_parms->log2_symbol_size))/12;j++)
+	  {
+	    if (j>19) {
+	      ((s16*)in_fft_ptr_0)[-40+(2*j)] = ((s16*)temp_out_ifft_0)[-80+(4*j)]*rx_power_correction;
+	      ((s16*)in_fft_ptr_0)[-40+(2*j)+1] = ((s16*)temp_out_ifft_0)[-80+(4*j+1)]*rx_power_correction;
+	      ((s16*)in_fft_ptr_1)[-40+(2*j)] = ((s16*)temp_out_ifft_1)[-80+(4*j)]*rx_power_correction;
+	      ((s16*)in_fft_ptr_1)[-40+(2*j)+1] = ((s16*)temp_out_ifft_1)[-80+(4*j)+1]*rx_power_correction;
 	    }
+	    else {
+	      ((s16*)in_fft_ptr_0)[2*(frame_parms->ofdm_symbol_size-20+j)] = ((s16*)temp_out_ifft_0)[4*(frame_parms->ofdm_symbol_size-20+j)]*rx_power_correction;
+	      ((s16*)in_fft_ptr_0)[2*(frame_parms->ofdm_symbol_size-20+j)+1] = ((s16*)temp_out_ifft_0)[4*(frame_parms->ofdm_symbol_size-20+j)+1]*rx_power_correction;
+	      ((s16*)in_fft_ptr_1)[2*(frame_parms->ofdm_symbol_size-20+j)] = ((s16*)temp_out_ifft_1)[4*(frame_parms->ofdm_symbol_size-20+j)]*rx_power_correction;
+	      ((s16*)in_fft_ptr_1)[2*(frame_parms->ofdm_symbol_size-20+j)+1] = ((s16*)temp_out_ifft_1)[4*(frame_parms->ofdm_symbol_size-20+j)+1]*rx_power_correction;
+	    }
+	  }
 	  
 
-	  fft((s16*) &temp_in_fft_0[0],                        // Performing FFT to obtain the Channel Estimates for UE0 to eNB1
-	      temp_out_fft_0,
-	      frame_parms->twiddle_fft,
-	      frame_parms->rev,
-	      frame_parms->log2_symbol_size,
-	      frame_parms->log2_symbol_size>>1,
-	      0);
+	fft((s16*) &temp_in_fft_0[0],                        // Performing FFT to obtain the Channel Estimates for UE0 to eNB1
+	    temp_out_fft_0,
+	    frame_parms->twiddle_fft,
+	    frame_parms->rev,
+	    frame_parms->log2_symbol_size,
+	    frame_parms->log2_symbol_size>>1,
+	    0);
 
-	  out_fft_ptr_0 = &ul_ch_estimates_0[aa][symbol_offset]; // CHANNEL ESTIMATES FOR UE0 TO eNB1
-	  temp_out_fft_0_ptr = (s32*) temp_out_fft_0;
+	out_fft_ptr_0 = &ul_ch_estimates_0[aa][symbol_offset]; // CHANNEL ESTIMATES FOR UE0 TO eNB1
+	temp_out_fft_0_ptr = (s32*) temp_out_fft_0;
 
-	  i=0;
+	i=0;
 
-	  for(j=0;j<frame_parms->N_RB_UL*12;j++){
-	    out_fft_ptr_0[i] = temp_out_fft_0_ptr[2*j];
-	    i++;
-	  }
+	for(j=0;j<frame_parms->N_RB_UL*12;j++){
+	  out_fft_ptr_0[i] = temp_out_fft_0_ptr[2*j];
+	  i++;
+	}
 
-	  fft((s16*) &temp_in_fft_1[0],                          // Performing FFT to obtain the Channel Estimates for UE1 to eNB1
-	      temp_out_fft_1,
-	      frame_parms->twiddle_fft,
-	      frame_parms->rev,
-	      frame_parms->log2_symbol_size,
-	      frame_parms->log2_symbol_size>>1,
-	      0);
+	fft((s16*) &temp_in_fft_1[0],                          // Performing FFT to obtain the Channel Estimates for UE1 to eNB1
+	    temp_out_fft_1,
+	    frame_parms->twiddle_fft,
+	    frame_parms->rev,
+	    frame_parms->log2_symbol_size,
+	    frame_parms->log2_symbol_size>>1,
+	    0);
 
-	  out_fft_ptr_1 = &ul_ch_estimates_1[aa][symbol_offset];   // CHANNEL ESTIMATES FOR UE1 TO eNB1
-	  temp_out_fft_1_ptr = (s32*) temp_out_fft_1;
+	out_fft_ptr_1 = &ul_ch_estimates_1[aa][symbol_offset];   // CHANNEL ESTIMATES FOR UE1 TO eNB1
+	temp_out_fft_1_ptr = (s32*) temp_out_fft_1;
 
-	  i=0;
+	i=0;
 	  
-	  for(j=0;j<frame_parms->N_RB_UL*12;j++){
-	    out_fft_ptr_1[i] = temp_out_fft_1_ptr[2*j];
-	    i++;
-	  }
+	for(j=0;j<frame_parms->N_RB_UL*12;j++){
+	  out_fft_ptr_1[i] = temp_out_fft_1_ptr[2*j];
+	  i++;
+	}
 
 #ifdef DEBUG_CH
 #ifdef USER_MODE
-	  if((aa == 0)&& (cooperation_flag == 2)){
-	    write_output("test1.m","t1",temp_in_ifft_0,512,1,1);
-	    write_output("test2.m","t2",temp_out_ifft_0,512*2,2,1);
-	    //	    write_output("test2.m","t2",ul_ch_estimates_time[aa],512*2,2,1);
-	    write_output("test3.m","t3",temp_in_fft_0,512,1,1);  
-	    write_output("test4.m","t4",temp_out_fft_0,512,1,1);
-	    write_output("test5.m","t5",temp_in_fft_1,512,1,1);  
-	    write_output("test6.m","t6",temp_out_fft_1,512,1,1);
-	  }
+	if((aa == 0)&& (cooperation_flag == 2)){
+	  write_output("test1.m","t1",temp_in_ifft_0,512,1,1);
+	  write_output("test2.m","t2",temp_out_ifft_0,512*2,2,1);
+	  //	    write_output("test2.m","t2",ul_ch_estimates_time[aa],512*2,2,1);
+	  write_output("test3.m","t3",temp_in_fft_0,512,1,1);  
+	  write_output("test4.m","t4",temp_out_fft_0,512,1,1);
+	  write_output("test5.m","t5",temp_in_fft_1,512,1,1);  
+	  write_output("test6.m","t6",temp_out_fft_1,512,1,1);
+	}
 #endif
 #endif
 
-	}//cooperation_flag == 2
+      }//cooperation_flag == 2
 
       if (Ns&1) {//we are in the second slot of the sub-frame, so do the interpolation
 
@@ -341,8 +402,8 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	    //	    multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
 	    //multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 
-	    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	    //	    memcpy(&ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],ul_ch1,N_rb_alloc*12*sizeof(s32));
 	    if(cooperation_flag == 2)// For Distributed Alamouti
 	      {
@@ -371,12 +432,12 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	  }
 
 	//write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
-		/*if(cooperation_flag == 2)// For Distributed Alamouti
-		{
-		write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
-		write_output("drs_est0.m","drsest0",ul_ch_estimates_0[0],300*12,1,1);
-		write_output("drs_est1.m","drsest1",ul_ch_estimates_1[0],300*12,1,1);
-		}*/
+	/*if(cooperation_flag == 2)// For Distributed Alamouti
+	  {
+	  write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
+	  write_output("drs_est0.m","drsest0",ul_ch_estimates_0[0],300*12,1,1);
+	  write_output("drs_est1.m","drsest1",ul_ch_estimates_1[0],300*12,1,1);
+	  }*/
 
 
       } //if (Ns&1)
@@ -411,12 +472,12 @@ s32 lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   T_SFC = (Ssrs<=7 ? 5 : 10);
 
   /* 
-  msg("SRS channel estimation eNb %d, subframs %d, %d %d %d %d %d\n",eNb_id,sub_frame_number,
-      SRS_parms->Csrs,
-      SRS_parms->Bsrs,
-      SRS_parms->kTC,
-      SRS_parms->n_RRC,
-      SRS_parms->Ssrs);
+     msg("SRS channel estimation eNb %d, subframs %d, %d %d %d %d %d\n",eNb_id,sub_frame_number,
+     SRS_parms->Csrs,
+     SRS_parms->Bsrs,
+     SRS_parms->kTC,
+     SRS_parms->n_RRC,
+     SRS_parms->Ssrs);
   */
 
   if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[Ssrs]) {
@@ -448,18 +509,18 @@ s32 lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       //msg("SRS channel estimation cmult out\n");
 #ifdef USER_MODE
 #ifdef DEBUG_SRS
-	sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
-	sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
-	write_output(fname,vname,eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
+      sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
+      sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
+      write_output(fname,vname,eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
 #endif
 #endif
     }
   }
   /*
-  else {
+    else {
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) 
-      bzero(eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size*sizeof(int));
-  }
+    bzero(eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size*sizeof(int));
+    }
   */
   return(0);
 }

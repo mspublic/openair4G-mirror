@@ -61,12 +61,12 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
 
-#define MAX_NUM_DLSCH_SEGMENTS 3
-#define MAX_NUM_ULSCH_SEGMENTS 3
+#define MAX_NUM_DLSCH_SEGMENTS 12
+#define MAX_NUM_ULSCH_SEGMENTS MAX_NUM_DLSCH_SEGMENTS
 #define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
 #define MAX_ULSCH_PAYLOAD_BYTES (MAX_NUM_ULSCH_SEGMENTS*768)
 
-#define MAX_NUM_CHANNEL_BITS (14*1200*12)  // 14 symbols, 1200 REs, 12 bits/RE
+#define MAX_NUM_CHANNEL_BITS (14*1200*6)  // 14 symbols, 1200 REs, 12 bits/RE
 #define MAX_NUM_RE (14*1200)
 
 #define SI_RNTI 0xffff 
