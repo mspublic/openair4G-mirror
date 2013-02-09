@@ -79,12 +79,15 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 
 
   // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
+#ifndef NEW_FFT
   if ( (abstraction_flag==0) && ((phy_vars_ue->lte_frame_parms.ofdm_symbol_size == 128) ||
 				   (phy_vars_ue->lte_frame_parms.ofdm_symbol_size == 512)) )
     rx_power_correction = 2;
   else
     rx_power_correction = 1;
-  
+#else
+  rx_power_correction=1;
+#endif
   for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells;eNB_offset++) {
 
     if (eNB_offset==0)
@@ -116,10 +119,16 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 	LOG_D(PHY,"[UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,nushift,eNB_offset,k);
 #endif
 	for (aarx=0;aarx<phy_vars_ue->lte_frame_parms.nb_antennas_rx;aarx++) {
+#ifndef NEW_FFT
 	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1];
-	  
 	  off  = (phy_vars_ue->lte_frame_parms.first_carrier_offset+k)<<2;
 	  off2 = (phy_vars_ue->lte_frame_parms.first_carrier_offset)<<2;
+#else
+	  rxF = (s16 *)&phy_vars_ue->lte_ue_common_vars.rxdataF[aarx][(l*phy_vars_ue->lte_frame_parms.ofdm_symbol_size)];
+	  off  = (phy_vars_ue->lte_frame_parms.first_carrier_offset+k)<<1;
+	  off2 = (phy_vars_ue->lte_frame_parms.first_carrier_offset)<<1;
+#endif	  
+
 
 	    
 	    for (rb=0;rb<phy_vars_ue->lte_frame_parms.N_RB_DL;rb++) {
@@ -129,13 +138,25 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 		//	  printf("rb %d, off %d, off2 %d\n",rb,off,off2);
 		
 		phy_vars_ue->PHY_measurements.rsrp[eNB_offset] += ((rxF[off]*rxF[off])+(rxF[off+1]*rxF[off+1]));
+#ifndef NEW_FFT
 		off+=24;
 		if (off>=(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<2))
 		  off = (1+k)<<2;
+#else
+		off+=12;
+		if (off>=(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1))
+		  off = (1+k)<<1;
+#endif
 		phy_vars_ue->PHY_measurements.rsrp[eNB_offset] += ((rxF[off]*rxF[off])+(rxF[off+1]*rxF[off+1]));
+#ifndef NEW_FFT
 		off+=24;
 		if (off>=(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<2))
 		  off = (1+k)<<2;
+#else
+		off+=12;
+		if (off>=(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1))
+		  off = (1+k)<<1;
+#endif
 	      }
 	  
 	      /*
@@ -242,12 +263,15 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       rx_power[eNB_id] = 0;
 
     // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
+#ifndef NEW_FFT
     if ( (abstraction_flag==0) && ((frame_parms->ofdm_symbol_size == 128) ||
 				   (frame_parms->ofdm_symbol_size == 512)) )
       rx_power_correction = 2;
     else
       rx_power_correction = 1;
-  
+#else
+    rx_power_correction=1;
+#endif  
   
     // noise measurements
     // for abstraction we do noise measurements based on the precalculated phy_vars_ue->N0

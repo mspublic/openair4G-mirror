@@ -655,13 +655,19 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	re_offset -= (frame_parms->ofdm_symbol_size);
       
       symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*l;
+#ifndef NEW_FFT
       rxptr = (s16 *)&eNB_common_vars->rxdataF[0][aa][2*symbol_offset];
-      
+#else
+      rxptr = (s16 *)&eNB_common_vars->rxdataF[0][aa][symbol_offset];
+#endif      
       for (i=0;i<12;i++,j+=2,re_offset++) {
-	
+#ifndef NEW_FFT	
 	rxcomp[aa][j]   = (s16)((rxptr[re_offset<<2]*(s32)zptr[j])>>15)   - ((rxptr[1+(re_offset<<2)]*(s32)zptr[1+j])>>15);
 	rxcomp[aa][1+j] = (s16)((rxptr[re_offset<<2]*(s32)zptr[1+j])>>15) + ((rxptr[1+(re_offset<<2)]*(s32)zptr[j])>>15);
-
+#else
+	rxcomp[aa][j]   = (s16)((rxptr[re_offset<<1]*(s32)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(s32)zptr[1+j])>>15);
+	rxcomp[aa][1+j] = (s16)((rxptr[re_offset<<1]*(s32)zptr[1+j])>>15) + ((rxptr[1+(re_offset<<1)]*(s32)zptr[j])>>15);
+#endif
 	if (re_offset==frame_parms->ofdm_symbol_size)
 	  re_offset = 0; 
 #ifdef DEBUG_PUCCH_RX
