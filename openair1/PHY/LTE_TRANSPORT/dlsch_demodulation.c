@@ -907,11 +907,15 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
     pilots=1;
 
+#ifndef NEW_FFT
   if ( (frame_parms->ofdm_symbol_size == 128) ||
        (frame_parms->ofdm_symbol_size == 512) )
     rx_power_correction = 2;
   else
     rx_power_correction = 1;
+#else
+  rx_power_correction = 1;
+#endif
     
 #ifndef __SSE3__
   zero = _mm_xor_si128(zero,zero);
@@ -1272,7 +1276,10 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
     
   // Determine scaling amplitude based the symbol
   ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
-    
+#ifdef NEW_FFT
+  if (frame_parms->nb_antennas_tx_eNB==2)
+    ch_amp = (ch_amp*ONE_OVER_SQRT2_Q15)>>15;
+#endif
   //    msg("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13

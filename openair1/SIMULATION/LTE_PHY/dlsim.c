@@ -4,6 +4,8 @@
 #include <execinfo.h>
 #include <signal.h>
 
+#include <omp.h>
+
 #include "SIMULATION/TOOLS/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -397,7 +399,11 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
 	txdataF2[aa][i] = 0;
     
   }
-  
+
+
+
+  //#pragma omp parallel for
+    
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(txdataF2[aa],        // input
@@ -412,7 +418,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
       normal_prefix_mod(txdataF2[aa],&txdata[aa][slot_offset],7,frame_parms);
     }
   }
-  
+
   free(txdataF2[0]);
   free(txdataF2[1]);
   free(txdataF2);
