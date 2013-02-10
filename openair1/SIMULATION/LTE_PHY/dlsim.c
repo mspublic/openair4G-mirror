@@ -4,8 +4,6 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include <omp.h>
-
 #include "SIMULATION/TOOLS/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -367,6 +365,7 @@ uint64_t DLSCH_alloc_pdu_1[2];
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
   int aa, slot_offset, slot_offset_F;
+  int nthreads,tid;
 
 #ifdef IFFT_FPGA
   s32 **txdataF2;
@@ -400,10 +399,9 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
     
   }
 
+ 
 
 
-  //#pragma omp parallel for
-    
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(txdataF2[aa],        // input
@@ -418,17 +416,20 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
       normal_prefix_mod(txdataF2[aa],&txdata[aa][slot_offset],7,frame_parms);
     }
   }
+  
 
   free(txdataF2[0]);
   free(txdataF2[1]);
   free(txdataF2);
   
 #else //IFFT_FPGA
-  
+
   slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-  
+
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+    //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
+
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
 		   &txdata[aa][slot_offset],         // output
@@ -444,9 +445,12 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
 			7,
 			frame_parms);
     }
-  }  
-#endif //IFFT_FPGA
   
+
+  }
+
+#endif //IFFT_FPGA
+
 }
 
 int main(int argc, char **argv) {
@@ -1783,14 +1787,17 @@ int main(int argc, char **argv) {
 			    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 	  
 	    start_meas(&PHY_vars_eNB->ofdm_mod_stats);
+	    
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
 			(subframe*2),
 			&PHY_vars_eNB->lte_frame_parms);
+
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
 			(subframe*2)+1,
 			&PHY_vars_eNB->lte_frame_parms);
+
 	    stop_meas(&PHY_vars_eNB->ofdm_mod_stats);
 
 	    do_OFDM_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
