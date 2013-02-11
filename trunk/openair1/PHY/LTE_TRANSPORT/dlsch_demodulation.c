@@ -85,7 +85,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
   LTE_UE_DLSCH_t   **dlsch_ue;
 
-  unsigned char aatx,aarx,symbol_mod,harq_pid0;    
+  unsigned char aatx,aarx,harq_pid0;    
   unsigned short nb_rb;
   int avgs, rb;  
   
@@ -1454,12 +1454,14 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   short *rxF0,*rxF1;
-  __m128i *ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b;
+  __m128i *ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b, amp, *rxF0_128;
   unsigned char rb,re;
   int jj = (symbol*frame_parms->N_RB_DL*12);
   u8 symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   u8 pilots = ((symbol_mod==0)||(symbol_mod==(4-frame_parms->Ncp))) ? 1 : 0;
+  rxF0_128 = (__m128i*) &rxdataF_comp[0][jj];
 
+  amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
 
   //    printf("Doing alamouti!\n");
   rxF0     = (short*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
@@ -1493,20 +1495,39 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
     ch_mag0b[0] = _mm_adds_epi16(ch_mag0b[0],ch_mag1b[0]);
     ch_mag0b[1] = _mm_adds_epi16(ch_mag0b[1],ch_mag1b[1]);
 
+    // account for 1/sqrt(2) scaling at transmission
+    ch_mag0[0] = _mm_srai_epi16(ch_mag0[0],1);
+    ch_mag0[1] = _mm_srai_epi16(ch_mag0[1],1);
+    ch_mag0b[0] = _mm_srai_epi16(ch_mag0b[0],1);
+    ch_mag0b[1] = _mm_srai_epi16(ch_mag0b[1],1);
+
+    rxF0_128[0] = _mm_mulhi_epi16(rxF0_128[0],amp);
+    rxF0_128[0] = _mm_slli_epi16(rxF0_128[0],1);
+    rxF0_128[1] = _mm_mulhi_epi16(rxF0_128[1],amp);
+    rxF0_128[1] = _mm_slli_epi16(rxF0_128[1],1);
+
     if (pilots==0) {
       ch_mag0[2] = _mm_adds_epi16(ch_mag0[2],ch_mag1[2]);
       ch_mag0b[2] = _mm_adds_epi16(ch_mag0b[2],ch_mag1b[2]);
+
+      ch_mag0[2] = _mm_srai_epi16(ch_mag0[2],1);
+      ch_mag0b[2] = _mm_srai_epi16(ch_mag0b[2],1);
+
+      rxF0_128[2] = _mm_mulhi_epi16(rxF0_128[2],amp);
+      rxF0_128[2] = _mm_slli_epi16(rxF0_128[2],1);
 
       ch_mag0+=3;
       ch_mag1+=3;
       ch_mag0b+=3;
       ch_mag1b+=3;
+      rxF0_128+=3;
     }
     else {
       ch_mag0+=2;
       ch_mag1+=2;
       ch_mag0b+=2;
       ch_mag1b+=2;
+      rxF0_128+=2;
     }
   }
 
