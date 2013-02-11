@@ -7,6 +7,9 @@
 #define MAX_CARDS   4
 #define INIT_ZEROS {0, 0, 0, 0}
 
+
+/** PCIe subsystem configuration Space
+ */
 // Vendor and System IDs
 //
 #define XILINX_VENDOR 0x10ee
@@ -26,6 +29,7 @@
 // SW/Protocol revision:
 #define BOARD_SWREV_LEGACY   0x07
 #define BOARD_SWREV_CMDFIFOS 0x11
+
 
 
 // Device IO definitions and operations

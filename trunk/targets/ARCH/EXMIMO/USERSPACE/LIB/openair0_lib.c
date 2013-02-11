@@ -51,7 +51,12 @@ int openair0_open(void)
     }
 
     ioctl(openair0_fd, openair_GET_NUM_DETECTED_CARDS, &openair0_num_detected_cards);
-    printf("Num. detected cards: %d\n", openair0_num_detected_cards);
+    
+    if ( openair0_num_detected_cards == 0 )
+    {
+        error("No cards detected!\n");
+        return -4;
+    }
 
     ioctl(openair0_fd, openair_GET_BIGSHMTOPS_KVIRT, &bigshm_top_kvirtptr[0]);
     ioctl(openair0_fd, openair_GET_PCI_INTERFACE_BOTS_KVIRT, &exmimo_pci_kvirt[0]);
@@ -90,8 +95,6 @@ int openair0_open(void)
         if ( openair0_exmimo_pci[card].exmimo_id_ptr->board_exmimoversion == 2)
             openair0_num_antennas[card] = 4;
 
-        printf("card%d: %d Antennas\n", card, openair0_num_antennas[card]);
-            
         for (ant=0; ant<openair0_num_antennas[card]; ant++)
         {
             openair0_exmimo_pci[card].rxcnt_ptr[ant] = (unsigned int *) (bigshm_top[card] +  (unsigned int)exmimo_pci_kvirt[card].rxcnt_ptr[ant] - bigshm_top_kvirtptr[card]);
@@ -120,7 +123,9 @@ int openair0_open(void)
             }
         }
         //printf("p_exmimo_config = %p, p_exmimo_id = %p\n", openair0_exmimo_pci.exmimo_config_ptr, openair0_exmimo_pci.exmimo_id_ptr);
-        printf("ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", openair0_exmimo_pci[card].exmimo_id_ptr->board_exmimoversion, openair0_exmimo_pci[card].exmimo_id_ptr->board_hwrev, openair0_exmimo_pci[card].exmimo_id_ptr->board_swrev);
+        
+        printf("card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d, %d antennas\n", card, openair0_exmimo_pci[card].exmimo_id_ptr->board_exmimoversion,
+            openair0_exmimo_pci[card].exmimo_id_ptr->board_hwrev, openair0_exmimo_pci[card].exmimo_id_ptr->board_swrev, openair0_num_antennas[card]);
       
     } // end for(card)
     return 0;
