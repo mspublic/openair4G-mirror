@@ -111,8 +111,11 @@ typedef struct
 } exmimo_id_t;
 
 
-/* Structure and flags for configuring RF and LIME */
-
+/****************************************************
+ * Structure and flags for configuring RF and LIME
+ * (struct exmimo_rf_t)
+ */
+//
 // register values and masks for rf_mode
 //
 #define RXEN 1
@@ -243,14 +246,21 @@ typedef struct
 
 } exmimo_rf_t;
 
+
+/*********************************************************
+ * Structure and flags for configuring Framing and Sync
+ * (struct exmimo_framing_t)
+ */
+//
 // ** multicard synchronization mode (framing.multicard_syncmode)
 //
 //    slave: take sync_newframe & sync_getframe from IO_SYNC header pin
 //    master: enable IO_SYNC header OUTPUT (do this only on a single card!) for sync_newframe & sync_getframe
-#define SYNCMODE_INDEPENDANT 0
+#define SYNCMODE_FREE       0
 #define SYNCMODE_MASTER     1
 #define SYNCMODE_SLAVE      2
 
+//
 // ** register values and masks for tdd_config
 //
 //    In TDD mode, there are two ways to control the RX/TX switch:
@@ -295,6 +305,11 @@ typedef struct
 } exmimo_config_t;
 
 
+
+/*****************************************
+ * Structures to pass pointers
+ * between Leon, Kernel and Userspace
+ */
 
 /* 
  * struct exmimo_pci_interface_bot_t:
