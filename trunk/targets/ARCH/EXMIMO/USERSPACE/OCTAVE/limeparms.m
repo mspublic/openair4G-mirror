@@ -100,6 +100,6 @@ TEST_ADACLOOP_MASK= 1*(2^4);
 TEST_ADACLOOP_EN  = 1*(2^4);
 
 % multicard synchronization mode (multicard_syncmode)
-SYNCMODE_INDEPENDANT = 0;
-SYNCMODE_MASTER      = 1;
-SYNCMODE_SLAVE       = 2;
+SYNCMODE_FREE    = 0;
+SYNCMODE_MASTER  = 1;
+SYNCMODE_SLAVE   = 2;

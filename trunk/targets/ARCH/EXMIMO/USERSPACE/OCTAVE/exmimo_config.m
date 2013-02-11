@@ -1,7 +1,13 @@
-dual_tx=0;
+% Basic configuration script for ExpressMIMO-1 and ExpressMIMO-2
+% Some functions are only available on ExpressMIMO-2!
+limeparms;
+
 eNBflag = 0;
 card=0;
-limeparms;
+
+tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
+syncmode = SYNCMODE_FREE;
+
 
 %% acquisition
 %rf_mode = ( RXEN +        TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + RXOUTSW )*[1 1 0 0];
@@ -39,12 +45,11 @@ rf_vcocal=(( 0xE)*(2^6)) + ( 0xE)*[1 1 1 1];  % 1.907 GHz, (OLD)
 
 freq_tx = freq_rx + 0000000; % 1kHz offset: @30 MSPS: 2.5 sines, @15 MSPS: 5 sines, @7 MSPS: 10 sines
 tx_gain = 13*[1 1 1 1];
-rx_gain = 0*[1 1 1 1]; 
+rx_gain = 20*[1 1 1 1]; 
 
 rf_rxdc = rf_rxdc*[1 1 1 1];
 
-card=1;
-oarf_config_exmimo(card,freq_rx,freq_tx,0,dual_tx,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal)
+oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal)
 %sleep(0.2)
 
 % stuff for I/Q imbalance correction on RX
