@@ -5,23 +5,23 @@ echo "make sure that you have compiled the code with GPROF=1 and installed gprof
 
 echo "set up params"
 
-n_frames=10000
+n_frames=4000
 abstraction=1
-traffic_load=1
-ue="1 2 3"
+traffic_load=2
+ue="1"
 #ping="64 128 256 512 1024 1400"
 
 if [ $abstraction = 1 ]; then 
     option1="-a"
 else
-    option1="-A -s 10"
+    option1="-A AWGN -s 15"
 fi;
 
 if [ $traffic_load = 1 ]; then 
     option2="-T1"
 fi;
 if [ $traffic_load = 2 ]; then 
-    option2="-T2"
+    option2="-c8"
 fi;
 if [ $traffic_load = 3 ]; then 
     option2="-T3"

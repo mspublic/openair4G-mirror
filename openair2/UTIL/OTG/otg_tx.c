@@ -473,7 +473,7 @@ int k;
 
  for (i=0; i<g_otg->num_nodes; i++){ // src 
    for (j=0; j<g_otg->num_nodes; j++){ // dst
- 			for (k=0; k<g_otg->application_idx[i][j]; k++){  
+     for (k=0; k<g_otg->application_idx[i][j]; k++){  
      
      switch  (g_otg->application_type[i][j][k]) {
      case  SCBR : 
@@ -1047,33 +1047,33 @@ int background_gen(int src, int dst, int ctime){
 
 /*check if it is time to transmit the background traffic
 - we have different distributions for packet size and idt for the UL and DL */
-	if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) 
-	||  (otg_info->idt_background[src][dst]==0)){
-		LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
-	/* Distinguish between the UL and DL case*/
-	if (src<NB_eNB_INST) // DL case
-		otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
-	else //UL case
-    otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); 
-
-
-		if (otg_info->size_background[src][dst]>1500)
-    	otg_info->size_background[src][dst]=1500;
+  if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) ||  
+      (otg_info->idt_background[src][dst]==0)){
+    LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
+    /* Distinguish between the UL and DL case*/
+    if (src<NB_eNB_INST) // DL case
+      otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
+    else //UL case
+      otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); 
+    
+    // adjust the packet size if needed 
+    if (otg_info->size_background[src][dst]>1500)
+      otg_info->size_background[src][dst]=1500;
     if (otg_info->size_background[src][dst]<=0)
     	otg_info->size_background[src][dst]=10;
 
-   	LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
+    LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
 
 /* Compute the corresponding IDT*/
-		otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
-  	otg_info->ptime_background=ctime;	
+    otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
+    otg_info->ptime_background=ctime;	
     return 1;
   }
-	else {
-		//LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
+  else {
+    //LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
     return 0;
-   }
-
+  }
+  
 }
 
 

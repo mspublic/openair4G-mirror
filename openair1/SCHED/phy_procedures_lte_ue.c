@@ -837,8 +837,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
-	    LOG_D(PHY,"%x.",ulsch_input_buffer[i]);
-	  LOG_D(PHY,"\n");
+	    msg("%x.",ulsch_input_buffer[i]);
+	  msg("\n");
 #endif
 #else //OPENAIR2
       // the following lines were necessary for the calibration in CROWN
