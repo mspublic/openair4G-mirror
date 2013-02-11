@@ -1,0 +1,42 @@
+#!/bin/sh
+#set -x
+echo "Bringup eNB interface"
+sudo pkill oaisim
+sudo pkill oaisim
+sudo /sbin/rmmod nasmesh
+echo "REMOVING MULTICAST ROUTING RULE"
+sudo ip route del 239.0.0.160/28 dev eth4
+sudo make  naslite_netlink_ether oaisim
+sudo insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/nasmesh.ko nas_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
+sleep 1
+sudo ip link set oai0 broadcast ff:ff:ff:ff:ff:ff
+sudo macchanger oai0 -m 90:f6:52:0c:60:aa
+sudo ip link set oai0 up
+sleep 1
+
+#avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
+#sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
+echo " ADDING MULTICAST ROUTING RULE"
+sudo ip route add 239.0.0.160/28 dev eth4
+#ip route add 239.0.0.0/8 dev eth4
+
+echo "CONFIGURING OAI INTERFACE"
+sudo ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
+sleep 1
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.2 -r 3
+sudo ip addr add dev oai0 2001:1::1/64
+
+echo "rb_tool -a -c0 -i0 -f0 -z0 -x 2001:1::1/128  -y 2001:1::2/128 -r 3"
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0 -x 0::0/128  -y 0::0/128 -r 3
+#$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0 -x 2001:1::1/128  -y 2001:1::2/128 -r 3
+
+echo "rb_tool -a -c0 -i0 -f2 -z63 -s 10.0.1.1/32   -t 10.0.1.2/32   -r 3"
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2 -z64 -s 10.0.1.1/32   -t 10.0.1.2/32   -r 3
+
+echo "to see eNB stats, pleasae run : watch_enb script"
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p2 -g3 -l3  > /dev/null"
+nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234 -u0 -M0 -p2  -g3 -l3 > /dev/null
+#nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234 -u0 -M0 -p2  -g3 -l7
+#nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  -g3 -l3 
+echo "End"
+
