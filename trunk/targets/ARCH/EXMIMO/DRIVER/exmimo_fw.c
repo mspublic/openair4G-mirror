@@ -238,7 +238,7 @@ int exmimo_firmware_init(int card)
 
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
     
-    msleep(100); // give card time to initialize system id structure
+    msleep(1000); // give card time to initialize system id structure
     
     return 0;
 }
