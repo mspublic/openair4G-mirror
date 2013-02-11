@@ -118,6 +118,10 @@ ifdef ADDCONF
 CFLAGS+=-DADDRCONF
 endif
 
+ifdef NAS_DRIVER_TYPE_ETHERNET
+CFLAGS+=-DNAS_DRIVER_TYPE_ETHERNET
+endif
+
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 CFLAGS += -DENABLE_FXP -DOAI_EMU
