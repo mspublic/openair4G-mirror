@@ -220,8 +220,16 @@ multicast_link_write_sock (int groupP, char *dataP, uint32_t sizeP)
 {
 //------------------------------------------------------------------------------
   int             num;
+  //static int      is_first_packet = 1;
+  static int      is_first_packet = 0;
   if ((num = sendto (group_list[groupP].socket, dataP, sizeP, 0, (struct sockaddr *) &group_list[groupP].sock_remote_addr, sizeof (group_list[groupP].sock_remote_addr))) < 0) {
     fprintf (stderr, "ERROR: %s line %d multicast_link_write_sock()/sendto() %m", __FILE__, __LINE__);
+  }
+  if (is_first_packet == 1) {
+      if ((num = sendto (group_list[groupP].socket, dataP, sizeP, 0, (struct sockaddr *) &group_list[groupP].sock_remote_addr, sizeof (group_list[groupP].sock_remote_addr))) < 0) {
+          fprintf (stderr, "ERROR: %s line %d multicast_link_write_sock()/sendto() %m", __FILE__, __LINE__);
+      }
+      is_first_packet == 0;
   }
   return num;
 }
