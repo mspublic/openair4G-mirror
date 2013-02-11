@@ -32,7 +32,7 @@ static bool any_bad_argument(const octave_value_list &args)
     if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
     {
         error(FCNNAME);
-        error("card must be 0, 1, 2, or 3.");
+        error("card must be between 0 and MAX_CARDS.");
         return true;
     }
 
@@ -60,7 +60,7 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 
     octave_value returnvalue;
     int i, ret;
-    unsigned int length,aa,nbits;
+    unsigned int length,aa,nbits, numcols;
     int dummy=0;
 
     ret = openair0_open();
@@ -76,21 +76,25 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
         return octave_value(ret);
     }
     
-    if (card <0 || card >= openair0_num_detected_cards)
+    if (card <0 || card >= openair0_num_detected_cards) {
         error("Invalid card number!");
-        
-    printf("colums = %d, rows = %d\n\n\n", args(1).columns(), args(1).rows());
+        return octave_value(-4);
+    }
+    
+    numcols = args(1).columns();
+    
+    printf("colums = %d, rows = %d\n\n\n", numcols, args(1).rows());
 
-    if ((args(1).columns() != openair0_num_antennas[card]) || (args(1).rows()!=76800))
+    if ( numcols<1 || (numcols > openair0_num_antennas[card]) || (args(1).rows()!=76800))
     {
         error(FCNNAME);
-        error("input array must be of size (%d,%d)", 76800, openair0_num_antennas[card]);
+        error("input array must be of size (%d, 1..%d).", 76800, openair0_num_antennas[card]);
         return octave_value_list();
     }
 
     nbits = args(2).scalar_value();
 
-    for (aa=0;aa<openair0_num_antennas[card];aa++)
+    for (aa=0;aa<numcols;aa++)
     {
         if (nbits==16)
         {

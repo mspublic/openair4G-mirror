@@ -28,7 +28,7 @@ static bool any_bad_argument(const octave_value_list &args)
     }
 
     v=args(0);
-    if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
+    if ((!v.is_real_scalar()) || (v.scalar_value() < -1) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
     {
         error(FCNNAME);
         error("card must be 0..number of cards-1.\nUse card = -1 to stop all cards.\n");
@@ -47,7 +47,7 @@ DEFUN_DLD (oarf_stop, args, nargout,"Stop RT acquisition and write registers.")
     if (any_bad_argument(args))
        return octave_value_list(); 
        
-    unsigned int card = args(0).int_value();
+    int card = args(0).int_value();
     int ret;
 
     octave_value returnvalue;
@@ -66,7 +66,7 @@ DEFUN_DLD (oarf_stop, args, nargout,"Stop RT acquisition and write registers.")
     }
     
     if (card <-1 || card >= openair0_num_detected_cards)
-        error("Invalid card number!");
+        error("Invalid card number (num detected cards: %d, card: %d)!", openair0_num_detected_cards, card);
 
     if (card == -1) {
         for (card = 0; card < openair0_num_detected_cards; card++)
