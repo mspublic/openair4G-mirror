@@ -371,6 +371,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 		       RADIO_ACCESS_BEARER,Rlc_info_um); 
 #ifdef NAS_NETLINK
     LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d\n", Mod_id, oai_emulation.info.nb_enb_local+Mod_id);
+#    ifndef NAS_DRIVER_TYPE_ETHERNET
     oip_ifup=nas_config(oai_emulation.info.nb_enb_local+Mod_id,// interface index
 	       oai_emulation.info.nb_enb_local+Mod_id+1,
 	       NB_eNB_INST+Mod_id+1);
@@ -390,6 +391,10 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,eNB_index+1));//daddr
 	    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",Mod_id,eNB_index);	 
     }
+    #endif
+#        ifdef OAI_EMU
+      oai_emulation.info.oai_ifup[Mod_id]=1;
+#        endif
 #endif
     break;
   case RLC_Config_PR_um_Uni_Directional_UL :

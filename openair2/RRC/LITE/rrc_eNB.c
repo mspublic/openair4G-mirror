@@ -563,6 +563,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n", 
 	      Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity);
 #ifdef NAS_NETLINK
+// can mean also IPV6 since ether -> ipv6 autoconf
+#    ifndef NAS_DRIVER_TYPE_ETHERNET
 	LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d\n", Mod_id, Mod_id);
 	oip_ifup = nas_config(Mod_id,// interface index
 		   Mod_id+1, // thrid octet
@@ -584,6 +586,11 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	   
 	   LOG_D(RRC,"[eNB %d] State = Attached (UE %d)\n",Mod_id,UE_index);
 	 }
+#    else
+#        ifdef OAI_EMU
+         oai_emulation.info.oai_ifup[Mod_id]=1;
+#        endif
+#    endif
 #endif
 	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
 	      frame, Mod_id, UE_index, Mod_id);
