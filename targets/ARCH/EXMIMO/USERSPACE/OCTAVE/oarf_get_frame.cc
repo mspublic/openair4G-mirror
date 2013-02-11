@@ -30,24 +30,56 @@ static bool any_bad_argument(const octave_value_list &args)
     }
 
     v=args(0);
-    if ((!v.is_real_scalar()) || (v.scalar_value() < 0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
+    if ((!v.is_real_scalar()) || (v.scalar_value() < -2) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() >= MAX_CARDS))
     {
         error(FCNNAME);
-        error("card must be 0-3.\nTo get frame from all cards, set SYNCMODE_MASTER in framing.\nConfigure framing.sync_mode (master resp. slave) for each card.\n");
+        error("card must be 0-3 for a specific card, or -1 to get frame from all cards.\nSet framing.sync_mode =SYNCMODE_MASTER for one card and =SYNCMODE_SLAVE to obtain synchronized frames.\n");
         return true;
     }
     return false;
 }
 
-
-DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
+int find_mastercard()
 {
-    int numant;
+    int card=0, found_master=0, i;
+    const char *str[] = { "FREE", "MASTER", "SLAVE" };
+    
+    printf("Card configuration: card");
+    for (i=0; i<openair0_num_detected_cards; i++)
+        printf(" [%i]=%s,", i, str[ openair0_exmimo_pci[i].exmimo_config_ptr->framing.multicard_syncmode ]);
+    printf("\n");
+
+    for (i=0; i<openair0_num_detected_cards; i++)
+    {
+        if ( openair0_exmimo_pci[i].exmimo_config_ptr->framing.multicard_syncmode == SYNCMODE_MASTER )
+        {
+            if (found_master >= 1)
+            {
+                printf("Warning: There is more than one master active! Will put card[%i] back into SYNCMODE_FREE!\n", i);
+                openair0_exmimo_pci[i].exmimo_config_ptr->framing.multicard_syncmode == SYNCMODE_FREE;
+            }
+            else
+            {
+                card = i;
+                found_master++;
+            }
+        }
+    }
+    
+    if (found_master == 0)
+        printf("Warning: No master activated! Will trigger getframe on card 0\n");
+    
+    return card;
+}
+
+DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
+{
+    int numant, no_getframe_ioctl=0;
     
     if (any_bad_argument(args))
         return octave_value_list();
        
-    const int card = args(0).int_value();
+    int card = args(0).int_value();
     
     octave_value returnvalue;
     int i,aa;
@@ -67,12 +99,19 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
         return octave_value(ret);
     }
     
-    if (card <-1 || card >= openair0_num_detected_cards)
-        error("Invalid card number!");
+    if (card == -2)
+    {
+        no_getframe_ioctl = 1;
+        card = -1;
+    }
     
+    if (card <-1 || card >= openair0_num_detected_cards)
+        error("card number must be between 0 and %d. Or -1 for all cards.", openair0_num_detected_cards-1);
 
-    if (card == -1)
+    if (card == -1) {
         numant = openair0_num_detected_cards * openair0_num_antennas[0];
+        card = find_mastercard();
+    }
     else
         numant = openair0_num_antennas[card];
     
@@ -81,13 +120,18 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
     // assign userspace pointers
     for (i=0; i<numant; i++)
     {
-        rx_sig[i] = (short*) openair0_exmimo_pci[ i / (int)openair0_num_antennas[0] ].adc_head[i % openair0_num_antennas[0]];
-        printf("adc_head[%i] = %p ", i, rx_sig[i]);
+        if ( numant == openair0_num_antennas[card] )
+            rx_sig[i] = (short*) openair0_exmimo_pci[ card ].adc_head[ i ];
+        else
+            rx_sig[i] = (short*) openair0_exmimo_pci[ i / (int)openair0_num_antennas[0] ].adc_head[i % openair0_num_antennas[0]];
+            
+        //printf("adc_head[%i] = %p ", i, rx_sig[i]);
     }
     printf("\n");
 
     //  msg("Getting buffer...\n");
-    openair0_get_frame(card);
+    if ( no_getframe_ioctl == 0)
+        openair0_get_frame(card);
 
     for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)
         for (aa=0; aa<numant; aa++)

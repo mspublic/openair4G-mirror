@@ -231,7 +231,7 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
     }
 
     if (card <-1 || card >= openair0_num_detected_cards) {
-        warning("Invalid card number %d! Must be between -1 and %d. Will assume -1.", openair0_num_detected_cards-1);
+        warning("Invalid card number %d! Must be between 0 and %d. Or -1 for all card. Will assume -1.", openair0_num_detected_cards-1);
         card = -1;
     }
 
@@ -269,9 +269,10 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
 
         returnvalue = openair0_dump_config( card );
         
-        printf("Card %d: ExpressMIMO %d, HW Rev. 0x%d, SW Rev 0x%d, SVN Rev %d, Timestamp %d\n", card, p_exmimo_id->board_exmimoversion,
+        printf("Card %d: ExpressMIMO %d, HW Rev. 0x%d, SW Rev 0x%d, SVN Rev %d, Builddate %d,  %d antennas\n", card, p_exmimo_id->board_exmimoversion,
             p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev,
-            p_exmimo_id->system_id.bitstream_id, p_exmimo_id->system_id.bitstream_build_date);
+            p_exmimo_id->system_id.bitstream_id, p_exmimo_id->system_id.bitstream_build_date,
+            openair0_num_antennas[card]);
     }
     
     openair0_close();
