@@ -53,11 +53,11 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
 
     if ((irqval&0x80) != 0)
     {
-        /// FIXME: This "clearing the IRQ bit" operation is not atomic! -> may not work for high IRQ rates!!!
+        /// FIXME: This "clearing the IRQ bit" operation is not atomic! -> may not work for high IRQ rates! -> should be done in HW instead
         // clear PCIE interrupt bit (bit 7 of register 0x0)
         iowrite32(irqval&0xffffff7f,bar[card_id]);
         irqcmd = ioread32(bar[card_id]+0x4);
-        
+
         if (irqcmd == GET_FRAME_DONE)
             get_frame_done = 1;
 

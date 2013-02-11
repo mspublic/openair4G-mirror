@@ -71,6 +71,8 @@ static int __init openair_init_module( void )
             exmimo_id_tmp[card].board_vendor = EURECOM_VENDOR; // set default to EURECOM
             
         exmimo_id_tmp[card].board_exmimoversion = (subid >> 12) & 0x0F;
+	if (exmimo_id_tmp[card].board_exmimoversion == 0) 
+            exmimo_id_tmp[card].board_exmimoversion = 1;   // default (for old bitstreams) is ExpressMIMO-1
 
         exmimo_id_tmp[card].board_hwrev  = (subid >>  8) & 0x0F;
         exmimo_id_tmp[card].board_swrev  = (subid      ) & 0xFF;
