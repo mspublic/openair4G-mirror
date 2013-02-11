@@ -237,8 +237,6 @@ static void __exit openair_cleanup_module(void)
     // stop any ongoing acquisition
     for (card = 0; card < number_of_cards; card++)
         exmimo_send_pccmd(card, EXMIMO_STOP);
-
-    msleep(100); // give the cards some time to stop before removing the driver
     
     openair_cleanup();
 }
