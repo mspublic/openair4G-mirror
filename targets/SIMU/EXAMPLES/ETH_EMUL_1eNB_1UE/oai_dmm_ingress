@@ -1,0 +1,10 @@
+#!/bin/bash
+#Done in start_enb_medieval
+#ifconfig oai0 down
+#macchanger oai0 -m 90:f6:52:0c:60:aa
+#ifconfig oai0 up
+#ip addr add dev oai0 2001:1::1/64
+
+PID=$(pidof mcastread)
+if [ $PID ]; then kill $PID; fi
+mcastread oai0 ff02::2 9999 &>/dev/null &
