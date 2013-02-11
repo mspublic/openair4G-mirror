@@ -469,7 +469,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     }else {
       src_id = module_id+NB_eNB_INST;
       dst_id = eNB_index;	
-      if ((mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) ) { 
+      if ((mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) && (frame > (module_id+1) * 50)) { 
 	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
 	if (otg_pkt != NULL){
 	  rb_id= eNB_index * MAX_NUM_RB + DTCH;

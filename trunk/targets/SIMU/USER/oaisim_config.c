@@ -901,12 +901,14 @@ LOG_I(OTG,"OCG_config_OTG (single node config): source = %d, dest = %d, dist typ
 	} else { // OCG not used, but -T option is used, so config here
 	  for (i=0; i<g_otg->num_nodes; i++){
 	    for (j=0; j<g_otg->num_nodes; j++){ 
-	      g_otg->application_type[i][j][g_otg->application_idx[i][j]] = oai_emulation.info.otg_traffic;
-	      g_otg->background[i][j][g_otg->application_idx[i][j]]=oai_emulation.info.otg_bg_traffic_enabled;
-	      g_otg->packet_gen_type=SUBSTRACT_STRING;
-	      init_predef_traffic();
+	      for (k=1; k<4; k++){ 
+		g_otg->application_type[i][j][k] =oai_emulation.info.otg_traffic;
+		g_otg->background[i][j][k]=oai_emulation.info.otg_bg_traffic_enabled;
+		g_otg->packet_gen_type=SUBSTRACT_STRING;
+	      }
 	    }
 	  }
+	  init_predef_traffic();
 	}
 	return 1;
 }
