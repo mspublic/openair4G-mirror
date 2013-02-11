@@ -415,13 +415,13 @@ void rlc_data_conf     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_i
             LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
             switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                 case RLC_AM:
-                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
+                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP, muiP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                     break;
                 case RLC_UM:
-                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
+                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP, muiP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                     break;
                 case RLC_TM:
-                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][][RLC_DATA_CONF/ MUI %d]\n",frame, module_idP,rb_idP, ( eNB_flag == 1) ? "eNB":"UE", muiP, module_idP);
+                    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_CONF /MUI %d --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,  muiP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
                     break;
             }
             LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
