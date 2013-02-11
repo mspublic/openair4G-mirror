@@ -190,8 +190,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
             msleep(10);
             get_frame_cnt++;
         }
-        if (get_frame_cnt==10)
-            printk("Get frame error: no IRQ received within 100ms.\n");
+        if (get_frame_cnt==200)
+            printk("Get frame error: no IRQ received within 2000ms.\n");
         
         get_frame_done = 0;
 
@@ -380,8 +380,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       
                 exmimo_send_pccmd(c, EXMIMO_FW_START_EXEC);
                 
-                msleep(100); // wait until code has started before initialization command is sent
-
                 exmimo_firmware_init(c);
             }
             break;
@@ -394,7 +392,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
             {
                 exmimo_send_pccmd(c, EXMIMO_REBOOT);
             
-                msleep(100);// wait until code has started before initialization command is sent
                 exmimo_firmware_init(c);
             }
             break;
@@ -413,7 +410,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
  
     default:
         //----------------------
-        printk("[IOCTL] openair_IOCTL unknown: cmd = %i, basecmd = %i\n", cmd, _IOC_NR(cmd) );
+        printk("[IOCTL] openair_IOCTL unknown: basecmd = %i  (cmd=%X)\n", _IOC_NR(cmd), cmd );
         return -EPERM;
         break;
     }

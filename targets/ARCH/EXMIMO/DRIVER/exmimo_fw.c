@@ -238,8 +238,6 @@ int exmimo_firmware_init(int card)
 
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
     
-    msleep(1000); // give card time to initialize system id structure
-    
     return 0;
 }
 
@@ -280,7 +278,7 @@ int exmimo_firmware_cleanup(int card)
 
 
 /*
- * Send command to Leon and waits until command was completed
+ * Send command to Leon and wait until command is completed
  */
 int exmimo_send_pccmd(int card_id, unsigned int cmd)
 {
@@ -293,6 +291,17 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
     // set interrupt bit to trigger LEON interrupt
     iowrite32(val|0x1,bar[card_id]);
     //    printk("Readback of control0 %x\n",ioread32(bar[0]));
+    
+    // workaround until command ack works: wait
+    if (cmd == EXMIMO_PCIE_INIT)
+        msleep(500);   // give card time to initialize system id structure
+    if (cmd == EXMIMO_CONFIG)
+        msleep(500);   // give card time to configure
+    if (cmd == EXMIMO_STOP)
+        msleep(100);
+    if (cmd == EXMIMO_FW_START_EXEC || cmd == EXMIMO_REBOOT)
+        msleep(100); // wait until code has started before initialization command is sent
+    
     return(0);
 }
 
