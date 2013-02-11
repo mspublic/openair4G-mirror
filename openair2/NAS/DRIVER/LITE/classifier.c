@@ -522,20 +522,20 @@ struct cx_entity *nas_CLASS_cx6(struct sk_buff  *skb,
           switch(mc_addr_hdr & 0x000F0000) {
               case (0x00020000):
                   *paddr_type = NAS_IPV6_ADDR_TYPE_MC_SIGNALLING;
-                  #ifdef NAS_DEBUG_CLASS
-                  printk("nasrg_CLASS_cx6: multicast packet - signalling \n");
-                  #endif
+                  //#ifdef NAS_DEBUG_CLASS
+                  printk("nas_CLASS_cx6: multicast packet - signalling \n");
+                  //#endif
                   break;
               case (0x000E0000):
                   *paddr_type = NAS_IPV6_ADDR_TYPE_MC_MBMS;
                   //*pmbms_ix = 0;
                   //cx=gpriv->cx;  // MBMS associate to Mobile 0
                   #ifdef NAS_DEBUG_CLASS
-                  printk("nasrg_CLASS_cx6: multicast packet - MBMS data \n");
+                  printk("nas_CLASS_cx6: multicast packet - MBMS data \n");
                   #endif
                   break;
           default:
-                  printk("nasrg_CLASS_cx6: default \n");
+                  printk("nas_CLASS_cx6: default \n");
                   *paddr_type = NAS_IPV6_ADDR_TYPE_UNKNOWN;
                   //*pmbms_ix = NASRG_MBMS_SVCES_MAX;
           }
@@ -770,7 +770,6 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
             // find in default DSCP a valid classification
             if (cx == NULL) {
                 switch (addr_type) {
-                        break;
                     case NAS_IPV6_ADDR_TYPE_MC_SIGNALLING:
                     case NAS_IPV6_ADDR_TYPE_UNICAST:
 
@@ -965,7 +964,7 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
         sp       = NULL;
 
         #ifdef NAS_DEBUG_CLASS
-        printk("[NAS][%s] DSCP/EXP %d : looking for classifier entry\n",__FUNCTION__,dscp);
+        printk("[NAS][%s] DSCP/EXP %d version %d: looking for classifier entry\n",__FUNCTION__,dscp, version);
         #endif
         for (pclassifier=cx->sclassifier[dscp]; pclassifier!=NULL; pclassifier=pclassifier->next) {
             #ifdef NAS_DEBUG_CLASS
@@ -982,6 +981,7 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
             // normal rule checks that network protocol version matches
 
             if ((pclassifier->ip_version == version)  || (pclassifier->ip_version == NAS_IP_VERSION_ALL)){
+                //printk("[NAS][%s] IP version are equals\n",__FUNCTION__);
                 sp=pclassifier;
                 classref=sp->classref;
                 break;
@@ -1014,17 +1014,18 @@ void nas_CLASS_send(struct sk_buff *skb,int inst){
             #endif
 
             sp->fct(skb, cx, sp,inst);
+            no_connection = 0;
         } // if classifier entry match found
         else {
             printk("[NAS][%s] no corresponding item in the classifier, so the message is dropped\n",__FUNCTION__);
             //  nas_COMMON_del_send(skb, cx, NULL,inst);
         }
 
-        no_connection = 0;
     }   // if connection found
     #ifdef NAS_DEBUG_CLASS
-    if (no_connection == 1)
+    if (no_connection == 1) {
         printk("[NAS][%s] no corresponding connection, so the message is dropped\n",__FUNCTION__);
+    }
     #endif
     //  }   // while loop over connections
     #ifdef NAS_DEBUG_CLASS
