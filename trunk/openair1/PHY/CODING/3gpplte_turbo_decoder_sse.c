@@ -129,7 +129,7 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
   
 }
 
-#define L 64
+#define L 40
 
 void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F) {
   int k,l,l2,K1,rerun_flag=0;
@@ -517,24 +517,7 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_ptr[6] = _mm_srli_si128(beta128[6],2);
       beta_ptr[7] = _mm_srli_si128(beta128[7],2);
 
-      beta_ptr[0] = _mm_insert_epi16(beta_ptr[0],beta0_16,7);
-      beta_ptr[1] = _mm_insert_epi16(beta_ptr[1],beta1_16,7);
-      beta_ptr[2] = _mm_insert_epi16(beta_ptr[2],beta2_16,7);
-      beta_ptr[3] = _mm_insert_epi16(beta_ptr[3],beta3_16,7);
-      beta_ptr[4] = _mm_insert_epi16(beta_ptr[4],beta4_16,7);
-      beta_ptr[5] = _mm_insert_epi16(beta_ptr[5],beta5_16,7);
-      beta_ptr[6] = _mm_insert_epi16(beta_ptr[6],beta6_16,7);
-      beta_ptr[7] = _mm_insert_epi16(beta_ptr[7],beta7_16,7);
 
-      /*
-      beta[7+(frame_length<<3)] = beta0_16;
-      beta[15+(frame_length<<3)] = beta1_16;
-      beta[23+(frame_length<<3)] = beta2_16;
-      beta[31+(frame_length<<3)] = beta3_16;
-      beta[39+(frame_length<<3)] = beta4_16;
-      beta[47+(frame_length<<3)] = beta5_16;
-      beta[55+(frame_length<<3)] = beta6_16;
-      beta[63+(frame_length<<3)] = beta7_16;*/
 #else
       beta_ptr[0] = _mm_srli_si128(beta128[0],1);
       beta_ptr[1] = _mm_srli_si128(beta128[1],1);
@@ -584,8 +567,27 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       }
 #endif
     }
+
+#ifndef LLR8    
+    beta_ptr[0] = _mm_insert_epi16(beta_ptr[0],beta0_16,7);
+    beta_ptr[1] = _mm_insert_epi16(beta_ptr[1],beta1_16,7);
+    beta_ptr[2] = _mm_insert_epi16(beta_ptr[2],beta2_16,7);
+    beta_ptr[3] = _mm_insert_epi16(beta_ptr[3],beta3_16,7);
+    beta_ptr[4] = _mm_insert_epi16(beta_ptr[4],beta4_16,7);
+    beta_ptr[5] = _mm_insert_epi16(beta_ptr[5],beta5_16,7);
+    beta_ptr[6] = _mm_insert_epi16(beta_ptr[6],beta6_16,7);
+    beta_ptr[7] = _mm_insert_epi16(beta_ptr[7],beta7_16,7);
     
-    
+    /*
+      beta[7+(frame_length<<3)] = beta0_16;
+      beta[15+(frame_length<<3)] = beta1_16;
+      beta[23+(frame_length<<3)] = beta2_16;
+      beta[31+(frame_length<<3)] = beta3_16;
+      beta[39+(frame_length<<3)] = beta4_16;
+      beta[47+(frame_length<<3)] = beta5_16;
+      beta[55+(frame_length<<3)] = beta6_16;
+      beta[63+(frame_length<<3)] = beta7_16;*/    
+#endif
     
 #ifndef LLR8    
     for (k=(frame_length>>3)-1;k>=((rerun_flag==0)?0:((frame_length-L)>>3));k--){
@@ -930,7 +932,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 
   
   unsigned int pi,*pi2_p,*pi3_p,pi2[n],pi3[n+8],pi5[n+8],pi4[n+8],pi6[n+8],*pi4_p,*pi5_p,*pi6_p;
-  llr_t *yp,*s,*yp1,*yp2;
+  llr_t *yp,*s,*s1,*s2,*yp1,*yp2;
   unsigned int i,j;//,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
@@ -1009,7 +1011,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     pi = base_interleaver[i];//(unsigned int)threegpplte_interleaver(f1,f2,n);
     pi3[i] = pi2[pi];
     pi4[pi2[i]] = pi3[i];
-    pi5[pi2[i]] = pi2[i];
+    pi5[pi3[i]] = pi2[i];
     pi6[pi] = pi2[i];
   } 
 
@@ -1025,12 +1027,13 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     crc_len=1;
     break;
   default: 
-    crc_len=3;
+    crc_len=3; 
   }
  
 #ifdef LLR8
   for (i=0,j=0;i<(3*(n2>>4))+1;i++,j+=2) {
     ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],1),_mm_srai_epi16(((__m128i *)y)[j+1],1));
+//    ((__m128i *)y8)[i] = _mm_packs_epi16(((__m128i *)y)[j],((__m128i *)y)[j+1]);
   }
   yp = y8;
 #else
@@ -1038,6 +1041,8 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 #endif
 
   s = systematic0;
+  s1 = systematic1;
+  s2 = systematic2;
   yp1 = yparity1;
   yp2 = yparity2;
  
@@ -1126,7 +1131,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   
   // Termination
   for (i=n2;i<n2+3;i++) {
-    s[i]= *yp; yp++;
+    s[i]= *yp; s1[i] = s[i] ; s2[i] = s[i]; yp++;
     yp1[i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
     msg("Term 1 (%d): %d %d\n",i,s[i],yp1[i]);
@@ -1134,7 +1139,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   }
 #ifdef LLR8
   for (i=n2+16;i<n2+19;i++) {
-    s[i]= *yp; yp++;
+    s[i]= *yp; s1[i] = s[i] ; s2[i] = s[i]; yp++;
     yp2[i-16] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
     msg("Term 2 (%d): %d %d\n",i-3,s[i],yp2[i-16]);
@@ -1142,7 +1147,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   }
 #else
   for (i=n2+8;i<n2+11;i++) {
-    s[i]= *yp; yp++;
+    s[i]= *yp; s1[i] = s[i] ; s2[i] = s[i]; yp++;
     yp2[i-8] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
     msg("Term 2 (%d): %d %d\n",i-3,s[i],yp2[i-8]);
@@ -1153,6 +1158,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   msg("\n");
 #endif //DEBUG_LOGMAP
   
+
   // do log_map from first parity bit
 
   log_map(systematic0,yparity1,m11,m10,alpha,beta,ext,n2,0,F,(n2==n)?0:1);
@@ -1209,7 +1215,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 
     // do log_map from second parity bit    
 
-    log_map(systematic2,yparity2,m11,m10,alpha,beta,ext2,n2,1,0,(n2==n)?0:1);
+    log_map(systematic2,yparity2,m11,m10,alpha,beta,ext2,n2,1,F,(n2==n)?0:1);
 
 
     memset(decoded_bytes,0,n>>3);
@@ -1227,8 +1233,10 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       tmp128[i]=_mm_insert_epi16(tmp128[i],ext2[*pi5_p++],5);
       tmp128[i]=_mm_insert_epi16(tmp128[i],ext2[*pi5_p++],6);
       tmp128[i]=_mm_insert_epi16(tmp128[i],ext2[*pi5_p++],7);
-      tmp128[i] = _mm_adds_epi16(tmp128[i],((__m128i *)systematic0)[i]);
+//      tmp128[i]=_mm_adds_epi16(tmp128[i],((__m128i *)systematic0)[i]);
+      ((__m128i *)systematic1)[i] =_mm_adds_epi16(tmp128[i],((__m128i *)systematic0)[i]);
     }
+/*
     pi3_p=pi3;
     for (i=0;i<(n>>3);i++) { // steady-state portion
       // printf("i%d => pi4[i] %d\n",i,*pi4_p);
@@ -1240,7 +1248,8 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       ((__m128i *)systematic1)[i]=_mm_insert_epi16(((__m128i *)systematic1)[i],((llr_t*)tmp128)[*pi3_p++],5);
       ((__m128i *)systematic1)[i]=_mm_insert_epi16(((__m128i *)systematic1)[i],((llr_t*)tmp128)[*pi3_p++],6);
       ((__m128i *)systematic1)[i]=_mm_insert_epi16(((__m128i *)systematic1)[i],((llr_t*)tmp128)[*pi3_p++],7);
-    }
+    }*/
+
     for (i=0;i<(n>>3);i++) {
       tmp128[i] = _mm_adds_epi16(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
     }
@@ -1279,9 +1288,10 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       tmp128[i]=_mm_insert_epi8(tmp128[i],ext2[*pi5_p++],13);
       tmp128[i]=_mm_insert_epi8(tmp128[i],ext2[*pi5_p++],14);
       tmp128[i]=_mm_insert_epi8(tmp128[i],ext2[*pi5_p++],15);
-      tmp128[i] = _mm_adds_epi8(tmp128[i],((__m128i *)systematic0)[i]);
+//      tmp128[i] = _mm_adds_epi8(tmp128[i],((__m128i *)systematic0)[i]);
+      ((__m128i *)systematic1)[i] = _mm_adds_epi8(tmp128[i],((__m128i *)systematic0)[i]);
     }
-
+/*
     pi3_p=pi3;
     for (i=0;i<(n2>>4);i++) { // steady-state portion
       //      printf("i %d/%d: pi3_p %p\n",i<<4,n,pi3_p);
@@ -1303,6 +1313,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       ((__m128i *)systematic1)[i]=_mm_insert_epi8(((__m128i *)systematic1)[i],((llr_t*)tmp128)[*pi3_p++],15);
 	
     }
+*/
 
     for (i=0;i<(n2>>4);i++) {
       tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
