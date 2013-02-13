@@ -1510,7 +1510,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	
 	for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 	  eNB_pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = 
-	    (int *)malloc16(2*sizeof(int)*frame_parms->ofdm_symbol_size);
+	    (int *)malloc16(2*2*sizeof(int)*frame_parms->ofdm_symbol_size);
 	  if (eNB_pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i]) {
 #ifdef DEBUG_PHY
 	    msg("[openair][LTE_PHY][INIT] lte_eNB_pusch_vars[%d]->drs_ch_estimates_time[%d][%d] allocated at %p\n",UE_id,eNB_id,i,
