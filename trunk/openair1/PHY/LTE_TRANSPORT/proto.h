@@ -957,7 +957,7 @@ u8 get_Qm(u8 I_MCS);
 
 /** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
     @param I_MCS */
-u8 get_Qm(u8 I_MCS);
+u8 get_Qm_ul(u8 I_MCS);
 
 /** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
