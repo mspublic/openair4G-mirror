@@ -164,6 +164,10 @@ int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 			      u8 Ns,
 			      u8 cooperation_flag);
 
+s16 lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
+                                  s32 *ul_ch_estimates,
+                                  u16 nb_rb);
+
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,
 			       LTE_eNB_SRS *eNb_srs_vars,
