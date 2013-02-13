@@ -13,8 +13,16 @@ CFLAGS += -O2
 
 SRC = synctest.c condtest.c
 
-RTAI_OBJ = synctest.o sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
-OBJ = $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
+RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
+OBJ = $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o 
+ifdef DRIVER2013
+RTAI_OBJ += lte-softmodem.o
+OBJ += $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
+CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS
+else
+RTAI_OBJ += synctest.o 
+OBJ += $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
+endif
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -96,6 +104,9 @@ condtest: condtest.c
 
 synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
+
+lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem
 
 synctest_eNB: synctest
 	cp synctest synctest_eNB
