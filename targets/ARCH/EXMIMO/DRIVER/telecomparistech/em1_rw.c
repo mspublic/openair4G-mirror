@@ -1,7 +1,3 @@
-#ifndef DRIVER_COMPILE
-#define DRIVER_COMPILE 
-#endif
-
 #include "em1_drv.h"
 
 void em1_unlock_user_page(struct em1_page_s *ep)
