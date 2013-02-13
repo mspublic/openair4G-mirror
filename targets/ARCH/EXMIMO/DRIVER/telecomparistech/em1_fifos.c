@@ -1,4 +1,3 @@
-
 #include "em1_drv.h"
 
 int em1_fifo_write(struct em1_private_s *pv, const uint32_t *buf, size_t count)

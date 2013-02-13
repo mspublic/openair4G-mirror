@@ -1,4 +1,3 @@
-
 #include "em1_drv.h"
 
 MODULE_AUTHOR("Alexandre Becoulet, Cerdan Sebastien");
@@ -60,11 +59,13 @@ static int em1_open(struct inode *inode, struct file *file)
 			struct em1_file_s *fpv = kmalloc(sizeof(struct em1_file_s), GFP_KERNEL);
 			if (!fpv)
 				return -ENOMEM;
+			printk(KERN_DEBUG "exmimo1 : open()\n");
 
 			fpv->pv = pv;
 			file->private_data = fpv;
 			fpv->read.addr = 0;
 			fpv->write.addr = 0;
+                        memset(fpv->mmap_list, 0, sizeof(fpv->mmap_list));
 			return 0;
 		}
 	}
@@ -74,10 +75,17 @@ static int em1_open(struct inode *inode, struct file *file)
 
 static int em1_release(struct inode *inode, struct file *file)
 {
+	int i;
 	struct em1_file_s *fpv = file->private_data;
 
 	em1_unlock_user_page(&fpv->read);
 	em1_unlock_user_page(&fpv->write);
+	for (i = 0; i < MAX_EM1_MMAP; i++)
+		if (fpv->mmap_list[i].virt)
+                {
+ 			struct em1_mmap_ctx * mctx = fpv->mmap_list + i;
+			pci_free_consistent(fpv->pv->pdev, mctx->size, &mctx->virt, mctx->phys);
+		} 
 	kfree(fpv);
 
 	printk(KERN_DEBUG "exmimo1 : release()\n");
