@@ -788,7 +788,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,
 			       phy_vars_ue,
 			       harq_pid,
-			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
+			       phy_vars_ue->transmission_mode[eNB_id],0,0,
+			       &phy_vars_ue->ulsch_rate_matching_stats,
+			       &phy_vars_ue->ulsch_turbo_encoding_stats,
+			       &phy_vars_ue->ulsch_interleaving_stats)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      mac_xface->macphy_exit("");
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -875,8 +878,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       phy_vars_ue,
 			       harq_pid,
 			       phy_vars_ue->transmission_mode[eNB_id],0,
-			       0  //  Nbundled, to be updated!!!!
-			       )!=0) {
+			       0,  //  Nbundled, to be updated!!!!
+			       &phy_vars_ue->ulsch_rate_matching_stats,
+			       &phy_vars_ue->ulsch_turbo_encoding_stats,
+			       &phy_vars_ue->ulsch_interleaving_stats)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 	      return;

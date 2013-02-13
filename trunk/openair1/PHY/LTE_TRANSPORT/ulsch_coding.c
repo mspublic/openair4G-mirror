@@ -162,7 +162,10 @@ u32 ulsch_encoding(u8 *a,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,
-		   u8 Nbundled) {
+		   u8 Nbundled,
+		   time_stats_t *rm_stats,
+		   time_stats_t *te_stats,
+		   time_stats_t *i_stats) {
   
   //  u16 offset;
   u32 crc=1;
@@ -323,9 +326,9 @@ u32 ulsch_encoding(u8 *a,
 	
 	
 #ifdef DEBUG_ULSCH_CODING    
-    msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
+	msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
-	
+	start_meas(te_stats);
 	threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
 				  Kr>>3, 
 				  &ulsch->harq_processes[harq_pid]->d[r][96],
@@ -333,16 +336,17 @@ u32 ulsch_encoding(u8 *a,
 				  f1f2mat_old[iind*2],   // f1 (see 36212-820, page 14)
 				  f1f2mat_old[(iind*2)+1]  // f2 (see 36212-820, page 14)
 				  );
+	stop_meas(te_stats);
 #ifdef DEBUG_ULSCH_CODING
 	if (r==0)
 	  write_output("enc_output0.m","enc0",&ulsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 #endif
-	
+	start_meas(i_stats);
 	ulsch->harq_processes[harq_pid]->RTC[r] = 
 	  sub_block_interleaving_turbo(4+(Kr_bytes*8), 
 				       &ulsch->harq_processes[harq_pid]->d[r][96], 
 				       ulsch->harq_processes[harq_pid]->w[r]);
-	
+	stop_meas(i_stats);
       }
       
     }
@@ -452,7 +456,7 @@ u32 ulsch_encoding(u8 *a,
 	  Q_m,ulsch->harq_processes[harq_pid]->nb_rb);
 #endif
       
-      
+      start_meas(rm_stats);      
       r_offset += lte_rate_matching_turbo(ulsch->harq_processes[harq_pid]->RTC[r],
 					  G,
 					  ulsch->harq_processes[harq_pid]->w[r],
@@ -467,6 +471,7 @@ u32 ulsch_encoding(u8 *a,
 					  r,
 					  ulsch->harq_processes[harq_pid]->nb_rb,
 					  ulsch->harq_processes[harq_pid]->mcs);                       // r
+      stop_meas(rm_stats);
 #ifdef DEBUG_ULSCH_CODING
       if (r==ulsch->harq_processes[harq_pid]->C-1)
 	write_output("enc_output.m","enc",ulsch->e,r_offset,1,4);

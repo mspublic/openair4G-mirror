@@ -1212,13 +1212,19 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param tmode Transmission mode (1-7)
   @param control_only_flag Generate PUSCH with control information only
   @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
+  @param rm_stats
+  @param te_stats
+  @param i_stats
 */
 u32 ulsch_encoding(u8 *a,
 		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,
-		   u8 Nbundled);
+		   u8 Nbundled,
+		   time_stats_t *rm_stats,
+		   time_stats_t *te_stats,
+		   time_stats_t *i_stats);
 
 /*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212 for emulation
