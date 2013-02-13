@@ -336,6 +336,59 @@ void generate_RIV_tables() {
   }
 }
 
+// Ngap = 3, N_VRB_DL=6, P=1, N_row=2, N_null=4*2-6=2
+// permutation for even slots :
+//    n_PRB'(0,2,4) = (0,1,2), n_PRB'(1,3,5) = (4,5,6)
+//    n_PRB''(0,1,2,3) = (0,2,4,6)
+//    => n_tilde_PRB(5) = (4)
+//       n_tilde_PRB(4) = (1)
+//       n_tilde_PRB(2,3) = (3,5)
+//       n_tilde_PRB(0,1) = (0,2)
+
+int dist6[6]={0,2,3,5,1,4};
+ 
+void generate_RIV_tables6() {
+
+  // 6RBs localized RIV
+  int Lcrbs,RBstart;
+  int distpos;
+  int RIV;
+  int alloc,alloc_dist;
+
+  for (RBstart=0;RBstart<6;RBstart++) {
+    alloc = 0;
+    alloc_dist = 0;
+    for (Lcrbs=1;Lcrbs<=(6-RBstart);Lcrbs++) {
+      //printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
+      alloc |= (1<<(RBstart+Lcrbs-1));
+      // This is the RB<->VRB relationship for N_RB_DL=6
+      distpos = dist6[RBstart+Lcrbs-1];
+      alloc_dist |= (1<<distpos);
+
+      RIV=computeRIV(25,RBstart,Lcrbs);
+      if (RIV>RIV_max)
+	RIV_max = RIV;
+
+      //      printf("RIV %d (%d) : first_rb %d NBRB %d\n",RIV,localRIV2alloc_LUT25[RIV],RBstart,Lcrbs);
+      localRIV2alloc_LUT25[RIV] = alloc;
+      distRIV2alloc_LUT25[RIV]  = alloc_dist;
+      RIV2nb_rb_LUT25[RIV]      = Lcrbs;
+      RIV2first_rb_LUT25[RIV]   = RBstart;
+    }
+  }
+}
+
+// 50 PRB
+// Ngap1 = 27, Ngap2 = 9, N_VRB_DL1=46,N_VRB_DL2=36, P=3, N_row1=12, N_row2=9, N_null1=4*12-46=2, N_null2=0
+// permutation for even slots, Ngap1 :
+
+//  n_tilde_PRB(46,...,49) = ()
+//  n_tilde_PRB(45) = 24+22 - 12 = 34
+//  n_PRB = n_tilde_PRB(44) = 22 -12 -1  = 9
+//  n_tilde_PRB(2,3,6,7,...,42,43) = (24,36,...,24,36) + (0,0,1,1,...,10,10) = (24,36,25,37,...,34,46)-1 = (23,35,24,36,...,33,45)
+//  n_PRB = n_tilde_PRB(0,1,4,5,...,40,41) = (0,12,0,12,...,0,12) + (0,0,1,1,...,10,10) = (0,12,1,13,2,14,...,10,22)
+//  n_PRB=n_tilde_PRB(2,3,6,7,...) - 23 + Ngap = 27+(0,12,2,14,...,10,22) = (27,39,29,41,...,37,49)
+
 u32 get_rballoc(u8 vrb_type,u16 rb_alloc_dci) {
 
   if (vrb_type == 0)

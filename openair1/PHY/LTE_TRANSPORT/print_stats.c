@@ -42,11 +42,13 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
+extern int number_of_cards;
+
 #ifdef EXMIMO
 #ifdef DRIVER2013
 #include "openair0_lib.h"
 extern int card;
-extern int number_of_cards;
+
 #else
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"

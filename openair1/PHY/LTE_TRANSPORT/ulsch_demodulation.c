@@ -666,18 +666,11 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 #else
 
 	mmtmpU0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
-#ifndef NEW_FFT
-	mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift-1);
-#else
+
 	mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift);
-#endif
 	mmtmpU1 = _mm_madd_epi16(ul_ch128[1],ul_ch128[1]);
 
-#ifndef NEW_FFT
-	mmtmpU1 = _mm_srai_epi32(mmtmpU1,output_shift-1);
-#else
 	mmtmpU1 = _mm_srai_epi32(mmtmpU1,output_shift);
-#endif
 
 	mmtmpU0 = _mm_packs_epi32(mmtmpU0,mmtmpU1);
 	
@@ -686,11 +679,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 	
 	mmtmpU0 = _mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
 
-#ifndef NEW_FFT
-	mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift-1);
-#else
 	mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift);
-#endif
 	mmtmpU1 = _mm_packs_epi32(mmtmpU0,mmtmpU0);
 	ul_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpU1,mmtmpU1);
 
@@ -1347,7 +1336,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
   
       //      log2_maxh = 4+(log2_approx(avgs)/2);
 #ifdef NEW_FFT
-      log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+4;
+      log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+5;
 #else
       log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #endif

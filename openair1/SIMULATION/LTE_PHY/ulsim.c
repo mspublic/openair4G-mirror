@@ -50,6 +50,7 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 extern u16 beta_ack[16],beta_ri[16],beta_cqi[16];
 //extern  char* namepointer_chMag ;
 
+
 #ifdef XFORMS
   FD_lte_scope *form_ul;
   char title[255];
@@ -517,7 +518,7 @@ FILE *csv_fdUL;
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:Q")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -665,6 +666,9 @@ FILE *csv_fdUL;
     case 'Q':
       cqi_flag=1;
       break;
+    case 'B':
+      N_RB_DL=atoi(optarg);
+      break;
     case 'h':
     default:
       printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on) -g channel_model [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M') \n",argv[0]);
@@ -674,6 +678,7 @@ FILE *csv_fdUL;
   }
   
   lte_param_init(1,n_rx,1,extended_prefix_flag,N_RB_DL,frame_type,tdd_config,osf);  
+  printf("1 . rxdataF_comp[0] %p\n",PHY_vars_eNB->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0]);
   printf("Setting mcs = %d\n",mcs);
   printf("n_frames = %d\n",	n_frames);
 
@@ -1109,8 +1114,10 @@ FILE *csv_fdUL;
 			     harq_pid,
 			     2, // transmission mode
 			     control_only_flag,
-			     1// Nbundled
-			     )==-1) {
+			     1,// Nbundled
+			     &PHY_vars_UE->ulsch_rate_matching_stats,
+			     &PHY_vars_UE->ulsch_turbo_encoding_stats,
+			     &PHY_vars_UE->ulsch_interleaving_stats)==-1) {
 	    printf("ulsim.c Problem with ulsch_encoding\n");
 	    exit(-1);
 	  }
@@ -1322,6 +1329,7 @@ if(abstx){
 	//	write_output("rxsig1_75.m","rxs1_75", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],PHY_vars_eNB->lte_frame_parms.samples_per_tti,1,1);
 
 #endif      
+
 
 	start_meas(&PHY_vars_eNB->ofdm_demod_stats);	      	      	  
 	lte_eNB_I0_measurements(PHY_vars_eNB,

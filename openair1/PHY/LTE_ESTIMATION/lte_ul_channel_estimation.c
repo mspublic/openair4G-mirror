@@ -420,10 +420,10 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
           //          multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
           //          multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
 
-          //          multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
-          //          multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
+	//                    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
+	//               multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
           //          msg("phase = %d\n",ru[2*cmax(((delta_phase/7)*(k-3)),0)]);
-
+		    
           // rotate channel estimates by estimated phase
           rotate_cpx_vector_norep((s16*) ul_ch1, 
                                   &ru[2*cmax(((delta_phase/7)*(k-3)),0)], 
@@ -438,10 +438,10 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
                                   15);
 
           // Combine the two rotated estimates 
-          multadd_complex_vector_real_scalar((s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
+          multadd_complex_vector_real_scalar((s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
 
-          multadd_complex_vector_real_scalar((s16*) &tmp_estimates[0],SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
-
+          multadd_complex_vector_real_scalar((s16*) &tmp_estimates[0],SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
+		    
           /*
           if ((k<pilot_pos1) || ((k>pilot_pos2))) {
               
