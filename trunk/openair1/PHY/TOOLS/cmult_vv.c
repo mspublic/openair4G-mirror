@@ -521,7 +521,7 @@ int mult_cpx_vector_norep_unprepared_conjx2(s16 *x1,
   //register __m128i m0,m1,m2,m3;
 
   short conj_x2s[8] __attribute__((aligned(16))) = {1,1,-1,1,1,1,-1,1};
-  __m128i *conj_x2 = &conj_x2s;
+  __m128i *conj_x2 = (__m128i *)&conj_x2s[0];
 
 #ifdef DEBUG_CMULT
   __m128i temp;
