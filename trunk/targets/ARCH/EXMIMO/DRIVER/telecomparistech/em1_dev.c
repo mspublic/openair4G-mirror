@@ -1,4 +1,3 @@
-
 #include "em1_drv.h"
 
 static irqreturn_t irq_handler(int irq, void *dev_id)
@@ -109,8 +108,8 @@ found:
 	pv->fifo_read_left = 0;
 	pv->fifo_write_left = 0;
 	spin_lock_init(&pv->lock);	
+	pv->dev = &dev->dev;
 	pv->pdev = dev;
-	pv->pdev = &dev->dev;
 
 	/* Get DMA done counter */
 	pv->dma_started = pv->dma_done = ioread32(pv->base + REG_ISTATUS) >> 16;

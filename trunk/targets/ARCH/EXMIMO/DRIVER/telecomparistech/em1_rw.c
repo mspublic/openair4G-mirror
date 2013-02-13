@@ -1,3 +1,6 @@
+#ifndef DRIVER_COMPILE
+#define DRIVER_COMPILE 
+#endif
 
 #include "em1_drv.h"
 

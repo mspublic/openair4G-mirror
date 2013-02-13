@@ -1,4 +1,4 @@
-
+#ifndef USER_APP 
 
 #include <linux/uaccess.h>
 #include <linux/module.h>
@@ -59,6 +59,7 @@
 #define EM1_CMD_OP_DMA_EM12PC 0x0200
 
 #define MAX_EM1_DEVICES 8
+#define MAX_EM1_MMAP 4
 
 #define EM1_BUSY_FIFO_R 1
 #define EM1_BUSY_FIFO_W 2
@@ -72,11 +73,18 @@ struct em1_page_s
 	struct page *page;
 };
 
+struct em1_mmap_ctx {
+    unsigned long virt;
+    dma_addr_t phys;
+    size_t size;
+};
+
 struct em1_file_s
 {
 	struct em1_private_s *pv;
 	struct em1_page_s read;
 	struct em1_page_s write;
+        struct em1_mmap_ctx mmap_list[MAX_EM1_MMAP];
 };
 
 struct	em1_private_s
@@ -143,6 +151,8 @@ int em1_ioctl(struct inode *inode, struct file *file,
 
 /* em1_mmap.c */
 int em1_mmap(struct file *filp, struct vm_area_struct *vma);
+
+#endif
 
 enum em1_ioctl_cmd
 {
