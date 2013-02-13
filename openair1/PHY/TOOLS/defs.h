@@ -538,7 +538,7 @@ s32 dot_product(s16 *x,
 		u32 N, //must be a multiple of 8
 		u8 output_shift) __attribute__ ((force_align_arg_pointer));
 
-
+void dft12(int16_t *x,int16_t *y) __attribute__ ((force_align_arg_pointer));
 void dft24(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
 void dft36(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
 void dft48(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
