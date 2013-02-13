@@ -1,7 +1,3 @@
-#ifndef DRIVER_COMPILE
-#define DRIVER_COMPILE 
-#endif
-
 #include "em1_drv.h"
 
 static int em1_ioctl_fifo_write(struct em1_private_s *pv,
