@@ -1336,7 +1336,7 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
   
       //      log2_maxh = 4+(log2_approx(avgs)/2);
 #ifdef NEW_FFT
-      log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+5;
+      log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+4;
 #else
       log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+3;
 #endif
