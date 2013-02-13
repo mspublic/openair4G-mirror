@@ -30,8 +30,7 @@ CFLAGS += -I$(OPENAIRTARGETS_DIR)/ARCH/EXMIMO/USERSPACE/LIB -I$(OPENAIRTARGETS_D
 
 OCTAVEOBJS =  oarf_config_exmimo.oct oarf_get_frame.oct oarf_stop.oct oarf_send_frame.oct oarf_get_num_detected_cards.oct
 
-all: $(OCTAVEOBJS) 
-#gpib_send.oct 
+all: $(OCTAVEOBJS) gpib_send.oct 
 
 oarf: $(OCTAVEOBJS)
 
