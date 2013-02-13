@@ -154,9 +154,9 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH) {
   
   switch (Msc_PUSCH) {
   case 12:
-    dft12((__m128i *)idft_in0,(__m128i *)idft_out0);
-    dft12((__m128i *)idft_in1,(__m128i *)idft_out1);
-    dft12((__m128i *)idft_in2,(__m128i *)idft_out2);
+    dft12((int16_t *)idft_in0,(int16_t *)idft_out0);
+    dft12((int16_t *)idft_in1,(int16_t *)idft_out1);
+    dft12((int16_t *)idft_in2,(int16_t *)idft_out2);
 
     /*
     dft12f(&((__m128i *)idft_in0)[0],&((__m128i *)idft_in0)[1],&((__m128i *)idft_in0)[2],&((__m128i *)idft_in0)[3],&((__m128i *)idft_in0)[4],&((__m128i *)idft_in0)[5],&((__m128i *)idft_in0)[6],&((__m128i *)idft_in0)[7],&((__m128i *)idft_in0)[8],&((__m128i *)idft_in0)[9],&((__m128i *)idft_in0)[10],&((__m128i *)idft_in0)[11],
@@ -316,7 +316,7 @@ int32_t ulsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   int32_t i;
-  __m128i **llrp128 = llrp;
+  __m128i **llrp128 = (__m128i **)llrp;
 
   //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128U-(__m128i*)ulsch_llr);
 
@@ -390,9 +390,9 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag,*ch_magb;
-  int32_t j=0,i;
+  int32_t i;
   __m128i mmtmpU1,mmtmpU2;
-  int32_t **llrp32=llrp;
+  int32_t **llrp32=(int32_t **)llrp;
 
   //  uint8_t symbol_mod;
 
@@ -1346,7 +1346,11 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 	avgs = cmax(avgs,avgU[(aarx<<1)]);
   
       //      log2_maxh = 4+(log2_approx(avgs)/2);
+#ifdef NEW_FFT
+      log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+4;
+#else
       log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+3;
+#endif
 #ifdef DEBUG_ULSCH
       msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 #endif
