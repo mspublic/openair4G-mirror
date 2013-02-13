@@ -43,17 +43,26 @@
 #include "SCHED/extern.h"
 
 #ifdef EXMIMO
+#ifdef DRIVER2013
+#include "openair0_lib.h"
+extern int card;
+extern int number_of_cards;
+#else
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#else
-extern u8 number_of_cards;
+#endif
 #endif
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
   u32 RRC_status;
+#ifdef EXMIMO
+#ifdef DRIVER2013
+  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
+#endif
+#endif
 
   if (phy_vars_ue==NULL)
     return 0;
@@ -78,7 +87,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
 #else
 #ifdef EXMIMO
+#ifdef DRIVER2013
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],p_exmimo_config->rf.rx_gain[0][0]);
+#else
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],exmimo_pci_interface->rf.rx_gain00);
+#endif
 #else
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
 #endif
@@ -207,7 +220,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] rf_mode %d, input level (set by user) %d dBm, VGA gain %d dB ==> total gain %3.2f dB, noise figure %3.2f dB\n",
 		   phy_vars_ue->rx_gain_mode[0],
 		   input_level_dBm, 
+#ifdef DRIVER2013
+		   p_exmimo_config->rf.rx_gain[0][0],
+#else
 		   exmimo_pci_interface->rf.rx_gain00,
+#endif
 		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
 		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot)-phy_vars_ue->rx_total_gain_dB+105);
 #endif
