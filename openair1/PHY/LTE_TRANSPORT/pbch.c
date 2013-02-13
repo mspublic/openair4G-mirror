@@ -713,7 +713,7 @@ void pbch_quantize(s8 *pbch_llr8,
 }
 
 static unsigned char dummy_w_rx[3*3*(16+PBCH_A)];
-static char pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
+static int8_t pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
 
 
 u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
@@ -728,7 +728,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
   int symbol,i;
   u32 nsymb = (frame_parms->Ncp==0) ? 14:12;
-  u32  pbch_E;
+  u16  pbch_E;
   u8 pbch_a[8];
   u8 RCC;
 
