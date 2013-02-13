@@ -760,6 +760,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
 __m128i mmtmpX0,mmtmpX1,mmtmpX2,mmtmpX3;
 s16 prach_ifft[4][1024*4];
 
+
 void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, u16 *preamble_delay_list, u16 Nf, u8 tdd_mapindex) {
 
   int i;
@@ -1062,7 +1063,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 
 	// write_output("prach_rx0.m","prach_rx0",prach[0],6144+792,1,1);	
 	// write_output("prach_rx1.m","prach_rx1",prach[1],6144+792,1,1);	
-	write_output("prach_rxF0.m","prach_rxF0",rxsigF[0],24576,1,1);	
+	//write_output("prach_rxF0.m","prach_rxF0",rxsigF[0],24576,1,1);	
 	// write_output("prach_rxF1.m","prach_rxF1",rxsigF[1],6144,1,1);	
 
 	// Do componentwise product with Xu*
