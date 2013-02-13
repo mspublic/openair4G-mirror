@@ -420,8 +420,8 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
           //          multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
           //          multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
 
-	//                    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
-	//               multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE>>1,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
+          //          multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
+          //          multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
           //          msg("phase = %d\n",ru[2*cmax(((delta_phase/7)*(k-3)),0)]);
 		    
           // rotate channel estimates by estimated phase
@@ -439,7 +439,6 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
           // Combine the two rotated estimates 
           multadd_complex_vector_real_scalar((s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
-
           multadd_complex_vector_real_scalar((s16*) &tmp_estimates[0],SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
 		    
           /*
