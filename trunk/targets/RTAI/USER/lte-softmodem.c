@@ -105,14 +105,14 @@ static SEM *mutex;
 
 static int thread0;
 static int thread1;
-static int sync_thread;
+//static int sync_thread;
 
 pthread_t  thread2;
-
+/*
 static int instance_cnt=-1; //0 means worker is busy, -1 means its free
 int instance_cnt_ptr_kern,*instance_cnt_ptr_user;
 int pci_interface_ptr_kern;
-
+*/
 //extern unsigned int bigphys_top;
 //extern unsigned int mem_base;
 
@@ -151,9 +151,6 @@ int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
 
 LTE_DL_FRAME_PARMS *frame_parms;
-#ifdef EXMIMO
-  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
-#endif
 
 void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms, int carrier);
 void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms);
@@ -614,6 +611,7 @@ void *scope_thread(void *arg)
 
 int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
 
+/*
 static void *sync_hw(void *arg)
 {
   RT_TASK *task;
@@ -635,7 +633,7 @@ static void *sync_hw(void *arg)
     }
 
 }
-
+*/
 
 /* This is the main eNB thread. It gets woken up by the kernel driver using the RTAI message mechanism (rt_send and rt_receive). */
 static void *eNB_thread(void *arg)
@@ -662,7 +660,7 @@ static void *eNB_thread(void *arg)
 
   while (!oai_exit)
     {
-        //rt_printk("eNB: frame %d, slot %d, mbox %d, time %llu\n",frame,slot,((unsigned int *)DAQ_MBOX)[0],rt_get_time_ns());
+      //rt_printk("eNB: frame %d, slot %d, mbox %d, time %llu\n",frame,slot,((unsigned int *)DAQ_MBOX)[0],rt_get_time_ns());
 
       hw_slot = (((((unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
       //this is the mbox counter where we should be 
@@ -802,7 +800,7 @@ static void *eNB_thread(void *arg)
       }
     }
 
-  rt_printk("fun0: finished, ran %d times.\n",slot);
+  rt_printk("eNB_thread: finished, ran %d times.\n",frame);
 
 #ifdef HARD_RT
   rt_make_soft_real_time();
@@ -845,8 +843,8 @@ static void *UE_thread(void *arg)
   if (mode == rx_calib_ue) {
     carrier_freq_offset = -7500;
     for (i=0; i<4; i++) {
-        p_exmimo_config->rf.rf_freq_rx[i] = carrier_freq[i]+carrier_freq_offset;
-        p_exmimo_config->rf.rf_freq_tx[i] = carrier_freq[i]+carrier_freq_offset;
+        p_exmimo_config->rf.rf_freq_rx[i] = p_exmimo_config->rf.rf_freq_rx[i]+carrier_freq_offset;
+        p_exmimo_config->rf.rf_freq_tx[i] = p_exmimo_config->rf.rf_freq_rx[i]+carrier_freq_offset;
     }
     openair0_dump_config(card);
   }
@@ -986,8 +984,8 @@ static void *UE_thread(void *arg)
 	    else {
 	      LOG_I(PHY,"[initial_sync] trying carrier off %d Hz\n",carrier_freq_offset);
 	      for (i=0; i<4; i++) {
-              p_exmimo_config->rf.rf_freq_rx[i] = carrier_freq[i]+carrier_freq_offset;
-              p_exmimo_config->rf.rf_freq_tx[i] = carrier_freq[i]+carrier_freq_offset;
+              p_exmimo_config->rf.rf_freq_rx[i] = p_exmimo_config->rf.rf_freq_rx[i]+carrier_freq_offset;
+              p_exmimo_config->rf.rf_freq_tx[i] = p_exmimo_config->rf.rf_freq_rx[i]+carrier_freq_offset;
 	      }
 	      openair0_dump_config(card);
 	      
@@ -1006,7 +1004,7 @@ static void *UE_thread(void *arg)
           frame++;
       }
     }
-  rt_printk("fun0: finished, ran %d times.\n",slot);
+  rt_printk("UE_thread: finished, ran %d times.\n",frame);
 
 #ifdef HARD_RT
   rt_make_soft_real_time();
@@ -1027,19 +1025,22 @@ int main(int argc, char **argv) {
   RT_TASK *task;
   int i,j,aa;
 
-
+  /*
   u32 rf_mode_max[4]     = {55759,55759,55759,55759};
   u32 rf_mode_med[4]     = {39375,39375,39375,39375};
   u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
-
+  */
+  u32 my_rf_mode = RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX;
+  u32 rf_mode[4]     = {my_rf_mode,my_rf_mode,my_rf_mode,my_rf_mode};
   u32 rf_local[4]    = {8255000,8255000,8255000,8255000}; // UE zepto
     //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
 
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
-  u32 rxgain[4]={30,30,30,30};
-  u32 txgain[4]={25,25,25,25};
+  u32 rxgain[4]      = {30,30,30,30};
+  u32 txgain[4]      = {25,25,25,25};
+  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
@@ -1067,7 +1068,6 @@ int main(int argc, char **argv) {
   char line[1000];
   int l;
   int ret, ant;
-  unsigned int my_rf_mode;
 
 #ifdef EMOS
   int error_code;
@@ -1302,22 +1302,25 @@ int main(int argc, char **argv) {
         for (i=0; i<4; i++) {
             PHY_vars_UE_g[0]->rx_gain_mode[i]  = max_gain;
             //            frame_parms->rfmode[i] = rf_mode_max[i];
+	    rf_mode[i] = (rf_mode[i] & (~LNAGAINMASK)) | LNAMax;
         }
-        PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0];
+        PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_max[0] + rxgain[0] - 30; //-30 because it was calibrated with a 30dB gain
     }
     else if ((mode == rx_calib_ue_med)) {
         for (i=0; i<4; i++) {
             PHY_vars_UE_g[0]->rx_gain_mode[i] = med_gain;
             //            frame_parms->rfmode[i] = rf_mode_med[i];
+	    rf_mode[i] = (rf_mode[i] & (~LNAGAINMASK)) | LNAMed;
         }
-      PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0];
+	PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_med[0]  + rxgain[0] - 30; //-30 because it was calibrated with a 30dB gain;
     }
     else if ((mode == rx_calib_ue_byp)) {
         for (i=0; i<4; i++) {
             PHY_vars_UE_g[0]->rx_gain_mode[i] = byp_gain;
             //            frame_parms->rfmode[i] = rf_mode_byp[i];
+	    rf_mode[i] = (rf_mode[i] & (~LNAGAINMASK)) | LNAByp;
         }
-        PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0];
+        PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0]  + rxgain[0] - 30; //-30 because it was calibrated with a 30dB gain;
     }
     
     PHY_vars_UE_g[0]->tx_power_max_dBm = tx_max_power;
@@ -1371,9 +1374,10 @@ int main(int argc, char **argv) {
 
 
     // set eNB to max gain
-    PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0]; //was measured at rxgain=30;
+    PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0] + rxgain[0] - 30; //was measured at rxgain=30;
     for (i=0; i<4; i++) {
-        //        frame_parms->rfmode[i] = rf_mode_max[i];
+      //        frame_parms->rfmode[i] = rf_mode_max[i];
+      rf_mode[i] = (rf_mode[i] & (~LNAGAINMASK)) | LNAMax;
     }
 
 
@@ -1391,19 +1395,25 @@ int main(int argc, char **argv) {
           return;
      }
 
-  my_rf_mode =  RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM;
-  my_rf_mode += DMAMODE_RX + DMAMODE_TX;
-  
   printf ("Detected %d number of cards, %d number of antennas.\n", openair0_num_detected_cards, openair0_num_antennas[card]);
-
+  
   p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
   p_exmimo_id     = openair0_exmimo_pci[card].exmimo_id_ptr;
   
   printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", card, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
 
-  for (ant = 0; ant<2; ant++) {
-      printf ("Will configure card %d, antenna %d\n", card, ant);
-      test_config(card, ant, my_rf_mode, UE_flag);
+  p_exmimo_config->framing.eNB_flag   = !UE_flag;
+  p_exmimo_config->framing.tdd_config = 0;
+  for (ant = 0; ant<1; ant++) { 
+    p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];
+    p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
+    p_exmimo_config->rf.rx_gain[ant][0] = rxgain[ant];
+    p_exmimo_config->rf.tx_gain[ant][0] = txgain[ant];
+    p_exmimo_config->rf.rf_mode[ant]    = rf_mode[ant];
+    
+    p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
+    p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];
+    p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
   }
 
   openair0_dump_config(card);
