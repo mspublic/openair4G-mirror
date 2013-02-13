@@ -23,26 +23,26 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   int i;
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
 
-  void *(*dft)(int16_t *,int16_t *, int);
+  void (*dft)(int16_t *,int16_t *, int);
 
   switch (frame_parms->log2_symbol_size) {
   case 7:
-    dft = &dft128;
+    dft = dft128;
     break;
   case 8:
-    dft = &dft256;
+    dft = dft256;
     break;
   case 9:
-    dft = &dft512;
+    dft = dft512;
     break;
   case 10:
-    dft = &dft1024;
+    dft = dft1024;
     break;
   case 11:
-    dft = &dft2048;
+    dft = dft2048;
     break;
   default:
-    dft = &dft512;
+    dft = dft512;
     break;
   }
 

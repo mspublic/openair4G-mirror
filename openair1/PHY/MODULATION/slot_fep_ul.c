@@ -18,7 +18,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   //  unsigned int subframe_offset; 
   unsigned int slot_offset;
 
-  void *(*dft)(int16_t *,int16_t *, int);
+  void (*dft)(int16_t *,int16_t *, int);
 
   switch (frame_parms->log2_symbol_size) {
   case 7:

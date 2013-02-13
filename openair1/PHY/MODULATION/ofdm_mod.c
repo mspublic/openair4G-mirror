@@ -80,26 +80,26 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   volatile int *output_ptr=(int*)0;
 #endif
   int *temp_ptr=(int*)0;
-  void *(*idft)(int16_t *,int16_t *, int);
+  void (*idft)(int16_t *,int16_t *, int);
 
   switch (log2fftsize) {
   case 7:
-    idft = &idft128;
+    idft = idft128;
     break;
   case 8:
-    idft = &idft256;
+    idft = idft256;
     break;
   case 9:
-    idft = &idft512;
+    idft = idft512;
     break;
   case 10:
-    idft = &idft1024;
+    idft = idft1024;
     break;
   case 11:
-    idft = &idft2048;
+    idft = idft2048;
     break;
   default:
-    idft = &idft512;
+    idft = idft512;
     break;
   }
 
