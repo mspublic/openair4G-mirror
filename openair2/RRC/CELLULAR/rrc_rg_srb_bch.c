@@ -94,33 +94,22 @@ void rrc_rg_mcch_tx (u8 * dataP, u16 lengthP){
 }
 
 //-----------------------------------------------------------------------------
-int rrc_rg_srb_rx (char* sduP, u8 ch_idP){
+int rrc_rg_srb_rx (char* sduP, int srb_id,  int UE_Id){
 //-----------------------------------------------------------------------------
-  int srb_id, rb_id=0;
-  int UE_Id;
-  int sdu_offset=0;
+  //int srb_id, rb_id = 0;
+  //int UE_Id;
+  int sdu_offset = 0; // not used anymore
+
+  //rb_id = ch_idP;
+  //srb_id = rb_id % maxRB;
+  //UE_Id = (rb_id - srb_id) / maxRB;
 
   #ifdef DEBUG_RRC_DETAILS
-  //msg ("\n[RRC][SRB-RG] CALL to rrc_rg_srb_rx, lchannel %d\n", ch_idP);
-  #endif
-  rb_id = ch_idP - 12;
-  srb_id = rb_id % maxRB;
-  UE_Id = (rb_id - srb_id) / maxRB;
-  //TEMP - if srb_id is SRB2, check if it is not SRB3
-  if (srb_id==RRC_SRB2_ID){
-    sdu_offset = 1;
-    if (sduP[0] == RRC_SRB2_ID)
-      srb_id=RRC_SRB2_ID;
-    if (sduP[0] == RRC_SRB3_ID)
-      srb_id=RRC_SRB3_ID;
-  }
-  #ifdef DEBUG_RRC_DETAILS
-  msg ("[RRC][SRB-RG] LCHAN%d RX in frame %d\n", ch_idP, protocol_bs->rrc.current_SFN);
+  msg ("[RRC][SRB-RG] LCHAN%d for UE %d RX in frame %d\n", srb_id, UE_Id, protocol_bs->rrc.current_SFN);
   #endif
 
-  if (ch_idP!=RRC_LTE_DCCH_ID){
     #ifdef DEBUG_RRC_STATE
-    msg ("[RRC][SRB-RG] RB %d, SRB%d received, UE_Id %d\n", rb_id, srb_id, UE_Id);
+    //msg ("[RRC][SRB-RG] RB %d, SRB%d received, UE_Id %d\n", rb_id, srb_id, UE_Id);
     //msg ("[RRC][SRB-RG] frame received: %s\n", (char*)&sduP[sdu_offset]);
     #endif
     switch (srb_id) {
@@ -144,7 +133,6 @@ int rrc_rg_srb_rx (char* sduP, u8 ch_idP){
         msg ("[RRC] [SRB-RG] Invalid call to rrc_rg_srb_rx : SRB Receive\n");
         break;
     }
-  }
 
   return 0;
 }

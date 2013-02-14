@@ -63,7 +63,7 @@ void rrc_rg_schedule_bch (void){
     }
   }
 
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   msg ("[RRC_BCH] current frame : %d, SFN : %d\n", protocol_bs->rrc.current_SFN, protocol_bs->rrc.rg_bch_blocks.currSI_BCH.sfn_Prime);
   msg ("[RRC_BCH-RG] next block : %d\n", protocol_bs->rrc.rg_bch_blocks.next_block_type);
 #endif
@@ -125,7 +125,7 @@ void rrc_rg_segment_block (void){
 //-----------------------------------------------------------------------------
 void rrc_rg_fill_Seg1 (void){
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   msg ("[RRC_BCH-RG] Fill NoSegment SIB with requested info [None] \n");
 #endif
 }
@@ -135,7 +135,7 @@ void rrc_rg_fill_Seg10 (PERParms * pParms){
 //-----------------------------------------------------------------------------
   CompleteSIB    *pSegment;
 
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   msg ("[RRC_BCH-RG] Fill Complete SIB. \n");
 #endif
   // Temp malloc for test
@@ -180,7 +180,7 @@ void rrc_rg_fill_Seg2 (PERParms * pParms){
 //-----------------------------------------------------------------------------
   FirstSegment   *pSegment;
 
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   msg ("[RRC_BCH-RG] Fill First Segment. \n");
 #endif
   // Temp malloc for test
@@ -230,7 +230,7 @@ void rrc_rg_fill_Seg3 (PERParms * pParms){
   SubsequentSegment *pSegment;
   char *pTemp = NULL;
 
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   msg ("[RRC_BCH-RG] Fill Subsequent Segment. \n");
 #endif
   // Temp malloc for test
@@ -278,7 +278,7 @@ void rrc_rg_fill_Seg11 (PERParms * pParms){
   LastSegment    *pSegment;
   char *pTemp = NULL;
 
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   msg ("[RRC_BCH-RG] Fill Last Segment. \n");
 #endif
   // Temp malloc for test
@@ -311,7 +311,9 @@ void rrc_rg_fill_Seg11 (PERParms * pParms){
         break;
       default:
         pParms->data = 0;
-        msg ("[RRC_BCH-RG] Error rrc_rg_fill_Seg11 - switch default \n");
+#ifdef DEBUG_RRC_BROADCAST
+       msg ("[RRC_BCH-RG] Error rrc_rg_fill_Seg11 - switch default \n");
+#endif
   }
   pParms->data = (ENCODEDBLOCK *) pTemp;
   protocol_bs->rrc.rg_bch_blocks.curr_block_type = NO_BLOCK;
@@ -374,7 +376,7 @@ void rrc_rg_prepare_next_segment (void){
   // Add length
   rrc_set_per_length (pParms);
 
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
 // msg("\n[RRC_BCH-RG] Next Broadcast preparation - status : %d\n", status);
   rrc_print_per_parms (pParms);
 // msg("[RRC_BCH-RG] End of buffer \n\n");

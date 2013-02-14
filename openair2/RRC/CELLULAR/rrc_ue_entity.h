@@ -17,7 +17,7 @@
 #include "rrm_config_structs.h"
 #include "rrc_ue_variables.h"
 #include "rrc_ue_mbms_variables.h"
-
+#include "rrc_ue_L2_intf_variables.h"
 
 /********************************************************************
 *                        Protocol variables                         *
@@ -85,6 +85,15 @@ struct rrc_ue_entity {
   u8  rrc_ue_outsynch_ind;
   u8  rrc_ue_cctrch_outsynch[maxCCTrCH];
 
+  /* ** OAI compatible part - begin **/
+  // Control block for srb-drb asn1-compliant
+  struct rrc_ue_srb_drb_asn1 ue_rb_asn1;
+
+  // Control block for Broadcast asn1-compliant
+  struct rrc_ue_bch_asn1 ue_bch_asn1;
+  int mod_id;
+  /* ** OAI compatible part - end **/
+ 
 // Control block for Broadcast
   struct rrc_ue_bch_blocks ue_bch_blocks;
 
@@ -107,10 +116,19 @@ struct rrc_ue_entity {
   int rrc_ue_NT_fifo;
   int rrc_ue_DCIn_fifo;
   int rrc_ue_DCOut_fifo;
-//former parameters
+
+//internal parameters
   unsigned int ue_broadcast_counter; // temp for sending broadcast to NAS
-  int ue_wait_establish_req;
-  list2_t rrc_timers;
+  int ue_wait_establish_req;  // possible values = 0 (init), 1 (SIB5 OK), 2 (SIB5 Not OK, SIB1 OK)
+  int L2_ccch_status;  // possible values = 0 (OFF), 1 (IN_PROGRESS), 2 (ON)
+  char ccch_buffer[100];
+  int ccch_buffer_size;
+  int rrc_ue_t300_target;
+  int rrc_ue_t300_retry;
+  int rrc_ue_ackSimu_flag;
+  unsigned int rrc_ue_ackSimu_mui;
+  unsigned int rrc_ue_ackSimu_srbid;
+  //list2_t rrc_timers;
 };
 
 #endif

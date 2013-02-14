@@ -33,7 +33,7 @@
 int rrc_PEREnc_MIB_ValueTag (PERParms * pParms, MIB_ValueTag value){
   int status = P_SUCCESS;
   status = rrc_PEREnc_ConstrInteger (pParms, value, 0, 7);
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   //msg("[RRC_PER]encode MIB_ValueTag status %d \n",status);
 #endif
   return status;
@@ -44,7 +44,7 @@ int rrc_PEREnc_MIB_ValueTag (PERParms * pParms, MIB_ValueTag value){
 int rrc_PERDec_MIB_ValueTag (PERParms * pParms, MIB_ValueTag * pvalue){
   int status = P_SUCCESS;
   status = rrc_PERDec_ConstrInteger (pParms, pvalue, 0, 7);
-#ifdef DEBUG_RRC_BROADCAST
+#ifdef DEBUG_RRC_BROADCAST_DETAILS
   //msg("[RRC_PER]decode MIB_ValueTag status %d \n",status);
 #endif
   return status;
@@ -200,7 +200,7 @@ int rrc_PERDec_SFN_Prime (PERParms * pParms, SFN_Prime * pvalue){
 /*  MCC                                                       */
 /**************************************************************/
 #ifdef NODE_RG
-int rrc_PEREnc_MCC (PERParms * pParms, MCC * pvalue){
+int rrc_PEREnc_MCC (PERParms * pParms, RCELL_MCC * pvalue){
   //size constraints =  3, 3
   int status = P_SUCCESS;
   int  i;
@@ -220,7 +220,7 @@ int rrc_PEREnc_MCC (PERParms * pParms, MCC * pvalue){
 #endif
 //-----------------------------------------------------------------------------
 #ifdef NODE_MT
-int rrc_PERDec_MCC (PERParms * pParms, MCC * pvalue){
+int rrc_PERDec_MCC (PERParms * pParms, RCELL_MCC * pvalue){
   //size constraints =  3, 3
   int status = P_SUCCESS;
   int  i;
@@ -268,7 +268,7 @@ int rrc_PERDec_MNC (PERParms * pParms, MNC * pvalue){
 /*  PLMN_Identity                                             */
 /**************************************************************/
 #ifdef NODE_RG
-int rrc_PEREnc_PLMN_Identity (PERParms * pParms, PLMN_Identity * pvalue){
+int rrc_PEREnc_PLMN_Identity (PERParms * pParms, RCELL_PLMN_Identity * pvalue){
   int status = P_SUCCESS;
 
   /* encode mcc */
@@ -284,7 +284,7 @@ int rrc_PEREnc_PLMN_Identity (PERParms * pParms, PLMN_Identity * pvalue){
 #endif
 //-----------------------------------------------------------------------------
 #ifdef NODE_MT
-int rrc_PERDec_PLMN_Identity (PERParms * pParms, PLMN_Identity * pvalue){
+int rrc_PERDec_PLMN_Identity (PERParms * pParms, RCELL_PLMN_Identity * pvalue){
   int status = P_SUCCESS;
 
   /* decode mcc */
@@ -661,7 +661,7 @@ rrc_PERDec_NAS_SystemInformation (PERParms * pParms, NAS_SystemInformation * pva
 //size constraints =  1, 5 --8
 #ifdef NODE_RG
 int
-rrc_PEREnc_UE_TimersAndConstants (PERParms * pParms, UE_TimersAndConstants value)
+rrc_PEREnc_UE_TimersAndConstants (PERParms * pParms, RCELL_UE_TimersAndConstants value)
 {
   int status = P_SUCCESS;
   if (value.numocts >= 0 && value.numocts <= 8) {
@@ -677,7 +677,7 @@ rrc_PEREnc_UE_TimersAndConstants (PERParms * pParms, UE_TimersAndConstants value
 //-----------------------------------------------------------------------------
 #ifdef NODE_MT
 int
-rrc_PERDec_UE_TimersAndConstants (PERParms * pParms, UE_TimersAndConstants * pvalue)
+rrc_PERDec_UE_TimersAndConstants (PERParms * pParms, RCELL_UE_TimersAndConstants * pvalue)
 {
   int status = P_SUCCESS;
 

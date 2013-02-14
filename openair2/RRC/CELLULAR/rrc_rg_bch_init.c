@@ -227,34 +227,38 @@ void rrc_fill_sib5 (void){
      I don't think anybody's going to question why I'm coming back next year.";
      //size 195
    */
-     u8 rachfach_conf[]="I'm not thinking about retiring at this point.";
+  //   u8 rachfach_conf[]="I'm not thinking about retiring at this point.";
      //size 45 - TEMP : SIB5 content to be revised
-
+  int config_length;
+  char* config_ptr=NULL;
   u8 error_message[] = "ERROR-SIB5";
 
   // Fill SCCPCH-PRACH config
-  protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts=strlen(rachfach_conf);
+  //protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts=strlen(rachfach_conf);
   //protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts = sizeof (SCCPCH_SYSTEM_INFO) + sizeof (PRACH_SYSTEM_INFO);
+  rrc_rg_get_common_config_SIB(&config_length, &config_ptr);
+  #ifdef DEBUG_RRC_DETAILS
+  //msg ("\n[RRC-RG] rrc_fill_sib5 config pointer  %p \n", config_ptr);
+  #endif
+
+  protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts = config_length;
+
+  #ifdef DEBUG_RRC_STATE
   msg ("[RRC] Fill SIB5 : config length = %d\n", protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts);
+  #endif
 
   if (protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts <= maxBlock - 8) {
     // For test only
-     memcpy(protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.data,rachfach_conf,
-               protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts);
+    // memcpy(protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.data,rachfach_conf,
+    //           protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts);
     //memcpy (protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.data, (char *) &(rrm_config->sccpch), sizeof (SCCPCH_SYSTEM_INFO) + sizeof (PRACH_SYSTEM_INFO));
+     memcpy(protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.data, config_ptr, config_length);
 
   } else {
     msg ("[RRC] Fill SIB5 : config length too long \n\n");
     protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts = strlen (error_message);
     memcpy (protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.data, error_message, protocol_bs->rrc.rg_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts);
   }
-
-/*  **** REMOVED FOR OPENAIR ****
-#ifdef DEBUG_RRC_BROADCAST
-  msg ("[RRC_BCH-UE] OpenLoopPowerControl: BCH Tx power %d, alpha %d, prach %d, dpch %d .\n",
-       rrm_config->outer_loop_vars.PCCPCH_POWER, rrm_config->outer_loop_vars.alpha, rrm_config->outer_loop_vars.PRACH_CNST, rrm_config->outer_loop_vars.DPCH_CNST);
-#endif
-*/
 
   // Fill OpenLoopPowerControl_TDD with initial values
   protocol_bs->rrc.rg_bch_blocks.currSIB5.openLoopPowerControl_TDD.primaryCCPCH_TX_Power 

@@ -76,6 +76,13 @@ void rrc_rg_connection_rb_release (int userP);
 #ifdef NODE_MT
 void CPHY_release_UE_resources (void);
 void CPHY_config_fach_rach (void);
+
+//OAI - rrc__L2_frontend.c
+void rrc_ue_L2_setupFachRach(void);
+void rrc_ue_config_common_channels (void);
+void rrc_ue_xmit_ccch (void);
+void rrc_ue_config_LTE_srb1_srb2 (void);
+void rrc_ue_config_common_channels_SIB2 (void);
 #endif
 
 void wcdma_handle_error (int errorP);
@@ -134,6 +141,19 @@ void RRC_RG_O_O_NAS_RB_Failure (int UE_Id);
 
 #endif
 
+//ASN1 messages
+uint8_t do_RRCConnectionSetup(uint8_t *buffer,
+			      uint8_t transmission_mode,
+			      uint8_t UE_id,
+			      uint8_t Transaction_id,
+			      LTE_DL_FRAME_PARMS *frame_parms,
+			      struct SRB_ToAddMod **SRB1_config,
+			      struct SRB_ToAddMod **SRB2_config,
+			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
+uint8_t do_SIB2_cell(uint8_t Mod_id, uint8_t *buffer, SystemInformation_t *systemInformation, SystemInformationBlockType2_t **sib2);
+uint8_t do_SIB1_TDD_config_cell (LTE_DL_FRAME_PARMS *frame_parms,TDD_Config_t *tdd_Config);
+
+// 
 
 #endif
 

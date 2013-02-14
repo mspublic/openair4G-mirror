@@ -13,14 +13,16 @@
 
 /* ***Debug flags*** */
 #define DEBUG_RRC_STATE
-//#define DEBUG_RRC_DETAILS
+#define DEBUG_RRC_DETAILS
+//#define DEBUG_RRC_DETAILS_2
+#define RRC_DEBUG_DUMMIES
 
-//#define DEBUG_RRC_BROADCAST_NAS
+#define DEBUG_RRC_BROADCAST_NAS
 //#ifndef DEBUG_RRC_BROADCAST
-//#define DEBUG_RRC_BROADCAST
+#define DEBUG_RRC_BROADCAST
 //#define DEBUG_RRC_BROADCAST_DETAILS
 //#endif
-//#define DEBUG_RRC_RRM_INTF
+#define DEBUG_RRC_RRM_INTF
 
 //#define DEBUG_RRC_TEMP_OPENAIR
 
@@ -38,7 +40,9 @@
 
 //FLAGS DEFINED FOR MBMS DEFINITION
 //#define ALLOW_MBMS_ACCESS_INFO
-#define ALLOW_MBMS_PROTOCOL  //Activate or deactivate the MBMS Protocol
+
+// !!Activate or deactivate the MBMS Protocol!!
+//#define ALLOW_MBMS_PROTOCOL
 
 //#define MBMS_TEST_MODE	//Used in stand-alone mode (MBMS standalone simulator)
 #define MBMS_INTEGRATION_MODE	//Used in platform mode - simulation or realtime mode

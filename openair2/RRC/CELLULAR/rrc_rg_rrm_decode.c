@@ -445,8 +445,24 @@ void rrc_rrm_decode_message (void){
         break;
       default:
         msg ("[RRC-RRM-INTF][WARNING] rrc_rrm_decode_message UNKNOWN MESSAGE %d FLUSHING BUFFER\n", m->type);
+        rrc_connection_response_TEMPdummy();
         protocol_bs->rrc.rc_rrm.rx_bytes = 0;
         return;
     }
   }
 }
+
+
+/*--------------------------------------------------------------------*/
+void rrc_connection_response_TEMPdummy (void){
+/*--------------------------------------------------------------------*/
+
+  if (protocol_bs->rrc.rc_rrm.connected_to_rrm != RRC_CONNECTED_TO_RRM) {
+          rrc_rg_rrm_connected_init();
+          protocol_bs->rrc.rc_rrm.connected_to_rrm = RRC_CONNECTED_TO_RRM;
+          protocol_bs->rrc.rc_rrm.equipment_id = 0;
+          msg ("[RRC-RRM-INTF] TEMP DUMMY RX CONNECTION_RESPONSE ACCEPTED eid 0 @frame %d\n",  protocol_bs->rrc.current_SFN);
+
+  }
+}
+

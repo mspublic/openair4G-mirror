@@ -365,6 +365,8 @@ int rrc_rg_read_GC_FIFO (void){
   if ((count = rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, rcve_buffer, NAS_TL_SIZE)) > 0) {
     #ifdef DEBUG_RRC_BROADCAST
      msg ("[RRC_RG] Message Received from NAS - GC SAP: -%hx- \n", rcve_buffer[0]);
+    #endif
+    #ifdef DEBUG_RRC_BROADCAST_DETAILS
      rrc_print_buffer ((char *)rcve_buffer, count);
     #endif
     p = (struct nas_rg_gc_element *) rcve_buffer;

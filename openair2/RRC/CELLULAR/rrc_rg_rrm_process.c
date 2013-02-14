@@ -83,6 +83,7 @@ int rrc_rrm_main_proc (void){
   int tx_id;
   rpc_message  rpc_mess;
   connection_request cr;
+  int count = 0;
 
    // prevoir ifdef
   //msg ("[RRC-RRM-INTF] rrc_rrm_main_proc state %d\n", protocol_bs->rrc.rc_rrm.connected_to_rrm);
@@ -108,10 +109,25 @@ int rrc_rrm_main_proc (void){
       #endif
       cr.nb_antennas = numANTENNAS;
 //      msg ("[RRC-RRM-INTF] sending CONNECTION_REQUEST %d + %d bytes to RRM througth FIFO frame %d\n", sizeof (rpc_message), sizeof (connection_request), frame);
-      msg ("[RRC-RRM-INTF] sending CONNECTION_REQUEST %d + %d bytes to RRM througth FIFO frame %d\n", sizeof (rpc_message), sizeof (connection_request), protocol_bs->rrc.current_SFN);
+      msg ("[RRC-RRM-INTF] sending CONNECTION_REQUEST %d + %d bytes to RRM through FIFO frame %d\n", sizeof (rpc_message), sizeof (connection_request), protocol_bs->rrc.current_SFN);
 
-      rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-      rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & cr, sizeof (connection_request));
+      count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+   if (count == sizeof (rpc_message)) {
+   #ifdef DEBUG_RRC_STATE
+     msg ("[RRC-RRM-INTF] RRM message sent successfully, length %d \n", count);
+   #endif
+   } else {
+     msg ("[RRC-RRM-INTF] transmission on FIFO failed, %d bytes sent instaed of %d\n", count, sizeof (rpc_message));
+   }
+
+      count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & cr, sizeof (connection_request));
+   if (count == sizeof (connection_request)) {
+   #ifdef DEBUG_RRC_STATE
+     msg ("[RRC-RRM-INTF] RRM message sent successfully, length %d \n", count);
+   #endif
+   } else {
+     msg ("[RRC-RRM-INTF] transmission on FIFO failed, %d bytes sent instaed of %d\n", count, sizeof(connection_request));
+   }
 
        #ifdef USER_MODE
       sleep (2);
@@ -136,7 +152,6 @@ void rrc_rg_rrm_connected_init (void){
   //struct rrc_rrm_measure_ctl rrm_control;
 
   msg ("\n[RRC-RRM-INTF] begin rrc_rg_rrm_connected_init\n");
-  //init_mac_rg ();
 
   rrc_rg_fsm_init ();
   rrc_mt_list_init ();
@@ -144,6 +159,11 @@ void rrc_rg_rrm_connected_init (void){
   rrc_init_blocks (); //prepares SIBs for broadcast
   //Initialise MBMS
   rrc_rg_mbms_init();
+
+  //rrc_rg_init_mac (0);
+
+  // temp - establish srb1-srb2
+  //rrc_rg_config_LTE_srb1_srb2(0);
 
 /*  rrm_config_indication = 0;
   // Set IBTS values to default:  will be replaced by RRC using BCH
