@@ -8,7 +8,7 @@ int em1_mmap(struct file *filp, struct vm_area_struct *vma)
 	struct em1_file_s *fpv = filp->private_data;
 	struct em1_mmap_ctx * mctx;
         size_t size = vma->vm_end - vma->vm_start;
-        unsigned long virt;
+        void * virt;
 	dma_addr_t phys;
 
 	printk(KERN_DEBUG "exmimo1 : mmap()\n");
@@ -26,7 +26,7 @@ int em1_mmap(struct file *filp, struct vm_area_struct *vma)
 	if (i == MAX_EM1_MMAP)
 		return -ENOMEM;
 
-        virt = (unsigned long)pci_alloc_consistent(fpv->pv->pdev, size, &phys);
+        virt = pci_alloc_consistent(fpv->pv->pdev, size, &phys);
         
         if (virt < 0)
                 return -EINVAL;

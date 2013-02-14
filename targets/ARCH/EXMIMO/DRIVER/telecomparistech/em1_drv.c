@@ -29,7 +29,6 @@ int em1_user_op_enter(struct em1_private_s *pv, wait_queue_t *wait,
 	}
 
 	pv->busy |= busy_flag;
-
 	return 0;
 }
 
@@ -84,7 +83,7 @@ static int em1_release(struct inode *inode, struct file *file)
 		if (fpv->mmap_list[i].virt)
                 {
  			struct em1_mmap_ctx * mctx = fpv->mmap_list + i;
-			pci_free_consistent(fpv->pv->pdev, mctx->size, &mctx->virt, mctx->phys);
+			pci_free_consistent(fpv->pv->pdev, mctx->size, mctx->virt, mctx->phys);
 		} 
 	kfree(fpv);
 

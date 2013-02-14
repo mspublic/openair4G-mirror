@@ -42,12 +42,11 @@ static ssize_t em1_dma_access(struct em1_file_s *fpv, char __user *buf,
 {
 	DECLARE_WAITQUEUE(wait, current);
 	struct em1_private_s *pv = fpv->pv;
-	ssize_t retval = 0;
 	uint32_t cmd[4];
 	uintptr_t addr = (uintptr_t)buf;
 	uintptr_t end = (uintptr_t)buf + size - 1;
 	struct em1_page_s *page;
-	int fres = 1;
+	int fres = -ERESTARTSYS;
 	uint16_t dma_this;
 
 	/* check single page span */
@@ -100,7 +99,7 @@ static ssize_t em1_dma_access(struct em1_file_s *fpv, char __user *buf,
 			}
 
 			pv->busy &= ~EM1_BUSY_DMA;
-			retval = size;
+			fres = size;
 		}
 
 		em1_user_op_leave(pv, &wait, &pv->rq_wait_dma);
@@ -111,7 +110,7 @@ static ssize_t em1_dma_access(struct em1_file_s *fpv, char __user *buf,
 	if (direction == DMA_FROM_DEVICE)
 		SetPageDirty(page->page);
 
-	return retval;
+	return fres;
 }
 
 ssize_t em1_write(struct file *file, const char __user *buf, size_t size, loff_t *ppos)
