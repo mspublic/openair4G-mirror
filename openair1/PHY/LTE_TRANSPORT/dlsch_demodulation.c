@@ -362,9 +362,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// effective channel of desired user is always stronger than interfering eff. channel
 	dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol, nb_rb);
 	
+    avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
 
-	avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
-	
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
 	//printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }      
@@ -1276,10 +1275,7 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
     
   // Determine scaling amplitude based the symbol
   ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
-#ifdef NEW_FFT
-  if (frame_parms->nb_antennas_tx_eNB==2)
-    ch_amp = (ch_amp*ONE_OVER_SQRT2_Q15)>>15;
-#endif
+
   //    msg("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
