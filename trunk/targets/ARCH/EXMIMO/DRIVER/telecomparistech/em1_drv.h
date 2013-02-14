@@ -74,7 +74,7 @@ struct em1_page_s
 };
 
 struct em1_mmap_ctx {
-    unsigned long virt;
+    void* virt;
     dma_addr_t phys;
     size_t size;
 };
@@ -159,6 +159,8 @@ enum em1_ioctl_cmd
 	EM1_IOCTL_FIFO_WRITE,
 	EM1_IOCTL_FIFO_READ,
 };
+
+#define EM1_MAX_FIFO_PAYLOAD 128
 
 struct em1_ioctl_fifo_params
 {

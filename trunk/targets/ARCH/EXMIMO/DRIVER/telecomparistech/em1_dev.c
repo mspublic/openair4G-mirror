@@ -103,6 +103,7 @@ found:
 	init_waitqueue_head(&pv->rq_wait_fifo_r);
 	init_waitqueue_head(&pv->rq_wait_fifo_w);
 	init_waitqueue_head(&pv->rq_wait_dma);
+
 	pv->ie = 0;
 	pv->busy = 0;
 	pv->fifo_read_left = 0;
