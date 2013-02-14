@@ -1161,9 +1161,9 @@ void pdcch_extract_rbs_dual(s32 **rxdataF,
 		(i!=nushiftmod3+6) &&
 		(i!=nushiftmod3+9)) {
 #ifndef NEW_FFT
-	      rxF_ext[j]=rxF[i];
+	      rxF_ext[j]=rxF[i<<1];
 #else
-
+	      rxF_ext[j]=rxF[i];
 #endif
 	      //	      	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 	      dl_ch0_ext[j++]=dl_ch0[i];
