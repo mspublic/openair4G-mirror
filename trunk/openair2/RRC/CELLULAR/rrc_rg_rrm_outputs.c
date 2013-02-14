@@ -62,6 +62,7 @@ int rrc_rg_compute_configuration (int UE_Id, u8 action){
   remove_radio_access_bearer_request remove_rab;
   int result = SUCCESS;
   int rab_qos_class_ix;
+  int count;
 
   if (protocol_bs->rrc.rrc_currently_updating != FALSE) {
     result = FAILURE;
@@ -82,8 +83,8 @@ int rrc_rg_compute_configuration (int UE_Id, u8 action){
         add_user.user_id = UE_Id;
         add_user.tx_id = protocol_bs->rrc.curr_transaction_id;
 
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & add_user, sizeof (struct add_user_request));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & add_user, sizeof (struct add_user_request));
         break;
       case E_REL_MT:
         msg ("[RRC][REQUEST] RRC -> RRM REMOVE_MOBILE %d \n", UE_Id);
@@ -96,8 +97,8 @@ int rrc_rg_compute_configuration (int UE_Id, u8 action){
         remove_user.user_id = UE_Id;
         remove_user.tx_id = protocol_bs->rrc.curr_transaction_id;
 
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & remove_user, sizeof (struct remove_user_request));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & remove_user, sizeof (struct remove_user_request));
         break;
       case E_ADD_RB:
         rpc_mess.type = RPC_ADD_RADIO_ACCESS_BEARER_REQUEST;
@@ -125,8 +126,8 @@ int rrc_rg_compute_configuration (int UE_Id, u8 action){
                    add_rab.user_id, add_rab.rab_id, rrc_traffic_class_names[add_rab.traffic_class-1],
                    add_rab.guaranted_bit_rate_downlink, add_rab.guaranted_bit_rate_uplink);
         }
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & add_rab, sizeof (struct add_radio_access_bearer_request));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & add_rab, sizeof (struct add_radio_access_bearer_request));
         break;
       case E_REL_RB:
         msg ("[RRC][REQUEST] RRC -> RRM MOBILE %d REMOVE_RADIO_BEARER %d \n", UE_Id, protocol_bs->rrc.Mobile_List[UE_Id].requested_rbId);
@@ -140,8 +141,8 @@ int rrc_rg_compute_configuration (int UE_Id, u8 action){
         remove_rab.user_id = UE_Id;
         remove_rab.tx_id = protocol_bs->rrc.curr_transaction_id;
         remove_rab.rab_id = protocol_bs->rrc.Mobile_List[UE_Id].requested_rbId;
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-        rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & remove_rab, sizeof (struct remove_radio_access_bearer_request));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+        count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & remove_rab, sizeof (struct remove_radio_access_bearer_request));
         break;
       default:
         msg ("[RRC][REQUEST] RRC -> RRM Invalid config_request.action %d \n", action);
@@ -162,6 +163,7 @@ void rrm_add_user_confirm (int ue_idP){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   add_user_confirm confirm;
+  int count;
 
   msg ("[RRC-RRM-INTF] RPC_ADD_USER_CONFIRM --> RRM\n ");
 
@@ -170,8 +172,8 @@ void rrm_add_user_confirm (int ue_idP){
   confirm.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   confirm.user_id = ue_idP;
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & confirm, sizeof (add_user_confirm));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & confirm, sizeof (add_user_confirm));
 }
 
 
@@ -181,6 +183,7 @@ void rrm_add_radio_access_bearer_confirm (int ue_idP, int rb_idP){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   add_radio_access_bearer_confirm confirm;
+  int count;
 
   msg ("[RRC-RRM-INTF] RPC_ADD_RADIO_ACCESS_BEARER_CONFIRM --> RRM\n ");
 
@@ -190,8 +193,8 @@ void rrm_add_radio_access_bearer_confirm (int ue_idP, int rb_idP){
   confirm.user_id = ue_idP;
   confirm.rab_id = rb_idP;
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & confirm, sizeof (add_radio_access_bearer_confirm));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & confirm, sizeof (add_radio_access_bearer_confirm));
 }
 
 // Measurement report to RRM
@@ -202,6 +205,7 @@ void rrm_meas_report_mt_if (struct rrc_rrm_meas_report_mt_if *pmeas){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   l1_measurement_mt_intra_frequency_report measurement_report;
+  int count;
 
 #ifdef DEBUG_RRC_MEASURE_REPORT
   msg ("[RRC][MEASUREMENT REPORT] INTRA FREQUENCY MT frame %d\n", protocol_bs->rrc.current_SFN);
@@ -213,8 +217,8 @@ void rrm_meas_report_mt_if (struct rrc_rrm_meas_report_mt_if *pmeas){
   measurement_report.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   memcpy (&measurement_report.measurements, pmeas, sizeof (struct rrc_rrm_meas_report_mt_if));
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_intra_frequency_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_intra_frequency_report));
 
 }
 
@@ -224,6 +228,7 @@ void rrm_meas_report_mt_tv (struct rrc_rrm_meas_report_mt_tv *pmeas){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   l1_measurement_mt_traffic_volume_report measurement_report;
+  int count;
 
 #ifdef DEBUG_RRC_MEASURE_REPORT
   //msg("[RRC][MEASUREMENT REPORT] TRAFFIC VOLUME MT frame %d\n", protocol_bs->rrc.current_SFN);
@@ -235,8 +240,8 @@ void rrm_meas_report_mt_tv (struct rrc_rrm_meas_report_mt_tv *pmeas){
   measurement_report.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   memcpy (&measurement_report.measurements, pmeas, sizeof (struct rrc_rrm_meas_report_mt_tv));
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_traffic_volume_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_traffic_volume_report));
 }
 
 //-------------------------------------------------------------------
@@ -245,6 +250,7 @@ void rrm_meas_report_mt_q (struct rrc_rrm_meas_report_mt_q *pmeas){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   l1_measurement_mt_quality_report measurement_report;
+  int count;
 
 #ifdef DEBUG_RRC_MEASURE_REPORT
   msg ("[RRC][MEASUREMENT REPORT] QUALITY MT frame %d\n", protocol_bs->rrc.current_SFN);
@@ -256,8 +262,8 @@ void rrm_meas_report_mt_q (struct rrc_rrm_meas_report_mt_q *pmeas){
   measurement_report.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   memcpy (&measurement_report.measurements, pmeas, sizeof (struct rrc_rrm_meas_report_mt_q));
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_quality_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_quality_report));
 }
 
 //-------------------------------------------------------------------
@@ -266,6 +272,7 @@ void rrm_meas_report_mt_int (struct rrc_rrm_meas_report_mt_int *pmeas){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   l1_measurement_mt_internal_report measurement_report;
+  int count;
 
 #ifdef DEBUG_RRC_MEASURE_REPORT
   msg ("[RRC][MEASUREMENT REPORT] INTERNAL MT frame %d\n", protocol_bs->rrc.current_SFN);
@@ -277,8 +284,8 @@ void rrm_meas_report_mt_int (struct rrc_rrm_meas_report_mt_int *pmeas){
   measurement_report.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   memcpy (&measurement_report.measurements, pmeas, sizeof (struct rrc_rrm_meas_report_mt_int));
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_internal_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (l1_measurement_mt_internal_report));
 }
 
 // 2 - from Base station
@@ -288,6 +295,7 @@ void rrm_meas_report_bs_tv (struct rrc_rrm_meas_report_bs_tv *pmeas){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   l1_measurement_rg_traffic_volume_report measurement_report;
+  int count;
 
 #ifdef DEBUG_RRC_MEASURE_REPORT
   //msg("[RRC][MEASUREMENT REPORT] TRAFFIC VOLUME RG frame %d\n", protocol_bs->rrc.current_SFN);
@@ -299,8 +307,8 @@ void rrm_meas_report_bs_tv (struct rrc_rrm_meas_report_bs_tv *pmeas){
   measurement_report.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   memcpy (&measurement_report.measurements, pmeas, sizeof (struct rrc_rrm_meas_report_bs_tv));
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (struct l1_measurement_rg_traffic_volume_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (struct l1_measurement_rg_traffic_volume_report));
 }
 
 //-------------------------------------------------------------------
@@ -309,6 +317,7 @@ void rrm_meas_report_bs_q (struct rrc_rrm_meas_report_bs_q *pmeas){
 //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   l1_measurement_rg_internal_report measurement_report;
+  int count;
 
 #ifdef DEBUG_RRC_MEASURE_REPORT
   //msg("[RRC][MEASUREMENT REPORT] QUALITY RG frame %d\n", protocol_bs->rrc.current_SFN);
@@ -320,8 +329,8 @@ void rrm_meas_report_bs_q (struct rrc_rrm_meas_report_bs_q *pmeas){
   measurement_report.equipment_id = protocol_bs->rrc.rc_rrm.equipment_id;
   memcpy (&measurement_report.measurements, pmeas, sizeof (struct rrc_rrm_meas_report_bs_q));
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (struct l1_measurement_rg_quality_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (struct l1_measurement_rg_quality_report));
 }
 
 //-------------------------------------------------------------------
@@ -330,7 +339,10 @@ void rrm_meas_report_bs_int (struct rrc_rrm_meas_report_bs_int *pmeas){
 //-------------------------------------------------------------------
   rpc_message rpc_mess;
   l1_measurement_rg_internal_report measurement_report;
+#ifdef DEBUG_RRC_MEASURE_REPORT
   int slot;
+#endif
+  int count;
 
   rpc_mess.type = RPC_L1_MEASUREMENT_RG_INTERNAL_REPORT;
   rpc_mess.length = sizeof (l1_measurement_rg_internal_report);
@@ -349,8 +361,8 @@ void rrm_meas_report_bs_int (struct rrc_rrm_meas_report_bs_int *pmeas){
   }
 #endif
 
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
-  rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (struct l1_measurement_rg_internal_report));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & rpc_mess, sizeof (rpc_message));
+  count = rtf_put (protocol_bs->rrc.rc_rrm.output_fifo, (u8 *) & measurement_report, sizeof (struct l1_measurement_rg_internal_report));
 }
 
 //-------------------------------------------------------------------
@@ -361,7 +373,7 @@ void rrc_rg_fwd_meas_report (int UE_Id){
   union rrc_rrm_meas_report_mt_rrc meas_mt;
   int i, j;
 
-  p = &(protocol_bs->rrc.Mobile_List[UE_Id].rg_meas_rep[protocol_bs->rrc.Mobile_List[UE_Id].rrc_rg_last_measurement]);
+  p = (struct rrc_rg_mt_meas_rep *)&(protocol_bs->rrc.Mobile_List[UE_Id].rg_meas_rep[protocol_bs->rrc.Mobile_List[UE_Id].rrc_rg_last_measurement]);
 
   switch (p->meas_results_type) {
       case MR_intraFreqMeasuredResultsList:
@@ -439,7 +451,7 @@ void rrc_rg_send_bs_meas_report (int index){
   struct rrc_rg_bs_meas_rep *p;
   union rrc_rrm_meas_report_bs_rrc meas_bs;
 
-  p = &(protocol_bs->rrc.rg_meas_blocks.bs_meas_rep[index]);
+  p = (struct rrc_rg_bs_meas_rep *)&(protocol_bs->rrc.rg_meas_blocks.bs_meas_rep[index]);
 
   switch (p->meas_results_type) {
       case IX_tvbM:

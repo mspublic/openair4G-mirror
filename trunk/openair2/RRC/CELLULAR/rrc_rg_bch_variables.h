@@ -13,6 +13,13 @@
 #include "mem_block.h"
 #include "rrc_bch_mib.h"
 
+//#include "SystemInformationBlockType2.h"
+//#include "SystemInformation.h"
+//#include "BCCH-DL-SCH-Message.h"
+//#include "TDD-Config.h"
+
+
+// RRC Cellular Block
 struct rrc_rg_bch_blocks {
   mem_block_t     *tSegment;
   PERParms        perParms;
@@ -56,5 +63,7 @@ struct rrc_rg_bch_blocks {
   ENCODEDBLOCK    encoded_currSIB18;
   ENCODEDBLOCK    encoded_prevSIB18;
 };
+
+
 
 #endif

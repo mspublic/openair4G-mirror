@@ -51,11 +51,13 @@ void RRC_UE_O_O_SEND_CCCH (int msgId){
   int data_length = 0;
   int  retcode;
 
-  msg ("[RRC][FSM-OUT] Sending Message on CCCH.\n");
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC][FSM-OUT] Sending Message on CCCH.");
+  #endif
 
   tx_ccch_info = (char *) protocol_ms->rrc.ue_msg_infos.msg_ptr;
   data_length = protocol_ms->rrc.ue_msg_infos.msg_length;
-
+  msg (" data length %d\n", data_length);
   if (data_length > 0) {
     //retcode = Mac_rlc_xface->rrc_rlc_data_req (RRC_MODULE_INST_ID, RRC_LCHAN_SRB0_ID, 0, RRC_RLC_CONFIRM_NO, data_length, tx_ccch_info);
     retcode = rrc_ue_send_to_srb_rlc (RRC_SRB0_ID, tx_ccch_info, data_length);
@@ -63,10 +65,14 @@ void RRC_UE_O_O_SEND_CCCH (int msgId){
     msg ("[RRC][FSM-OUT] Message sent on CCCH. SRB0 -- retcode = %d (1=OK) -- data length %d\n", retcode, data_length); //RC = 1 ==> OK
     #endif
   }
-  // clear resources
-  protocol_ms->rrc.ue_msg_infos.msg_length = 0;
-  //  free(protocol_ms->rrc.ue_msg_infos.msg_ptr);
-  free_mem_block (protocol_ms->rrc.ue_msg_infos.mem_block_ptr);
+  msg ("[RRC][FSM-OUT] Debug T300 target %d, ", protocol_ms->rrc.rrc_ue_t300_target);
+  // clear resources if T300 not running, otherwise keep them available
+  if (protocol_ms->rrc.rrc_ue_t300_target == 0){
+    protocol_ms->rrc.ue_msg_infos.msg_length = 0;
+    //  free(protocol_ms->rrc.ue_msg_infos.msg_ptr);
+    free_mem_block (protocol_ms->rrc.ue_msg_infos.mem_block_ptr);
+  }
+  msg ("Message length %d\n", protocol_ms->rrc.ue_msg_infos.msg_length);
 }
 
 //-------------------------------------------------------------------
@@ -232,8 +238,10 @@ void RRC_UE_O_O_UpdateSI_852(void){
 //-------------------------------------------------------------------
 void RRC_UE_O_O_stopT300(void){
 //-------------------------------------------------------------------
-  umts_timer_delete_timer (&protocol_ms->rrc.rrc_timers, RRC_T300);
-
+  // stop timer 
+  //umts_timer_delete_timer (&protocol_ms->rrc.rrc_timers, RRC_T300);
+  protocol_ms->rrc.rrc_ue_t300_target =0;
+  protocol_ms->rrc.rrc_ue_t300_retry = 0;
   // clear resources - Temp
   protocol_ms->rrc.ue_msg_infos.msg_length = 0;
   //free(protocol_ms->rrc.ue_msg_infos.msg_ptr);
@@ -249,10 +257,19 @@ void RRC_UE_O_O_stopT300(void){
 //-------------------------------------------------------------------
 void RRC_UE_O_O_startT300(void){
 //-------------------------------------------------------------------
-  umts_add_timer_list_up (&protocol_ms->rrc.rrc_timers, rrc_ue_t300_timeout, NULL, RRC_T300, T300_DURATION, protocol_ms->rrc.current_SFN/RRC_FRAME_DURATION);
 
+  int targetFrameNumber = protocol_ms->rrc.current_SFN*RRC_FRAME_DURATION;
+  //umts_add_timer_list_up (&protocol_ms->rrc.rrc_timers, rrc_ue_t300_timeout, NULL, RRC_T300, T300_DURATION, protocol_ms->rrc.current_SFN/RRC_FRAME_DURATION);
+  // Nest line is for real-time operation while second one is for emulation mode debug
+  //protocol_ms->rrc.rrc_ue_t300_target = protocol_ms->rrc.current_SFN + (T300_DURATION/RRC_FRAME_DURATION);
+  if (protocol_ms->rrc.rrc_ue_t300_retry == 0)
+     protocol_ms->rrc.rrc_ue_t300_target = protocol_ms->rrc.current_SFN + 10;
+  else 
+     protocol_ms->rrc.rrc_ue_t300_target = protocol_ms->rrc.current_SFN + 200;
+
+  protocol_ms->rrc.rrc_ue_t300_retry++;
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC][FSM-OUT] Start Physical Timer T300. frame %d\n", protocol_ms->rrc.current_SFN);
+  msg ("[RRC][FSM-OUT] Start Physical Timer T300. frame %d, target %d\n", protocol_ms->rrc.current_SFN, protocol_ms->rrc.rrc_ue_t300_target);
   #endif
 }
 
@@ -261,27 +278,9 @@ void RRC_UE_O_O_Setup_FACHRACH(void){
 //-------------------------------------------------------------------
   #ifdef DEBUG_RRC_STATE
   msg ("[RRC][FSM-OUT] Configure FACH-RACH channels.\n");
-   msg ("TEMP OPENAIR : COMMENTED\n");
   #endif
-    // TEMPComment - OPENAIR
-/*  if ((rrm_config->prach.rach_trch.tf[0].bs == 0) || (rrm_config->sccpch.fach_trch.tf[0].bs == 0)) {
-    msg ("[RRC][FSM-OUT] Configure FACH-RACH channels BAD CONFIG\n");
-    wcdma_handle_error (WCDMA_ERROR_RRC_NASTY_BCH_CONFIG);
-  }
-  // if (!(started))  {
-  //rrm_ue_simulate_bcch_sib5_6_acquisition();
-  #ifndef BYPASS_L1
-  msg ("[RRC][FSM-OUT] NOT BYPASS_L1 - Configure CPHY FACH-RACH channels.\n");
-  CPHY_config_fach_rach ();
-  #endif
-  msg ("[RRC][FSM-OUT] CMAC - Configure FACH-RACH channels.\n");
-  cmac_fach_rach_setup ();
-  //   rrc_NAS_Conn_Est_Req_Rx();
-  //  }
-  #ifdef ALLOW_MBMS_PROTOCOL
-  msg ("[RRC][FSM-OUT] ALLOW_MBMS_PROTOCOL ON - Configure FACH-RACH for MCCH channels.\n");
-  rrc_mt_set_mcch_rb();
-  #endif*/
+  rrc_ue_L2_setupFachRach();
+
 }
 
 /*****************************************************************/
@@ -488,7 +487,7 @@ void rrc_ue_broadcast_encode_nas_sib1 (void){
     memcpy (pdata, (char *) &protocol_ms->rrc.ue_bch_blocks.currSIB1.subnet_NAS_SysInfo.data, data_length);
     msgToBuild->prim_length += data_length;
     #ifdef DEBUG_RRC_BROADCAST_NAS
-    msg ("[RRC] Building BROADCAST IND for NAS, length:  %d.\n", msgToBuild->prim_length);
+    msg ("[RRC] Building BROADCAST IND for NAS - SIB1, length:  %d.\n", msgToBuild->prim_length);
     #endif
   } else {
     #ifdef DEBUG_RRC_BROADCAST_NAS

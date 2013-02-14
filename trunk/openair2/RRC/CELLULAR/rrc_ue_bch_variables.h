@@ -12,6 +12,11 @@
 
 #include "rrc_bch_mib.h"
 
+#include "SystemInformationBlockType2.h"
+#include "SystemInformation.h"
+#include "BCCH-DL-SCH-Message.h"
+#include "TDD-Config.h"
+
 struct rrc_ue_bch_value_tags {
   int             mib_vt;
   int             sib1_vt;
@@ -64,5 +69,6 @@ struct rrc_ue_bch_blocks {
   ENCODEDBLOCK    encoded_currSIB18;
   ENCODEDBLOCK    encoded_prevSIB18;
 };
+
 
 #endif
