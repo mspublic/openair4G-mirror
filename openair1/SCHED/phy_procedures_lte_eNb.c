@@ -730,6 +730,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
 		 0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
 	  // fill first symbol of each TX subframe with random QPSK data (overwritten by TX routines later).  This guarantees that the first symbol is full power
+	  /*
 	  if ((next_slot&1) == 0) {
 	    re_offset = phy_vars_eNB->lte_frame_parms.first_carrier_offset;
 	    txptr = (uint32_t*)&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)];
@@ -742,6 +743,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    
 		
 	    }
+	  */
 #endif
 	}
       }
