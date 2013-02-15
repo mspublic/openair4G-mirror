@@ -73,7 +73,11 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   
 
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+#ifdef NEW_FFT
+    memset(&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
+#else
     memset(&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],0,2*frame_parms->ofdm_symbol_size*sizeof(int));
+#endif
 
     if (l==0) {
       if ((sample_offset +
