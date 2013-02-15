@@ -1745,7 +1745,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
   
-  log2_maxh = 2+(log2_approx(avgs)/2);
+  log2_maxh = (log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
   msg("[PDCCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgP[0],avgs);
 #endif
@@ -2789,11 +2789,13 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   }
 
   if (do_common == 1) { 
-    //  printf("[DCI search] doing common search/format0 aggregation 2\n");
+#ifdef DEBUG_DCI_DECODING
+    printf("[DCI search] doing common search/format0 aggregation 4\n");
+#endif
     if (phy_vars_ue->prach_resources[eNB_id])
       ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
     
-    // First check common search spaces at aggregation 4 (SI_RNTI and RA_RNTI format 1A), 
+    // First check common search spaces at aggregation 8 (SI_RNTI and RA_RNTI format 1A), 
     // and UE_SPEC format0 (PUSCH) too while we're at it
     dci_decoding_procedure0(lte_ue_pdcch_vars,1,subframe,
 			    dci_alloc,
@@ -2802,7 +2804,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    mi,
 			    SI_RNTI,
 			    ra_rnti,
-			    3,
+			    2,
 			    format1A,
 			    format1A,
 			    format0,
@@ -2823,6 +2825,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     // Now check common search spaces at aggregation 8 (SI_RNTI and RA_RNTI format 1A), 
     // and UE_SPEC format0 (PUSCH) too while we're at it
     //  printf("[DCI search] doing common search/format0 aggregation 3\n");
+#ifdef DEBUG_DCI_DECODING
+    printf("[DCI search] doing common search/format0 aggregation 8\n");
+#endif
     dci_decoding_procedure0(lte_ue_pdcch_vars,1,subframe,
 			    dci_alloc,
 			    eNB_id,
@@ -2830,7 +2835,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    mi,
 			    SI_RNTI,
 			    ra_rnti,
-			    2,
+			    3,
 			    format1A,
 			    format1A,
 			    format0,
