@@ -33,6 +33,7 @@
 #define SWITCH_IS_ON         1
 static unsigned int helpflag = SWITCH_IS_OFF;
 static unsigned int pflag = SWITCH_IS_OFF;
+static unsigned int noexecflag = SWITCH_IS_OFF;
 static unsigned int fflag = SWITCH_IS_OFF;
 static unsigned int sflag = SWITCH_IS_OFF;
 static unsigned int rebootflag = SWITCH_IS_OFF;
@@ -44,11 +45,12 @@ long Shdr_pos, StringSec_pos, StringSec_size;
 char SecNameStnTable[MAX_SIZE_STRING_TABLE];
 unsigned int ioctl_params[4];
 
-#define LONGOPTIONS_NB 5
+#define LONGOPTIONS_NB 6
 struct option updatefw_longopts[LONGOPTIONS_NB+1] = {
   {  .name = "help",        .has_arg = no_argument,       .flag = &helpflag,      .val = SWITCH_IS_ON  },
   {  .name = "firmware",    .has_arg = required_argument, .flag = NULL,           .val = 'f'           },
   {  .name = "pretend",     .has_arg = no_argument,       .flag = &pflag,         .val = SWITCH_IS_ON  },
+  {  .name = "noexec",      .has_arg = no_argument,       .flag = &noexecflag,    .val = SWITCH_IS_ON  },
   {  .name = "stackptr",    .has_arg = required_argument, .flag = NULL,           .val = 's'           },
   {  .name = "forcereboot", .has_arg = no_argument,       .flag = &rebootflag,    .val = SWITCH_IS_ON  },
   {0, 0, 0, 0}
@@ -89,6 +91,7 @@ void show_usage(char* pgname) {
   fprintf(stderr, "  [-b|--forcereboot]   Force reboot of Leon processor before updating the firmware.\n");
   fprintf(stderr, "  [-p|--pretend]       Just pretend to transfer commands (ioctls) to driver, don't do it\n");
   fprintf(stderr, "                       actually. Useful together with verbose -vv switch.\n");
+  fprintf(stderr, "  [-n|--noexec]        Transfer all data and text segments, but don't do actually start the code on Leon (no START_EXEC).\n");
   fprintf(stderr, "  [-v|-vv|-vvv|-vvvv]  Verbose modes.\n");
   fprintf(stderr, "  [-h|--help]          Displays this help.\n");
 }
@@ -292,11 +295,12 @@ int main(int argc, char** argv) {
   char* c;
   unsigned int stackpointer = 0;
   unsigned int ioctl_test_gok = 0;
+  unsigned int do_UPDATE_FIRMWARE_START_EXECUTION = 1;
 
   /*****************
    * Parse options *
    *****************/
-  while ((getoptret = getopt_long_only (argc, argv, "f:vhps:b", updatefw_longopts, &indexptr)) != -1)
+  while ((getoptret = getopt_long_only (argc, argv, "f:vhpns:b", updatefw_longopts, &indexptr)) != -1)
     switch (getoptret) {
       /* Without-argument options */
       case 0: /* means that the option just sets a flag. Nothing has to be done,
@@ -311,6 +315,9 @@ int main(int argc, char** argv) {
         break;
       case 'p': /* short switch -p was used */
         pflag = SWITCH_IS_ON;
+        break;
+      case 'n': /* short switch -n was used */
+        noexecflag = SWITCH_IS_ON;
         break;
       case 'f': /* short switch -f was used */
         fflag = SWITCH_IS_ON; p_str_fwn = optarg;
@@ -505,14 +512,16 @@ int main(int argc, char** argv) {
     //invert4(ioctl_params[1]);
     //invert4(ioctl_params[2]);
     /* Call ioctl driver */
-    ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
-    if (ioctlretval) {
-      fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
-      close(ifile);
-      fclose(p_elfimage);
-      exit(-1);
-    } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
-      printf("Info: ok, successful ioctl on %s for stack-pointer setting/firmware-execution.\n", DEVICE_NAME);
+    if ( noexecflag == SWITCH_IS_OFF ) {
+      ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
+      if (ioctlretval) {
+        fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
+        close(ifile);
+        fclose(p_elfimage);
+        exit(-1);
+      } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
+        printf("Info: ok, successful ioctl on %s for stack-pointer setting/firmware-execution.\n", DEVICE_NAME);
+      }
     }
     close(ifile);
   } /* pflag */
