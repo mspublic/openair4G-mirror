@@ -46,11 +46,11 @@
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 num_pdcch_symbols,
 		      LTE_eNB_DLSCH_t *dlsch,
-		      u16 G,
+		      int G,
 		      u8 q,
 		      u8 Ns) {
 
-  int i;
+  int i,j,k=0;
   u8 reset;
   u32 x1, x2, s=0;
   u8 *e=dlsch->e;
@@ -60,14 +60,13 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
 
   //  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
-  for (i=0; i<G; i++) {
-    if ((i&0x1f)==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      //printf("lte_gold[%d]=%x\n",i,s);
-      reset = 0;
+  s = lte_gold_generic(&x1, &x2, 1);
+  for (i=0; i<(1+(G>>5)); i++) {
+ 
+    for (j=0;j<32;j++,k++) {
+     e[k] = (e[k]&1) ^ ((s>>j)&1);
     }
-    //        printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
-    e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
+   s = lte_gold_generic(&x1, &x2, 0);
   }
 
 }
@@ -76,12 +75,12 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 num_pdcch_symbols,
 			LTE_UE_DLSCH_t *dlsch,
-			u16 G,
+			int G,
 			s16* llr,
 			u8 q,
 			u8 Ns) {
 
-  int i;
+  int i,j,k=0;
   u8 reset;
   u32 x1, x2, s=0;
   
@@ -90,16 +89,12 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   //  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
-  for (i=0; i<G; i++) {
-    if (i%32==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      //printf("lte_gold[%d]=%x\n",i,s);
-      reset = 0;
-    }
-    // take the quarter of the PBCH that corresponds to this frame
-    //printf("unscrambling %d : e %d, c %d\n",i,llr[i],((s>>(i&0x1f))&1));
-    if (((s>>(i%32))&1)==0)
-      llr[i] = -llr[i];
-
+  s = lte_gold_generic(&x1, &x2, 1);
+  for (i=0; i<(1+(G>>5)); i++) {
+    for (j=0;j<32;j++,k++)
+      //      if (((s>>j)&1)==0)
+      //llr[k] = -llr[k];
+      llr[k] = ((2*((s>>j)&1))-1)*llr[k];
+    s = lte_gold_generic(&x1, &x2, 0);
   }
 } 
