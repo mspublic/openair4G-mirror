@@ -342,7 +342,7 @@ typedef struct {
   /// Pointers to transport block segments
   u8 *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
-  u32 RTC[8]; 
+  u32 RTC[MAX_NUM_ULSCH_SEGMENTS]; 
   /// Index of current HARQ round for this ULSCH
   u8 round; 
   /// MCS format for this ULSCH
@@ -458,7 +458,7 @@ typedef struct {
   /// Pointers to transport block segments
   u8 *c[MAX_NUM_DLSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
-  u32 RTC[8]; 
+  u32 RTC[MAX_NUM_DLSCH_SEGMENTS]; 
   /// Index of current HARQ round for this DLSCH
   u8 round; 
   /// MCS format for this DLSCH

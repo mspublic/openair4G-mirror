@@ -109,7 +109,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
   return(NULL);
 }
 
-u32  dlsch_decoding(short *dlsch_llr,
+uint32_t  dlsch_decoding(short *dlsch_llr,
 		    LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_UE_DLSCH_t *dlsch,
 		    u8 subframe,
@@ -123,14 +123,14 @@ u32  dlsch_decoding(short *dlsch_llr,
 
   u16 nb_rb;
   u8 harq_pid;
-  u32 A,E;
+  uint32_t A,E;
   u8 mod_order;
-  u32 G;
-  u32 ret,offset;
+  uint32_t G;
+  uint32_t ret,offset;
   u16 iind;
   //  u8 dummy_channel_output[(3*8*block_length)+12];
   short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
-  u32 r,r_offset=0,Kr,Kr_bytes,err_flag=0;
+  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0;
   u8 crc_type;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
@@ -170,13 +170,6 @@ u32  dlsch_decoding(short *dlsch_llr,
   }
 
   A = dlsch->harq_processes[harq_pid]->TBS; //2072 for QPSK 1/3
-  //printf("DEcoder: A: %d\n",A);
-#ifndef USER_MODE
-  if (A > 6144) {
-    msg("dlsch_decoding.c: Illegal TBS %d\n",A);
-    return(MAX_TURBO_ITERATIONS);
-  }
-#endif
 
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
@@ -237,6 +230,7 @@ u32  dlsch_decoding(short *dlsch_llr,
     msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
+    start_meas(dlsch_rate_unmatching_stats);
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
 							       (u8*) &dummy_w[r][0],
@@ -251,7 +245,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 	   dlsch->harq_processes[harq_pid]->Nl);
 #endif    
 
-    start_meas(dlsch_rate_unmatching_stats);
+
     if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
 				   G,
 				   dlsch->harq_processes[harq_pid]->w[r],
@@ -413,7 +407,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 #include "LAYER2/MAC/defs.h"
 #endif
 
- int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, u32 rb_alloc[4], u8 mcs) {
+ int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, uint32_t rb_alloc[4], u8 mcs) {
 
    int index,ii;
   double sinr_eff = 0;
@@ -470,7 +464,7 @@ u32  dlsch_decoding(short *dlsch_llr,
 #endif
 }
 
- int dlsch_abstraction_MIESM(double* sinr_dB,u8 TM, u32 rb_alloc[4], u8 mcs) {
+ int dlsch_abstraction_MIESM(double* sinr_dB,u8 TM, uint32_t rb_alloc[4], u8 mcs) {
 
   int index;
   double sinr_eff = 0;
@@ -786,7 +780,7 @@ u32  dlsch_decoding(short *dlsch_llr,
     
  }
 
-u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
+uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
 			u8 dlsch_id,
 			u8 eNB_id) {
@@ -794,8 +788,8 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
-  u32 eNB_id2;
-  u32 ue_id;
+  uint32_t eNB_id2;
+  uint32_t ue_id;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
@@ -843,7 +837,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    ue_id= (u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    ue_id= (uint32_t)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
 
 #ifdef DEBUG_DLSCH_DECODING
@@ -879,7 +873,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(uint32_t)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,
 								PHY_vars_eNB_g[eNB_id2])][1];
      // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;

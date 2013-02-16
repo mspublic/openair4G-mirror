@@ -1336,14 +1336,14 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 num_pdcch_symbols,
 		      LTE_eNB_DLSCH_t *dlsch,
-		      u16 G,
+		      int G,
 		      u8 q,
 		      u8 Ns);
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 num_pdcch_symbols,
 			LTE_UE_DLSCH_t *dlsch,
-			u16 G,
+			int G,
 			s16* llr,
 			u8 q,
 			u8 Ns);
