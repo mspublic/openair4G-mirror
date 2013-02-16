@@ -179,9 +179,10 @@ static int __init openair_init_module( void )
         udelay(1000);
         readback = ioread32( bar[card] );
         printk("CONTROL0 readback %x\n",readback);
-
-        if ( exmimo_firmware_init( card ) ) {
-            printk("[openair][MODULE][ERROR] exmimo_firmware_init failed!\n");
+    
+        // allocating buffers
+        if ( exmimo_memory_alloc( card ) ) {
+            printk("[openair][MODULE][ERROR] exmimo_memory_alloc() failed!\n");
             openair_cleanup();
             return -ENOMEM;
         }
@@ -195,6 +196,8 @@ static int __init openair_init_module( void )
 
         openair_irq_enabled[card] = 0;
 
+// #ifdef CONFIG_PREEMPT_RT doesn't work -> fix misconfigured header files?
+#if 1
         if ( (res = request_irq(pdev[card]->irq, openair_irq_handler, 
                         IRQF_SHARED , "openair_rf", pdev[card] )) == 0)
         {
@@ -205,6 +208,10 @@ static int __init openair_init_module( void )
             openair_cleanup();
             return -EBUSY;
         }
+#else
+        printk("Warning: didn't request IRQ for PREEMPT_REALTIME\n");
+#endif
+
     } // for (i=0; i<number_of_cards; i++)
     
     //------------------------------------------------
@@ -224,7 +231,13 @@ static int __init openair_init_module( void )
         openair_chrdev_registered = 1;
     }
 
-    printk("[openair][MODULE][INFO] Done init\n");
+    printk("[openair][MODULE][INFO] Initializing Leon (EXMIMO_PCIE_INIT) on all cards...\n");
+
+    for (card=0; card<number_of_cards; card++)
+        exmimo_firmware_init( card );
+
+    printk("[openair][MODULE][INFO] Done module init\n");
+
     return 0;
 }
 
