@@ -56,6 +56,9 @@ int bigshm_init(int card)
 {
     printk("[openair][module] calling pci_alloc_consistent for card %d, bigshm (size: %u*%lu bytes)...\n", card, BIGSHM_SIZE_PAGES, PAGE_SIZE);
 
+    if ( sizeof(dma_addr_t) != 4)
+        printk("!!! WARNING: sizeof (dma_addr_t) = %d! Only 32bit mode (= 4) (also: no PAE) is supported at this time!\n", sizeof(dma_addr_t));
+    
     if ( bigshm_head[card] == NULL )
         bigshm_head[card] = pci_alloc_consistent( pdev[card], BIGSHM_SIZE_PAGES<<PAGE_SHIFT, &bigshm_head_phys[card] );
 
@@ -89,7 +92,7 @@ void *bigshm_assign( int card, size_t size_bytes, dma_addr_t *dma_handle_ptr )
     size = (size-1) + 256 - ( (size-1) % 256);
 
     if ( (bigshm_currentptr[card] - bigshm_head[card]) > (BIGSHM_SIZE_PAGES<<PAGE_SHIFT) -size ) {
-        printk("Not enough memory in bigshm! Make it bigger!\n");
+        printk("Not enough memory in bigshm! Make BIGSHM_SIZE_PAGES bigger!\n");
         return NULL;
     }
 
@@ -116,7 +119,7 @@ int exmimo_assign_shm_vars(int card_id)
         p_exmimo_pci_phys[card_id] = (exmimo_pci_interface_bot_t *) bigshm_assign( card_id,
                                       sizeof(exmimo_pci_interface_bot_t),
                                       &pphys_exmimo_pci_phys[card_id]);
-        printk("Intializing EXMIMO interface support (exmimo_pci_bot at %p, phys %x)\n",p_exmimo_pci_phys[card_id],(unsigned int)pphys_exmimo_pci_phys[card_id]);
+        printk("Intializing EXMIMO interface support (exmimo_pci_bot at %p, phys %x, size %d bytes)\n",p_exmimo_pci_phys[card_id],(unsigned int)pphys_exmimo_pci_phys[card_id], sizeof(exmimo_pci_interface_bot_t));
 
         exmimo_pci_kvirt[card_id].firmware_block_ptr = (char *) bigshm_assign( card_id,
                                             MAX_FIRMWARE_BLOCK_SIZE_B,
@@ -206,36 +209,44 @@ int exmimo_allocate_rx_tx_buffers(int card_id)
  *  Public functions ExpressMIMO Interface 
  */
 
-/*
- * Main init function, called on driver load
- * Allocates buffers and copies pointer to Leon
+/* Allocates buffer and assigns pointers
  * 
- * returns 0 on success, -1 on error
+ * return 0 on success
+ */
+int exmimo_memory_alloc(int card)
+{
+    if ( bigshm_init( card ) ) {
+        printk("exmimo_memory_alloc(): bigshm_init failed for card %d.\n", card);
+        return -ENOMEM;
+    }
+
+    if ( exmimo_assign_shm_vars( card ) ) {
+        printk("exmimo_memory_alloc(): exmimo_assign_shm_vars failed to assign enough shared memory for all variables and structures for card %i!\n", card);
+        return -ENOMEM;
+    }
+    
+    if ( exmimo_allocate_rx_tx_buffers( card ) ) {
+        printk("exmimo_memory_alloc(): exmimo_allocate_rx_tx_buffers() failed to allocate enough memory for RX and TX buffers for card %i!\n", card);
+        return -ENOMEM;
+    }
+    return 0;
+}
+
+/*
+ * Copies pointer to Leon
  */
 int exmimo_firmware_init(int card)
 {
-    static int memory_already_allocated[MAX_CARDS] = INIT_ZEROS;
-    
-    if (memory_already_allocated[card] == 0)
-    {
-        if ( bigshm_init( card ) )
-            return -ENOMEM;
-
-        if ( exmimo_assign_shm_vars( card ) ) {
-            printk("[openair][MODULE][ERROR] exmimo_assign_shm_vars failed to assign enough shared memory for all variables and structures for card %i!\n", card);
-            return -ENOMEM;
-        }
-        if ( exmimo_allocate_rx_tx_buffers( card ) ) {
-            printk("[openair][MODULE][ERROR] exmimo_allocate_rx_tx_buffers() failed to allocate enough memory for RX and TX buffers for card %i!\n", card);
-            return -ENOMEM;
-        }
-        memory_already_allocated[card] = 1;
-    }
+    /* pci_dma_sync_single_for_device(pdev[card], 
+        pphys_exmimo_pci_phys[card],
+        sizeof(exmimo_pci_interface_bot_t), 
+        PCI_DMA_TODEVICE); */
 
     // put DMA pointer to exmimo_pci_interface_bot into LEON register
     iowrite32( pphys_exmimo_pci_phys[card], (bar[card]+0x1c) );  // lower 32bit of address
     iowrite32( 0, (bar[card]+0x20) );                            // higher 32bit of address
 
+    //printk("exmimo_firmware_init(): initializing Leon (EXMIMO_PCIE_INIT)...\n");
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
     
     return 0;
@@ -283,6 +294,7 @@ int exmimo_firmware_cleanup(int card)
 int exmimo_send_pccmd(int card_id, unsigned int cmd)
 {
     unsigned int val;
+    unsigned int cnt=0;
     
     //printk("Sending command to ExpressMIMO (card %d) : %x\n",card_id, cmd);
     iowrite32(cmd,(bar[card_id]+0x04));
@@ -301,7 +313,21 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
         msleep(100);
     if (cmd == EXMIMO_FW_START_EXEC || cmd == EXMIMO_REBOOT)
         msleep(100); // wait until code has started before initialization command is sent
-    
+
+    if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_exmimoversion == 2 )   // currently, only exmimo2 implements command ack in bootloader
+    {
+        if (cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC)
+        {
+            while (cnt<120 && ( ioread32(bar[card_id]+0x4) != EXMIMO_NOP )) {
+                msleep(500);
+                cnt++;
+            }
+            if (cnt==120)
+                printk("EXMIMO_FW error: Timeout: no EXMIMO_NOP received within 60sec.\n");
+        }
+    } else
+        msleep(500);
+        
     return(0);
 }
 

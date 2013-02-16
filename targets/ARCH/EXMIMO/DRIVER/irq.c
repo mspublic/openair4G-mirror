@@ -49,7 +49,7 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
 
     // get AHBPCIE interrupt line
     irqval = ioread32(bar[card_id]);
-    // printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
+    //printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
 
     if ((irqval&0x80) != 0)
     {
@@ -98,6 +98,9 @@ void openair_do_tasklet (unsigned long card_id)
             
         case GET_FRAME_DONE:
             printk("Got PCIe interrupt for GET_FRAME_DONE ...\n");
+            break;
+            
+        case EXMIMO_NOP:
             break;
             
         default:

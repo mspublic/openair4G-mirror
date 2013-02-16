@@ -43,7 +43,7 @@ int openair_device_open    (struct inode *inode,struct file *filp);
 int openair_device_release (struct inode *inode,struct file *filp);
 int openair_device_mmap    (struct file *filp, struct vm_area_struct *vma);
 
-
+int exmimo_memory_alloc(int card);
 int exmimo_firmware_init(int card);
 int exmimo_firmware_cleanup(int card_id);
 
