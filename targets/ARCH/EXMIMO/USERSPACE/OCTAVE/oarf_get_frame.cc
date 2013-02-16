@@ -115,6 +115,22 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
     else
         numant = openair0_num_antennas[card];
     
+    if ( no_getframe_ioctl )
+    {
+        // print mbox counters
+        for (i=0; i<numant; i++)
+        {
+            
+            if ( numant == openair0_num_antennas[card] )
+                printf("rx_cnt[%d] = %d, tx_cnt[%d] = %d,    ", i, *openair0_exmimo_pci[card].rxcnt_ptr[i],
+                                                                i, *openair0_exmimo_pci[card].txcnt_ptr[i]);
+            else
+                printf("rx_cnt[%d] = %d, tx_cnt[%d] = %d,    ", i, *openair0_exmimo_pci[i / (int)openair0_num_antennas[0]].rxcnt_ptr[i % openair0_num_antennas[0]],
+                                                                i, *openair0_exmimo_pci[i / (int)openair0_num_antennas[0]].txcnt_ptr[i % openair0_num_antennas[0]]);
+        }
+        printf("\n");
+    }
+    
     ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES, numant);
 
     // assign userspace pointers

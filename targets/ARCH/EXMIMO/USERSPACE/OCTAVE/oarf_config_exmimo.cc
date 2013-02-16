@@ -182,7 +182,7 @@ static bool any_bad_argument(const octave_value_list &args)
     if ( !args(0).is_real_scalar() )
     {
         error(FCNNAME);
-        error("card_id must be scalar (count starting from 0).\nUse card_id = -1 to send command to all cards");
+        error("card_id must be scalar (count starting from 0).\nUse card_id = -1 to send command to all cards.\nUse card_id = -2 to update config in memory, but do not send DUMP_CONFIG ioctl.");
         return true;
     }
 
@@ -196,6 +196,7 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
     int ret;
     int ant;
     int a,b;
+    int no_dump_config = 0;
     if (any_bad_argument(args))
         return octave_value_list();
 
@@ -228,6 +229,11 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
         if (ret == -3)
             error("Error mapping RX or TX buffer");
         return octave_value(ret);
+    }
+
+    if (card == -2) {
+        no_dump_config = 1;
+        card = -1;
     }
 
     if (card <-1 || card >= openair0_num_detected_cards) {
@@ -267,7 +273,8 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
             p_exmimo_config->rf.rf_vcocal[ant] = rf_vcocal(ant);
         }
 
-        returnvalue = openair0_dump_config( card );
+        if (no_dump_config == 0)
+            returnvalue = openair0_dump_config( card );
         
         printf("Card %d: ExpressMIMO %d, HW Rev. 0x%d, SW Rev 0x%d, SVN Rev %d, Builddate %d,  %d antennas\n", card, p_exmimo_id->board_exmimoversion,
             p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev,
