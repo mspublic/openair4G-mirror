@@ -1028,11 +1028,11 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     break;
   default: 
     crc_len=3; 
-  }
- 
+  }  
+  
 #ifdef LLR8
   for (i=0,j=0;i<(3*(n2>>4))+1;i++,j+=2) {
-    ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],1),_mm_srai_epi16(((__m128i *)y)[j+1],1));
+    ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],4),_mm_srai_epi16(((__m128i *)y)[j+1],4));
 //    ((__m128i *)y8)[i] = _mm_packs_epi16(((__m128i *)y)[j],((__m128i *)y)[j+1]);
   }
   yp = y8;
