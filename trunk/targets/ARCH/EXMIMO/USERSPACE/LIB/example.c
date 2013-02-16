@@ -31,6 +31,17 @@ void test_config(int card, int ant, unsigned int rf_mode)
     openair0_dump_config( card );
 }
 
+void read_firmware_buffer(int card)
+{
+    int i;
+    unsigned int *p= (unsigned int *) (openair0_exmimo_pci[card].firmware_block_ptr);
+    printf("firmware_buffer: \n");
+    
+    for (i=0; i<0x30; i++)
+        printf("u32 fwbuf[%d]: value=%08X\n", i, p[i]);
+    
+}
+
 void main(void)
 {
     int ret, card, ant;
@@ -66,6 +77,10 @@ void main(void)
     p_exmimo_id     = openair0_exmimo_pci[card].exmimo_id_ptr;
         
     printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", card, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
+
+
+    //read_firmware_buffer(card);
+
 
     test_config( card, ant, my_rf_mode);
     
