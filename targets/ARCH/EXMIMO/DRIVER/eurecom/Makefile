@@ -7,7 +7,7 @@ IS_KERNEL_SUBVERSION_GREATER_THAN_20=$(shell if [ $(SUBVERSION) -ge 20 ] ; then 
 
 EXTRA_CFLAGS = -ggdb -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h 
 
-EXTRA_CFLAGS += -I$(PWD)/../DEFS
+EXTRA_CFLAGS += -I$(PWD)/../../DEFS
 
 obj-m += openair_rf.o
 
