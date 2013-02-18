@@ -166,18 +166,18 @@ static int __init openair_init_module( void )
 
         printk("[openair][INIT_MODULE][INFO]: Writing 0x%x to BAR0+0x1c (PCIBASEL)\n", 0x12345678);
 
-        iowrite32( 0x12345678, (bar[card]+0x1c) );
+        iowrite32( 0x12345678, (bar[card]+PCIE_PCIBASEL) );
         udelay(100);
-        readback = ioread32( bar[card]+0x1c );
+        readback = ioread32( bar[card]+PCIE_PCIBASEL );
         if (readback != 0x12345678)
         {
             printk("[openair][INIT_MODULE][INFO]: Readback of FPGA register failed (%x)\n",readback);
             openair_cleanup();
             return -EIO;
         }
-        iowrite32((1<<8) | (1<<9) | (1<<10), bar[card] ); // bit8=AHBPCIE_CTL0_SOFTRESET, but what is bit9 and bit10?
+        iowrite32((1<<8) | (1<<9) | (1<<10), bar[card] +PCIE_CONTROL0 ); // bit8=AHBPCIE_CTL0_SOFTRESET, but what is bit9 and bit10?
         udelay(1000);
-        readback = ioread32( bar[card] );
+        readback = ioread32( bar[card] +PCIE_CONTROL0);
         printk("CONTROL0 readback %x\n",readback);
     
         // allocating buffers

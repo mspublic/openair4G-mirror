@@ -48,15 +48,15 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
         card_id = 0;
 
     // get AHBPCIE interrupt line
-    irqval = ioread32(bar[card_id]);
+    irqval = ioread32(bar[card_id]+PCIE_CONTROL0);
     //printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
 
     if ((irqval&0x80) != 0)
     {
         /// FIXME: This "clearing the IRQ bit" operation is not atomic! -> may not work for high IRQ rates! -> should be done in HW instead
         // clear PCIE interrupt bit (bit 7 of register 0x0)
-        iowrite32(irqval&0xffffff7f,bar[card_id]);
-        irqcmd = ioread32(bar[card_id]+0x4);
+        iowrite32(irqval&0xffffff7f,bar[card_id]+PCIE_CONTROL0);
+        irqcmd = ioread32(bar[card_id]+PCIE_CONTROL1);
 
         if (irqcmd == GET_FRAME_DONE)
             get_frame_done = 1;
@@ -78,7 +78,7 @@ void openair_do_tasklet (unsigned long card_id)
     unsigned int irqcmd;
     openair_bh_cnt = 0;
     
-    irqcmd = ioread32(bar[card_id]+0x4);
+    irqcmd = ioread32(bar[card_id]+PCIE_CONTROL1);
     
     if (save_irq_cnt > 1)
         printk("openair_do_tasklet(%ld): Warning: received more than 1 PCIE IRQ (openair_bh_cnt=%i), only the last one is acted upon(irqcmd= %i (0x%X)\n", card_id, openair_bh_cnt, irqcmd, irqcmd);
