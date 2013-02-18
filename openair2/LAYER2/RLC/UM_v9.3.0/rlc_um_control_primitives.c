@@ -56,10 +56,32 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
       rlc_um_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
       rlc_um_configure(rlcP,
-		       frame,
-		       config_umP->timer_reordering,
-		       config_umP->sn_field_length,
-		       config_umP->is_mXch);
+               frame,
+               config_umP->timer_reordering,
+               config_umP->sn_field_length,
+               config_umP->is_mXch);
+    }
+}
+//-----------------------------------------------------------------------------
+void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
+{
+    //-----------------------------------------------------------------------------
+    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d  --->][RLC_UM][MOD %02d][RB %02d]    \n",
+                frame,
+                ( eNB_flagP == 1) ? "eNB":"UE",
+                module_idP,
+                dl_rlcP->t_Reordering,
+                ul_rlcP->sn_FieldLength,
+                module_idP,
+                rb_idP);
+    rlc_um_init(rlcP);
+    if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
+      rlc_um_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
+      rlc_um_configure(rlcP,
+               frame,
+               dl_rlcP->t_Reordering,
+               ul_rlcP->sn_FieldLength,
+               0);
     }
 }
 //-----------------------------------------------------------------------------
