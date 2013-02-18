@@ -113,12 +113,40 @@ void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
   rlc_am_init(rlcP,frame);
   rlc_am_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
   rlc_am_configure(rlcP,frame,
-		   config_amP->max_retx_threshold,
-		   config_amP->poll_pdu,
-		   config_amP->poll_byte,
-		   config_amP->t_poll_retransmit,
-		   config_amP->t_reordering,
-		   config_amP->t_status_prohibit);
+           config_amP->max_retx_threshold,
+           config_amP->poll_pdu,
+           config_amP->poll_byte,
+           config_amP->t_poll_retransmit,
+           config_amP->t_reordering,
+           config_amP->t_status_prohibit);
+
+}
+//-----------------------------------------------------------------------------
+void config_req_rlc_am_asn1 (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, struct RLC_Config__am * config_amP, rb_id_t rb_idP, rb_type_t rb_typeP)
+{
+//-----------------------------------------------------------------------------
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d) --->][RLC_AM][MOD %02d][RB %02d]\n",
+                                                                                    frame,
+                                                                                    ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+                                                                                    module_idP,
+                                                                                    config_amP->ul_AM_RLC.maxRetxThreshold,
+                                                                                    config_amP->ul_AM_RLC.pollPDU,
+                                                                                    config_amP->ul_AM_RLC.pollByte,
+                                                                                    config_amP->ul_AM_RLC.t_PollRetransmit,
+                                                                                    config_amP->dl_AM_RLC.t_Reordering,
+                                                                                    config_amP->dl_AM_RLC.t_StatusProhibit,
+                                                                                    module_idP,
+                                                                                    rb_idP);
+
+  rlc_am_init(rlcP,frame);
+  rlc_am_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
+  rlc_am_configure(rlcP,frame,
+           config_amP->ul_AM_RLC.maxRetxThreshold,
+           config_amP->ul_AM_RLC.pollPDU,
+           config_amP->ul_AM_RLC.pollByte,
+           config_amP->ul_AM_RLC.t_PollRetransmit,
+           config_amP->dl_AM_RLC.t_Reordering,
+           config_amP->dl_AM_RLC.t_StatusProhibit);
 
 }
 //-----------------------------------------------------------------------------
