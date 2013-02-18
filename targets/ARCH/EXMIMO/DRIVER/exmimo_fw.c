@@ -243,8 +243,8 @@ int exmimo_firmware_init(int card)
         PCI_DMA_TODEVICE); */
 
     // put DMA pointer to exmimo_pci_interface_bot into LEON register
-    iowrite32( pphys_exmimo_pci_phys[card], (bar[card]+0x1c) );  // lower 32bit of address
-    iowrite32( 0, (bar[card]+0x20) );                            // higher 32bit of address
+    iowrite32( pphys_exmimo_pci_phys[card], (bar[card]+PCIE_PCIBASEL) );  // lower 32bit of address
+    iowrite32( 0, (bar[card]+PCIE_PCIBASEH) );                            // higher 32bit of address
 
     //printk("exmimo_firmware_init(): initializing Leon (EXMIMO_PCIE_INIT)...\n");
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
@@ -297,12 +297,12 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
     unsigned int cnt=0;
     
     //printk("Sending command to ExpressMIMO (card %d) : %x\n",card_id, cmd);
-    iowrite32(cmd,(bar[card_id]+0x04));
-    //    printk("Readback of control1 %x\n",ioread32(bar[0]+0x4));
-    val = ioread32(bar[card_id]);
+    iowrite32(cmd,(bar[card_id]+PCIE_CONTROL1));
+    //    printk("Readback of control1 %x\n",ioread32(bar[0]+PCIE_CONTROL1));
+    val = ioread32(bar[card_id]+PCIE_CONTROL0);
     // set interrupt bit to trigger LEON interrupt
-    iowrite32(val|0x1,bar[card_id]);
-    //    printk("Readback of control0 %x\n",ioread32(bar[0]));
+    iowrite32(val|0x1,bar[card_id]+PCIE_CONTROL0);
+    //    printk("Readback of control0 %x\n",ioread32(bar[0]+PCIE_CONTROL0));
     
     // workaround until command ack works: wait
     if (cmd == EXMIMO_PCIE_INIT)
@@ -318,7 +318,7 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
     {
         if (cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC)
         {
-            while (cnt<120 && ( ioread32(bar[card_id]+0x4) != EXMIMO_NOP )) {
+            while (cnt<120 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
                 msleep(500);
                 cnt++;
             }

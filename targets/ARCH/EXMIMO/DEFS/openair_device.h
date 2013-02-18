@@ -18,18 +18,41 @@
 // PCIe Subsystem Vendor ID
 #define EURECOM_VENDOR           0x0001
 #define TELECOM_PARISTECH_VENDOR 0x0002
-//
-// PCIe Subsystem ID = exmimo_id.board_exmimoversion(1,2) (4 bits) | exmimo_id.board_hwrev (4 bits) | exmimo_id.board_swrev (Protocol Revision, 8 bits)
-// Board IDs:
-//   0x11 => ExpressMIMO-1, first run/HW revision
-//   0x12 => ExpressMIMO-1, second run
-//   0x21 => ExpressMIMO-2, first run
-//   0x22 => ExpressMIMO-2, second run
-//
-// SW/Protocol revision:
+/*
+   PCIe Subsystem ID = exmimo_id.board_exmimoversion(1,2) (4 bits) | exmimo_id.board_hwrev (4 bits) | exmimo_id.board_swrev (Protocol Revision, 8 bits)
+   
+   Board IDs:
+     0x11 => ExpressMIMO-1, first run/HW revision
+     0x12 => ExpressMIMO-1, second run
+     0x21 => ExpressMIMO-2, first run
+     0x22 => ExpressMIMO-2, second run
+  
+   SW/Protocol revisions:
+   
+   BOARD_SWREV_LEGACY:
+     - IRQ Leon->PC Bit 7 (AHBPCIE_INTERRUPT_ASSERT_BIT) must be cleared in PC kernel driver
+     - PC->Leon and Leon->PC commands share a single register CONTROL1
+   
+   BOARD_SWREV_CMDREGISTERS:
+     - IRQ Leon->PC Bit 7 (AHBPCIE_INTERRUPT_ASSERT_BIT) is automatically cleared on PCIe read
+     - PC->Leon and Leon->PC commands have separete command registers CONTROL1 (PC->Leon) and CONTROL2 (Leon->PC)
+   
+   BOARD_SWREV_CMDFIFOS:
+     - uses two command FIFOs (for PC->Leon and Leon->PC), by Telecom Paristech
+*/
 #define BOARD_SWREV_LEGACY   0x07
+#define BOARD_SWREV_CMDREGISTERS 0x08
 #define BOARD_SWREV_CMDFIFOS 0x11
 
+
+
+// ExpressMIMO PCIe register offsets to bar0
+//
+#define PCIE_CONTROL0        0x00
+#define PCIE_CONTROL1        0x04
+#define PCIE_STATUS          0x08
+#define PCIE_PCIBASEL        0x1c
+#define PCIE_PCIBASEH        0x20
 
 
 // Device IO definitions and operations
