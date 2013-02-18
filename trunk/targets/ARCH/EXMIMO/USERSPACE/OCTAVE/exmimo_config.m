@@ -3,15 +3,17 @@
 limeparms;
 
 eNBflag = 0;
-card=0;
+card=-2;
 
-tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
+tdd_config = TXRXSWITCH_LSB;
+%tdd_config = TXRXSWITCH_TESTTX;
 syncmode = SYNCMODE_FREE;
 
 
 %% acquisition
 %rf_mode = ( RXEN +        TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + RXOUTSW )*[1 1 0 0];
- rf_mode = ( RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM )*[1 0 0 0]; 
+ rf_mode = ( RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM )*[ 1 0 0  0 ]; 
+%rf_mode = rf_mode + (RXEN+TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM )*[ 0 1 0 0 ]; 
 
 % internal loopback test
 %rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1)*[1 1 0 0];
@@ -22,7 +24,8 @@ syncmode = SYNCMODE_FREE;
 %rf_mode = rf_mode + (DMAMODE_RX)*[0 1 0 0];
 %rf_mode = rf_mode + (DMAMODE_RX)*[0 0 1 1];
 %rf_mode = rf_mode + (DMAMODE_TX)*[1 1 0 0];
-rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[1 0 0 0];
+rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[ 1 0 0 0 ];
+%rf_mode = rf_mode + (DMAMODE_RX )*[0 1 0 0];
 %rf_mode = rf_mode + (DMAMODE_TX)*[1 0 0 0]; rf_mode = rf_mode + (DMAMODE_RX)*[0 1 0 0];
 
 
@@ -33,7 +36,7 @@ freq_rx = (1907600000 - 0*9000)*[1 1 1 1];
 %rf_local= [rfl( 0, 0,31,31)   rfl(28,44,31,31)  rfl(60,60,31,31)   rfl(60,60,31,31)]; % 1.9 GHz, OLD
 %rf_local= [rfl(56,56,31,31)   rfl(16,12,31,31)  rfl(36,48,31,31)   rfl(32,20,31,31)]; % 1.9 GHz, Exmimo2-No1, lime_cal_exmimo
 %rf_local= [rfl(34,40,31,31)   rfl(20,25,38,21)  rfl(12,38,21,14)   rfl(31,19,36, 6)]; % 1.9 GHz, Exmimo2-No1, LIME GUI
- rf_local= [0                  rfl(20,25,26,04)  0                  0]; % 1.9 GHz & 860 MHz, VGA2Gain=0
+ rf_local= [rfl(20,25,26,04)   rfl(20,25,26,04)  0                  0]; % 1.9 GHz & 860 MHz, VGA2Gain=0
 %rf_local= [0                  rfl(20,25,38,21)  0                  0                  ]; % 1.9 GHz, VGA2Gain=30
 
 rf_vcocal=(( 0xE)*(2^6)) + ( 0xE)*[1 1 1 1];  % 1.907 GHz, (OLD)
@@ -76,6 +79,10 @@ vlen=76800
 %v=15000*exp(-i*2*pi*1/7.68*[0:vlen-1]); v=[v;v]'; oarf_send_frame(card,v,16);
 %v=10000*exp(-i*(3000*[0:vlen-1]/vlen)*2*pi); v=[v;v]'; oarf_send_frame(card,v,16);
 %v=20000*exp(-i*pi*(0:vlen-1)/2); v=[v;v]'; oarf_send_frame(card,v,16);
+
+% Set LSB to RX (,1) or to TX(,0)
+%v=10000*m'.*exp(-i*(50*[0:vlen-1]/vlen)*2*pi); v=bitset(real(v),1,0) + i*bitset(imag(v),1,0); v=[v;v]'; oarf_send_frame(card,v,16);
+
 
 v2=15000*sin((1:vlen)/vlen*2*pi); v2=[v2;v2]';
 v=15000*exp(i*2*pi*1/7.68*[1:vlen]); v=[v;v]';
