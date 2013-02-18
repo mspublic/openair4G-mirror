@@ -238,6 +238,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
                     exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rx_gain[0][0],
                     exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rx_gain[1][0]);        
         */
+        
         exmimo_send_pccmd((int)arg, EXMIMO_CONFIG);
     
         break;
@@ -304,7 +305,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
                     /* Copy the data block from user space */
                     fw_block[0] = update_firmware_address;
                     fw_block[1] = update_firmware_length;
-                    // printk("copy_from_user %p => %p (pci) => %p (ahb) length %d\n",update_firmware_ubuffer,&fw_block[16],update_firmware_address,update_firmware_length);
+                    //printk("copy_from_user %p => %p (pci) => fw[0]=fw_addr=%08x (ahb), fw[1]=fw_length=%d DW\n",update_firmware_ubuffer,&fw_block[16],update_firmware_address,update_firmware_length);
                     tmp = copy_from_user(update_firmware_kbuffer,
                             update_firmware_ubuffer, /* from */
                             update_firmware_length * 4       /* in bytes */
@@ -322,8 +323,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
                     }
                     
                     exmimo_send_pccmd(c, EXMIMO_FW_INIT);
-                    printk("[openair][IOCTL] card%d: ok %u words copied at address 0x%08x (fw_block %p)\n",
-                        c, ((unsigned int*)arg)[2],((unsigned int*)arg)[1],fw_block);
+                    printk("[openair][IOCTL] card%d: ok %u DW copied to address 0x%08x  (fw_block_ptr %p)\n",
+                        c, fw_block[1], fw_block[0],fw_block);
                 }
                 
                 kfree(update_firmware_kbuffer);
