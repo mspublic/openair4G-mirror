@@ -70,9 +70,8 @@
 
 #define IS_EXMIMOCMD_FROM_PC(x)  ( (x)<0x1000 ? 1 : 0)
 
-// Commands from LEON --> PC, passed through ahbpcie_control1 register
+// Commands from LEON --> PC, passed through ahbpcie_control2 register
 
-#define SLOT_INTERRUPT    0x1111
 #define PCI_PRINTK        0x2222
 #define GET_FRAME_DONE    0x3333
 
@@ -175,6 +174,7 @@ typedef struct
 #define LNAMed      (2<<14)
 #define LNAMax      (3<<14)
 
+// RFBBMASK: enable different loopback modes for calibration and testing. Use RFBBNORM for normal operation
 #define RFBBMASK   (7<<16)
 #define RFBBNORM    0
 #define RFBBRXLPF  (1<<16)
