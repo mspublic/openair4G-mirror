@@ -41,7 +41,9 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   s32 **rxdataF_ext=  eNB_pusch_vars->rxdataF_ext[eNB_id];
   u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
   s16 delta_phase = 0;
-  s16 *ru = ru_90;
+  s16 *ru1 = ru_90;
+  s16 *ru2 = ru_90;
+  s16 current_phase1,current_phase2;
   u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
   u16 aa,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
   u16 * Msc_idx_ptr;
@@ -395,10 +397,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
                                                 ul_ch_estimates[aa],
                                                 N_rb_alloc);
     // negative phase index indicates negative Im of ru
-    if (delta_phase<0) {
-        ru = ru_90c;
-        delta_phase = -delta_phase;
-    }
+    //    msg("delta_phase: %d\n",delta_phase);
 
 #ifdef DEBUG_CH
 	msg("lte_ul_channel_estimation: ul_ch1 = %p, ul_ch2 = %p, pilot_pos1=%d, pilot_pos2=%d\n",ul_ch1, ul_ch2, pilot_pos1,pilot_pos2); 
@@ -416,23 +415,35 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
 	  // interpolate between estimates
       if ((k != pilot_pos1) && (k != pilot_pos2))  {
-	    
           //          multadd_complex_vector_real_scalar((s16*) ul_ch1,alpha,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
           //          multadd_complex_vector_real_scalar((s16*) ul_ch2,beta ,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
 
           //          multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
           //          multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
           //          msg("phase = %d\n",ru[2*cmax(((delta_phase/7)*(k-3)),0)]);
-		    
+                    		    
+          // the phase is linearly interpolated
+          current_phase1 = (delta_phase/7)*(k-pilot_pos1);
+          current_phase2 = (delta_phase/7)*(k-pilot_pos2);
+          //          msg("sym: %d, current_phase1: %d, current_phase2: %d\n",k,current_phase1,current_phase2);
+          // set the right quadrant
+          (current_phase1 > 0) ? (ru1 = ru_90) : (ru1 = ru_90c);
+          (current_phase2 > 0) ? (ru2 = ru_90) : (ru2 = ru_90c);
+          // take absolute value and clip
+          current_phase1 = cmin(abs(current_phase1),127);
+          current_phase2 = cmin(abs(current_phase2),127);
+
+          //          msg("sym: %d, current_phase1: %d, ru: %d + j%d, current_phase2: %d, ru: %d + j%d\n",k,current_phase1,ru1[2*current_phase1],ru1[2*current_phase1+1],current_phase2,ru2[2*current_phase2],ru2[2*current_phase2+1]);   
+
           // rotate channel estimates by estimated phase
           rotate_cpx_vector_norep((s16*) ul_ch1, 
-                                  &ru[2*cmax(((delta_phase/7)*(k-3)),0)], 
+                                  &ru1[2*current_phase1], 
                                   (s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
                                   Msc_RS, 
                                   15);
 
           rotate_cpx_vector_norep((s16*) ul_ch2, 
-                                  &ru[2*cmax(((delta_phase/7)*(k-10)),0)], 
+                                  &ru2[2*current_phase2], 
                                   (s16*) &tmp_estimates[0],
                                   Msc_RS, 
                                   15);
@@ -440,7 +451,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
           // Combine the two rotated estimates 
           multadd_complex_vector_real_scalar((s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
           multadd_complex_vector_real_scalar((s16*) &tmp_estimates[0],SCALE,(s16*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,Msc_RS);
-		    
+          
           /*
           if ((k<pilot_pos1) || ((k>pilot_pos2))) {
               
@@ -476,8 +487,8 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
 	// because of the scaling of alpha and beta we also need to scale the final channel estimate at the pilot positions 
 	
-    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE,(s16*) ul_ch1,1,Msc_RS);
-    multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE,(s16*) ul_ch2,1,Msc_RS);
+    //    multadd_complex_vector_real_scalar((s16*) ul_ch1,SCALE,(s16*) ul_ch1,1,Msc_RS);
+    //    multadd_complex_vector_real_scalar((s16*) ul_ch2,SCALE,(s16*) ul_ch2,1,Msc_RS);
 	
 	if(cooperation_flag == 2)// For Distributed Alamouti
 	  {
@@ -709,8 +720,8 @@ s16 lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
    }
 
    // phase estimation on Ravg
-   //   Ravg[0] = 144;
-   //   Ravg[1] = 7;
+   //   Ravg[0] = 56;
+   //   Ravg[1] = 0;
    rv = Ravg[0];
    iv = Ravg[1];
 
@@ -723,22 +734,17 @@ s16 lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
        conj_flag = 1;
    }
 
-   for (k=0;k<5;k++) {
+   //   msg("rv = %d, iv = %d\n",rv,iv);
+   //   msg("max_avg = %d, log2_approx = %d, shift = %d\n",avg[0], avg[1], output_shift);
+
+   for (k=0;k<6;k++) {
        (iv<(((s32)(alpha[a_idx]*rv))>>15)) ? (a_idx -= 32>>k) : (a_idx += 32>>k);
    }
 
-   (conj_flag==1) ? (phase_idx = 2*(127-(a_idx>>1))) : (phase_idx = 2*(a_idx>>1));
+   (conj_flag==1) ? (phase_idx = 127-(a_idx>>1)) : (phase_idx = (a_idx>>1));
 
    if (Ravg[1]<0)
        phase_idx = -phase_idx;
-
-   /*
-   if (foffset[1] > 2000) {
-       msg("rv = %d, iv = %d\n",rv,iv);
-       msg("max_avg = %d, log2_approx = %d, shift = %d\n",avg[0], avg[1], output_shift);
-       msg("foffset= %d %d\n",foffset[0],foffset[1]);
-   }
-   */
 
     return(phase_idx);
 }
