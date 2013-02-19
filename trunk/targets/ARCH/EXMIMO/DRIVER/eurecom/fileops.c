@@ -111,13 +111,14 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma)
         phys = p_exmimo_pci_phys[card]->dac_head[ openair_mmap_getAntTX(memblock_ind) ];
     }
     
-    printk("[openair][MMAP] card%d: map phys (%08lx) at start %lx, end %lx, pg_off %lx, size %lx\n",
-        card,
-        phys,
-        vma->vm_start, 
-        vma->vm_end,
-        vma->vm_pgoff,
-        size);
+    if (0)
+        printk("[openair][MMAP] card%d: map phys (%08lx) at start %lx, end %lx, pg_off %lx, size %lx\n",
+            card,
+            phys,
+            vma->vm_start, 
+            vma->vm_end,
+            vma->vm_pgoff,
+            size);
   
     /* loop through all the physical pages in the buffer */ 
     /* Remember this won't work for vmalloc()d memory ! */

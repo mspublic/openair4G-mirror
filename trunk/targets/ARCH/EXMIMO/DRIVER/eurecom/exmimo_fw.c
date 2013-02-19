@@ -295,38 +295,37 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
 {
     unsigned int val;
     unsigned int cnt=0;
-    
+        
     //printk("Sending command to ExpressMIMO (card %d) : %x\n",card_id, cmd);
     iowrite32(cmd,(bar[card_id]+PCIE_CONTROL1));
+    
+    // Be careful - this is not safe if the Leon wants to send an IRQ at the same time!
+    // setting the IRQ bit should be a single operation, i.e. if bis 1 is set, ignore all other bits in FPGA
     //    printk("Readback of control1 %x\n",ioread32(bar[0]+PCIE_CONTROL1));
     val = ioread32(bar[card_id]+PCIE_CONTROL0);
     // set interrupt bit to trigger LEON interrupt
     iowrite32(val|0x1,bar[card_id]+PCIE_CONTROL0);
     //    printk("Readback of control0 %x\n",ioread32(bar[0]+PCIE_CONTROL0));
     
-    // workaround until command ack works: wait
-    if (cmd == EXMIMO_PCIE_INIT)
-        msleep(500);   // give card time to initialize system id structure
-    if (cmd == EXMIMO_CONFIG)
-        msleep(500);   // give card time to configure
-    if (cmd == EXMIMO_STOP)
-        msleep(100);
-    if (cmd == EXMIMO_FW_START_EXEC || cmd == EXMIMO_REBOOT)
-        msleep(100); // wait until code has started before initialization command is sent
+    // workaround for ExMIMO1 and old ExMIMO2 code: no command ack -> sleep
 
-    if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_exmimoversion == 2 )   // currently, only exmimo2 implements command ack in bootloader
-    {
-        if (cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC)
-        {
-            while (cnt<120 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
-                msleep(500);
+    /*if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_exmimoversion == 1 &&
+         ( cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC ) )
+    */
+    if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY ) 
+         msleep(500); // currently, exmimo1 implements no command ack in bootloader -> sleep
+    
+    else {
+        //if (cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC)
+        //{
+            while (cnt<600 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
+                msleep(100);
                 cnt++;
             }
-            if (cnt==120)
-                printk("EXMIMO_FW error: Timeout: no EXMIMO_NOP received within 60sec.\n");
-        }
-    } else
-        msleep(500);
+            if (cnt==600)
+                printk("exmimo_send_pccmd error: Timeout: no EXMIMO_NOP received within 60sec for card%d, pccmd=%x\n", card_id, cmd);
+        //}
+    }
         
     return(0);
 }
