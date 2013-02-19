@@ -276,10 +276,11 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
         if (no_dump_config == 0)
             returnvalue = openair0_dump_config( card );
         
-        printf("Card %d: ExpressMIMO %d, HW Rev. 0x%d, SW Rev 0x%d, SVN Rev %d, Builddate %d,  %d antennas\n", card, p_exmimo_id->board_exmimoversion,
-            p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev,
-            p_exmimo_id->system_id.bitstream_id, p_exmimo_id->system_id.bitstream_build_date,
-            openair0_num_antennas[card]);
+        if (0)
+            printf("Card %d: ExpressMIMO %d, HW Rev. 0x%d, SW Rev 0x%d, SVN Rev %d, Builddate %d,  %d antennas\n", card, p_exmimo_id->board_exmimoversion,
+                p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev,
+                p_exmimo_id->system_id.bitstream_id, p_exmimo_id->system_id.bitstream_build_date,
+                openair0_num_antennas[card]);
     }
     
     openair0_close();

@@ -3,7 +3,7 @@
 limeparms;
 
 eNBflag = 0;
-card=-2;
+card=0;
 
 tdd_config = TXRXSWITCH_LSB;
 %tdd_config = TXRXSWITCH_TESTTX;
@@ -12,7 +12,7 @@ syncmode = SYNCMODE_FREE;
 
 %% acquisition
 %rf_mode = ( RXEN +        TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + RXOUTSW )*[1 1 0 0];
- rf_mode = ( RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM )*[ 1 0 0  0 ]; 
+ rf_mode = ( RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM )*[ 1 0 0 0 ]; 
 %rf_mode = rf_mode + (RXEN+TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM )*[ 0 1 0 0 ]; 
 
 % internal loopback test
