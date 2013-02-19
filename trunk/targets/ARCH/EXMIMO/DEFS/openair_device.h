@@ -21,13 +21,13 @@
 /*
    PCIe Subsystem ID = exmimo_id.board_exmimoversion(1,2) (4 bits) | exmimo_id.board_hwrev (4 bits) | exmimo_id.board_swrev (Protocol Revision, 8 bits)
    
-   Board IDs:
+   Board IDs (exmimo_id.board_exmimoversion(1,2) (4 bits) + exmimo_id.board_hwrev (4 bits))
      0x11 => ExpressMIMO-1, first run/HW revision
      0x12 => ExpressMIMO-1, second run
      0x21 => ExpressMIMO-2, first run
      0x22 => ExpressMIMO-2, second run
   
-   SW/Protocol revisions:
+   SW/Protocol revisions: (exmimo_id.board_swrev (Protocol Revision, 8 bits)
    
    BOARD_SWREV_LEGACY:
      - IRQ Leon->PC Bit 7 (AHBPCIE_INTERRUPT_ASSERT_BIT) must be cleared in PC kernel driver
@@ -50,6 +50,7 @@
 //
 #define PCIE_CONTROL0        0x00
 #define PCIE_CONTROL1        0x04
+#define PCIE_CONTROL2        0x64
 #define PCIE_STATUS          0x08
 #define PCIE_PCIBASEL        0x1c
 #define PCIE_PCIBASEH        0x20
