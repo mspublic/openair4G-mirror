@@ -581,6 +581,14 @@ typedef struct{
 } LTE_eNB_PUSCH;
 
 typedef struct {
+  s32 *subframe_data;
+  s32 **txdata;
+  mod_sym_t **txdataF;
+  s32 **rxdata;
+  s32 **rxdataF;
+} LTE_UE_BUFFER;
+
+typedef struct {
   ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER)
   s32 **txdata;           
   ///holds the transmit data in the frequency domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)

@@ -110,6 +110,9 @@ extern struct timing_info_t {
 } timing_info[2];
 #endif
 
+void clear_ue_tx_tti(PHY_VARS_UE* phy_vars_ue, u8 subframe, u8 abstraction_flag);
+void modulate_ue_tx_tti(PHY_VARS_UE* phy_vars_ue, u8 subframe, u8 abstraction_flag);
+
 #ifdef USER_MODE
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid) {
@@ -541,77 +544,95 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   u8 subframe,nsymb;
   LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; 
 
-  u8 generate_ul_signal = 0;
   u8 ack_status=0;
   s8 Po_PUCCH;
   s32 ulsch_start=0,ulsch_end=0,overflow=0;
   int k,l;
 
-
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_IN);
 
-#ifdef EMOS
-  //phy_procedures_emos_UE_TX(next_slot);
-#endif
   // FIXME? there is memory leak on the sr_ConfigIndex
   LOG_W(PHY,"FIXME:there is memory leak on the sr_ConfigIndex, resetting manually sr_ConfigIndex to 7\n");
   phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex=7;
 
-  if ((next_slot%2)==0) {
-    phy_vars_ue->tx_power_dBm=-127;
-    subframe = next_slot>>1;
+  subframe = next_slot>>1;
 
-    //    printf("[PHY][UE] Frame %d, subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
-    if ((abstraction_flag==0)) {      
-      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
-	//	printf("[PHY][UE][RAROC] frame %d subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
+  switch(phy_vars_ue->UE_mode[eNB_id]) {
+    case NOT_SYNCHED:
+      break;
 
-#ifdef IFFT_FPGA
-        memset(&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[aa][subframe*frame_parms->N_RB_DL*12*frame_parms->symbols_per_tti],
-               0,frame_parms->N_RB_DL*12*frame_parms->symbols_per_tti*sizeof(mod_sym_t));
+    case PRACH:
+#ifdef OPENAIR2
+      if(phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_Config_enabled == 1)
 #else
-        memset(&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[aa][subframe*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti],
-               0,frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*sizeof(s32));
-        /*
-#ifdef BIT8_TX //this is the CBMIMO1 case
-        ulsch_start = (frame_parms->samples_per_tti*subframe)>>1;
-        memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0,
-               (frame_parms->samples_per_tti)*sizeof(s16));
+      if(1)
+#endif
+      {
+        // check if we have PRACH opportunity
+        if(is_prach_subframe(phy_vars_ue->lte_frame_parms[eNB_id], phy_vars_ue->frame, next_slot>>1)) {
+          phy_vars_ue->generate_prach = 0;
+
+#ifdef OPENAIR2
+          // ask L2 for RACH transport
+          if((mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) && (mode != no_L2_connect)) {
+            phy_vars_ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,
+                phy_vars_ue->frame, eNB_id, next_slot>>1);
+          }
+#endif
+
+          if(phy_vars_ue->prach_resources[eNB_id] != NULL) {
+            phy_vars_ue->generate_prach=1;
+            phy_vars_ue->prach_cnt=0;
+            //phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
+            phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
+	  
+            if (abstraction_flag == 0) {
+              LOG_I(PHY,"[UE %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+                    phy_vars_ue->Mod_id,
+                    phy_vars_ue->frame,
+                    next_slot>>1,
+                    phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
+                    phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+                    phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
+                    phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
+
+              phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
+
+#ifdef EXMIMO
+              phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm)/3;
 #else
-#ifdef EXMIMO //this is the EXPRESS MIMO case
-        ulsch_start = (phy_vars_ue->rx_offset+subframe*frame_parms->samples_per_tti-TIMING_ADVANCE_HW);
-        if (ulsch_start<0)
-          ulsch_start+=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-        if (ulsch_start>=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-          ulsch_start-=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-        if (ulsch_start>(9*frame_parms->samples_per_tti)) //we have to divide the memset in two parts
-          {
-              ulsch_end = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti - ulsch_start;
-            for (i=0;i<ulsch_end;i++)
-              ((u32*)&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start])[i] = 0x00010001;
-            ulsch_end = ulsch_start-(9*frame_parms->samples_per_tti);
-            for (i=0;i<ulsch_end;i++)
-              ((u32*)&phy_vars_ue->lte_ue_common_vars.txdata[aa][0])[i] = 0x00010001;
+              phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = AMP;
+#endif
+              prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
+              LOG_I(PHY,"[UE  %d][RAPROC] PRACH digital power %d dB (amp %d)\n",
+                    phy_vars_ue->Mod_id,
+                    dB_fixed(prach_power),
+                    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp);
+            }
+            else {
+              UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
+              UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
+              mac_xface->Msg1_transmitted(phy_vars_ue->Mod_id,
+                                           phy_vars_ue->frame,
+                                           eNB_id);
+            }
+            LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
+                  phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
+                  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
+                  phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
+                  get_PL(phy_vars_ue->Mod_id,eNB_id));
 
           }
-        else {
-          ulsch_end = frame_parms->samples_per_tti+1;
-          for (i=0;i<ulsch_end;i++)
-            ((u32*)&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start])[i] = 0x00010001;
         }
-#else //this is the normal case
-        ulsch_start = (frame_parms->samples_per_tti*subframe);
-        memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0,
-               (frame_parms->samples_per_tti)*sizeof(s32));
-#endif //else EXMIMO
-#endif //else BIT8_TX
-        */
-#endif //else IFFT_FPGA
+        printf("[PHY][UE %p] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
+
+        phy_vars_ue->prach_cnt++;
+        if (phy_vars_ue->prach_cnt==3)
+          phy_vars_ue->generate_prach=0;
       }
-    }
- 
-   if (phy_vars_ue->UE_mode[eNB_id] != PRACH) {
-    /*
+      break;
+    default:
+      /*
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[UE  %d] Frame %d, slot %d: Generating SRS\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot);
 #endif
@@ -628,7 +649,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	generate_srs_tx_emul(phy_vars_ue,next_slot>>1);
       }
 #endif
-    */
+      */
+
       // get harq_pid from subframe relationship
       harq_pid = subframe2harq_pid(phy_vars_ue->lte_frame_parms[eNB_id],
 				   (((next_slot>>1)==0)?1:0) + phy_vars_ue->frame,
@@ -646,7 +668,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 					    eNB_id);
 	
 	phy_vars_ue->ulsch_ue[eNB_id]->power_offset = 14;
-	LOG_I(PHY,"[UE  %d][RAPROC] Frame %d: Setting Msg3_flag in subframe %d, for harq_pid %d\n",
+	LOG_I(PHY,"[UE %d][RAPROC] Frame %d: Setting Msg3_flag in subframe %d, for harq_pid %d\n",
 	    phy_vars_ue->Mod_id,
 	    phy_vars_ue->frame,
 	    next_slot>>1,
@@ -656,7 +678,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       else {
 	
 	if (harq_pid==255) {
-	  LOG_E(PHY,"[UE%d] Frame %d ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
+	  LOG_E(PHY,"[UE %d] Frame %d ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->frame);
 	  mac_xface->macphy_exit("");
           vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -668,14 +690,13 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       
       if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag == 1) {
 	
-	generate_ul_signal = 1;
 #ifdef OPENAIR2
 	pusch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,1, abstraction_flag);
 	phy_vars_ue->tx_power_dBm = phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;
 #else
 	phy_vars_ue->tx_power_dBm = UE_TX_POWER;
 #endif
-	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Po_PUSCH : %d dBm\n",
+	LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d subframe %d Po_PUSCH : %d dBm\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm);	
 
 	// deactivate service request
@@ -689,15 +710,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	first_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb;
 	nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
 	
-	
-	//frame_parms->pusch_config_c ommon.ul_ReferenceSignalsPUSCH.cyclicShift = 0;
-	
-	//frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[20] = 0;
-	
-	
-	
-	//#ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH for eNB %d: first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
+#ifdef DEBUG_PHY_PROC
+	LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d subframe %d Generating PUSCH for eNB %d: first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,eNB_id,
 	      first_rb,nb_rb,
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->round,
@@ -713,14 +727,14 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	      phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
 	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
 	if (ack_status > 0) {
-	  LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
+	  LOG_D(PHY,"[UE %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
 		phy_vars_ue->Mod_id,
 		phy_vars_ue->ulsch_ue[eNB_id]->rnti,
 		phy_vars_ue->frame,next_slot>>1,
 		phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
 		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
 	}
-	//#endif
+#endif
 	
 
 #ifdef EXMIMO
@@ -820,34 +834,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  LOG_D(PHY,"\n");
 #endif
 #else //OPENAIR2
-      // the following lines were necessary for the calibration in CROWN
-      /*
-      if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
-          for (i=0;i<input_buffer_length;i++) 
-              ulsch_input_buffer[i]= (u8)(taus()&0xff);
-	  }
-	  else {
-          // Get calibration information from TDD procedures
-      }
-      */
-
 	  for (i=0;i<input_buffer_length;i++) 
 	    ulsch_input_buffer[i]= (u8)(taus()&0xff);
-	  
-      // the following lines were necessary for the collaborative UL in PUCCO
-	  /*
-	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o    ,0,MAX_CQI_BYTES*sizeof(u8));
-	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_RI ,0,2*sizeof(u8));
-	  memset(phy_vars_ue->ulsch_ue[eNB_id]->o_ACK,0,4*sizeof(u8));
-	  for (i=0;i<input_buffer_length;i++)
-	    ulsch_input_buffer[i]= i;
-	  */
-
 #endif //OPENAIR2
 	  if (abstraction_flag==0) {
-	    if (phy_vars_ue->frame%100==0) {
-	      LOG_I(PHY,"Encoding ulsch\n");
-	    }
 	    if (ulsch_encoding(ulsch_input_buffer,
 			       phy_vars_ue->lte_frame_parms[eNB_id],
 			       phy_vars_ue->ulsch_ue[eNB_id],
@@ -879,30 +869,30 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else
 		AMP
 #endif
-	);    
+          );    
 #ifdef OFDMA_ULSCH
-	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF,
+          ulsch_modulation(phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF,
 #ifdef EXMIMO                       
-			   get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm),
+                           get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm),
 #else
-			   AMP,
+                           AMP,
 #endif
-			   phy_vars_ue->frame,
-			   (next_slot>>1),
-			   phy_vars_ue->lte_frame_parms[eNB_id],
-			   phy_vars_ue->ulsch_ue[eNB_id]);
+                           phy_vars_ue->frame,
+                           (next_slot>>1),
+                           phy_vars_ue->lte_frame_parms[eNB_id],
+                           phy_vars_ue->ulsch_ue[eNB_id]);
 
 #else //OFDMA_ULSCH
-	  ulsch_modulation(phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF,
+          ulsch_modulation(phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF,
 #ifdef EXMIMO                       
-			   get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm),
+                           get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm),
 #else
-			   AMP,
+                           AMP,
 #endif
-			   phy_vars_ue->frame,
-			   (next_slot>>1),
-			   phy_vars_ue->lte_frame_parms[eNB_id],
-			   phy_vars_ue->ulsch_ue[eNB_id]);
+                           phy_vars_ue->frame,
+                           (next_slot>>1),
+                           phy_vars_ue->lte_frame_parms[eNB_id],
+                           phy_vars_ue->ulsch_ue[eNB_id]);
       
 #endif //OFDMA_ULSCH
 	}
@@ -920,11 +910,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    (bundling_flag==bundling)    || 
 	    ((frame_parms->frame_type==1)&&(frame_parms->tdd_config==1)&&((next_slot!=4)||(next_slot!=14)))) {
 	  format = pucch_format1a;
-	  //	debug_msg("PUCCH 1a\n");
 	}
 	else {
 	  format = pucch_format1b;
-	  //	debug_msg("PUCCH 1b\n");
 	}
 	
 	// Check for SR and do ACK/NACK accordingly
@@ -941,7 +929,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1,SR_payload);
 	  
 	  if (SR_payload>0) {
-	    generate_ul_signal = 1;
 	  }
 	  else {
 	    phy_vars_ue->sr[next_slot>>1]=0;
@@ -955,8 +942,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		    (next_slot>>1),pucch_ack_payload) > 0) {
 	  // we need to transmit ACK/NAK in this subframe
 	  
-	  generate_ul_signal = 1;
-	  
 	  n1_pucch = get_n1_pucch(phy_vars_ue,
 				  eNB_id,
 				  next_slot>>1,
@@ -964,28 +949,28 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				  SR_payload); 
 
 #ifdef OPENAIR2
-	    Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format);
-	    phy_vars_ue->tx_power_dBm = Po_PUCCH;
+          Po_PUCCH = pucch_power_cntl(phy_vars_ue,(next_slot>>1),eNB_id,format);
+          phy_vars_ue->tx_power_dBm = Po_PUCCH;
 #else
-	    phy_vars_ue->tx_power_dBm = UE_TX_POWER;
+          phy_vars_ue->tx_power_dBm = UE_TX_POWER;
 #endif
 
-	    if (SR_payload>0) {
-	      LOG_I(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b (with SR for PUSCH), n1_pucch %d, Po_PUCCH %d\n",
-		    phy_vars_ue->Mod_id, 
-		    phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
-		    phy_vars_ue->frame, next_slot>>1,
-		    phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
-		    Po_PUCCH);
-	    }
-	    else {
-	      LOG_I(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d\n",
-		    phy_vars_ue->Mod_id, 
-		    phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
-		    phy_vars_ue->frame, next_slot>>1,
-		    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],SR_payload,
-		    Po_PUCCH);
-	    }
+          if (SR_payload>0) {
+            LOG_I(PHY,"[UE  %d][SR %x] Frame %d subframe %d Generating PUCCH 1a/1b (with SR for PUSCH), n1_pucch %d, Po_PUCCH %d\n",
+                  phy_vars_ue->Mod_id, 
+                  phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
+                  phy_vars_ue->frame, next_slot>>1,
+                  phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex,
+                  Po_PUCCH);
+          }
+          else {
+            LOG_I(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d (SR_Payload %d), Po_PUCCH %d\n",
+                  phy_vars_ue->Mod_id, 
+                  phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
+                  phy_vars_ue->frame, next_slot>>1,
+                  n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],SR_payload,
+                  Po_PUCCH);
+          }
 
 	  if (abstraction_flag == 0) {
 
@@ -1063,176 +1048,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
       }
 #endif  // PUCCH
+      break;
+  } // switch(phy_vars_ue->UE_mode[eNB_id])
 
-
-      if (abstraction_flag == 0) {
-	if (generate_ul_signal == 1 ) {
-	  
-	  subframe = next_slot>>1;
-	  nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-
-#ifdef CBMIMO1 //this is the CBMIMO1 case
-	ulsch_start = (frame_parms->samples_per_tti*subframe)>>1;
-#else
-#ifdef EXMIMO //this is the EXPRESS MIMO case
-	ulsch_start = (phy_vars_ue->rx_offset+subframe*frame_parms->samples_per_tti-openair_daq_vars.timing_advance-phy_vars_ue->timing_advance)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
-#else //this is the normal case
-	ulsch_start = (frame_parms->samples_per_tti*subframe);
-#endif //else EXMIMO
-#endif //else CBMIMO1
-
-	  for (aa=0; aa<1; aa++) {
-	    if (frame_parms->Ncp == 1) 
-	      PHY_ofdm_mod(&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size],
-#ifdef EXMIMO
-			   dummy_tx_buffer, 
-#else
-			   &phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],
-#endif
-			   frame_parms->log2_symbol_size,
-			   nsymb,
-			   frame_parms->nb_prefix_samples,
-			   frame_parms->twiddle_ifft,
-			   frame_parms->rev,
-			   CYCLIC_PREFIX);
-	    else
-	      normal_prefix_mod(&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size], 
-#ifdef EXMIMO
-				dummy_tx_buffer, 
-#else
-				&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],
-#endif
-				nsymb,
-				phy_vars_ue->lte_frame_parms[eNB_id]);
-
-	    /*
-	    if ((next_slot>>1) == 8) {
-	      printf("Symbol 0 %p (offset %d) base %p\n", 
-		     &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe],
-		     nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe,
-		     phy_vars_ue->lte_ue_common_vars.txdataF[0]);
-	      write_output("txsigF8.m","txsF8", &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe],
-			   phy_vars_ue->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);	      
-	      write_output("txsig8.m","txs8", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
-			   phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);	      
-	    }
-	    */
-#ifndef OFDMA_ULSCH
-#ifdef EXMIMO
-	    // apply_7_5_kHz(phy_vars_ue,subframe<<1, eNB_id); 
-	    //apply_7_5_kHz(phy_vars_ue,1+(subframe<<1), eNB_id); 
-	    apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,0);
-	    apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,1);
-#else
-	    apply_7_5_kHz(phy_vars_ue,phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],0);
-	    apply_7_5_kHz(phy_vars_ue,phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],1);
-#endif
-	    /*
-	    if ((next_slot>>1) == 8) {
-	      write_output("txsig8_mod.m","txs8_mod", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
-			   phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);	      
-	    }
-	    */
-#endif
-
-#ifdef EXMIMO
-	    overflow = ulsch_start - 9*frame_parms->samples_per_tti;
-	    //if ((next_slot==4) && (aa==0)) printf("ulsch_start %d, overflow %d\n",ulsch_start,overflow);
-	    for (k=ulsch_start,l=0; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++)
-	      {
-		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k] = ((short*)dummy_tx_buffer)[2*l]<<4;
-		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k+1] = ((short*)dummy_tx_buffer)[2*l+1]<<4;
-	      }
-	    for (k=0;k<overflow;k++,l++)
-	      {
-		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k] = ((short*)dummy_tx_buffer)[2*l]<<4;
-		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k+1] = ((short*)dummy_tx_buffer)[2*l+1]<<4;
-	      }
-#endif
-	  
-	  }
-	} // generate_ul_signal == 1
-      } 
-    } // mode != PRACH
-    //  }// next_slot is even
-    //  else {  // next_slot is odd, do the PRACH here
- 
-#ifdef OPENAIR2 
-    if ((phy_vars_ue->UE_mode[eNB_id] == PRACH) && 
-	(phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_Config_enabled==1)) { 
-#else
-    if (1) {
-#endif
-      // check if we have PRACH opportunity
-
-      if (is_prach_subframe(phy_vars_ue->lte_frame_parms[eNB_id],phy_vars_ue->frame,next_slot>>1)) {
-	printf("UE %d: eNB %d, Frame %d, SF %d Clearing generate_prach\n",phy_vars_ue->Mod_id,eNB_id,phy_vars_ue->frame,next_slot>>1);
-	phy_vars_ue->generate_prach=0;
-#ifdef OPENAIR2
-	// ask L2 for RACH transport
-	if ((mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) && (mode != no_L2_connect) ){
-	  phy_vars_ue->prach_resources[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,
-									phy_vars_ue->frame,
-									eNB_id,
-									next_slot>>1);
-	}
-#endif
-
-	if (phy_vars_ue->prach_resources[eNB_id]!=NULL) {
-	  
-	  phy_vars_ue->generate_prach=1;
-	  phy_vars_ue->prach_cnt=0;
-	  //phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
-	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
-	  
-	  if (abstraction_flag == 0) {
-	    LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
-		  phy_vars_ue->Mod_id,
-		  phy_vars_ue->frame,
-		  next_slot>>1,
-		  phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
-		  phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-		  phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
-		  phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
-
-	    phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
-
-#ifdef EXMIMO
-	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm)/3;
-#else
-	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = AMP;
-#endif
-	    prach_power = generate_prach(phy_vars_ue,eNB_id,next_slot>>1,phy_vars_ue->frame);
-	    LOG_I(PHY,"[UE  %d][RAPROC] PRACH digital power %d dB (amp %d)\n",
-		  phy_vars_ue->Mod_id,
-		  dB_fixed(prach_power),
-		  phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp);
-	  }
-	  else {
-	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
-	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
-	    mac_xface->Msg1_transmitted(phy_vars_ue->Mod_id,
-					 phy_vars_ue->frame,
-					 eNB_id);
-	  }
-	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
-		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
-		phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
-		phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id),
-		get_PL(phy_vars_ue->Mod_id,eNB_id));
-
-	}
-      }
-      printf("[PHY][UE %p] frame %d subframe %d : generate_prach %d, prach_cnt %d\n",phy_vars_ue,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->generate_prach,phy_vars_ue->prach_cnt);
-
-      phy_vars_ue->prach_cnt++;
-      if (phy_vars_ue->prach_cnt==3)
-	phy_vars_ue->generate_prach=0;
-    } // mode is PRACH
-    else {
-      phy_vars_ue->generate_prach=0; 
-    }
-  } // next_slot is even
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 }
 
@@ -1282,7 +1100,6 @@ void mrpsch_procedures_ue(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
       for(antenna = 0; antenna < frame_parms->nb_antennas_tx; antenna++) {
 	slot_data_f = get_ue_slot_ref_f(phy_vars_ue, eNB_id, antenna, next_slot);
-
 	memset(slot_data_f, 0, slot_len*sizeof(mod_sym_t));
 #ifndef IFFT_FPGA
 	slot_data = get_ue_slot_ref(phy_vars_ue, eNB_id, antenna, next_slot);
@@ -1765,7 +1582,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       LOG_E(PHY,"[UE  %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell); 
       mac_xface->macphy_exit("");
       vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
-      return;
+      return -1;
     }
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
 					  PHY_vars_eNB_g[i]->num_ue_spec_dci[(last_slot>>1)&1],
@@ -2091,6 +1908,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
   //msg("UE_RX 1 last_slot %d \n",last_slot);
+
+  if(phy_vars_ue->UE_mode[eNB_id] == NOT_SYNCHED) {
+    if(last_slot == (LTE_SLOTS_PER_FRAME-2)) {
+      pbch_search(phy_vars_ue, eNB_id, abstraction_flag, normal_txrx);
+    }
+    return 0;
+  }
 
   if (phy_vars_ue->lte_frame_parms[eNB_id]->Ncp == 0) {  // normal prefix  
     pilot1 = 4;
@@ -2789,9 +2613,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   return (0);
 }
   
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id_t,u8 abstraction_flag,runmode_t mode) {
 
-#undef DEBUG_PHY_PROC
+  u8 eNB_id;
 
 #ifdef OPENAIR2
   UE_L2_STATE_t ret;
@@ -2805,49 +2629,86 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
   vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER, (last_slot + 1) % 20);
   vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER, phy_vars_ue->frame);
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
-  
-  if ((subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],next_slot>>1)==SF_UL)||
-      (phy_vars_ue->lte_frame_parms[eNB_id]->frame_type == 0)){
-    phy_procedures_UE_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
+
+#ifdef DEBUG_PHY_PROC
+  LOG_D(PHY, "[UE %d] Frame %d, slot %d: UE mode:", phy_vars_ue->Mod_id, phy_vars_ue->frame, next_slot);
+  for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+    printf(" [eNB%d]:%s", eNB_id,
+        (phy_vars_ue->UE_mode[eNB_id] == NOT_SYNCHED ? "NOT_SYNCHED" :
+        (phy_vars_ue->UE_mode[eNB_id] == PRACH ? "PRACH" :
+        (phy_vars_ue->UE_mode[eNB_id] == RA_RESPONSE ? "RA_RESPONSE" :
+        (phy_vars_ue->UE_mode[eNB_id] == PUSCH ? "PUSCH" :
+        (phy_vars_ue->UE_mode[eNB_id] == RESYNCH ? "RESYNCH" : "INVALID"))))));
   }
-  if ((subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],last_slot>>1)==SF_DL) ||
-      (phy_vars_ue->lte_frame_parms[eNB_id]->frame_type == 0)){ 
-     phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
-#ifdef EMOS
-    phy_procedures_emos_UE_RX(phy_vars_ue,last_slot,eNB_id);
+  printf("\n");
 #endif
+
+  if((next_slot%2) == 0) {
+    if((subframe_select(phy_vars_ue->lte_frame_parms[0], next_slot>>1) == SF_UL) ||
+        (phy_vars_ue->lte_frame_parms[0]->frame_type == 0)) {
+      clear_ue_tx_tti(phy_vars_ue, next_slot>>1, abstraction_flag);
+      phy_vars_ue->tx_power_dBm=-127;
+      for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+        phy_procedures_UE_TX(next_slot, phy_vars_ue, eNB_id, abstraction_flag, mode);
+      }
+      modulate_ue_tx_tti(phy_vars_ue, next_slot>>1, abstraction_flag);
+    }
   }
-  if ((subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],next_slot>>1)==SF_S) &&
-      ((next_slot&1)==1)) {
-     phy_procedures_UE_S_TX(next_slot,phy_vars_ue,eNB_id,abstraction_flag);
+  if((subframe_select(phy_vars_ue->lte_frame_parms[0], last_slot>>1) == SF_DL) ||
+      (phy_vars_ue->lte_frame_parms[0]->frame_type == 0)) {
+    for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+      phy_procedures_UE_RX(last_slot, phy_vars_ue, eNB_id, abstraction_flag, mode);
+#ifdef EMOS
+      phy_procedures_emos_UE_RX(phy_vars_ue, last_slot, eNB_id);
+#endif
+    }
   }
-  if ((subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],last_slot>>1)==SF_S) &&
-      ((last_slot&1)==0)) {
-    //phy_procedures_UE_S_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag);
-    phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag,mode);
+  if((next_slot%2) == 1) {
+    if(subframe_select(phy_vars_ue->lte_frame_parms[0], next_slot>>1) == SF_S) {
+      clear_ue_tx_tti(phy_vars_ue, next_slot>>1, abstraction_flag);
+      phy_vars_ue->tx_power_dBm=-127;
+      for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+        phy_procedures_UE_S_TX(next_slot, phy_vars_ue, eNB_id, abstraction_flag);
+      }
+      if(phy_vars_ue->UE_mode[0] == PUSCH) {
+#ifdef DEBUG_PHY_PROC
+        LOG_D(PHY,"[UE %d] Generating MRPSCH in slot %d\n", phy_vars_ue->Mod_id, next_slot);
+#endif
+        generate_mrpsch(phy_vars_ue, 0, AMP, next_slot, (phy_vars_ue->lte_frame_parms[0]->symbols_per_tti >> 1)-1);
+        phy_vars_ue->tx_power_dBm = phy_vars_ue->mrpsch_power_dbm;
+      }
+      modulate_ue_tx_tti(phy_vars_ue, next_slot>>1, abstraction_flag);
+    }
+  }
+  if((subframe_select(phy_vars_ue->lte_frame_parms[0], last_slot>>1) == SF_S) && ((last_slot&1)==0)) {
+    for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+      phy_procedures_UE_RX(last_slot, phy_vars_ue, eNB_id, abstraction_flag, mode);
+    }
   }
 
 #ifdef OPENAIR2
-  if (last_slot%2==0) {
-
-    ret = mac_xface->ue_scheduler(phy_vars_ue->Mod_id, 
-				  phy_vars_ue->frame,
-				  last_slot>>1, 
-				  subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],next_slot>>1),
-				  eNB_id);
-    if (ret == CONNECTION_LOST) {
-      LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",phy_vars_ue->Mod_id,
-	    phy_vars_ue->frame,next_slot>>1);
-      phy_vars_ue->UE_mode[eNB_id] = PRACH;
-      mac_xface->macphy_exit("Connection lost");
-    }
-    else if (ret == PHY_RESYNCH) {
-      LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, trying to resynch\n",
-	    phy_vars_ue->Mod_id,
-	    phy_vars_ue->frame,next_slot>>1);
-      phy_vars_ue->UE_mode[eNB_id] = RESYNCH;
-      mac_xface->macphy_exit("Connection lost");
-      //exit(-1);
+  if ((last_slot%2)==0) {
+    for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+      if(phy_vars_ue->UE_mode[eNB_id] != NOT_SYNCHED) {
+        ret = mac_xface->ue_scheduler(phy_vars_ue->Mod_id, 
+                                      phy_vars_ue->frame,
+                                      last_slot>>1, 
+                                      subframe_select(phy_vars_ue->lte_frame_parms[eNB_id],next_slot>>1),
+                                      eNB_id);
+        if (ret == CONNECTION_LOST) {
+          LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",phy_vars_ue->Mod_id,
+                phy_vars_ue->frame,next_slot>>1);
+          phy_vars_ue->UE_mode[eNB_id] = PRACH;
+          mac_xface->macphy_exit("Connection lost");
+        }
+        else if (ret == PHY_RESYNCH) {
+          LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, trying to resynch\n",
+                phy_vars_ue->Mod_id,
+                phy_vars_ue->frame,next_slot>>1);
+          phy_vars_ue->UE_mode[eNB_id] = RESYNCH;
+          mac_xface->macphy_exit("Connection lost");
+        }
+      }
     }
   }
 #endif
@@ -2857,3 +2718,128 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,0);
 }
+
+void clear_ue_tx_tti(PHY_VARS_UE* phy_vars_ue, u8 subframe, u8 abstraction_flag) {
+
+  LTE_DL_FRAME_PARMS* frame_parms = phy_vars_ue->lte_frame_parms[0];
+  u8 aa;
+
+  LOG_D(PHY, "[UE %d] Frame %d, subframe %d Clearing TX buffer\n", phy_vars_ue->Mod_id, phy_vars_ue->frame, subframe);
+
+  if(abstraction_flag == 0) {
+    for(aa = 0; aa < frame_parms->nb_antennas_tx; aa++) {
+      memset(get_ue_slot_ref_f(phy_vars_ue, 0, aa, subframe<<1), 0, (get_slot_length_f(frame_parms)<<1)*sizeof(mod_sym_t));
+      memset(get_ue_slot_ref(phy_vars_ue, 0, aa, subframe<<1), 0, frame_parms->samples_per_tti*sizeof(mod_sym_t));
+    }
+  }
+}
+
+void modulate_ue_tx_tti(PHY_VARS_UE* phy_vars_ue, u8 subframe, u8 abstraction_flag) { 
+
+  LTE_DL_FRAME_PARMS* frame_parms = phy_vars_ue->lte_frame_parms[0];
+  u8 aa;
+  u8 nsymb;
+  int k;
+  s32* src_ref;
+  s32* dst_ref;
+
+  LOG_D(PHY, "[UE %d] Frame %d, subframe %d Modulating TX buffer\n", phy_vars_ue->Mod_id, phy_vars_ue->frame, subframe);
+
+  if(abstraction_flag == 0) {
+    nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
+    for(aa = 0; aa < frame_parms->nb_antennas_tx; aa++) {
+#if defined(CBMIMO1) || defined(EXMIMO)
+#  error "implementation missing"
+#endif
+      if(frame_parms->Ncp == 1)
+        PHY_ofdm_mod(get_ue_slot_ref_f(phy_vars_ue, 0, aa, subframe<<1),
+            phy_vars_ue->lte_ue_buffer_vars->subframe_data,
+            frame_parms->log2_symbol_size, nsymb, frame_parms->nb_prefix_samples,
+            frame_parms->twiddle_ifft, frame_parms->rev, CYCLIC_PREFIX);
+      else
+        normal_prefix_mod(get_ue_slot_ref_f(phy_vars_ue, 0, aa, subframe<<1),
+            phy_vars_ue->lte_ue_buffer_vars->subframe_data, nsymb, frame_parms);
+
+      src_ref = phy_vars_ue->lte_ue_buffer_vars->subframe_data;
+      dst_ref = get_ue_slot_ref(phy_vars_ue, 0, aa, subframe<<1);
+      for(k = 0; k < frame_parms->samples_per_tti; k++) {
+        ((short*)dst_ref)[0] += ((short*)src_ref)[0];
+        ((short*)dst_ref)[1] += ((short*)src_ref)[1];
+        src_ref++;
+        dst_ref++;
+      }
+#ifndef OFDMA_ULSCH
+#  error "apply_7_5_kHz needed here"
+#endif
+    }
+  }
+}
+
+
+/*
+#ifdef CBMIMO1 //this is the CBMIMO1 case
+	ulsch_start = (frame_parms->samples_per_tti*subframe)>>1;
+#else
+#ifdef EXMIMO //this is the EXPRESS MIMO case
+	ulsch_start = (phy_vars_ue->rx_offset+subframe*frame_parms->samples_per_tti-openair_daq_vars.timing_advance-phy_vars_ue->timing_advance)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+#else //this is the normal case
+	ulsch_start = (frame_parms->samples_per_tti*subframe);
+#endif //else EXMIMO
+#endif //else CBMIMO1
+
+	  for (aa=0; aa<1; aa++) {
+	    if (frame_parms->Ncp == 1) 
+	      PHY_ofdm_mod(&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size],
+#ifdef EXMIMO
+			   dummy_tx_buffer, 
+#else
+			   &phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],
+#endif
+			   frame_parms->log2_symbol_size,
+			   nsymb,
+			   frame_parms->nb_prefix_samples,
+			   frame_parms->twiddle_ifft,
+			   frame_parms->rev,
+			   CYCLIC_PREFIX);
+	    else
+	      normal_prefix_mod(&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdataF[aa][subframe*nsymb*frame_parms->ofdm_symbol_size], 
+#ifdef EXMIMO
+				dummy_tx_buffer, 
+#else
+				&phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],
+#endif
+				nsymb,
+				phy_vars_ue->lte_frame_parms[eNB_id]);
+
+#ifndef OFDMA_ULSCH
+#ifdef EXMIMO
+	    // apply_7_5_kHz(phy_vars_ue,subframe<<1, eNB_id); 
+	    //apply_7_5_kHz(phy_vars_ue,1+(subframe<<1), eNB_id); 
+	    apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,0);
+	    apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,1);
+#else
+	    apply_7_5_kHz(phy_vars_ue,phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],0);
+	    apply_7_5_kHz(phy_vars_ue,phy_vars_ue->lte_ue_common_vars[eNB_id]->txdata[aa][ulsch_start],1);
+#endif
+#endif
+
+#ifdef EXMIMO
+	    overflow = ulsch_start - 9*frame_parms->samples_per_tti;
+	    //if ((next_slot==4) && (aa==0)) printf("ulsch_start %d, overflow %d\n",ulsch_start,overflow);
+	    for (k=ulsch_start,l=0; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++)
+	      {
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k] = ((short*)dummy_tx_buffer)[2*l]<<4;
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k+1] = ((short*)dummy_tx_buffer)[2*l+1]<<4;
+	      }
+	    for (k=0;k<overflow;k++,l++)
+	      {
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k] = ((short*)dummy_tx_buffer)[2*l]<<4;
+		((short*)phy_vars_ue->lte_ue_common_vars.txdata[aa])[2*k+1] = ((short*)dummy_tx_buffer)[2*l+1]<<4;
+	      }
+#endif
+	  
+	  }
+	} // generate_ul_signal == 1
+      } 
+*/
+

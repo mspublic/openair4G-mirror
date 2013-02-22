@@ -1193,6 +1193,7 @@ parameters are know, the routine calls some basic initialization routines (cell-
   
 */
 int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_index, u8 abstraction_flag, runmode_t mode); 
+int pbch_search(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmode_t mode);
 
 int mrpsch_sync(PHY_VARS_eNB *phy_vars_enb);
 int mrpsch_update_sync(PHY_VARS_eNB* phy_vars_enb, int search_range);

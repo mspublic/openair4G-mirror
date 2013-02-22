@@ -59,7 +59,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
   LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; 
 
 #ifdef DEBUG_INIT_SYNCH
-  LOG_D(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
+  LOG_D(PHY,"[UE %d] PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
       phy_vars_ue->rx_offset);
 #endif
 
@@ -88,7 +88,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
       (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
     phy_adjust_gain(phy_vars_ue,0);
 
-  LOG_I(PHY,"[UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
+  LOG_I(PHY,"[UE %d] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 	phy_vars_ue->Mod_id,
 	phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_rx==2) ? 3 : 0), 
 	phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
@@ -99,7 +99,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
 	phy_vars_ue->PHY_measurements.rx_power_avg[0],
 	phy_vars_ue->rx_total_gain_dB);
   
-  LOG_I(PHY,"[UE %d][initial sync] N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
+  LOG_I(PHY,"[UE %d] N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
 	phy_vars_ue->Mod_id,
 	phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 	phy_vars_ue->PHY_measurements.n0_power_dB[0],
@@ -163,13 +163,13 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
       frame_parms->N_RB_DL = 100;
       break;
     default:
-        LOG_E(PHY,"[UE%d] Initial sync: PBCH decoding: Unknown N_RB_DL\n",phy_vars_ue->Mod_id);
+        LOG_E(PHY,"[UE %d] PBCH decoding: Unknown N_RB_DL\n",phy_vars_ue->Mod_id);
       return -1;
       break;
     }
 #ifndef USER_MODE
     if (frame_parms->N_RB_DL != 25) {
-        LOG_E(PHY,"[UE%d] Initial sync: PBCH decoding: Detected NB_RB %d, but CBMIMO1 can only handle NB_RB=25\n",phy_vars_ue->Mod_id,frame_parms->N_RB_DL);
+        LOG_E(PHY,"[UE %d] PBCH decoding: Detected NB_RB %d, but CBMIMO1 can only handle NB_RB=25\n",phy_vars_ue->Mod_id,frame_parms->N_RB_DL);
       return -1;
     }
 #endif
@@ -191,7 +191,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
       frame_parms->phich_config_common.phich_resource = two;
       break;
     default:
-        LOG_E(PHY,"[UE%d] Initial sync: Unknown PHICH_DURATION\n",phy_vars_ue->Mod_id);
+        LOG_E(PHY,"[UE %d] PBCH decoding: Unknown PHICH_DURATION\n",phy_vars_ue->Mod_id);
       return -1;
       break;
     }
@@ -204,7 +204,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
     phy_vars_ue->frame ++;
 #endif
 #ifdef DEBUG_INIT_SYNCH
-    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
+    LOG_I(PHY,"[UE %d] PBCH decoded sucessfully: mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	phy_vars_ue->Mod_id,
 	frame_parms->mode1_flag,
 	pbch_tx_ant,
@@ -230,7 +230,13 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
   u16 Nid_cell_fdd_ncp=0,Nid_cell_fdd_ecp=0,Nid_cell_tdd_ncp=0,Nid_cell_tdd_ecp=0;
   LTE_DL_FRAME_PARMS *frame_parms  = phy_vars_ue->lte_frame_parms[eNB_id] ;
   u8 i;
+  int k;
   int ret=-1;
+
+  if(eNB_id != 0) {
+    LOG_E(PHY,"[UE%d] Initial sync : called with eNB_id = %d\n", phy_vars_ue->Mod_id, eNB_id);
+    return -1;
+  }
 
   if (abstraction_flag == 0) {
     LOG_I(PHY,"**************************************************************\n");
@@ -400,8 +406,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 #endif
 #ifdef OPENAIR2
       LOG_I(PHY,"[PHY][UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
-    //mac_resynch();
-    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+      //mac_resynch();
+      mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif //OPENAIR2
       
       generate_pcfich_reg_mapping(frame_parms);
@@ -409,9 +415,19 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
       //    init_prach625(frame_parms);
       
       phy_vars_ue->UE_mode[eNB_id] = PRACH;
-    //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
+      //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
       phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
       //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
+
+      // Initialize frame parameters for the other eNBs:
+      for(k = 1; k < phy_vars_ue->n_connected_eNB; k++) {
+        phy_vars_ue->lte_frame_parms[k]->Ncp = frame_parms->Ncp;
+        phy_vars_ue->lte_frame_parms[k]->frame_type = frame_parms->frame_type;
+        phy_vars_ue->lte_frame_parms[k]->Nid_cell = frame_parms->Nid_cell+1;
+        phy_vars_ue->lte_frame_parms[k]->nushift = phy_vars_ue->lte_frame_parms[k]->Nid_cell%6;
+        init_frame_parms(phy_vars_ue->lte_frame_parms[k], 1);
+        //lte_gold(phy_vars_ue->lte_frame_parms[k], phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);
+      }
     }
     else {
       //#ifdef DEBUG_INIT_SYNC
@@ -476,3 +492,66 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 #endif  
   return ret;
 }
+
+int pbch_search(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmode_t mode) {
+
+  LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; 
+  int ret;
+
+  if(abstraction_flag == 0) {
+    ret = pbch_detection(phy_vars_ue, eNB_id, mode);
+    if (ret==0) {
+      LOG_I(PHY, "[UE %d] pbch_search : PBCH ok from eNB %d\n", phy_vars_ue->Mod_id, eNB_id);
+
+      generate_pcfich_reg_mapping(frame_parms);
+      generate_phich_reg_mapping(frame_parms);
+      
+      phy_vars_ue->UE_mode[eNB_id] = PRACH;
+      LOG_I(PHY, "[UE %d] changed state to PRACH for eNB %d\n", phy_vars_ue->Mod_id, eNB_id);
+
+      phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
+    }
+    else {
+      phy_vars_ue->UE_mode[eNB_id] = NOT_SYNCHED;
+      phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_last=phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors; // may not be required
+      phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors++;
+      phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq++;
+      
+    }
+  }//abstraction_flag =0
+#ifdef PHY_ABSTRACTION
+  else {
+    // rx_sss operation
+    // ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
+    frame_parms->Nid_cell= ((oai_emulation.info.Nid_cell/3)*3)+(oai_emulation.info.Nid_cell+ eNB_id) %3; //PHY_VARS_eNB_g[eNB_id]->lte_frame_parms.Nid_cell;
+    frame_parms->nushift=frame_parms->Nid_cell%6;// PHY_VARS_eNB_g[eNB_id]->lte_frame_parms.nushift;
+    
+    //pbch detection
+    frame_parms->nb_antennas_tx = (oai_emulation.info.transmission_mode == 1) ? 1 : 2;
+    // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
+    frame_parms->mode1_flag = (oai_emulation.info.transmission_mode == 1) ? 1 : 0;
+    frame_parms->N_RB_DL= oai_emulation.info.N_RB_DL;
+    frame_parms->phich_config_common.phich_duration=normal;
+    frame_parms->phich_config_common.phich_resource=oneSixth;
+    phy_vars_ue->frame =oai_emulation.info.frame; // PHY_vars_eNB_g[eNB_id]->frame;
+    
+    init_frame_parms(frame_parms,1);
+
+    phy_vars_ue->UE_mode[eNB_id] = PRACH;
+    phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
+    ret=1;
+    LOG_I(PHY,"[UE%d] initial_sync: pbch decoded sucessfully, change mode to PRACH for eNB %d %p %p: nid_cell %d %d mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
+	phy_vars_ue->Mod_id,
+	eNB_id,frame_parms,phy_vars_ue->lte_frame_parms[0],
+	frame_parms->Nid_cell, phy_vars_ue->lte_frame_parms[0]->Nid_cell,
+	frame_parms->mode1_flag,
+	frame_parms->nb_antennas_tx,
+	phy_vars_ue->frame,
+	frame_parms->N_RB_DL,
+	frame_parms->phich_config_common.phich_duration,
+	frame_parms->phich_config_common.phich_resource);
+  }
+#endif  
+  return ret;
+}
+

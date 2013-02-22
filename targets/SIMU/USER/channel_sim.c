@@ -234,7 +234,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	}
 
  // calculate the SNR for the attached eNB
-      init_snr(eNB2UE[att_eNB_id][UE_id], enb_data[att_eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id]->sinr_dB, &PHY_vars_UE_g[UE_id]->N0, PHY_vars_UE_g[UE_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[0][0]->pmi_alloc);
+      init_snr(eNB2UE[att_eNB_id][UE_id], enb_data[att_eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id]->sinr_dB[att_eNB_id], &PHY_vars_UE_g[UE_id]->N0, PHY_vars_UE_g[UE_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[0][0]->pmi_alloc);
 
 #ifdef LOLAMESH
       // calculate sinr here
@@ -293,11 +293,12 @@ void do_DL_sig(double **r_re0,double **r_im0,
 				//				enb_data[eNB_id]->tx_power_dBm); 
 				PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
 #ifdef DEBUG_SIM
-	LOG_D(OCM,"eNB %d: tx_pwr %f dBm, for slot %d (subframe %d)\n",
-	       eNB_id,
-	       10*log10(tx_pwr),
-	       next_slot,
-	       next_slot>>1);
+	LOG_D(OCM, "[eNB%d] ref power %d, tx_pwr %f dBm, for slot %d (subframe %d)\n",
+	    eNB_id,
+	    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower,
+	    10*log10(tx_pwr),
+	    next_slot,
+	    next_slot>>1);
 #endif
 	//eNB2UE[eNB_id][UE_id]->path_loss_dB = 0;
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
@@ -380,9 +381,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 #ifdef DEBUG_SIM    
       printf("[SIM][DL] UE %d : ADC in %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif    
-      // fixme, this need to be done for num connected enb per ue
-      //      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[eNB_id]->rxdata; 
-      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[0]->rxdata; 
+      rxdata = PHY_vars_UE_g[UE_id]->lte_ue_buffer_vars->rxdata; 
 
       slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
       
@@ -452,9 +451,9 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       }
       
       // Compute RX signal for eNB = eNB_id
-	for (UE_id=0;UE_id<NB_UE_INST;UE_id++){
+      for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
  
-	txdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars[eNB_id]->txdata; 
+	txdata = PHY_vars_UE_g[UE_id]->lte_ue_buffer_vars->txdata; 
 	frame_parms = PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id];
 	slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 	slot_offset_meas = ((next_slot&1)==0) ? slot_offset : (slot_offset-(frame_parms->samples_per_tti>>1));
@@ -468,13 +467,17 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
 	if (((double)PHY_vars_UE_g[UE_id]->tx_power_dBm + 	
 	     UE2eNB[UE_id][eNB_id]->path_loss_dB) <= -125.0) {
-	  
-	  // don't simulate a UE that is too weak
+#ifdef DEBUG_SIM
+	  LOG_D(OCM, "[SIM][UL] UE %d: tx_pwr %d dBm for slot %d (skipped)\n", UE_id,
+	      PHY_vars_UE_g[UE_id]->tx_power_dBm, next_slot);
+#endif
 	}
 	else {
 	  
+#ifdef DEBUG_SIM
 	  printf("[SIM][UL] UE %d tx_pwr %d dBm for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",
 	      UE_id, PHY_vars_UE_g[UE_id]->tx_power_dBm, next_slot, next_slot>>1, slot_offset, slot_offset_meas);
+#endif
 
 	  tx_pwr = dac_fixed_gain(s_re,
 				  s_im,
