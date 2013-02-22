@@ -43,6 +43,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 		    u8 abstraction_flag, u8 nb_connected_eNB); 
 
 
+int phy_init_lte_ue_buffer(PHY_VARS_UE *phy_vars_ue, u8 abstraction_flag);
 int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
 		    u8 abstraction_flag, u8 eNB_index); 
 

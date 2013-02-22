@@ -97,13 +97,13 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 			 u8 abstraction_flag,
 			 u8 transmission_mode) {
 
-  int i,j;
+  int j;
   int eNB_id =0;
+  int vlink_id;
   PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
   LOG_D(PHY,"[UE %d] PHY_vars_UE %p\n", UE_id,PHY_vars_UE);
   memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
   LTE_DL_FRAME_PARMS **lte_frame_parms = PHY_vars_UE->lte_frame_parms;
-  // LTE_UE_COMMON **lte_ue_common_vars = PHY_vars_UE->lte_ue_common_vars; 
   PHY_vars_UE->Mod_id=UE_id; 
   PHY_vars_UE->n_connected_eNB = nb_connected_eNB;    
   
@@ -111,7 +111,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
     lte_frame_parms[eNB_id] = (LTE_DL_FRAME_PARMS*)malloc16(sizeof(LTE_DL_FRAME_PARMS));
     //memcpy(&lte_frame_parms[eNB_id],&frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-     lte_frame_parms[eNB_id]->frame_type        = frame_parms->frame_type;
+    lte_frame_parms[eNB_id]->frame_type        = frame_parms->frame_type;
     lte_frame_parms[eNB_id]->tdd_config         = frame_parms->tdd_config;
     lte_frame_parms[eNB_id]->tdd_config_S       = frame_parms->tdd_config_S;
     lte_frame_parms[eNB_id]->N_RB_DL            = frame_parms->N_RB_DL;
@@ -134,41 +134,57 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
     phy_init_lte_top(lte_frame_parms[eNB_id]);
 
   }
-  
-  for(eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++){ 
+
+  PHY_vars_UE->lte_ue_buffer_vars = (LTE_UE_BUFFER*)malloc16(sizeof(LTE_UE_BUFFER));
+  phy_init_lte_ue_buffer(PHY_vars_UE, abstraction_flag);
+  for(eNB_id = 0; eNB_id < nb_connected_eNB; eNB_id++) {
     PHY_vars_UE->lte_ue_common_vars[eNB_id] =(LTE_UE_COMMON*)malloc16(sizeof(LTE_UE_COMMON));
     LOG_D(PHY,"initial_sync enb %d ue common vars %p\n",eNB_id, PHY_vars_UE->lte_ue_common_vars[eNB_id]);
-    phy_init_lte_ue_common(PHY_vars_UE,abstraction_flag, eNB_id); 
+    phy_init_lte_ue_common(PHY_vars_UE, abstraction_flag, eNB_id); 
   }
 
   phy_init_lte_ue(PHY_vars_UE,abstraction_flag, nb_connected_eNB); 
   
-  //for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) { // NUMBER_OF_CONNECTED_eNB_MAX is a definition
-  for (i=0;i<NB_eNB_INST;i++) { 
-  //for (i=0;i<nb_connected_eNB;i++) {
-    for (j=0;j<2;j++) {
-      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
-      if (!PHY_vars_UE->dlsch_ue[i][j]) {
+  for (eNB_id = 0; eNB_id < nb_connected_eNB; eNB_id++) {
+    for (j=0; j<2; j++) {
+      PHY_vars_UE->dlsch_ue[eNB_id][j] = new_ue_dlsch(1,8,abstraction_flag);
+      if (!PHY_vars_UE->dlsch_ue[eNB_id][j]) {
 	LOG_E(PHY,"Can't get ue dlsch structures\n");
 	exit(-1);
       }
       else
-	LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch_ue[i][j]);//navid
+	LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,eNB_id,PHY_vars_UE->dlsch_ue[eNB_id][j]);//navid
     }
 
-    
-    
-    PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
-    if (!PHY_vars_UE->ulsch_ue[i]) {
+    PHY_vars_UE->ulsch_ue[eNB_id]  = new_ue_ulsch(8,abstraction_flag);
+    if (!PHY_vars_UE->ulsch_ue[eNB_id]) {
       LOG_E(PHY,"Can't get ue ulsch structures\n");
       exit(-1);
-      }
+    }
     
-    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
-    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
+    PHY_vars_UE->dlsch_ue_SI[eNB_id]  = new_ue_dlsch(1,1,abstraction_flag);
+    PHY_vars_UE->dlsch_ue_ra[eNB_id]  = new_ue_dlsch(1,1,abstraction_flag);
         
-    PHY_vars_UE->transmission_mode[i] = transmission_mode;
-      LOG_I(OCM," navid tm is %d for enb %d \n", PHY_vars_UE->transmission_mode[i] , i);
+    PHY_vars_UE->transmission_mode[eNB_id] = transmission_mode;
+    LOG_I(OCM," navid tm is %d for enb %d \n", PHY_vars_UE->transmission_mode[eNB_id] , eNB_id);
+  }
+
+  for(vlink_id = 0; vlink_id < MAX_VLINK_PER_MR; vlink_id++) {
+    for(j = 0; j < 2; j++) {
+      PHY_vars_UE->dlsch_ue_co[vlink_id][j] = new_ue_dlsch(1, 8, abstraction_flag);
+      if(!PHY_vars_UE->dlsch_ue_co[vlink_id][j]) {
+	LOG_E(PHY, "Can't get ue dlsch_co structure\n");
+	exit(-1);
+      }
+      else
+	LOG_D(PHY, "dlsch_ue_co[%d][%d] => %p\n", UE_id, vlink_id, PHY_vars_UE->dlsch_ue[vlink_id][j]);
+    }
+
+    PHY_vars_UE->ulsch_ue_co[vlink_id] = new_ue_ulsch(8, abstraction_flag);
+    if(!PHY_vars_UE->ulsch_ue_co[vlink_id]) {
+      LOG_E(PHY, "Can't get ue ulsch_co structure\n");
+      exit(-1);
+    }
   }
 
   return (PHY_vars_UE);
@@ -227,47 +243,6 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 
     PHY_vars_eNB_g[eNB_id] = init_lte_eNB(*frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
   }
-
-
-
-  // init all UE vars
-  /*
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-
-
-    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), *frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-    // Do this until SSS detection is finished
-    if (NB_eNB_INST>0) {
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.Nid_cell;
-      PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST]->lte_frame_parms.nushift;
-    }
-
-    phy_init_lte_ue(PHY_vars_UE_g[UE_id],abstraction_flag);
-
-    for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
-      for (j=0;j<2;j++) {
-	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
-	if (!PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]) {
-	  msg("Can't get ue dlsch structures\n");
-	  exit(-1);
-	}
-	else
-	  msg("dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]);//navid
-      }
-      
-      
-      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
-      if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
-	msg("Can't get ue ulsch structures\n");
-	exit(-1);
-      }
-      
-      PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
-      PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
-
-      PHY_vars_UE_g[UE_id]->transmission_mode[i] = transmission_mode;
-    }
-*/
 
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){  // begin init_lte_UE for all UEs

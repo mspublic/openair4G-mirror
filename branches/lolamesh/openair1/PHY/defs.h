@@ -297,6 +297,7 @@ typedef struct
   u8 n_connected_eNB;
   PHY_MEASUREMENTS  PHY_measurements; 
   LTE_DL_FRAME_PARMS  *lte_frame_parms[NUMBER_OF_CONNECTED_eNB_MAX]; 
+  LTE_UE_BUFFER    *lte_ue_buffer_vars;
   LTE_UE_COMMON    *lte_ue_common_vars[NUMBER_OF_CONNECTED_eNB_MAX]; 
 
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
