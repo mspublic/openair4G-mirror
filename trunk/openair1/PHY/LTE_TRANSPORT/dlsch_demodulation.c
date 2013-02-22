@@ -261,9 +261,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     //	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
         
     
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 2
-      + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
-      + log2_approx(frame_parms->nb_antennas_rx-1);
+    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);// + 2
+        // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
+        //      + log2_approx(frame_parms->nb_antennas_rx-1);
 
     if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
 	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
@@ -441,18 +441,39 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   //  printf("Combining");
   // Single-layer transmission formats
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
-    if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||
-	((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode >= UNIFORM_PRECODING11) &&
-	 (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode <= PUSCH_PRECODING0)))
-      {}//dlsch_siso(frame_parms,lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,symbol,nb_rb);
-    else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ALAMOUTI)
-      dlsch_alamouti(frame_parms,lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,symbol,nb_rb);
-    else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ANTCYCLING)
-      dlsch_antcyc(frame_parms,lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,symbol,nb_rb);
-    else {
-      msg("dlsch_rx: Unknown MIMO mode\n");
-      return (-1);
-    }
+      
+      if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||
+          ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode >= UNIFORM_PRECODING11) &&
+           (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode <= PUSCH_PRECODING0))) {
+          /*
+          dlsch_siso(frame_parms,
+                     lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                     lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                     symbol,
+                     nb_rb);
+          */
+      } else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ALAMOUTI) {
+          
+          dlsch_alamouti(frame_parms,
+                         lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                         lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                         lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+                         symbol,
+                         nb_rb);
+          
+      } else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ANTCYCLING) {
+          
+          dlsch_antcyc(frame_parms,
+                       lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                       lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                       lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+                       symbol,
+                       nb_rb);
+          
+      } else {
+          msg("dlsch_rx: Unknown MIMO mode\n");
+          return (-1);
+      }
 
     //    printf("LLR");
 
@@ -2610,8 +2631,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	      //		     *(short *)&dl_ch0_ext[j-1],*(1+(short*)&dl_ch0_ext[j-1]),
 	      //		     *(short *)&dl_ch1_ext[j-1],*(1+(short*)&dl_ch1_ext[j-1]));
 	    }
-
-	    //SSS	  }
+      }
 #ifndef NEW_FFT
 	    rxF       = &rxdataF[aarx][symbol*(frame_parms->ofdm_symbol_size)*2];
 #else
@@ -2635,9 +2655,6 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    dl_ch1_ext+=8;
 	    rxF_ext+=8; 
 	  }
-	
-	
-	}
       }
       else {
 #ifndef NEW_FFT
