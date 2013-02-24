@@ -130,15 +130,17 @@
 #include "impl_defs_top.h"
 #include "impl_defs_lte.h"
 
+#include "PHY/TOOLS/time_meas.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
+
 
 #ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "PHY/LTE_TRANSPORT/defs.h"
-#include "PHY/TOOLS/time_meas.h"
+
 
 #define NUM_DCI_MAX 32
 
@@ -266,7 +268,7 @@ typedef struct
   unsigned int total_dlsch_bitrate;
   unsigned int total_transmitted_bits;
   unsigned int total_system_throughput;
-
+ 
   time_stats_t ofdm_mod_stats;
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
@@ -283,7 +285,15 @@ typedef struct
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_turbo_decoding_stats;
   time_stats_t ulsch_deinterleaving_stats;
+  time_stats_t ulsch_demultiplexing_stats;
   time_stats_t ulsch_llr_stats;
+  time_stats_t ulsch_tc_init_stats;
+  time_stats_t ulsch_tc_alpha_stats;
+  time_stats_t ulsch_tc_beta_stats;
+  time_stats_t ulsch_tc_gamma_stats;
+  time_stats_t ulsch_tc_ext_stats;
+  time_stats_t ulsch_tc_intl1_stats;
+  time_stats_t ulsch_tc_intl2_stats;
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
@@ -427,9 +437,11 @@ typedef struct
   time_stats_t ofdm_mod_stats;
   time_stats_t ulsch_encoding_stats;
   time_stats_t ulsch_modulation_stats;
+  time_stats_t ulsch_segmentation_stats;
   time_stats_t ulsch_rate_matching_stats;
   time_stats_t ulsch_turbo_encoding_stats;
   time_stats_t ulsch_interleaving_stats;
+  time_stats_t ulsch_multiplexing_stats;
 
   time_stats_t ofdm_demod_stats;
   time_stats_t rx_dft_stats;
@@ -441,6 +453,13 @@ typedef struct
   time_stats_t dlsch_turbo_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
   time_stats_t dlsch_llr_stats;
+  time_stats_t dlsch_tc_init_stats;
+  time_stats_t dlsch_tc_alpha_stats;
+  time_stats_t dlsch_tc_beta_stats;
+  time_stats_t dlsch_tc_gamma_stats;
+  time_stats_t dlsch_tc_ext_stats;
+  time_stats_t dlsch_tc_intl1_stats;
+  time_stats_t dlsch_tc_intl2_stats;
 } PHY_VARS_UE;
 
 

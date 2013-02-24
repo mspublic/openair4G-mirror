@@ -761,6 +761,7 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     turbo-decoding algorithm for each segment and stops after either after unsuccesful decoding of at least
     one segment or correct decoding of all segments.  Only the segment CRCs are check for the moment, the
     overall CRC is ignored.  Finally transport block reassembly is performed.
+    @param phy_vars_ue Pointer to ue variables
     @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
     @param lte_frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
@@ -769,15 +770,13 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
     @returns 0 on success, 1 on unsuccessful decoding
 */
-u32 dlsch_decoding(s16 *dlsch_llr,
+u32 dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
+		   s16 *dlsch_llr,
 		   LTE_DL_FRAME_PARMS *lte_frame_parms,
 		   LTE_UE_DLSCH_t *dlsch,
 		   u8 subframe,
 		   u8 num_pdcch_symbols,
-		   u8 is_crnti,
-		   time_stats_t *dlsch_rate_unmatching_stats,
-		   time_stats_t *dlsch_turbo_decoding_stats,
-		   time_stats_t *dlsch_deinterleaving_stats);
+		   u8 is_crnti);
 
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
@@ -1212,19 +1211,13 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param tmode Transmission mode (1-7)
   @param control_only_flag Generate PUSCH with control information only
   @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
-  @param rm_stats
-  @param te_stats
-  @param i_stats
 */
 u32 ulsch_encoding(u8 *a,
 		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
 		   u8 tmode,
 		   u8 control_only_flag,
-		   u8 Nbundled,
-		   time_stats_t *rm_stats,
-		   time_stats_t *te_stats,
-		   time_stats_t *i_stats);
+		   u8 Nbundled);
 
 /*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212 for emulation

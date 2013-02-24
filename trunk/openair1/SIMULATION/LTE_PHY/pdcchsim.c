@@ -900,7 +900,7 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
 	if (n_frames==1) {
 	  write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][0],12*PHY_vars_UE->lte_frame_parms.N_RB_DL*120,1,4);
-	  if (nb_tx > 1)
+	  if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB > 1)
 	    write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][1],12*PHY_vars_UE->lte_frame_parms.N_RB_DL*120,1,4);
 	}
 
@@ -944,7 +944,8 @@ int main(int argc, char **argv) {
 #else
 	if (n_frames==1)
 	  write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][0],2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-	//write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB > 1)
+	  write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][1],2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	  
 	tx_lev = 0;
 	  

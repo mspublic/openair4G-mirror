@@ -2441,15 +2441,13 @@ int main(int argc, char **argv) {
 	    PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i] = (short)quantize(100,PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[0][i],4);
 	  */
 	  start_meas(&PHY_vars_UE->dlsch_decoding_stats);
-	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],		 
+	  ret = dlsch_decoding(PHY_vars_UE,
+			       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],		 
 			       &PHY_vars_UE->lte_frame_parms,
 			       PHY_vars_UE->dlsch_ue[0][0],
 			       subframe,
 			       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-			       1,
-			       &PHY_vars_UE->dlsch_rate_unmatching_stats,
-			       &PHY_vars_UE->dlsch_turbo_decoding_stats,
-			       &PHY_vars_UE->dlsch_deinterleaving_stats);
+			       1);
 	  stop_meas(&PHY_vars_UE->dlsch_decoding_stats);
  
 #ifdef XFORMS

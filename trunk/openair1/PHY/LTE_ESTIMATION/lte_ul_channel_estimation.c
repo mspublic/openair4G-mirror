@@ -45,7 +45,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   s16 *ru2 = ru_90;
   s16 current_phase1,current_phase2;
   u16 N_rb_alloc = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
-  u16 aa,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
+  u16 aa,Msc_RS,Msc_RS_idx;
   u16 * Msc_idx_ptr;
   int k,pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
   s16 alpha, beta;
@@ -62,6 +62,8 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   u32 u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+(subframe<<1)];
   u32 v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[Ns+(subframe<<1)];
   s32 tmp_estimates[N_rb_alloc*12];
+
+  int symbol_offset,i,j;
 
   //debug_msg("lte_ul_channel_estimation: cyclic shift %d\n",cyclicShift);
 
