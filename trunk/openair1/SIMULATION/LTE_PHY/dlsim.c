@@ -1468,6 +1468,13 @@ int main(int argc, char **argv) {
       reset_meas(&PHY_vars_UE->dlsch_turbo_decoding_stats);
       reset_meas(&PHY_vars_UE->dlsch_deinterleaving_stats);
       reset_meas(&PHY_vars_UE->dlsch_rate_unmatching_stats);
+      reset_meas(&PHY_vars_UE->dlsch_tc_init_stats);    
+      reset_meas(&PHY_vars_UE->dlsch_tc_alpha_stats);
+      reset_meas(&PHY_vars_UE->dlsch_tc_beta_stats);
+      reset_meas(&PHY_vars_UE->dlsch_tc_gamma_stats);
+      reset_meas(&PHY_vars_UE->dlsch_tc_ext_stats);
+      reset_meas(&PHY_vars_UE->dlsch_tc_intl1_stats);
+      reset_meas(&PHY_vars_UE->dlsch_tc_intl2_stats);
       for (trials = 0;trials<n_frames;trials++) {
 	//  printf("Trial %d\n",trials);
 	fflush(stdout);
@@ -2604,8 +2611,37 @@ int main(int argc, char **argv) {
 	     PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS/1000.0,(double)avg_iter/iter_trials,
 	     (double)PHY_vars_UE->dlsch_decoding_stats.diff/PHY_vars_UE->dlsch_decoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_decoding_stats.trials, 
 	     (double)PHY_vars_UE->dlsch_decoding_stats.max/cpu_freq_GHz/1000.0);
-      printf("|__ DLSCH Turbo Decoding                                :%f us (%d trials)\n",(PHY_vars_UE->dlsch_turbo_decoding_stats.trials/PHY_vars_UE->dlsch_decoding_stats.trials)*(double)PHY_vars_UE->dlsch_turbo_decoding_stats.diff/PHY_vars_UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_turbo_decoding_stats.trials);
-      printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",(PHY_vars_UE->dlsch_rate_unmatching_stats.trials/PHY_vars_UE->dlsch_decoding_stats.trials)*(double)PHY_vars_UE->dlsch_rate_unmatching_stats.diff/PHY_vars_UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_rate_unmatching_stats.trials);
+      printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",(double)PHY_vars_UE->dlsch_rate_unmatching_stats.diff/PHY_vars_UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_rate_unmatching_stats.trials);
+      printf("|__ DLSCH Turbo Decoding(%d bits)                       :%f us (%d trials)\n",PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Cminus ? PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Kminus : PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Kplus,(double)PHY_vars_UE->dlsch_turbo_decoding_stats.diff/PHY_vars_UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_UE->dlsch_turbo_decoding_stats.trials);
+      printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_init_stats.diff/PHY_vars_UE->dlsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_init_stats.diff/PHY_vars_UE->dlsch_tc_init_stats.trials/((double)avg_iter/iter_trials),
+	     PHY_vars_UE->dlsch_tc_init_stats.trials);
+      printf("    |__ alpha                                           %f us (cycles/iter %f, %d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_alpha_stats.diff/PHY_vars_UE->dlsch_tc_alpha_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_alpha_stats.diff/PHY_vars_UE->dlsch_tc_alpha_stats.trials*2,
+	     PHY_vars_UE->dlsch_tc_alpha_stats.trials);
+      printf("    |__ beta                                            %f us (cycles/iter %f,%d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_beta_stats.diff/PHY_vars_UE->dlsch_tc_beta_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_beta_stats.diff/PHY_vars_UE->dlsch_tc_beta_stats.trials*2,
+	     PHY_vars_UE->dlsch_tc_beta_stats.trials);
+      printf("    |__ gamma                                           %f us (cycles/iter %f,%d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_gamma_stats.diff/PHY_vars_UE->dlsch_tc_gamma_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_gamma_stats.diff/PHY_vars_UE->dlsch_tc_gamma_stats.trials*2,
+	     PHY_vars_UE->dlsch_tc_gamma_stats.trials);
+      printf("    |__ ext                                             %f us (cycles/iter %f,%d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_ext_stats.diff/PHY_vars_UE->dlsch_tc_ext_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_ext_stats.diff/PHY_vars_UE->dlsch_tc_ext_stats.trials*2,
+	     PHY_vars_UE->dlsch_tc_ext_stats.trials);
+      printf("    |__ intl1                                           %f us (cycles/iter %f,%d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_intl1_stats.diff/PHY_vars_UE->dlsch_tc_intl1_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_intl1_stats.diff/PHY_vars_UE->dlsch_tc_intl1_stats.trials,
+	     PHY_vars_UE->dlsch_tc_intl1_stats.trials);
+      printf("    |__ intl2+HD+CRC                                    %f us (cycles/iter %f,%d trials)\n",
+	     (double)PHY_vars_UE->dlsch_tc_intl2_stats.diff/PHY_vars_UE->dlsch_tc_intl2_stats.trials/cpu_freq_GHz/1000.0,
+	     (double)PHY_vars_UE->dlsch_tc_intl2_stats.diff/PHY_vars_UE->dlsch_tc_intl2_stats.trials,
+	     PHY_vars_UE->dlsch_tc_intl2_stats.trials);
+
 	     
 
 
