@@ -136,7 +136,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u8 extended_prefix_flag, 
 		   u8 N_RB_DL,
 		   u16 Nid_cell,
-		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
+		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag,
+		   int nb_antennas_rx) {
 
   u8 eNB_id,UE_id;
 
@@ -157,7 +158,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 2;
+  (*frame_parms)->nb_antennas_rx     = nb_antennas_rx;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
   init_frame_parms(*frame_parms,1);
