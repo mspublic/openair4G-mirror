@@ -54,6 +54,10 @@
 #include "PHY_INTERFACE/extern.h"
 #endif
 
+#ifdef OMP
+#include <omp.h>
+#endif
+
 #ifdef PHY_ABSTRACTION
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
@@ -1037,7 +1041,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   // Do PUSCH Decoding
 
   //  stop_meas(&phy_vars_eNB->ulsch_demultiplexing_stats);
-  
+
+
   r_offset = 0;
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
     
@@ -1118,60 +1123,70 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     msg("\n");
 #endif
     */
+  }
 
+#ifdef OMP
+#pragma omp parallel private(r) shared(ulsch,harq_pid,crc_type,Kr,f1f2mat_old,phy_vars_eNB)
+  {
+#pragma omp for  
+#endif
+    for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
     //    msg("Clearing c, %p\n",ulsch->harq_processes[harq_pid]->c[r]);
     //    memset(ulsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
     //    msg("done\n");
-    if (ulsch->harq_processes[harq_pid]->C == 1) 
-      crc_type = CRC24_A;
-    else 
-      crc_type = CRC24_B;
-
-    /*            
-    msg("decoder input(segment %d)\n",r);
-    for (i=0;i<(3*8*Kr_bytes)+12;i++)
-      if ((ulsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
-	  (ulsch->harq_processes[harq_pid]->d[r][96+i] < -8))
-	msg("%d : %d\n",i,ulsch->harq_processes[harq_pid]->d[r][96+i]);
-    msg("\n");
-    */
-
-    start_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
-
-    ret = phy_threegpplte_turbo_decoder(&ulsch->harq_processes[harq_pid]->d[r][96],
-					ulsch->harq_processes[harq_pid]->c[r],
-					Kr,
-					f1f2mat_old[iind*2],   
-					f1f2mat_old[(iind*2)+1], 
-					MAX_TURBO_ITERATIONS,
-					crc_type,
-					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					&phy_vars_eNB->ulsch_tc_init_stats,
-					&phy_vars_eNB->ulsch_tc_alpha_stats,
-					&phy_vars_eNB->ulsch_tc_beta_stats,
-					&phy_vars_eNB->ulsch_tc_gamma_stats,
-					&phy_vars_eNB->ulsch_tc_ext_stats,
-					&phy_vars_eNB->ulsch_tc_intl1_stats,
-					&phy_vars_eNB->ulsch_tc_intl2_stats);
-
-    stop_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
-    
-    if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-#ifdef DEBUG_ULSCH_DECODING    
-      msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
-#endif
-      /*
-      for (i=0;i<Kr_bytes;i++)
-	printf("segment %d : byte %d => %d\n",r,i,ulsch->harq_processes[harq_pid]->c[r][i]);
-      return(ret);
+      if (ulsch->harq_processes[harq_pid]->C == 1) 
+	crc_type = CRC24_A;
+      else 
+	crc_type = CRC24_B;
+      
+      /*            
+		    msg("decoder input(segment %d)\n",r);
+		    for (i=0;i<(3*8*Kr_bytes)+12;i++)
+		    if ((ulsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
+		    (ulsch->harq_processes[harq_pid]->d[r][96+i] < -8))
+		    msg("%d : %d\n",i,ulsch->harq_processes[harq_pid]->d[r][96+i]);
+		    msg("\n");
       */
-    }
+      
+      start_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
+      
+      ret = phy_threegpplte_turbo_decoder(&ulsch->harq_processes[harq_pid]->d[r][96],
+					  ulsch->harq_processes[harq_pid]->c[r],
+					  Kr,
+					  f1f2mat_old[iind*2],   
+					  f1f2mat_old[(iind*2)+1], 
+					  MAX_TURBO_ITERATIONS,
+					  crc_type,
+					  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
+					  &phy_vars_eNB->ulsch_tc_init_stats,
+					  &phy_vars_eNB->ulsch_tc_alpha_stats,
+					  &phy_vars_eNB->ulsch_tc_beta_stats,
+					  &phy_vars_eNB->ulsch_tc_gamma_stats,
+					  &phy_vars_eNB->ulsch_tc_ext_stats,
+					  &phy_vars_eNB->ulsch_tc_intl1_stats,
+					  &phy_vars_eNB->ulsch_tc_intl2_stats);
+      
+      stop_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
+      
+      if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
-    else
-      msg("ULSCH harq_pid %d CRC OK : %d iterations\n",harq_pid, ret);
+	msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
+#endif
+	/*
+	  for (i=0;i<Kr_bytes;i++)
+	  printf("segment %d : byte %d => %d\n",r,i,ulsch->harq_processes[harq_pid]->c[r][i]);
+	  return(ret);
+	*/
+      }
+#ifdef DEBUG_ULSCH_DECODING    
+      else
+	msg("ULSCH harq_pid %d CRC OK : %d iterations\n",harq_pid, ret);
 #endif
 
+    }
+#ifdef OMP
   }
+#endif
   // Reassembly of Transport block here
   offset = 0;
   //  msg("F %d, Fbytes %d\n",ulsch->harq_processes[harq_pid]->F,ulsch->harq_processes[harq_pid]->F>>3);

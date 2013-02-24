@@ -1,3 +1,7 @@
+#ifdef OMP
+#include <omp.h>
+#endif
+
 typedef struct {
 
   long long in;
@@ -27,17 +31,33 @@ static inline unsigned long long rdtsc_oai() {
 
 static inline void start_meas(time_stats_t *ts) {
 
-  ts->trials++;
-  ts->in = rdtsc_oai();
+#ifdef OMP
+  int tid;
+
+  tid = omp_get_thread_num();
+  if (tid==0)
+#endif
+    {
+      ts->trials++;
+      ts->in = rdtsc_oai();
+    }
 }
 
 static inline void stop_meas(time_stats_t *ts) {
 
   long long out = rdtsc_oai();
 
-  ts->diff += (out-ts->in);
-  if ((out-ts->in) > ts->max)
-    ts->max = out-ts->in;
+#ifdef OMP
+  int tid;
+  tid = omp_get_thread_num();
+  if (tid==0)
+#endif
+    {
+      ts->diff += (out-ts->in);
+      if ((out-ts->in) > ts->max)
+	ts->max = out-ts->in;
+      
+    }
 }
 
 static inline void reset_meas(time_stats_t *ts) {
