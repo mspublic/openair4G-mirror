@@ -1127,7 +1127,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
 
 #ifdef OMP
-#pragma omp parallel private(r,ret) shared(ulsch,harq_pid,crc_type,Kr,f1f2mat_old,phy_vars_eNB,status)
+#pragma omp parallel private(r,ret) shared(ulsch,harq_pid,crc_type,Kr,f1f2mat_old,phy_vars_eNB,status,iind,)
   {
 #pragma omp for nowait
 #endif
