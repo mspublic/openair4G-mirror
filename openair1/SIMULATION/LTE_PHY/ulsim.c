@@ -1611,7 +1611,7 @@ if(abstx){
       printf("|__ rate-matching                                   %f us (%d trials)\n",
 	     (double)PHY_vars_eNB->ulsch_rate_unmatching_stats.diff/PHY_vars_eNB->ulsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ulsch_rate_unmatching_stats.trials);
       printf("|__ turbo_decoder(%d bits)                              %f us (%d cycles, %d trials)\n",
-	     PHY_vars_eNB->ulsch_eNB[0]->harq_processes[0]->Cminus ? PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kminus : PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kplus,
+	     PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Cminus ? PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kminus : PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Kplus,
 	     (double)PHY_vars_eNB->ulsch_turbo_decoding_stats.diff/PHY_vars_eNB->ulsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,
 	     (int)((double)PHY_vars_eNB->ulsch_turbo_decoding_stats.diff/PHY_vars_eNB->ulsch_turbo_decoding_stats.trials),PHY_vars_eNB->ulsch_turbo_decoding_stats.trials);
       printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
