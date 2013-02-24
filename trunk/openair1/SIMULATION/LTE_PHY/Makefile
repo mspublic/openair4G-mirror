@@ -12,6 +12,9 @@ OPENAIR3 = $(OPENAIR3_DIR)
 
 CFLAGS = -O3 -Wno-strict-aliasing -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
 
+ifdef OMP
+CFLAGS += -DOMP -fopenmp
+endif
 ifdef LLR8
 CFLAGS += -DLLR8
 endif
