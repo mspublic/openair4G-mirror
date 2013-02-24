@@ -788,10 +788,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,
 			       phy_vars_ue,
 			       harq_pid,
-			       phy_vars_ue->transmission_mode[eNB_id],0,0,
-			       &phy_vars_ue->ulsch_rate_matching_stats,
-			       &phy_vars_ue->ulsch_turbo_encoding_stats,
-			       &phy_vars_ue->ulsch_interleaving_stats)!=0) {
+			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      mac_xface->macphy_exit("");
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -878,10 +875,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       phy_vars_ue,
 			       harq_pid,
 			       phy_vars_ue->transmission_mode[eNB_id],0,
-			       0,  //  Nbundled, to be updated!!!!
-			       &phy_vars_ue->ulsch_rate_matching_stats,
-			       &phy_vars_ue->ulsch_turbo_encoding_stats,
-			       &phy_vars_ue->ulsch_interleaving_stats)!=0) {
+			       0)!=0) {  //  Nbundled, to be updated!!!!
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 	      return;
@@ -2267,15 +2261,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			       0,
 			       ((((last_slot>>1)==0) ? 9 : ((last_slot>>1))-1))<<1);
-	    ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+	    ret = dlsch_decoding(phy_vars_ue,
+				 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 				 &phy_vars_ue->lte_frame_parms,
 				 phy_vars_ue->dlsch_ue[eNB_id][0],
 				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-				 1,
-				 &phy_vars_ue->dlsch_rate_unmatching_stats,
-				 &phy_vars_ue->dlsch_turbo_decoding_stats,
-				 &phy_vars_ue->dlsch_deinterleaving_stats);
+				 1);
 	  }
 
 	  else {
@@ -2444,15 +2436,14 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			       0,
 			       ((((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)))<<1);
 	    
-	    ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0],
+	    ret = dlsch_decoding(phy_vars_ue,
+				 phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0],
 				 &phy_vars_ue->lte_frame_parms,
 				 phy_vars_ue->dlsch_ue_SI[eNB_id],
 				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-				 0,
-				 &phy_vars_ue->dlsch_rate_unmatching_stats,
-				 &phy_vars_ue->dlsch_turbo_decoding_stats,
-				 &phy_vars_ue->dlsch_deinterleaving_stats);
+				 0);
+
 	    //ret = 1+MAX_TURBO_ITERATIONS;
 	    /*
 	      #ifdef DEBUG_PHY_PROC
@@ -2576,15 +2567,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			     phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id]->llr[0],
 			     0,
 			     ((((last_slot>>1)==0) ?9 : ((last_slot>>1)-1)))<<1);
-	  ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id]->llr[0],
+	  ret = dlsch_decoding(phy_vars_ue,
+			       phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id]->llr[0],
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue_ra[eNB_id],
 			       (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),  // subframe
 			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			       0,
-			       &phy_vars_ue->dlsch_rate_unmatching_stats,
-			       &phy_vars_ue->dlsch_turbo_decoding_stats,
-			       &phy_vars_ue->dlsch_deinterleaving_stats);
+			       0);
 	}
 
 #ifdef PHY_ABSTRACTION

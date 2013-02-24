@@ -109,18 +109,18 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
   return(NULL);
 }
 
-uint32_t  dlsch_decoding(short *dlsch_llr,
-		    LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_UE_DLSCH_t *dlsch,
-		    u8 subframe,
-		    u8 num_pdcch_symbols,
-		    u8 is_crnti,
-		    time_stats_t *dlsch_rate_unmatching_stats,
-		    time_stats_t *dlsch_turbo_decoding_stats,
-		    time_stats_t *dlsch_deinterleaving_stats){
+uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
+			 short *dlsch_llr,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 LTE_UE_DLSCH_t *dlsch,
+			 u8 subframe,
+			 u8 num_pdcch_symbols,
+			 u8 is_crnti){
   
   
-
+  time_stats_t *dlsch_rate_unmatching_stats=&phy_vars_ue->dlsch_rate_unmatching_stats;
+  time_stats_t *dlsch_turbo_decoding_stats=&phy_vars_ue->dlsch_turbo_decoding_stats;
+  time_stats_t *dlsch_deinterleaving_stats=&phy_vars_ue->dlsch_deinterleaving_stats;
   u16 nb_rb;
   u8 harq_pid;
   uint32_t A,E;
@@ -319,16 +319,22 @@ uint32_t  dlsch_decoding(short *dlsch_llr,
 #else
       ret = phy_threegpplte_turbo_decoder
 #endif
-					  (&dlsch->harq_processes[harq_pid]->d[r][96],
-					  dlsch->harq_processes[harq_pid]->c[r],
-					  Kr,
-					  f1f2mat_old[iind*2],   
-					  f1f2mat_old[(iind*2)+1], 
-					  MAX_TURBO_ITERATIONS,
-					  crc_type,
-					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-					  is_crnti); //(is_crnti==0)?harq_pid:harq_pid+1);
-
+	(&dlsch->harq_processes[harq_pid]->d[r][96],
+	 dlsch->harq_processes[harq_pid]->c[r],
+	 Kr,
+	 f1f2mat_old[iind*2],   
+	 f1f2mat_old[(iind*2)+1], 
+	 MAX_TURBO_ITERATIONS,
+	 crc_type,
+	 (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+	 &phy_vars_ue->dlsch_tc_init_stats,
+	 &phy_vars_ue->dlsch_tc_alpha_stats,
+	 &phy_vars_ue->dlsch_tc_beta_stats,
+	 &phy_vars_ue->dlsch_tc_gamma_stats,
+	 &phy_vars_ue->dlsch_tc_ext_stats,
+	 &phy_vars_ue->dlsch_tc_intl1_stats,
+	 &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+      
 
       stop_meas(dlsch_turbo_decoding_stats);            
     }

@@ -51,7 +51,7 @@ extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
-extern unsigned short RIV_max;
+extern unsigned short RIV_max6,RIV_max25,RIV_max50,RIV_max100;
 
 //#define DEBUG_RAR
 
@@ -75,7 +75,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   
   ulsch->harq_processes[harq_pid]->TPC                = (rar[3]>>2)&7;//rar->TPC;
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
-  if (rballoc>RIV_max) {
+  if (rballoc>RIV_max25) {
     LOG_E(PHY,"[eNB]dci_tools.c: ERROR: rb_alloc (%x)> RIV_max\n",rballoc);
     return(-1);
   }
@@ -163,7 +163,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
   cqireq=rar[3]&1;
 
-  if (rballoc>RIV_max) {
+  if (rballoc>RIV_max25) {
     msg("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
     return(-1);
   }

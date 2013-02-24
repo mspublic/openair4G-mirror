@@ -94,6 +94,9 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
 				    0b01000000,
 				    0b10000000);
 
+  if ((n&15) > 0)
+    loop++;
+
   for (i=0; i<loop ; i++ ) {
     /* int cur_byte=i<<3; */
     /* for (b=0;b<8;b++) */

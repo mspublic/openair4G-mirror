@@ -554,6 +554,7 @@ void dft216(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg
 void dft240(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
 void dft288(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
 void dft300(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft1200(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
 
 void dft64(int16_t *x,int16_t *y,int scale);
 void dft128(int16_t *x,int16_t *y,int scale);

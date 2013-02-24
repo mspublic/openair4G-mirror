@@ -475,7 +475,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-
+  init_td();
 
 #ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);
