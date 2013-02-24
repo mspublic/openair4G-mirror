@@ -149,6 +149,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
   u8 nb_antennas_rx = eNB2UE[0][0]->nb_rx; // number of rx antennas at UE
   u8 nb_antennas_tx = eNB2UE[0][0]->nb_tx; // number of tx antennas at eNB
 
+
   if (next_slot==0)
     hold_channel = 0;
   else
@@ -269,13 +270,23 @@ void do_DL_sig(double **r_re0,double **r_im0,
 
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
       // Compute RX signal for UE = UE_id
+      /*
       for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<nb_antennas_rx;aa++) {
 	  r_re[aa][i]=0.0;
 	  r_im[aa][i]=0.0;
 	}
       }
-
+      */
+      //      printf("r_re[0] %p\n",r_re[0]);
+      for (aa=0;aa<nb_antennas_rx;aa++) {
+	memset((void*)r_re[aa],0,(frame_parms->samples_per_tti>>1)*sizeof(double));
+	memset((void*)r_im[aa],0,(frame_parms->samples_per_tti>>1)*sizeof(double));
+      }
+      /*
+      for (i=0;i<16;i++)
+	printf("%f, %X\n",r_re[aa][i],(unsigned long long)r_re[aa][i]);
+      */
       for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 	//	if (((double)PHY_vars_UE_g[UE_id]->tx_power_dBm + 
 	//	     eNB2UE[eNB_id][UE_id]->path_loss_dB) <= -107.0)
@@ -364,7 +375,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 		     1e3/eNB2UE[eNB_id][UE_id]->BW,  // sampling time (ns)
 		     (double)PHY_vars_UE_g[UE_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 		     
-	rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,512,0);
+	rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,frame_parms->ofdm_symbol_size,0);
 #ifdef DEBUG_SIM    
 	printf("[SIM][DL] UE %d : ADC in (eNB %d) %f dB for slot %d (subframe %d)\n",
 	       UE_id,eNB_id,
@@ -374,12 +385,11 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  for (aa=0;aa<nb_antennas_rx;aa++) {
 	    r_re[aa][i]+=r_re0[aa][i]; 
 	    r_im[aa][i]+=r_im0[aa][i]; 
-	    
 	  }
 	}
 	
       }      
-      rx_pwr = signal_energy_fp(r_re,r_im,nb_antennas_rx,512,0);
+      rx_pwr = signal_energy_fp(r_re,r_im,nb_antennas_rx,frame_parms->ofdm_symbol_size,0);
 #ifdef DEBUG_SIM    
       printf("[SIM][DL] UE %d : ADC in %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif    
@@ -431,6 +441,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   int subframe = (next_slot>>1);
   
   //  u8 aatx,aarx;
+
+
 
   if (next_slot==4) 
   {

@@ -122,7 +122,7 @@ mapping small_scale_names[] = {
     {NULL, -1}
 };
 
-static void *sigh(void *arg);
+//static void *sigh(void *arg);
 void terminate(void);
 void exit_fun(const char* s);
 
@@ -660,7 +660,7 @@ main (int argc, char **argv)
   sprintf(SINRpost_fname,"postprocSINR.m");
   SINRpost = fopen(SINRpost_fname,"w");
   // variables/flags which are set by user on command-line
-  double snr_dB, sinr_dB,snr_direction;//,sinr_direction;
+  double snr_dB, sinr_dB,snr_direction,snr_step=1.0;//,sinr_direction;
   u8 set_sinr=0;//,set_snr=0;
   u8 ue_connection_test=0;
   u8 set_seed=0;
@@ -672,7 +672,7 @@ main (int argc, char **argv)
   u8 abstraction_flag = 0, ethernet_flag = 0;
 
   u16 Nid_cell = 0;
-  s32 UE_id, eNB_id, ret;
+  s32 UE_id, eNB_id,ret;
 
   // time calibration for soft realtime mode  
   struct timespec time_spec;
@@ -707,14 +707,15 @@ main (int argc, char **argv)
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
 
+#ifdef PRINT_STATS
   FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
   
   char UE_stats_filename[255];
- 
-  int len;
-#ifdef ICIC
-  remove ("dci.txt");
-#endif
+ #endif
+
+  int nb_antennas_rx=2;
+
+
   //time_t t0,t1;
   //clock_t start, stop;
   
@@ -725,13 +726,16 @@ main (int argc, char **argv)
   Data_Flow_Unit omv_data ;
 #endif //ALU
 
-  int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
+#ifdef PROC
+  int node_id;
+  int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
+#endif
   //double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
   //double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
   //default parameters
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
-  oai_emulation.info.n_frames = 0xffff;//1024;          //100;
+  oai_emulation.info.n_frames = 0xffff;//1024;          //10;
   oai_emulation.info.n_frames_flag = 0;//fixme
   snr_dB = 30;
   cooperation_flag = 0;         // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
@@ -739,7 +743,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:y:X:z:Z:")) != -1) {
 
     switch (c) {
 
@@ -778,6 +782,13 @@ main (int argc, char **argv)
         exit(-1);
       }
       break;
+    case 'y':
+      nb_antennas_rx=atoi(optarg);
+      if (nb_antennas_rx>4) {
+	printf("Cannot have more than 4 antennas\n");
+	exit(-1);
+      }
+      break;
     case 'm':
       target_dl_mcs = atoi (optarg);
       break;
@@ -802,6 +813,7 @@ main (int argc, char **argv)
     case 'J':
       ue_connection_test=1;
       oai_emulation.info.ocm_enabled=0;
+      snr_step = atof(optarg);
       break;
     case 'k':
       //ricean_factor = atof (optarg);
@@ -906,18 +918,25 @@ main (int argc, char **argv)
       oai_emulation.info.cli_enabled = 1;
       break;
     case 'X':
+#ifdef PROC
       temp=atoi(optarg);
       if(temp==0){ 
-      port=CHANNEL_PORT; Channel_Flag=1; Process_Flag=0; wgt=0; }
+	port=CHANNEL_PORT; Channel_Flag=1; Process_Flag=0; wgt=0; 
+      }
       else if(temp==1){
-      port=eNB_PORT; wgt=0;}
+	port=eNB_PORT; wgt=0;
+      }
       else {
-      port=UE_PORT; wgt=MAX_eNB;}
+	port=UE_PORT; wgt=MAX_eNB;
+      }
+#endif
       break;
     case 'i':
+#ifdef PROC
      Process_Flag=1;
      node_id = wgt+atoi(optarg);
      port+=atoi(optarg);
+#endif
      break;
     case 'v':
       oai_emulation.info.omv_enabled = 1;
@@ -992,6 +1011,8 @@ main (int argc, char **argv)
   //#ifdef NAS_NETLINK  
   LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
   ret = netlink_init ();
+  if (ret < 0)
+    LOG_E(EMU,"[INIT] Netlink not available, careful ...\n");
   //#endif
 
   if (ethernet_flag == 1) {
@@ -1079,7 +1100,7 @@ main (int argc, char **argv)
     // set_taus_seed (0);
     // }
   // change the nb_connected_eNB
-  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
+    init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag,nb_antennas_rx);
   
   printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("AFTER init: frame_type %d,tdd_config %d\n", 
@@ -1121,10 +1142,14 @@ main (int argc, char **argv)
           oai_emulation.topology_config.area.x_m,
           oai_emulation.topology_config.area.y_m);
   }
-  
-  if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
-          init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
 
+#ifdef PROC  
+  if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
+    init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
+#else
+  if (abstraction_flag == 0)
+    init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
+#endif
   // initialize channel descriptors
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
@@ -1182,7 +1207,7 @@ main (int argc, char **argv)
   openair_daq_vars.ue_ul_nb_rb = 8;
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=120;
+    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=130;
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
@@ -1269,9 +1294,9 @@ main (int argc, char **argv)
 
 
   if (ue_connection_test == 1) {
-    snr_direction = -2;
-    snr_dB=30;
-    sinr_dB=-10;
+    snr_direction = -snr_step;
+    snr_dB=20;
+    sinr_dB=-20;
   }
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
@@ -1287,11 +1312,11 @@ main (int argc, char **argv)
         snr_dB += snr_direction;
         sinr_dB -= snr_direction;
       }
-      if (snr_dB == -10) {
-        snr_direction=2;
+      if (snr_dB == -20) {
+        snr_direction=snr_step;
       }
-      else if (snr_dB==30) {
-        snr_direction=-2;
+      else if (snr_dB==20) {
+        snr_direction=-snr_step;
       }
     }
       
@@ -1398,8 +1423,10 @@ main (int argc, char **argv)
 #ifdef PROC      
       if(Channel_Flag==1)
           Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
-#endif 
-     if(Channel_Flag==0){
+
+     if(Channel_Flag==0)
+#endif
+       {
       if((next_slot %2) ==0)
         clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
 
@@ -1571,7 +1598,11 @@ main (int argc, char **argv)
 
      }                          //end of slot
     
-    if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
+    if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)
+#ifdef PROC
+	&&(Channel_Flag==0) 
+#endif
+	){
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       sprintf(fname,"eNBtxsig%d.m",frame);
       sprintf(vname,"txs%d",frame);
@@ -1644,7 +1675,12 @@ main (int argc, char **argv)
     emu_transport_release ();
   }
 
-  if (abstraction_flag == 0 && Channel_Flag==0 && Process_Flag==0) {
+#ifdef PROC
+  if (abstraction_flag == 0 && Channel_Flag==0 && Process_Flag==0) 
+#else
+  if (abstraction_flag == 0) 
+#endif
+    {
     /*
        #ifdef IFFT_FPGA
        free(txdataF2[0]);
@@ -1716,7 +1752,7 @@ main (int argc, char **argv)
   return(0);
 }
 
-
+/*
 static void *sigh(void *arg) {
    
   int signum;
@@ -1739,6 +1775,7 @@ static void *sigh(void *arg) {
   }
   pthread_exit(NULL);
 }
+*/
 
 void terminate(void) {
   int i;
