@@ -307,6 +307,9 @@ typedef struct{
   /// C-RNTI of UE
   u16 rnti;
 
+  /// Flag to indicate UL has been scheduled at least once
+  int ul_active;
+
   // PHY interface info
 
   /// DCI format for DLSCH

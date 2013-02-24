@@ -572,6 +572,11 @@ uint8_t do_SIB23(uint8_t Mod_id,
     exit(-1);
   }
 
+#ifdef Rel10
+  LOG_I(RRC,"Configuration SIB2/3, MBMS = %d\n",MBMS_flag);
+#else
+  LOG_I(RRC,"Configuration SIB2/3\n");
+#endif
   sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
   sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
   memset(sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -709,6 +714,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->freqInfo.ul_Bandwidth = NULL;
 #ifdef Rel10
   if (MBMS_flag == 1) {
+    LOG_I(RRC,"Adding MBSFN Configuration to SIB2\n");
     MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
     (*sib2)->mbsfn_SubframeConfigList = CALLOC(1,sizeof(struct MBSFN_SubframeConfigList));
     MBSFNSubframeConfigList = (*sib2)->mbsfn_SubframeConfigList;

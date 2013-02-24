@@ -312,11 +312,20 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
 
 
   /// System Information INIT
+
+
+  LOG_I(RRC,"Checking release \n"); 
+#ifdef Rel10
+  // This has to come from some top-level configuration
+  printf("Rel10 RRC detected, setting MBMS flag\n");
+  eNB_rrc_inst[Mod_id].MBMS_flag = 1;
+#else 
+  printf("Rel8 RRC\n");
+#endif
+
   init_SI(Mod_id);
 
 #ifdef Rel10
-  // This has to come from some top-level configuration
-  eNB_rrc_inst[Mod_id].MBMS_flag = 1;
   /// MCCH INIT
   init_MCCH(Mod_id);
 #endif
