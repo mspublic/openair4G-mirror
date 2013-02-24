@@ -212,6 +212,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   //  u8 ytag2[6*14*1200],*ytag2_ptr;
   s16 cseq[6*14*1200];
   int off;
+  int status[20];
 
   // x1 is set in lte_gold_generic
   x2 = ((u32)ulsch->rnti<<14) + ((u32)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
@@ -1126,7 +1127,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
 
 #ifdef OMP
-#pragma omp parallel private(r) shared(ulsch,harq_pid,crc_type,Kr,f1f2mat_old,phy_vars_eNB)
+#pragma omp parallel private(r,ret) shared(ulsch,harq_pid,crc_type,Kr,f1f2mat_old,phy_vars_eNB,status)
   {
 #pragma omp for  
 #endif
@@ -1167,7 +1168,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 					  &phy_vars_eNB->ulsch_tc_intl2_stats);
       
       stop_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
-      
+
+      status[r] = ret;
       if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
 	msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
@@ -1190,29 +1192,38 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   // Reassembly of Transport block here
   offset = 0;
   //  msg("F %d, Fbytes %d\n",ulsch->harq_processes[harq_pid]->F,ulsch->harq_processes[harq_pid]->F>>3);
-  
-  for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
-    if (r<ulsch->harq_processes[harq_pid]->Cminus)
-      Kr = ulsch->harq_processes[harq_pid]->Kminus;
-    else
-      Kr = ulsch->harq_processes[harq_pid]->Kplus;
 
-    Kr_bytes = Kr>>3;
-    
-    if (r==0) {
-      memcpy(ulsch->harq_processes[harq_pid]->b,
-	     &ulsch->harq_processes[harq_pid]->c[0][(ulsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0);
-      //            msg("copied %d bytes to b sequence\n",
-      //      	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
+  ret = 1;
+  for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
+    if (status[r] != (1+MAX_TURBO_ITERATIONS)) {
+      if (r<ulsch->harq_processes[harq_pid]->Cminus)
+	Kr = ulsch->harq_processes[harq_pid]->Kminus;
+      else
+	Kr = ulsch->harq_processes[harq_pid]->Kplus;
+      
+      Kr_bytes = Kr>>3;
+      
+      if (r==0) {
+	memcpy(ulsch->harq_processes[harq_pid]->b,
+	       &ulsch->harq_processes[harq_pid]->c[0][(ulsch->harq_processes[harq_pid]->F>>3)],
+	       Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+	offset = Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3) - ((ulsch->harq_processes[harq_pid]->C>1)?3:0);
+	//            msg("copied %d bytes to b sequence\n",
+	//      	     Kr_bytes - (ulsch->harq_processes[harq_pid]->F>>3));
+      }
+      else {
+	memcpy(ulsch->harq_processes[harq_pid]->b+offset,
+	       ulsch->harq_processes[harq_pid]->c[r],
+	       Kr_bytes - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+	offset += (Kr_bytes- ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+      }
+      if (ret != (1+MAX_TURBO_ITERATIONS))
+	ret = status[r];
     }
     else {
-      memcpy(ulsch->harq_processes[harq_pid]->b+offset,
-	     ulsch->harq_processes[harq_pid]->c[r],
-	     Kr_bytes - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset += (Kr_bytes- ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
+      ret = 1+MAX_TURBO_ITERATIONS;
     }
+    
   }
   
   return(ret);
