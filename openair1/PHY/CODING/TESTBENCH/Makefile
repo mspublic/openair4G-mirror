@@ -1,10 +1,10 @@
-CC = $(shell if [ $$OSTYPE = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi)
+CC =  gcc
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 #-mssse3 -msse4 -m32 
-CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
+CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4 
+#CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
+#CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 
 TOP_DIR = $(OPENAIR1_DIR)
@@ -13,11 +13,13 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
 
-CFLAGS += -Wall -O3 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DOPENAIR_LTE -g $(CPUFLAGS)
+CFLAGS += -Wall -O2 -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DOPENAIR_LTE -g $(CPUFLAGS)
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-
+ifdef LLR8
+CFLAGS += -DLLR8
+endif
 
 ifeq ($(turbo_flag),1)
   CFLAGS += -DTURBO_S

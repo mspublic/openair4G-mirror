@@ -131,14 +131,14 @@ char quantize(double D,double x,unsigned char B) {
 
   qxd = floor(x/D);
   //    printf("x=%f,qxd=%f\n",x,qxd);
-  /*
+  
   maxlev = 1<<(B-1);
 
   if (qxd <= -maxlev)
     qxd = -maxlev;
   else if (qxd >= maxlev)
     qxd = maxlev-1;
-  */
+  
   return((char)qxd);
 }
 
@@ -201,7 +201,10 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 		   &PHY_vars_eNB->lte_frame_parms,
 		   num_pdcch_symbols,
 		   PHY_vars_eNB->dlsch_eNB[0][0],
-		   subframe);
+		   subframe,
+		   &PHY_vars_eNB->dlsch_rate_matching_stats,
+		   &PHY_vars_eNB->dlsch_turbo_encoding_stats,
+		   &PHY_vars_eNB->dlsch_interleaving_stats);
 
     uerr=0;
 
@@ -212,7 +215,7 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 	printf("\ne %d..%d:    ",i,i+15);
       printf("%d.",PHY_vars_eNB->dlsch_eNB[0][0]->e[i]);
 #endif
-      channel_output[i] = (short)quantize(sigma/32.0,(2.0*PHY_vars_eNB->dlsch_eNB[0][0]->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
+      channel_output[i] = (short)quantize(sigma/4.0,(2.0*PHY_vars_eNB->dlsch_eNB[0][0]->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
     }
 #ifdef DEBUG_CODER
     printf("\n");
@@ -222,7 +225,8 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
     
     //    memset(decoded_output,0,16);
     //    printf("decoding %d\n",trial);
-    ret = dlsch_decoding(channel_output,
+    ret = dlsch_decoding(PHY_vars_UE,
+			 channel_output,
 			 &PHY_vars_UE->lte_frame_parms,
 			 PHY_vars_UE->dlsch_ue[0][0],
 			 subframe,
