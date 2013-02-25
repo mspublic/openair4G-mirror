@@ -61,7 +61,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
   u32 alpha_ind;
   u32 u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+(subframe<<1)];
   u32 v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[Ns+(subframe<<1)];
-  s32 tmp_estimates[N_rb_alloc*12];
+  s32 tmp_estimates[N_rb_alloc*12] __attribute__((aligned(16)));
 
   int symbol_offset,i,j;
 

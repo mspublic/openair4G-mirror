@@ -113,9 +113,9 @@ uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w) {
     index = bitrev_cc[col];
     index3 = 3*index;
     for (row=0;row<RCC;row++) {
-      w[k]          =  d[index3-ND3];
-      w[Kpi+k]     =   d[index3-ND3+1];
-      w[(Kpi<<1)+k] =  d[index3-ND3+2]; 
+      w[k]          =  d[(int32_t)index3-(int32_t)ND3];
+      w[Kpi+k]     =   d[(int32_t)index3-(int32_t)ND3+1];
+      w[(Kpi<<1)+k] =  d[(int32_t)index3-(int32_t)ND3+2]; 
 #ifdef RM_DEBUG_CC
       printf("row %d, index %d k %d w(%d,%d,%d)\n",row,index,k,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
       

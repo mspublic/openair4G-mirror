@@ -72,7 +72,7 @@ void multadd_real_vector_complex_scalar(s16 *x,
 					s16 *alpha,
 					s16 *y,
 					u32 N
-					)__attribute__ ((force_align_arg_pointer));
+					);
 
 /*!\fn void multadd_complex_vector_real_scalar(s16 *x,s16 alpha,s16 *y,u8 zero_flag,u32 N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
@@ -88,7 +88,7 @@ void multadd_complex_vector_real_scalar(s16 *x,
 					s16 alpha,
 					s16 *y,
 					u8 zero_flag,
-					u32 N)__attribute__ ((force_align_arg_pointer));
+					u32 N);
 
 
 /*!\fn s32 mult_cpx_vector(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
@@ -106,7 +106,7 @@ s32 mult_cpx_vector(s16 *x1,
 		    s16 *x2, 
 		    s16 *y, 
 		    u32 N, 
-		    s32 output_shift)__attribute__ ((force_align_arg_pointer));
+		    s32 output_shift);
 
 /*!\fn s32 mult_cpx_vector_norep(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors with normal formatted output.
@@ -123,7 +123,7 @@ s32 mult_cpx_vector_norep(s16 *x1,
 			  s16 *x2, 
 			  s16 *y, 
 			  u32 N, 
-			  s32 output_shift) __attribute__ ((force_align_arg_pointer));
+			  s32 output_shift);
 
 
 /*!\fn s32 mult_cpx_vector_norep2(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
@@ -141,19 +141,19 @@ s32 mult_cpx_vector_norep2(s16 *x1,
 			   s16 *x2, 
 			   s16 *y, 
 			   u32 N, 
-			   s32 output_shift)__attribute__ ((force_align_arg_pointer));
+			   s32 output_shift);
  
 s32 mult_cpx_vector_norep_conj(s16 *x1, 
 			       s16 *x2, 
 			       s16 *y, 
 			       u32 N, 
-			       s32 output_shift) __attribute__ ((force_align_arg_pointer));
+			       s32 output_shift);
 
 s32 mult_cpx_vector_norep_conj2(s16 *x1, 
 				s16 *x2, 
 				s16 *y, 
 				u32 N, 
-				s32 output_shift) __attribute__ ((force_align_arg_pointer));
+				s32 output_shift);
 
 /*!\fn s32 mult_cpx_vector2(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors.
@@ -170,7 +170,7 @@ s32 mult_cpx_vector2(s16 *x1,
 		     s16 *x2, 
 		     s16 *y, 
 		     u32 N, 
-		     s32 output_shift) __attribute__ ((force_align_arg_pointer));
+		     s32 output_shift);
 
 /*!\fn s32 mult_cpx_vector_add(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -188,29 +188,29 @@ s32 mult_cpx_vector_add(s16 *x1,
 			s16 *x2, 
 			s16 *y, 
 			u32 N, 
-			s32 output_shift) __attribute__ ((force_align_arg_pointer));
+			s32 output_shift);
 
 
 s32 mult_cpx_vector_h_add32(s16 *x1, 
 			    s16 *x2, 
 			    s16 *y, 
 			    u32 N, 
-			    s16 sign) __attribute__ ((force_align_arg_pointer));
+			    s16 sign);
 
 s32 mult_cpx_vector_add32(s16 *x1, 
 			  s16 *x2, 
 			  s16 *y, 
-			  u32 N) __attribute__ ((force_align_arg_pointer));
+			  u32 N);
 
 s32 mult_vector32(s16 *x1, 
 		  s16 *x2, 
 		  s16 *y, 
-		  u32 N) __attribute__ ((force_align_arg_pointer));
+		  u32 N);
 
 s32 mult_vector32_scalar(s16 *x1, 
 			 s32 x2, 
 			 s16 *y, 
-			 u32 N) __attribute__ ((force_align_arg_pointer));
+			 u32 N);
 
 s32 mult_cpx_vector32_conj(s16 *x, 
 			   s16 *y, 
@@ -219,11 +219,11 @@ s32 mult_cpx_vector32_conj(s16 *x,
 s32 mult_cpx_vector32_real(s16 *x1, 
 			   s16 *x2, 
 			   s16 *y, 
-			   u32 N) __attribute__ ((force_align_arg_pointer));
+			   u32 N);
 
 s32 shift_and_pack(s16 *y, 
 		   u32 N, 
-		   s32 output_shift) __attribute__ ((force_align_arg_pointer));
+		   s32 output_shift);
 
 /*!\fn s32 mult_cpx_vector_h(s16 *x1,s16 *x2,s16 *y,u32 N,s32 output_shift,s16 sign)
 This function performs optimized componentwise multiplication of the vector x1 with the conjugate of the vector x2. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -242,7 +242,7 @@ s32 mult_cpx_vector_h(s16 *x1,
 		      s16 *y, 
 		      u32 N, 
 		      s32 output_shift,
-		      s16 sign) __attribute__ ((force_align_arg_pointer));
+		      s16 sign);
 
 /*!\fn s32 mult_cpx_matrix_h(s16 *x1[2][2],s16 *x2[2][2],s16 *y[2][2],u32 N,u16 output_shift,s16 hermitian)
 This function performs optimized componentwise matrix multiplication of the 2x2 matrices x1 with the 2x2 matrices x2. The output IS ADDED TO y (i.e. make sure y is initilized correctly). WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -259,7 +259,8 @@ s32 mult_cpx_matrix_h(s16 *x1[2][2],
 		    s16 *y[2][2], 
 		    u32 N, 
 		    u16 output_shift,
-		    s16 hermitian) __attribute__ ((force_align_arg_pointer));
+		    s16 hermitian); 
+
 
 /*!\fn s32 mult_cpx_matrix_vector(s32 *x1[2][2],s32 *x2[2],s32 *y[2],u32 N,u16 output_shift)
 This function performs optimized componentwise matrix-vector multiplication of the 2x2 matrices x1 with the 2x1 vectors x2. The output IS ADDED TO y (i.e. make sure y is initilized correctly). WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -274,7 +275,7 @@ s32 mult_cpx_matrix_vector(s32 *x1[2][2],
 		    s32 *x2[2], 
 		    s32 *y[2], 
 		    u32 N, 
-		    u16 output_shift) __attribute__ ((force_align_arg_pointer));
+		    u16 output_shift);
 
 /*!\fn void init_fft(u16 size,u8 logsize,u16 *rev)
 \brief Initialize the FFT engine for a given size
@@ -304,31 +305,31 @@ void fft(s16 *x,
 	 u8 log2size,
 	 u8 scale,
 	 u8 input_fmt
-	 ) __attribute__ ((force_align_arg_pointer));
+	 );
 
-void ifft1536(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void ifft1536(s16 *sigF,s16 *sig);
 
-void ifft6144(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void ifft6144(s16 *sigF,s16 *sig);
 
-void ifft12288(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void ifft12288(s16 *sigF,s16 *sig);
 
-void ifft18432(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void ifft18432(s16 *sigF,s16 *sig);
 
-void ifft3072(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void ifft3072(s16 *sigF,s16 *sig);
 
-void ifft24576(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void ifft24576(s16 *sigF,s16 *sig);
 
-void fft1536(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void fft1536(s16 *sigF,s16 *sig);
 
-void fft6144(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void fft6144(s16 *sigF,s16 *sig);
 
-void fft12288(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void fft12288(s16 *sigF,s16 *sig); 
 
-void fft18432(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void fft18432(s16 *sigF,s16 *sig);
 
-void fft3072(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void fft3072(s16 *sigF,s16 *sig);
 
-void fft24576(s16 *sigF,s16 *sig) __attribute__ ((force_align_arg_pointer));
+void fft24576(s16 *sigF,s16 *sig); 
 
 
 /*!\fn int rotate_cpx_vector(s16 *x,s16 *alpha,s16 *y,u32 N,u16 output_shift, u8 format)
@@ -347,7 +348,7 @@ s32 rotate_cpx_vector(s16 *x,
 		      s16 *y, 
 		      u32 N, 
 		      u16 output_shift,
-		      u8 format) __attribute__ ((force_align_arg_pointer));
+		      u8 format); 
 
 /*!\fn s32 rotate_cpx_vector2(s16 *x,s16 *alpha,s16 *y,u32 N,u16 output_shift,u8 format)
 This function performs componentwise multiplication of a vector with a complex scalar.
@@ -364,7 +365,7 @@ s32 rotate_cpx_vector2(s16 *x,
 		       s16 *y, 
 		       u32 N, 
 		       u16 output_shift,
-		       u8 format) __attribute__ ((force_align_arg_pointer));
+		       u8 format);
 
 /*!\fn s32 rotate_cpx_vector_norep(s16 *x,s16 *alpha,s16 *y,u32 N,u16 output_shift)
 This function performs componentwise multiplication of a vector with a complex scalar.
@@ -380,7 +381,7 @@ s32 rotate_cpx_vector_norep(s16 *x,
 			       s16 *alpha, 
 			       s16 *y, 
 			       u32 N, 
-			       u16 output_shift) __attribute__ ((force_align_arg_pointer));
+			       u16 output_shift);
 
 
 
@@ -396,27 +397,27 @@ The function implemented is : \f$\mathbf{y} = \alpha + \mathbf{x}\f$
 s32 add_cpx_vector(s16 *x, 
 		   s16 *alpha, 
 		   s16 *y, 
-		   u32 N) __attribute__ ((force_align_arg_pointer));
+		   u32 N);
 
 s32 add_cpx_vector32(s16 *x, 
 		      s16 *y, 
 		      s16 *z, 
-		      u32 N) __attribute__ ((force_align_arg_pointer));
+		      u32 N);
 
 s32 add_real_vector64(s16 *x, 
 		      s16 *y, 
 		      s16 *z, 
-		      u32 N) __attribute__ ((force_align_arg_pointer));
+		      u32 N);
 
 s32 sub_real_vector64(s16 *x, 
 		      s16* y, 
 		      s16 *z, 
-		      u32 N) __attribute__ ((force_align_arg_pointer));
+		      u32 N);
 
 s32 add_real_vector64_scalar(s16 *x, 
 			     long long int a, 
 			     s16 *y, 
-			     u32 N) __attribute__ ((force_align_arg_pointer));
+			     u32 N);
 
 /*!\fn s32 add_vector16(s16 *x,s16 *y,s16 *z,u32 N)
 This function performs componentwise addition of two vectors with Q1.15 components.
@@ -430,20 +431,20 @@ The function implemented is : \f$\mathbf{z} = \mathbf{x} + \mathbf{y}\f$
 s32 add_vector16(s16 *x, 
 		 s16 *y, 
 		 s16 *z, 
-		 u32 N) __attribute__ ((force_align_arg_pointer));
+		 u32 N);
 
 s32 add_vector16_64(s16 *x, 
 		    s16 *y, 
 		    s16 *z, 
-		    u32 N) __attribute__ ((force_align_arg_pointer));
+		    u32 N);
 
 s32 complex_conjugate(s16 *x1, 
 		      s16 *y, 
-		      u32 N) __attribute__ ((force_align_arg_pointer));
+		      u32 N);
 
-void bit8_txmux(s32 length,s32 offset) __attribute__ ((force_align_arg_pointer));
+void bit8_txmux(s32 length,s32 offset);
 
-void bit8_rxdemux(s32 length,s32 offset) __attribute__ ((force_align_arg_pointer));
+void bit8_rxdemux(s32 length,s32 offset);
 
 #ifdef USER_MODE
 /*!\fn s32 write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
@@ -458,20 +459,20 @@ void bit8_rxdemux(s32 length,s32 offset) __attribute__ ((force_align_arg_pointer
 s32 write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
 #endif
 
-void Zero_Buffer(void *,u32) __attribute__ ((force_align_arg_pointer));
+void Zero_Buffer(void *,u32);
 void Zero_Buffer_nommx(void *buf,u32 length);
 
-void mmxcopy(void *dest,void *src,int size) __attribute__ ((force_align_arg_pointer));
+void mmxcopy(void *dest,void *src,int size);
 
 /*!\fn s32 signal_energy(int *,u32);
 \brief Computes the signal energy per subcarrier
 */
-s32 signal_energy(s32 *,u32) __attribute__ ((force_align_arg_pointer));
+s32 signal_energy(s32 *,u32);
 
 /*!\fn s32 signal_energy_nodc(s32 *,u32);
 \brief Computes the signal energy per subcarrier, without DC removal
 */
-s32 signal_energy_nodc(s32 *,u32) __attribute__ ((force_align_arg_pointer));
+s32 signal_energy_nodc(s32 *,u32);
 
 /*!\fn double signal_energy_fp(double **, double **,u32, u32,u32);
 \brief Computes the signal energy per subcarrier
@@ -536,25 +537,25 @@ void phy_phase_compensation (s16 *ref_sch, s16 *tgt_sch, s16 *out_sym, s32 ignor
 s32 dot_product(s16 *x,
 		s16 *y,
 		u32 N, //must be a multiple of 8
-		u8 output_shift) __attribute__ ((force_align_arg_pointer));
+		u8 output_shift);
 
-void dft12(int16_t *x,int16_t *y) __attribute__ ((force_align_arg_pointer));
-void dft24(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft36(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft48(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft60(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft72(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft96(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft108(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft120(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft144(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft180(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft192(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft216(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft240(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft288(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft300(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
-void dft1200(int16_t *x,int16_t *y,u8 scale_flag) __attribute__ ((force_align_arg_pointer));
+void dft12(int16_t *x,int16_t *y);
+void dft24(int16_t *x,int16_t *y,u8 scale_flag);
+void dft36(int16_t *x,int16_t *y,u8 scale_flag);
+void dft48(int16_t *x,int16_t *y,u8 scale_flag);
+void dft60(int16_t *x,int16_t *y,u8 scale_flag);
+void dft72(int16_t *x,int16_t *y,u8 scale_flag);
+void dft96(int16_t *x,int16_t *y,u8 scale_flag);
+void dft108(int16_t *x,int16_t *y,u8 scale_flag);
+void dft120(int16_t *x,int16_t *y,u8 scale_flag);
+void dft144(int16_t *x,int16_t *y,u8 scale_flag);
+void dft180(int16_t *x,int16_t *y,u8 scale_flag);
+void dft192(int16_t *x,int16_t *y,u8 scale_flag);
+void dft216(int16_t *x,int16_t *y,u8 scale_flag);
+void dft240(int16_t *x,int16_t *y,u8 scale_flag);
+void dft288(int16_t *x,int16_t *y,u8 scale_flag);
+void dft300(int16_t *x,int16_t *y,u8 scale_flag);
+void dft1200(int16_t *x,int16_t *y,u8 scale_flag);
 
 void dft64(int16_t *x,int16_t *y,int scale);
 void dft128(int16_t *x,int16_t *y,int scale);
