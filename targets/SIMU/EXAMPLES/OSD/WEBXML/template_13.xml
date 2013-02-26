@@ -31,7 +31,7 @@
       <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> <!-- OPTIONS: tcp (default), udp -->
       <IP_VERSION>ipv4</IP_VERSION> <!-- OPTIONS: ipv4 (default), ipv6 -->
       <DESTINATION_ID>0</DESTINATION_ID> 
-       <BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC> <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
+       <BACKGROUND_TRAFFIC>disable</BACKGROUND_TRAFFIC> <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
       <AGGREGATION_LEVEL>1</AGGREGATION_LEVEL>     <!-- options: default=1, the number of traffic to aggregate-->
       <IDT_DIST>uniform</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
       <IDT_MIN_ms>300</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
@@ -51,7 +51,7 @@
     <PERFORMANCE_METRICS>
       	<THROUGHPUT>enable</THROUGHPUT>	<!-- option: enable, disable. If enable, throughput measurements are plotted in real time-->
       	<LATENCY>enable</LATENCY>        <!-- option: enable, disable. If enable, latency measurements are plotted in real time-->
-       	<OWD_RADIO_ACESS>enable</OWD_RADIO_ACESS>  <!-- option: enable, disable. If enable owd curve shows the one way radio access delay, else it shows end to end owd -->
+       	<OWD_RADIO_ACCESS>enable</OWD_RADIO_ACCESS>  <!-- option: enable, disable. If enable owd curve shows the one way radio access delay, else it shows end to end owd -->
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
       <LEVEL>trace</LEVEL>
