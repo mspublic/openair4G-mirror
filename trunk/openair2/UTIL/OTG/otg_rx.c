@@ -121,29 +121,48 @@ char * hdr_payload=NULL;
 			/* (1) Receieved packet corresponds to the expected one, in terms of the sequence number*/
 
 	if ((otg_hdr_rx->seq_num)==seq_num_rx) {
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+	  LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
 	  seq_num_rx+=1;
 	}
 			/* (2) Receieved packet with a sequence number higher than the expected sequence number (there is a gap): packet loss */
 	else if ((otg_hdr_rx->seq_num)>seq_num_rx){ // out of sequence packet:  previous packet lost 
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+	  LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
 	  nb_loss_pkts+=((otg_hdr_rx->seq_num)-(seq_num_rx));
 	  seq_num_rx=otg_hdr_rx->seq_num+1;
 	} 
 			/* (3) Receieved packet with a sequence number less than the expected sequence number: recovery after loss/out of sequence  */
 	else if ((otg_hdr_rx->seq_num)< seq_num_rx){ //the received packet arrived late 
 	  nb_loss_pkts-=1;
-	  LOG_D(OTG,"check_packet :: (i=%d,j=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+	  LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
 	}
+	else
+ LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) ::  packet seq_num TX=%d , seq_num RX=%d (ERROR)\n",src,dst,otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, seq_num_rx);
+
+
         /* End Loss and out of sequence data management */
  
 	if (otg_info->owd_const[src][dst]==0)
-	  owd_const_gen(src,dst,1);
+	  owd_const_gen(src,dst,otg_hdr_rx->traffic_type);
 
 
 
 	if (otg_hdr_rx->time<=ctime){
-	  otg_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
+		otg_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
+/******/
+/*
+float owd_const_capillary_v=owd_const_capillary()/2;
+float owd_const_mobile_core_v=owd_const_mobile_core()/2;
+float owd_const_IP_backbone_v=owd_const_IP_backbone()/2;
+float owd_const_application_v=owd_const_application()/2;
+
+  FILE *file;
+  file = fopen("/tmp/log_latency_m2m.txt", "a");
+ fprintf(file," %d %d %.2f %.2f %.2f %.2f %.2f %.2f\n", otg_hdr_rx->time, otg_hdr_info_rx->size,owd_const_capillary_v,otg_info->radio_access_delay[src][dst],owd_const_mobile_core_v, owd_const_IP_backbone_v, owd_const_application_v, owd_const_capillary_v + otg_info->radio_access_delay[src][dst]+owd_const_mobile_core_v + owd_const_IP_backbone_v+ owd_const_application_v);
+    fclose(file);
+*/
+/******/
+
+	  
          }
 
 	
@@ -243,7 +262,11 @@ else
 
 
 void owd_const_gen(int src, int dst, unsigned int flag){
-  otg_info->owd_const[src][dst]=(owd_const_capillary()+owd_const_mobile_core()+owd_const_IP_backbone())/2;
+  otg_info->owd_const[src][dst]=(owd_const_mobile_core()+owd_const_IP_backbone()+owd_const_application())/2;
+
+	if (flag==M2M_TYPE)
+		otg_info->owd_const[src][dst]+=(owd_const_capillary()/2);
+
 }
 
 
