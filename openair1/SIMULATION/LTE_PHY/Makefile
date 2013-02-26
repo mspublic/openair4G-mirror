@@ -111,7 +111,7 @@ endif
 #OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)  
 
 ifdef XFORMS
-OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
+OBJ += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 endif
 
 ifdef STATIC
