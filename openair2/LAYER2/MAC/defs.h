@@ -302,6 +302,8 @@ typedef struct{
   
   //dl buffer info
   u32_t dl_buffer_info[MAX_NUM_LCID];
+
+  u32_t dl_buffer_total;
 } UE_TEMPLATE;
 
 typedef struct {

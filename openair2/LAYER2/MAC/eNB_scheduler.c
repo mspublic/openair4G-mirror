@@ -54,7 +54,7 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
-
+#include "LAYER2/MAC/pre_processor.c"
  
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 1
@@ -1734,625 +1734,6 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
 }
 
-// This function return the estimate of number of RBs required by each UE for downlink scheduling
-void store_dlsch_buffer (unsigned char Mod_id,
-			 u32 frame,
-			 unsigned char subframe,
-			 u16 *nb_rbs_required){
-  
-  unsigned char header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0,ta_len=0;
-  unsigned char sdu_lcids[11],num_sdus=0,next_ue,harq_pid=0,round=0;
-  unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-  u16 UE_id,granted_UEs,rnti,TBS,sdu_lengths[11],sdu_length_total=0;
-  LTE_eNB_UE_stats* eNB_UE_stats;
-  mac_rlc_status_resp_t rlc_status;
-  
-
-  granted_UEs = find_dlgranted_UEs(Mod_id);
-
-  for (UE_id=0;UE_id<granted_UEs;UE_id++){
-    eNB_mac_inst[Mod_id].UE_template[UE_id].dl_buffer_info[DCCH]=0;
-    eNB_mac_inst[Mod_id].UE_template[UE_id].dl_buffer_info[DCCH+1]=0;
-    eNB_mac_inst[Mod_id].UE_template[UE_id].dl_buffer_info[DTCH]=0;
-    nb_rbs_required[UE_id] = 0;
-  }
-
-
-
-  for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-    
-    next_ue = UE_id;
-    rnti = find_UE_RNTI(Mod_id,next_ue);
-    if (rnti == 0)
-      continue;
-
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-    //if(eNB_UE_stats == NULL)
-    //continue;
-
-
-
-
-    if ((mac_get_rrc_status(Mod_id,1,next_ue) < RRC_RECONFIGURED)){
-	nb_rbs_required[next_ue] = mac_xface->lte_frame_parms->N_RB_DL;
-	continue;
-      }
-
-
-
-    switch(eNB_UE_stats->DL_cqi[0])
-      {
-      case 0:
-	eNB_UE_stats->dlsch_mcs1 = 0;
-	break;
-      case 1:
-	eNB_UE_stats->dlsch_mcs1 = 0;
-	break;
-      case 2:
-	eNB_UE_stats->dlsch_mcs1 = 0;
-	break;	
-      case 3:
-	eNB_UE_stats->dlsch_mcs1 = 2;
-	break;
-      case 4:
-	eNB_UE_stats->dlsch_mcs1 = 4;
-	break;
-      case 5:
-	eNB_UE_stats->dlsch_mcs1 = 6;
-	break;
-      case 6:
-	eNB_UE_stats->dlsch_mcs1 = 8;
-	break;
-      case 7:
-	eNB_UE_stats->dlsch_mcs1 = 11;
-	break;
-      case 8:
-	eNB_UE_stats->dlsch_mcs1 = 13;
-	break;
-      case 9:
-	eNB_UE_stats->dlsch_mcs1 = 16;
-	break;
-      case 10:
-	eNB_UE_stats->dlsch_mcs1 = 18;
-	break;
-      case 11:
-	eNB_UE_stats->dlsch_mcs1 = 20;
-	break;
-      case 12:
-	eNB_UE_stats->dlsch_mcs1 = 22;
-	break;
-      case 13:
-	eNB_UE_stats->dlsch_mcs1 = 22;//25
-	break;
-      case 14:
-	eNB_UE_stats->dlsch_mcs1 = 22;//27
-	break;
-      case 15:
-	eNB_UE_stats->dlsch_mcs1 = 22;//28
-	break;
-      default:
-	printf("Invalid CQI");
-	exit(-1);
-      }
-
-    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);  
-    ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
-    
-    
-    header_len_dcch = 2; 
-    rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+(MAX_NUM_RB*next_ue),
-				    (TBS-ta_len-header_len_dcch)); 
-    eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_info[DCCH] = rlc_status.bytes_in_buffer;
-    printf ("CHECK DCCH buffer UE%d:%d TBS %d/\n",next_ue,rlc_status.bytes_in_buffer,TBS);
-    
-    
-    sdu_lengths[0]=0;
-    if (rlc_status.bytes_in_buffer > 0) {  
-      sdu_lengths[0] += mac_rlc_data_req(Mod_id,frame,
-					 DCCH+(MAX_NUM_RB*next_ue),
-					 (char *)&dlsch_buffer[sdu_lengths[0]]);
-      sdu_length_total = sdu_lengths[0];
-      sdu_lcids[0] = DCCH;
-      num_sdus = 1;
-    }
-    else {
-      header_len_dcch = 0;
-      sdu_length_total = 0;
-    }
-    
-    
-    
-    rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+1+(MAX_NUM_RB*next_ue),
-				    (TBS-ta_len-header_len_dcch-sdu_length_total)); 
-    eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_info[DCCH+1] = rlc_status.bytes_in_buffer;
-    printf ("CHECK DCCH1 buffer UE%d:%d\n",next_ue,rlc_status.bytes_in_buffer);
-    
-    
-    if (rlc_status.bytes_in_buffer > 0) {
-      sdu_lengths[num_sdus] += mac_rlc_data_req(Mod_id,frame,
-						DCCH+1+(MAX_NUM_RB*next_ue),
-						(char *)&dlsch_buffer[sdu_lengths[0]]);
-      sdu_lcids[num_sdus] = DCCH1;
-      sdu_length_total += sdu_lengths[num_sdus];
-      header_len_dcch += 2;
-      num_sdus++;
-    }
-    
-    header_len_dtch = 3;     
-    rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
-				    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
-    eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_info[DTCH] = rlc_status.bytes_in_buffer;
-    printf ("CHECK DTCH buffer UE%d:%d\n",next_ue,rlc_status.bytes_in_buffer);
-
-    if (rlc_status.bytes_in_buffer > 0) {
-      
-      sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,
-					       DTCH+(MAX_NUM_RB*next_ue),
-					       (char*)&dlsch_buffer[sdu_length_total]);
-      
-      sdu_lcids[num_sdus] = DTCH;
-      sdu_length_total += sdu_lengths[num_sdus];
-      if (sdu_lengths[num_sdus] < 128)
-	header_len_dtch=2;
-      num_sdus++;
-    }
-    else {
-      header_len_dtch = 0;
-    }
-    
-    
-    if (((sdu_length_total + header_len_dcch + header_len_dtch )> 0)) {
-      
-      header_len_dcch_tmp = header_len_dcch;
-      header_len_dtch_tmp = header_len_dtch;
-      if (header_len_dtch==0)
-	header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch; 
-      else 
-	header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch; 
-      
-      
-
-      nb_rbs_required[next_ue] = 2;
-      
-      
-      TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]); 
-      
-      while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len))  {
-	nb_rbs_required[next_ue] += 2;  
-	if (nb_rbs_required[next_ue]>mac_xface->lte_frame_parms->N_RB_DL) { 
-	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
-	  nb_rbs_required[next_ue] = mac_xface->lte_frame_parms->N_RB_DL;
-	  break;
-	}
-	TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]);
-      }
-    }
-  
-  }
-}
-
-
-// This fuction sorts the UE in order their dlsch buffer and CQI
-void sort_UEs (unsigned char Mod_id,
-	       unsigned char subframe,
-	       u16 *UE_id_sorted){
-  
-  unsigned char next_ue1,next_ue2,round1=0,round2=0,harq_pid1=0,harq_pid2=0;
-  u16 UE_id,granted_UEs,i=0,ii=0,rnti1,rnti2;
-  LTE_eNB_UE_stats* eNB_UE_stats1;
-  LTE_eNB_UE_stats* eNB_UE_stats2;
-  
-
-  granted_UEs = find_dlgranted_UEs(Mod_id);
-
-  i=0;
-  for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-    UE_id_sorted[i] = UE_id;
-    i++;
-  }
-  
-  for(i=0; i < granted_UEs;i++){
-    
-    next_ue1 = UE_id_sorted[i];
-
-    rnti1 = find_UE_RNTI(Mod_id,next_ue1);
-    if(rnti1 == 0)
-      continue;
-
-
-    eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
-
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti1,subframe,&harq_pid1,&round1,0);
-
-
-    for(ii=i+1;ii<granted_UEs;ii++){
-      
-      next_ue2 = UE_id_sorted[ii];
-
-      rnti2 = find_UE_RNTI(Mod_id,next_ue2);
-      if(rnti2 == 0)
-	continue;
-
-      eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,rnti2);
-
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
-
-      if(round2 > round1){
-	UE_id_sorted[i] = next_ue2;
-	UE_id_sorted[ii] = next_ue1;
-      }
-      else if (round2 == round1){      
-	if(eNB_mac_inst[Mod_id].UE_template[next_ue1].dl_buffer_info[DCCH] < eNB_mac_inst[Mod_id].UE_template[next_ue2].dl_buffer_info[DCCH]){
-	  UE_id_sorted[i] = next_ue2;
-	  UE_id_sorted[ii] = next_ue1;
-	}
-	else{
-	  if(eNB_mac_inst[Mod_id].UE_template[next_ue1].dl_buffer_info[DCCH] == eNB_mac_inst[Mod_id].UE_template[next_ue2].dl_buffer_info[DCCH]){
-	    if(eNB_mac_inst[Mod_id].UE_template[next_ue1].dl_buffer_info[DCCH+1] < eNB_mac_inst[Mod_id].UE_template[next_ue2].dl_buffer_info[DCCH+1]){
-	      UE_id_sorted[i] = next_ue2;
-	      UE_id_sorted[ii] = next_ue1;
-	    }
-	    else {
-	      if(eNB_mac_inst[Mod_id].UE_template[next_ue1].dl_buffer_info[DCCH+1] == eNB_mac_inst[Mod_id].UE_template[next_ue2].dl_buffer_info[DCCH+1]){
-		if(eNB_mac_inst[Mod_id].UE_template[next_ue1].dl_buffer_info[DTCH] < eNB_mac_inst[Mod_id].UE_template[next_ue2].dl_buffer_info[DTCH]){
-		  UE_id_sorted[i] = next_ue2;
-		  UE_id_sorted[ii] = next_ue1;
-		}
-		else
-		  {
-		    if(eNB_mac_inst[Mod_id].UE_template[next_ue1].dl_buffer_info[DTCH] == eNB_mac_inst[Mod_id].UE_template[next_ue2].dl_buffer_info[DTCH]){
-		      
-		      if(eNB_UE_stats1->DL_cqi[0] < eNB_UE_stats2->DL_cqi[0]){
-			UE_id_sorted[i] = next_ue2;
-			UE_id_sorted[ii] = next_ue1;
-		      }
-		    }
-		  }
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-}
-	
-// This function provides initial estimation of RBs required by each UE and sub-band allocation for dlsch scheduling on the basis of dlsch buffer and channel feedback (CQI and PMI) 
-void dlsch_scheduler_pre_processor (unsigned char Mod_id,
-				    u32 frame,
-				    unsigned char subframe,
-				    u8 *dl_pow_off,
-				    u16 *pre_nb_available_rbs,
-				    unsigned char rballoc_sub_UE[256][13]){
-
-  unsigned char next_ue,next_ue1,next_ue2,rballoc_sub[13],harq_pid=0,harq_pid1=0,harq_pid2=0,round=0,round1=0,round2=0;
-  unsigned char MIMO_mode_indicator[13];
-  u16 UE_id,UE_id_sorted[256],granted_UEs,i,ii,j,nb_rbs_required[256],nb_rbs_required_remaining[256],i1,i2,i3;
-  u16 rnti,rnti1,rnti2;
-  LTE_eNB_UE_stats* eNB_UE_stats1;
-  LTE_eNB_UE_stats* eNB_UE_stats2;
-
-  granted_UEs = find_dlgranted_UEs(Mod_id);
-
-
-  for(i=0;i<256;i++){
-    nb_rbs_required[i] = 0;
-    UE_id_sorted[i] = i;
-    dl_pow_off[i]  =2;
-    pre_nb_available_rbs[i] = 0;
-    nb_rbs_required_remaining[i] = 0;
-    for(j=0;j<13;j++)
-      {
-	MIMO_mode_indicator[j] = 2;
-	rballoc_sub[j] = 0;
-	rballoc_sub_UE[i][j] = 0;
-      }
-  }
-  
-  // Calculate the number of RBs required by each UE on the basis of DCCH, DCCH+1 and DTCH buffer
-  store_dlsch_buffer (Mod_id,frame,subframe,nb_rbs_required);
-
-  // Sorts the user on the basis of dlsch logical channel buffer and CQI
-  sort_UEs (Mod_id,subframe,UE_id_sorted);
-  //printf ("Frame:%d,SUCCESS %d[%d] %d[%d]\n",frame,UE_id_sorted[0],nb_rbs_required[UE_id_sorted[0]],UE_id_sorted[1],nb_rbs_required[UE_id_sorted[1]]);
-  
-  for (i=0;i<granted_UEs;i++){
-    rnti = find_UE_RNTI(Mod_id,i);
-    if(rnti == 0)
-      continue;
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-    if(round>0)
-      nb_rbs_required[i] = eNB_mac_inst[Mod_id].UE_template[i].nb_rb[harq_pid];
-    nb_rbs_required_remaining[i] = nb_rbs_required[i];
-  }
-  
-
-  
-
-
-  for (i = 0 ;i<granted_UEs; i++){
-    
-    next_ue = UE_id_sorted[i];
-    rnti = find_UE_RNTI(Mod_id,next_ue);
-    if(rnti == 0)
-      continue;
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-
-    if ((mac_get_rrc_status(Mod_id,1,next_ue) < RRC_RECONFIGURED) && (round >0)) {
-
-      for(j=0;j<13;j++){
-
-	if((rballoc_sub[j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){
-
-	  rballoc_sub[j] = 1;
-	  rballoc_sub_UE[next_ue][j] = 1;
-
-	  MIMO_mode_indicator[j] = 1;
-
-	  if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-	    dl_pow_off[next_ue] = 1;
-
-	  if(j == 12){
-	    nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
-	    pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
-	  }
-	  else
-	    {
-	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 2;
-	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 2;
-	    }
-	}
-      }
-    }
-  }
-
-  for (i = 0 ;i<granted_UEs; i++){
-    
-    next_ue = UE_id_sorted[i];
-    rnti = find_UE_RNTI(Mod_id,next_ue);
-    if(rnti == 0)
-      continue;
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-
-    if ((mac_get_rrc_status(Mod_id,1,next_ue) >= RRC_RECONFIGURED) && (round > 0)) {
-
-      for(j=0;j<13;j++){
-
-	if((rballoc_sub[j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){
-
-	  rballoc_sub[j] = 1;
-	  rballoc_sub_UE[next_ue][j] = 1;
-
-	  MIMO_mode_indicator[j] = 1;
-
-	  if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-	    dl_pow_off[next_ue] = 1;
-
-	  if(j == 12){
-	    nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
-	    pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
-	  }
-	  else
-	    {
-	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 2;
-	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 2;
-	    }
-	}
-      }
-    }
-  }
-
-  for (i = 0 ;i<granted_UEs; i++){
-    
-    next_ue = UE_id_sorted[i];
-    rnti = find_UE_RNTI(Mod_id,next_ue);
-    if(rnti == 0)
-      continue;
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-
-    if ((mac_get_rrc_status(Mod_id,1,next_ue) < RRC_RECONFIGURED) && (round == 0)) {
-
-      for(j=0;j<13;j++){
-
-	if((rballoc_sub[j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){
-
-	  rballoc_sub[j] = 1;
-	  rballoc_sub_UE[next_ue][j] = 1;
-
-	  MIMO_mode_indicator[j] = 1;
-
-	  if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-	    dl_pow_off[next_ue] = 1;
-
-	  if(j == 12){
-	    nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
-	    pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
-	  }
-	  else
-	    {
-	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 2;
-	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 2;
-	    }
-	}
-      }
-    }
-  }
-
-  
-  for (i = 0 ;i<granted_UEs; i++){
-    
-    next_ue1 = UE_id_sorted[i];
-    rnti1 = find_UE_RNTI(Mod_id,next_ue1);
-    if(rnti1 == 0)
-      continue;
-
-    eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
-
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti1,subframe,&harq_pid1,&round1,0);
-
-    if ((mac_get_rrc_status(Mod_id,1,next_ue1) >= RRC_RECONFIGURED) && (round1==0) && (mac_xface->get_transmission_mode(Mod_id,rnti1)==5) && (dl_pow_off[next_ue1] != 1)) {	
-      
-      for(j=0;j<13;j+=2){
-      
-	if((((rballoc_sub[j] == 0) && (rballoc_sub[j+1]==0) && (j < 12)) || (j==12 && (rballoc_sub[j]==0))) && (nb_rbs_required_remaining[next_ue1]>0)){
-
-	  for (ii = i+1;ii < granted_UEs;ii++) {
-	      
-	    next_ue2 = UE_id_sorted[ii];
-	    rnti2 = find_UE_RNTI(Mod_id,next_ue2);
-	    if(rnti2 == 0)
-	      continue;
-
-	    eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,rnti2);
-	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
-	      
-	    if((mac_get_rrc_status(Mod_id,1,next_ue2) >= RRC_RECONFIGURED) && (round2==0) && (nb_rbs_required_remaining[next_ue2]>0) && (mac_xface->get_transmission_mode(Mod_id,rnti2)==5) && ((((eNB_UE_stats2->DL_pmi_single^eNB_UE_stats1->DL_pmi_single)<<(14-j))&0xc000)== 0x4000) && (dl_pow_off[next_ue2] != 1)){
-
-		rballoc_sub[j] = 1;
-		rballoc_sub_UE[next_ue1][j] = 1;
-		rballoc_sub_UE[next_ue2][j] = 1;
-		MIMO_mode_indicator[j] = 0;
-
-		if (j<12){
-		  rballoc_sub[j+1] = 1;
-		  rballoc_sub_UE[next_ue1][j+1] = 1;
-		  rballoc_sub_UE[next_ue2][j+1] = 1;
-		  MIMO_mode_indicator[j+1] = 0;
-		}
-		
-		dl_pow_off[next_ue1] = 0;
-		dl_pow_off[next_ue2] = 0;
-
-		
-		
-
-		if(j == 12){
-		  nb_rbs_required_remaining[next_ue1] = nb_rbs_required_remaining[next_ue1] - 1;
-		  pre_nb_available_rbs[next_ue1] = pre_nb_available_rbs[next_ue1] + 1;
-		  nb_rbs_required_remaining[next_ue2] = nb_rbs_required_remaining[next_ue2] - 1;
-		  pre_nb_available_rbs[next_ue2] = pre_nb_available_rbs[next_ue2] + 1;
-		}
-		else
-		  {
-		    nb_rbs_required_remaining[next_ue1] = nb_rbs_required_remaining[next_ue1] - 4;
-		    pre_nb_available_rbs[next_ue1] = pre_nb_available_rbs[next_ue1] + 4;
-		    nb_rbs_required_remaining[next_ue2] = nb_rbs_required_remaining[next_ue2] - 4;
-		    pre_nb_available_rbs[next_ue2] = pre_nb_available_rbs[next_ue2] + 4;
-		  }
-		break;
-	    }
-	  }
-	}
-      }
-    }
-  }
-  for (i = 0;i<granted_UEs; i++){
-    
-    next_ue = UE_id_sorted[i];
-    rnti = find_UE_RNTI(Mod_id,next_ue);
-    if (rnti == 0)
-      continue;
-    
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-    
-    if ((mac_get_rrc_status(Mod_id,1,next_ue) >= RRC_RECONFIGURED) && (round==0)) {
-      
-      for(j=0;j<13;j++){
-	
-	if((rballoc_sub[j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){	  
-	  
-	  
-	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
-	  case 1:
-	  case 2:
-	  case 4:
-	  case 6:
-	    rballoc_sub[j] = 1;
-	    rballoc_sub_UE[next_ue][j] = 1;
-	    
-	    MIMO_mode_indicator[j] = 1;
-	    
-	    if(j == 12){
-	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
-	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
-	    }
-	    else
-	      {
-		nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 2;
-		pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 2;
-	      }
-	    
-	    break;
-	  case 5:
-	    if (dl_pow_off[next_ue] != 0){
-	      
-	      dl_pow_off[next_ue] = 1;
-	      
-	      rballoc_sub[j] = 1;
-	      rballoc_sub_UE[next_ue][j] = 1;
-	      
-	      MIMO_mode_indicator[j] = 1;
-	      
-	      if(j == 12){
-		nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
-		pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
-	      }
-	      else
-		{
-		  nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 2;
-		  pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 2;
-		}
-	    }
-	    break;
-	  default:
-	    break;
-	  }
-	}
-      }
-    }
-  }
-  
-  i1=0;
-  i2=0;
-  i3=0;
-  for (j=0;j<13;j++){
-    if(MIMO_mode_indicator[j] == 2)
-      i1 = i1+1;
-    else if(MIMO_mode_indicator[j] == 1)
-      i2 = i2+1;
-    else if(MIMO_mode_indicator[j] == 0)
-      i3 = i3+1;
-  }
-
-
-  if((i1 < 13) && (i2>0) && (i3==0))
-    PHY_vars_eNB_g[Mod_id]->check_for_SUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_SUMIMO_transmissions + 1;
-  
-  if(i3 == 13)
-    PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions + 1;
-
-  if((i1 < 13) && (i3 > 0))
-    PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions + 1;
-
-  PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
-  
-  
-  
-  
-  for(UE_id=0;UE_id<granted_UEs;UE_id++){
-    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
-    LOG_D(PHY,"******************Scheduling Information for UE%d ************************\n",UE_id);
-    LOG_D(PHY,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
-    LOG_D(PHY,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
-    for(i=0;i<13;i++){
-      PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub_UE[UE_id][i];
-      LOG_D(PHY,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub_UE[UE_id][i]);
-    }
-    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
-    LOG_D(PHY,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
-  }
-}
-
 
 void update_ul_dci(u8 Mod_id,u16 rnti,u8 dai) {
 
@@ -2607,6 +1988,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	nCCE-=(1<<aggregation); // adjust the remaining nCCE
 	*nCCE_used += (1<<aggregation);
 
+	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].pre_nb_available_rbs = nb_rb;
+	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].dl_pow_off = dl_pow_off[next_ue];
+
+	for(j=0;j<13;j++)
+	  PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].rballoc_sub[j] = eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_sub[harq_pid][j];
+
 	switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
 	case 1:
 	case 2:
@@ -2676,11 +2063,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       // calculate mcs
 
-
+      rlc_status.bytes_in_buffer = 0;
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
       //TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
       TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+      printf("CHECK1 TBS:%d RBs:%d MCS:%d \n",TBS,nb_available_rb,eNB_UE_stats->dlsch_mcs1);
       // check first for RLC data on DCCH
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload  
       ta_len = (eNB_UE_stats->UE_timing_offset>0) ? 2 : 0;
@@ -2691,6 +2079,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+(MAX_NUM_RB*next_ue),
 				      (TBS-ta_len-header_len_dcch)); // transport block set size
+      printf ("CHECK1 DCCH buffer UE%d:%d \n",next_ue,rlc_status.bytes_in_buffer);
 
       sdu_lengths[0]=0;
       if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
@@ -2720,6 +2109,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DCCH+1+(MAX_NUM_RB*next_ue),
 				      (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
                                                                                  // DCCH SDU
+      printf ("CHECK1 DCCH1 buffer UE%d:%d \n",next_ue,rlc_status.bytes_in_buffer);
 
       if (rlc_status.bytes_in_buffer > 0) {
 	LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, Requesting %d bytes from RLC (RRC message)\n",
@@ -2744,6 +2134,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
       rlc_status = mac_rlc_status_ind(Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),
 				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+      printf ("CHECK1 DTCH buffer UE%d:%d TBS:%d Mod_id:%d frame:%d SDU:%d DTCH:%d\n",next_ue,rlc_status.bytes_in_buffer,TBS,Mod_id,frame,TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch,DTCH+(MAX_NUM_RB*next_ue));
 
       if (rlc_status.bytes_in_buffer > 0) {
 	
@@ -2814,6 +2205,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    }
 	  }
 
+	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].pre_nb_available_rbs = nb_rb;
+	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].dl_pow_off = dl_pow_off[next_ue];
+
+	for(j=0;j<13;j++)
+	  PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].rballoc_sub[j] = eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_sub[harq_pid][j];
+
 	// decrease mcs until TBS falls below required length
 	while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs>0)) {
 	  mcs--;
@@ -2821,7 +2218,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	}
 
 	// if we have decreased too much or we don't have enough RBs, increase MCS
-	while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs<28)) {
+	while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && ((( dl_pow_off[next_ue]>0) && (mcs<28)) || ( (dl_pow_off[next_ue]==0) && (mcs<=15)))) {
 	  mcs++;
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
