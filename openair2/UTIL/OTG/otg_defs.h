@@ -193,6 +193,18 @@ UDP_IPV6,
 TCP_IPV6,
 }HEADER_TYPE; 
 
+/**
+* \enum TRAFFIC_TYPE
+*
+* \brief HEADER_TYPE alows to identify the traffic type no specific type, m2m,etc.    
+*
+*/
+
+typedef enum { 
+NO_TYPE=0,
+M2M_TYPE,
+}TRAFFIC_TYPE;
+
 
 /**
 * \struct otg_t
@@ -261,7 +273,7 @@ typedef struct {
 	unsigned int holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
 	unsigned int pu_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
 	unsigned int ed_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
-	//unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
 
 
 	unsigned int throughput_metric;
@@ -284,6 +296,7 @@ typedef struct{
 	unsigned char hdr_type; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 	unsigned short pkts_size;		/*!< \brief the size of payload + header */
   unsigned short aggregation_level;		/*!< \brief packet aggregation level */
+	unsigned int traffic_type; 		/*!< \brief to specify if it corresponds to an m2m traffic */
 	//int payload_size;	/*!< \brief the size of the payload to transmit */
 	//int header_size; 	/*!< \brief Header type: tcp/udp vs ipv4/ipv6 */
 }__attribute__((__packed__)) otg_hdr_t;
