@@ -862,6 +862,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
   // PDP is oversampled, e.g. 1024 sample instead of 839
   // Adapt the NCS (zero-correlation zones) with oversampling factor e.g. 1024/839
   NCS2 = (N_ZC==839) ? ((NCS<<10)/839) : ((NCS<<8)/139);
+  if (NCS2==0)
+      NCS2 = N_ZC;
 
   switch (prach_fmt) {
   case 0:
