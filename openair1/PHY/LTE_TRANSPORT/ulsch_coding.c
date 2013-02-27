@@ -173,7 +173,7 @@ u32 ulsch_encoding(u8 *a,
   //  u16 offset;
   u32 crc=1;
   u16 iind;
-  u16 A;
+  uint32_t A;
   u8 Q_m=0;
   u32 Kr=0,Kr_bytes,r,r_offset=0;
   u8 y[6*14*1200],*yptr;;
