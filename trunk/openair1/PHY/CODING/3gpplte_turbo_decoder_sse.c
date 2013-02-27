@@ -1,6 +1,6 @@
 /* file: 3gpplte_turbo_decoder_sse.c
    purpose: Routines for implementing max-logmap decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
-   author: raymond.knopp@eurecom.fr
+   authors: raymond.knopp@eurecom.fr, Laurent Thomas (Alcatel-Lucent)
    date: 21.10.2009 
 
    Note: This routine currently requires SSE2,SSSE3 and SSE4.1 equipped computers.  IT WON'T RUN OTHERWISE!
@@ -8,6 +8,7 @@
    Changelog: 17.11.2009 FK SSE4.1 not required anymore
    Aug. 2012 new parallelization options for higher speed (8-way parallelization)
    Jan. 2013 8-bit LLR support with 16-way parallelization
+   Feb. 2013 New interleaving and hard-decision optimizations (L. Thomas)
 */
 
 ///
@@ -42,7 +43,6 @@
 typedef int8_t llr_t; // internal decoder LLR data is 8-bit fixed
 typedef int8_t channel_t;
 #define MAX 64
-#define MINBY2 0xc0c0
 #else 
 
 typedef int16_t llr_t; // internal decoder LLR data is 16-bit fixed
@@ -115,8 +115,51 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
 
     m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
     m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
+    /*
+    printf("gamma %d: s %d,%d,%d,%d,%d,%d,%d,%d\n",
+	   k,
+	   (int16_t)_mm_extract_epi16(systematic128[k],0),
+	   (int16_t)_mm_extract_epi16(systematic128[k],1),
+	   (int16_t)_mm_extract_epi16(systematic128[k],2),
+	   (int16_t)_mm_extract_epi16(systematic128[k],3),
+	   (int16_t)_mm_extract_epi16(systematic128[k],4),
+	   (int16_t)_mm_extract_epi16(systematic128[k],5),
+	   (int16_t)_mm_extract_epi16(systematic128[k],6),
+	   (int16_t)_mm_extract_epi16(systematic128[k],7));
 
-    //      msg("gamma %d : (%d,%d) -> (%d,%d)\n",k,systematic[k],y_parity[k],m11[k],m10[k]);
+    printf("gamma %d: yp %d,%d,%d,%d,%d,%d,%d,%d\n",
+	   k,
+	   (int16_t)_mm_extract_epi16(y_parity128[k],0),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],1),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],2),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],3),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],4),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],5),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],6),
+	   (int16_t)_mm_extract_epi16(y_parity128[k],7));
+
+    printf("gamma %d: m11 %d,%d,%d,%d,%d,%d,%d,%d\n",
+	   k,
+	   (int16_t)_mm_extract_epi16(m11_128[k],0),
+	   (int16_t)_mm_extract_epi16(m11_128[k],1),
+	   (int16_t)_mm_extract_epi16(m11_128[k],2),
+	   (int16_t)_mm_extract_epi16(m11_128[k],3),
+	   (int16_t)_mm_extract_epi16(m11_128[k],4),
+	   (int16_t)_mm_extract_epi16(m11_128[k],5),
+	   (int16_t)_mm_extract_epi16(m11_128[k],6),
+	   (int16_t)_mm_extract_epi16(m11_128[k],7));
+    printf("gamma %d: m10 %d,%d,%d,%d,%d,%d,%d,%d\n",
+	   k,
+	   (int16_t)_mm_extract_epi16(m10_128[k],0),
+	   (int16_t)_mm_extract_epi16(m10_128[k],1),
+	   (int16_t)_mm_extract_epi16(m10_128[k],2),
+	   (int16_t)_mm_extract_epi16(m10_128[k],3),
+	   (int16_t)_mm_extract_epi16(m10_128[k],4),
+	   (int16_t)_mm_extract_epi16(m10_128[k],5),
+	   (int16_t)_mm_extract_epi16(m10_128[k],6),
+	   (int16_t)_mm_extract_epi16(m10_128[k],7));
+    */
+          
   }
   // Termination
   m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
@@ -138,7 +181,7 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
     //    m11_128[k] = _mm_sub_epi8(_mm_avg_epu8(_mm_add_epi8(systematic128[k],K128),_mm_add_epi8(y_parity128[k],K128)),K128);
     //    m10_128[k] = _mm_sub_epi8(_mm_avg_epu8(_mm_add_epi8(systematic128[k],K128),_mm_add_epi8(_mm_sign_epi8(y_parity128[k],K128),K128)),K128);
 
-    /*        
+    /*            
     printf("gamma %d: s %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 	   k,
 	   (int8_t)_mm_extract_epi8(systematic128[k],0),
@@ -211,7 +254,7 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
 	   (int8_t)_mm_extract_epi8(m10_128[k],13),
 	   (int8_t)_mm_extract_epi8(m10_128[k],14),
 	   (int8_t)_mm_extract_epi8(m10_128[k],15));
-    */            
+    */                
   }
   // Termination
 
@@ -294,7 +337,7 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
 void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F) {
   int k,l,l2,K1,rerun_flag=0;
   __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
-  __m128i m11_0,m10_0,a0,a1,a2,a3,a4,a5,a6,a7;
+  __m128i a0,a1,a2,a3,a4,a5,a6,a7,*m11p,*m10p;
   __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
   __m128i new0,new1,new2,new3,new4,new5,new6,new7;
   __m128i alpha_max;
@@ -321,6 +364,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha128[7] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
     }
     else { 
+      //set initial alpha in columns 1-7 from final alpha from last run in columns 0-6
       alpha128[0] = _mm_slli_si128(alpha128[frame_length],2);
       alpha128[1] = _mm_slli_si128(alpha128[1+frame_length],2);
       alpha128[2] = _mm_slli_si128(alpha128[2+frame_length],2);
@@ -329,6 +373,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha128[5] = _mm_slli_si128(alpha128[5+frame_length],2);
       alpha128[6] = _mm_slli_si128(alpha128[6+frame_length],2);
       alpha128[7] = _mm_slli_si128(alpha128[7+frame_length],2);
+      // set initial alpha in column 0 to (0,-MAX/2,...,-MAX/2)
       alpha[8] = -MAX/2;
       alpha[16] = -MAX/2;
       alpha[24] = -MAX/2;
@@ -336,71 +381,44 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha[40] = -MAX/2;
       alpha[48] = -MAX/2;
       alpha[56] = -MAX/2;
-      /*
-	printf("alpha (init, frame_length %d) alpha128[frame_length) = %p\n",frame_length,&alpha128[frame_length]);
-	print_shorts("a0:",&alpha128[0]);
-	print_shorts("a1:",&alpha128[1]);
-	print_shorts("a2:",&alpha128[2]);
-	print_shorts("a3:",&alpha128[3]);
-	print_shorts("a4:",&alpha128[4]);
-	print_shorts("a5:",&alpha128[5]);
-	print_shorts("a6:",&alpha128[6]);
-	print_shorts("a7:",&alpha128[7]);      
-      */
     }
   
     alpha_ptr = &alpha128[0];
-    /*
-      printf("alpha k %d\n",-1);
-      print_shorts("a0:",&alpha_ptr[0]);
-      print_shorts("a1:",&alpha_ptr[1]);
-      print_shorts("a2:",&alpha_ptr[2]);
-      print_shorts("a3:",&alpha_ptr[3]);
-      print_shorts("a4:",&alpha_ptr[4]);
-      print_shorts("a5:",&alpha_ptr[5]);
-      print_shorts("a6:",&alpha_ptr[6]);
-      print_shorts("a7:",&alpha_ptr[7]);
-    */
+
+    m11p = (__m128i*)m_11;
+    m10p = (__m128i*)m_10;
 
     for (k=0;
 	 k<l;
 	 k++){
-
-      //            printf("*****%d/%d (rerun %d)\n",k,l,rerun_flag);
-
-      
-      m11_0=((__m128i*)m_11)[k];  
-      m10_0=((__m128i*)m_10)[k];
-
 
       a1=_mm_load_si128(&alpha_ptr[1]);
       a3=_mm_load_si128(&alpha_ptr[3]);
       a5=_mm_load_si128(&alpha_ptr[5]);
       a7=_mm_load_si128(&alpha_ptr[7]);
 
-      m_b0 = _mm_adds_epi16(a1,m11_0);  // m11
-      m_b4 = _mm_subs_epi16(a1,m11_0);  // m00=-m11    
-      m_b1 = _mm_subs_epi16(a3,m10_0);  // m01=-m10
-      m_b5 = _mm_adds_epi16(a3,m10_0);  // m10
-      m_b2 = _mm_adds_epi16(a5,m10_0);  // m10
-      m_b6 = _mm_subs_epi16(a5,m10_0);  // m01=-m10
-      m_b3 = _mm_subs_epi16(a7,m11_0);  // m00=-m11
-      m_b7 = _mm_adds_epi16(a7,m11_0);  // m11
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
 
       a0=_mm_load_si128(&alpha_ptr[0]);
       a2=_mm_load_si128(&alpha_ptr[2]);
       a4=_mm_load_si128(&alpha_ptr[4]);
       a6=_mm_load_si128(&alpha_ptr[6]);
-
      
-      new0 = _mm_subs_epi16(a0,m11_0);  // m00=-m11
-      new4 = _mm_adds_epi16(a0,m11_0);  // m11
-      new1 = _mm_adds_epi16(a2,m10_0);  // m10
-      new5 = _mm_subs_epi16(a2,m10_0);  // m01=-m10
-      new2 = _mm_subs_epi16(a4,m10_0);  // m01=-m10
-      new6 = _mm_adds_epi16(a4,m10_0);  // m10
-      new3 = _mm_adds_epi16(a6,m11_0);  // m11
-      new7 = _mm_subs_epi16(a6,m11_0);  // m00=-m11
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
       
       a0 = _mm_max_epi16(m_b0,new0);
       a1 = _mm_max_epi16(m_b1,new1);
@@ -411,7 +429,6 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       a6 = _mm_max_epi16(m_b6,new6);
       a7 = _mm_max_epi16(m_b7,new7);
 
-      // compute and subtract maxima
       alpha_max = _mm_max_epi16(a0,a1);
       alpha_max = _mm_max_epi16(alpha_max,a2);
       alpha_max = _mm_max_epi16(alpha_max,a3);
@@ -420,7 +437,9 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_max = _mm_max_epi16(alpha_max,a6);
       alpha_max = _mm_max_epi16(alpha_max,a7);
 
-      alpha_ptr += 8;    
+      alpha_ptr+=8;
+      m11p++;
+      m10p++;    
       alpha_ptr[0] = _mm_subs_epi16(a0,alpha_max);
       alpha_ptr[1] = _mm_subs_epi16(a1,alpha_max);
       alpha_ptr[2] = _mm_subs_epi16(a2,alpha_max);
@@ -429,33 +448,482 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_ptr[5] = _mm_subs_epi16(a5,alpha_max);
       alpha_ptr[6] = _mm_subs_epi16(a6,alpha_max);
       alpha_ptr[7] = _mm_subs_epi16(a7,alpha_max);
-    
-    
-      //      printf("alpha k %d/%d (%d) (%p,%p)\n",k,K1,k<<3,alpha_ptr,&alpha[(frame_length+16)*8]);
-      /*
-	print_shorts("m11:",&m11_0);
-	print_shorts("m10:",&m10_0);
-	print_shorts("a0:",&alpha_ptr[0]);
-	print_shorts("a1:",&alpha_ptr[1]);
-	print_shorts("a2:",&alpha_ptr[2]);
-	print_shorts("a3:",&alpha_ptr[3]);
-	print_shorts("a4:",&alpha_ptr[4]);
-	print_shorts("a5:",&alpha_ptr[5]);
-	print_shorts("a6:",&alpha_ptr[6]);
-	print_shorts("a7:",&alpha_ptr[7]);      
-      */
-      /*
-	if (rerun_flag == 1) {
-	int i,j;
-	for (j=0;j<8;j++) {
-	for (i=0;i<8;i++) {
-	if (((int16_t*)&alpha_ptr[i])[j] == 0)
-	printf("state %d in pos %d, alpha %d\n", i, k+(j*K1),((int16_t*)&alpha_ptr[i])[j]);
-	}
-	}
-	}
-      */
+
     }
+
+    /* 
+       // Try this on x86-64
+    for (k=0;
+	 k<l;
+	 k+=8){
+
+      
+      //      m11_0=((__m128i*)m_11)[k];  
+      //      m10_0=((__m128i*)m_10)[k];
+
+      // 0/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+
+      // 1/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;    
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+
+      // 2/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;    
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+
+      // 3/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;    
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+
+      // 4/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;    
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+
+      // 5/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;    
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+
+      // 6/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;    
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+      
+	// 7/7
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+	// compute and subtract maxima
+      alpha_max = _mm_max_epi16(a0,a1);
+      alpha_max = _mm_max_epi16(alpha_max,a2);
+      alpha_max = _mm_max_epi16(alpha_max,a3);
+      alpha_max = _mm_max_epi16(alpha_max,a4);
+      alpha_max = _mm_max_epi16(alpha_max,a5);
+      alpha_max = _mm_max_epi16(alpha_max,a6);
+      alpha_max = _mm_max_epi16(alpha_max,a7);
+      alpha_ptr += 8;
+      m11p++;
+      m10p++;    
+      alpha_ptr[0] = _mm_subs_epi16(a0,alpha_max);
+      alpha_ptr[1] = _mm_subs_epi16(a1,alpha_max);
+      alpha_ptr[2] = _mm_subs_epi16(a2,alpha_max);
+      alpha_ptr[3] = _mm_subs_epi16(a3,alpha_max);
+      alpha_ptr[4] = _mm_subs_epi16(a4,alpha_max);
+      alpha_ptr[5] = _mm_subs_epi16(a5,alpha_max);
+      alpha_ptr[6] = _mm_subs_epi16(a6,alpha_max);
+      alpha_ptr[7] = _mm_subs_epi16(a7,alpha_max);
+    }
+    // fill in remainder
+    for (k=0;
+	 k<(l-((l>>3)<<3));
+	 k++){
+
+      
+      a1=_mm_load_si128(&alpha_ptr[1]);
+      a3=_mm_load_si128(&alpha_ptr[3]);
+      a5=_mm_load_si128(&alpha_ptr[5]);
+      a7=_mm_load_si128(&alpha_ptr[7]);
+
+      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
+      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
+      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
+      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
+
+      a0=_mm_load_si128(&alpha_ptr[0]);
+      a2=_mm_load_si128(&alpha_ptr[2]);
+      a4=_mm_load_si128(&alpha_ptr[4]);
+      a6=_mm_load_si128(&alpha_ptr[6]);
+     
+      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
+      new4 = _mm_adds_epi16(a0,*m11p);  // m11
+      new1 = _mm_adds_epi16(a2,*m10p);  // m10
+      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
+      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
+      new6 = _mm_adds_epi16(a4,*m10p);  // m10
+      new3 = _mm_adds_epi16(a6,*m11p);  // m11
+      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
+      
+      a0 = _mm_max_epi16(m_b0,new0);
+      a1 = _mm_max_epi16(m_b1,new1);
+      a2 = _mm_max_epi16(m_b2,new2);
+      a3 = _mm_max_epi16(m_b3,new3);
+      a4 = _mm_max_epi16(m_b4,new4);
+      a5 = _mm_max_epi16(m_b5,new5);
+      a6 = _mm_max_epi16(m_b6,new6);
+      a7 = _mm_max_epi16(m_b7,new7);
+      
+      alpha_ptr += 8;
+      m11p++;
+      m10p++;
+      alpha_ptr[0] = a0;
+      alpha_ptr[1] = a1;
+      alpha_ptr[2] = a2;
+      alpha_ptr[3] = a3;
+      alpha_ptr[4] = a4;
+      alpha_ptr[5] = a5;
+      alpha_ptr[6] = a6;
+      alpha_ptr[7] = a7;
+    }
+*/
 #else
 
 
@@ -491,7 +959,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
     }
   
     alpha_ptr = &alpha128[0];
-    /*
+    /*    
     printf("alpha k %d (%d) (%p)\n",0,0,alpha_ptr);
     
     print_bytes("a0:",&alpha_ptr[0]);
@@ -502,35 +970,37 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
     print_bytes("a5:",&alpha_ptr[5]);
     print_bytes("a6:",&alpha_ptr[6]);
     print_bytes("a7:",&alpha_ptr[7]);      
-    */
+    */    
+
+    m11p = (__m128i*)m_11;
+    m10p = (__m128i*)m_10;
+
     for (k=0;
 	 k<l;
 	 k++){
     
-      m11_0=((__m128i*)m_11)[k];  
-      m10_0=((__m128i*)m_10)[k];
     
+      m_b0 = _mm_adds_epi8(alpha_ptr[1],*m11p);  // m11
+      m_b4 = _mm_subs_epi8(alpha_ptr[1],*m11p);  // m00=-m11    
+      m_b1 = _mm_subs_epi8(alpha_ptr[3],*m10p);  // m01=-m10
+      m_b5 = _mm_adds_epi8(alpha_ptr[3],*m10p);  // m10
+      m_b2 = _mm_adds_epi8(alpha_ptr[5],*m10p);  // m10
+      m_b6 = _mm_subs_epi8(alpha_ptr[5],*m10p);  // m01=-m10
+      m_b3 = _mm_subs_epi8(alpha_ptr[7],*m11p);  // m00=-m11
+      m_b7 = _mm_adds_epi8(alpha_ptr[7],*m11p);  // m11 
     
-      m_b0 = _mm_adds_epi8(alpha_ptr[1],m11_0);  // m11
-      m_b4 = _mm_subs_epi8(alpha_ptr[1],m11_0);  // m00=-m11    
-      m_b1 = _mm_subs_epi8(alpha_ptr[3],m10_0);  // m01=-m10
-      m_b5 = _mm_adds_epi8(alpha_ptr[3],m10_0);  // m10
-      m_b2 = _mm_adds_epi8(alpha_ptr[5],m10_0);  // m10
-      m_b6 = _mm_subs_epi8(alpha_ptr[5],m10_0);  // m01=-m10
-      m_b3 = _mm_subs_epi8(alpha_ptr[7],m11_0);  // m00=-m11
-      m_b7 = _mm_adds_epi8(alpha_ptr[7],m11_0);  // m11
-    
-      new0 = _mm_subs_epi8(alpha_ptr[0],m11_0);  // m00=-m11
-      new4 = _mm_adds_epi8(alpha_ptr[0],m11_0);  // m11
-      new1 = _mm_adds_epi8(alpha_ptr[2],m10_0);  // m10
-      new5 = _mm_subs_epi8(alpha_ptr[2],m10_0);  // m01=-m10
-      new2 = _mm_subs_epi8(alpha_ptr[4],m10_0);  // m01=-m10
-      new6 = _mm_adds_epi8(alpha_ptr[4],m10_0);  // m10
-      new3 = _mm_adds_epi8(alpha_ptr[6],m11_0);  // m11
-      new7 = _mm_subs_epi8(alpha_ptr[6],m11_0);  // m00=-m11
+      new0 = _mm_subs_epi8(alpha_ptr[0],*m11p);  // m00=-m11
+      new4 = _mm_adds_epi8(alpha_ptr[0],*m11p);  // m11
+      new1 = _mm_adds_epi8(alpha_ptr[2],*m10p);  // m10
+      new5 = _mm_subs_epi8(alpha_ptr[2],*m10p);  // m01=-m10
+      new2 = _mm_subs_epi8(alpha_ptr[4],*m10p);  // m01=-m10
+      new6 = _mm_adds_epi8(alpha_ptr[4],*m10p);  // m10
+      new3 = _mm_adds_epi8(alpha_ptr[6],*m11p);  // m11
+      new7 = _mm_subs_epi8(alpha_ptr[6],*m11p);  // m00=-m11
     
       alpha_ptr += 8;
-    
+      m11p++;
+      m10p++;
       alpha_ptr[0] = _mm_max_epi8(m_b0,new0);
       alpha_ptr[1] = _mm_max_epi8(m_b1,new1);
       alpha_ptr[2] = _mm_max_epi8(m_b2,new2);
@@ -549,7 +1019,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[5]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[6]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[7]);
-    
+
       alpha_ptr[0] = _mm_subs_epi8(alpha_ptr[0],alpha_max);
       alpha_ptr[1] = _mm_subs_epi8(alpha_ptr[1],alpha_max);
       alpha_ptr[2] = _mm_subs_epi8(alpha_ptr[2],alpha_max);
@@ -558,7 +1028,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_ptr[5] = _mm_subs_epi8(alpha_ptr[5],alpha_max);
       alpha_ptr[6] = _mm_subs_epi8(alpha_ptr[6],alpha_max);
       alpha_ptr[7] = _mm_subs_epi8(alpha_ptr[7],alpha_max);
-      /*      
+      /*            
       printf("alpha k %d (%d) (%p)\n",k+1,(k+1)<<4,alpha_ptr);
     
       print_bytes("m11:",&m11_0);
@@ -572,7 +1042,7 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       print_bytes("a6:",&alpha_ptr[6]);
       print_bytes("a7:",&alpha_ptr[7]);      
       */
-    }
+}
 #endif
     if (rerun_flag==1)
       break;
@@ -596,6 +1066,7 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
 #ifdef LLR8
   llr_t beta2,beta3,beta4,beta5,beta6,beta7;
   __m128i beta_16;
+
 #endif
 
 #ifdef DEBUG_LOGMAP
@@ -795,14 +1266,14 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[5]);
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[7]);
-      
+
       beta_ptr[0] = _mm_subs_epi16(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi16(beta_ptr[1],beta_max);
       beta_ptr[2] = _mm_subs_epi16(beta_ptr[2],beta_max);
       beta_ptr[3] = _mm_subs_epi16(beta_ptr[3],beta_max);
       beta_ptr[4] = _mm_subs_epi16(beta_ptr[4],beta_max);
       beta_ptr[5] = _mm_subs_epi16(beta_ptr[5],beta_max);
-      beta_ptr[6] = _mm_subs_epi16(beta_ptr[6],beta_max);
+      beta_ptr[6] = _mm_subs_epi16(beta_ptr[6],beta_max); 
       beta_ptr[7] = _mm_subs_epi16(beta_ptr[7],beta_max);
       
 
@@ -1012,7 +1483,7 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[5]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[7]);
-      
+
       beta_ptr[0] = _mm_subs_epi8(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi8(beta_ptr[1],beta_max);
       beta_ptr[2] = _mm_subs_epi8(beta_ptr[2],beta_max);
@@ -1468,10 +1939,10 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   llr_t m10[n+16] __attribute__ ((aligned(16)));
 
   
-  unsigned int pi,*pi2_p,*pi3_p,*pi4_p,*pi5_p,*pi6_p;
+  int *pi2_p,*pi4_p,*pi5_p,*pi6_p;
   llr_t *s,*s1,*s2,*yp1,*yp2,*yp;
   __m128i *yp128;
-  unsigned int i,i2,i3,j,iind;//,pi;
+  unsigned int i,j,iind;//,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
   u8 temp;
@@ -1531,9 +2002,9 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],3),_mm_srai_epi16(((__m128i *)y)[j+1],3));
     //((__m128i *)y8)[i] = _mm_packs_epi16(((__m128i *)y)[j],((__m128i *)y)[j+1]);
   }
-  yp128 = (__m128i*)y8;
+  yp128 = (__m128i*)y8; 
 #else
-  yp128 = (__m128i*)y;
+  yp128 = (__m128i*)y;    
 #endif
 
 
@@ -1548,7 +2019,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 #ifndef LLR8  
   for (i=0;i<n2;i+=8) {
     pi2_p = &pi2tab[iind][i];
-    
+     
     j=pi2_p[0];
 
 
@@ -1557,14 +2028,14 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     s[j]   = _mm_extract_epi16(tmpe,0); 
     yp1[j] = _mm_extract_epi16(tmpe,1); 
     yp2[j] = _mm_extract_epi16(tmpe,2);
-
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
     
     j=pi2_p[1];
 
     s[j]   = _mm_extract_epi16(tmpe,3); 
     yp1[j] = _mm_extract_epi16(tmpe,4); 
     yp2[j] = _mm_extract_epi16(tmpe,5);
-
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[2];
 
@@ -1572,18 +2043,21 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     yp1[j] = _mm_extract_epi16(tmpe,7); 
     tmpe = _mm_load_si128(&yp128[1]);
     yp2[j] = _mm_extract_epi16(tmpe,0);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[3];
 
     s[j]   = _mm_extract_epi16(tmpe,1); 
     yp1[j] = _mm_extract_epi16(tmpe,2); 
     yp2[j] = _mm_extract_epi16(tmpe,3);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[4];
 
     s[j]   = _mm_extract_epi16(tmpe,4); 
     yp1[j] = _mm_extract_epi16(tmpe,5); 
     yp2[j] = _mm_extract_epi16(tmpe,6);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
     
     j=pi2_p[5];
 
@@ -1591,18 +2065,21 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     tmpe = _mm_load_si128(&yp128[2]);
     yp1[j] = _mm_extract_epi16(tmpe,0); 
     yp2[j] = _mm_extract_epi16(tmpe,1);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
     
     j=pi2_p[6];
 
     s[j]   = _mm_extract_epi16(tmpe,2); 
     yp1[j] = _mm_extract_epi16(tmpe,3); 
     yp2[j] = _mm_extract_epi16(tmpe,4);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[7];
 
     s[j]   = _mm_extract_epi16(tmpe,5); 
     yp1[j] = _mm_extract_epi16(tmpe,6); 
     yp2[j] = _mm_extract_epi16(tmpe,7);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     yp128+=3;
 
@@ -1617,83 +2094,99 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     s[j]   = _mm_extract_epi8(yp128[0],0); 
     yp1[j] = _mm_extract_epi8(yp128[0],1); 
     yp2[j] = _mm_extract_epi8(yp128[0],2);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[1];
     s[j]   = _mm_extract_epi8(yp128[0],3); 
     yp1[j] = _mm_extract_epi8(yp128[0],4); 
     yp2[j] = _mm_extract_epi8(yp128[0],5);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[2];
     s[j]   = _mm_extract_epi8(yp128[0],6); 
     yp1[j] = _mm_extract_epi8(yp128[0],7); 
     yp2[j] = _mm_extract_epi8(yp128[0],8);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[3];
     s[j]   = _mm_extract_epi8(yp128[0],9); 
     yp1[j] = _mm_extract_epi8(yp128[0],10); 
     yp2[j] = _mm_extract_epi8(yp128[0],11);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[4];
     s[j]   = _mm_extract_epi8(yp128[0],12); 
     yp1[j] = _mm_extract_epi8(yp128[0],13); 
     yp2[j] = _mm_extract_epi8(yp128[0],14);
-    
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+
     j=pi2_p[5];
-    s[j]   = _mm_extract_epi8(yp128[1],15); 
+    s[j]   = _mm_extract_epi8(yp128[0],15); 
     yp1[j] = _mm_extract_epi8(yp128[1],0); 
     yp2[j] = _mm_extract_epi8(yp128[1],1);
-    
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+
     j=pi2_p[6];
     s[j]   = _mm_extract_epi8(yp128[1],2); 
     yp1[j] = _mm_extract_epi8(yp128[1],3); 
     yp2[j] = _mm_extract_epi8(yp128[1],4);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[7];
     s[j]   = _mm_extract_epi8(yp128[1],5); 
     yp1[j] = _mm_extract_epi8(yp128[1],6); 
     yp2[j] = _mm_extract_epi8(yp128[1],7);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[8];
     s[j]   = _mm_extract_epi8(yp128[1],8); 
     yp1[j] = _mm_extract_epi8(yp128[1],9); 
     yp2[j] = _mm_extract_epi8(yp128[1],10);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[9];
     s[j]   = _mm_extract_epi8(yp128[1],11); 
     yp1[j] = _mm_extract_epi8(yp128[1],12); 
     yp2[j] = _mm_extract_epi8(yp128[1],13);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[10];
     s[j]   = _mm_extract_epi8(yp128[1],14); 
     yp1[j] = _mm_extract_epi8(yp128[1],15); 
     yp2[j] = _mm_extract_epi8(yp128[2],0);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[11];
     s[j]   = _mm_extract_epi8(yp128[2],1); 
     yp1[j] = _mm_extract_epi8(yp128[2],2); 
     yp2[j] = _mm_extract_epi8(yp128[2],3);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[12];
     s[j]   = _mm_extract_epi8(yp128[2],4); 
     yp1[j] = _mm_extract_epi8(yp128[2],5); 
     yp2[j] = _mm_extract_epi8(yp128[2],6);
-    
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+
     j=pi2_p[13];
     s[j]   = _mm_extract_epi8(yp128[2],7); 
     yp1[j] = _mm_extract_epi8(yp128[2],8); 
     yp2[j] = _mm_extract_epi8(yp128[2],9);
-    
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+
     j=pi2_p[14];
     s[j]   = _mm_extract_epi8(yp128[2],10); 
     yp1[j] = _mm_extract_epi8(yp128[2],11); 
     yp2[j] = _mm_extract_epi8(yp128[2],12);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
     j=pi2_p[15];
     s[j]   = _mm_extract_epi8(yp128[2],13); 
     yp1[j] = _mm_extract_epi8(yp128[2],14); 
     yp2[j] = _mm_extract_epi8(yp128[2],15);
+    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 
-    yp128+=3;
+     yp128+=3;
 
   }
 #endif
