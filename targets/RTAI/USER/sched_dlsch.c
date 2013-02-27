@@ -179,8 +179,8 @@ static void * dlsch_thread(void *param) {
 			 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			 0,
 			 dlsch_subframe[dlsch_thread_index]<<1);
-      LOG_D(PHY,"[UE %d] Calling dlsch_decoding for subframe %d, harq_pid %d\n",
-	    phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid);
+      LOG_I(PHY,"[UE %d] PDSCH Calling dlsch_decoding for subframe %d, harq_pid %d PDCCH symbols %d\n",
+	    phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid, phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
       ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			   &phy_vars_ue->lte_frame_parms,
 			   phy_vars_ue->dlsch_ue[eNB_id][0],
