@@ -1081,16 +1081,16 @@ void ulsch_extract_rbs_single(s32 **rxdataF,
 u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
 u8 subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
-s32 generate_ue_dlsch_params_from_dci(u8 subframe,
-				      void *dci_pdu,
-				      u16 rnti,
-				      DCI_format_t dci_format,
-				      LTE_UE_DLSCH_t **dlsch_ue,
-				      LTE_DL_FRAME_PARMS *frame_parms,
-                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-				      u16 si_rnti,
-				      u16 ra_rnti,
-				      u16 p_rnti);
+int generate_ue_dlsch_params_from_dci(uint8_t subframe,
+                                      void *dci_pdu,
+                                      uint16_t rnti,
+                                      DCI_format_t dci_format,
+                                      LTE_UE_DLSCH_t **dlsch,
+                                      LTE_DL_FRAME_PARMS *frame_parms,
+                                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+                                      uint16_t si_rnti,
+                                      uint16_t ra_rnti,
+                                      uint16_t p_rnti);
 
 s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       void *dci_pdu,
