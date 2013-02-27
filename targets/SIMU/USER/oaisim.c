@@ -393,6 +393,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   
 
   // channel_t_re = rx_sig[0]
+  if (rx_sig!=NULL) {
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
     sig2[i] = 10*log10(1.0+(double) ((rx_sig[0][2*i])*(rx_sig[0][2*i])+(rx_sig[0][2*i+1])*(rx_sig[0][2*i+1])));
@@ -402,7 +403,7 @@ void do_forms2(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms,
   fl_set_xyplot_ybounds(form->channel_t_re,0,63);
   //fl_set_xyplot_data(form->channel_t_re,&time2[640*12*6],&sig2[640*12*6],640*12,"","","");
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-  //}
+  }
 
 
   // PBCH LLR
@@ -709,8 +710,8 @@ main (int argc, char **argv)
 
 #ifdef PRINT_STATS
   FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
-  
   char UE_stats_filename[255];
+  int len;
  #endif
 
   int nb_antennas_rx=2;
@@ -1207,6 +1208,7 @@ main (int argc, char **argv)
   openair_daq_vars.ue_ul_nb_rb = 8;
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
+    //PHY_vars_UE_g[UE_id]->rx_total_gain_dB=145;
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=130;
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
@@ -1383,7 +1385,7 @@ main (int argc, char **argv)
           calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
           //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
           UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-          LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+          LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
                 eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
                 eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
         }
@@ -1615,35 +1617,54 @@ main (int argc, char **argv)
   
 #ifdef XFORMS
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-      do_forms2(form_dl[UE_id],
-                      &PHY_vars_UE_g[UE_id]->lte_frame_parms,  
-                PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
-                PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
-                PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
-                PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
-                PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
-                PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[PHY_vars_UE_g[UE_id]->n_connected_eNB]->rxdataF_comp[0],
-                PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
-                PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
-                PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
-                1920,
-                &PHY_vars_UE_g[UE_id]->PHY_measurements);
+      if (abstraction_flag==0) {
+	do_forms2(form_dl[UE_id],
+		  &PHY_vars_UE_g[UE_id]->lte_frame_parms,  
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
+		  PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->rxdataF_comp[0],
+		  PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[PHY_vars_UE_g[UE_id]->n_connected_eNB]->rxdataF_comp[0],
+		  PHY_vars_UE_g[UE_id]->lte_ue_pdsch_vars[0]->llr[0],
+		  PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
+		  PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars[0]->llr,
+		  1920,
+		  &PHY_vars_UE_g[UE_id]->PHY_measurements);
+      }
+      else {
+	do_forms2(form_dl[UE_id],
+		  &PHY_vars_UE_g[UE_id]->lte_frame_parms,  
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates_time,
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0],
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata,
+		  PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  1920,
+		  &PHY_vars_UE_g[UE_id]->PHY_measurements);
+      }
     }
 
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-      do_forms2(form_ul[eNB_id],
-                      &PHY_vars_eNB_g[eNB_id]->lte_frame_parms,  
-                NULL,
-                NULL,
-                PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
-                PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdataF[0],
-                PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
-                NULL,
-                PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->llr,
-                NULL,
-                NULL,
-                1024,
-                NULL);
+      if (abstraction_flag==0) {
+	do_forms2(form_ul[eNB_id],
+		  &PHY_vars_eNB_g[eNB_id]->lte_frame_parms,  
+		  NULL,
+		  NULL,
+		  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0],
+		  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdataF[0],
+		  PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->rxdataF_comp[0][0],
+		  NULL,
+		  PHY_vars_eNB_g[eNB_id]->lte_eNB_pusch_vars[0]->llr,
+		  NULL,
+		  NULL,
+		  1024,
+		  NULL);
+      }
     }
     
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
