@@ -183,8 +183,9 @@ typedef struct {
   // LIME calibration parameters
 } exmimo_rf_t;
 
-#define TXEN 1
-#define RXEN 2
+
+#define RXEN 1
+#define TXEN 2
 
 #define TXLPFENMASK 4
 #define TXLPFEN 4
@@ -244,25 +245,33 @@ typedef struct {
 #define RFBBMASK   (7<<16)
 #define RFBBNORM   0
 #define RFBBRXLPF  (1<<16)
-#define RFBBRXVGA  (2<<<16)
+#define RFBBRXVGA  (2<<16)
 #define RFBBOUTPUT (3<<16)
 #define RFBBLNA1   (4<<16)
 #define RFBBLNA2   (5<<16)
 #define RFBBLNA3   (6<<16)
-
-#define TXLPFMODEMASK (1<<21)
-#define TXLPFNORM     0
-#define TXLPFBYP      (1<<21)
 
 #define RXLPFMODEMASK (3<<19)
 #define RXLPFNORM     0
 #define RXLPFBYP      (1<<19)
 #define RXLPFBPY2     (3<<19)
 
+#define TXLPFMODEMASK (1<<21)
+#define TXLPFNORM     0
+#define TXLPFBYP      (1<<21)
+
+#define RXOUTSW       (1<<22)
+
+#define DMAMODE_TRXMASK (3<<23)
+#define DMAMODE_RX      (1<<23)
+#define DMAMODE_TX      (2<<23)
+
+// register values and masks for rf_local
 #define TXLOIMASK 63
 #define TXLOQMASK (63<<6)
 #define RXLOIMASK (63<<12)
 #define RXLOQMASK  (63<<18)
+
 
 typedef struct {
   uint32_t tdd;

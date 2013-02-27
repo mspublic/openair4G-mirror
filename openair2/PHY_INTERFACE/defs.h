@@ -89,7 +89,7 @@ typedef struct
     // UE functions
 
     /// Indicate loss of synchronization of PBCH
-    void (*out_of_sync_ind)(u8 Mod_id,u32 frame,u16);
+    void (*out_of_sync_ind)(u8 Mod_id,u8 CC_id,u32 frame,u16);
 
     ///  Send a received SI sdu
     void (*ue_decode_si)(u8 Mod_id,u8 CC_id,u32 frame, u8 CH_index, void *pdu, u16 len);
@@ -113,7 +113,7 @@ typedef struct
     u32 (*ue_get_SR)(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti,u8 subframe);
 
     /// Indicate synchronization with valid PBCH
-    void (*dl_phy_sync_success) (u8 Mod_id,u32 frame, u8 CH_index,u8 first_sync);
+    void (*dl_phy_sync_success) (u8 Mod_id,u8 CC_id,u32 frame, u8 CH_index,u8 first_sync);
 
     /// Only calls the PDCP for now
     UE_L2_STATE_t (*ue_scheduler)(u8 Mod_id, u32 frame,u8 subframe, lte_subframe_t direction,u8 eNB_id);
@@ -140,7 +140,7 @@ typedef struct
 
 
     /// Function to indicate failure of contention resolution or RA procedure
-    void (*ra_failed)(u8 Mod_id,u8 eNB_index);
+    void (*ra_failed)(u8 Mod_id,u8 CC_id,u8 eNB_index);
 
     /// Function to indicate success of contention resolution or RA procedure
     void (*ra_succeeded)(u8 Mod_id,u8 CC_id,u8 eNB_index);

@@ -135,6 +135,17 @@ openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/register.o
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/init.o
 
+# Sched 
+ifeq ($(FIRMWARE2010),1)
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
+else
+#openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_fw2011.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte_user.o
+endif
+ifeq ($(OPENAIR1),1)
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
+endif
+
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/lte_parms.o
@@ -162,6 +173,15 @@ endif
 
 #openair_rf-objs += $(LOG_DIR)/log.o
 
+openair_rf_cbmimo1_softmodem.ko:  
+	(cd $(OPENAIR1_TOP) ; make openair_rf_cbmimo1_softmodem.ko)
+
+oai_user_cbmimo1.ko:
+	(cd $(OPENAIR1_TOP) ; make oai_user_cbmimo1.ko)
+
+oai_user_exmimo:
+	(cd $(OPENAIR1_TOP) ; make oai_user_exmimo.ko)
+
 test:
 	echo $(openair_rf-objs)
 	echo $(obj-m)
@@ -170,3 +190,8 @@ test:
 
 clean:
 	rm -f $(openair_rf-objs) $(obj-m)
+	rm -f openair_rf.mod.c .*.cmd *.o modules.order Module.symvers 
+	rm -rf .tmp_versions/
+
+ultraclean: clean
+	rm -f *.ko

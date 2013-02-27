@@ -7,6 +7,8 @@ typedef struct {
   unsigned int pci_interface_ptr;
 } exmimo_pci_interface_bot;
 
+#define EXMIMO_NOP                  0x9999
+
 #define EXMIMO_PCIE_INIT  0x0000
 #define EXMIMO_FW_INIT    0x0001
 #define EXMIMO_CLEAR_BSS  0x0002

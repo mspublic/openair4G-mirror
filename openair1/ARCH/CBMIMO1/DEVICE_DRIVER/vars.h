@@ -51,7 +51,7 @@ exmimo_pci_interface_t *exmimo_pci_interface;
 
 #ifdef RTAI_ENABLED
 s32 *inst_cnt_ptr = NULL;
-SEM* oai_semaphore = NULL;
-CND* oai_condition = NULL;
+SEM *oai_semaphore = NULL;
+RT_TASK *lxrt_task;
 #endif
 #endif

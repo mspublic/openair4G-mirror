@@ -281,7 +281,7 @@ void ue_send_sdu(u8 Mod_id,u8 CC_id, u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index)
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
 	      LOG_I(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
-	      mac_xface->ra_failed(Mod_id,eNB_index);
+	      mac_xface->ra_failed(Mod_id,CC_id,eNB_index);
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 	      return;
 	    }
@@ -943,7 +943,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       UE_mac_inst[Mod_id].RA_active = 0;
       // Signal PHY to quit RA procedure
       LOG_I(MAC,"Contention resolution timer expired, RA failed\n");
-      mac_xface->ra_failed(Mod_id,eNB_index);
+      mac_xface->ra_failed(Mod_id,CC_id,eNB_index);
     }
   }
 

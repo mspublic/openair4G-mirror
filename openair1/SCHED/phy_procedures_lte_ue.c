@@ -87,8 +87,6 @@ fifo_dump_emos_UE emos_dump_UE;
 extern inline unsigned int taus(void);
 extern int oai_exit;
 
-u8 CC_id;
-
 u8 ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
 
 #ifdef DLSCH_THREAD
@@ -233,7 +231,7 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
 }
 #endif
 
-void ra_failed(u8 Mod_id,u8 eNB_index) {
+void ra_failed(u8 Mod_id,u8 CC_id,u8 eNB_index) {
 
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[eNB_index] = PRACH;
@@ -261,7 +259,7 @@ void ra_succeeded(u8 Mod_id,u8 CC_id, u8 eNB_index) {
 
 UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
 
-  return(PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[eNB_index]);
+  return(PHY_vars_UE_g[Mod_id][0]->UE_mode[eNB_index]);
 
 }
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
@@ -1613,7 +1611,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     frame_tx += pbch_phase;
 
 #ifdef OPENAIR2
-    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id,
+    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,phy_vars_ue->frame,eNB_id,
 				   phy_vars_ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
 #endif
 
@@ -1701,7 +1699,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq++;
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors++;
 #ifdef OPENAIR2
-    mac_xface->out_of_sync_ind(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id);
+    mac_xface->out_of_sync_ind(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,phy_vars_ue->frame,eNB_id);
 #endif
     //mac_xface->macphy_exit("");
   }
@@ -1938,8 +1936,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       //LOG_I(PHY,"[PHY][UE  %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
       LOG_D(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,i);
       //if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
-	dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
-      
+      //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 #endif      
 #ifdef DIAG_PHY
       if (((last_slot>>1) != 5)) {
@@ -2464,7 +2461,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
 #ifdef USER_MODE
-	    dump_dlsch_SI(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)));
+	    //dump_dlsch_SI(phy_vars_ue,eNB_id,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)));
 #endif
             vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 	    return(-1);
@@ -2530,13 +2527,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
           vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 	  return;
 	}
-	/*
-#ifdef DEBUG_PHY_PROC
-	debug_LOG_D(PHY,"[UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot==0)?9 : (last_slot>>1)));
-	#endif*/
 
 	if (abstraction_flag==0) {
-	  printf("decoding RA (subframe %d): G %d,rnti %x\n" ,last_slot>>1,
+	  LOG_D(PHY,"decoding RA (subframe %d): G %d,rnti %x\n" ,last_slot>>1,
 		 get_G(&phy_vars_ue->lte_frame_parms,
 		       phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
 		       phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc,
@@ -2652,8 +2645,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else //OPENAIR2
 
 
-	  timing_advance = ((RAR_PDU*) (phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b+1))->Timing_Advance_Command;
-	  //timing_advance = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b[0];
+	  //timing_advance = ((RAR_PDU*) (phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b+1))->Timing_Advance_Command;
+	  timing_advance = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b[0];
 	  process_timing_advance_rar(phy_vars_ue,timing_advance);
 #endif
 	} //ret <= MAX_ITERATIONS
@@ -2814,13 +2807,16 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE **phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
 
 #undef DEBUG_PHY_PROC
+  u8 CC_id;
 
 #ifdef OPENAIR2
   UE_L2_STATE_t ret;
 #endif
 #ifndef OPENAIR2
-  phy_vars_ue->UE_mode[eNB_id]=PUSCH;
-  phy_vars_ue->prach_resources[eNB_id] = &prach_resources_local;
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    phy_vars_ue[CC_id]->UE_mode[eNB_id]=PUSCH;
+    phy_vars_ue[CC_id]->prach_resources[eNB_id] = &prach_resources_local;
+  }
   prach_resources_local.ra_RNTI = 0xbeef;
 #endif
 

@@ -52,7 +52,7 @@ extern exmimo_pci_interface_t *exmimo_pci_interface;
 
 #ifdef RTAI_ENABLED
 extern s32 *inst_cnt_ptr;
-extern SEM* oai_semaphore;
-extern CND* oai_condition;
+extern SEM *oai_semaphore;
+extern RT_TASK *lxrt_task;
 #endif
 #endif

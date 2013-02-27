@@ -107,22 +107,22 @@ void mac_sync_ind(u8 Mod_id,u8 Status){
 }
 
 /********************************************************************************************************************/
-void mac_in_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
+void mac_in_sync_ind(u8 Mod_id,u8 CC_id, u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_sync_ind_rx();
 #else
-  rrc_lite_in_sync_ind(Mod_id,frame,eNB_index);
+  rrc_lite_in_sync_ind(Mod_id,CC_id, frame,eNB_index);
 #endif
 }
 
 /********************************************************************************************************************/
-void mac_out_of_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
+void mac_out_of_sync_ind(u8 Mod_id,u8 CC_id, u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_out_sync_ind_rx();
 #else 
-  rrc_lite_out_of_sync_ind(Mod_id,frame,eNB_index);
+  rrc_lite_out_of_sync_ind(Mod_id,CC_id,frame,eNB_index);
 #endif //CELLULAR
 }
 
