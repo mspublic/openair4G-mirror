@@ -1346,14 +1346,14 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[1] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[2] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][1],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][1],
-		phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi[0][1],		  
+		phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
+		phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
+		phy_vars_ue->PHY_measurements.rx_power_dB[1][0],
+		phy_vars_ue->PHY_measurements.rx_power_dB[1][1],
+		phy_vars_ue->PHY_measurements.rx_power_dB[2][0],
+		phy_vars_ue->PHY_measurements.rx_power_dB[2][1],
+		phy_vars_ue->PHY_measurements.rx_power[0][0],
+		phy_vars_ue->PHY_measurements.rx_power[0][1],		  
 		phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],
 		phy_vars_ue->PHY_measurements.rx_power_avg[0],
 		phy_vars_ue->rx_total_gain_dB);
@@ -1451,8 +1451,9 @@ if ((last_slot==14) || (last_slot==15)) {
     emos_dump_UE.timestamp = rt_get_time_ns();
     emos_dump_UE.frame_rx = phy_vars_ue->frame;
     emos_dump_UE.UE_mode = phy_vars_ue->UE_mode[eNB_id];
+    emos_dump_UE.mimo_mode = phy_vars_ue->transmission_mode[eNB_id];
     emos_dump_UE.freq_offset = phy_vars_ue->lte_ue_common_vars.freq_offset;
-    emos_dump_UE.timing_advance = openair_daq_vars.timing_advance;
+    emos_dump_UE.timing_advance = phy_vars_ue->timing_advance;
     emos_dump_UE.timing_offset  = phy_vars_ue->rx_offset;
     emos_dump_UE.rx_total_gain_dB = phy_vars_ue->rx_total_gain_dB;
     emos_dump_UE.eNb_id = eNB_id;
