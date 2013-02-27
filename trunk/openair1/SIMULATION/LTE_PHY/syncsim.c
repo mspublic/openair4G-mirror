@@ -284,12 +284,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   memcpy((void*)&PHY_vars_UE[0]->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
   memcpy((void*)&PHY_vars_UE[1]->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
   
-  phy_init_lte_ue(PHY_vars_UE[0],0);
+  phy_init_lte_ue(PHY_vars_UE[0],1,0);
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE[0]->lte_gold_table[i],i); 
   PHY_vars_UE[0]->Mod_id = 0;
 
-  phy_init_lte_ue(PHY_vars_UE[1],0);
+  phy_init_lte_ue(PHY_vars_UE[1],1,0);
   for (i=0;i<3;i++)
     lte_gold(lte_frame_parms,PHY_vars_UE[1]->lte_gold_table[i],i);    
   PHY_vars_UE[1]->Mod_id = 1;
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
   double pbch_sinr; 
   u8 N_RB_DL=25,osf=1;
 
-  int openair_fd=(int)NULL;
+  int openair_fd=(int)0;
   int tcxo=74,fc=0;
   unsigned char temp[4];
 
@@ -1325,7 +1325,7 @@ int main(int argc, char **argv) {
 	PHY_vars_UE[0]->lte_frame_parms.frame_type = 1;
 	PHY_vars_UE[0]->lte_frame_parms.Ncp = 0;
 	PHY_vars_UE[0]->lte_frame_parms.Nid_cell = 0;
-	if (initial_sync(PHY_vars_UE[0])==0) {
+	if (initial_sync(PHY_vars_UE[0],normal_txrx)==0) {
 	  //if (1) {
 	  printf("Synchronized to %s %s prefix Cell with id %d\n",
 		 (PHY_vars_UE[0]->lte_frame_parms.frame_type == 0) ? "FDD\0" : "TDD\0",
@@ -1382,6 +1382,7 @@ int main(int argc, char **argv) {
 	    dci_cnt = dci_decoding_procedure(PHY_vars_UE[UE_idx],
 					     dci_alloc_rx,
 					     0,
+					     0,
 					     subframe);
 	    printf("Found %d DCIs\n",dci_cnt);
 
@@ -1392,6 +1393,7 @@ int main(int argc, char **argv) {
 					      dci_alloc_rx[0].format,
 					      PHY_vars_UE[UE_idx]->dlsch_ue[0],
 					      &PHY_vars_UE[UE_idx]->lte_frame_parms,
+                                              PHY_vars_UE[UE_idx]->pdsch_config_dedicated,
 					      SI_RNTI,
 					      0,
 					      P_RNTI);
@@ -1520,9 +1522,11 @@ int main(int argc, char **argv) {
 			       0,
 			       subframe<<1);
 	    
-	    ret = dlsch_decoding(PHY_vars_UE[UE_idx]->lte_ue_pdsch_vars[0]->llr[0],		 
+	    ret = dlsch_decoding(PHY_vars_UE[UE_idx],
+                                 PHY_vars_UE[UE_idx]->lte_ue_pdsch_vars[0]->llr[0],		 
 				 &PHY_vars_UE[UE_idx]->lte_frame_parms,
 				 PHY_vars_UE[UE_idx]->dlsch_ue[0][0],
+                                 subframe,
 				 0,
 				 PHY_vars_UE[UE_idx]->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
 	    
