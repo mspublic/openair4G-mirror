@@ -217,7 +217,8 @@ u32 ulsch_encoding(u8 *a,
   // fill CQI/PMI information
   if (ulsch->O>0) {
     fill_CQI(ulsch->o,ulsch->uci_format,meas,0,tmode);
-    //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+    //LOG_D(PHY,"UE CQI\n");
+    //print_CQI(ulsch->o,ulsch->uci_format,0);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
@@ -834,9 +835,21 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 			u8 control_only_flag) {
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[eNB_id];
+  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
+  u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
 
   LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
+  if (ulsch->O>0) {
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,0,tmode);
+    //LOG_D(PHY,"UE CQI\n");
+    //print_CQI(ulsch->o,ulsch->uci_format,0);
+
+    // save PUSCH pmi for later (transmission modes 4,5,6)
+    //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
+  }
 
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
