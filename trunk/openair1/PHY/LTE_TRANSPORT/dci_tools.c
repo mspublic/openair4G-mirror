@@ -3040,7 +3040,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = mcs;
       //      ulsch->harq_processes[harq_pid]->calibration_flag =0;
-      if (ulsch->harq_processes[harq_pid]->mcs < 28)
+      if (ulsch->harq_processes[harq_pid]->mcs < 29)
 	ulsch->harq_processes[harq_pid]->TBS         = TBStable[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
       /*
 	else if (ulsch->harq_processes[harq_pid]->mcs == 29) {
@@ -3059,10 +3059,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     }
     else {
       //      printf("Ndi = 0 : Setting RVidx from mcs %d\n",((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
-      if (mcs >= 28)
-	ulsch->harq_processes[harq_pid]->rvidx = mcs - 28;
-      else
-	ulsch->harq_processes[harq_pid]->rvidx = 0;
+      ulsch->harq_processes[harq_pid]->rvidx = mcs - 28;
       //      ulsch->harq_processes[harq_pid]->round++;
     }
 
@@ -3367,6 +3364,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	}
       */
       ulsch->harq_processes[harq_pid]->TBS         = TBStable[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
+     
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->Nsymb_pusch;
       ulsch->harq_processes[harq_pid]->round = 0;
