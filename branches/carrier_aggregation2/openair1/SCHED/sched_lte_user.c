@@ -184,10 +184,12 @@ void openair1_restart(void) {
     openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
   //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
+  /*
   if (openair_daq_vars.is_eNB==0)
     PHY_vars_eNB_g[0]->frame = 0;
   else
     PHY_vars_UE_g[0]->frame = 0; 
+  */
   /*
   if ((mac_xface->is_cluster_head) && (mac_xface->is_primary_cluster_head)) {
     openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;

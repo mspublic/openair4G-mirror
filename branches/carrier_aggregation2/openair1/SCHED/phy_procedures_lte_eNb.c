@@ -755,7 +755,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	}
       }
-      LOG_I(PHY,"Calling generate_pilots_slot : %d\n",next_slot);
+      //LOG_I(PHY,"Calling generate_pilots_slot : %d\n",next_slot);
       generate_pilots_slot(phy_vars_eNB,
 			   phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			   AMP,
@@ -832,7 +832,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (abstraction_flag==0) {
 	
 	if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
-	  LOG_I(PHY,"Calling generate_sss : %d\n",next_slot);
+	  //LOG_I(PHY,"Calling generate_sss : %d\n",next_slot);
 	  generate_sss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		       AMP,
 		       &phy_vars_eNB->lte_frame_parms,
@@ -858,7 +858,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
       
       if (abstraction_flag==0) {
-	LOG_I(PHY,"Calling generate_pbch : %d\n",next_slot);
+	//LOG_I(PHY,"Calling generate_pbch : %d\n",next_slot);
 	generate_pbch(&phy_vars_eNB->lte_eNB_pbch,
 		      phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 		      AMP,
@@ -1358,7 +1358,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       dlsch_input_buffer[0] = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
       //LOG_I(PHY,"UE %d: timing_offset = %d\n",UE_id,dlsch_input_buffer[0]); 
-      ((RAR_PDU*) (dlsch_input_buffer+1))->Timing_Advance_Command = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
+      //((RAR_PDU*) (dlsch_input_buffer+1))->Timing_Advance_Command = phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset/4;
 #endif
 
 #ifdef DEBUG_PHY_PROC
@@ -2086,7 +2086,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   //#ifdef OPENAIR2
   // check if we have to detect PRACH first
   if ((last_slot&1)==1){
-    	  LOG_I(PHY,"Calling generate_sss : %d\n",last_slot);
+    //LOG_I(PHY,"Calling generate_sss : %d\n",last_slot);
 
     //    printf("Checking PRACH for eNB %d, subframe %d\n",phy_vars_eNB->Mod_id,last_slot>>1);
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,last_slot>>1)>0) {

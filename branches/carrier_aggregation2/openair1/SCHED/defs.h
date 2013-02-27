@@ -276,7 +276,7 @@ u8 get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 current_subfra
     @param Mod_id Instance index of UE
     @param eNB_index Index of eNB
  */
-void ra_failed(u8 Mod_id,u8 eNB_index);
+void ra_failed(u8 Mod_id,u8 CC_id,u8 eNB_index);
 
 /** \brief Function to indicate success of contention resolution or RA procedure.
     @param Mod_id Instance index of UE

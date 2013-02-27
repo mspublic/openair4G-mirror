@@ -286,26 +286,33 @@ void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_si
 
 }
 
-void rrc_lite_in_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index) {
+void rrc_lite_in_sync_ind(u8 Mod_id, u8 CC_id, u32 frame, u16 eNB_index) {
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt=0;
-  if (UE_rrc_inst[Mod_id].Info[eNB_index].T310_active==1)
-    UE_rrc_inst[Mod_id].Info[eNB_index].N311_cnt++;
+  if (CC_id==0) {
+    UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt=0;
+    if (UE_rrc_inst[Mod_id].Info[eNB_index].T310_active==1)
+      UE_rrc_inst[Mod_id].Info[eNB_index].N311_cnt++;
+  }
+  else {
+    LOG_D(RRC,"[UE %d][CC %d] Frame %d: Ignoring in_sync_ind for CC_id>0\n",Mod_id,CC_id,frame);
+  }
 }
 /*-------------------------------------------------------------------------------------------*/
-void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
+void rrc_lite_out_of_sync_ind(u8  Mod_id, u8 CC_id, u32 frame, u16 eNB_index){
 /*-------------------------------------------------------------------------------------------*/
 
 
-//  rlc_info_t rlc_infoP;
-//  rlc_infoP.rlc_mode=RLC_UM;
-
-  LOG_D(RRC,"[UE %d] Frame %d OUT OF SYNC FROM CH %d (T310 %d, N310 %d, N311 %d)\n ",Mod_id,frame,eNB_index,
-	UE_rrc_inst[Mod_id].Info[eNB_index].T310_cnt,
-	UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt,
-	UE_rrc_inst[Mod_id].Info[eNB_index].N311_cnt);
-
-  UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt++;
+  if (CC_id==0) {
+    LOG_D(RRC,"[UE %d][CC %d] Frame %d OUT OF SYNC FROM CH %d (T310 %d, N310 %d, N311 %d)\n ",Mod_id,CC_id,frame,eNB_index,
+	  UE_rrc_inst[Mod_id].Info[eNB_index].T310_cnt,
+	  UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt,
+	  UE_rrc_inst[Mod_id].Info[eNB_index].N311_cnt);
+    
+    UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt++;
+  }
+  else {
+    LOG_D(RRC,"[UE %d][CC %d] Frame %d: Ignoring out_of_sync_ind for CC_id>0\n",Mod_id,CC_id,frame);
+  }
 
 }
 

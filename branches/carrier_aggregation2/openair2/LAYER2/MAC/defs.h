@@ -1085,6 +1085,7 @@ void Msg3_tx(u8 Mod_id,u32 frame,u8 eNB_id);
 void Msg1_tx(u8 Mod_id,u32 frame, u8 eNB_id);
 
 void dl_phy_sync_success(unsigned char Mod_id,
+			 unsigned char CC_id,
 			 u32 frame,
 			 unsigned char eNB_index,
 			 u8 first_sync);

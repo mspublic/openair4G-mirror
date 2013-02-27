@@ -178,6 +178,7 @@ cleanall: clean
 show:
 	@echo $(CFLAGS)
 	@echo $(OBJ)
+	@echo $(RTAI_OBJ)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)

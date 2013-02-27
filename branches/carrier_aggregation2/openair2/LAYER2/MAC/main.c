@@ -74,19 +74,20 @@
 
 /***********************************************************************/
 void dl_phy_sync_success(unsigned char Mod_id,
+			 unsigned char CC_id,
 			 u32 frame,
 			 unsigned char eNB_index,
 			 u8 first_sync){  //init as MR
 /***********************************************************************/
   // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
-  if (first_sync==1) {
+  if ((CC_id==0) && (first_sync==1)) {
     if( (layer2_init_UE(Mod_id)==-1) ||
 	(openair_rrc_lite_ue_init(Mod_id,eNB_index)==-1) ) {
       //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
   }
   else {
-    mac_in_sync_ind(Mod_id,frame,eNB_index);
+    mac_in_sync_ind(Mod_id,CC_id,frame,eNB_index);
   }
 
 }
@@ -411,4 +412,5 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 
   return(1);
 }
+
 
