@@ -74,14 +74,14 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
   len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
 		 phy_vars_ue->frame,
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[1],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][1],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[1][0],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[1][1],
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[2],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][1],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[2][0],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[2][1],
 		 phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		 phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		 phy_vars_ue->PHY_measurements.n0_power_dB[1]);
@@ -111,7 +111,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][0][1],
 		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][0],
 		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][1]);
-    
+
+    len += sprintf(&buffer[len], "[UE PROC] RX total power eNB%d: %d dB, avg: %d dB\n",eNB,phy_vars_ue->PHY_measurements.rx_power_tot_dB[eNB],phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB]);
+    len += sprintf(&buffer[len], "[UE PROC] RX total power lin: %d, avg: %d, RX total noise lin: %d, avg: %d\n",phy_vars_ue->PHY_measurements.rx_power_tot[eNB], phy_vars_ue->PHY_measurements.rx_power_avg[eNB], phy_vars_ue->PHY_measurements.n0_power_tot, phy_vars_ue->PHY_measurements.n0_power_avg);
+    len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d: %d dB, avg: %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB],phy_vars_ue->PHY_measurements.wideband_cqi_avg[eNB]);
+
     len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 0): [%d %d %d %d %d %d %d] dB\n",
 		   eNB,
 		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][0],
@@ -177,7 +181,6 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][5],
 		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][6]);
     
-    len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB]);
     len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (max): %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&phy_vars_ue->PHY_measurements,eNB)));
     len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (both): %x,%x\n",eNB,
 		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,0)),
@@ -212,8 +215,8 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] Frame count: %d, RSSI %3.2f dB (%d dB, %d dB), N0 %3.2f dB (%d dB, %d dB)\n",
 		   phy_vars_ue->frame,
 		   10*log10(phy_vars_ue->PHY_measurements.rssi),
-		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		   phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
+		   phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
 		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot),
 		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);

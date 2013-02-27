@@ -2593,7 +2593,7 @@ uint32_t fill_subband_cqi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mo
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
-    diff_cqi = -sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode) + sinr2cqi(meas->subband_cqi_dB[eNB_id][0][i],trans_mode);
+    diff_cqi = -sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode) + sinr2cqi(meas->subband_cqi_tot_dB[eNB_id][i],trans_mode);
 
     // Note, this is Table 7.2.1-2 from 36.213
     if (diff_cqi<=-1)
@@ -2619,28 +2619,28 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB
 
   switch (uci_format) {
   case wideband_cqi_rank1_2A:
-    ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_tot[eNB_id],trans_mode);
+    ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
     ((wideband_cqi_rank1_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNB_id);
     break;
   case wideband_cqi_rank2_2A:
-    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode);
-    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(meas->wideband_cqi_dB[eNB_id][1],trans_mode);
+    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode); //FIXME: calculate rank2 cqi
+    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode); //FIXME: calculate rank2 cqi
     ((wideband_cqi_rank2_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNB_id);
     break;
   case HLC_subband_cqi_nopmi:
-    ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id],trans_mode);
+    ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
     ((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
     break;
   case HLC_subband_cqi_rank1_2A:
-    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id],trans_mode);
+    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
     ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi      = quantize_wideband_pmi(meas,eNB_id);
     break;
   case HLC_subband_cqi_rank2_2A:
     // This has to be improved!!!
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0],trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNB_id);
     break;

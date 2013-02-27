@@ -17,7 +17,7 @@ __m128i zeroPMI;
 #endif
 
 //#define k1 1000
-#define k1 ((long long int) 512)
+#define k1 ((long long int) 1000)
 #define k2 ((long long int) (1024-k1))
 
 //#define DEBUG_MEAS
@@ -223,14 +223,14 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 
 
     int aarx,aatx,eNB_id=0,rx_power_correction=1,gain_offset=0;
-    int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
+    //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
     int i;
     unsigned int limit,subband;
     __m128i *dl_ch0_128,*dl_ch1_128;
     int *dl_ch0,*dl_ch1;
     LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
 
-  phy_vars_ue->PHY_measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
+    phy_vars_ue->PHY_measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
 
 #ifdef CBMIMO1
   if (openair_daq_vars.rx_rf_mode == 0)
@@ -259,19 +259,20 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       phy_vars_ue->PHY_measurements.n0_power_avg_dB = 0;
     }
 
-    for (eNB_id=0;eNB_id<1+phy_vars_ue->n_connected_eNB;eNB_id++) 
-      rx_power[eNB_id] = 0;
-
     // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
-#ifndef NEW_FFT
-    if ( (abstraction_flag==0) && ((frame_parms->ofdm_symbol_size == 128) ||
-				   (frame_parms->ofdm_symbol_size == 512)) )
-      rx_power_correction = 2;
-    else
+    if (abstraction_flag==0) {
       rx_power_correction = 1;
+    }
+    else {
+#ifndef NEW_FFT
+      if ((frame_parms->ofdm_symbol_size == 128) || (frame_parms->ofdm_symbol_size == 512)) 
+	rx_power_correction = 2;
+      else
+	rx_power_correction = 1;
 #else
-    rx_power_correction=1;
-#endif  
+      rx_power_correction=1;
+#endif 
+    } 
   
     // noise measurements
     // for abstraction we do noise measurements based on the precalculated phy_vars_ue->N0
@@ -309,9 +310,9 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     }
 
     // signal measurements  
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
-	for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
+    for (eNB_id=0;eNB_id<phy_vars_ue->n_connected_eNB;eNB_id++) {
+      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+	for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
 	  phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
 	    (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
 				(frame_parms->nb_prefix_samples))*rx_power_correction) - 
@@ -323,41 +324,43 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	  phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB_id][aatx][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx]);
 	
 	  if (aatx==0)
-	    phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx] = phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
+	    phy_vars_ue->PHY_measurements.rx_power[eNB_id][aarx] = phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
 	  else
-	    phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx] += phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
-	}
-      }
-  
-      for (eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++){
-	//      phy_measurements->rx_power[eNB_id][aarx]/=frame_parms->nb_antennas_tx;
-	phy_vars_ue->PHY_measurements.wideband_cqi_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx]);
-	rx_power[eNB_id] += phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx];
-	//      phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNB_id] += phy_vars_ue->PHY_measurements.rx_power_dB[eNB_id][aarx];
-      }
+	    phy_vars_ue->PHY_measurements.rx_power[eNB_id][aarx] += phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
+	} //aatx
 
-    }
+	phy_vars_ue->PHY_measurements.rx_power_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.rx_power[eNB_id][aarx]);
+
+	if (aarx==0)
+	  phy_vars_ue->PHY_measurements.rx_power_tot[eNB_id] = phy_vars_ue->PHY_measurements.rx_power[eNB_id][aarx];
+	else
+	  phy_vars_ue->PHY_measurements.rx_power_tot[eNB_id] += phy_vars_ue->PHY_measurements.rx_power[eNB_id][aarx];
+      } //aarx
+
+      phy_vars_ue->PHY_measurements.rx_power_tot_dB[eNB_id] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.rx_power_tot[eNB_id]);
+
+    } //eNB_id
 
     // filter to remove jitter
     if (phy_vars_ue->init_averaging == 0) {
       for (eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++)
 	phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = (int) 
 	  (((k1*((long long int)(phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]))) + 
-	    (k2*((long long int)(rx_power[eNB_id]))))>>10);
+	    (k2*((long long int)(phy_vars_ue->PHY_measurements.rx_power_tot[eNB_id]))))>>10);
       phy_vars_ue->PHY_measurements.n0_power_avg = (int)
 	(((k1*((long long int) (phy_vars_ue->PHY_measurements.n0_power_avg))) + 
 	  (k2*((long long int) (phy_vars_ue->PHY_measurements.n0_power_tot))))>>10);
     }
     else {
       for (eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++)
-	phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = rx_power[eNB_id];
+	phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = phy_vars_ue->PHY_measurements.rx_power_tot[eNB_id];
       phy_vars_ue->PHY_measurements.n0_power_avg = phy_vars_ue->PHY_measurements.n0_power_tot;
       phy_vars_ue->init_averaging = 0;
     }
 
     for (eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
       phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id] = dB_fixed( phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]);
-      phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_vars_ue->PHY_measurements.n0_power_tot);
+      phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(phy_vars_ue->PHY_measurements.rx_power_tot[eNB_id],phy_vars_ue->PHY_measurements.n0_power_tot);
       phy_vars_ue->PHY_measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id],phy_vars_ue->PHY_measurements.n0_power_avg);
       phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_id] = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id] - phy_vars_ue->rx_total_gain_dB + gain_offset;
     }
