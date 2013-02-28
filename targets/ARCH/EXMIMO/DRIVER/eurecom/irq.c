@@ -55,7 +55,6 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
 
 
     //printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
-    
     if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY) {
         // get AHBPCIE interrupt line
         irqval = ioread32(bar[card_id]+PCIE_CONTROL0);
@@ -64,13 +63,23 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
             iowrite32(irqval&0xffffff7f,bar[card_id]+PCIE_CONTROL0);
     }
 
-    irqcmd = ioread32(bar[card_id]+pcie_control);
+    irqcmd = ioread32(bar[card_id]+pcie_control);   // On ExMIMO2, this ioread is sufficient to clear the IRQ
+
+    //printk("ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, pcie_control:%x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), pcie_control);
 
     if ( irqcmd != EXMIMO_NOP )
     {
         if (irqcmd == GET_FRAME_DONE)
+        {
             get_frame_done = 1;
-
+            iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);
+        }
+        else if (irqcmd == PCI_PRINTK)
+        {
+            // TODO: copy printk_buffer into FIFO to allow several consecutive printks and ACK pcie_printk
+            //iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);
+        }
+        
         openair_tasklet.data = card_id;
         tasklet_schedule(&openair_tasklet);
         openair_bh_cnt++;
@@ -97,7 +106,7 @@ void openair_do_tasklet (unsigned long card_id)
     irqcmd = ioread32(bar[card_id]+pcie_control);
     
     if (save_irq_cnt > 1)
-        printk("openair_do_tasklet(%ld): Warning: received more than 1 PCIE IRQ (openair_bh_cnt=%i), only the last one is acted upon(irqcmd= %i (0x%X)\n", card_id, openair_bh_cnt, irqcmd, irqcmd);
+        printk("[openair][IRQ tasklet(%ld)]: Warning: received more than 1 PCIE IRQ (openair_bh_cnt=%i), only the last one is acted upon(irqcmd= %i (0x%X)\n", card_id, openair_bh_cnt, irqcmd, irqcmd);
     
     switch( irqcmd )
     {
@@ -107,14 +116,14 @@ void openair_do_tasklet (unsigned long card_id)
             break;
             
         case GET_FRAME_DONE:
-            printk("Got PCIe interrupt for GET_FRAME_DONE ...\n");
+            printk("[openair][IRQ tasklet] : Got PCIe interrupt for GET_FRAME_DONE ...\n");
             break;
             
         case EXMIMO_NOP:
             break;
             
         default:
-            printk("Got unknown PCIe cmd: card_id = %li, irqcmd(CONTROL1) = %i (0x%X)\n", card_id, irqcmd, irqcmd);
+            printk("[openair][IRQ tasklet] : Got unknown PCIe cmd: card_id = %li, irqcmd(CONTROL1) = %i (0x%X)\n", card_id, irqcmd, irqcmd);
     }
     
     iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);
