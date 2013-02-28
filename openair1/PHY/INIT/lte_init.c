@@ -1095,6 +1095,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*12*sizeof(double));
   }
 
+   phy_vars_ue->sinr_CQI_dB = (double*) malloc16(frame_parms->N_RB_DL*12*sizeof(double));
   phy_vars_ue->init_averaging = 1;
 
   phy_vars_ue->pdsch_config_dedicated->p_a = PDSCH_ConfigDedicated__p_a_dB0; //defaul value until overwritten by RRCConnectionReconfiguration

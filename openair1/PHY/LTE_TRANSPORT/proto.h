@@ -1123,7 +1123,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 s32 generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      u8 eNB_id);
-
+double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
+				      u8 eNB_id);
 int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
@@ -1288,7 +1289,7 @@ void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
 void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats);
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode);
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode,double sinr_eff);
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id);
 u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id);

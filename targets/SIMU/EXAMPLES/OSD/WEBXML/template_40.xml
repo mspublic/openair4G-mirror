@@ -36,18 +36,18 @@
       <UE_MOBILITY>
 	<UE_INITIAL_DISTRIBUTION>random</UE_INITIAL_DISTRIBUTION>
 	<RANDOM_UE_DISTRIBUTION>
-	  <NUMBER_OF_NODES>2</NUMBER_OF_NODES>
+	  <NUMBER_OF_NODES>1</NUMBER_OF_NODES>
 	</RANDOM_UE_DISTRIBUTION>
 	<UE_MOBILITY_TYPE>TRACE</UE_MOBILITY_TYPE> 
-	<TRACE_MOBILITY_FILE>static_2ues.tr</TRACE_MOBILITY_FILE> --> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
+	<TRACE_MOBILITY_FILE>mobility_2ues.tr</TRACE_MOBILITY_FILE> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
       </UE_MOBILITY>
       <eNB_MOBILITY>
 	<eNB_INITIAL_DISTRIBUTION>random</eNB_INITIAL_DISTRIBUTION>
 	<RANDOM_eNB_DISTRIBUTION>
 	  <NUMBER_OF_CELLS>1</NUMBER_OF_CELLS>
 	</RANDOM_eNB_DISTRIBUTION>
-	<eNB_MOBILITY_TYPE>TRACE</eNB_MOBILITY_TYPE>	
-	<TRACE_MOBILITY_FILE>static_1enb.tr</TRACE_MOBILITY_FILE> --> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
+	<eNB_MOBILITY_TYPE>STATIC</eNB_MOBILITY_TYPE>	
+<!--	<TRACE_MOBILITY_FILE>static_1enb.tr</TRACE_MOBILITY_FILE> --> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
       </eNB_MOBILITY>
     </MOBILITY>
   </TOPOLOGY_CONFIG>
@@ -56,27 +56,17 @@
     <!--DL-->
     <CUSTOMIZED_TRAFFIC>  	
       <SOURCE_ID>0</SOURCE_ID>		
-      <DESTINATION_ID>1:2</DESTINATION_ID>
+      <DESTINATION_ID>1</DESTINATION_ID>
       <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>10</IDT_MIN_ms>
       <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>150</SIZE_MIN_byte>
+      <SIZE_MIN_byte>1500</SIZE_MIN_byte>
     </CUSTOMIZED_TRAFFIC>  
 
-    <!--UL-->
-    <CUSTOMIZED_TRAFFIC>  	
-      <SOURCE_ID>1:2</SOURCE_ID>		
-      <DESTINATION_ID>0</DESTINATION_ID>
-      <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <IDT_MIN_ms>10</IDT_MIN_ms>
-      <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>50</SIZE_MIN_byte>
-    </CUSTOMIZED_TRAFFIC>  
-
-  </APPLICATION_CONFIG>
+    </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>2000</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>5000</EMULATION_TIME_ms> 
     <CURVE>disable</CURVE>
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>

@@ -54,6 +54,10 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
+double snr_mcs[28]={-4.1130, -3.3830, -2.8420, -2.0480, -1.3230, -0.6120, 0.1080, 0.977, 1.7230, 2.7550, 3.1960, 3.8080, 4.6870, 5.6840, 6.6550, 7.7570, 8.3730, 9.3040, 9.5990, 10.9020, 11.7220, 12.5950, 13.4390, 14.8790, 15.8800, 16.4800, 17.8690, 18.7690};
+int cqi_mcs[3][16] = {{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 27},{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 27},{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 19, 22, 24, 26, 27}};
+double cqi_snr[16] = {-8, -7, -6.08, -5.252, -3.956, -2.604, -1.107, 0.87, 2.599, 4.79, 6.716, 8, 10.593, 13.286, 15.745, 18.5};
+double snr_tm6=0;
 
  
 #define DEBUG_eNB_SCHEDULER 1
@@ -2101,6 +2105,19 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
 	((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
 
+	add_ue_spec_dci(DCI_pdu,
+			DLSCH_dci,
+			rnti,
+			sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t),
+			process_ue_cqi (Mod_id,UE_id),//aggregation,
+			sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t,
+			format1E_2A_M10PRB,
+			0);
+	break;
+       case 6:
+
+	((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
+	((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
 	add_ue_spec_dci(DCI_pdu,
 			DLSCH_dci,
 			rnti,
@@ -4218,7 +4235,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
     //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
-
+    // int flag_LA=0;
+  printf("Imran CQI %d\n",eNB_UE_stats->DL_cqi[0]);
+ if(flag_LA==0){
+     
     switch(eNB_UE_stats->DL_cqi[0])
       {
       case 0:
@@ -4235,7 +4255,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	break;
       case 4:
 	eNB_UE_stats->dlsch_mcs1 = 4;
-	  break;
+	break;
       case 5:
 	eNB_UE_stats->dlsch_mcs1 = 6;
 	break;
@@ -4273,6 +4293,39 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	printf("Invalid CQI");
 	exit(-1);
       }
+    }
+    else
+      {
+	// begin CQI to MCS mapping
+	if(mac_xface->get_transmission_mode(Mod_id,rnti)==1)
+	  eNB_UE_stats->dlsch_mcs1 = cqi_mcs[0][eNB_UE_stats->DL_cqi[0]];
+	else
+	  if(mac_xface->get_transmission_mode(Mod_id,rnti)==2)
+	    eNB_UE_stats->dlsch_mcs1 = cqi_mcs[1][eNB_UE_stats->DL_cqi[0]];
+	  else
+	    if(mac_xface->get_transmission_mode(Mod_id,rnti)==6 || mac_xface->get_transmission_mode(Mod_id,rnti)==5)
+	      eNB_UE_stats->dlsch_mcs1 = cqi_mcs[2][eNB_UE_stats->DL_cqi[0]];
+	// end CQI Mapping 
+	// if MUMIMO is enabled with two UEs then adjust the CQI and MCS mapping
+	if(mac_xface->get_transmission_mode(Mod_id,rnti)==5 && dl_pow_off[UE_id]==0){
+	  snr_tm6 = cqi_snr[eNB_UE_stats->DL_cqi[0]];
+	  if (snr_tm6<snr_mcs[0])
+	    eNB_UE_stats->dlsch_mcs1 = 0;
+	  else 
+	    if(snr_tm6>snr_mcs[27])
+	      eNB_UE_stats->dlsch_mcs1 = 27;
+	    else
+	      for (i=0;i<27;i++){
+		if(snr_tm6 > snr_mcs[i] && snr_tm6 < snr_mcs[i+1])
+		  eNB_UE_stats->dlsch_mcs1 = i;
+	      }
+	}
+      }
+    if(eNB_UE_stats->dlsch_mcs1>22)
+      eNB_UE_stats->dlsch_mcs1=22;
+    // for TM5, limit the MCS to 16QAM    
+    //    if((mac_xface->get_transmission_mode(Mod_id,rnti)==5) || (mac_xface->get_transmission_mode(Mod_id,rnti)==6))
+    //   eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
     
     // for TM5, limit the MCS to 16QAM    
     if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
@@ -4363,6 +4416,11 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  // }
 	  break;
 	case 6:
+	   ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi = 0;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv = round&3;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = 1;//dl_pow_off[next_ue];
 	  break;
 	}
 
@@ -4512,7 +4570,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
 
-
+	printf("Imran MCS %d\n",eNB_UE_stats->dlsch_mcs1);
 
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
@@ -4644,6 +4702,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
 	  break;
 	case 6:
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs = mcs;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi = 1;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv = round&3;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = 1;
+	  ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
 	  break;
 	}
 

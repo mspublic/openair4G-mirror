@@ -163,6 +163,7 @@ int main(int argc, char **argv) {
  
 
   FILE *bler_fdUL;
+ FILE *bler_fd;
   char bler_fname[20];
 
 FILE *ulchanest_f;
@@ -462,6 +463,11 @@ FILE *csv_fdUL;
   //bler_fdUL = fopen(bler_fname,"w");
   //ftxlev = fopen(ftxlev_name,"w");
   //fprintf(bler_fd,"bler = [");
+  
+  sprintf(bler_fname,"bler_%d.m",mcs);
+  bler_fd = fopen(bler_fname,"w");
+
+
   if(abstx){
   sprintf(fperen_name,"ULchan_estims_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
   fperen = fopen(fperen_name,"a+");
@@ -1286,20 +1292,19 @@ if(abstx){
 	     cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
     }
 
-/*
-    fprintf(bler_fdUL,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;\n",
-	    SNR,
-	    mcs,
-	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
-	    rate,
-	    errs[0],
-	    round_trials[0],
-	    errs[1],
-	    round_trials[1],
-	    errs[2],
-	    round_trials[2],
-	    errs[3],
-	    round_trials[3]);*/
+fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
+            SNR,
+            mcs,
+            PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
+            rate,
+            errs[0],
+            round_trials[0],
+            errs[1],
+            round_trials[1],
+            errs[2],
+            round_trials[2],
+            errs[3],
+            round_trials[3]);
 	    
 	    // fprintf(bler_fdUL,"%f\n",tx_lev);
 
@@ -1436,7 +1441,7 @@ if(abstx){// ABSTRACTION
        fclose(bler_fdUL);
      
   }
-  
+   fclose(bler_fd);
   
 #ifdef IFFT_FPGA
   printf("Freeing transmit signals\n");
