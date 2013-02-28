@@ -71,11 +71,12 @@ static int __init openair_init_module( void )
             exmimo_id_tmp[card].board_vendor = EURECOM_VENDOR; // set default to EURECOM
             
         exmimo_id_tmp[card].board_exmimoversion = (subid >> 12) & 0x0F;
-	if (exmimo_id_tmp[card].board_exmimoversion == 0) 
+        if (exmimo_id_tmp[card].board_exmimoversion == 0) 
             exmimo_id_tmp[card].board_exmimoversion = 1;   // default (for old bitstreams) is ExpressMIMO-1
 
         exmimo_id_tmp[card].board_hwrev  = (subid >>  8) & 0x0F;
         exmimo_id_tmp[card].board_swrev  = (subid      ) & 0xFF;
+
         printk("[openair][INIT_MODULE][INFO]: card %d: ExpressMIMO-%i (HW Rev %i), Bitstream: %s, SW/Protocol Revision: 0x%02X\n", card,
                  exmimo_id_tmp[card].board_exmimoversion, exmimo_id_tmp[card].board_hwrev, ( (exmimo_id_tmp[card].board_vendor == EURECOM_VENDOR) ? "Eurecom" : "Telecom Paristech"), exmimo_id_tmp[card].board_swrev );
         
@@ -136,6 +137,15 @@ static int __init openair_init_module( void )
         }
         // Make the FPGA to a PCI master
         pci_set_master(pdev[card]);
+
+        // set DMA mask
+        if (!pci_set_dma_mask(pdev[card], DMA_BIT_MASK(32))) {
+            if (pci_set_consistent_dma_mask(pdev[card], DMA_BIT_MASK(32))) {
+                printk(KERN_INFO "[openair][INIT_MODULE]: Unable to obtain 32bit DMA for consistent allocations\n");
+                openair_cleanup();
+                return -EIO;
+            }
+        }
 
         if (pci_enable_pcie_error_reporting(pdev[card]) > 0)
             printk("[openair][INIT_MODULE][INFO]: Enabled PCIe error reporting\n");
@@ -248,8 +258,8 @@ static void __exit openair_cleanup_module(void)
     printk("[openair][CLEANUP MODULE]\n");
 
     // stop any ongoing acquisition
-    for (card = 0; card < number_of_cards; card++)
-        exmimo_send_pccmd(card, EXMIMO_STOP);
+    //for (card = 0; card < number_of_cards; card++)
+    //    exmimo_send_pccmd(card, EXMIMO_STOP);
     
     openair_cleanup();
 }
