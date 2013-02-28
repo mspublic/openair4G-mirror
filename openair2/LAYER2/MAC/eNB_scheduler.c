@@ -4236,7 +4236,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
     // int flag_LA=0;
-  printf("Imran CQI %d\n",eNB_UE_stats->DL_cqi[0]);
+  printf("CQI %d\n",eNB_UE_stats->DL_cqi[0]);
  if(flag_LA==0){
      
     switch(eNB_UE_stats->DL_cqi[0])
@@ -4570,7 +4570,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  TBS = mac_xface->get_TBS(mcs,nb_rb);
 	}
 
-	printf("Imran MCS %d\n",eNB_UE_stats->dlsch_mcs1);
+	printf("MCS %d\n",eNB_UE_stats->dlsch_mcs1);
 
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
