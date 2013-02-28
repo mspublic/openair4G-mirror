@@ -29,12 +29,12 @@ void extract_position(Node_list input_node_list, node_desc_t**, int nb_nodes);//
 void get_beta_map();//Abstraction changes
 void get_MIESM_param(void);
 
-void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, u8, u16);//Abstraction changes
+void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, u8, u16, u8);//Abstraction changes
 void init_snr_up(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, u16, u16);//Abstraction changes
 void calculate_sinr(channel_desc_t *,  node_desc_t *, node_desc_t *, double *sinr_dB);//Abstraction changes
 void get_beta_map(void); 
-int dlsch_abstraction_EESM(double* sinr_dB, u32 rb_alloc[4], u8 mcs); //temporary testing for PHY abstraction
-int dlsch_abstraction_MIESM(double* sinr_dB,u8 TM, u32 rb_alloc[4], u8 mcs);
+int dlsch_abstraction_EESM(double* sinr_dB, u32 rb_alloc[4], u8 mcs, u8); //temporary testing for PHY abstraction
+int dlsch_abstraction_MIESM(double* sinr_dB,u8 TM, u32 rb_alloc[4], u8 mcs,u8);
 int ulsch_abstraction_MIESM(double* sinr_dB,u8 TM, u8 mcs,u16 nb_rb, u16 first_rb);
 int ulsch_abstraction(double* sinr_dB,u8 TM, u8 mcs,u16 nb_rb, u16 first_rb);
 

@@ -150,7 +150,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
   uint16_t rballoc;
   uint8_t cqireq;
-    
+    double sinr_eff;
    
 #ifdef DEBUG_RAR
   LOG_I(PHY,"rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
@@ -198,7 +198,15 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     }
   
     ulsch->uci_format = HLC_subband_cqi_nopmi;
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
+    //int flag_LA = 0;
+    //   if(flag_LA==1)
+    //  {
+    sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, eNB_id);
+    
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode,sinr_eff);
+    //  }
+    // else
+    // fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
   }
@@ -252,4 +260,3 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     return(0);
 }
 #endif
-

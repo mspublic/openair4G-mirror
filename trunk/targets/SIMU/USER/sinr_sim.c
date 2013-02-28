@@ -38,13 +38,14 @@
 #define MCS_COUNT 24
 #define MCL (-70) /*minimum coupling loss (MCL) in dB*/
 //double sinr[NUMBER_OF_eNB_MAX][2*25];
+/*
 extern double sinr_bler_map[MCS_COUNT][2][16];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
 double SINRpost_eff[301];
 extern double MI_map_4qam[3][162];
 extern double MI_map_16qam[3][197];
 extern double MI_map_64qam[3][227];
-
+*/
 // Extract the positions of UE and ENB from the mobility model 
 
 void extract_position (Node_list input_node_list, node_desc_t **node_data, int nb_nodes) {    
@@ -69,19 +70,43 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
   }
 }
 
-void extract_position_fixed_ue (node_desc_t **node_data, int nb_nodes) {    
-    
-  int i;
+void extract_position_fixed_ue  (node_desc_t **node_data, int nb_nodes, u32 frame){    
+     int i;
+   if(frame<50)
   for (i=0;i<nb_nodes;i++) {
     if (i==0) {
-      node_data[i]->x = 1856;
-      node_data[i]->y = 1813;
+      node_data[i]->x = 2050;
+      node_data[i]->y = 1500;
     }
     else {
-      node_data[i]->x = 2106;
-      node_data[i]->y = 1563;
+      node_data[i]->x = 2150;
+      node_data[i]->y = 1500;
     }
   }
+    else
+    {
+      for (i=0;i<nb_nodes;i++) {
+	if (i==0) {
+	  node_data[i]->x = 1856 - (frame - 49);
+	  // if(node_data[i]->x > 2106)
+	  //  node_data[i]->x = 2106;
+	  node_data[i]->y = 1813 + (frame - 49);
+	  // if(node_data[i]->y < 1563)
+	  //  node_data[i]->y = 1563;
+	  // if( node_data[i]->x == 2106)
+	  //   node_data[i]->x = 2106 - (frame - 49);
+	}
+	else {
+	  node_data[i]->x = 2106 - (frame - 49);
+	  // if(node_data[i]->x < 1856)
+	  //  node_data[i]->x = 1856;
+	  node_data[i]->y = 1563 + (frame - 49);
+	  // if(node_data[i]->y < 1813)
+	  //  node_data[i]->y = 1813;
+	}
+      }
+      }
+ 
 }
 
 void init_ue(node_desc_t  *ue_data, UE_Antenna ue_ant) {//changed from node_struct
@@ -160,7 +185,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
 
 
-void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, u8 transmission_mode, u16 q) {
+void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, u8 transmission_mode, u16 q, u8 dl_power_off) {
 
   int return_value;
   u16 nb_rb = 25; //No. of resource blocks
@@ -180,7 +205,8 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
          thermal_noise + ue_data->rx_noise_level,
          enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
           enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
-    
+     if(transmission_mode == 5 && dl_power_off==1)
+      transmission_mode = 6;
     switch(transmission_mode){
     case 1:
       //printf ("coupling factor is %lf\n", coupling); 
@@ -291,11 +317,15 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
             
           }//aatx
         }//aarx
-        sinr_dB[count] = enb_data->tx_power_dBm 
-           + eNB2UE->path_loss_dB
-          - (thermal_noise + ue_data->rx_noise_level)  
-          + 10 * log10 ((pow(channelx,2) + pow(channely,2))/2) - 10 * log10 ((pow(channelx_i,2) + pow(channely_i,2))/2);
-      
+	/*	sinr_dB[count] = enb_data->tx_power_dBm 
+	   + eNB2UE->path_loss_dB
+	  - (thermal_noise + ue_data->rx_noise_level)  
+	  + 10 * log10 ((pow(channelx,2) + pow(channely,2))/2) - 10 * log10 ((pow(channelx_i,2) + pow(channely_i,2))/2);
+	*/
+	sinr_dB[count] = enb_data->tx_power_dBm 
+	   + eNB2UE->path_loss_dB
+	  - (thermal_noise + ue_data->rx_noise_level)  
+	  + 10 * log10 ((pow(channelx,2) + pow(channely,2))) - 10 * log10 ((pow(channelx_i,2) + pow(channely_i,2))) - 3; // 3dB is subtracted as the tx_power_dBm is to be adjusted on per user basis
         // printf("sinr_dB[%d]: %1f\n",count,sinr_dB[count]);
       }
       break;
@@ -376,6 +406,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
     }//switch
 }//function ends
 
+#ifdef PHY_ABSTRACTION_UL
 void init_snr_up(channel_desc_t* UE2eNB, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0,u16 nb_rb,u16 fr_rb) {
 
   int return_value;
@@ -439,7 +470,7 @@ void init_snr_up(channel_desc_t* UE2eNB, node_desc_t *enb_data, node_desc_t *ue_
         }
 }//function ends
 
-
+#endif
 
 void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double *sinr_dB) {
 
@@ -461,10 +492,10 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
     //printf("*****sinr% lf \n",sinr_dB[count]);
   }
 }
-
 void get_beta_map() {
   char *file_path = NULL;
-  int table_len = 0;
+  //int table_len = 0;
+  int t;
   int mcs = 0;
   char *sinr_bler;
   char buffer[1000];
@@ -488,24 +519,113 @@ void get_beta_map() {
     }
     // else {
       fgets(buffer, 1000, fp);
-      table_len=0;
+      table_length[mcs]=0;
       while (!feof(fp)) {
         sinr_bler = strtok(buffer, ",");
-        sinr_bler_map[mcs][0][table_len] = atof(sinr_bler);
+        sinr_bler_map[mcs][0][table_length[mcs]] = atof(sinr_bler);
         sinr_bler = strtok(NULL,",");
-        sinr_bler_map[mcs][1][table_len] = atof(sinr_bler);
-        table_len++;
+        sinr_bler_map[mcs][1][table_length[mcs]] = atof(sinr_bler);
+        table_length[mcs]++;
         fgets(buffer, 1000, fp);
       }
       fclose(fp);
       //   }
     LOG_D(OCM,"Print the table for mcs %d\n",mcs);
-    for (table_len = 0; table_len < 16; table_len++)
-      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][table_len],sinr_bler_map[mcs][1][table_len]);
+    for (t = 0; t<table_length[mcs]; t++)
+      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][t],sinr_bler_map[mcs][1][t]);
   }
   free(file_path);
 }
 
+//this function reads and stores the Mutual information tables for the MIESM abstraction. 
+void get_MIESM_param() {
+  char *file_path = NULL;
+  char buffer[10000];
+  FILE *fp;
+  int qam[3] = {4,16,64};
+  int q,cnt;
+  char *result = NULL;
+  int table_len=0;
+  int t;
+  file_path = (char*) malloc(512);
+  for (q=0;q<3;q++)
+    {
+      sprintf(file_path,"%s/SIMU/USER/files/MI_%dqam.csv",getenv("OPENAIR_TARGETS"),qam[q]);
+      fp = fopen(file_path,"r");
+      if (fp == NULL) {
+	printf("ERROR: Unable to open the file %s\n", file_path);
+	exit(-1);
+      }
+      else {
+	cnt=-1;
+	switch(qam[q]) {
+	case 4: 	  
+	  while (!feof(fp)) {
+	    table_len =0;
+	    cnt++;
+	    fgets(buffer, 10000, fp);
+	    result = strtok(buffer, ",");
+	    while (result != NULL) {
+	      MI_map_4qam[cnt][table_len]= atof(result);
+	      result = strtok(NULL, ",");
+	      table_len++;
+	    }
+	  }
+       fclose(fp);
+       for (t = 0; t < 162; t++){
+	 // MI_map_4Qam[0][t] = pow(10,0.1*(MI_map_4Qam[0][t]));
+	 printf("MIESM 4QAM Table: %lf  %lf  %1f\n ",MI_map_4qam[0][t],MI_map_4qam[1][t], MI_map_4qam[2][t]);
+       }
+       break;
+	case 16:
+	   while (!feof(fp)) {
+	    table_len =0;
+	    cnt++;
+	    fgets(buffer, 10000, fp);
+	    result = strtok(buffer, ",");
+	    while (result != NULL) {
+	      MI_map_16qam[cnt][table_len]= atof(result);
+	      result = strtok(NULL, ",");
+	      table_len++;
+	    }
+	  }
+       fclose(fp);
+       for (t = 0; t < 197; t++){
+	 // MI_map_16Qam[0][t] = pow(10,0.1*(MI_map_16Qam[0][t]));
+	 printf("MIESM 16 QAM Table: %lf  %lf  %1f\n ",MI_map_16qam[0][t],MI_map_16qam[1][t], MI_map_16qam[2][t]);
+	}
+       break;
+	case 64:
+	   while (!feof(fp)) {
+	    table_len=0;
+	    cnt++;
+	    if(cnt==3)
+	      break;
+	    fgets(buffer, 10000, fp);
+	    result = strtok(buffer, ",");
+	    while (result != NULL) {
+	      MI_map_64qam[cnt][table_len]= atof(result);
+	      result = strtok(NULL, ",");
+	      table_len++;
+	    }
+	  }
+       fclose(fp);
+       for (t = 0; t < 227; t++){
+	 //MI_map_64Qam[0][t] = pow(10,0.1*(MI_map_64Qam[0][t]));
+	 printf("MIESM 64QAM Table: %lf  %lf  %1f\n ",MI_map_64qam[0][t],MI_map_64qam[1][t], MI_map_64qam[2][t]);
+       }
+       break;
+       
+	default:
+	  msg("Error, bad input, quitting\n");
+	  break;
+	}
+
+      }
+    }
+  free(file_path);
+}
+#ifdef PHY_ABSTRACTION_UL
 void get_beta_map_up() {
   char *file_path = NULL;
   int table_len = 0;
@@ -550,89 +670,8 @@ void get_beta_map_up() {
   free(file_path);
 }
 
+#endif
 
 
-//this function reads and stores the Mutual information tables for the MIESM abstraction. 
-void get_MIESM_param() {
-  char *file_path = NULL;
-  char buffer[10000];
-  FILE *fp;
-  int qam[3] = {4,16,64};
-  int q,cnt;
-  char *result = NULL;
-  int table_length=0;
-  int table_len;
-  file_path = (char*) malloc(512);
-  for (q=0;q<3;q++)
-    {
-      sprintf(file_path,"%s/SIMU/USER/files/MI_%dqam.csv",getenv("OPENAIR_TARGETS"),qam[q]);
-      fp = fopen(file_path,"r");
-      if (fp == NULL) {
-        printf("ERROR: Unable to open the file %s\n", file_path);
-        exit(-1);
-      }
-      else {
-        cnt=-1;
-        switch(qam[q]) {
-        case 4:           
-          while (!feof(fp)) {
-            table_length =0;
-            cnt++;
-            fgets(buffer, 10000, fp);
-            result = strtok(buffer, ",");
-            while (result != NULL) {
-              MI_map_4qam[cnt][table_length]= atof(result);
-              result = strtok(NULL, ",");
-              table_length++;
-            }
-          }
-       fclose(fp);
-       for (table_len = 0; table_len < 162; table_len++)
-         printf("MIESM 4QAM Table: %lf  %lf  %1f\n ",MI_map_4qam[0][table_len],MI_map_4qam[1][table_len], MI_map_4qam[2][table_len]);
-       break;
-        case 16:
-           while (!feof(fp)) {
-            table_length =0;
-            cnt++;
-            fgets(buffer, 10000, fp);
-            result = strtok(buffer, ",");
-            while (result != NULL) {
-              MI_map_16qam[cnt][table_length]= atof(result);
-              result = strtok(NULL, ",");
-              table_length++;
-            }
-          }
-       fclose(fp);
- for (table_len = 0; table_len < 197; table_len++)
-         printf("MIESM 16 QAM Table: %lf  %lf  %1f\n ",MI_map_16qam[0][table_len],MI_map_16qam[1][table_len], MI_map_16qam[2][table_len]);
-       break;
-        case 64:
-           while (!feof(fp)) {
-            table_length =0;
-            cnt++;
-            if(cnt==3)
-              break;
-            fgets(buffer, 10000, fp);
-            result = strtok(buffer, ",");
-            while (result != NULL) {
-              MI_map_64qam[cnt][table_length]= atof(result);
-              result = strtok(NULL, ",");
-              table_length++;
-            }
-          }
-       fclose(fp);
- for (table_len = 0; table_len < 227; table_len++)
-         printf("MIESM 64QAM Table: %lf  %lf  %1f\n ",MI_map_64qam[0][table_len],MI_map_64qam[1][table_len], MI_map_64qam[2][table_len]);
-       break;
-       
-        default:
-          msg("Error, bad input, quitting\n");
-          break;
-        }
-
-      }
-    }
-  free(file_path);
-}
 
 

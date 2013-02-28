@@ -120,6 +120,7 @@
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmin(a,b)  ((a<b) ? (a) : (b))
 
+#define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
 
 #ifdef EXPRESSMIMO_TARGET
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
@@ -190,6 +191,7 @@ typedef struct
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
   double *sinr_dB;
+
  /// N0 (used for abstraction)
   double N0;
 
@@ -396,6 +398,9 @@ typedef struct
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
   double *sinr_dB;
+  
+   /// sinr for all subcarriers of first symbol for the CQI Calculation 
+  double *sinr_CQI_dB;
 
   /// N0 (used for abstraction)
   double N0;

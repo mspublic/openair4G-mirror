@@ -2523,8 +2523,10 @@ uint16_t quantize_wideband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id) {
 // -4.5 => 0   => 0
  
 uint8_t sinr2cqi(int sinr,uint8_t trans_mode) {
-
-  if (sinr<=-8)
+  // int flag_LA=0;
+  if(flag_LA==0){
+  // Ideal Channel Estimation
+       if (sinr<=-8)
     return(0);
   else if (sinr < -6)
     return(3);
@@ -2552,7 +2554,75 @@ uint8_t sinr2cqi(int sinr,uint8_t trans_mode) {
     return(14);
   else if (sinr > 16)
     return(15);
-
+  }
+  else{
+     if(trans_mode==1 || trans_mode ==2){
+       if (sinr<-6)
+	 return(0);
+       else if (sinr < -5.5)
+	 return(1);
+       else if (sinr <= -4.89)
+	 return(2);
+       else if (sinr <= -3.53)
+	 return(3);
+       else if (sinr <= -1.93)
+	 return(4);
+       else if (sinr <= -0.43)
+	 return(5);
+       else if (sinr <= 1.11)
+	 return(6);
+       else if (sinr <= 3.26)
+	 return(7);
+       else if (sinr <= 5)
+	 return(8);
+       else if (sinr <= 6.94)
+	 return(9);
+       else if (sinr <= 8.92)
+	 return(10);
+       else if (sinr <= 10.87)
+	 return(11);
+       else if (sinr <= 12.45)
+	 return(12);
+       else if (sinr <= 15.25)
+	 return(13);
+       else if (sinr <= 17.11)
+	 return(14);
+       else return(15);
+     } else
+       if(trans_mode==5 || trans_mode==6){
+	 if (sinr<=-8)
+	   return(0);
+	 else if (sinr < -7)
+	   return(1);
+	 else if (sinr <= -6)
+	   return(2);
+	 else if (sinr <= -5.25)
+	   return(3);
+	 else if (sinr <= -3.95)
+	   return(4);
+	 else if (sinr <= -2.60)
+	   return(5);
+	 else if (sinr <= -1.10)
+	   return(6);
+	 else if (sinr <= 0.87)
+	   return(7);
+	 else if (sinr <= 2.59)
+	   return(8);
+	 else if (sinr <= 4.79)
+	   return(9);
+	 else if (sinr <= 6.71)
+	   return(10);
+	 else if (sinr <= 8)
+	   return(11);
+	 else if (sinr <= 10.59)
+	   return(12);
+	 else if (sinr <= 13.28)
+	   return(13);
+	 else if (sinr <= 15.74)
+	   return(14);
+	 else return(15);
+    }
+  }
   return(0);
 }
 
@@ -2611,36 +2681,40 @@ uint32_t fill_subband_cqi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mo
   return(cqivect);
 }
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mode) {
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mode, double sinr_eff) {
   
   //  msg("[PHY][UE] Filling CQI for eNB %d, meas->wideband_cqi_tot[%d] %d\n",
   //      eNB_id,eNB_id,meas->wideband_cqi_tot[eNB_id]);
-  
+  double sinr_tmp;
+  if(flag_LA==1)
+    sinr_tmp = sinr_eff;
+  else
+    sinr_tmp = meas->wideband_cqi_avg[eNB_id];
 
   switch (uci_format) {
   case wideband_cqi_rank1_2A:
-    ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
+    ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(sinr_tmp,trans_mode);
     ((wideband_cqi_rank1_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNB_id);
     break;
   case wideband_cqi_rank2_2A:
-    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode); //FIXME: calculate rank2 cqi
-    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode); //FIXME: calculate rank2 cqi
+    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(sinr_tmp,trans_mode); //FIXME: calculate rank2 cqi
+    ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(sinr_tmp,trans_mode); //FIXME: calculate rank2 cqi
     ((wideband_cqi_rank2_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNB_id);
     break;
   case HLC_subband_cqi_nopmi:
-    ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
+    ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(sinr_tmp,trans_mode);
     ((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
     break;
   case HLC_subband_cqi_rank1_2A:
-    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
+    ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(sinr_tmp,trans_mode);
     ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi      = quantize_wideband_pmi(meas,eNB_id);
     break;
   case HLC_subband_cqi_rank2_2A:
     // This has to be improved!!!
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(sinr_tmp,trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id,trans_mode);
-    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_avg[eNB_id],trans_mode);
+    ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(sinr_tmp,trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNB_id);
     break;
@@ -3403,6 +3477,262 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 }
 
 
+double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue, u8 eNB_id){
+  u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
+  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
+  LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
+  s32 **dl_channel_est = phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id];
+  double *s_dB;
+  s_dB = phy_vars_ue->sinr_CQI_dB;   
+  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id]; 
+  //for the calculation of SINR_eff for CQI calculation
+  int count,a_rx,a_tx;
+  double abs_channel,channelx, channely,channelx_i, channely_i;
+  u16 q = quantize_subband_pmi(meas,eNB_id);
+  u8 qq;
+  
+  switch(transmission_mode){
+  case 1:
+    for (count=0;count<frame_parms->N_RB_DL*12;count++)
+      {
+	for(a_tx=0;a_tx<frame_parms->nb_antennas_tx;a_tx++)
+	  { 
+	    for (a_rx=0;a_rx<frame_parms->nb_antennas_rx;a_rx++)
+	      {
+		s_dB[count] = 10*log10(pow(((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2],2) + pow(((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2],2)) - meas->n0_power_avg_dB;    
+	      }
+	  }
+      }
+  break;
+ case 2:
+   for (count=0;count<frame_parms->N_RB_DL*12;count++)
+     {abs_channel=0;
+       for(a_tx=0;a_tx<frame_parms->nb_antennas_tx;a_tx++)
+	 { 
+	   for (a_rx=0;a_rx<frame_parms->nb_antennas_rx;a_rx++)
+	      {
+		abs_channel += (pow(((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2],2) + pow(((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2],2)); 
+	      }
+	 }
+       s_dB[count] = 10*log10(abs_channel/2) - meas->n0_power_avg_dB;
+     }
+   break;
+  case 5:
+    for (count=0;count<frame_parms->N_RB_DL*12;count++){
+	channelx=0;
+	channely=0;
+	channelx_i=0;
+	channely_i=0;
+	qq = (q>>(((count/12)>>2)<<1))&3;
+	//printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
+    	for(a_tx=0;a_tx<frame_parms->nb_antennas_tx;a_tx++)
+	  { 
+	    for (a_rx=0;a_rx<frame_parms->nb_antennas_rx;a_rx++)
+	      {
+		switch(qq){
+		case 0:
+		  if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channelx_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		  }
+		  else
+		    {
+		      channelx += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channelx_i -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely_i -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		    }
+		  break;
+		case 1:
+		    if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channelx_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		  }
+		  else
+		    {
+		      channelx -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channelx_i += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely_i += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		    }
+		  break;
+		case 2:
+		    if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channelx_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		  }
+		  else
+		    {
+		      channelx -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channelx_i += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely_i -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		    }
+		  break;
+		case 3:
+		    if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channelx_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely_i = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		  }
+		  else
+		    {
+		      channelx += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channelx_i -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely_i += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];	
+		    }
+		  break;
+		default:
+		  msg("Problem in SINR Calculation for TM5 \n");
+		  break;
+		}//switch(qq)
+	      }//a_rx
+	  }//a_tx
+	
+	s_dB[count] =  10 * log10 ((pow(channelx,2) + pow(channely,2))/2) - 10 * log10 ((pow(channelx_i,2) + pow(channely_i,2))/2) - meas->n0_power_avg_dB;
+    }//count
+    break;
+  case 6:
+      for (count=0;count<frame_parms->N_RB_DL*12;count++){
+	channelx=0;
+	channely=0;
+	qq = (q>>(((count/12)>>2)<<1))&3;
+	//printf("pmi_alloc %d: rb %d, pmi %d\n",q,count/12,qq);
+    	for(a_tx=0;a_tx<frame_parms->nb_antennas_tx;a_tx++)
+	  { 
+	    for (a_rx=0;a_rx<frame_parms->nb_antennas_rx;a_rx++)
+	      {
+		switch(qq){
+		case 0:
+		  if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		  }
+		  else
+		    {
+		      channelx += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    }
+		  break;
+		case 1:
+		    if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		  }
+		  else
+		    {
+		      channelx -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    }
+		  break;
+		case 2:
+		    if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		  }
+		  else
+		    {
+		      channelx -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    }
+		  break;
+		case 3:
+		    if (channelx==0 || channely==0){
+		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    channely = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		  }
+		  else
+		    {
+		      channelx += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		      channely -= ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
+		    }
+		  break;
+		default:
+		  msg("Problem in SINR Calculation for TM6 \n");
+		  break;
+		}//switch(qq)
+	      }//a_rx
+	  }//a_tx
+	
+	s_dB[count] =  10 * log10 ((pow(channelx,2) + pow(channely,2))/2) - meas->n0_power_avg_dB;
+    }//count
+      break;
+      default:
+      msg("Problem in SINR Calculation for CQI \n");
+      break;
+  }
+		
+		
+  int ii;
+  double sinr_eff = 0;
+  double sinr_eff_qpsk,sinr_eff_qam16,sinr_eff_qam64;
+  double x = 0;
+  double I_qpsk, I_qpsk_avg,I_qam16, I_qam16_avg,I_qam64, I_qam64_avg;
+  double qpsk_max=12.2;
+  double qam16_max=19.2;
+  double qam64_max=25.2;
+  double sinr_min = -20;
+  int offset=0;
+  
+  
+  for (offset = 0; offset <= 24; offset++) {
+    for(ii=0;ii<12;ii++){
+      //x is the sinr_dB in dB
+      x = s_dB[(offset*12)+ii];
+      if(x<sinr_min){
+	I_qpsk +=0;
+	I_qam16 +=0;
+	I_qam64 +=0;
+      }
+      else{
+	if(x>qpsk_max)
+	  I_qpsk += 1;
+	else
+	  I_qpsk += (q_qpsk[0]*pow(x,7) + q_qpsk[1]*pow(x,6) + q_qpsk[2]*pow(x,5) + q_qpsk[3]*pow(x,4) + q_qpsk[4]*pow(x,3) + q_qpsk[5]*pow(x,2) + q_qpsk[6]*x + q_qpsk[7]);
+	
+	if(x>qam16_max)
+	  I_qam16 += 1;
+	else
+	  I_qam16 += (q_qam16[0]*pow(x,7) + q_qam16[1]*pow(x,6) + q_qam16[2]*pow(x,5) + q_qam16[3]*pow(x,4) + q_qam16[4]*pow(x,3) + q_qam16[5]*pow(x,2) + q_qam16[6]*x + q_qam16[7]);
+	
+	if(x>qam64_max)
+	  I_qam64 += 1;
+	else
+	  I_qam64 += (q_qam64[0]*pow(x,7) + q_qam64[1]*pow(x,6) + q_qam64[2]*pow(x,5) + q_qam64[3]*pow(x,4) + q_qam64[4]*pow(x,3) + q_qam64[5]*pow(x,2) + q_qam64[6]*x + q_qam64[7]);
+	
+      }
+    }
+  }
+  
+      // averaging of accumulated MI 
+  I_qpsk_avg = I_qpsk/(12*frame_parms->N_RB_DL);  
+  I_qam16_avg = I_qam16/(12*frame_parms->N_RB_DL);  
+  I_qam64_avg = I_qam64/(12*frame_parms->N_RB_DL);  
+  
+  // I->SINR_effective Mapping
+  
+  sinr_eff_qpsk = (p_qpsk[0]*pow(I_qpsk_avg,7) + p_qpsk[1]*pow(I_qpsk_avg,6) + p_qpsk[2]*pow(I_qpsk_avg,5) + p_qpsk[3]*pow(I_qpsk_avg,4) + p_qpsk[4]*pow(I_qpsk_avg,3) + p_qpsk[5]*pow(I_qpsk_avg,2) + p_qpsk[6]*I_qpsk_avg + p_qpsk[7]);
+  
+  sinr_eff_qam16 = (p_qam16[0]*pow(I_qam16_avg,7) + p_qam16[1]*pow(I_qam16_avg,6) + p_qam16[2]*pow(I_qam16_avg,5) + p_qam16[3]*pow(I_qam16_avg,4) + p_qam16[4]*pow(I_qam16_avg,3) + p_qam16[5]*pow(I_qam16_avg,2) + p_qam16[6]*I_qam16_avg + p_qam16[7]);
+  
+  sinr_eff_qam64 = (p_qam64[0]*pow(I_qam64_avg,7) + p_qam64[1]*pow(I_qam64_avg,6) + p_qam64[2]*pow(I_qam64_avg,5) + p_qam64[3]*pow(I_qam64_avg,4) + p_qam64[4]*pow(I_qam64_avg,3) + p_qam64[5]*pow(I_qam64_avg,2) + p_qam64[6]*I_qam64_avg + p_qam64[7]);
+  sinr_eff = cmax3(sinr_eff_qpsk,sinr_eff_qam16,sinr_eff_qam64);
+  
+  printf("Imran SINR_Eff = %e\n",sinr_eff);
+  
+  return(sinr_eff);
+}
+//
+
+
 #ifdef DEBUG_DLSCH_TOOLS
 main() {
 
@@ -3440,3 +3770,4 @@ main() {
 }
 
 #endif
+

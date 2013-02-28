@@ -1231,7 +1231,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
 #ifdef PHY_ABSTRACTION
 
-
+#ifdef PHY_ABSTRACTION_UL
  int ulsch_abstraction(double* sinr_dB, u8 TM, u8 mcs,u16 nrb, u16 frb) {
 
    int index,ii;
@@ -1593,6 +1593,7 @@ int ulsch_abstraction_MIESM(double* sinr_dB,u8 TM, u8 mcs,u16 nrb, u16 frb) {
 
 }
 
+#endif
 
 u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
@@ -1650,7 +1651,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 }*/
 
   //
- write_output("postprocSINR.m","SINReNB",phy_vars_eNB->sinr_dB,301,1,7);
+  // write_output("postprocSINR.m","SINReNB",phy_vars_eNB->sinr_dB,301,1,7);
  
  
  //Yazdir buraya her frame icin 300 eNb 

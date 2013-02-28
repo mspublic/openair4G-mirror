@@ -72,9 +72,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  srand(1);
-  randominit(1);
-  set_taus_seed(1);
+  srand(0);
+  randominit(0);
+  set_taus_seed(0);
   
   lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
 
   int s,Kr,Kr_bytes;
 
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate,saving_bler=0;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate,saving_bler=1;
   double snr_step=1,input_snr_step=1, snr_int=30;
 
   LTE_DL_FRAME_PARMS *frame_parms;
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
   int hold_channel1=0; 
   // void *data;
   // int ii;
-  // int bler;
+  int bler;
   double blerr[4],uncoded_ber,avg_ber;
   short *uncoded_ber_bit;
   u8 N_RB_DL=25,osf=1;
@@ -1131,6 +1131,7 @@ int main(int argc, char **argv) {
 	}
 	break;
       case 5:
+      case 6:
 	memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2_1E[k],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
 	dci_alloc[num_dci].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
 	dci_alloc[num_dci].L          = 2;
@@ -1156,6 +1157,10 @@ int main(int argc, char **argv) {
 	num_ue_spec_dci++;
 	num_dci++;
 
+	break;
+      default:
+	printf("Unsupported Transmission Mode!!!");
+	exit(-1);
 	break;
       }
 
@@ -1219,7 +1224,7 @@ int main(int argc, char **argv) {
   for (ch_realization=0;ch_realization<n_ch_rlz;ch_realization++){
     if(abstx){
       printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
-       saving_bler=0;
+       saving_bler=1;
        hold_channel1=0;
     }
 
@@ -1689,61 +1694,66 @@ int main(int argc, char **argv) {
 	    multipath_channel(eNB2UE[0],s_re,s_im,r_re,r_im,
 			      2*frame_parms->samples_per_tti,hold_channel);
 	    if(abstx==1){
-	      if(hold_channel1==0){
-	       	hold_channel1 = multipath_channel_nosigconv(eNB2UE[1]);
-	        hold_channel1 = multipath_channel_nosigconv(eNB2UE[2]);
-	        hold_channel1 = multipath_channel_nosigconv(eNB2UE[3]);
-	      }
-	      switch (round)
-		{
-		case 1: 
-		  multipath_channel(eNB2UE[1],s_re,s_im,r_re,r_im,
-				    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
-		  break;
-		case 2:
-		  multipath_channel(eNB2UE[2],s_re,s_im,r_re,r_im,
-				    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
-		  break;
-		case 3:
-		  multipath_channel(eNB2UE[3],s_re,s_im,r_re,r_im,
-				    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
-		  break;
+	      if(num_rounds>2){
+		if(hold_channel1==0){
+		  
+		  hold_channel1 = multipath_channel_nosigconv(eNB2UE[1]);
+		  hold_channel1 = multipath_channel_nosigconv(eNB2UE[2]);
+		  hold_channel1 = multipath_channel_nosigconv(eNB2UE[3]);
+		  
 		}
+		switch (round)
+		  {
+		  case 1: 
+		    multipath_channel(eNB2UE[1],s_re,s_im,r_re,r_im,
+				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
+		    break;
+		  case 2:
+		    multipath_channel(eNB2UE[2],s_re,s_im,r_re,r_im,
+				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
+		    break;
+		  case 3:
+		    multipath_channel(eNB2UE[3],s_re,s_im,r_re,r_im,
+				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
+		    break;
+		  }
+	      }
 	    }
 	  }
 	  
 	  if(abstx){
 	    if(saving_bler==0)
-	    if (trials==0 && round==0) {
-	      // calculate freq domain representation to compute SINR
-	      freq_channel(eNB2UE[0], NB_RB,2*NB_RB + 1);
-	      // snr=pow(10.0,.1*SNR);
-	      fprintf(csv_fd,"%f,",SNR);
+	      if (trials==0 && round==0) {
+		// calculate freq domain representation to compute SINR
+		freq_channel(eNB2UE[0], NB_RB,2*NB_RB + 1);
+		// snr=pow(10.0,.1*SNR);
+		fprintf(csv_fd,"%f,",SNR);
+		
+		for (u=0;u<2*NB_RB;u++){
+		  for (aarx=0;aarx<eNB2UE[0]->nb_rx;aarx++) {
+		    for (aatx=0;aatx<eNB2UE[0]->nb_tx;aatx++) {
+		      channelx = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].x;
+		      channely = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].y;
+		      fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+		    }
+		}
+		}
 	      
-	      for (u=0;u<2*NB_RB;u++){
-		for (aarx=0;aarx<eNB2UE[0]->nb_rx;aarx++) {
-		  for (aatx=0;aatx<eNB2UE[0]->nb_tx;aatx++) {
-		    channelx = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].x;
-		    channely = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].y;
-		    fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+		if(num_rounds>2){
+		freq_channel(eNB2UE[1], NB_RB,2*NB_RB + 1);
+		
+		for (u=0;u<2*NB_RB;u++){
+		  for (aarx=0;aarx<eNB2UE[1]->nb_rx;aarx++) {
+		    for (aatx=0;aatx<eNB2UE[1]->nb_tx;aatx++) {
+		      channelx = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].x;
+		      channely = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].y;
+		      fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+		    }
 		  }
 		}
-	      }
-	      
-	      freq_channel(eNB2UE[1], NB_RB,2*NB_RB + 1);
-	      
-	      for (u=0;u<2*NB_RB;u++){
-		for (aarx=0;aarx<eNB2UE[1]->nb_rx;aarx++) {
-		  for (aatx=0;aatx<eNB2UE[1]->nb_tx;aatx++) {
-		    channelx = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].x;
-		    channely = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].y;
-		    fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
-		  }
-		}
-	      }
-	       freq_channel(eNB2UE[2], NB_RB,2*NB_RB + 1);
-	      
-	      for (u=0;u<2*NB_RB;u++){
+		freq_channel(eNB2UE[2], NB_RB,2*NB_RB + 1);
+		
+		for (u=0;u<2*NB_RB;u++){
 		for (aarx=0;aarx<eNB2UE[2]->nb_rx;aarx++) {
 		  for (aatx=0;aatx<eNB2UE[2]->nb_tx;aatx++) {
 		    channelx = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].x;
@@ -1751,23 +1761,24 @@ int main(int argc, char **argv) {
 		    fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
 		  }
 		}
-	      }
-	      
-	       freq_channel(eNB2UE[3], NB_RB,2*NB_RB + 1);
-	       
-	       for (u=0;u<2*NB_RB;u++){
-		for (aarx=0;aarx<eNB2UE[3]->nb_rx;aarx++) {
-		  for (aatx=0;aatx<eNB2UE[3]->nb_tx;aatx++) {
-		    channelx = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].x;
-		    channely = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].y;
-		    fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
-		  }
+		}
+		
+		freq_channel(eNB2UE[3], NB_RB,2*NB_RB + 1);
+		
+		for (u=0;u<2*NB_RB;u++){
+		  for (aarx=0;aarx<eNB2UE[3]->nb_rx;aarx++) {
+		    for (aatx=0;aatx<eNB2UE[3]->nb_tx;aatx++) {
+		      channelx = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].x;
+		      channely = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].y;
+		      fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
+		    }
+		}
+		}
 		}
 	      }
-	    }
 	  }
-
-	 
+	  
+	  
 	  
 	  //AWGN
       // This is the SNR on the PDSCH for OFDM symbols without pilots -> rho_A
@@ -1854,7 +1865,7 @@ int main(int argc, char **argv) {
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
 		if (abstx==1)
-            freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+		  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		else
 		    freq_channel(eNB2UE[0],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		//write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
@@ -2033,6 +2044,7 @@ int main(int argc, char **argv) {
 						      P_RNTI);
 		    break;
 		  case 5:
+		  case 6:
 		    generate_ue_dlsch_params_from_dci(0,
 						      &DLSCH_alloc_pdu2_1E[0],
 						      C_RNTI,
@@ -2435,28 +2447,27 @@ int main(int argc, char **argv) {
     
       if(abstx){ //ABSTRACTION         
 	blerr[0] = (double)errs[0]/(round_trials[0]);
+        if(num_rounds>2){
 	blerr[1] = (double)errs[1]/(round_trials[1]);
 	blerr[2] = (double)errs[2]/(round_trials[2]);
 	blerr[3] = (double)errs[3]/(round_trials[3]);
 	fprintf(csv_fd,"%e,%e,%e,%e;\n",blerr[0],blerr[1],blerr[2],blerr[3]);
-	/*	
-	blerr = (double)errs[0]/(round_trials[0]);
+	}
+	else
+	  {
+	   
+	    if(saving_bler==0)
+	      fprintf(csv_fd,"%e;\n",blerr[0]);
+	    
+	  }
 	
-	if(saving_bler==0)
-	   fprintf(csv_fd,"%e;\n",blerr);
-
-	if(blerr<1)
-	  saving_bler = 0;
-	else saving_bler =1;
-	*/
-	 
       } //ABStraction
-      /* if(num_rounds==1){
-      blerr= (double)errs[1]/(round_trials[1]);
-	if (blerr>.1)
-	  snr_step = 1.5;
-	else snr_step = input_snr_step;
-	}*/
+      if(num_rounds==2){
+      bler= (double)errs[1]/(round_trials[1]);
+	if (bler>.1)
+	  {snr_step = 1.5; saving_bler = 1;} 
+	else {snr_step = input_snr_step;     saving_bler = 0;}
+	}
       if (((double)errs[0]/(round_trials[0]))<1e-2) 
 	break;
     }// SNR
