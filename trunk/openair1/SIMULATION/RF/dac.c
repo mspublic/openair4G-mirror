@@ -68,7 +68,7 @@ double dac_fixed_gain(double **s_re,
   amp1 = sqrt((double)signal_energy((s32*)&input[0][input_offset_meas],length_meas));//(1.0/sqrt(2.0)) * AMP*sqrt(300.0/512); 
   //  printf("amp1 %f dB (%d,%d)\n",20*log10(amp1),input_offset,input_offset_meas);
   amp = pow(10.0,.05*txpwr_dBm);
-  amp = amp/sqrt(nb_tx_antennas);
+  //amp = amp/sqrt(nb_tx_antennas);
 
   for (i=0;i<length;i++) {
     for (aa=0;aa<nb_tx_antennas;aa++) {
