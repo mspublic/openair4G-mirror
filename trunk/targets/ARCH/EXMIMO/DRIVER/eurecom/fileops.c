@@ -181,7 +181,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
         get_frame_cnt=0;
         get_frame_done = 0;
-        printk("calling exmimo_send_pccmd(%d, EXMIMO_GET_FRAME)\n", (int)arg);
+        printk("[openair][IOCTL] : openair_GET_FRAME: calling exmimo_send_pccmd(%d, EXMIMO_GET_FRAME)\n", (int)arg);
         if ( is_card_num_invalid((int)arg) )
             return -EINVAL;
             
@@ -192,7 +192,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
             get_frame_cnt++;
         }
         if (get_frame_cnt==200)
-            printk("Get frame error: no IRQ received within 2000ms.\n");
+            printk("[openair][IOCTL] : Get frame error: no IRQ received within 2000ms.\n");
         
         get_frame_done = 0;
 
@@ -201,7 +201,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     case openair_GET_BIGSHMTOPS_KVIRT:
     
-        printk("[IOCTL] : openair_GET_BIGSHMTOPS_KVIRT  (0x%p)[0] = %p[0] (bigshm_head) for 0..3 (sizeof %d) \n", (void *)arg, bigshm_head[0], sizeof(bigshm_head));
+        //printk("[openair][IOCTL] : openair_GET_BIGSHMTOPS_KVIRT  (0x%p)[0] = %p[0] (bigshm_head) for 0..3 (sizeof %d) \n", (void *)arg, bigshm_head[0], sizeof(bigshm_head));
         copy_to_user((void *)arg, bigshm_head, sizeof(bigshm_head));
 
         break;
@@ -209,7 +209,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
         
     case openair_GET_PCI_INTERFACE_BOTS_KVIRT:
         
-        printk("[IOCTL] : openair_GET_PCI_INTERFACE_BOTS_KVIRT: copying exmimo_pci_kvirt(@%8p) to %lx (sizeof %d)\n", &exmimo_pci_kvirt[0], arg, sizeof(exmimo_pci_kvirt));
+        //printk("[openair][IOCTL] : openair_GET_PCI_INTERFACE_BOTS_KVIRT: copying exmimo_pci_kvirt(@%8p) to %lx (sizeof %d)\n", &exmimo_pci_kvirt[0], arg, sizeof(exmimo_pci_kvirt));
         copy_to_user((void *)arg, exmimo_pci_kvirt, sizeof(exmimo_pci_kvirt));
    
         break;
@@ -217,7 +217,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
         
     case openair_GET_NUM_DETECTED_CARDS:
 
-        printk("[IOCTL] : openair_GET_NUM_DETECTED_CARDS: *(0x%p) = %d\n", (void *)arg, number_of_cards);
+        //printk("[openair][IOCTL] : openair_GET_NUM_DETECTED_CARDS: *(0x%p) = %d\n", (void *)arg, number_of_cards);
         copy_to_user((void *)arg, &number_of_cards, sizeof(number_of_cards));
    
         break;
@@ -225,11 +225,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     case openair_DUMP_CONFIG:
 
-        printk("[openair][IOCTL]     openair_DUMP_CONFIG(%d)\n", (int)arg);
-        if ( is_card_num_invalid((int)arg) )
-            return -EINVAL;        
-        printk("exmimo_pci_kvirt[%d].exmimo_config_ptr = %p (phys %08x)\n",
-            (int)arg, exmimo_pci_kvirt[(int)arg].exmimo_config_ptr, p_exmimo_pci_phys[(int)arg]->exmimo_config_ptr);
+        //printk("[openair][IOCTL]     openair_DUMP_CONFIG(%d)\n", (int)arg);
+        if ( is_card_num_invalid((int)arg) ) {
+            printk("[openair][IOCTL]     openair_DUMP_CONFIG: Invalid card number %d.\n", (int)arg);
+            return -EINVAL;
+        }
+        printk("[openair][IOCTL] : openair_DUMP_CONFIG(%d):  exmimo_pci_kvirt[%d].exmimo_config_ptr = %p (phys %08x)\n",
+            (int)arg, (int)arg, exmimo_pci_kvirt[(int)arg].exmimo_config_ptr, p_exmimo_pci_phys[(int)arg]->exmimo_config_ptr);
             
         /*printk("EXMIMO_CONFIG: freq0 %d Hz, freq1 %d Hz, freqtx0 %d Hz, freqtx1 %d Hz, \nRX gain0 %d dB, RX Gain1 %d dB\n",  
                     exmimo_pci_kvirt[(int)arg].exmimo_config_ptr->rf.rf_freq_rx[0],
@@ -247,7 +249,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     case openair_START_RT_ACQUISITION:
     
-        printk("[openair][IOCTL]     openair_START_TX_SIG(%d)\n", (int) arg);
+        printk("[openair][IOCTL]     openair_START_TX_SIG(%d): send_pccmd(EXMIMO_START_RT_ACQUISITION).\n", (int) arg);
         if ( is_card_num_invalid((int)arg) )
             return -EINVAL;
 
@@ -354,7 +356,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
             for (c=0; c<number_of_cards; c++)
             {
                 fw_block = (unsigned int *)exmimo_pci_kvirt[c].firmware_block_ptr;
-                /* Copy the data block from user space */
                 fw_block[0] = update_firmware_bss_address;
                 fw_block[1] = update_firmware_bss_size;
     
@@ -376,7 +377,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
             for (c=0; c<number_of_cards; c++)
             {
                 fw_block = (unsigned int *)exmimo_pci_kvirt[c].firmware_block_ptr;
-                /* Copy the data block from user space */
                 fw_block[0] = update_firmware_start_address;
                 fw_block[1] = update_firmware_stack_pointer;
       
