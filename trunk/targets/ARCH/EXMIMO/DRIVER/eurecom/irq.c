@@ -65,14 +65,14 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
 
     irqcmd = ioread32(bar[card_id]+pcie_control);   // On ExMIMO2, this ioread is sufficient to clear the IRQ
 
-    //printk("ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, pcie_control:%x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), pcie_control);
-
+    //printk("IRQ: ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
+    
     if ( irqcmd != EXMIMO_NOP )
     {
         if (irqcmd == GET_FRAME_DONE)
         {
             get_frame_done = 1;
-            iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);
+            //iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);
         }
         else if (irqcmd == PCI_PRINTK)
         {

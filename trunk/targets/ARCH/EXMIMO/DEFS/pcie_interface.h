@@ -75,6 +75,7 @@
 #define PCI_PRINTK        0x2222
 #define GET_FRAME_DONE    0x3333
 
+#define EXMIMO_CONTROL2_COOKIE      0x43545232
 
 
 // -----------------------------------------------------------

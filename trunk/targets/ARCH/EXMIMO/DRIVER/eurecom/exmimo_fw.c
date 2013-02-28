@@ -247,7 +247,7 @@ int exmimo_firmware_init(int card)
     iowrite32( 0, (bar[card]+PCIE_PCIBASEH) );                            // higher 32bit of address
     
     if ( exmimo_pci_kvirt[card].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS )
-        iowrite32( EXMIMO_NOP, bar[card]+PCIE_CONTROL2 );
+        iowrite32( EXMIMO_CONTROL2_COOKIE, bar[card]+PCIE_CONTROL2 );
 
     //printk("exmimo_firmware_init(): initializing Leon (EXMIMO_PCIE_INIT)...\n");
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
@@ -321,7 +321,7 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
         if (cnt==100)
             printk("exmimo_send_pccmd error: Timeout: no EXMIMO_NOP received within 10sec for card%d, pccmd=%x\n", card_id, cmd);
     }
-    
+    //printk("Ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
     return(0);
 }
 

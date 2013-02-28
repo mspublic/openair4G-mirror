@@ -41,7 +41,7 @@ int is_card_num_invalid(int card)
 //-----------------------------------------------------------------------------
 int openair_device_open (struct inode *inode,struct file *filp)
 {
-    printk("[openair][MODULE]  openair_open()\n");
+    //printk("[openair][MODULE]  openair_open()\n");
     return 0;
 }
 
