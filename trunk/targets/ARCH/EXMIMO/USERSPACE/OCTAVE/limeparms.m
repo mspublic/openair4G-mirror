@@ -80,7 +80,7 @@ DMAMODE_RX      =1*(2^23);
 DMAMODE_TX      =2*(2^23);
 
 rf_local  = 31 + 31*(2^6) + 31*(2^12) + 31*(2^18);
-rf_rxdc   = 128 + 128*(2^8); % DC offset ( DCOFF_I_RXFE [6:0], DCOFF_Q_RXFE[14:8] )
+rf_rxdc   = 0 + 0*(2^8); % DC offset ( DCOFF_I_RXFE [6:0], DCOFF_Q_RXFE[14:8] )
 rf_vcocal = ((0xE)*(2^6)) + (0xE); % VCO calibration values for 1.9 GHz
 
 
