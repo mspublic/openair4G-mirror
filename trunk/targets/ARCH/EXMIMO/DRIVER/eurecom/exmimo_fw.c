@@ -245,6 +245,9 @@ int exmimo_firmware_init(int card)
     // put DMA pointer to exmimo_pci_interface_bot into LEON register
     iowrite32( pphys_exmimo_pci_phys[card], (bar[card]+PCIE_PCIBASEL) );  // lower 32bit of address
     iowrite32( 0, (bar[card]+PCIE_PCIBASEH) );                            // higher 32bit of address
+    
+    if ( exmimo_pci_kvirt[card].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS )
+        iowrite32( EXMIMO_NOP, bar[card]+PCIE_CONTROL2 );
 
     //printk("exmimo_firmware_init(): initializing Leon (EXMIMO_PCIE_INIT)...\n");
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
@@ -298,35 +301,27 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
         
     //printk("Sending command to ExpressMIMO (card %d) : %x\n",card_id, cmd);
     iowrite32(cmd,(bar[card_id]+PCIE_CONTROL1));
+    // printk("Readback of control1 %x\n",ioread32(bar[0]+PCIE_CONTROL1));
     
-    // Be careful - this is not safe if the Leon wants to send an IRQ at the same time!
-    // setting the IRQ bit should be a single operation, i.e. if bis 1 is set, ignore all other bits in FPGA
-    //    printk("Readback of control1 %x\n",ioread32(bar[0]+PCIE_CONTROL1));
-    val = ioread32(bar[card_id]+PCIE_CONTROL0);
+    val = ioread32(bar[card_id]+PCIE_CONTROL0);     // this is only necessary for ExMIMO1. ExMIMO2 will not overwrite any bits in CONTROL0 whenever bit0 is set.
     // set interrupt bit to trigger LEON interrupt
     iowrite32(val|0x1,bar[card_id]+PCIE_CONTROL0);
     //    printk("Readback of control0 %x\n",ioread32(bar[0]+PCIE_CONTROL0));
     
-    // workaround for ExMIMO1 and old ExMIMO2 code: no command ack -> sleep
-
-    /*if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_exmimoversion == 1 &&
-         ( cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC ) )
-    */
+    // workaround for ExMIMO1: no command ack -> sleep
     if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY ) 
          msleep(500); // currently, exmimo1 implements no command ack in bootloader -> sleep
     
     else {
-        //if (cmd == EXMIMO_FW_INIT || cmd == EXMIMO_FW_CLEAR_BSS || cmd == EXMIMO_FW_START_EXEC)
-        //{
-            while (cnt<600 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
-                msleep(100);
-                cnt++;
-            }
-            if (cnt==600)
-                printk("exmimo_send_pccmd error: Timeout: no EXMIMO_NOP received within 60sec for card%d, pccmd=%x\n", card_id, cmd);
-        //}
+        while (cnt<100 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
+            //printk("ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
+            msleep(100);
+            cnt++;
+        }
+        if (cnt==100)
+            printk("exmimo_send_pccmd error: Timeout: no EXMIMO_NOP received within 10sec for card%d, pccmd=%x\n", card_id, cmd);
     }
-        
+    
     return(0);
 }
 
