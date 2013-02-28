@@ -10,10 +10,10 @@ card = 0;
 off = 0; % -994;
 limeparms;
 rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM * [ 1 0 0 0 ];
-  rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[1 0 0 0];
-%  rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
-
-rf_local  = rf_local * ones(1,4);
+rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[1 0 0 0];
+%rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
+rf_local = [8254744   8255063   8257340   8257340]; %eNB2tx
+%rf_local  = rf_local * ones(1,4);
 rf_rxdc = rf_rxdc * ones(1,4);
 rf_vcocal = rf_vcocal * ones(1,4);
 rxgain = rxgain*ones(1,4);
@@ -21,8 +21,10 @@ txgain = txgain*ones(1,4);
 freq_rx = fc*[1 1 1 1];
 freq_tx = freq_rx;
 %freq_tx = freq_rx+1920000/3;
+tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
+syncmode = SYNCMODE_FREE;
 
-oarf_config_exmimo(card, freq_rx,freq_tx,1,dual_tx,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
 amp = pow2(14)-1;
 n_bit = 16;
 
