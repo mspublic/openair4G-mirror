@@ -1,5 +1,4 @@
 clear;
-dual_tx=0;
 card=0;
 
 limeparms;
@@ -10,29 +9,31 @@ freq_rx = 1907588000*[1 1 1 1];
 freq_tx = freq_rx+1920000;
 rxgain = 30*[1 1 1 1];
 txgain = 25*[1 1 1 1];
+tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
+syncmode = SYNCMODE_FREE;
 
 sleepafterconfig=0.2
 
-
+% coarse calibration loop for both rx chains
 for txdc_I=0:4:63
   for txdc_Q=0:4:63
 	rxdc_I = 0;
         rxdc_Q = 0;
-        rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1)*[0 0 1 1];
-        rf_mode = rf_mode + (DMAMODE_RX+DMAMODE_TX)*[0 0 0 1];
+        rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1)*[1 1 0 0];
+        rf_mode = rf_mode + (DMAMODE_RX+DMAMODE_TX)*[1 1 0 0];
         rf_local  = (txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18))*[1 1 1 1];
 
         rf_rxdc   = ((128+rxdc_I) + (128+rxdc_Q)*(2^8))*[1 1 1 1];
         rf_vcocal = (((0xE)*(2^6)) + (0xE))*[1 1 1 1];
         %rf_vcocal=((0x16)*(2^6)) + (0xF)*[1 1 1 1]; 
 
-oarf_config_exmimo(card, freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
-sleep(sleepafterconfig)
+	oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+	sleep(sleepafterconfig)
 
         s=oarf_get_frame(card);
         sF0 = 20*log10(abs(fftshift(fft(s(:,1)))));
         sF1 = 20*log10(abs(fftshift(fft(s(:,2)))));
-
+	
         f = (7.68*(0:length(s(:,1))-1)/(length(s(:,1))))-3.84;
         spec0 = sF0;
         spec1 = sF1;
@@ -75,6 +76,8 @@ sleep(sleepafterconfig)
         end        
   end
 end
+
+% fine calibration loop for RX1 (RX2 stays constant)
 txdc_I_min02 = txdc_I_min0;
 txdc_Q_min02 = txdc_Q_min0;
 for deltaI = -3:3,
@@ -90,8 +93,9 @@ for deltaI = -3:3,
      rf_local(1)  = txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18); 
      rf_local(2)  = txdc_I_min1 + (txdc_Q_min1)*(2^6) + 31*(2^12) + 31*(2^18);
 
-oarf_config_exmimo(card, freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
-sleep(sleepafterconfig)
+     oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+     sleep(sleepafterconfig)
+
      s=oarf_get_frame(card);
      sF0 = 20*log10(abs(fftshift(fft(s(:,1)))));
      spec0 = sF0;
@@ -116,10 +120,11 @@ sleep(sleepafterconfig)
         txdc_Q_min02
 	fflush(stdout);
      end   
-    end
+     end
   end
 end
 
+% fine calibration loop for RX2 (RX1 stays constant)
 txdc_I_min12 = txdc_I_min1;
 txdc_Q_min12 = txdc_Q_min1;
 for deltaI = -3:3,
@@ -135,8 +140,8 @@ for deltaI = -3:3,
       rf_local(1)  = txdc_I_min02 + (txdc_Q_min02)*(2^6) + 31*(2^12) + 31*(2^18);
       rf_local(2)  = txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18);
 
-oarf_config_exmimo(card, freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
-sleep(sleepafterconfig)
+      oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+      sleep(sleepafterconfig)
 
       s=oarf_get_frame(card);
       sF1 = 20*log10(abs(fftshift(fft(s(:,2)))));
@@ -177,7 +182,7 @@ rf_local(1)  = txdc_I_min02 + (txdc_Q_min02)*(2^6) + 31*(2^12) + 31*(2^18);
 rf_local(2)  = txdc_I_min12 + (txdc_Q_min12)*(2^6) + 31*(2^12) + 31*(2^18);
 
 
-oarf_config_exmimo(card, freq_rx,freq_tx,1,dual_tx,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
 sleep(sleepafterconfig)
 
 s=oarf_get_frame(card);

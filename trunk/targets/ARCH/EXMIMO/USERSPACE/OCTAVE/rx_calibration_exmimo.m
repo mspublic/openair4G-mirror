@@ -11,20 +11,25 @@ fs = 7680e3;
 fref = fc+fs/4;
 
 power_dBm      = -70;
-cables_loss_dB = 0;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
+cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 
 dual_tx = 0;
 tdd = 1;
 card = 0;
 limeparms;
 %rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM+DMAMODE_RX+DMAMODE_TX)*[1 1 1 1];
-rf_mode = (RXEN+0+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM+DMAMODE_RX+0)*[1 1 0 0];
+rf_mode1 = (RXEN+0+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM+DMAMODE_RX+0);
+rf_mode2 = (RXEN+0+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA2ON+LNAMax+RFBBNORM+DMAMODE_RX+0);
+rf_mode = [rf_mode1 rf_mode2 0 0];
 freq_rx = 1907600000*[1 1 1 1];
 freq_tx = freq_rx;
 tx_gain = 25*[1 1 1 1];
 rx_gain = 15*[1 1 1 1];
-rf_local= [8254744   8255063   8257340   8257340]; %rf_local*[1 1 1 1];
-rf_rxdc = rf_rxdc*[1 1 1 1];
+%rf_local= [8254744   8255063   8257340   8257340]; %rf_local*[1 1 1 1];
+rf_local = [8254813 8255016 8254813 8254813]; %exmimo2_2
+%rf_rxdc = rf_rxdc*[1 1 1 1];
+%rf_rxdc   = ((128+rxdc_I) + (128+rxdc_Q)*(2^8))*[1 1 1 1];
+rf_rxdc = [37059   35459   36300   36999]; %exmimo2_2
 rf_vcocal=rf_vcocal*[1 1 1 1];
 eNBflag = 0;
 tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
@@ -32,7 +37,7 @@ syncmode = SYNCMODE_FREE;
 
 
 gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
-gpib_send(gpib_card,gpib_device,'POW 0dBm');
+gpib_send(gpib_card,gpib_device,sprintf("POW %ddBm",power_dBm+cables_loss_dB));
 %gpib_send(gpib_card,gpib_device,'FREQ 1.91860GHz');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.919225GHz');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.909225GHz');
