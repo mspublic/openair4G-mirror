@@ -49,7 +49,6 @@ void dac(double **s_re,
   }
 }
 
-
 double dac_fixed_gain(double **s_re,
 		      double **s_im,
 		      u32 **input,
@@ -65,10 +64,18 @@ double dac_fixed_gain(double **s_re,
   int aa;
   double amp,amp1;
  
-  amp1 = sqrt((double)signal_energy((s32*)&input[0][input_offset_meas],length_meas));//(1.0/sqrt(2.0)) * AMP*sqrt(300.0/512); 
-  //  printf("amp1 %f dB (%d,%d)\n",20*log10(amp1),input_offset,input_offset_meas);
+  //amp1 = sqrt((double)signal_energy((s32*)&input[0][input_offset_meas],length_meas));
+  //printf("amp1 %f dB (%d,%d)\n",20*log10(amp1),input_offset,input_offset_meas);
   amp = pow(10.0,.05*txpwr_dBm);
-  //amp = amp/sqrt(nb_tx_antennas);
+  amp = amp/sqrt(nb_tx_antennas); //this is amp per tx antenna
+
+  if (nb_tx_antennas==2)
+    amp1 = AMP/2;
+  else if (nb_tx_antennas==4)
+    amp1 = ((AMP*ONE_OVER_SQRT2_Q15)>>16);
+  else //assume (nb_tx_antennas==1) 
+    amp1 = ((AMP*ONE_OVER_SQRT2_Q15)>>15);
+  amp1 = amp1*sqrt(512.0/300.0); //account for loss due to null carriers
 
   for (i=0;i<length;i++) {
     for (aa=0;aa<nb_tx_antennas;aa++) {
