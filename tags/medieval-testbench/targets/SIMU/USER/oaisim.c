@@ -1468,11 +1468,14 @@ main (int argc, char **argv)
 	}  
 	if (td_avg<(TARGET_SF_TIME_NS - SF_DEVIATION_OFFSET_NS)){
 	  sleep_time_us += SLEEP_STEP_US; 
-	  LOG_D(EMU,"[TIMING]Fater than realtime increase the avg sleep time for %d us, frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",	sleep_time_us,frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
+	  LOG_D(EMU,"[TIMING]Faster than realtime increase the avg sleep time for %d us, frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, average difference from the target %dus\n",	sleep_time_us,frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
 	}
 	else if (td_avg > (TARGET_SF_TIME_NS + SF_DEVIATION_OFFSET_NS)) {
-	  sleep_time_us-= SLEEP_STEP_US; 
-	  LOG_D(EMU,"[TIMING]Slower than realtime reduce the avg sleep time for %d us, frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, avgerage difference from the target %dus\n",	sleep_time_us,frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
+	  sleep_time_us-= SLEEP_STEP_US;
+      if (sleep_time_us < 0) {
+          sleep_time_us = 0;
+      }    
+	  LOG_D(EMU,"[TIMING]Slower than realtime reduce the avg sleep time for %d us, frame %d, time_now %ldus,time_last %ldus,average time difference %ldns, CURRENT TIME DIFF %dus, average difference from the target %dus\n",	sleep_time_us,frame, time_now,time_last,td_avg, td/1000,(td_avg-TARGET_SF_TIME_NS)/1000);
 	}
       } // end if next_slot%2
      }// if Channel_Flag==0
@@ -1536,7 +1539,7 @@ main (int argc, char **argv)
     // calibrate at the end of each frame if there is some time  left
     if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"[TIMING] Adjust average frame duration, sleep for %d us\n",sleep_time_us);
-      usleep(sleep_time_us);
+      //usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
   }	//end of frame
