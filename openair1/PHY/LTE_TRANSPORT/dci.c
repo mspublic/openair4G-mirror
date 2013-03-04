@@ -2015,6 +2015,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   int nushiftmod3 = frame_parms->nushift%3;
 
   int Msymb2;
+  int split_flag=0;
 
   switch (frame_parms->N_RB_DL) {
   case 100:
@@ -2240,7 +2241,10 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 	  
       tti_offset = symbol_offset + re_offset;
-
+      if (re_offset==(frame_parms->ofdm_symbol_size-2))
+	split_flag=1;
+      else
+	split_flag=0;
       //            printf("kprime %d, lprime %d => REG %d (symbol %d)\n",kprime,lprime,(lprime==0)?(kprime/6) : (kprime>>2),symbol_offset);
       // if REG is allocated to PHICH, skip it
       if (check_phich_reg(frame_parms,kprime,lprime,mi) == 1) {
@@ -2275,15 +2279,48 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	else { // no pilots in this symbol
 	  kprime_mod12 = kprime%12;
 	  if ((kprime_mod12 == 0) || (kprime_mod12 == 4) || (kprime_mod12 == 8)) {
-	    // kprime represents REG	    
-	    for (i=0;i<4;i++) {
-	      txdataF[0][tti_offset+i] = wbar[0][mprime];
-	      if (frame_parms->nb_antennas_tx_eNB > 1)
-		txdataF[1][tti_offset+i] = wbar[1][mprime];
+	    // kprime represents REG
+	    if (split_flag==0) {
+	      for (i=0;i<4;i++) {
+		txdataF[0][tti_offset+i] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx_eNB > 1)
+		  txdataF[1][tti_offset+i] = wbar[1][mprime];
 #ifdef DEBUG_DCI_ENCODING
-	      msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
 		mprime++;
+	      }
+	    }
+	    else {
+		txdataF[0][tti_offset+0] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx_eNB > 1)
+		  txdataF[1][tti_offset+0] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+		txdataF[0][tti_offset+1] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx_eNB > 1)
+		  txdataF[1][tti_offset+1] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+1,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+		txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+2] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx_eNB > 1)
+		  txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+2] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+2,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+		txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx_eNB > 1)
+		  txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+3,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+
 	    }
 	  }
 	}
