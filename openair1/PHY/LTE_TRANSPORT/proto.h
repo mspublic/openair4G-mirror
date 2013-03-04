@@ -89,6 +89,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
     LTE_DL_FRAME_PARMS *frame_parms,
     u8 num_pdcch_symbols,
     LTE_eNB_DLSCH_t *dlsch,
+    int frame,
     u8 subframe)
     \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
     - CRC computation and addition
@@ -100,6 +101,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
     @param frame_parms Pointer to frame descriptor structure
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
     @param dlsch Pointer to dlsch to be encoded
+    @param frame Frame number
     @param subframe Subframe number
     @param rm_stats Time statistics for rate-matching
     @param te_stats Time statistics for turbo-encoding
@@ -110,6 +112,7 @@ s32 dlsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
 		   LTE_eNB_DLSCH_t *dlsch,
+		   int frame,
 		   u8 subframe,
 		   time_stats_t *rm_stats,
 		   time_stats_t *te_stats,
@@ -988,7 +991,7 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti);
 */
 u32 conv_nprb(u8 ra_header,u32 rb_alloc,int N_RB_DL);
 
-int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,int frame,u8 subframe);
 
 int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe);
 int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol);
@@ -1447,6 +1450,15 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
 		       lte_frame_type_t frame_type,
 		       u32 X_u[64][839]);
 
+/*!
+  \brief Return the status of MBSFN in this frame/subframe
+  @param frame Frame index
+  @param subframe Subframe index
+  @param frame_parms Pointer to frame parameters
+  @returns 1 if subframe is for MBSFN
+*/
+int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+ 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);
 //end ALU's algo

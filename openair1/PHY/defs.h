@@ -168,6 +168,7 @@ typedef struct
   // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
   LTE_eNB_ULSCH_t  *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
+  LTE_eNB_DLSCH_t  *dlsch_eNB_MCH;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats *eNB_UE_stats_ptr[NUMBER_OF_UE_MAX];
 
@@ -338,7 +339,7 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
-
+  LTE_UE_DLSCH_t   *dlsch_ue_MCH;
   // For abstraction-purposes only
   u8               sr[10];
   u8               pucch_sel[10];

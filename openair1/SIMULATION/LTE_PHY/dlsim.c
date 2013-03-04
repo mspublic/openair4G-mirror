@@ -1479,7 +1479,7 @@ int main(int argc, char **argv) {
 					      PHY_vars_eNB->dlsch_eNB[k][0]->rb_alloc,
 					      get_Qm(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs),
 					      num_pdcch_symbols,
-					      subframe);
+					      0,subframe);
 	      
 #ifdef TBS_FIX   // This is for MESH operation!!!
 	      tbs = (double)3*TBStable[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb-1]/4;
@@ -1530,7 +1530,7 @@ int main(int argc, char **argv) {
 				 &PHY_vars_eNB->lte_frame_parms,
 				 num_pdcch_symbols,
 				 PHY_vars_eNB->dlsch_eNB[k][0],
-				 subframe,
+				 0,subframe,
 				 &PHY_vars_eNB->dlsch_rate_matching_stats,
 				 &PHY_vars_eNB->dlsch_turbo_encoding_stats,
 				 &PHY_vars_eNB->dlsch_interleaving_stats
@@ -1998,7 +1998,7 @@ int main(int argc, char **argv) {
 						      PHY_vars_UE->dlsch_ue[0][0]->rb_alloc,
 						      get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
 						      PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-						      subframe);
+						      0,subframe);
 		      /*
 			rate = (double)dlsch_tbs25[get_I_TBS(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs)][PHY_vars_UE->dlsch_ue[0][0]->nb_rb-1]/(coded_bits_per_codeword);
 			rate*=get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs);
@@ -2231,7 +2231,7 @@ int main(int argc, char **argv) {
 					  PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
 					  get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
 					  num_pdcch_symbols,
-					  subframe);
+					  0,subframe);
 	  start_meas(&usts);	      
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
 			     PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,

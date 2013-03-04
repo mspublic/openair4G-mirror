@@ -347,7 +347,9 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     Qprime = G - ulsch->O_RI;
 
   Q_CQI = Q_m * Qprime;
-  //  printf("ulsch_decoding.c: G %d, Q_RI %d, Q_CQI %d (L %d, Or1 %d)\n",G,Q_RI,Q_CQI,L,ulsch->Or1); 
+#ifdef DEBUG_ULSCH_DECODING
+  printf("ulsch_decoding.c: G %d, Q_RI %d, Q_CQI %d (L %d, Or1 %d)\n",G,Q_RI,Q_CQI,L,ulsch->Or1); 
+#endif
   Qprime_CQI = Qprime;
 
   G = G - Q_RI - Q_CQI;

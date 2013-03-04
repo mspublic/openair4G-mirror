@@ -127,7 +127,8 @@ void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe,u8 harq_pid) {
 				  phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
 				  phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
 				  get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),  
-				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,subframe);
+				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				  phy_vars_ue->frame,subframe);
 
   write_output("rxsigF0.m","rxsF0", phy_vars_ue->lte_ue_common_vars.rxdataF[0],2*nsymb*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", phy_vars_ue->lte_ue_pdsch_vars[0]->rxdataF_ext[0],2*nsymb*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
@@ -153,7 +154,8 @@ void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
 				  phy_vars_ue->dlsch_ue_SI[eNB_id]->nb_rb,
 				  phy_vars_ue->dlsch_ue_SI[eNB_id]->rb_alloc,
 				  get_Qm(phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->mcs),  
-				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,subframe);
+				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				  phy_vars_ue->frame,subframe);
   LOG_D(PHY,"[UE %d] Dumping dlsch_SI : nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
       phy_vars_ue->Mod_id,
       phy_vars_ue->dlsch_ue_SI[eNB_id]->nb_rb,
@@ -205,7 +207,8 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
 				  phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
 				  phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc,
 				  get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),  
-				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,subframe);
+				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				  phy_vars_ue->frame,subframe);
   LOG_D(PHY,"[UE %d] Dumping dlsch_ra : nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
       phy_vars_ue->Mod_id,
       phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
@@ -1340,7 +1343,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     if ((last_slot == 2) && (phy_vars_ue->frame%100==0)) {
 	
       LOG_I(PHY,"[UE  %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
-	
+      /*	
       LOG_I(PHY,"[UE  %d] frame %d, slot %d, RX RSSI (%d,%d,%d) dBm, digital (%d, %d)(%d,%d)(%d,%d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
 		phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
@@ -1366,7 +1369,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 		phy_vars_ue->PHY_measurements.n0_power[0],
 		phy_vars_ue->PHY_measurements.n0_power[1],
 		phy_vars_ue->PHY_measurements.n0_power_avg_dB,
-		phy_vars_ue->PHY_measurements.n0_power_avg);
+		phy_vars_ue->PHY_measurements.n0_power_avg); */
     }
 #endif
   }
@@ -2258,7 +2261,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				     phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
 				     phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
 				     get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
-				     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
+				     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				     phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
 			       phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			       0,
 			       ((((last_slot>>1)==0) ? 9 : ((last_slot>>1))-1))<<1);
@@ -2432,7 +2436,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				     phy_vars_ue->dlsch_ue_SI[eNB_id]->nb_rb,
 				     phy_vars_ue->dlsch_ue_SI[eNB_id]->rb_alloc,
 				     get_Qm(phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->mcs),
-				     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
+				     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				     phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
 			       phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0],
 			       0,
 			       ((((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)))<<1);
@@ -2552,7 +2557,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		      phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
 		      phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc,
 		      get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),
-		      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
+		      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+		      phy_vars_ue->frame,
+		      (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
 		phy_vars_ue->dlsch_ue_ra[eNB_id]->rnti
 		);
 #endif
@@ -2564,7 +2571,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				   phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,
 				   phy_vars_ue->dlsch_ue_ra[eNB_id]->rb_alloc,
 				   get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),
-				   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
+				   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+				   phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1))),
 			     phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id]->llr[0],
 			     0,
 			     ((((last_slot>>1)==0) ?9 : ((last_slot>>1)-1)))<<1);

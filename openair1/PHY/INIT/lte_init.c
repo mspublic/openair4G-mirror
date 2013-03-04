@@ -69,9 +69,14 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
 }
 
 void phy_config_sib2_eNB(u8 Mod_id,
-			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
+			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			 ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+			 long *ul_Bandwidth,
+			 AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			 struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+  int i;
 
   msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id]->frame);
 
@@ -158,13 +163,43 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   init_ul_hopping(lte_frame_parms);
 
+
+  // MBSFN
+  if (mbsfn_SubframeConfigList != NULL) {
+    lte_frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
+    for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
+      if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
+	lte_frame_parms->MBSFN_config[i].fourFrames_flag = 0;
+	lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
+	LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+      }
+      else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration 
+	  lte_frame_parms->MBSFN_config[i].fourFrames_flag = 1;
+	  lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = 
+	    mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+	  
+	  LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+		lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+	}
+    }
+  }
 }
 
 
 void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
-			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
+			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+			long *ul_Bandwidth,
+			AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+  int i;
 
   LOG_I(PHY,"[UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame,CH_index);
 
@@ -234,6 +269,33 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
 
   init_ul_hopping(lte_frame_parms);
 
+
+  // MBSFN
+
+  if (mbsfn_SubframeConfigList != NULL) {
+    lte_frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
+    for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
+      if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
+	lte_frame_parms->MBSFN_config[i].fourFrames_flag = 0;
+	lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
+	LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+      }
+      else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration 
+	  lte_frame_parms->MBSFN_config[i].fourFrames_flag = 1;
+	  lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = 
+	    mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+	  
+	  LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+		lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+	}
+    }
+  }
+  
 }
 
 void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {

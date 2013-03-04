@@ -176,7 +176,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   ret = MAX_TURBO_ITERATIONS;
 
 
-  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
+  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
 
 
