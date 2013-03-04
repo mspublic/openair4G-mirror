@@ -70,7 +70,7 @@ __m128i zero2;
 u32 check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,u32 kprime,u8 lprime,u8 mi) {
 
   u16 i;
-  u16 Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
+  u16 Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
   u16 mprime;
   u16 *pcfich_reg = frame_parms->pcfich_reg;
 
@@ -2241,10 +2241,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 	  
       tti_offset = symbol_offset + re_offset;
-      if (re_offset==(frame_parms->ofdm_symbol_size-2))
-	split_flag=1;
-      else
-	split_flag=0;
+
+      (re_offset==(frame_parms->ofdm_symbol_size-2)) ? (split_flag=1) : (split_flag=0);
+
       //            printf("kprime %d, lprime %d => REG %d (symbol %d)\n",kprime,lprime,(lprime==0)?(kprime/6) : (kprime>>2),symbol_offset);
       // if REG is allocated to PHICH, skip it
       if (check_phich_reg(frame_parms,kprime,lprime,mi) == 1) {
@@ -2306,18 +2305,18 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+1,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
 		mprime++;
-		txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+2] = wbar[0][mprime];
-		if (frame_parms->nb_antennas_tx_eNB > 1)
-		  txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+2] = wbar[1][mprime];
-#ifdef DEBUG_DCI_ENCODING
-		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+2,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
-#endif
-		mprime++;
 		txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[0][mprime];
 		if (frame_parms->nb_antennas_tx_eNB > 1)
 		  txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[1][mprime];
 #ifdef DEBUG_DCI_ENCODING
 		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+3,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+		txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+4] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx_eNB > 1)
+		  txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+4] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+4,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
 		mprime++;
 
@@ -2480,7 +2479,7 @@ u16 get_nCCE(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,u8 mi) {
 u16 get_nquad(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,u8 mi) {
 
   u16 Nreg=0;
-  u8 Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);								   
+  u8 Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;								   
 
   if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
     Ngroup_PHICH++;
