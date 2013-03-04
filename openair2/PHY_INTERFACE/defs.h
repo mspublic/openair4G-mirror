@@ -72,13 +72,21 @@ typedef struct
     
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_eNB)(u8 Mod_id,
-			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
-
+				RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+				ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+				long *ul_Bandwidth,
+				AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+				struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList);
+    
 
     /// PHY-Config-Dedicated eNB
     void (*phy_config_dedicated_eNB)(u8 Mod_id,u16 rnti,
-				    struct PhysicalConfigDedicated *physicalConfigDedicated);
+				     struct PhysicalConfigDedicated *physicalConfigDedicated);
 
+#ifdef Rel10
+    /// Get MCH sdu and corresponding MCS for particular MBSFN subframe
+    MCH_PDU* (*get_mch_sdu)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
+#endif
 
     // UE functions
 
@@ -91,8 +99,13 @@ typedef struct
     /// Send a received DLSCH sdu to MAC
     void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
-   /// Send a received MCH  sdu to MAC
-    //    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
+#ifdef Rel10
+    /// Send a received MCH sdu to MAC
+    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
+
+    /// Function to check if UE PHY needs to decode MCH for MAC
+    int (*ue_query_mch)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
+#endif
 
   /// Retrieve ULSCH sdu from MAC
     void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
@@ -124,7 +137,11 @@ typedef struct
     
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
-			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
+			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			       ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+			       long *ul_Bandwidth,
+			       AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			       struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList);
 
 
     /// Function to indicate failure of contention resolution or RA procedure

@@ -489,11 +489,14 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 		       (MeasGapConfig_t *)NULL,
 		       (TDD_Config_t *)NULL,
 		       NULL,
+		       NULL,
+		       NULL,
+		       NULL,
+		       NULL,
 		       NULL
 #ifdef Rel10	       
 		       ,
 		       0,
-		       (MBSFN_SubframeConfigList_t*)NULL,
 		       (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 		       );
@@ -655,11 +658,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			     (MeasGapConfig_t *)NULL,
 			     NULL,
 			     NULL,
+			     NULL,
+			     NULL,
+			     NULL,
+			     NULL,
 			     NULL
 #ifdef Rel10	       
 			     ,
 			     0,
-			     (MBSFN_SubframeConfigList_t*)NULL,
 			     (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			     );
@@ -701,11 +707,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			 UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 			 (TDD_Config_t *)NULL,
 			 (u8 *)NULL,
-			 (u16 *)NULL
+			 (u16 *)NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL
 #ifdef Rel10	       
 			 ,
 			 0,
-			 (MBSFN_SubframeConfigList_t*)NULL,
 			 (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			 );
@@ -740,11 +749,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			   UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 			   (TDD_Config_t*)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL
+			   (u16 *)NULL,
+			   NULL,
+			   NULL,
+			   NULL,
+			   (MBSFN_SubframeConfigList_t*)NULL
 #ifdef Rel10	       
 			   ,
 			   0,
-			   (MBSFN_SubframeConfigList_t*)NULL,
 			   (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			   );
@@ -1167,11 +1179,14 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 		     (MeasGapConfig_t *)NULL,
 		     UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
 		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
-		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod
+		     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,
+		     NULL,
+		     NULL,
+		     NULL,
+		     (MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10	       
 		     ,
 		     0,
-		     (MBSFN_SubframeConfigList_t *)NULL,
 		     (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 		     );
@@ -1325,11 +1340,14 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 (MeasGapConfig_t *)NULL,
 			 (TDD_Config_t *)NULL,
 			 NULL,
-			 NULL
+			 NULL,
+			 UE_rrc_inst[Mod_id].sib2[eNB_index]->freqInfo.ul_CarrierFreq,
+			 UE_rrc_inst[Mod_id].sib2[eNB_index]->freqInfo.ul_Bandwidth,
+			 &UE_rrc_inst[Mod_id].sib2[eNB_index]->freqInfo.additionalSpectrumEmission,
+			 UE_rrc_inst[Mod_id].sib2[eNB_index]->mbsfn_SubframeConfigList
 #ifdef Rel10	       
 			 ,
 			 0,
-			 (MBSFN_SubframeConfigList_t *)NULL,
 			 (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			 );
