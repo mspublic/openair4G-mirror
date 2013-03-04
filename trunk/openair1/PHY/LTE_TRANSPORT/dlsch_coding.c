@@ -184,11 +184,12 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag) {
   }
 }
 
-
+ 
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
 		   LTE_eNB_DLSCH_t *dlsch,
+		   int frame,
 		   u8 subframe,
 		   time_stats_t *rm_stats,
 		   time_stats_t *te_stats,
@@ -208,7 +209,7 @@ int dlsch_encoding(unsigned char *a,
   // printf("Encoder: A: %d\n",A);
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
+  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,frame,subframe);
 
    
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet

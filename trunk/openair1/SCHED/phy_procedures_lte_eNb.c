@@ -1266,7 +1266,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		       &phy_vars_eNB->lte_frame_parms,
 		       num_pdcch_symbols,
 		       phy_vars_eNB->dlsch_eNB_SI,
-		       next_slot>>1,
+		       phy_vars_eNB->frame,next_slot>>1,
 		       &phy_vars_eNB->dlsch_rate_matching_stats,
 		       &phy_vars_eNB->dlsch_turbo_encoding_stats,
 		       &phy_vars_eNB->dlsch_interleaving_stats);
@@ -1278,7 +1278,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       phy_vars_eNB->dlsch_eNB_SI->nb_rb,
 			       phy_vars_eNB->dlsch_eNB_SI->rb_alloc,
 			       get_Qm(phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->mcs),
-			       num_pdcch_symbols,next_slot>>1),
+			       num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 			 0,
 			 next_slot);      
 	
@@ -1370,7 +1370,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		       &phy_vars_eNB->lte_frame_parms,
 		       num_pdcch_symbols,
 		       phy_vars_eNB->dlsch_eNB_ra,
-		       next_slot>>1,
+		       phy_vars_eNB->frame,next_slot>>1,
 		       &phy_vars_eNB->dlsch_rate_matching_stats,
 		       &phy_vars_eNB->dlsch_turbo_encoding_stats,
 		       &phy_vars_eNB->dlsch_interleaving_stats);
@@ -1383,7 +1383,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       phy_vars_eNB->dlsch_eNB_ra->nb_rb,
 			       phy_vars_eNB->dlsch_eNB_ra->rb_alloc,
 			       get_Qm(phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->mcs),
-			       num_pdcch_symbols,next_slot>>1),
+			       num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 			 0,
 			 next_slot);
 	for (sect_id=0;sect_id<number_of_cards;sect_id++) 
@@ -1432,7 +1432,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
 		    phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rb_alloc,
 		    get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
-		    num_pdcch_symbols,next_slot>>1),
+		    num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs,
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->Ndi,
@@ -1480,7 +1480,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			 &phy_vars_eNB->lte_frame_parms,
 			 num_pdcch_symbols,
 			 phy_vars_eNB->dlsch_eNB[(u8)UE_id][0],
-			 next_slot>>1,
+			 phy_vars_eNB->frame,next_slot>>1,
 			 &phy_vars_eNB->dlsch_rate_matching_stats,
 			 &phy_vars_eNB->dlsch_turbo_encoding_stats,
 			 &phy_vars_eNB->dlsch_interleaving_stats);
@@ -1492,7 +1492,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				 phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
 				 phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rb_alloc,
 				 get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
-				 num_pdcch_symbols,next_slot>>1),
+				 num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 			   0,
 			   next_slot);      
 	  for (sect_id=0;sect_id<number_of_cards;sect_id++) {
@@ -2550,7 +2550,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			    0,
 			    0);
       
-#ifdef DEBUG_PHY_PROC
+      //#ifdef DEBUG_PHY_PROC
       LOG_I(PHY,"[eNB %d] Frame %d subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n", 
 	    phy_vars_eNB->Mod_id,phy_vars_eNB->frame,last_slot>>1,
 	    phy_vars_eNB->eNB_UE_stats[i].sector, 
@@ -2562,7 +2562,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[i]->o_ACK[1], 
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
-#endif
+      //#endif
 
 
       if (phy_vars_eNB->frame % 100 == 0) {

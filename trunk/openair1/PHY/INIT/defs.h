@@ -4,7 +4,8 @@
 #include "PHY/defs.h"
 
 #ifdef OPENAIR_LTE
-#include "RadioResourceConfigCommonSIB.h"
+#include "SystemInformationBlockType2.h"
+//#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #else
@@ -98,24 +99,48 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
 
 /*!
   \fn void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
-			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon)
+			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+		        long *ul_Bandwidth,
+			AdditionalSpectrumEmission_t additionalSpectrumEmission,
+			struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList)
   \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of SIB2 (at UE).  
   @param Mod_id Instance id
   @param CH_index Index of CH to which UE is connected
   @param radioResourceConfigCommon Radio Configuration from SIB2
+  @param ul_CarrierFreq UL carrier ARFCN, null if optional (i.e. implicit from DL)
+  @param ul_Bandwidth UL bandwidth, null if optional (i.e. same as DL)
+  @param additionalSpectrumEmission UL parameter (see 36.101)
+  @param mbsfn_SubframeConfigList MBSFN subframe configuration
 */
 void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
-			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
+			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+			long *ul_Bandwidth,
+			AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList);
 
 /*!
   \fn void phy_config_sib2_eNB(u8 Mod_id,
-			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon)
+                               RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			       ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+			       long *ul_Bandwidth,
+			       AdditionalSpectrumEmission_t additionalSpectrumEmission,
+			       struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList)
   \brief Configure LTE_DL_FRAME_PARMS with components of SIB2 (at eNB).  
   @param Mod_id Instance id
   @param radioResourceConfigCommon Radio Configuration from SIB2
+  @param ul_CarrierFreq UL carrier ARFCN, null if optional (i.e. implicit from DL)
+  @param ul_Bandwidth UL bandwidth, null if optional (i.e. same as DL)
+  @param additionalSpectrumEmission UL parameter (see 36.101)
+  @param mbsfn_SubframeConfigList MBSFN subframe configuration
 */
 void phy_config_sib2_eNB(u8 Mod_id,
-			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
+			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			 ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+			 long *ul_Bandwidth,
+			 AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			 struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList);
 
 
 /*!

@@ -40,6 +40,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "PHY/LTE_TRANSPORT/proto.h"
 
 unsigned char get_Qm(unsigned char I_MCS) {
 
@@ -305,32 +306,40 @@ int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subfr
   return(0);
 }
 
-int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe) {
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,int frame,u8 subframe) {
 
   
 
-  int G_adj = adjust_G(frame_parms,rb_alloc,mod_order,subframe);
+  int G_adj;
 
-  //  printf("get_G subframe %d mod_order %d, nb_rb %d: rb_alloc %x,%x,%x,%x, G_adj %d\n",subframe,mod_order,nb_rb,rb_alloc[3],rb_alloc[2],rb_alloc[1],rb_alloc[0], G_adj);
-  if (frame_parms->Ncp==0) { // normal prefix
-  // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
-  // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
-  // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
-    if (frame_parms->mode1_flag==0) // SISO 
-      return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj);
-    else
-      return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+  if (is_pmch_subframe(frame,subframe,frame_parms) == 0) {
+    G_adj= adjust_G(frame_parms,rb_alloc,mod_order,subframe);
+    
+    //    printf("get_G subframe %d mod_order %d, nb_rb %d: rb_alloc %x,%x,%x,%x, G_adj %d\n",subframe,mod_order,nb_rb,rb_alloc[3],rb_alloc[2],rb_alloc[1],rb_alloc[0], G_adj);
+    if (frame_parms->Ncp==0) { // normal prefix
+      // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
+      // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
+      // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
+      if (frame_parms->mode1_flag==0) // SISO 
+	return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj);
+      else
+	return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+    }
+    else {
+      // PDDPDD PDDPDD - 11 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
+      // PCDPDD PDDPDD - 10 PDSCH symbols, 7 full, 3 w/ pilots = 7*12 + 3*8
+      // PCCPDD PDDPDD - 9 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
+      if (frame_parms->mode1_flag==0)
+	return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj);
+      else
+	return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+    }
   }
-  else {
-  // PDDPDD PDDPDD - 11 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
-  // PCDPDD PDDPDD - 10 PDSCH symbols, 7 full, 3 w/ pilots = 7*12 + 3*8
-  // PCCPDD PDDPDD - 9 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
-    if (frame_parms->mode1_flag==0)
-      return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj);
-    else
-      return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+  else { // This is an MBSFN subframe
+    return((int)frame_parms->N_RB_DL * mod_order * 102);
   }
 }
+
 // following function requires dlsch_tbs_full.h
 #include "PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
 

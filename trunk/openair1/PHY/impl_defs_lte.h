@@ -63,6 +63,8 @@
 
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
+typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
+
 typedef enum {
   normal=0,
   extended=1
@@ -402,6 +404,12 @@ typedef struct {
   CQI_REPORTPERIODIC CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG;
 
+typedef struct {
+  int radioframeAllocationPeriod;
+  int radioframeAllocationOffset;
+  int fourFrames_flag;
+  int mbsfn_SubframeConfig;
+} MBSFN_config_t;
 
 typedef struct {
   /// Number of resource blocks (RB) in DL
@@ -413,9 +421,9 @@ typedef struct {
   /// MBSFN Area ID
   u16 Nid_cell_mbsfn;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
-  u8 Ncp;
+  lte_prefix_type_t Ncp;
   /// Cyclic Prefix for UL (0=Normal CP, 1=Extended CP)
-  u8 Ncp_UL;                   
+  lte_prefix_type_t Ncp_UL;                   
   /// shift of pilot position in one RB
   u8 nushift;                
   /// Frame type (0 FDD, 1 TDD)
@@ -488,6 +496,10 @@ typedef struct {
   SOUNDINGRS_UL_CONFIG_COMMON soundingrs_ul_config_common;
   /// UL Power Control (from 36-331 RRC spec)
   UL_POWER_CONTROL_CONFIG_COMMON ul_power_control_config_common;
+  /// Number of MBSFN Configurations
+  int num_MBSFN_config;
+  /// Array of MBSFN Configurations (max 8 elements as per 36.331)
+  MBSFN_config_t MBSFN_config[8];
   /// Maximum Number of Retransmissions of RRCConnectionRequest (from 36-331 RRC Spec)
   u8 maxHARQ_Msg3Tx;
   /// Size of SI windows used for repetition of one SI message (in frames)
