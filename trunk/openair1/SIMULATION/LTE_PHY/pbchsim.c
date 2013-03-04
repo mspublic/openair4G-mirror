@@ -430,13 +430,17 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:dP:")) != -1)
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:O:dP:")) != -1)
     {
       switch (c)
 	{
 	case 'f':
-	  output_fd = fopen(optarg,"w");
 	  write_output_file=1;
+	  output_fd = fopen(optarg,"w");
+	  if (output_fd==NULL) {
+	    printf("Error opening %s\n",optarg);
+	    exit(-1);
+	  }
 	  break;
 	case 'd':
 	  frame_type = 1;
@@ -601,7 +605,7 @@ int main(int argc, char **argv) {
 	}
     }
 
-  if (transmission_mode==2)
+  if (transmission_mode>=2)
     n_tx=2;
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,N_RB_DL,osf);
@@ -1201,10 +1205,10 @@ int main(int argc, char **argv) {
 	      msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 		  trial,
 		  PHY_vars_UE->PHY_measurements.rx_rssi_dBm[0], 
-		  PHY_vars_UE->PHY_measurements.wideband_cqi_dB[0][0],
-		  PHY_vars_UE->PHY_measurements.wideband_cqi_dB[0][1],
-		  PHY_vars_UE->PHY_measurements.wideband_cqi[0][0],
-		  PHY_vars_UE->PHY_measurements.wideband_cqi[0][1],
+		  PHY_vars_UE->PHY_measurements.rx_power_dB[0][0],
+		  PHY_vars_UE->PHY_measurements.rx_power_dB[0][1],
+		  PHY_vars_UE->PHY_measurements.rx_power[0][0],
+		  PHY_vars_UE->PHY_measurements.rx_power[0][1],
 		  PHY_vars_UE->rx_total_gain_dB);
 	      
 	      msg("[PHY_PROCEDURES_LTE] frame %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
@@ -1270,8 +1274,8 @@ int main(int argc, char **argv) {
 	    else {
 	      n_errors++;
 	      n_errors2++;
-	      //if (n_frames==1)
-	      msg("pbch error (%d)\n",pbch_tx_ant);
+	      if (n_frames==1)
+		msg("pbch error (%d)\n",pbch_tx_ant);
 	    }
 	  }
 	}
