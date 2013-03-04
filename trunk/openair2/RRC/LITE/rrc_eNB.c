@@ -227,11 +227,14 @@ void init_SI(u8 Mod_id) {
 		       (MeasGapConfig_t *)NULL,
 		       eNB_rrc_inst[Mod_id].sib1->tdd_Config,
 		       &SIwindowsize,
-		       &SIperiod
+		       &SIperiod,
+		       eNB_rrc_inst[Mod_id].sib2->freqInfo.ul_CarrierFreq,
+		       eNB_rrc_inst[Mod_id].sib2->freqInfo.ul_Bandwidth,
+		       &eNB_rrc_inst[Mod_id].sib2->freqInfo.additionalSpectrumEmission,
+		       (MBSFN_SubframeConfigList_t *)eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList
 #ifdef Rel10
 		       ,
-		       eNB_rrc_inst[Mod_id].MBMS_flag,		        
-		       (MBSFN_SubframeConfigList_t *)eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList,
+		       eNB_rrc_inst[Mod_id].MBMS_flag,		        		       
 		       (MBSFN_AreaInfoList_r9_t *)&eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9
 #endif 
 		       );
@@ -1257,11 +1260,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 			   (TDD_Config_t *)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL
+			   (u16 *)NULL,
+			   NULL,
+			   NULL,
+			   NULL,
+			   (MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10	       
 			   ,
 			   0,
-			   (MBSFN_SubframeConfigList_t *)NULL,
 			   (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			   );
@@ -1290,11 +1296,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (MeasGapConfig_t *)NULL,
 			   (TDD_Config_t *)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL
+			   (u16 *)NULL,
+			   NULL,
+			   NULL,
+			   NULL,
+			   NULL
 #ifdef Rel10	       
 			   ,
 			   0,
-			   (MBSFN_SubframeConfigList_t *)NULL,
 			   (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			   );
@@ -1356,11 +1365,15 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 		     eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 		     (TDD_Config_t *)NULL,
 		     (u8 *)NULL,
-		     (u16 *)NULL
+		     (u16 *)NULL,
+		     NULL,
+		     NULL,
+		     NULL,
+		     (MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10	       
 		     ,
 		     0,
-		     (MBSFN_SubframeConfigList_t *)NULL,
+
 		     (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 		     );

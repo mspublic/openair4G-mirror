@@ -4328,7 +4328,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     //   eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
     
     // for TM5, limit the MCS to 16QAM    
-    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
+    if (mac_xface->get_transmission_mode(Mod_id,rnti)==5) {
       if (dl_pow_off[next_ue]==0) {
 	if (next_ue==0)
 	  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
@@ -4337,7 +4337,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
       else
 	eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
-
+    }
     // for EXMIMO, limit the MCS to 16QAM as well
 #ifdef EXMIMO
     eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);

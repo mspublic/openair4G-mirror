@@ -1,6 +1,7 @@
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
-#include "RadioResourceConfigCommonSIB.h"
+#include "SystemInformationBlockType2.h"
+//#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
 #include "MeasObjectToAddModList.h"
@@ -23,11 +24,14 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
-		       u16 *SIperiod
+		       u16 *SIperiod,
+		       ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+		       long *ul_Bandwidth,
+		       AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+		       struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
 #ifdef Rel10
 		       ,
 		       u8 MBMS_Flag,
-		       struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
 		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
 #endif 
 		       ) {
@@ -80,11 +84,11 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       
       LOG_I(MAC,"[CONFIG]pusch_config_common.cyclicShift  = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift); 
       
-      mac_xface->phy_config_sib2_eNB(Mod_id,radioResourceConfigCommon);
+      mac_xface->phy_config_sib2_eNB(Mod_id,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
     }
     else {
       UE_mac_inst[Mod_id].radioResourceConfigCommon = radioResourceConfigCommon;
-      mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon);
+      mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
     }
   }
   
@@ -177,7 +181,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       }
   }
 
-#ifdef Rel10
 
   if (mbsfn_SubframeConfigList != NULL) {
     if (eNB_flag == 1) {
@@ -186,13 +189,16 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	LOG_I(MAC, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
 	      eNB_mac_inst[Mod_id].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]); 
       }
+#ifdef Rel10
       eNB_mac_inst[Mod_id].MBMS_flag = MBMS_Flag;
+#endif
     }
     else {
       // UE
     }
   }
 
+#ifdef Rel10
   if (mbsfn_AreaInfoList != NULL) {
     if (eNB_flag == 1) {
       LOG_I(MAC, "[CONFIG] SIB13 Contents (partial)\n");
@@ -207,7 +213,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       // UE
     }
   }
-  
-#endif
+#endif  
+
   return(0);
 }

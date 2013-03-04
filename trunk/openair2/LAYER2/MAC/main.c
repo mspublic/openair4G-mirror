@@ -365,7 +365,9 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
-  //  mac_xface->ue_send_mch_sdu     = ue_send_mch_sdu;
+#ifdef Rel10
+  mac_xface->ue_send_mch_sdu     = ue_send_mch_sdu;
+#endif
   mac_xface->ue_get_SR                 = ue_get_SR;
   mac_xface->ue_get_sdu                = ue_get_sdu;
   mac_xface->ue_get_rach               = ue_get_rach;
@@ -397,6 +399,10 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
+
+#ifdef Rel10
+  mac_xface->get_mch_sdu                = get_mch_sdu;
+#endif
 
   mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");

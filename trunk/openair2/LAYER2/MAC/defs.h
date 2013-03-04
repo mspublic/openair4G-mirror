@@ -256,9 +256,17 @@ typedef struct {
 /*! \brief Downlink SCH PDU Structure
  */
 typedef struct {
-  s8 payload[8][SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  s8 payload[8][SCH_PAYLOAD_SIZE_MAX];         
   u16 Pdu_size[8];
 } __attribute__ ((__packed__)) DLSCH_PDU;
+
+/*! \brief MCH PDU Structure
+ */
+typedef struct {
+  s8 payload[SCH_PAYLOAD_SIZE_MAX];         
+  u16 Pdu_size;
+  uint8_t mcs;
+} __attribute__ ((__packed__)) MCH_PDU;
 
 /*! \brief Uplink SCH PDU Structure
  */
@@ -430,6 +438,8 @@ typedef struct{
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
   /// BCCH active flag
   u8 bcch_active;
+  /// MBSFN SubframeConfig
+  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
  #ifdef Rel10 
   /// MBMS Flag
   u8 MBMS_flag;
@@ -439,8 +449,6 @@ typedef struct{
   u8 mcch_active;
   /// MBSFN Area Info
   struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
-  /// MBSFN SubframeConfig
-  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
 #endif
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
@@ -627,11 +635,14 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
-		       u16 *SIperiod
- #ifdef Rel10
+		       u16 *SIperiod,
+		       ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+		       long *ul_Bandwidth,
+		       AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+		       struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
+#ifdef Rel10
 		       ,
 		       u8 MBMS_Flag,
-		       struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
 		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
 #endif
 		       );
@@ -811,6 +822,17 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu, u16 sdu_len);
 void SR_indication(u8 Mod_id,u32 frame,u16 rnti, u8 subframe);
 
 u8 *get_dlsch_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 TBindex);
+
+/* \brief Function to retrieve MCH transport block and MCS used for MCH in this MBSFN subframe.  Returns null if no MCH is to be transmitted
+@param Mod_id Instance ID of eNB
+@param frame Index of frame
+@param subframe Index of current subframe
+@param mcs Pointer to mcs used by PHY (to be filled by MAC) 
+@returns Pointer to MCH transport block and mcs for subframe
+*/
+MCH_PDU *get_mch_sdu(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
+
+
 //added for ALU icic purpose
 u32 Get_Cell_SBMap(u8 Mod_id);
 void UpdateSBnumber(unsigned char Mod_id);
@@ -878,7 +900,24 @@ void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
 
+#ifdef Rel10
+/* \brief Called by PHY to transfer MCH transport block to ue MAC.
+@param Mod_id Index of module instance
+@param frame Frame index
+@param sdu Pointer to transport block
+@param sdu_len Length of transport block
+@param eNB_index Index of attached eNB
+*/
 void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) ;
+
+/*\brief Function to check if UE PHY needs to decode MCH for MAC.
+@param Mod_id Index of protocol instance
+@param frame Index of frame
+@param subframe Index of subframe
+*/
+int ue_query_mch(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
+
+#endif
 
 /* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.  
 @param Mod_id Instance id of UE in machine
