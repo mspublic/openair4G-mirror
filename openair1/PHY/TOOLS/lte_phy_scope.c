@@ -9,8 +9,23 @@ FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 
 float tput_time_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
-float tput_time_ue[NUMBER_OF_CONNECTED_eNB_MAX+1][TPUT_WINDOW_LENGTH] = {{0}};
-float tput_ue[NUMBER_OF_CONNECTED_eNB_MAX+1][TPUT_WINDOW_LENGTH] = {{0}};
+float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
+float tput_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
+float tput_ue_max[NUMBER_OF_UE_MAX] = {0};
+
+static void ia_receiver_on_off( FL_OBJECT *button, long arg) {
+
+    if (fl_get_button(button)) {
+        fl_set_object_label(button, "IA Receiver ON");
+        openair_daq_vars.use_ia_receiver = 1;
+        fl_set_object_color(button, FL_GREEN, FL_GREEN);
+    } else {
+        fl_set_object_label(button, "IA Receiver OFF");
+        openair_daq_vars.use_ia_receiver = 0;
+        fl_set_object_color(button, FL_RED, FL_RED);
+    }
+}
+
 
 FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void ) {
 
@@ -79,13 +94,13 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_enb->lte_frame_parms;
     int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
     u8 nb_antennas_rx = frame_parms->nb_antennas_rx;
-    u8 nb_antennas_tx = frame_parms->nb_antennas_tx; // should be UE tx antennas
+    u8 nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
     s16 **rxsig_t;
     s16 **chest_t;
     s16 **chest_f;
     s16 *pusch_llr;
     s16 *pusch_comp;
-    float Re,Im,ymin,ymax;
+    float Re,Im,ymax;
     float *llr, *bit;
     float I[nsymb_ce*2], Q[nsymb_ce*2];
     float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
@@ -137,9 +152,12 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     
     // Channel Impulse Response (still repeated format)
     if (chest_t != NULL) {
+        ymax = 0;
         if (chest_t[0] !=NULL) {
             for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
                 chest_t_abs[0][i] = (float) (chest_t[0][4*i]*chest_t[0][4*i]+chest_t[0][4*i+1]*chest_t[0][4*i+1]);
+                if (chest_t_abs[0][i] > ymax) 
+                    ymax = chest_t_abs[0][i];
             }
             fl_set_xyplot_data(form->chest_t,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size>>3),"","","");
         }
@@ -147,13 +165,15 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
             if (chest_t[arx] !=NULL) {
                 for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
                     chest_t_abs[arx][i] = (float) (chest_t[arx][4*i]*chest_t[arx][4*i]+chest_t[arx][4*i+1]*chest_t[arx][4*i+1]);
+                    if (chest_t_abs[arx][i] > ymax) 
+                        ymax = chest_t_abs[arx][i];
                 }
                 fl_add_xyplot_overlay(form->chest_t,arx,time,chest_t_abs[arx],(frame_parms->ofdm_symbol_size>>3),rx_antenna_colors[arx]);
                 fl_set_xyplot_overlay_type(form->chest_t,arx,FL_DASHED_XYPLOT);
             }
         }
         // Avoid flickering effect
-        fl_get_xyplot_ybounds(form->chest_t,&ymin,&ymax);
+        //        fl_get_xyplot_ybounds(form->chest_t,&ymin,&ymax);
         fl_set_xyplot_ybounds(form->chest_t,0,ymax);
     }
     
@@ -185,15 +205,17 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
             fl_add_xyplot_overlay(form->chest_f,1,&freq[arx*nsymb_ce],&chest_f_abs[arx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
         }
         // other tx antennas
-        if (nb_antennas_rx > 1) {
-            for (atx=1;atx<nb_antennas_tx;atx++) {
-                for (arx=0;arx<nb_antennas_rx;arx++) {
-                    fl_add_xyplot_overlay(form->chest_f,(atx<<1)+arx,&freq[((atx<<1)+arx)*nsymb_ce],&chest_f_abs[((atx<<1)+arx)*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
+        if (nb_antennas_tx > 1) {
+            if (nb_antennas_rx > 1) {
+                for (atx=1;atx<nb_antennas_tx;atx++) {
+                    for (arx=0;arx<nb_antennas_rx;arx++) {
+                        fl_add_xyplot_overlay(form->chest_f,(atx<<1)+arx,&freq[((atx<<1)+arx)*nsymb_ce],&chest_f_abs[((atx<<1)+arx)*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
+                    }
                 }
+            } else { // 1 rx antenna
+                atx=1; arx=0;
+                fl_add_xyplot_overlay(form->chest_f,atx,&freq[atx*nsymb_ce],&chest_f_abs[atx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
             }
-        } else { // 1 rx antenna
-            atx=1; arx=0;
-            fl_add_xyplot_overlay(form->chest_f,atx,&freq[atx*nsymb_ce],&chest_f_abs[atx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
         }
     }
 
@@ -229,8 +251,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     
     fl_set_xyplot_data(form->pusch_tput,tput_time_enb[UE_id],tput_enb[UE_id],TPUT_WINDOW_LENGTH,"","","");
     
-    fl_get_xyplot_ybounds(form->pusch_tput,&ymin,&ymax);
-    fl_set_xyplot_ybounds(form->pusch_tput,0,ymax);
+    //    fl_get_xyplot_ybounds(form->pusch_tput,&ymin,&ymax);
+    //    fl_set_xyplot_ybounds(form->pusch_tput,0,ymax);
     
     free(llr);
     free(bit);
@@ -242,6 +264,9 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
     FL_OBJECT *obj;
     FD_lte_phy_scope_ue *fdui = fl_malloc( sizeof *fdui );
     
+    fdui->vdata = fdui->cdata = NULL;
+    fdui->ldata = 0;
+
     // Define form
     fdui->lte_phy_scope_ue = fl_bgn_form( FL_NO_BOX, 800, 900 );
 
@@ -318,10 +343,20 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
     fl_set_xyplot_symbolsize( fdui->pdsch_comp,2);
     
     // Throughput on PDSCH
-    fdui->pdsch_tput = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 720, 760, 100, "PDSCH Throughput [frame]/[kbit/s]" );
+    fdui->pdsch_tput = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 720, 500, 100, "PDSCH Throughput [frame]/[kbit/s]" );
     fl_set_object_boxtype( fdui->pdsch_tput, FL_EMBOSSED_BOX );
     fl_set_object_color( fdui->pdsch_tput, FL_BLACK, FL_WHITE );
     fl_set_object_lcolor( fdui->pdsch_tput, FL_WHITE ); // Label color
+
+    // Generic UE Button
+    fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 540, 720, 240, 40, "" );
+    fl_set_object_lalign(fdui->button_0, FL_ALIGN_CENTER );
+    openair_daq_vars.use_ia_receiver = 0;
+    fl_set_button(fdui->button_0,0);
+    fl_set_object_label(fdui->button_0, "IA Receiver OFF");
+    fl_set_object_color(fdui->button_0, FL_RED, FL_RED);  
+    fl_set_object_callback(fdui->button_0, ia_receiver_on_off, 0 );
+    fl_hide_object(fdui->button_0);
 
     fl_end_form( );
     fdui->lte_phy_scope_ue->fdui = fdui;
@@ -331,7 +366,8 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
 
 void phy_scope_UE(FD_lte_phy_scope_ue *form, 
                   PHY_VARS_UE *phy_vars_ue,
-                  int eNB_id) {
+                  int eNB_id,
+                  int UE_id) {    
     int i,arx,atx,ind,k;
     LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
     int nsymb_ce = frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti;
@@ -346,12 +382,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     s16 *pdcch_comp;
     s8 *pbch_llr;
     s16 *pbch_comp;
-    float Re,Im,ymin,ymax;
+    float Re,Im,ymax=1;
     int num_pdcch_symbols=3;
     float *llr, *bit, *chest_f_abs, llr_pbch[1920], bit_pbch[1920], *llr_pdcch, *bit_pdcch;
     float *I, *Q;
     float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
-    float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
+    float **chest_t_abs;
     float time[FRAME_LENGTH_COMPLEX_SAMPLES];
     float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
     int frame = phy_vars_ue->frame;
@@ -360,6 +396,11 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     int mcs = 0;
     if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
         mcs = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs;    
+        // Button 0
+        if(!phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off) {
+            // we are in TM5
+            fl_show_object(form->button_0);
+        } 
     }
     
     coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*frame_parms->symbols_per_tti;
@@ -370,6 +411,10 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
     I = (float*) calloc(nsymb_ce*2,sizeof(float));
     Q = (float*) calloc(nsymb_ce*2,sizeof(float));
+    chest_t_abs = (float**) malloc(nb_antennas_rx*sizeof(float*));
+    for (arx=0;arx<nb_antennas_rx;arx++) {
+        chest_t_abs[arx] = (float*) calloc(frame_parms->ofdm_symbol_size,sizeof(float));
+    }
     chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
     llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
     bit = malloc(coded_bits_per_codeword*sizeof(float));
@@ -408,9 +453,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
     // Channel Impulse Response (still repeated format)
     if (chest_t != NULL) {
+        ymax = 0;
         if (chest_t[0] !=NULL) {
             for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
                 chest_t_abs[0][i] = (float) (chest_t[0][4*i]*chest_t[0][4*i]+chest_t[0][4*i+1]*chest_t[0][4*i+1]);
+                if (chest_t_abs[0][i] > ymax) 
+                    ymax = chest_t_abs[0][i];
             }
             fl_set_xyplot_data(form->chest_t,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size>>3),"","","");
         }
@@ -418,14 +466,16 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
             if (chest_t[arx] !=NULL) {
                 for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
                     chest_t_abs[arx][i] = (float) (chest_t[arx][4*i]*chest_t[arx][4*i]+chest_t[arx][4*i+1]*chest_t[arx][4*i+1]);
+                    if (chest_t_abs[arx][i] > ymax) 
+                        ymax = chest_t_abs[arx][i];
                 }
                 fl_add_xyplot_overlay(form->chest_t,arx,time,chest_t_abs[arx],(frame_parms->ofdm_symbol_size>>3),rx_antenna_colors[arx]);
                 fl_set_xyplot_overlay_type(form->chest_t,arx,FL_DASHED_XYPLOT);
             }
         }
         // Avoid flickering effect
-        fl_get_xyplot_ybounds(form->chest_t,&ymin,&ymax);
-        fl_set_xyplot_ybounds(form->chest_t,0,ymax);
+        //        fl_get_xyplot_ybounds(form->chest_t,&ymin,&ymax); // Does not always work...
+        fl_set_xyplot_ybounds(form->chest_t,0,(double) ymax);
     }
     
     // Channel Frequency Response
@@ -457,15 +507,17 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
             fl_add_xyplot_overlay(form->chest_f,1,&freq[arx*nsymb_ce],&chest_f_abs[arx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
         }
         // other tx antennas
-        if (nb_antennas_rx > 1) {
-            for (atx=1;atx<nb_antennas_tx;atx++) {
-                for (arx=0;arx<nb_antennas_rx;arx++) {
-                    fl_add_xyplot_overlay(form->chest_f,(atx<<1)+arx,&freq[((atx<<1)+arx)*nsymb_ce],&chest_f_abs[((atx<<1)+arx)*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
+        if (nb_antennas_tx > 1) {
+            if (nb_antennas_rx > 1) {
+                for (atx=1;atx<nb_antennas_tx;atx++) {
+                    for (arx=0;arx<nb_antennas_rx;arx++) {
+                        fl_add_xyplot_overlay(form->chest_f,(atx<<1)+arx,&freq[((atx<<1)+arx)*nsymb_ce],&chest_f_abs[((atx<<1)+arx)*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
+                    }
                 }
+            } else { // 1 rx antenna
+                atx=1; arx=0;
+                fl_add_xyplot_overlay(form->chest_f,atx,&freq[atx*nsymb_ce],&chest_f_abs[atx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
             }
-        } else { // 1 rx antenna
-            atx=1; arx=0;
-            fl_add_xyplot_overlay(form->chest_f,atx,&freq[atx*nsymb_ce],&chest_f_abs[atx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
         }
     }
 
@@ -535,16 +587,22 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
     
     // PDSCH Throughput
-    memcpy((void*)tput_time_ue[eNB_id],(void*)&tput_time_ue[eNB_id][1],(TPUT_WINDOW_LENGTH-1)*sizeof(float));
-    memcpy((void*)tput_ue[eNB_id],(void*)&tput_ue[eNB_id][1],(TPUT_WINDOW_LENGTH-1)*sizeof(float));
+    memcpy((void*)tput_time_ue[UE_id],(void*)&tput_time_ue[UE_id][1],(TPUT_WINDOW_LENGTH-1)*sizeof(float));
+    memcpy((void*)tput_ue[UE_id],(void*)&tput_ue[UE_id][1],(TPUT_WINDOW_LENGTH-1)*sizeof(float));
     
-    tput_time_ue[eNB_id][TPUT_WINDOW_LENGTH-1]  = (float) frame;
-    tput_ue[eNB_id][TPUT_WINDOW_LENGTH-1] = ((float) total_dlsch_bitrate)/1000.0;
+    tput_time_ue[UE_id][TPUT_WINDOW_LENGTH-1]  = (float) frame;
+    tput_ue[UE_id][TPUT_WINDOW_LENGTH-1] = ((float) total_dlsch_bitrate)/1000.0;
     
-    fl_set_xyplot_data(form->pdsch_tput,tput_time_ue[eNB_id],tput_ue[eNB_id],TPUT_WINDOW_LENGTH,"","","");
+    if (tput_ue[UE_id][TPUT_WINDOW_LENGTH-1] > tput_ue_max[UE_id]) {
+        tput_ue_max[UE_id] = tput_ue[UE_id][TPUT_WINDOW_LENGTH-1];
+    }
     
-    fl_get_xyplot_ybounds(form->pdsch_tput,&ymin,&ymax);
-    fl_set_xyplot_ybounds(form->pdsch_tput,0,ymax);
+    fl_set_xyplot_data(form->pdsch_tput,tput_time_ue[UE_id],tput_ue[UE_id],TPUT_WINDOW_LENGTH,"","","");
+    
+    fl_set_xyplot_ybounds(form->pdsch_tput,0,tput_ue_max[UE_id]);
+
+
+    fl_check_forms();
 
     free(I);
     free(Q);
@@ -553,4 +611,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     free(bit);
     free(bit_pdcch);
     free(llr_pdcch);
+    for (arx=0;arx<nb_antennas_rx;arx++) {
+        free(chest_t_abs[arx]);
+    }
+    free(chest_t_abs);
 }
