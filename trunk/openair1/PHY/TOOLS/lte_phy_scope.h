@@ -7,8 +7,12 @@
 #include "../impl_defs_lte.h"
 #include "../impl_defs_top.h"
 #include "../defs.h"
+#include "../../SCHED/defs.h" // for OPENAIR_DAQ_VARS
+
+extern OPENAIR_DAQ_VARS openair_daq_vars;
 
 /* Forms and Objects */
+//static void ia_receiver_on_off( FL_OBJECT *button, long arg);
 
 typedef struct {
     FL_FORM   * lte_phy_scope_enb;
@@ -32,11 +36,14 @@ typedef struct {
     FL_OBJECT * pdsch_comp;
     FL_OBJECT * pdsch_llr;
     FL_OBJECT * pdsch_tput;
+    FL_OBJECT * button_0;
+    void      * vdata;
+    char      * cdata;
+    long        ldata;
 } FD_lte_phy_scope_ue;
 
-extern void ia_receiver_on_off( FL_OBJECT *, long );
-extern FD_lte_phy_scope_enb * create_lte_phy_scope_enb( void );
-extern FD_lte_phy_scope_ue * create_lte_phy_scope_ue( void );
+FD_lte_phy_scope_enb * create_lte_phy_scope_enb( void );
+FD_lte_phy_scope_ue * create_lte_phy_scope_ue( void );
 
 void phy_scope_eNB(FD_lte_phy_scope_enb *form, 
                    PHY_VARS_eNB *phy_vars_enb,
@@ -44,7 +51,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 
 void phy_scope_UE(FD_lte_phy_scope_ue *form, 
                   PHY_VARS_UE *phy_vars_ue,
-                  int eNB_id);
+                  int eNB_id,
+                  int UE_id);
 
 
 
