@@ -19,6 +19,11 @@
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
 
+
+#ifdef XFORMS
+#include "PHY/TOOLS/lte_phy_scope.h"
+#endif
+
 #define BW 10.0
 #define N_TRIALS 100
 
@@ -28,7 +33,6 @@ PHY_VARS_UE *PHY_vars_UE;
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
-
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,lte_frame_type_t frame_type,u8 osf) {
 
@@ -58,7 +62,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nb_antennas_tx_eNB     = N_tx;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->phich_config_common.phich_resource = half; //oneSixth;
+  lte_frame_parms->phich_config_common.phich_resource = oneSixth; //half
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = frame_type;
 
@@ -138,7 +142,10 @@ int main(int argc, char **argv) {
   double iqim=0.0;
   //  int subframe_offset;
   u8 subframe=0;
-
+#ifdef XFORMS
+  FD_lte_phy_scope_ue *form_ue;
+  char title[255];
+#endif
   int trial, n_errors_common=0,n_errors_ul=0,n_errors_dl=0,n_errors_cfi=0,n_errors_hi=0;
   unsigned char eNb_id = 0;
 
@@ -384,6 +391,14 @@ int main(int argc, char **argv) {
 		 tdd_config,
 		 N_RB_DL,frame_type,
 		 osf);
+
+#ifdef XFORMS
+  fl_initialize (&argc, argv, NULL, 0, 0);
+  form_ue = create_lte_phy_scope_ue();
+  sprintf (title, "LTE PHY SCOPE UE");
+  fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);  
+#endif
+
 
   mac_xface->computeRIV = computeRIV;
   mac_xface->lte_frame_parms = &PHY_vars_eNB->lte_frame_parms;
@@ -808,7 +823,8 @@ int main(int argc, char **argv) {
 	    n_trials_dl++;
 	  }
 	}
-	num_pdcch_symbols=1;
+    num_pdcch_symbols=1;
+
 	while (numCCE > get_nCCE(num_pdcch_symbols,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,subframe))) {
 	  num_pdcch_symbols++;
 	}
@@ -842,7 +858,7 @@ int main(int argc, char **argv) {
 	num_pdcch_symbols = generate_dci_top(num_ue_spec_dci,
 					     num_common_dci,
 					     dci_alloc,
-					     0,
+                         0,
 					     1024,
 					     &PHY_vars_eNB->lte_frame_parms,
 					     PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
@@ -859,10 +875,10 @@ int main(int argc, char **argv) {
 	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb       = 0;
 	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->n_DMRS         = 0;
 
-	  /*
-	  generate_phich_top(PHY_vars_eNB,
-			     subframe,1024,0,0);
-	  
+
+      generate_phich_top(PHY_vars_eNB,
+                         subframe,1024,0,0);
+	  /*	  
 	  // generate 3 interfering PHICH
 	  if (num_phich_interf>0) {
 	    PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 4;
@@ -1056,8 +1072,8 @@ int main(int argc, char **argv) {
 	  //	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
 	  //	    break;
 	  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
-					   dci_alloc_rx,1,
-					   0,subframe);
+                                       dci_alloc_rx,1,
+                                       0,subframe);
 
 	  common_rx=0;
 	  ul_rx=0;
@@ -1102,6 +1118,12 @@ int main(int argc, char **argv) {
 	break;
       if ((n_errors_ul>100) && (n_errors_dl>100) && (n_errors_common>100))
 	break;
+
+#ifdef XFORMS
+      phy_scope_UE(form_ue, 
+                   PHY_vars_UE,
+                   eNb_id,0);
+#endif
 
     } //trials
 
