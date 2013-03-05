@@ -381,6 +381,8 @@ int mrpsch_sync(PHY_VARS_eNB* phy_vars_enb)
   else
     phy_vars_enb->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + symbol_pos - expected_symbol_pos;
 
+  phy_vars_enb->nb_lost_mrpsch = 0;
+
 #ifdef DEBUG_MRPSCH
   LOG_D(PHY, "[eNB%d]MRPSCH: Sync estimated from sector %d, position %d, offset %d, corr %d/%d\n",
       phy_vars_enb->Mod_id, sync_source, sync_pos, phy_vars_enb->rx_offset, 
@@ -408,11 +410,17 @@ int mrpsch_update_sync(PHY_VARS_eNB* phy_vars_enb, int search_range)
 
   // Return -1 if MRPSCH not found
   if(sync_pos == -1) {
+    phy_vars_enb->nb_lost_mrpsch++;
 #ifdef DEBUG_MRPSCH
-    LOG_D(PHY, "[eNB%d]MRPSCH: Sync lost\n", phy_vars_enb->Mod_id);
+    LOG_D(PHY, "[eNB%d]MRPSCH: not detected (nb_lost_mrpsch=%d)\n", phy_vars_enb->Mod_id, phy_vars_enb->nb_lost_mrpsch);
 #endif
-    phy_vars_enb->rx_offset = 0;
-    return -1;
+    if(phy_vars_enb->nb_lost_mrpsch == 1000) {
+      phy_vars_enb->rx_offset = 0;
+      return -1;
+    }
+    else {
+      return 0;
+    }
   }
 
   // Update receiver offset
