@@ -243,7 +243,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
   u16 *pcfich_reg = frame_parms->pcfich_reg;
 
   // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
-  Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
+  Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
   if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
     Ngroup_PHICH++;
   // check if Extended prefix
@@ -979,7 +979,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe);
   if (ulsch->harq_processes[harq_pid]->status == ACTIVE) {
     LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe);
-    Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
+    Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
     if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
       Ngroup_PHICH++;
     
@@ -1306,7 +1306,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
   // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
   
-  Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
+  Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
   if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
     Ngroup_PHICH++;
 
