@@ -53,6 +53,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
 #    include "PHY/defs.h"
+#    include "RLC-Config.h"
+#    include "DRB-ToAddMod.h"
+#    include "DRB-ToAddModList.h"
+#    include "SRB-ToAddMod.h"
+#    include "SRB-ToAddModList.h"
 //-----------------------------------------------------------------------------
 #    ifdef RLC_MAC_C
 #        define private_rlc_mac(x) x
