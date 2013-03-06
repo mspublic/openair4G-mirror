@@ -309,9 +309,14 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
     //    printk("Readback of control0 %x\n",ioread32(bar[0]+PCIE_CONTROL0));
     
     // workaround for ExMIMO1: no command ack -> sleep
-    if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY ) 
-         msleep(500); // currently, exmimo1 implements no command ack in bootloader -> sleep
-    
+    if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY ) {
+        switch(cmd) {  // currently, exmimo1 implements no command ack in bootloader -> sleep
+            case EXMIMO_PCIE_INIT : msleep(1000); break;
+            case EXMIMO_GET_FRAME : /* no sleep - wait for GET_FRAME_DONE*/ ; break;
+            case EXMIMO_START_RT_ACQUISITION : /* no sleep */ ; break;
+            default: msleep(500); break;
+        }
+    }
     else {
         while (cnt<100 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
             //printk("ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
