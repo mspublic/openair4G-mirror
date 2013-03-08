@@ -181,15 +181,21 @@ static void * dlsch_thread(void *param) {
 			 dlsch_subframe[dlsch_thread_index]<<1);
       LOG_I(PHY,"[UE %d] PDSCH Calling dlsch_decoding for subframe %d, harq_pid %d PDCCH symbols %d\n",
 	    phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid, phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
-      ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
-			   &phy_vars_ue->lte_frame_parms,
-			   phy_vars_ue->dlsch_ue[eNB_id][0],
-			   dlsch_subframe[dlsch_thread_index],
-               phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-               1,
-               &phy_vars_ue->dlsch_rate_unmatching_stats,
-               &phy_vars_ue->dlsch_turbo_decoding_stats,
-               &phy_vars_ue->dlsch_deinterleaving_stats);
+      ret = dlsch_decoding(phy_vars_ue,
+                           phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+                           &phy_vars_ue->lte_frame_parms,
+                           phy_vars_ue->dlsch_ue[eNB_id][0],
+                           dlsch_subframe[dlsch_thread_index],
+                           phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+                           1);
+
+      	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
+              phy_vars_ue->Mod_id,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,harq_pid,
+              phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],ret,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS); 
       
 
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
