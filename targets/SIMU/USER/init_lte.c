@@ -88,6 +88,8 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   
   PHY_vars_eNB->check_for_SUMIMO_transmissions = 0;
 
+  PHY_vars_eNB->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+
   return (PHY_vars_eNB);
 }
 
@@ -126,6 +128,8 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
         
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
+  PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+
   return (PHY_vars_UE);
 }
 
