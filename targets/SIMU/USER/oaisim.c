@@ -302,6 +302,8 @@ main (int argc, char **argv)
   LTE_DL_FRAME_PARMS *frame_parms;
 
 #ifdef PRINT_STATS
+  int len;
+
   FILE *UE_stats[NUMBER_OF_UE_MAX], *UE_stats_th[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
   char UE_stats_filename[255];
 
