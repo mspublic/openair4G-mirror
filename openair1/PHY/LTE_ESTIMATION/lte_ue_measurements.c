@@ -43,8 +43,12 @@ void print_ints(char *s,__m128i *x) {
 }
 #endif
 
-__m128i pmi128_re,pmi128_im;
-__m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
+__m128i pmi128_re __attribute__ ((aligned(16)));
+__m128i pmi128_im __attribute__ ((aligned(16)));
+__m128i mmtmpPMI0 __attribute__ ((aligned(16)));
+__m128i mmtmpPMI1 __attribute__ ((aligned(16)));
+__m128i mmtmpPMI2 __attribute__ ((aligned(16)));
+__m128i mmtmpPMI3 __attribute__ ((aligned(16)));
 
 s16 get_PL(u8 Mod_id,u8 eNB_index) {
 
@@ -136,10 +140,8 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
 #endif	  
 
 
-	    
+      if (l==(4-phy_vars_ue->lte_frame_parms.Ncp)) {
 	    for (rb=0;rb<phy_vars_ue->lte_frame_parms.N_RB_DL;rb++) {
-
-	      if (l==(4-phy_vars_ue->lte_frame_parms.Ncp)) {
 		
 		//	  printf("rb %d, off %d, off2 %d\n",rb,off,off2);
 		
@@ -424,8 +426,9 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	}	
       
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-	  dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][8];
-	  dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][8];
+        // skip the first 4 RE due to interpolation filter length of 5 (not possible to skip 5 due to 128i alignment, must be multiple of 128bit)
+	  dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][4];
+	  dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][4];
 	  /*
 	    #ifdef DEBUG_PHY	
 	    if(eNB_id==0){
