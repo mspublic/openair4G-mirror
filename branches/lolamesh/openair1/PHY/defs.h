@@ -198,6 +198,7 @@ typedef struct
   unsigned char cooperation_flag; // for cooperative communication
 
   mesh_state_t mesh_state; // Synchronization state of the eNB in the lola mesh
+  int nb_lost_mrpsch; // Number of lost MRPSCH
 
   unsigned char    is_secondary_eNB; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
@@ -323,7 +324,7 @@ typedef struct
   UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
   s8               g_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
   /// cell-specific reference symbols
-  unsigned int lte_gold_table[7][20][2][14];
+  unsigned int lte_gold_table[NUMBER_OF_CONNECTED_eNB_MAX][7][20][2][14];
 
 /// mbsfn reference symbols
   unsigned int lte_gold_mbsfn_table[10][3][42];

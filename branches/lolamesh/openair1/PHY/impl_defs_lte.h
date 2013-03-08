@@ -597,7 +597,6 @@ typedef struct {
   s32 **rxdata;          
   ///holds the received data in the frequency domain
   s32 **rxdataF;         
-  s32 **rxdataF2;         
   /// hold the channel estimates in frequency domain
   s32 **dl_ch_estimates[7];  
   /// hold the channel estimates in time domain (used for tracking)
@@ -777,7 +776,8 @@ typedef enum {
   PRACH=1,
   RA_RESPONSE=2,
   PUSCH=3,
-  RESYNCH=4
+  RESYNCH=4,
+  PBCH_SEARCH=5
 } UE_MODE_t;
 
 

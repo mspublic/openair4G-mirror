@@ -578,7 +578,7 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 			13+rb,pil[10],pil[11],rxF[40],rxF[41],ch[20],ch[21]);
 	    }
 	  //------------------------Temporal Interpolation ------------------------------
-	  if (l=6) {		  
+	  if (l==6) {		  
 	   ch = (short *)&dl_ch_estimates[aarx][ch_offset];  	  
 	  //      printf("Interpolating %d->0\n",4-phy_vars_ue->lte_frame_parms[eNB_id]->Ncp);
 	  ch_prev = (short *)&dl_ch_estimates[aarx][2*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)];
@@ -598,7 +598,7 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	  multadd_complex_vector_real_scalar(ch_prev,8192,ch_prev+(6*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size))),1,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
 	  multadd_complex_vector_real_scalar(ch,24576,ch_prev+(6*((phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size))),0,phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size);
     }
-	 if (l=10) { 
+	 if (l==10) { 
 	  ch = (short *)&dl_ch_estimates[aarx][ch_offset];    
       ch_prev = (short *)&dl_ch_estimates[aarx][6*(phy_vars_ue->lte_frame_parms[eNB_id]->ofdm_symbol_size)];
 	  // 3/4 ch6 + 1/4 ch10 => ch7

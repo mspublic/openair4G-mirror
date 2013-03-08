@@ -333,9 +333,9 @@ void phy_config_meas_ue(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,unsigned int *adj_
   LOG_I(PHY,"Configuring inter-cell measurements for %d cells, ids: \n",n_adj_cells);
   for (i=0;i<n_adj_cells;i++) {
     LOG_I(PHY,"%d\n",adj_cell_id[i]);
-    lte_gold(PHY_vars_UE_g[Mod_id]->lte_frame_parms[eNB_index],PHY_vars_UE_g[Mod_id]->lte_gold_table[i+1],adj_cell_id[i]); 
+    lte_gold(PHY_vars_UE_g[Mod_id]->lte_frame_parms[eNB_index],PHY_vars_UE_g[Mod_id]->lte_gold_table[eNB_index][i+1],adj_cell_id[i]); 
   }
-  phy_meas->n_adj_cells = n_adj_cells;
+  phy_meas->n_adj_cells[eNB_index] = n_adj_cells;
   memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 
 }
@@ -584,32 +584,6 @@ int phy_init_lte_ue_common(PHY_VARS_UE *phy_vars_ue,
     ue_common_vars->txdataF = phy_vars_ue->lte_ue_buffer_vars->txdataF;
     ue_common_vars->rxdata = phy_vars_ue->lte_ue_buffer_vars->rxdata;
     ue_common_vars->rxdataF = phy_vars_ue->lte_ue_buffer_vars->rxdataF;
-
-    ue_common_vars->rxdataF2 = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
-    if (ue_common_vars->rxdataF2) {
-#ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2 allocated at %p\n", ue_common_vars->rxdataF2);
-#endif
-    }
-    else {
-      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2 not allocated\n");
-      return(-1);
-    }
-
-    
-    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      //RK 2 times because of output format of FFT!  We should get rid of this
-      ue_common_vars->rxdataF2[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*10));
-      if (ue_common_vars->rxdataF2[i]) {
-#ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2[%d] allocated at %p\n",i,ue_common_vars->rxdataF2[i]);
-#endif
-      }
-      else {
-	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2[%d] not allocated\n",i);
-	return(-1);
-      }
-    }
   }
 
     

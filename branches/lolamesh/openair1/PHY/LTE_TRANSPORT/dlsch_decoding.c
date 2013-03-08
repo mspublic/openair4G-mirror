@@ -845,7 +845,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 #endif
 
     // apaposto //
-						 if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+    if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
    // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
       // reset HARQ 
       dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
