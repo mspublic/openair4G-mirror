@@ -16,28 +16,18 @@ OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -fno-strict-aliasing -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
-#CFLAGS += -DLLR8
-CFLAGS += -DNEW_FFT
-
-GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
-ifeq "$(GCCVERSION)"  "4.4.3"
+# Check if GCC version is greater or equal to 4.4
+GCCVERSIONGTEQ44 := $(shell expr `gcc -dumpversion | cut -f1,2 -d. --output-delimiter=""` \>= 44)
+ifeq "$(GCCVERSIONGTEQ44)" "1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
-ifeq "$(GCCVERSION)" "4.5.2"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-ifeq "$(GCCVERSION)" "4.6.1"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-ifeq "$(GCCVERSION)" "4.6.3"
-    CFLAGS += -Wno-packed-bitfield-compat
-endif
-
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DPUCCH #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE
 CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION #-DPHY_ABSTRACTION_UL #-DRLC_UM_TEST_TRAFFIC=1
+CFLAGS += -DNEW_FFT
+#CFLAGS += -DLLR8
 
 ifndef OPENAIR2
 OPENAIR2=1
@@ -180,10 +170,9 @@ OAISIM_OBJS += init_lte.o
 OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o
 OAISIM_OBJS += cor_SF_sim.o
-OAISIM_OBJS += phy_procedures_sim_form.o
+#OAISIM_OBJS += phy_procedures_sim_form.o
 ifdef XFORMS
-OAISIM_OBJS += $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE/lte_scope.o
-#OAISIM_OBJS += lte_scope.o
+TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 endif
 
 ifdef PROC
