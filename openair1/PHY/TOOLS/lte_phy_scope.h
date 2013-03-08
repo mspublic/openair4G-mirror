@@ -12,8 +12,6 @@
 extern OPENAIR_DAQ_VARS openair_daq_vars;
 
 /* Forms and Objects */
-//static void ia_receiver_on_off( FL_OBJECT *button, long arg);
-
 typedef struct {
     FL_FORM   * lte_phy_scope_enb;
     FL_OBJECT * rxsig_t;
@@ -37,9 +35,6 @@ typedef struct {
     FL_OBJECT * pdsch_llr;
     FL_OBJECT * pdsch_tput;
     FL_OBJECT * button_0;
-    void      * vdata;
-    char      * cdata;
-    long        ldata;
 } FD_lte_phy_scope_ue;
 
 FD_lte_phy_scope_enb * create_lte_phy_scope_enb( void );
@@ -52,7 +47,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 void phy_scope_UE(FD_lte_phy_scope_ue *form, 
                   PHY_VARS_UE *phy_vars_ue,
                   int eNB_id,
-                  int UE_id);
+                  int UE_id,
+                  u8 subframe);
 
 
 

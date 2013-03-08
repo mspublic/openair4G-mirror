@@ -454,6 +454,9 @@ int main(int argc, char **argv) {
 	case 'M':
 	  channel_model=Rice1;
 	  break;
+    case 'N':
+      channel_model=AWGN;
+      break;
 	default:
 	  msg("Unsupported channel model!\n");
 	  exit(-1);
@@ -513,6 +516,11 @@ int main(int argc, char **argv) {
 	break;	
       case 'u':
 	dual_stream_UE=atoi(optarg);
+    if (dual_stream_UE) {
+        openair_daq_vars.use_ia_receiver = 1;
+    } else {
+        openair_daq_vars.use_ia_receiver = 0;
+    }
 	if ((n_tx!=2) || (transmission_mode!=5)) {
 	  msg("Unsupported nb of decoded users: %d user(s), %d user(s) to decode\n", n_tx, dual_stream_UE);
 	  exit(-1);
@@ -578,6 +586,13 @@ int main(int argc, char **argv) {
   form_ue = create_lte_phy_scope_ue();
   sprintf (title, "LTE PHY SCOPE eNB");
   fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);  
+
+  if (!dual_stream_UE==0) {
+      openair_daq_vars.use_ia_receiver = 1;
+      fl_set_button(form_ue->button_0,1);
+      fl_set_object_label(form_ue->button_0, "IA Receiver ON");
+      fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+  }
 #endif
 
   if (transmission_mode==5) {
@@ -2065,8 +2080,17 @@ int main(int argc, char **argv) {
 	      if (dlsch_active == 1) {
 		if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
-		  start_meas(&PHY_vars_UE->dlsch_llr_stats);
+          if ((transmission_mode == 5) && 
+              (PHY_vars_UE->dlsch_ue[eNB_id][0]->dl_power_off==0) &&
+              (openair_daq_vars.use_ia_receiver ==1)) {
+              dual_stream_UE = 1;
+          } else {
+              dual_stream_UE = 0;
+          }
 
+
+		  start_meas(&PHY_vars_UE->dlsch_llr_stats);
+          
 		  for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 		       m<pilot2;
 		       m++) 
@@ -2254,13 +2278,7 @@ int main(int argc, char **argv) {
 			       subframe,
 			       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
 			       1);
-	  stop_meas(&PHY_vars_UE->dlsch_decoding_stats);
- 
-#ifdef XFORMS
-      phy_scope_UE(form_ue, 
-                   PHY_vars_UE,
-                   eNB_id);
-#endif
+	  stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
 
 	  if (ret <= MAX_TURBO_ITERATIONS) {
 		
@@ -2273,6 +2291,8 @@ int main(int argc, char **argv) {
 	      round=5;
 	    else
 	      round++;
+
+	    PHY_vars_UE->total_TBS[eNB_id] =  PHY_vars_UE->total_TBS[eNB_id] + PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS;
 	  }	
 	  else {
 	    errs[round]++;
@@ -2292,8 +2312,8 @@ int main(int argc, char **argv) {
 		Kr_bytes = Kr>>3;
 		    
 		printf("Decoded_output (Segment %d):\n",s);
-        for (i=0;i<Kr_bytes;i++)
-            printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i],PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c[s][i]);
+        //        for (i=0;i<Kr_bytes;i++)
+        //            printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i],PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c[s][i]);
 	      }
 	      write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 	      write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
@@ -2339,7 +2359,13 @@ int main(int argc, char **argv) {
 	  }
 	  //free(uncoded_ber_bit);
 	  //uncoded_ber_bit = NULL;
-	  
+#ifdef XFORMS
+      phy_scope_UE(form_ue, 
+                   PHY_vars_UE,
+                   eNB_id,
+                   0,// UE_id
+                   subframe); 
+#endif
 	}  //round
 	//      printf("\n");
 
@@ -2348,6 +2374,14 @@ int main(int argc, char **argv) {
       
 	//len = chbch_stats_read(stats_buffer,NULL,0,4096);
 	//printf("%s\n\n",stats_buffer);
+    
+    if (PHY_vars_UE->frame % 10 == 0) {
+        PHY_vars_UE->bitrate[eNB_id] = (PHY_vars_UE->total_TBS[eNB_id] - PHY_vars_UE->total_TBS_last[eNB_id])*10;
+        LOG_D(PHY,"[UE %d] Calculating bitrate: total_TBS = %d, total_TBS_last = %d, bitrate = %d kbits/s\n",PHY_vars_UE->Mod_id,PHY_vars_UE->total_TBS[eNB_id],PHY_vars_UE->total_TBS_last[eNB_id],PHY_vars_UE->bitrate[eNB_id]/1000);
+        PHY_vars_UE->total_TBS_last[eNB_id] = PHY_vars_UE->total_TBS[eNB_id];
+    }
+
+    
     PHY_vars_UE->frame++;
       }   //trials
       printf("\n**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
@@ -2375,7 +2409,7 @@ int main(int argc, char **argv) {
 	     rate,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
-
+      /*
       printf("eNB TX function statistics (per 1ms subframe)\n\n");
       printf("OFDM_mod time                     :%f us (%d trials)\n",(double)PHY_vars_eNB->ofdm_mod_stats.diff/PHY_vars_eNB->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ofdm_mod_stats.trials);
       printf("DLSCH modulation time             :%f us (%d trials)\n",(double)PHY_vars_eNB->dlsch_modulation_stats.diff/PHY_vars_eNB->dlsch_modulation_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_modulation_stats.trials);
@@ -2426,6 +2460,7 @@ int main(int argc, char **argv) {
 	     (double)PHY_vars_UE->dlsch_tc_intl2_stats.diff/PHY_vars_UE->dlsch_tc_intl2_stats.trials,
 	     PHY_vars_UE->dlsch_tc_intl2_stats.trials);
 
+      */ 
 
 
       fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",

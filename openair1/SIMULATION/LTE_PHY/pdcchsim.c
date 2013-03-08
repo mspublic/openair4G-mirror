@@ -1122,7 +1122,7 @@ int main(int argc, char **argv) {
 #ifdef XFORMS
       phy_scope_UE(form_ue, 
                    PHY_vars_UE,
-                   eNb_id,0);
+                   eNb_id,0,subframe);
 #endif
 
     } //trials
