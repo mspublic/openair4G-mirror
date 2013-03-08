@@ -207,6 +207,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
       s32 **dl_channel_est = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[0];
       //      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
       double scale = pow(10.0,(PHY_vars_eNB_g[att_eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower+eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
+      scale = scale * sqrt(512.0/300.0); //TODO: make this variable for all BWs
       LOG_D(OCM,"scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
       // freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
       //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
@@ -216,7 +217,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	{ 
 	  for (a_rx=0;a_rx<nb_antennas_rx;a_rx++)
 	    {
-	      for (count=0;count<frame_parms->symbols_per_tti/2;count++)
+	      //for (count=0;count<frame_parms->symbols_per_tti/2;count++)
+	      for (count=0;count<1;count++)
 		{ 
 		  for (count1=0;count1<frame_parms->N_RB_DL*12;count1++)
 		    { 
@@ -238,7 +240,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  //  printf("pmi_alloc in channel sim: %d",PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[0][0]->pmi_alloc);
 	}
 
- // calculate the SNR for the attached eNB
+      // calculate the SNR for the attached eNB
       init_snr(eNB2UE[att_eNB_id][UE_id], enb_data[att_eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id]->sinr_dB, &PHY_vars_UE_g[UE_id]->N0, PHY_vars_UE_g[UE_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[UE_id][0]->pmi_alloc,PHY_vars_eNB_g[att_eNB_id]->mu_mimo_mode[UE_id].dl_pow_off);
 
       // calculate sinr here
@@ -306,6 +308,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 				14,
 				//				enb_data[eNB_id]->tx_power_dBm); 
 				PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+
 #ifdef DEBUG_SIM
 	LOG_D(OCM,"eNB %d: tx_pwr %f dBm, for slot %d (subframe %d)\n",
 	       eNB_id,
@@ -402,7 +405,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  0,
 	  slot_offset,
 	  rxdata,
-      nb_antennas_rx,
+	  nb_antennas_rx,
 	  frame_parms->samples_per_tti>>1,
 	  12);
       

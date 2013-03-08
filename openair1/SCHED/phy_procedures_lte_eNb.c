@@ -690,8 +690,10 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
 }
 #endif
 
-#define AMP2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
-int QPSK[4]={AMP2|(AMP2<<16),AMP2|((65536-AMP2)<<16),(65536-AMP2)|AMP2,(65536-AMP2)|(65536-AMP2)};
+#define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
+#define AMP_OVER_2 (AMP>>1)
+int QPSK[4]={AMP_OVER_SQRT2|(AMP_OVER_SQRT2<<16),AMP_OVER_SQRT2|((65536-AMP_OVER_SQRT2)<<16),((65536-AMP_OVER_SQRT2)<<16)|AMP_OVER_SQRT2,((65536-AMP_OVER_SQRT2)<<16)|(65536-AMP_OVER_SQRT2)};
+int QPSK2[4]={AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),((65536-AMP_OVER_2)<<16)|AMP_OVER_2,((65536-AMP_OVER_2)<<16)|(65536-AMP_OVER_2)};
 
 void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
 
@@ -721,7 +723,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
     if (abstraction_flag==0) {
       if (next_slot%2 == 0) {
-	for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
+	for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB;aa++) {
 	 
 #ifdef IFFT_FPGA
 	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*(phy_vars_eNB->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
@@ -729,30 +731,27 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #else
 	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
 		 0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+
 	  // fill first symbol of each TX subframe with random QPSK data (overwritten by TX routines later).  This guarantees that the first symbol is full power
-	  /*
-	  if ((next_slot&1) == 0) {
+	  // in case of transmission mode > 1, this all data is filled by the PDCCH routine (which always assumes that pilots are transmitted on all antenna ports)
+	  if (phy_vars_eNB->lte_frame_parms.mode1_flag==1) {
 	    re_offset = phy_vars_eNB->lte_frame_parms.first_carrier_offset;
 	    txptr = (uint32_t*)&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)];
 	    for (i=0;i<phy_vars_eNB->lte_frame_parms.N_RB_DL*6;i++) 
 	      txptr[re_offset++] = QPSK[taus()&3];
-	    
-	    re_offset=0;
+		
+	    re_offset=1; //skip DC
 	    for (i=0;i<phy_vars_eNB->lte_frame_parms.N_RB_DL*6;i++)
 	      txptr[re_offset++] = QPSK[taus()&3];
-	    
-		
-	    }
-	  */
+	  }
 #endif
 	}
       }
+
       generate_pilots_slot(phy_vars_eNB,
 			   phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			   AMP,
 			   next_slot);
-    
-  
 
       if (next_slot == 0) {
 	
@@ -1206,7 +1205,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
  
     if (abstraction_flag == 0) {
 #ifdef DEBUG_PHY_PROC
-      //      LOG_D(PHY,"[eNB %d] Frame %d, subframe %d: Calling generate_dci_top (common %d,ue_spec %d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot>>1,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+      LOG_D(PHY,"[eNB %d] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (common %d,ue_spec %d)\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot>>1,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
 #endif
       for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_ue_spec_dci,
