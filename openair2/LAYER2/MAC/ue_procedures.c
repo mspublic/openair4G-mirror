@@ -355,7 +355,7 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	msg("%x.",(unsigned char)payload_ptr[j]);
       msg("\n");
       */
-      Mac_rlc_data_ind(Mod_id+NB_eNB_INST,
+      mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
 		       0,
 		       DTCH,
