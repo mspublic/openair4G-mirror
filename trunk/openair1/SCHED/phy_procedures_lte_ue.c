@@ -1218,7 +1218,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		  phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index,
 		  phy_vars_ue->prach_resources[eNB_id]->ra_RNTI);
 
+#ifdef OPENAIR2
 	    phy_vars_ue->tx_power_dBm = phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(phy_vars_ue->Mod_id,eNB_id);
+#else
+	    phy_vars_ue->tx_power_dBm = UE_TX_POWER;
+#endif
 
 #ifdef EXMIMO
 	    phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm);
@@ -1340,26 +1344,28 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     }
 
 #ifdef DEBUG_PHY_PROC    
-    if ((last_slot == 2) && (phy_vars_ue->frame%100==0)) {
+    if ((last_slot == 2)) { // && (phy_vars_ue->frame%100==0)) {
 	
       LOG_I(PHY,"[UE  %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
       /*	
-      LOG_I(PHY,"[UE  %d] frame %d, slot %d, RX RSSI (%d,%d,%d) dBm, digital (%d, %d)(%d,%d)(%d,%d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
-		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
-		phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
-		phy_vars_ue->PHY_measurements.rx_rssi_dBm[1] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
-		phy_vars_ue->PHY_measurements.rx_rssi_dBm[2] - ((frame_parms->nb_antennas_rx==2) ? 3 : 0), 
-		phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
-		phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
-		phy_vars_ue->PHY_measurements.rx_power_dB[1][0],
-		phy_vars_ue->PHY_measurements.rx_power_dB[1][1],
-		phy_vars_ue->PHY_measurements.rx_power_dB[2][0],
-		phy_vars_ue->PHY_measurements.rx_power_dB[2][1],
-		phy_vars_ue->PHY_measurements.rx_power[0][0],
-		phy_vars_ue->PHY_measurements.rx_power[0][1],		  
-		phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],
-		phy_vars_ue->PHY_measurements.rx_power_avg[0],
-		phy_vars_ue->rx_total_gain_dB);
+      LOG_I(PHY,"[UE  %d] frame %d, slot %d, RX RSSI (%d,%d,%d) dBm, digital (%d,%d)(%d,%d)(%d,%d) dB, linear (%d,%d), avg rx power %d dB (%d lin), N0 %d dB (%d lin), RX gain %d dB\n",
+	    phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,
+	    phy_vars_ue->PHY_measurements.rx_rssi_dBm[0],
+	    phy_vars_ue->PHY_measurements.rx_rssi_dBm[1],
+	    phy_vars_ue->PHY_measurements.rx_rssi_dBm[2],
+	    phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
+	    phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
+	    phy_vars_ue->PHY_measurements.rx_power_dB[1][0],
+	    phy_vars_ue->PHY_measurements.rx_power_dB[1][1],
+	    phy_vars_ue->PHY_measurements.rx_power_dB[2][0],
+	    phy_vars_ue->PHY_measurements.rx_power_dB[2][1],
+	    phy_vars_ue->PHY_measurements.rx_power[0][0],
+	    phy_vars_ue->PHY_measurements.rx_power[0][1],		  
+	    phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],
+	    phy_vars_ue->PHY_measurements.rx_power_avg[0],
+	    phy_vars_ue->PHY_measurements.n0_power_avg_dB,
+	    phy_vars_ue->PHY_measurements.n0_power_avg,
+	    phy_vars_ue->rx_total_gain_dB);
       
       LOG_I(PHY,"[UE  %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot,

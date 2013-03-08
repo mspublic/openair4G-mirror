@@ -1984,9 +1984,6 @@ u8 get_num_pdcch_symbols(u8 num_dci,
   return(0);
 }
 
-static u8 e[DCI_BITS_MAX];	
-static mod_sym_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
-     
 u8 generate_dci_top(u8 num_ue_spec_dci,
 		    u8 num_common_dci,
 		    DCI_ALLOC_t *dci_alloc, 
@@ -2002,8 +1999,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   u16 gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
   s16 re_offset;
   u8 mi = get_mi(frame_parms,subframe);
-
-
+  static u8 e[DCI_BITS_MAX];	
+  static mod_sym_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
+     
   mod_sym_t *y[2];
   mod_sym_t *wbar[2];
   
@@ -2055,7 +2053,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   y[0] = &yseq0[0];
   y[1] = &yseq1[0];
 
-  memset(e,0,72*get_nCCE(num_pdcch_symbols,frame_parms,mi));
+  memset(e,0,DCI_BITS_MAX);
   e_ptr = e;
 
   // generate DCIs in order of decreasing aggregation level, then common/ue spec
@@ -2107,7 +2105,10 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   msg("[PHY] PDCCH Modulation, Msymb %d\n",Msymb);
 #endif
   // Now do modulation
-  gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  if (frame_parms->mode1_flag==1) 
+    gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  else
+    gain_lin_QPSK = amp/2;  
 
   e_ptr = e;
   if (frame_parms->mode1_flag) { //SISO

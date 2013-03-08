@@ -350,7 +350,10 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
   memset(d,0,24*sizeof(s16));
 
-  gain_lin_QPSK = (s16)(((s32)amp*ONE_OVER_SQRT2_Q15)>>15);  
+  if (frame_parms->mode1_flag==1) 
+    gain_lin_QPSK = (s16)(((s32)amp*ONE_OVER_SQRT2_Q15)>>15);  
+  else
+    gain_lin_QPSK = amp/2;  
 
   //printf("PHICH : gain_lin_QPSK %d\n",gain_lin_QPSK);
 
