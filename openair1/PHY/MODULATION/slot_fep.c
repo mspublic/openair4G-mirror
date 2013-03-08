@@ -182,7 +182,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				  l,
 				  symbol);
       }
-
+    }
 #endif
 
       // do frequency offset estimation here!
@@ -199,7 +199,6 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	stop_meas(&phy_vars_ue->dlsch_freq_offset_estimation_stats);
 
       }
-    }
   }
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");
