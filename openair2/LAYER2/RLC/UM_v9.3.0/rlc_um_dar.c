@@ -180,7 +180,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
         if ((pdu_mem = rlcP->dar_buffer[sn])) {
 
             if ((rlcP->last_reassemblied_sn+1)%rlcP->sn_modulo != sn) {
-                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] CLEARING OUTPUT SDU BECAUSE NEW SN (%03d) TO REASSEMBLY NOT CONTIGUOUS WITH LAST REASSEMBLIED SN (%03d)\n",
+                LOG_W(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] FINDING a HOLE in RLC UM SN: CLEARING OUTPUT SDU BECAUSE NEW SN (%03d) TO REASSEMBLY NOT CONTIGUOUS WITH LAST REASSEMBLIED SN (%03d)\n",
                       rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->last_reassemblied_sn);
                 rlc_um_clear_rx_sdu(rlcP);
             }
@@ -235,7 +235,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                             // one whole segment of SDU in PDU
                             rlc_um_reassembly (data, size, rlcP,frame);
                         } else {
-                            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=00 (11) MISSING SN DETECTED\n", rlcP->module_id, rlcP->rb_id, frame);
+                            LOG_W(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=00 (11) MISSING SN DETECTED\n", rlcP->module_id, rlcP->rb_id, frame);
                             //LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
                             //      frame, rlcP->module_id,rlcP->rb_id, rlcP->module_id,rlcP->rb_id);
                             rlcP->reassembly_missing_sn_detected = 1; // not necessary but for readability of the code
@@ -353,7 +353,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
 #ifdef USER_MODE
                             assert(1 != 1);
 #endif
-                            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
+                            LOG_W(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN detected][RLC_UM][MOD %02d][RB %02d]\n",
                                   frame, rlcP->module_id,rlcP->rb_id, rlcP->module_id,rlcP->rb_id);
                             rlcP->reassembly_missing_sn_detected = 1;
                     }
@@ -364,7 +364,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
             rlcP->dar_buffer[sn] = NULL;
         } else {
             rlcP->last_reassemblied_missing_sn = sn;
-            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN %04d detected, clearing RX SDU][RLC_UM][MOD %02d][RB %02d]\n",
+            LOG_W(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %02d][Missing SN %04d detected, clearing RX SDU][RLC_UM][MOD %02d][RB %02d]\n",
                                       frame, rlcP->module_id,rlcP->rb_id, sn, rlcP->module_id,rlcP->rb_id);
             rlcP->reassembly_missing_sn_detected = 1;
             rlc_um_clear_rx_sdu(rlcP);
@@ -667,7 +667,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     //      -if VR(UR) falls outside of the reordering window:
     //          -set VR(UR) to (VR(UH) – UM_Window_Size);
     if (rlc_um_in_reordering_window(rlcP, frame, sn) < 0) {
-        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->vr_uh, rlcP->um_window_size);
+        LOG_W(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->vr_uh, rlcP->um_window_size);
         rlcP->vr_uh = (sn + 1) % rlcP->sn_modulo;
 
         if (rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ur) != 0) {

@@ -349,7 +349,13 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     }
     else if (rx_lcids[i] == DTCH) {
       LOG_I(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
-      mac_rlc_data_ind(Mod_id+NB_eNB_INST,
+     
+      /*  int j;
+      for (j=0;j<rx_lengths[i];j++)
+	msg("%x.",(unsigned char)payload_ptr[j]);
+      msg("\n");
+      */
+      Mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
 		       0,
 		       DTCH,
@@ -805,7 +811,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     else 
       dtch_header_len= dtch_header_len_tmp;
     
-    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
+    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total -1 ;
   }
  
   // Generate header

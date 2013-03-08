@@ -71,6 +71,13 @@
   #include "COMMON/mac_rrc_primitives.h"
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
+#include "DRB-ToAddMod.h"
+#include "DRB-ToAddModList.h"
+#include "SRB-ToAddMod.h"
+#include "SRB-ToAddModList.h"
+#ifdef Rel10
+#include "MBMS-SessionInfoList-r9.h"
+#endif
 
 #define TRUE 0x01
 #define FALSE 0x00
@@ -87,11 +94,12 @@ public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MA
 
 typedef struct pdcp_t {
   BOOL instanciated_instance;
-  BOOL header_compression_active;
+  BOOL header_compression_profile;
   
   u8 cipheringAlgorithm;
   u8 integrityProtAlgorithm;
   
+  u8 status_report;
   u8 seq_num_size;
 
   /*
@@ -215,6 +223,40 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * @ingroup _pdcp
 */ 
 public_pdcp(void rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rab_id, u8 security_mode);)
+
+
+/*! \fn bool rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list)
+* \brief  Function for RRC to configure a Radio Bearer.
+* \param[in]  module_id         Virtualized module identifier.
+* \param[in]  frame              Frame index.
+* \param[in]  eNB_flag           Flag to indicate eNB (1) or UE (0)
+* \param[in]  index             index of UE or eNB depending on the eNB_flag
+* \param[in]  srb2add_list      SRB configuration list to be created.
+* \param[in]  drb2add_list      DRB configuration list to be created.
+* \param[in]  drb2release_list  DRB configuration list to be released.
+* \return     A status about the processing, OK or error code.
+*/
+#ifdef Rel10
+public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list, MBMS_SessionInfoList_r9_t  *mbms_SessionInfoList_r9);)
+#else
+public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list);)
+#endif
+
+
+/*! \fn BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode)
+* \brief  Function for RRC to configure a Radio Bearer.
+* \param[in]  module_id         Virtualized module identifier.
+* \param[in]  frame              Frame index.
+* \param[in]  eNB_flag           Flag to indicate eNB (1) or UE (0)
+* \param[in]  action             add, remove, modify a RB
+* \param[in]  rb_id              radio bearer id
+* \param[in]  rb_sn              sequence number for this radio bearer
+* \param[in]  drb_report         set a pdcp report for this drb
+* \param[in]  header_compression set the rohc profile
+* \param[in]  security_mode      set the integrity and ciphering algs
+* \return     A status about the processing, OK or error code.
+*/
+public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
 
 /*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused

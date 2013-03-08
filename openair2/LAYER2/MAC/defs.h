@@ -85,7 +85,9 @@
 #define DTCH  3 // DTCH + lcid < 11
 
 #ifdef Rel10
-#define MCCH 4 //MCCH
+#define MCCH 4 //MCCH :: need to be fixed
+#define MTCH 5 //MTCH :: need to be fixed
+
 
 // Mask for identifying subframe for MBMS 
 #define MBSFN_TDD_SF3 0x80// for TDD
