@@ -1052,7 +1052,7 @@ int main(int argc, char **argv) {
 #ifdef XFORMS
       phy_scope_UE(form_ue, 
                    PHY_vars_UE,
-                   0,0);
+                   0,0,1);
 #endif
 	
       } //noise trials

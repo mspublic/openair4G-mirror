@@ -264,9 +264,6 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
     FL_OBJECT *obj;
     FD_lte_phy_scope_ue *fdui = fl_malloc( sizeof *fdui );
     
-    fdui->vdata = fdui->cdata = NULL;
-    fdui->ldata = 0;
-
     // Define form
     fdui->lte_phy_scope_ue = fl_bgn_form( FL_NO_BOX, 800, 900 );
 
@@ -367,7 +364,8 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
 void phy_scope_UE(FD_lte_phy_scope_ue *form, 
                   PHY_VARS_UE *phy_vars_ue,
                   int eNB_id,
-                  int UE_id) {    
+                  int UE_id,
+                  u8 subframe){    
     int i,arx,atx,ind,k;
     LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
     int nsymb_ce = frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti;
@@ -401,14 +399,25 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
             // we are in TM5
             fl_show_object(form->button_0);
         } 
-    }
-    
-    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*frame_parms->symbols_per_tti;
+    }        
     
     if (phy_vars_ue->lte_ue_pdcch_vars[eNB_id]!=NULL) {
         num_pdcch_symbols = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols;
-    }    
+    }
 
+    //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
+    if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
+        coded_bits_per_codeword = get_G(frame_parms,
+                                        phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
+                                        phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
+                                        get_Qm(mcs),
+                                        num_pdcch_symbols,
+                                        frame,
+                                        subframe);
+    } else {
+        coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
+    }
+    
     I = (float*) calloc(nsymb_ce*2,sizeof(float));
     Q = (float*) calloc(nsymb_ce*2,sizeof(float));
     chest_t_abs = (float**) malloc(nb_antennas_rx*sizeof(float*));
@@ -478,7 +487,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         fl_set_xyplot_ybounds(form->chest_t,0,(double) ymax);
     }
     
-    // Channel Frequency Response
+    // Channel Frequency Response (includes 5 complex sample for filter)
     if (chest_f != NULL) {
         ind = 0;
         for (atx=0;atx<nb_antennas_tx;atx++) {
@@ -562,14 +571,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
     }
 
-    
     // PDSCH LLRs
     if (pdsch_llr != NULL) {
         for (i=0; i<coded_bits_per_codeword; i++) {
             llr[i] = (float) pdsch_llr[i];
             bit[i] = (float) i;
         }
-        
+
+        fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);        
         fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
     }
     
