@@ -332,8 +332,8 @@ typedef struct
 
   // RRC measurements
   int rssi;
-  int n_adj_cells;
-  unsigned int adj_cell_id[6];
+  int n_adj_cells[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned int adj_cell_id[NUMBER_OF_CONNECTED_eNB_MAX][6];
   int rsrq[7];
   int rsrp[7];
   // common measurements

@@ -11,8 +11,8 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 	     int sample_offset,
 	     int no_prefix) {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  LTE_UE_COMMON *ue_common_vars   = &phy_vars_ue->lte_ue_common_vars;
+  LTE_DL_FRAME_PARMS *frame_parms = phy_vars_ue->lte_frame_parms[0];
+  LTE_UE_COMMON *ue_common_vars   = phy_vars_ue->lte_ue_common_vars[0];
   u8 eNB_id = 0;//ue_common_vars->eNb_id;
   
   unsigned char aa;
@@ -80,9 +80,9 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 	  0);
     }
 
-    memcpy(&ue_common_vars->rxdataF2[aa][2*subframe_offset_F+2*frame_parms->ofdm_symbol_size*l],
-	   &ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*l],
-	   2*frame_parms->ofdm_symbol_size*sizeof(int));
+    //memcpy(&ue_common_vars->rxdataF2[aa][2*subframe_offset_F+2*frame_parms->ofdm_symbol_size*l],
+//	   &ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*l],
+//	   2*frame_parms->ofdm_symbol_size*sizeof(int));
 
   }
   //if ((l==0) || (l==(4-frame_parms->Ncp))) {

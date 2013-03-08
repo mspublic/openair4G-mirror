@@ -269,7 +269,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 			 pilots,
 			 2,
 			 0,
-			 (amp*3)/2,
+			 pilots == 1 ? amp/2 : amp,
 			 &re_allocated,
 			 0,
 			 0,
@@ -729,7 +729,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     msg("[PBCH] starting extract\n");
 #endif
     pbch_extract(lte_ue_common_vars->rxdataF,
-		 lte_ue_common_vars->dl_ch_estimates[eNB_id],
+		 lte_ue_common_vars->dl_ch_estimates[0],
 		 lte_ue_pbch_vars->rxdataF_ext,
 		 lte_ue_pbch_vars->dl_ch_estimates_ext,
 		 symbol,
@@ -795,7 +795,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
   //un-scrambling
 #ifdef DEBUG_PBCH
-  msg("[PBCH] doing unscrambling\n");
+  msg("[PBCH] doing unscrambling, Nid_cell = %d\n", frame_parms->Nid_cell);
 #endif
 
   

@@ -81,7 +81,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
   else
     rx_power_correction = 1;
   
-  for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells;eNB_offset++) {
+  for (eNB_offset = 0;eNB_offset<1+phy_vars_ue->PHY_measurements.n_adj_cells[eNB_id];eNB_offset++) {
 
     if (eNB_offset==0)
       phy_vars_ue->PHY_measurements.rssi = 0;
@@ -91,7 +91,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
     // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
     //    printf("[PHY][UE %d] Frame %d slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, Nid2 %d, nushift %d, eNB_offset %d)\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,slot,Nid_cell,Nid2,nushift,eNB_offset);
     if (eNB_offset > 0)
-      Nid_cell = phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];
+      Nid_cell = phy_vars_ue->PHY_measurements.adj_cell_id[eNB_id][eNB_offset-1];
 
 
     nushift =  Nid_cell%6;
@@ -172,7 +172,7 @@ void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
       LOG_D(PHY,"[UE %d] Frame %d, slot %d RRC Measurements => rsrp/rsrq[%d][%d] %3.1f (%3.1f) dBm %3.1f dB\n",
 	    phy_vars_ue->Mod_id,  
 	    phy_vars_ue->frame,slot,eNB_offset,
-	    (eNB_offset>0) ? phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1] : phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell, 
+	    (eNB_offset>0) ? phy_vars_ue->PHY_measurements.adj_cell_id[eNB_id][eNB_offset-1] : phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell, 
 	    (dB_fixed_times10(phy_vars_ue->PHY_measurements.rsrp[eNB_offset])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL*12), 
 	    (10*log10(phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_offset][0][0])/10.0)-phy_vars_ue->rx_total_gain_dB-dB_fixed(phy_vars_ue->lte_frame_parms[eNB_id]->N_RB_DL*12)-6.02, 
 	    (10*log10(phy_vars_ue->PHY_measurements.rsrq[eNB_offset]))-20);

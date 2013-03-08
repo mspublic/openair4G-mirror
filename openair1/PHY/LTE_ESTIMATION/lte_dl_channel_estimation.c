@@ -24,7 +24,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   //  unsigned int n;
   //  int i;
 
-  u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_offset-1];  
+  u16 Nid_cell = (eNB_offset == 0) ? phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell : phy_vars_ue->PHY_measurements.adj_cell_id[eNB_id][eNB_offset-1];  
 
   u8 nushift,pilot1,pilot2,pilot3;
   int **dl_ch_estimates=phy_vars_ue->lte_ue_common_vars[eNB_id]->dl_ch_estimates[eNB_offset]; 

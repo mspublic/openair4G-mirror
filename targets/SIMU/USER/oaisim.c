@@ -1635,6 +1635,10 @@ main (int argc, char **argv)
 	snprintf(vname, 64, "enb%d_f%d_rx", i, frame);
 	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.rxdata[0][0], 
 	    FRAME_LENGTH_COMPLEX_SAMPLES, 1, 1);
+
+        snprintf(fname, 64, "%s/enb%d_f%d_pbch_es_v.m", debug_signals_dir, i, frame);
+        snprintf(vname, 64, "enb%d_f%d_pbch_es", i, frame);
+        write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_pbch.pbch_e, 1920, 1, 4);
       }
 
       for(i = 0; i < NB_UE_INST; i++) {
@@ -1663,8 +1667,22 @@ main (int argc, char **argv)
 	for (eNB_id = 0; eNB_id < nb_connected_eNB; eNB_id++) { 
 	  snprintf(fname, 64, "%s/ue%d_enb%d_f%d_dlchestt_v.m", debug_signals_dir, i, eNB_id, frame);
 	  snprintf(vname, 64, "ue%d_enb%d_f%d_dlchestt", i, eNB_id, frame);
-	  write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->dl_ch_estimates_time[eNB_id][0], 
-	      PHY_vars_UE_g[i]->lte_frame_parms[0]->ofdm_symbol_size, 1, 1);
+	  write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->dl_ch_estimates_time[0][0], 
+	      PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
+
+	  snprintf(fname, 64, "%s/ue%d_enb%d_f%d_dlchest_v.m", debug_signals_dir, i, eNB_id, frame);
+	  snprintf(vname, 64, "ue%d_enb%d_f%d_dlchest", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0],
+              6*PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
+
+	  snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pbch_rxf_comp_v.m", debug_signals_dir, i, eNB_id, frame);
+	  snprintf(vname, 64, "ue%d_enb%d_f%d_pbch_rxf_comp", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pbch_vars[eNB_id]->rxdataF_comp[0], 6*12*4, 1, 1);
+
+	  snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pbch_llr_v.m", debug_signals_dir, i, eNB_id, frame);
+	  snprintf(vname, 64, "ue%d_enb%d_f%d_pbch_llr", i, eNB_id, frame);
+          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pbch_vars[eNB_id]->llr,
+              PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->Ncp == 0 ? 1920 : 1728, 1, 4);
 	}
       }
     }

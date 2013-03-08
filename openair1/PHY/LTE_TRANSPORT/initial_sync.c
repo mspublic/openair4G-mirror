@@ -59,7 +59,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, u8  eNB_id, runmode_t mode) {
   LTE_DL_FRAME_PARMS *frame_parms=phy_vars_ue->lte_frame_parms[eNB_id]; 
 
 #ifdef DEBUG_INIT_SYNCH
-  LOG_D(PHY,"[UE %d] PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
+  LOG_D(PHY,"[UE %d] PBCH detection for eNB %d (rx_offset %d)\n", phy_vars_ue->Mod_id, eNB_id,
       phy_vars_ue->rx_offset);
 #endif
 
@@ -267,7 +267,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
       if (flip_fdd_ncp==1)
 	phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
       init_frame_parms(frame_parms,1);
-      lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
+      lte_gold(frame_parms,phy_vars_ue->lte_gold_table[eNB_id][0],frame_parms->Nid_cell);    
       ret = pbch_detection(phy_vars_ue, eNB_id, mode);
 #ifdef DEBUG_INIT_SYNCH
       LOG_I(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -304,7 +304,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 	if (flip_fdd_ecp==1)
 	  phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	init_frame_parms(frame_parms,1);
-	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
+	lte_gold(frame_parms,phy_vars_ue->lte_gold_table[eNB_id][0],frame_parms->Nid_cell);    
 	ret = pbch_detection(phy_vars_ue, eNB_id, mode); 
 #ifdef DEBUG_INIT_SYNCH
       LOG_I(PHY,"FDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -344,7 +344,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 	  frame_parms->nushift  = frame_parms->Nid_cell%6;
 	  init_frame_parms(frame_parms,1);
 
-	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
+	  lte_gold(frame_parms,phy_vars_ue->lte_gold_table[eNB_id][0],frame_parms->Nid_cell);    
 	  ret = pbch_detection(phy_vars_ue, eNB_id, mode); 
 	
 #ifdef DEBUG_INIT_SYNCH
@@ -381,7 +381,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 	    if (flip_tdd_ecp==1)
 	      phy_vars_ue->rx_offset += (FRAME_LENGTH_COMPLEX_SAMPLES>>1);
 	    init_frame_parms(frame_parms,1);
-	    lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);    
+	    lte_gold(frame_parms,phy_vars_ue->lte_gold_table[eNB_id][0],frame_parms->Nid_cell);    
 	    ret = pbch_detection(phy_vars_ue, eNB_id,mode);
    
 #ifdef DEBUG_INIT_SYNCH
@@ -426,7 +426,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
         phy_vars_ue->lte_frame_parms[k]->Nid_cell = frame_parms->Nid_cell+1;
         phy_vars_ue->lte_frame_parms[k]->nushift = phy_vars_ue->lte_frame_parms[k]->Nid_cell%6;
         init_frame_parms(phy_vars_ue->lte_frame_parms[k], 1);
-        //lte_gold(phy_vars_ue->lte_frame_parms[k], phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);
+        lte_gold(phy_vars_ue->lte_frame_parms[k], phy_vars_ue->lte_gold_table[k][0], phy_vars_ue->lte_frame_parms[k]->Nid_cell);
       }
     }
     else {
