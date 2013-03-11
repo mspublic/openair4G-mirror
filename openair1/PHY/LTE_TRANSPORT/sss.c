@@ -361,7 +361,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
   sss5 = (short*)&sss5_ext[0][5];
   for (flip=0;flip<2;flip++) {        //  d0/d5 flip in RX frame
     for (phase=0;phase<=7;phase++) {  // phase offset between PSS and SSS
-      for (Nid1 = 0 ; Nid1 < 167; Nid1++) {  // possible Nid1 values
+      for (Nid1 = 0 ; Nid1 <= 167; Nid1++) {  // 168 possible Nid1 values
 	metric = 0;
 	if (flip==0) {
 	  d0 = &d0_sss[62*(Nid2 + (Nid1*3))];
