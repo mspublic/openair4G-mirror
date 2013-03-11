@@ -179,8 +179,10 @@ typedef struct {
   u8 LCID:5;   // octet 1 LSB
   u8 E:1;
   u8 R:2;      // octet 1 MSB
-  u16 L:15;      // octet 3/2 LSB
-  u16 F:1;      // octet 3 MSB     
+  u8 L_MSB:7;
+  u8 F:1;      // octet 3 MSB  
+  u8 L_LSB:8;
+  u8 padding;
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
  
 typedef struct {

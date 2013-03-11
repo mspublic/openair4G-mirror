@@ -138,8 +138,12 @@ unsigned char *parse_header(unsigned char *mac_header,
       }
       else {
 	if (((SCH_SUBHEADER_LONG *)mac_header_ptr)->F == 1) {
-	  length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
+	  length = ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB & 0x7f ) << 8 ) | (((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB & 0xff);
 	  mac_header_ptr += 3;
+#ifdef DEBUG_HEADER_PARSING
+      LOG_D(MAC,"[UE] parse long sdu, size %x \n",length);
+#endif
+	
 	}  else {	//if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
 	  mac_header_ptr += 2;
@@ -238,11 +242,13 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
     return(0);
   }
 }
-/*// this function is for sending mch_sdu from phy to mac
+#ifdef Rel10
+// this function is for sending mch_sdu from phy to mac
 void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
+  LOG_D(MAC,"entering ue_send_mch_sdu\n");
   LOG_I(MAC,"parse_mch_header, demultiplex\n");
 } 
-*/
+#endif
 
 void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 
@@ -592,8 +598,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7fff;
-
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB    = ((unsigned short) sdu_lengths[i]>>8)&0x7f;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB    = (unsigned short) sdu_lengths[i]&0xff;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->padding  = 0x00;
       last_size=3;
 #ifdef DEBUG_HEADER_PARSING
       LOG_D(MAC,"[UE] long sdu\n");

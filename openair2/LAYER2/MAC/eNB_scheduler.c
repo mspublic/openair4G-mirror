@@ -446,8 +446,8 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
 	  mac_header_ptr += 2;//sizeof(SCH_SUBHEADER_SHORT);
 	}
-	else {
-	  length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
+	else { // F = 1 
+	  length = length = ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB & 0x7f ) << 8 ) | (((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB & 0xff);
 	  mac_header_ptr += 3;//sizeof(SCH_SUBHEADER_LONG);
 	}
       }
@@ -715,8 +715,16 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = (unsigned short) sdu_lengths[i]&0x7fff;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB    = ((unsigned short) sdu_lengths[i]>>8)&0x7f;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB    = (unsigned short) sdu_lengths[i]&0xff;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->padding   = 0x00;
       last_size=3;
+#ifdef DEBUG_HEADER_PARSING
+      LOG_D(MAC,"[eNB] generate long sdu, size %x (MSB %x, LSB %x)\n", 
+	    sdu_lengths[i],
+	    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB,
+	    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB);
+#endif
     }
   }
   /*
