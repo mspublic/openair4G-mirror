@@ -366,7 +366,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
 #ifdef Rel10
-  mac_xface->ue_send_mch_sdu     = ue_send_mch_sdu;
+  mac_xface->ue_send_mch_sdu           = ue_send_mch_sdu;
 #endif
   mac_xface->ue_get_SR                 = ue_get_SR;
   mac_xface->ue_get_sdu                = ue_get_sdu;
@@ -401,7 +401,8 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
 #ifdef Rel10
-  mac_xface->get_mch_sdu                = get_mch_sdu;
+  // not currently used in the code
+  //mac_xface->get_mch_sdu                = get_mch_sdu;
 #endif
 
   mac_xface->get_PHR = get_PHR;
