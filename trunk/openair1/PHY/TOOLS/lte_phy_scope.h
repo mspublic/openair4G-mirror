@@ -20,6 +20,7 @@ typedef struct {
     FL_OBJECT * pusch_comp;
     FL_OBJECT * pusch_llr;
     FL_OBJECT * pusch_tput;
+    FL_OBJECT * button_0;
 } FD_lte_phy_scope_enb;
 
 typedef struct {
