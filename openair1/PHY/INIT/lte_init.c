@@ -1119,7 +1119,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
   }
   else { //abstraction == 1
     for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++)
-      phy_vars_ue->sinr_dB[eNB_id] = (double*) malloc16(frame_parms[eNB_id]->N_RB_DL*2*sizeof(double));
+      phy_vars_ue->sinr_dB[eNB_id] = (double*) malloc16(frame_parms[eNB_id]->N_RB_DL*12*sizeof(double));
   }
    
   phy_vars_ue->init_averaging = 1;

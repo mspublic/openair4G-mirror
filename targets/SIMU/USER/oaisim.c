@@ -1235,11 +1235,11 @@ main (int argc, char **argv)
   mac_xface->macphy_init();
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i); // init rrc_enb 
-  if (abstraction_flag == 1) {
+  /*  if (abstraction_flag == 1) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
       for (eNB_id =0 ; eNB_id < nb_connected_eNB; eNB_id++) //  call phy_sync_success among the UE and all potential connected eNBs
 	mac_xface->dl_phy_sync_success (UE_id, 0, eNB_id,1);	//UE_id%NB_eNB_INST);
-      }
+	}*/
 #endif
 
   mac_xface->macphy_exit = exit_fun;
@@ -1455,10 +1455,11 @@ main (int argc, char **argv)
 	      phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 	      if(slot == 19) {
 		LOG_D(EMU, "[eNB%d]Updating MRPSCH synch\n", eNB_id);
-		if(mrpsch_update_sync(PHY_vars_eNB_g[eNB_id], 16) == -1) {
-		  PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_UNSYNCHED;
-		  LOG_D(EMU, "[eNB%d]MRPSCH lost, changed state SYNCHED->UNSYNCHED\n", eNB_id);
-		}
+		if (abstraction_flag == 0)
+		  if(mrpsch_update_sync(PHY_vars_eNB_g[eNB_id], 16) == -1) {
+		    PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_UNSYNCHED;
+		    LOG_D(EMU, "[eNB%d]MRPSCH lost, changed state SYNCHED->UNSYNCHED\n", eNB_id);
+		  }
 	      }
 	      break;
 	    case MESH_STATE_UNSYNCHED:

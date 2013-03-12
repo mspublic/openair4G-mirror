@@ -450,7 +450,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
       
     }
   }//abstraction_flag =0
-#ifdef PHY_ABSTRACTION
+  //#ifdef PHY_ABSTRACTION
   else {
     LOG_I(PHY,"Initial sync phase in abstraction mode \n");
     frame_parms->Ncp=oai_emulation.info.extended_prefix_flag;
@@ -472,9 +472,17 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
     phy_vars_ue->frame =oai_emulation.info.frame; // PHY_vars_eNB_g[eNB_id]->frame;
     
     init_frame_parms(frame_parms,1);
-
-    // if (ret ==0)
-    //mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,0,1); // already done in oaisim.c
+    for(k = 1; k < phy_vars_ue->n_connected_eNB; k++) {
+      phy_vars_ue->lte_frame_parms[k]->Ncp = frame_parms->Ncp;
+      phy_vars_ue->lte_frame_parms[k]->frame_type = frame_parms->frame_type;
+      phy_vars_ue->lte_frame_parms[k]->Nid_cell = frame_parms->Nid_cell+1;
+      phy_vars_ue->lte_frame_parms[k]->nushift = phy_vars_ue->lte_frame_parms[k]->Nid_cell%6;
+      init_frame_parms(phy_vars_ue->lte_frame_parms[k], 1);
+    }
+#ifdef OPENAIR2
+    LOG_I(PHY,"[PHY][UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
+    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+#endif //OPENAIR2
     phy_vars_ue->UE_mode[eNB_id] = PRACH;
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
     ret=1;
@@ -489,7 +497,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 	frame_parms->phich_config_common.phich_duration,
 	frame_parms->phich_config_common.phich_resource);
   }
-#endif  
+  //#endif  
   return ret;
 }
 

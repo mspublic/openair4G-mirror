@@ -77,6 +77,11 @@ MAC_OBJS += $(MAC_DIR)/rar_tools.o
 MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
 MAC_OBJS += $(MAC_DIR)/config.o
 
+#ifeq ($(OPENAIR_MESH),1)
+#MAC_OBJS += $(MAC_DIR)/forwarding_buffer.o
+#endif
+
+
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 
 L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS)
