@@ -1418,7 +1418,10 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 
 #ifdef OPENAIR2
     mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id,
-				   phy_vars_ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
+    				   ((phy_vars_ue->UE_mode[eNB_id]==NOT_SYNCHED) ||  
+				    (phy_vars_ue->UE_mode[eNB_id]==PBCH_SEARCH)) ? 1 : 0);
+    //mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame,eNB_id,
+    //				   phy_vars_ue->UE_mode[eNB_id]==NOT_SYNCHED ? 0 : 1);
 #endif
 
 #ifdef EMOS
@@ -1697,7 +1700,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       if (!((((last_slot>>1) == 6) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) ||
 	    (((last_slot>>1) == 7) && (dci_alloc_rx[i].format == format1)))) {
 	LOG_D(PHY,"[UE  %d][DIAG] frame %d, subframe %d: should not have received C_RNTI Format %d!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].format);
-	phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors++;
+	phyue_pdcch_vars[eNB_id]->dci_errors++;
 	phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false++;
         vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
 	return(-1);
@@ -1733,8 +1736,10 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	  phy_vars_ue->UE_mode[eNB_id] = PUSCH;
       
           // Try to connect to another eNB
-          if(eNB_id+1 < phy_vars_ue->n_connected_eNB)
-            phy_vars_ue->UE_mode[eNB_id+1] = PBCH_SEARCH;
+          if(eNB_id+1 < phy_vars_ue->n_connected_eNB){
+	    phy_vars_ue->UE_mode[eNB_id+1] = PBCH_SEARCH;
+	    LOG_D(PHY,"[UE %d] change the mode to PBCH_SEARCH for eNB %d\n",phy_vars_ue->Mod_id,eNB_id );
+	  }
 	  //mac_xface->macphy_exit("Connected. Exiting\n");
 	}
       }
@@ -1909,11 +1914,11 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   }
 
   if(phy_vars_ue->UE_mode[eNB_id] == PBCH_SEARCH) {
-    if (abstraction_flag == 0) {
+    //   if (abstraction_flag == 0) {
       if(last_slot == 1) {
         lte_ue_pbch_procedures(eNB_id, last_slot, phy_vars_ue, abstraction_flag);
       }
-    }
+      // }
     return 0;
   }
 
@@ -1938,6 +1943,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   else {
     n_symb = phy_vars_ue->lte_frame_parms[eNB_id]->symbols_per_tti/2; 
   }
+  LOG_I(PHY, " debug n_symb \n", n_symb );
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   
   // RX processing of symbols in last_slot
@@ -2664,27 +2670,26 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
   if((subframe_select(phy_vars_ue->lte_frame_parms[0], last_slot>>1) == SF_DL) ||
       ((subframe_select(phy_vars_ue->lte_frame_parms[0], last_slot>>1) == SF_S) && ((last_slot&1)==0)) ||
       (phy_vars_ue->lte_frame_parms[0]->frame_type == 0)) {
-    if (abstraction_flag == 0) {
-      if (subframe_select(phy_vars_ue->lte_frame_parms[0],last_slot>>1) == SF_S) {
-        if ((last_slot%2)==0)
-          n_symb = 5;
-        else
-          n_symb = 0;   	
-      }
-      else {
-        n_symb = phy_vars_ue->lte_frame_parms[0]->symbols_per_tti/2; 
-      }
-      for (l=0;l<n_symb;l++) {
-        slot_fep(phy_vars_ue, l, last_slot, phy_vars_ue->rx_offset, 0);
-        for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++)
-          lte_ue_measurement_procedures(last_slot, l, phy_vars_ue, eNB_id, abstraction_flag, mode);
-      }
-      for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
-        phy_procedures_UE_RX(last_slot, phy_vars_ue, eNB_id, abstraction_flag, mode);
+    if (subframe_select(phy_vars_ue->lte_frame_parms[0],last_slot>>1) == SF_S) {
+      if ((last_slot%2)==0)
+	n_symb = 5;
+      else
+	n_symb = 0;   	
+    }
+    else {
+      n_symb = phy_vars_ue->lte_frame_parms[0]->symbols_per_tti/2; 
+    }
+    for (l=0;l<n_symb;l++) {
+      if (abstraction_flag == 0) 
+	slot_fep(phy_vars_ue, l, last_slot, phy_vars_ue->rx_offset, 0);
+      for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++)
+	lte_ue_measurement_procedures(last_slot, l, phy_vars_ue, eNB_id, abstraction_flag, mode);
+    }
+    for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
+      phy_procedures_UE_RX(last_slot, phy_vars_ue, eNB_id, abstraction_flag, mode);
 #ifdef EMOS
-        phy_procedures_emos_UE_RX(phy_vars_ue, last_slot, eNB_id);
+      phy_procedures_emos_UE_RX(phy_vars_ue, last_slot, eNB_id);
 #endif
-      }
     }
   }
   if((next_slot%2) == 1) {
@@ -2698,7 +2703,8 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_PHY_PROC
         LOG_D(PHY,"[UE %d] Generating MRPSCH in slot %d\n", phy_vars_ue->Mod_id, next_slot);
 #endif
-        generate_mrpsch(phy_vars_ue, 0, AMP, next_slot, (phy_vars_ue->lte_frame_parms[0]->symbols_per_tti >> 1)-1);
+        if (abstraction_flag == 0) 
+	  generate_mrpsch(phy_vars_ue, 0, AMP, next_slot, (phy_vars_ue->lte_frame_parms[0]->symbols_per_tti >> 1)-1);
         phy_vars_ue->tx_power_dBm = phy_vars_ue->mrpsch_power_dbm;
       }
       modulate_ue_tx_tti(phy_vars_ue, next_slot>>1, abstraction_flag);
