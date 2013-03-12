@@ -1,9 +1,7 @@
-SRC = emos_dump.c dump_size.c
+SRC = dump_size.c 
 
-OBJ = emos_dump.o dump_size.o
-
-CFLAGS = $(shell rtai-config --lxrt-cflags)
-LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -lm -lgps -lforms #-llxrt 
+#CFLAGS = $(shell rtai-config --lxrt-cflags)
+#LDFLAGS = $(shell rtai-config --lxrt-ldflags) -lpthread -lm -lgps -lforms #-llxrt 
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	
 
@@ -25,25 +23,23 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-all: emos_dump dump_size
+all: dump_size cstruct
 
 $(OBJ): %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-emos_dump: emos_dump.c
-	$(CC) $(CFLAGS) $(LDFLAGS) emos_dump.c -o emos_dump
+cstruct: cstruct.c MatlabCStruct.c
+	mkoctfile --mex cstruct.c MatlabCStruct.c
 
 dump_size: dump_size.c
 	$(CC) $(CFLAGS) $(LDFLAGS) dump_size.c -o dump_size
 
 clean:
-	rm -rf emos_dump dump_size
-	rm -rf $(OBJ)
+	rm -rf dump_size cstruct.oct cstruct.mex
 
 show:
 	@echo $(CFLAGS)
-	@echo $(OBJ)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)
