@@ -42,7 +42,7 @@ end
 %  - 100 entries of type fifo_dump_emos (defined in phy_procedures_emos.h)
 
 if exist('dump_size','file') && isunix
-    [dummy,result] = system('dump_size');
+    [dummy,result] = system('./dump_size');
     eval(result);
 else
     warning('File dump_size.c has to be compiled to enable error checking of sizes');
