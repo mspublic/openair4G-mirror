@@ -4,6 +4,7 @@
 #include "lte_phy_scope.h"
 
 #define TPUT_WINDOW_LENGTH 100
+extern int otg_enabled;
 
 FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 
@@ -26,6 +27,18 @@ static void ia_receiver_on_off( FL_OBJECT *button, long arg) {
     }
 }
 
+static void dl_traffic_on_off( FL_OBJECT *button, long arg) {
+
+    if (fl_get_button(button)) {
+        fl_set_object_label(button, "DL Traffic ON");
+        otg_enabled = 1;
+        fl_set_object_color(button, FL_GREEN, FL_GREEN);
+    } else {
+        fl_set_object_label(button, "DL Traffic OFF");
+        otg_enabled = 0;
+        fl_set_object_color(button, FL_RED, FL_RED);
+    }
+}
 
 FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void ) {
 
@@ -75,10 +88,19 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void ) {
     fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
     
     // Throughput on PUSCH
-    fdui->pusch_tput = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 480, 760, 100, "PUSCH Throughput [frame]/[kbit/s]" );
+    fdui->pusch_tput = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 480, 500, 100, "PUSCH Throughput [frame]/[kbit/s]" );
     fl_set_object_boxtype( fdui->pusch_tput, FL_EMBOSSED_BOX );
     fl_set_object_color( fdui->pusch_tput, FL_BLACK, FL_WHITE );
     fl_set_object_lcolor( fdui->pusch_tput, FL_WHITE ); // Label color
+
+    // Generic eNB Button
+    fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 540, 480, 240, 40, "" );
+    fl_set_object_lalign(fdui->button_0, FL_ALIGN_CENTER );
+    fl_set_button(fdui->button_0,0);
+    otg_enabled = 0;
+    fl_set_object_label(fdui->button_0, "DL Traffic OFF");
+    fl_set_object_color(fdui->button_0, FL_RED, FL_RED);  
+    fl_set_object_callback(fdui->button_0, dl_traffic_on_off, 0 );
 
     fl_end_form( );
     fdui->lte_phy_scope_enb->fdui = fdui;
@@ -253,6 +275,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     
     //    fl_get_xyplot_ybounds(form->pusch_tput,&ymin,&ymax);
     //    fl_set_xyplot_ybounds(form->pusch_tput,0,ymax);
+
+    fl_check_forms();
     
     free(llr);
     free(bit);
@@ -609,7 +633,6 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     fl_set_xyplot_data(form->pdsch_tput,tput_time_ue[UE_id],tput_ue[UE_id],TPUT_WINDOW_LENGTH,"","","");
     
     fl_set_xyplot_ybounds(form->pdsch_tput,0,tput_ue_max[UE_id]);
-
 
     fl_check_forms();
 
