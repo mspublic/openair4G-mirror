@@ -79,11 +79,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
              unsigned char dual_stream_flag,
              unsigned char i_mod) {
   
-//  LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars; // apaposto
-  LTE_UE_COMMON *lte_ue_common_vars  = phy_vars_ue->lte_ue_common_vars[eNB_id]; // apaposto
+  LTE_UE_COMMON *lte_ue_common_vars  = phy_vars_ue->lte_ue_common_vars[eNB_id];
   LTE_UE_PDSCH **lte_ue_pdsch_vars;
-// LTE_DL_FRAME_PARMS *frame_parms    = &phy_vars_ue->lte_frame_parms; // apaposto
-  LTE_DL_FRAME_PARMS *frame_parms    = phy_vars_ue->lte_frame_parms[eNB_id]; // apaposto
+  LTE_DL_FRAME_PARMS *frame_parms    = phy_vars_ue->lte_frame_parms[eNB_id];
   PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
   LTE_UE_DLSCH_t   **dlsch_ue;
 
@@ -161,7 +159,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->rb_alloc[0]);
 #endif
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-				   lte_ue_common_vars->dl_ch_estimates[eNB_id],
+				   lte_ue_common_vars->dl_ch_estimates[0],
 				   lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
 				   lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 				   dlsch_ue[0]->pmi_alloc,
@@ -185,7 +183,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				       frame_parms);
       else 
 	nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-				       lte_ue_common_vars->dl_ch_estimates[eNB_id],
+				       lte_ue_common_vars->dl_ch_estimates[0],
 				       lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 				       lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
 				       dlsch_ue[0]->pmi_alloc,
@@ -198,7 +196,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   } // if n_tx>1
   else {     
     nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-				     lte_ue_common_vars->dl_ch_estimates[eNB_id],
+				     lte_ue_common_vars->dl_ch_estimates[0],
 				     lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
 				     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 				     dlsch_ue[0]->pmi_alloc,
@@ -222,7 +220,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 					 frame_parms);
       else 
 	nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-					 lte_ue_common_vars->dl_ch_estimates[eNB_id],
+					 lte_ue_common_vars->dl_ch_estimates[0],
 					 lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 					 lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,    
 					 dlsch_ue[0]->pmi_alloc,
