@@ -1123,7 +1123,7 @@ void mrpsch_procedures_ue(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
           normal_prefix_mod(slot_data_f, slot_data, frame_parms->symbols_per_tti >> 1, frame_parms);
 
 #ifndef OFDMA_ULSCH
-	apply_7_5_kHz(phy_vars_ue,next_slot);
+	//apply_7_5_kHz(phy_vars_ue,next_slot);
 #endif
       }
     }
@@ -1409,6 +1409,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       generate_phich_reg_mapping(phy_vars_ue->lte_frame_parms[eNB_id]);
       
       phy_vars_ue->UE_mode[eNB_id] = PRACH;
+      mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id, phy_vars_ue->frame, eNB_id, 1);
     }
 
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq = 0;
@@ -2699,13 +2700,14 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
       for(eNB_id = 0; eNB_id < phy_vars_ue->n_connected_eNB; eNB_id++) {
         phy_procedures_UE_S_TX(next_slot, phy_vars_ue, eNB_id, abstraction_flag);
       }
-      if(phy_vars_ue->UE_mode[0] == PUSCH) {
+      if(abstraction_flag == 0) {
+        if(phy_vars_ue->UE_mode[0] == PUSCH) {
 #ifdef DEBUG_PHY_PROC
-        LOG_D(PHY,"[UE %d] Generating MRPSCH in slot %d\n", phy_vars_ue->Mod_id, next_slot);
+          LOG_D(PHY,"[UE %d] Generating MRPSCH in slot %d\n", phy_vars_ue->Mod_id, next_slot);
 #endif
-        if (abstraction_flag == 0) 
 	  generate_mrpsch(phy_vars_ue, 0, AMP, next_slot, (phy_vars_ue->lte_frame_parms[0]->symbols_per_tti >> 1)-1);
-        phy_vars_ue->tx_power_dBm = phy_vars_ue->mrpsch_power_dbm;
+          phy_vars_ue->tx_power_dBm = phy_vars_ue->mrpsch_power_dbm;
+        }
       }
       modulate_ue_tx_tti(phy_vars_ue, next_slot>>1, abstraction_flag);
     }
@@ -2786,6 +2788,11 @@ void modulate_ue_tx_tti(PHY_VARS_UE* phy_vars_ue, u8 subframe, u8 abstraction_fl
         normal_prefix_mod(get_ue_slot_ref_f(phy_vars_ue, 0, aa, subframe<<1),
             phy_vars_ue->lte_ue_buffer_vars->subframe_data, nsymb, frame_parms);
 
+#ifndef OFDMA_ULSCH
+      apply_7_5_kHz(phy_vars_ue,phy_vars_ue->lte_ue_buffer_vars->subframe_data[aa],0);
+      apply_7_5_kHz(phy_vars_ue,phy_vars_ue->lte_ue_buffer_vars->subframe_data[aa],1);
+#endif
+
       src_ref = phy_vars_ue->lte_ue_buffer_vars->subframe_data;
       dst_ref = get_ue_slot_ref(phy_vars_ue, 0, aa, subframe<<1);
       for(k = 0; k < frame_parms->samples_per_tti; k++) {
@@ -2794,9 +2801,6 @@ void modulate_ue_tx_tti(PHY_VARS_UE* phy_vars_ue, u8 subframe, u8 abstraction_fl
         src_ref++;
         dst_ref++;
       }
-#ifndef OFDMA_ULSCH
-#  error "apply_7_5_kHz needed here"
-#endif
     }
   }
 }
