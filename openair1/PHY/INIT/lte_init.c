@@ -336,7 +336,7 @@ void phy_config_meas_ue(u8 Mod_id,u8 eNB_index,u8 n_adj_cells,unsigned int *adj_
     lte_gold(PHY_vars_UE_g[Mod_id]->lte_frame_parms[eNB_index],PHY_vars_UE_g[Mod_id]->lte_gold_table[eNB_index][i+1],adj_cell_id[i]); 
   }
   phy_meas->n_adj_cells[eNB_index] = n_adj_cells;
-  memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
+  memcpy((void*)phy_meas->adj_cell_id[eNB_index],(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 
 }
 
