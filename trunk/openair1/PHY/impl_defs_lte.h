@@ -416,6 +416,8 @@ typedef struct {
   u8 N_RB_DL;                
   /// Number of resource blocks (RB) in UL
   u8 N_RB_UL;
+/// Number of Sub-bands in DL
+  u8 N_SUBBANDS_DL;
   /// Cell ID                 
   u16 Nid_cell;               
   /// MBSFN Area ID
@@ -771,7 +773,7 @@ typedef struct {
   /// Downlink Power offset field
   u8 dl_pow_off;
   ///Subband resource allocation field
-  u8 rballoc_sub[7];
+  u8 rballoc_sub[50];
   ///Total number of PRBs indicator
   u8 pre_nb_available_rbs;
 }MU_MIMO_mode;

@@ -1185,6 +1185,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   phy_vars_eNB->total_dlsch_bitrate = 0;
   phy_vars_eNB->total_transmitted_bits = 0;
   phy_vars_eNB->total_system_throughput = 0;
+  phy_vars_eNB->check_for_MUMIMO_transmissions=0;
 
   msg("[PHY][eNB %d] Initializing DL_FRAME_PARMS : N_RB_DL %d, PHICH Resource %d, PHICH Duration %d\n",
       phy_vars_eNB->Mod_id,
