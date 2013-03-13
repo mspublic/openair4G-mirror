@@ -352,7 +352,7 @@ typedef struct{
   u8 ul_SR;
 
   //Resource Block indication for each sub-band in MU-MIMO 
-  u8 rballoc_sub[8][7];
+  u8 rballoc_subband[8][50];
 
 
   // Logical channel info for link with RLC
@@ -362,6 +362,11 @@ typedef struct{
   
   /// phr information 
    u8 phr_info; 
+
+  //dl buffer info
+  u32_t dl_buffer_info[MAX_NUM_LCID];
+
+  u32_t dl_buffer_total;
 } UE_TEMPLATE;
 
 typedef struct {
