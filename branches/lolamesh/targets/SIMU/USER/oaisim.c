@@ -683,6 +683,10 @@ main (int argc, char **argv)
   int len;
   bool synched_to_any_enb;
 
+  s32* dl_ch_estimates_frame[MAX_UE][NUMBER_OF_CONNECTED_eNB_MAX];
+  s32* ue_rxF_frame[MAX_UE];
+  s32* enb_txF_frame[NUMBER_OF_eNB_MAX];
+
 #ifdef ICIC
   remove ("dci.txt");
 #endif
@@ -707,6 +711,20 @@ main (int argc, char **argv)
   cooperation_flag = 0;		// default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
   init_oai_emulation(); // to initialize everything !!!
+
+  for(UE_id = 0; UE_id < MAX_UE; UE_id++) {
+    for(eNB_id = 0; eNB_id < NUMBER_OF_CONNECTED_eNB_MAX; eNB_id++) {
+      dl_ch_estimates_frame[UE_id][eNB_id] = malloc(10*14*512*sizeof(s32));
+    }
+  }
+
+  for(UE_id = 0; UE_id < MAX_UE; UE_id++) {
+    ue_rxF_frame[UE_id] = malloc(10*14*512*sizeof(s32));
+  }
+
+  for(eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++) {
+    enb_txF_frame[eNB_id] = malloc(10*14*512*sizeof(s32));
+  }
 
    // get command-line options
   while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:")) != -1) {
@@ -1445,6 +1463,10 @@ main (int argc, char **argv)
 		    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	      
 	      phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
+              if(abstraction_flag == 0)
+                memcpy(&enb_txF_frame[eNB_id][next_slot*512*7],
+                    &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0][0][(next_slot%2)*512*7],
+                    512*7*sizeof(s32));
 	      break;
 	    case MESH_STATE_SYNCHED:
 	      LOG_D(EMU,"[eNB%d]PHY procedures for frame %d, slot %d (subframe %d) TDD %d/%d Nid_cell %d\n",
@@ -1453,23 +1475,29 @@ main (int argc, char **argv)
 		    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	      
 	      phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
-	      if(slot == 19) {
-		LOG_D(EMU, "[eNB%d]Updating MRPSCH synch\n", eNB_id);
-		if (abstraction_flag == 0)
-		  if(mrpsch_update_sync(PHY_vars_eNB_g[eNB_id], 16) == -1) {
-		    PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_UNSYNCHED;
-		    LOG_D(EMU, "[eNB%d]MRPSCH lost, changed state SYNCHED->UNSYNCHED\n", eNB_id);
-		  }
-	      }
+              if(abstraction_flag == 0) {
+                memcpy(&enb_txF_frame[eNB_id][next_slot*512*7],
+                    &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0][0][(next_slot%2)*512*7],
+                    512*7*sizeof(s32));
+                if(slot == 19) {
+                  LOG_D(EMU, "[eNB%d]Updating MRPSCH synch\n", eNB_id);
+                  if(mrpsch_update_sync(PHY_vars_eNB_g[eNB_id], 16) == -1) {
+                    PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_UNSYNCHED;
+                    LOG_D(EMU, "[eNB%d]MRPSCH lost, changed state SYNCHED->UNSYNCHED\n", eNB_id);
+                  }
+                }
+              }
 	      break;
 	    case MESH_STATE_UNSYNCHED:
-	      if(slot == 19) {
-		LOG_D(EMU,"[eNB%d]Attempting MRPSCH synch\n", eNB_id);
-		if(mrpsch_sync(PHY_vars_eNB_g[eNB_id]) >= 0) {
-		  PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_SYNCHED;
-		  LOG_D(EMU,"[eNB%d]Changed state UNSYNCHED->SYNCHED\n", eNB_id);
-		}
-	      }
+              if(abstraction_flag == 0) {
+                if(slot == 19) {
+                  LOG_D(EMU,"[eNB%d]Attempting MRPSCH synch\n", eNB_id);
+                  if(mrpsch_sync(PHY_vars_eNB_g[eNB_id]) >= 0) {
+                    PHY_vars_eNB_g[eNB_id]->mesh_state = MESH_STATE_SYNCHED;
+                    LOG_D(EMU,"[eNB%d]Changed state UNSYNCHED->SYNCHED\n", eNB_id);
+                  }
+                }
+              }
 	      break;
 	  }
 
@@ -1511,38 +1539,16 @@ main (int argc, char **argv)
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag, normal_txrx);
 	    }
 	  }
-	  /*
-	    for (eNB_id=0; eNB_id < nb_connected_eNB ; eNB_id++) { 
-	      if (PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] == NOT_SYNCHED) { 
-		if(eNB_id == 0) {
-		  if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-		    initial_sync(PHY_vars_UE_g[UE_id], 0, abstraction_flag, normal_txrx);
-		  }
-		}
-		else if(PHY_vars_UE_g[UE_id]->UE_mode[0] == PUSCH) {
-		  if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-		    pbch_search(PHY_vars_UE_g[UE_id], eNB_id, abstraction_flag, normal_txrx);
-		  }
-		}
-	      }
-	      else {
-		if (frame>= (eNB_id+UE_id) * 20 ) { // activate UE proc for multiple eNB only after 20*eNB_id frames so that different UEs start the proc separately
-		}
-	      }
-	    }
-	    if(PHY_vars_UE_g[UE_id]->UE_mode[0] == PUSCH) {
-	      mrpsch_procedures_ue(next_slot, PHY_vars_UE_g[UE_id], 1, abstraction_flag);
-	    }
-#ifdef PRINT_STATS
-	    if (UE_stats[UE_id]) {
-	      len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
-	      rewind (UE_stats[UE_id]);
-	      fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-	      fflush(UE_stats[UE_id]);
-	    }
-#endif
-	  } // frame >= (UE_id * 20)
-	  */
+          if(abstraction_flag == 0) {
+            for(i = 0; i < 512*7; i++)
+              ue_rxF_frame[UE_id][last_slot*512*7+i] = 
+                  PHY_vars_UE_g[UE_id]->lte_ue_buffer_vars->rxdataF[0][2*((last_slot%2)*512*7+i)];
+            for(eNB_id = 0; eNB_id < PHY_vars_UE_g[UE_id]->n_connected_eNB; eNB_id++) {
+              memcpy(&dl_ch_estimates_frame[UE_id][eNB_id][last_slot*512*7],
+                  &PHY_vars_UE_g[UE_id]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0][(last_slot%2)*512*7],
+                  512*7*sizeof(s32));
+            }
+          }
 	} // UE_id
       
         direction = subframe_select(frame_parms,next_slot>>1);
@@ -1619,8 +1625,8 @@ main (int argc, char **argv)
       for(i = 0; i < NB_eNB_INST; i++) {
 	snprintf(fname, 64, "%s/enb%d_f%d_txf_v.m", debug_signals_dir, i, frame);
 	snprintf(vname, 64, "enb%d_f%d_txf", i, frame);
-	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.txdataF[0][0],
-	    PHY_vars_eNB_g[i]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[i]->lte_frame_parms.ofdm_symbol_size, 1, 1);
+	write_output(fname, vname, enb_txF_frame[i],
+	    10*PHY_vars_eNB_g[i]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[i]->lte_frame_parms.ofdm_symbol_size, 1, 1);
 
 	snprintf(fname, 64, "%s/enb%d_f%d_tx_v.m", debug_signals_dir, i, frame);
 	snprintf(vname, 64, "enb%d_f%d_tx", i, frame);
@@ -1656,8 +1662,8 @@ main (int argc, char **argv)
 
 	snprintf(fname, 64, "%s/ue%d_f%d_rxf_v.m", debug_signals_dir, i, frame);
 	snprintf(vname, 64, "ue%d_f%d_rxf", i, frame);
-	write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_buffer_vars->rxdataF[0],
-	    PHY_vars_UE_g[i]->lte_frame_parms[0]->symbols_per_tti*
+	write_output(fname, vname, ue_rxF_frame[i],
+	    10*PHY_vars_UE_g[i]->lte_frame_parms[0]->symbols_per_tti*
 	    PHY_vars_UE_g[i]->lte_frame_parms[0]->ofdm_symbol_size, 1, 1);
 
 	snprintf(fname, 64, "%s/ue%d_f%d_rx_v.m", debug_signals_dir, i, frame);
@@ -1673,8 +1679,10 @@ main (int argc, char **argv)
 
 	  snprintf(fname, 64, "%s/ue%d_enb%d_f%d_dlchest_v.m", debug_signals_dir, i, eNB_id, frame);
 	  snprintf(vname, 64, "ue%d_enb%d_f%d_dlchest", i, eNB_id, frame);
-          write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0],
-              6*PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
+          //write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0],
+          //    6*PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
+          write_output(fname, vname, dl_ch_estimates_frame[i][eNB_id],
+              10*14*PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->ofdm_symbol_size, 1, 1);
 
 	  snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pbch_rxf_comp_v.m", debug_signals_dir, i, eNB_id, frame);
 	  snprintf(vname, 64, "ue%d_enb%d_f%d_pbch_rxf_comp", i, eNB_id, frame);
