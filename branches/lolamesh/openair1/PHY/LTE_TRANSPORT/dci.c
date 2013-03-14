@@ -1694,13 +1694,13 @@ s32 rx_pdcch_icancel(LTE_UE_COMMON **lte_ue_common_vars,
                              frame_parms);
   }
 
-  for(i = 0; i < 200; i++) {
+  for(i = 0; i < 600; i++) {
     est = (short*)&lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext[0][i];
-    est[0] /= 4;
-    est[1] /= 4;
+    est[0] /= 2;
+    est[1] /= 2;
     est = (short*)&lte_ue_pdcch_vars[eNB_id_i]->dl_ch_estimates_ext[0][i];
-    est[0] /= 4;
-    est[1] /= 4;
+    est[0] /= 2;
+    est[1] /= 2;
   }
 
   write_output("dl_ch_p_v.m","dl_ch_p",lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0],14*512,1,1);
