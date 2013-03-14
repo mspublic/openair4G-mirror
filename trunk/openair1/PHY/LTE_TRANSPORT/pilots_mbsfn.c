@@ -27,13 +27,13 @@
 
 *******************************************************************************/
 
-/*! \file PHY/LTE_TRANSPORT/pilots.c
+/*! \file PHY/LTE_TRANSPORT/pilots_mbsfn.c
 * \brief Top-level routines for generating DL mbsfn reference signals 
-* \author R. Knopp, F. Kaltenberger
+* \author R. Knopp
 * \date 2012
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \email: knopp@eurecom.fr
 * \note
 * \warning
 */
@@ -74,8 +74,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 	       &txdataF[0][subframe_offset+(2*samples_per_symbol)],
 	       amp,
 	       subframe,
-	       0,
-	       4);
+	       0);
 
     
     
@@ -84,16 +83,14 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 	       &txdataF[0][subframe_offset+(6*samples_per_symbol)],
 	       amp,
 	       subframe,
-	       1,
-	       4);
+	       1);
 		   
     //antenna 4 symbol 4 slot 1
   lte_dl_mbsfn(phy_vars_eNB,
 	       &txdataF[0][subframe_offset+(10*samples_per_symbol)],
 	       amp,
 	       subframe,
-	       2,
-	       4);
+	       2);
      
   return(0);  
 }

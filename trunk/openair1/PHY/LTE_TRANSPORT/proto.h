@@ -203,6 +203,58 @@ s32 dlsch_modulation(mod_sym_t **txdataF,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 num_pdcch_symbols,
 		     LTE_eNB_DLSCH_t *dlsch);
+/*
+    \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for MCH.  
+    @param txdataF Table of pointers for frequency-domain TX signals
+    @param amp Amplitude of signal
+    @param subframe_offset Offset of this subframe in units of subframes (usually 0)
+    @param frame_parms Pointer to frame descriptor
+    @param dlsch Pointer to DLSCH descriptor for this allocation
+*/
+int mch_modulation(mod_sym_t **txdataF,
+		   int16_t amp,
+		   uint32_t subframe_offset,
+		   LTE_DL_FRAME_PARMS *frame_parms,
+		   LTE_eNB_DLSCH_t *dlsch);
+
+/** \brief Top-level generation function for eNB TX of MBSFN
+    @param phy_vars_eNB Pointer to eNB variables
+    @param subframe Subframe for PMCH
+    @param a Pointer to transport block
+*/
+void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a);
+
+/** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
+    @param phy_vars_eNB Pointer to eNB variables
+    @param mcs MCS for MBSFN
+*/
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs);
+
+/** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
+    @param phy_vars_ue Pointer to UE variables
+    @param mcs MCS for MBSFN
+    @param eNB_id index of eNB in ue variables
+*/
+void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int eNB_id);
+
+/** \brief Receiver processing for MBSFN, symbols can be done separately for time/CPU-scheduling purposes
+    @param phy_vars_ue Pointer to UE variables
+    @param eNB_id index of eNB in ue variables
+    @param subframe Subframe index of PMCH
+    @param symbol Symbol index on which to act
+*/
+int rx_pmch(PHY_VARS_UE *phy_vars_ue,
+	    unsigned char eNB_id,
+	    u8 subframe,
+	    unsigned char symbol);
+
+/** \brief Dump OCTAVE/MATLAB files for PMCH debugging
+    @param phy_vars_ue Pointer to UE variables
+    @param eNB_id index of eNB in ue variables
+    @param coded_bits_per_codeword G from 36.211
+    @returns 0 on success
+*/
+void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword);
 
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
@@ -1331,14 +1383,14 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u32 length);
 
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
-		      u8 num_pdcch_symbols,
+		      int mbsfn_flag,
 		      LTE_eNB_DLSCH_t *dlsch,
 		      int G,
 		      u8 q,
 		      u8 Ns);
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
-			u8 num_pdcch_symbols,
+			int mbsfn_flag,
 			LTE_UE_DLSCH_t *dlsch,
 			int G,
 			s16* llr,

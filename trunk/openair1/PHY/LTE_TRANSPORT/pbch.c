@@ -58,6 +58,7 @@ extern __m128i zero;
   
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
+#define INTERFERENCE_MITIGATION 1
 
 #ifdef OPENAIR2
 #include "PHY_INTERFACE/defs.h"
@@ -79,9 +80,9 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
   u8 pbch_a[PBCH_A>>3];
   u8 RCC;
 
-  u32 nsymb = (frame_parms->Ncp==0) ? 14:12;
-  u32 pilots;
-  u32 second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
+  u32 nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
+  u32 pilots,pilots_2;
+  u32 second_pilot = (frame_parms->Ncp==NORMAL) ? 4 : 3;
   u32 jj=0;
   u32 re_allocated=0;
   u32 rb, re_offset, symbol_offset;
@@ -89,7 +90,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
   pbch_D    = 16+PBCH_A;
 
-  pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
+  pbch_E  = (frame_parms->Ncp==NORMAL) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
   //  pbch_E_bytes = pbch_coded_bits>>3;
 
   if (frame_mod4==0) {
@@ -229,8 +230,10 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
   for (l=(nsymb>>1);l<(nsymb>>1)+4;l++) {
     
     pilots=0;
+    pilots_2 = 0;
     if ((l==0) || (l==(nsymb>>1))){
       pilots=1;
+      pilots_2=1;
     }
 
     if ((l==1) || (l==(nsymb>>1)+1)){
@@ -269,7 +272,11 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 			 pilots,
 			 2,
 			 0,
-			 (amp*3)/2,
+#ifdef INTERFERENCE_MITIGATION
+			 (pilots_2==1)?(amp/3):amp,
+#else
+			 amp,
+#endif
 			 NULL,
 			 &re_allocated,
 			 0,

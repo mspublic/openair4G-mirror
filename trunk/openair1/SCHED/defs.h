@@ -360,6 +360,7 @@ u8 pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,u32 frame, u8 n);
 
 u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
 
+int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rnti, unsigned char subframe);
 
 
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);

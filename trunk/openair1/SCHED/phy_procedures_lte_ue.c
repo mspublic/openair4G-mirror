@@ -2261,7 +2261,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
 	  if (abstraction_flag == 0) {
 	    dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			       0,
 			       phy_vars_ue->dlsch_ue[0][0],
 			       get_G(&phy_vars_ue->lte_frame_parms,
 				     phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
@@ -2309,18 +2309,19 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	  }
 	  else {
-	    LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d)\n",
+	    LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d,TBS %d)\n",
 		  phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 		  harq_pid,phy_vars_ue->frame,last_slot>>1,
 		  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
-		  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+		  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
+		  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
 #ifdef DEBUG_PHY_PROC	 
 #ifdef DEBUG_DLSCH
 	    int j;
-	    LOG_T(PHY,"dlsch harq_pid %d (rx): \n",phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
+	    LOG_D(PHY,"dlsch harq_pid %d (rx): \n",phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
 	    for (j=0;j<phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS>>3;j++)
-	      LOG_T(PHY,"%x.",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b[j]);
-	    LOG_T(PHY,"\n");
+	      printf("%x.",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b[j]);
+	    printf("\n");
 #endif 
 #endif	    
 #ifdef OPENAIR2
@@ -2436,7 +2437,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    */
 #endif
 	    dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			       0,
 			       phy_vars_ue->dlsch_ue_SI[eNB_id],
 			       get_G(&phy_vars_ue->lte_frame_parms,
 				     phy_vars_ue->dlsch_ue_SI[eNB_id]->nb_rb,
@@ -2571,7 +2572,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
 	  dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
-			     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			     0,
 			     phy_vars_ue->dlsch_ue_ra[eNB_id],
 			     get_G(&phy_vars_ue->lte_frame_parms,
 				   phy_vars_ue->dlsch_ue_ra[eNB_id]->nb_rb,

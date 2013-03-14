@@ -18,7 +18,7 @@ static uint32_t bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16
 //#define RM_DEBUG_TX 1
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
-// #define RM_DEBUG_CC 1
+//#define RM_DEBUG_CC 1
  
 uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
 
@@ -458,11 +458,17 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
 
   for (;(ind<Ncb)&&(k<E);ind++) {
     e2[k]=w[ind];
+#ifdef RM_DEBUG_TX
+    printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
+#endif
     if (w[ind] != LTE_NULL) k++;
   }
   while(k<E) {
     for (ind=0;(ind<Ncb)&&(k<E);ind++) {
       e2[k] = w[ind];
+#ifdef RM_DEBUG_TX
+    printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
+#endif
       if (w[ind] != LTE_NULL) k++;
     }
   }
@@ -637,11 +643,19 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
   k=0;
 
   for (;(ind<Ncb)&&(k<E);ind++) {
-    if (dummy_w[ind] != LTE_NULL) w[ind] += soft_input2[k++];
+    if (dummy_w[ind] != LTE_NULL) { w[ind] += soft_input2[k++];
+#ifdef RM_DEBUG
+      printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);
+#endif
+    }
   }
   while(k<E) {
     for (ind=0;(ind<Ncb)&&(k<E);ind++) {
-      if (dummy_w[ind] != LTE_NULL) w[ind] += soft_input2[k++];
+      if (dummy_w[ind] != LTE_NULL) { w[ind] += soft_input2[k++];
+#ifdef RM_DEBUG
+	printf("RM_RX k%d Ind: %d (%d)(soft in %d)\n",k-1,ind,w[ind],soft_input2[k-1]);
+#endif
+      }
     }
   }
 
