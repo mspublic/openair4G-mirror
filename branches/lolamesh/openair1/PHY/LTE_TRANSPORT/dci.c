@@ -510,15 +510,28 @@ s32 pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   s16* rxF = (s16*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   s16* rxF_i = (s16*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
   s16* rho = (s16*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  s16* llr = &pdcch_llr8in[2*symbol*frame_parms->N_RB_DL*((symbol==1) ? 8 : 0)];
+  s16* llr16 = &pdcch_llr16[2*symbol*frame_parms->N_RB_DL*12];
+  s8* llr = (s8*)&pdcch_llr8in[symbol*frame_parms->N_RB_DL*12];
 
   //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
   
+  int i;
+  int len = frame_parms->N_RB_DL*((symbol==0) ? 8 : 12);
+
   qpsk_qpsk((s16 *)rxF,
 	    (s16 *)rxF_i,
-	    (s16 *)llr,
+	    (s16 *)llr16,
 	    (s16 *)rho,
 	    frame_parms->N_RB_DL*((symbol==0) ? 8 : 12));
+
+  for(i = 0; i < 2*len; i++) {
+    if(llr16[i] < -32)
+      llr[i] = -32;
+    else if(llr16[i] > 31)
+      llr[i] = 31;
+    else
+      llr[i] = llr16[i];
+  }
 
   return(0);
 }
@@ -1767,7 +1780,7 @@ s32 rx_pdcch_icancel(LTE_UE_COMMON **lte_ue_common_vars,
                         lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,
                         lte_ue_pdcch_vars[eNB_id_i]->rxdataF_comp,
                         lte_ue_pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                        0,
+                        lte_ue_pdcch_vars[eNB_id]->llr16,
                         lte_ue_pdcch_vars[eNB_id]->llr,
                         s);
 
@@ -2167,7 +2180,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 	    for (i=0;i<6;i++) {
 	      if ((i!=(nushiftmod3))&&(i!=(nushiftmod3+3))) {
-                if(lprime > 0)
+                //if(lprime > 0)
 		txdataF[0][tti_offset+i] = wbar[0][mprime];
 		if (frame_parms->nb_antennas_tx_eNB > 1)
 		  txdataF[1][tti_offset+i] = wbar[1][mprime];
