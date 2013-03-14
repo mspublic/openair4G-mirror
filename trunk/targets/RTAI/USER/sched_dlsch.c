@@ -175,6 +175,7 @@ static void * dlsch_thread(void *param) {
 			       phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
 			       get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
 			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			       phy_vars_ue->frame,
 			       dlsch_subframe[dlsch_thread_index]),
 			 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
 			 0,
