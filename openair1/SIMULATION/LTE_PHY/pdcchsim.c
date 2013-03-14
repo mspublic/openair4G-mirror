@@ -660,7 +660,7 @@ int main(int argc, char **argv) {
       }
       generate_pilots(PHY_vars_eNB,
 		      PHY_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		      1024*4,
+		      1024*2,
 		      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
  	
       if(interf1) {
@@ -673,7 +673,7 @@ int main(int argc, char **argv) {
         }
         generate_pilots(PHY_vars_eNB1,
                         PHY_vars_eNB1->lte_eNB_common_vars.txdataF[0],
-                        1024*4,
+                        1024*2,
                         LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
       }
 
