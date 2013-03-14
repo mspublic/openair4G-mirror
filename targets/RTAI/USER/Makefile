@@ -9,7 +9,7 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -O2
+CFLAGS += -O1
 
 SRC = synctest.c condtest.c
 
@@ -53,14 +53,16 @@ CFLAGS += $(L2_incl) $(UTIL_incl)
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
+CFLGAS += -DNEW_FFT
+
 ifeq ($(XFORMS),1)
 CFLAGS += -DXFORMS -I/usr/include/X11
 LDFLAGS += -lforms
-OBJ += lte_scope.o
+OBJ += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 OBJ += stats.o
 endif
 
-CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3
+CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
 CFLAGS += -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
@@ -70,7 +72,8 @@ ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
 else
 #only for EXPRESS MIMO
-CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #162 #560 with PXB
+#CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #this is for ExpressMIMO 1
+CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=45 #this is for ExpressMIMO 2
 endif
 
 ifeq ($(HARD_RT),1)
@@ -79,6 +82,7 @@ endif
 
 ifeq ($(EMOS),1)
 CFLAGS += -DEMOS
+LDFLAGS += -lgps
 endif
 
 ifeq ($(NAS),1)
@@ -121,29 +125,28 @@ drivers:
 run: condtest
 	rtai-load condtest --verbose
 
-run_eNB_test: synctest 
+run_eNB_test: 
 	rtai-load eNB_test --verbose
 
-run_eNB: synctest
+run_eNB: 
 	rtai-load eNB --verbose
 
-run_UE: synctest
+run_UE: 
 	rtai-load UE --verbose
 
-run_UE0: synctest
+run_UE0:
 	rtai-load UE0 --verbose
 
-run_UE0prach: synctest
+run_UE0prach:
 	rtai-load UE0prach --verbose
 
-
-run_UE1prach: synctest
+run_UE1prach:
 	rtai-load UE1prach --verbose
 
-run_UE2prach: synctest
+run_UE2prach:
 	rtai-load UE2prach --verbose
 
-run_UE0noL2: synctest
+run_UE0noL2:
 	rtai-load UE0noL2 -- verbose
 
 run_UE1noL2: 
@@ -152,13 +155,13 @@ run_UE1noL2:
 run_UE2noL2: 
 	rtai-load UE2noL2 --verbose
 
-run_UE0calib: synctest
+run_UE0calib:
 	rtai-load UE0calib --verbose
 
-run_UE0calibmed: synctest
+run_UE0calibmed:
 	rtai-load UE0calibmed --verbose
 
-run_UE0calibbyp: synctest
+run_UE0calibbyp:
 	rtai-load UE0calibbyp --verbose
 
 run_UE1: 
@@ -177,16 +180,16 @@ run_eNB2:
 	rtai-load eNB2 --verbose
 
 clean:
-	rm -rf condtest synctest
 	rm -rf $(OBJ) $(RTAI_OBJ)
 
 cleanall: clean
+	rm -rf condtest synctest lte-softmodem
 	rm -rf synctest_eNB synctest_UE
 	rm -rf $(ASN1_MSG_OBJS1)
 
 show:
 	@echo $(CFLAGS)
-	@echo $(OBJ)
+	@echo $(OBJ) $(RTAI_OBJ)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)

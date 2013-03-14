@@ -3,21 +3,22 @@ condtest:lxrt+sem+mbx+msg:!sudo ./condtest;sleep 1;popall:control_c
 msg_test:lxrt+sem+mbx+msg:!sudo ./msg_test;sleep 1;popall:control_c
 msg_many:lxrt+sem+mbx+msg:!sudo ./msg_test;sleep 1;popall:control_c
 eNB:lxrt+sem+mbx+msg:!sudo ./synctest;sleep 1;popall:control_c
-eNB_test:lxrt+sem+mbx+msg+smi:!sudo ./synctest -S;sleep 1;popall:control_c
+eNB_test:lxrt+sem+mbx+msg+smi:!sudo ./lte-softmodem -S -F enb2tx;sleep 1;popall:control_c
 UE:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -T 108;sleep 1;popall:control_c
-UE0:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1912606900 -F ue2;sleep 1;popall:control_c
-UE0noL2:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1912606900 -F ue2 --no-L2-connect;sleep 1;popall:control_c
-UE0calib:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1912600000 --calib-ue-rx -70 ;sleep 1;popall:control_c
-UE0calibmed:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1912600000 --calib-ue-rx-med -70 ;sleep 1;popall:control_c
-UE0calibbyp:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -C 1912600000 --calib-ue-rx-byp -70 ;sleep 1;popall:control_c
-UE0prach:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1912606900 -F ue1 --debug-ue-prach;sleep 1;popall:control_c
-UE1:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue1 ;sleep 1;popall:control_c
-UE1prach:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue1 --debug-ue-prach;sleep 1;popall:control_c
-UE1noL2:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue1 --no-L2-connect;sleep 1;popall:control_c
-UE2:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue2;sleep 1;popall:control_c
-UE2prach:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue2 --debug-ue-prach;sleep 1;popall:control_c
-UE2noL2:lxrt+sem+mbx+msg:!sudo ./synctest_UE -U -d -C 1907600000 -F ue2 --no-L2-connect;sleep 1;popall:control_c
-eNB0:lxrt+sem+mbx+msg:!sudo ./synctest_eNB -C 1907600000 -F enb2tx -d;sleep 1;popall:control_c
-eNB1:lxrt+sem+mbx+msg:!sudo ./synctest_eNB -C 1907600000 -F ue1 -d;sleep 1;popall:control_c
-eNB2:lxrt+sem+mbx+msg:!sudo ./synctest_eNB -C 1907600000 -F ue2 -d;sleep 1;popall:control_c
+#UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907598464 -F ue2;sleep 1;popall:control_c
+UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907593460 -F ex2_2;sleep 1;popall:control_c
+UE0noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912606900 -F ue2 --no-L2-connect;sleep 1;popall:control_c
+UE0calib:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912600000 --calib-ue-rx -70 ;sleep 1;popall:control_c
+UE0calibmed:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912600000 --calib-ue-rx-med -70 ;sleep 1;popall:control_c
+UE0calibbyp:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912600000 --calib-ue-rx-byp -70 ;sleep 1;popall:control_c
+UE0prach:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912606900 -F ue1 --debug-ue-prach;sleep 1;popall:control_c
+UE1:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue1 ;sleep 1;popall:control_c
+UE1prach:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue1 --debug-ue-prach;sleep 1;popall:control_c
+UE1noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue1 --no-L2-connect;sleep 1;popall:control_c
+UE2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2;sleep 1;popall:control_c
+UE2prach:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --debug-ue-prach;sleep 1;popall:control_c
+UE2noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --no-L2-connect;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F enb2tx -d;sleep 1;popall:control_c
+eNB1:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F ue1 -d;sleep 1;popall:control_c
+eNB2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F ue2 -d;sleep 1;popall:control_c
 
