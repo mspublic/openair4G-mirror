@@ -1774,7 +1774,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
   //msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
   while((nb_rb >0) && (check2 < mac_xface->lte_frame_parms->N_SUBBANDS_DL)){
     if(rballoc[check2] == 1){
-      rballoc_dci |= (1<<((12-check1)>>1));
+      rballoc_dci |= (1<<(((mac_xface->lte_frame_parms->N_SUBBANDS_DL-1)-check1)>>1));
       if((check2 == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
      	nb_rb = nb_rb -1;
       else
