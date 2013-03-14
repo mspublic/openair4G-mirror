@@ -203,19 +203,34 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
-
-/*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP)
+#ifdef Rel10
+/*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP,  u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  module_idP         Virtualized module identifier.
 * \param[in]  frame              Frame index.
 * \param[in]  eNB_flag           Flag to indicate eNB (1) or UE (0)
+* \param[in]  UE_index           Index of UE in eNB RRC
+* \param[in]  srb2add_listP      SRB configuration list to be created.
+* \param[in]  drb2add_listP      DRB configuration list to be created.
+* \param[in]  drb2release_listP  DRB configuration list to be released.
+* \param[in]  SessionInfo_listP  eMBMS Session info list to be created.
+* \return     A status about the processing, OK or error code.
+*/
+public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, u8_t UE_index, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*, MBMS_SessionInfoList_r9_t *SessionInfo_listP);)
+#else
+/*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP,  u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP)
+* \brief  Function for RRC to configure a Radio Bearer.
+* \param[in]  module_idP         Virtualized module identifier.
+* \param[in]  frame              Frame index.
+* \param[in]  eNB_flag           Flag to indicate eNB (1) or UE (0)
+* \param[in]  UE_index           Index of UE in eNB RRC
 * \param[in]  srb2add_listP      SRB configuration list to be created.
 * \param[in]  drb2add_listP      DRB configuration list to be created.
 * \param[in]  drb2release_listP  DRB configuration list to be released.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*);)
-
+public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, u8_t UE_index, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*);)
+#endif
 
 /*! \fn rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, u32_t frame, rb_id_t rb_idP)
 * \brief  Remove a RLC protocol instance from a radio bearer.
