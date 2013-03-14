@@ -808,6 +808,14 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     u8 eNB_id,
 	     MIMO_mode_t mimo_mode,
 	     u8 is_secondary_ue);
+
+s32 rx_pdcch_icancel(LTE_UE_COMMON **lte_ue_common_vars,
+                     LTE_UE_PDCCH **lte_ue_pdcch_vars,
+                     LTE_DL_FRAME_PARMS *frame_parms,
+                     u8 subframe,
+                     u8 eNB_id,
+                     u8 eNB_id_i,
+                     MIMO_mode_t mimo_mode);
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
 @param phy_vars_ue Pointer to UE variables
 @param tot_metric Pointer to variable containing maximum metric under framing hypothesis (to be compared to other hypotheses

@@ -450,7 +450,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
       
     }
   }//abstraction_flag =0
-  //#ifdef PHY_ABSTRACTION
+#ifdef PHY_ABSTRACTION
   else {
     LOG_I(PHY,"Initial sync phase in abstraction mode \n");
     frame_parms->Ncp=oai_emulation.info.extended_prefix_flag;
@@ -497,7 +497,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
 	frame_parms->phich_config_common.phich_duration,
 	frame_parms->phich_config_common.phich_resource);
   }
-  //#endif  
+#endif  
   return ret;
 }
 
