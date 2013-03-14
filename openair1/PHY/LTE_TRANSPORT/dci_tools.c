@@ -158,12 +158,12 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
   case 25:
     if (ra_header == 0) {// Type 0 Allocation
       
-      for (i=0;i<12;i++) {
+      for (i=12;i>0;i--) {
 	if ((rb_alloc&(1<<i)) != 0)
-	  rb_alloc2[0] |= (3<<((2*i)));
+	  rb_alloc2[0] |= (3<<((2*(12-i))));
 	//      printf("rb_alloc2 (type 0) %x\n",rb_alloc2);
       }
-      if ((rb_alloc&(1<<12)) != 0)
+      if ((rb_alloc&1) != 0)
 	rb_alloc2[0] |= (1<<24);
     }
     else {
@@ -270,11 +270,11 @@ uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL) {
   case 25:
     if (ra_header == 0) {// Type 0 Allocation
       
-      for (i=0;i<12;i++) {
+      for (i=12;i>0;i--) {
 	if ((rb_alloc&(1<<i)) != 0)
 	  nprb += 2;
       }
-      if ((rb_alloc&(1<<12)) != 0)
+      if ((rb_alloc&1) != 0)
 	nprb += 1;
     }
     else {

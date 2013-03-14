@@ -974,6 +974,8 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
 
     m11p = (__m128i*)m_11;
     m10p = (__m128i*)m_10;
+    __m128i max_val=_mm_set1_epi8(32);
+    __m128i zeros=_mm_set1_epi8(0);
 
     for (k=0;
 	 k<l;
@@ -1019,6 +1021,8 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[5]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[6]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[7]);
+      __m128i tmp = _mm_cmpgt_epi8(alpha_max,max_val);
+      alpha_max = _mm_blendv_epi8(zeros,alpha_max,tmp);
 
       alpha_ptr[0] = _mm_subs_epi8(alpha_ptr[0],alpha_max);
       alpha_ptr[1] = _mm_subs_epi8(alpha_ptr[1],alpha_max);
@@ -1267,6 +1271,7 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[7]);
 
+
       beta_ptr[0] = _mm_subs_epi16(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi16(beta_ptr[1],beta_max);
       beta_ptr[2] = _mm_subs_epi16(beta_ptr[2],beta_max);
@@ -1427,7 +1432,9 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
 	   _mm_extract_epi8(beta_ptr[7],14),
 	   _mm_extract_epi8(beta_ptr[7],15));
  #endif
-      
+    __m128i max_val=_mm_set1_epi8(32); 
+    __m128i zeros=_mm_set1_epi8(0);
+  
     for (k=(frame_length>>4)-1;k>=((rerun_flag==0)?0:((frame_length-L)>>4));k--){
 
       m11_128=((__m128i*)m_11)[k];  
@@ -1484,6 +1491,9 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[7]);
 
+      __m128i tmp = _mm_cmpgt_epi8(beta_max,max_val);
+      beta_max = _mm_blendv_epi8(zeros,beta_max,tmp);
+ 
       beta_ptr[0] = _mm_subs_epi8(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi8(beta_ptr[1],beta_max);
       beta_ptr[2] = _mm_subs_epi8(beta_ptr[2],beta_max);

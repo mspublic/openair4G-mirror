@@ -1271,7 +1271,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		       &phy_vars_eNB->dlsch_interleaving_stats);
 	
 	dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,
-			 num_pdcch_symbols,
+			 0,
 			 phy_vars_eNB->dlsch_eNB_SI,
 			 get_G(&phy_vars_eNB->lte_frame_parms,
 			       phy_vars_eNB->dlsch_eNB_SI->nb_rb,
@@ -1376,7 +1376,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 	//	phy_vars_eNB->dlsch_eNB_ra->rnti = RA_RNTI;
 	dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,
-			 num_pdcch_symbols,
+			 0,
 			 phy_vars_eNB->dlsch_eNB_ra,
 			 get_G(&phy_vars_eNB->lte_frame_parms,
 			       phy_vars_eNB->dlsch_eNB_ra->nb_rb,
@@ -1485,7 +1485,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			 &phy_vars_eNB->dlsch_interleaving_stats);
 	  // 36-211
 	  dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,
-			   num_pdcch_symbols,
+			   0,
 			   phy_vars_eNB->dlsch_eNB[(u8)UE_id][0],
 			   get_G(&phy_vars_eNB->lte_frame_parms,
 				 phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,

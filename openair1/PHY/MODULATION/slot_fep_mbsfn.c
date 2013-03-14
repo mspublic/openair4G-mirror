@@ -1,7 +1,7 @@
 #include "PHY/defs.h"
 #include "MAC_INTERFACE/extern.h"
 #include "defs.h"
-#define DEBUG_FEP
+//#define DEBUG_FEP
 
 #define SOFFSET 0
 
@@ -19,9 +19,33 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
   unsigned char frame_type = 0; // Frame Type: 0 - FDD, 1 - TDD;
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
-  unsigned int subframe_offset,subframe_offset_F;
+  unsigned int subframe_offset;
  
   int i;
+  unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
+  void (*dft)(int16_t *,int16_t *, int);
+
+  switch (frame_parms->log2_symbol_size) {
+
+  case 7:
+    dft = dft128;
+    break;
+  case 8:
+    dft = dft256;
+    break;
+  case 9:
+    dft = dft512;
+    break;
+  case 10:
+    dft = dft1024;
+    break;
+  case 11:
+    dft = dft2048;
+    break;
+  default:
+    dft = dft512;
+    break;
+  }
     
   if (no_prefix) {
     subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * subframe;
@@ -31,7 +55,6 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
     subframe_offset = frame_parms->samples_per_tti * subframe;
 
   }
-  subframe_offset_F = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * subframe;
 
 
   if (l<0 || l>=12) {
@@ -54,6 +77,14 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
     memset(&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*l],0,2*frame_parms->ofdm_symbol_size*sizeof(int));
 
     if (l==0) {
+	start_meas(&phy_vars_ue->rx_dft_stats);
+	dft((int16_t *)&ue_common_vars->rxdata[aa][(sample_offset +
+						    nb_prefix_samples0 + 
+						    subframe_offset -
+						    SOFFSET) % frame_length_samples],
+	    (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
+	stop_meas(&phy_vars_ue->rx_dft_stats);
+	/*
       fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
 					       nb_prefix_samples0 + 
 					       subframe_offset -
@@ -64,9 +95,27 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 	  frame_parms->log2_symbol_size,
 	  frame_parms->log2_symbol_size>>1,
 	  0);
+	*/
     }
     else {
+      if ((sample_offset +
+	   (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
+	   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
+	   subframe_offset-
+	   SOFFSET) > (frame_length_samples - frame_parms->ofdm_symbol_size))
+	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
+	       (short *)&ue_common_vars->rxdata[aa][0],
+	       frame_parms->ofdm_symbol_size*sizeof(int));
 
+	start_meas(&phy_vars_ue->rx_dft_stats);
+	dft((int16_t *)&ue_common_vars->rxdata[aa][(sample_offset +
+						    (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
+						    (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
+						    subframe_offset-
+						    SOFFSET) % frame_length_samples],
+	    (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
+	stop_meas(&phy_vars_ue->rx_dft_stats);
+	/*
       fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
 					       (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
 					       (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
@@ -78,12 +127,13 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
 	  frame_parms->log2_symbol_size,
 	  frame_parms->log2_symbol_size>>1,
 	  0);
+      */
     }
-
+    /*
     memcpy(&ue_common_vars->rxdataF2[aa][2*subframe_offset_F+2*frame_parms->ofdm_symbol_size*l],
 	   &ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*l],
 	   2*frame_parms->ofdm_symbol_size*sizeof(int));
-
+    */
   }
   //if ((l==0) || (l==(4-frame_parms->Ncp))) {
 // changed to invoke MBSFN channel estimation in symbols 2,6,10    

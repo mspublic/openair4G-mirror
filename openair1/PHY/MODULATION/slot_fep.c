@@ -18,7 +18,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
-  unsigned int subframe_offset,subframe_offset_F;
+  unsigned int subframe_offset;//,subframe_offset_F;
   unsigned int slot_offset;
   int i;
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
@@ -54,7 +54,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
     subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
     slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
   }
-  subframe_offset_F = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
+  //  subframe_offset_F = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
 
 
   if (l<0 || l>=7-frame_parms->Ncp) {

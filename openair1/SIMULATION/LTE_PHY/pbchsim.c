@@ -447,7 +447,7 @@ int main(int argc, char **argv) {
 				   channel_model,
 				   BW,
 				   0,
-				   0,
+				   4,
 				   0);
   
   if (interf2>-20)
@@ -456,7 +456,7 @@ int main(int argc, char **argv) {
 				   channel_model,
 				   BW,
 				   0,
-				   0,
+				   8,
 				   0);
   
 
@@ -970,7 +970,7 @@ int main(int argc, char **argv) {
 				0,
 				1,
 				0);
-	    
+	   /* 
 	    if (trial%100 == 0) {
 	      msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 		  trial,
@@ -992,7 +992,7 @@ int main(int argc, char **argv) {
 		  trial, freq_offset);
 	      
 	    }
-	    
+	   */ 
 	  }
 	  
 	  if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?4:3)) {

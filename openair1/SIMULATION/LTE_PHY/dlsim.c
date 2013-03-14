@@ -9,9 +9,6 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
-#ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
-#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "SCHED/defs.h"
@@ -148,64 +145,6 @@ uint64_t DLSCH_alloc_pdu_1[2];
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
   int aa, slot_offset, slot_offset_F;
-  int nthreads,tid;
-
-#ifdef IFFT_FPGA
-  s32 **txdataF2;
-  int i, l;
-
-  txdataF2    = (s32 **)malloc(2*sizeof(s32*));
-  txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  
-  bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  
-  slot_offset_F = (next_slot)*(frame_parms->N_RB_DL*12)*((frame_parms->Ncp==1) ? 6 : 7);
-  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-  
-  //write_output("eNB_txsigF0.m","eNB_txsF0", lte_eNB_common_vars->txdataF[eNB_id][0],300*120,1,4);
-  //write_output("eNB_txsigF1.m","eNB_txsF1", lte_eNB_common_vars->txdataF[eNB_id][1],300*120,1,4);
-  
-  
-  // do talbe lookup and write results to txdataF2
-  for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-    
-    l = slot_offset_F;	
-    for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7);i++) 
-      if ((i%512>=1) && (i%512<=150))
-	txdataF2[aa][i] = ((s32*)mod_table)[txdataF[aa][l++]];
-      else if (i%512>=362)
-	txdataF2[aa][i] = ((s32*)mod_table)[txdataF[aa][l++]];
-      else 
-	txdataF2[aa][i] = 0;
-    
-  }
-
- 
-
-
-  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    if (frame_parms->Ncp == 1)
-      PHY_ofdm_mod(txdataF2[aa],        // input
-		   &txdata[aa][slot_offset],         // output
-		   frame_parms->log2_symbol_size,                // log2_fft_size
-		   6,                 // number of symbols
-		   frame_parms->nb_prefix_samples,               // number of prefix samples
-		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		   frame_parms->rev,           // bit-reversal permutation
-		   CYCLIC_PREFIX);
-    else {
-      normal_prefix_mod(txdataF2[aa],&txdata[aa][slot_offset],7,frame_parms);
-    }
-  }
-  
-
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  
-#else //IFFT_FPGA
 
   slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
@@ -231,8 +170,6 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
   
 
   }
-
-#endif //IFFT_FPGA
 
 }
 
@@ -269,20 +206,20 @@ int main(int argc, char **argv) {
   unsigned char *input_buffer[2];
   unsigned short input_buffer_length;
   unsigned int ret;
-  unsigned int coded_bits_per_codeword,nsymb,dci_cnt,tbs;
+  unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
  
-  unsigned int tx_lev,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
+  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
   int re_allocated;
   FILE *bler_fd;
   char bler_fname[256];
   FILE *tikz_fd;
   char tikz_fname[256];
 
-  FILE *input_trch_fd;
+  FILE *input_trch_fd=NULL;
   unsigned char input_trch_file=0;
   FILE *input_fd=NULL;
   unsigned char input_file=0;
-  char input_val_str[50],input_val_str2[50];
+  //  char input_val_str[50],input_val_str2[50];
 
   char input_trch_val[16];
   double channelx,channely;
@@ -308,7 +245,7 @@ int main(int argc, char **argv) {
   int n=0;
   int abstx=0;
   int iii;
-  FILE *csv_fd;
+  FILE *csv_fd=NULL;
   char csv_fname[512];
   int ch_realization;
   int pmi_feedback=0;
@@ -318,7 +255,7 @@ int main(int argc, char **argv) {
   // int ii;
   int bler;
   double blerr[4],uncoded_ber,avg_ber;
-  short *uncoded_ber_bit;
+  short *uncoded_ber_bit=NULL;
   u8 N_RB_DL=25,osf=1;
   u8 fdd_flag = 0;
 #ifdef XFORMS
@@ -327,10 +264,9 @@ int main(int argc, char **argv) {
 #endif
   u32 DLSCH_RB_ALLOC = 0x1fff;
   int numCCE;
-  int dci_length_bytes,dci_length;
+  int dci_length_bytes=0,dci_length=0;
   double BW = 7.68;
-  int common_flag=0,TPC;
-  int number_of_cards = 1;
+  int common_flag=0,TPC=0;
 
   double cpu_freq_GHz;
   time_stats_t ts,sts,usts;
@@ -1222,7 +1158,7 @@ int main(int argc, char **argv) {
       else {
 	i=0;
 	while ((!feof(input_trch_fd)) && (i<input_buffer_length<<3)) {
-	  fscanf(input_trch_fd,"%s",input_trch_val);
+	  ret=fscanf(input_trch_fd,"%s",input_trch_val);
 	  if (input_trch_val[0] == '1')
 	    input_buffer[k][i>>3]+=(1<<(7-(i&7)));
 	  if (i<16)
@@ -1311,11 +1247,7 @@ int main(int argc, char **argv) {
 	
 	  //  printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
 	  for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
-#ifdef IFFT_FPGA
-	    memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
-#else
 	    memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-#endif
 	  }
 	
 	  if (input_fd==NULL) {
@@ -1513,8 +1445,7 @@ int main(int argc, char **argv) {
 		       tbs,
 		       get_Qm(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs),
 		       num_pdcch_symbols,
-		       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi,
-		       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx);
+		       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi);
 
 	     
 	      /*
@@ -1556,7 +1487,7 @@ int main(int argc, char **argv) {
 	      PHY_vars_eNB->dlsch_eNB[k][0]->rnti = (common_flag==0) ? n_rnti+k : SI_RNTI;	  
 	      start_meas(&sts);	      
 	      dlsch_scrambling(&PHY_vars_eNB->lte_frame_parms,
-			       num_pdcch_symbols,
+			       0,
 			       PHY_vars_eNB->dlsch_eNB[k][0],
 			       coded_bits_per_codeword,
 			       0,
@@ -1580,7 +1511,7 @@ int main(int argc, char **argv) {
 	      //	      if (k==1)
 	      start_meas(&PHY_vars_eNB->dlsch_modulation_stats);	      
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
-                          AMP,
+					      AMP,
 					      subframe,
 					      &PHY_vars_eNB->lte_frame_parms,
 					      num_pdcch_symbols,
@@ -1624,22 +1555,11 @@ int main(int argc, char **argv) {
 			(subframe*2)+2,
 			&PHY_vars_eNB->lte_frame_parms);
 
-#ifdef IFFT_FPGA
-	    if (n_frames==1) {
-	      write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][subframe*nsymb*300],300*nsymb,1,4);
-	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-		write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][1][subframe*nsymb*300],300*nsymb,1,4);
-	      write_output("txsigF20.m","txsF20", txdataF2[0], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-		write_output("txsigF21.m","txsF21", txdataF2[1], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-	    }
-#else //IFFT_FPGA
 	    if (n_frames==1) {
 	      write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 	      if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
 		write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 	    }
-#endif
 
 	    tx_lev = 0;
 	    for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
@@ -2258,7 +2178,7 @@ int main(int argc, char **argv) {
 					  0,subframe);
 	  start_meas(&usts);	      
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
-			     PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
+			     0,
 			     PHY_vars_UE->dlsch_ue[0][0],
 			     coded_bits_per_codeword,
 			     PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],

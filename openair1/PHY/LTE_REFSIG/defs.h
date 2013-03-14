@@ -33,7 +33,7 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_mbsfn_table[10]
 @param amp Q15 amplitude
 @param Ns Slot number (0..19)
 @param l symbol (0,1) - Note 1 means 3!
-@param p antenna intex
+@param p antenna index
 */
 
 
@@ -44,11 +44,17 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 		     unsigned char l,
 		     unsigned char p);
 
+/*! \brief This function generates the MBSFN reference signal sequence (36-211, Sec 6.10.1.2)
+@param phy_vars_eNB Pointer to eNB variables
+@param output Output vector for OFDM symbol (Frequency Domain)
+@param amp Q15 amplitude
+@param Ns Slot number (0..19)
+@param l symbol (0,1,2) 
+*/
 int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 		 short amp,
 		 int subframe,
-		 unsigned char l,
-		 unsigned char p);
+		 unsigned char l);
 
 
 /*!\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception

@@ -9,26 +9,17 @@
 #include "PHY/defs.h"
 
 //extern unsigned int lte_gold_table[10][3][42];
-#define DEBUG_DL_MBSFN
+//#define DEBUG_DL_MBSFN
 
 int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 		 short amp,
 		 int subframe,
-		 unsigned char l,
-		 unsigned char p) {
+		 unsigned char l) {
 
   unsigned int mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0,a;
   mod_sym_t qpsk[4];
 
-#ifdef IFFT_FPGA
-  // new mod table
-  qpsk[0] = 1;
-  qpsk[1] = 3;
-  qpsk[2] = 2;
-  qpsk[3] = 4;
-
-#else
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
   ((short *)&qpsk[0])[1] = a;
@@ -41,7 +32,6 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
   ((short *)&qpsk[3])[0] = -a;
   ((short *)&qpsk[3])[1] = -a;
   
-#endif
 
   mprime = 3*(110 - phy_vars_eNB->lte_frame_parms.N_RB_DL);
 
@@ -56,25 +46,16 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
       return(-1);
     }
 
-#ifdef IFFT_FPGA
-    k+=phy_vars_eNB->lte_frame_parms.N_RB_DL*6;
-#else  
     k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
-#endif   
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;   
     
-    #ifdef IFFT_FPGA
-    if (k >= phy_vars_eNB->lte_frame_parms.N_RB_DL*12) {
-      k-=phy_vars_eNB->lte_frame_parms.N_RB_DL*12;
-    }
-#else
     if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
       k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
     }
-#endif
+
     output[k] = qpsk[(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
     
@@ -91,7 +72,6 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
       printf("subframe %d, l %d output[%d] = (%d,%d)\n",subframe,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
 
-       printf("** k %d\n",k);
   }
   return(0);
 }
@@ -140,7 +120,7 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
       printf("subframe %d l %d output[%d] = (%d,%d)\n",subframe,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k++;
-       printf("** k %d\n",k);
+
   }
   return(0);
 }

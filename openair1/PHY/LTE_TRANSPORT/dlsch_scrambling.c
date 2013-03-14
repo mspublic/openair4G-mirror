@@ -44,7 +44,7 @@
 #include "extern.h"
 #include "PHY/extern.h"
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
-		      u8 num_pdcch_symbols,
+		      int mbsfn_flag,
 		      LTE_eNB_DLSCH_t *dlsch,
 		      int G,
 		      u8 q,
@@ -57,14 +57,20 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   reset = 1;
   // x1 is set in lte_gold_generic
-  x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
-
+  if (mbsfn_flag == 0) {
+    x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
+  }
+  else {
+    x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
+  }
   //  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
  
     for (j=0;j<32;j++,k++) {
-     e[k] = (e[k]&1) ^ ((s>>j)&1);
+      //      printf("scrambling %d : %d => ",k,e[k]);
+      e[k] = (e[k]&1) ^ ((s>>j)&1);
+      //      printf("%d\n",e[k]);
     }
    s = lte_gold_generic(&x1, &x2, 0);
   }
@@ -73,7 +79,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
-			u8 num_pdcch_symbols,
+			int mbsfn_flag,
 			LTE_UE_DLSCH_t *dlsch,
 			int G,
 			s16* llr,
@@ -87,14 +93,18 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   reset = 1;
   // x1 is set in first call to lte_gold_generic
 
-  x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
+  if (mbsfn_flag == 0)
+    x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
+  else
+    x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
   //  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
-    for (j=0;j<32;j++,k++)
-      //      if (((s>>j)&1)==0)
-      //llr[k] = -llr[k];
+    for (j=0;j<32;j++,k++) {
+      //      printf("unscrambling %d : %d => ",k,llr[k]);
       llr[k] = ((2*((s>>j)&1))-1)*llr[k];
+      //      printf("%d\n",llr[k]);
+    }
     s = lte_gold_generic(&x1, &x2, 0);
   }
 } 
