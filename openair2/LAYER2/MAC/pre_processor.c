@@ -128,10 +128,6 @@ void assign_rbs_required (unsigned char Mod_id,
   mac_rlc_status_resp_t rlc_status;
   unsigned char UE_id,granted_UEs,i=0;  
 
-  double snr_mcs[28]={-4.1130, -3.3830, -2.8420, -2.0480, -1.3230, -0.6120, 0.1080, 0.977, 1.7230, 2.7550, 3.1960, 3.8080, 4.6870, 5.6840, 6.6550, 7.7570, 8.3730, 9.3040, 9.5990, 10.9020, 11.7220, 12.5950, 13.4390, 14.8790, 15.8800, 16.4800, 17.8690, 18.7690};
-  int cqi_mcs[3][16] = {{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 27},{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 27},{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 19, 22, 24, 26, 27}};
-  double cqi_snr[16] = {-8, -7, -6.08, -5.252, -3.956, -2.604, -1.107, 0.87, 2.599, 4.79, 6.716, 8, 10.593, 13.286, 15.745, 18.5};
-  double snr_tm6=0;
 
   granted_UEs = find_dlgranted_UEs(Mod_id);
 
@@ -207,12 +203,7 @@ void assign_rbs_required (unsigned char Mod_id,
 	printf("Invalid CQI");
 	exit(-1);
       }
-
-    // for TM5, limit the MCS to 16QAM    
-    if((mac_xface->get_transmission_mode(Mod_id,rnti)==5) || (mac_xface->get_transmission_mode(Mod_id,rnti)==6))
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
-    
-    
+   
     
     
     if ((mac_get_rrc_status(Mod_id,1,next_ue) < RRC_RECONFIGURED)){
@@ -322,10 +313,10 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 				    unsigned char subframe,
 				    u8 *dl_pow_off,
 				    u16 *pre_nb_available_rbs,
-				    unsigned char rballoc_sub_UE[256][mac_xface->lte_frame_parms->N_SUBBANDS_DL]){
+				    unsigned char rballoc_sub_UE[256][mac_xface->lte_frame_parms->N_RBGS]){
 
-  unsigned char next_ue,next_ue1,next_ue2,rballoc_sub[mac_xface->lte_frame_parms->N_SUBBANDS_DL],harq_pid=0,harq_pid1=0,harq_pid2=0,round=0,round1=0,round2=0,total_ue_count=0;
-  unsigned char MIMO_mode_indicator[mac_xface->lte_frame_parms->N_SUBBANDS_DL];
+  unsigned char next_ue,next_ue1,next_ue2,rballoc_sub[mac_xface->lte_frame_parms->N_RBGS],harq_pid=0,harq_pid1=0,harq_pid2=0,round=0,round1=0,round2=0,total_ue_count=0;
+  unsigned char MIMO_mode_indicator[mac_xface->lte_frame_parms->N_RBGS];
   u16 UE_id,UE_id_sorted[256],granted_UEs,i,ii,j,nb_rbs_required[256],nb_rbs_required_remaining[256],nb_rbs_required_remaining_1[256],i1,i2,i3,r1=0,average_rbs_per_user=0;
   u16 rnti,rnti1,rnti2;
   LTE_eNB_UE_stats* eNB_UE_stats1;
@@ -341,7 +332,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
     dl_pow_off[i]  =2;
     pre_nb_available_rbs[i] = 0;
     nb_rbs_required_remaining[i] = 0;
-    for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++)
+    for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++)
       {
 	MIMO_mode_indicator[j] = 2;
 	rballoc_sub[j] = 0;
@@ -349,7 +340,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       }
   }
   
-  //printf("SUCCESS %d",mac_xface->lte_frame_parms->N_SUBBANDS_DL);
+  //printf("SUCCESS %d",mac_xface->lte_frame_parms->N_RBGS);
   //exit(-1);
   // Store the DLSCH buffer for each logical channel
   store_dlsch_buffer (Mod_id,frame,subframe);
@@ -387,7 +378,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
   
 
-  for(r1=0;r1<2;r1++){
+  for(r1=0;r1<2;r1++){ //Allocation to UEs is done in 2 rounds,1st round:average number of RBs allocated to each UE, 2nd round: remaining RBs are allocated to high priority UEs
 
     for(i=0; i<granted_UEs;i++)
       {
@@ -409,7 +400,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
 
 
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
 
 	  if((rballoc_sub[j] == 0) && (rballoc_sub_UE[next_ue][j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){
 
@@ -421,7 +412,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	    if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
 	      dl_pow_off[next_ue] = 1;
 
-	    if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
+	    if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
 	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
 	    }
@@ -450,7 +441,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
 
 
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
 
 	  if((rballoc_sub[j] == 0) && (rballoc_sub_UE[next_ue][j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){
 
@@ -462,7 +453,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	    if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
 	      dl_pow_off[next_ue] = 1;
 
-	    if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
+	    if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
 	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
 	    }
@@ -491,7 +482,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       
 
 
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
 
 	  if((rballoc_sub[j] == 0) && (rballoc_sub_UE[next_ue][j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){
 
@@ -503,7 +494,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	    if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
 	      dl_pow_off[next_ue] = 1;
 
-	    if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
+	    if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
 	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
 	    }
@@ -535,9 +526,9 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       if ((mac_get_rrc_status(Mod_id,1,next_ue1) >= RRC_RECONFIGURED) && (round1==0) && (mac_xface->get_transmission_mode(Mod_id,rnti1)==5) && (dl_pow_off[next_ue1] != 1)) {
 
 
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j+=2){
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j+=2){
       
-	  if((((j == (mac_xface->lte_frame_parms->N_SUBBANDS_DL-1))&& (rballoc_sub[j] == 0) && (rballoc_sub_UE[next_ue1][j] == 0)) || ((j < (mac_xface->lte_frame_parms->N_SUBBANDS_DL-1)) && (rballoc_sub[j+1] == 0) && (rballoc_sub_UE[next_ue1][j+1] == 0))) && (nb_rbs_required_remaining[next_ue1]>0)){
+	  if((((j == (mac_xface->lte_frame_parms->N_RBGS-1))&& (rballoc_sub[j] == 0) && (rballoc_sub_UE[next_ue1][j] == 0)) || ((j < (mac_xface->lte_frame_parms->N_RBGS-1)) && (rballoc_sub[j+1] == 0) && (rballoc_sub_UE[next_ue1][j+1] == 0))) && (nb_rbs_required_remaining[next_ue1]>0)){
 
 	    for (ii = i+1;ii < granted_UEs;ii++) {
 	      
@@ -551,7 +542,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	      
 	      if ((mac_get_rrc_status(Mod_id,1,next_ue2) >= RRC_RECONFIGURED) && (round2==0) && (mac_xface->get_transmission_mode(Mod_id,rnti2)==5) && (dl_pow_off[next_ue2] != 1)) {
 
-		if((((j == (mac_xface->lte_frame_parms->N_SUBBANDS_DL-1)) && (rballoc_sub_UE[next_ue2][j] == 0)) || ((j < (mac_xface->lte_frame_parms->N_SUBBANDS_DL-1)) && (rballoc_sub_UE[next_ue2][j+1] == 0))) && (nb_rbs_required_remaining[next_ue2]>0)){
+		if((((j == (mac_xface->lte_frame_parms->N_RBGS-1)) && (rballoc_sub_UE[next_ue2][j] == 0)) || ((j < (mac_xface->lte_frame_parms->N_RBGS-1)) && (rballoc_sub_UE[next_ue2][j+1] == 0))) && (nb_rbs_required_remaining[next_ue2]>0)){
 
 		  if((((eNB_UE_stats2->DL_pmi_single^eNB_UE_stats1->DL_pmi_single)<<(14-j))&0xc000)== 0x4000){ //MU-MIMO only for 25 RBs configuration
 
@@ -560,7 +551,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 		    rballoc_sub_UE[next_ue2][j] = 1;
 		    MIMO_mode_indicator[j] = 0;
 
-		    if (j< mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) {
+		    if (j< mac_xface->lte_frame_parms->N_RBGS-1) {
 		      rballoc_sub[j+1] = 1;
 		      rballoc_sub_UE[next_ue1][j+1] = 1;
 		      rballoc_sub_UE[next_ue2][j+1] = 1;
@@ -573,7 +564,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 		
 		
 
-		    if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
+		    if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 		      nb_rbs_required_remaining[next_ue1] = nb_rbs_required_remaining[next_ue1] - 1;
 		      pre_nb_available_rbs[next_ue1] = pre_nb_available_rbs[next_ue1] + 1;
 		      nb_rbs_required_remaining[next_ue2] = nb_rbs_required_remaining[next_ue2] - 1;
@@ -608,7 +599,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       if ((mac_get_rrc_status(Mod_id,1,next_ue) >= RRC_RECONFIGURED) && (round==0)) {
 
       
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
 	
 	  if((rballoc_sub[j] == 0) && (rballoc_sub_UE[next_ue][j] == 0) && (nb_rbs_required_remaining[next_ue]>0)){	  
 	  
@@ -623,7 +614,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	    
 	      MIMO_mode_indicator[j] = 1;
 	    
-	      if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
+	      if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 		nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
 		pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
 	      }
@@ -644,7 +635,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	      
 		MIMO_mode_indicator[j] = 1;
 	      
-		if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
+		if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 		  nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
 		  pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
 		}
@@ -667,7 +658,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
   i1=0;
   i2=0;
   i3=0;
-  for (j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+  for (j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
     if(MIMO_mode_indicator[j] == 2)
       i1 = i1+1;
     else if(MIMO_mode_indicator[j] == 1)
@@ -677,13 +668,13 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
   }
 
 
-  if((i1 < mac_xface->lte_frame_parms->N_SUBBANDS_DL) && (i2>0) && (i3==0))
+  if((i1 < mac_xface->lte_frame_parms->N_RBGS) && (i2>0) && (i3==0))
     PHY_vars_eNB_g[Mod_id]->check_for_SUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_SUMIMO_transmissions + 1;
   
-  if(i3 == mac_xface->lte_frame_parms->N_SUBBANDS_DL && i1==0 && i2==0)
+  if(i3 == mac_xface->lte_frame_parms->N_RBGS && i1==0 && i2==0)
     PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->FULL_MUMIMO_transmissions + 1;
 
-  if((i1 < mac_xface->lte_frame_parms->N_SUBBANDS_DL) && (i3 > 0))
+  if((i1 < mac_xface->lte_frame_parms->N_RBGS) && (i3 > 0))
     PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions + 1;
 
   PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
@@ -696,7 +687,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
     LOG_D(PHY,"******************Scheduling Information for UE%d ************************\n",UE_id);
     LOG_D(PHY,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
     LOG_D(PHY,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
-    for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+    for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
       //PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub_UE[UE_id][i];
       LOG_D(PHY,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,j,rballoc_sub_UE[UE_id][j]);
     }
