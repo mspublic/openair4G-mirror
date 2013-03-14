@@ -136,10 +136,12 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     u8 harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
     int mcs = 0;
     // choose max MCS to compute coded_bits_per_codeword
-    for (harq_pid=0;harq_pid<3;harq_pid++) {
-        mcs = cmax(phy_vars_enb->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,mcs);
+    if (phy_vars_enb->ulsch_eNB[UE_id]!=NULL) {
+        for (harq_pid=0;harq_pid<3;harq_pid++) {
+            mcs = cmax(phy_vars_enb->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,mcs);
+        }
     }
-    
+
     coded_bits_per_codeword = frame_parms->N_RB_UL*12*get_Qm(mcs)*frame_parms->symbols_per_tti;
 
     chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));    
