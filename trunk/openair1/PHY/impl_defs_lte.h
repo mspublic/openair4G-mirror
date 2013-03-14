@@ -416,8 +416,8 @@ typedef struct {
   u8 N_RB_DL;                
   /// Number of resource blocks (RB) in UL
   u8 N_RB_UL;
-/// Number of Sub-bands in DL
-  u8 N_SUBBANDS_DL;
+/// Number of Resource Block Groups for P=2
+  u8 N_RBGS;
   /// Cell ID                 
   u16 Nid_cell;               
   /// MBSFN Area ID

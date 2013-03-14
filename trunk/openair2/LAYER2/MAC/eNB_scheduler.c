@@ -1772,10 +1772,10 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
   //u8 number_of_subbands=13;
 
   //msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
-  while((nb_rb >0) && (check2 < mac_xface->lte_frame_parms->N_SUBBANDS_DL)){
+  while((nb_rb >0) && (check2 < mac_xface->lte_frame_parms->N_RBGS)){
     if(rballoc[check2] == 1){
-      rballoc_dci |= (1<<(((mac_xface->lte_frame_parms->N_SUBBANDS_DL-1)-check1)>>1));
-      if((check2 == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
+      rballoc_dci |= (1<<(((mac_xface->lte_frame_parms->N_RBGS-1)-check1)>>1));
+      if((check2 == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
      	nb_rb = nb_rb -1;
       else
 	nb_rb = nb_rb -2;
@@ -1796,7 +1796,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   unsigned char UE_id,first_rb,nb_rb=3;
   u16 rnti;
   unsigned char vrb_map[100];
-  u8 rballoc_sub[mac_xface->lte_frame_parms->N_SUBBANDS_DL];
+  u8 rballoc_sub[mac_xface->lte_frame_parms->N_RBGS];
   //u8 number_of_subbands=13;
   u32 rballoc=RBalloc;
 
@@ -2029,7 +2029,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 
 
       /// Synchronizing rballoc with rballoc_sub
-      for(i=0;i<mac_xface->lte_frame_parms->N_SUBBANDS_DL;i++){
+      for(i=0;i<mac_xface->lte_frame_parms->N_RBGS;i++){
 	rballoc_sub[i] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_subband[harq_pid][i];
 	if(rballoc_sub[i] == 1)
 	  rballoc |= (0x0001<<i);
@@ -2190,8 +2190,8 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   unsigned char DAI;
   u16 i=0,ii=0,tpmi0=1;
   u8 dl_pow_off[256];
-  unsigned char rballoc_sub_UE[256][mac_xface->lte_frame_parms->N_SUBBANDS_DL];
-  unsigned char rballoc_sub[mac_xface->lte_frame_parms->N_SUBBANDS_DL];
+  unsigned char rballoc_sub_UE[256][mac_xface->lte_frame_parms->N_RBGS];
+  unsigned char rballoc_sub[mac_xface->lte_frame_parms->N_RBGS];
   u16 pre_nb_available_rbs[256];
   int mcs;
   //u8 number_of_subbands=13;
@@ -2208,7 +2208,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     pre_nb_available_rbs[i] = 0;
     PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[i].pre_nb_available_rbs=0;
     dl_pow_off[i] = 2;
-    for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){
+    for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
       PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[i].rballoc_sub[j]=0;
 	rballoc_sub[j] = 0;
       rballoc_sub_UE[i][j] = 0;
@@ -2308,66 +2308,63 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
     // int flag_LA=0;
-  printf("CQI %d\n",eNB_UE_stats->DL_cqi[0]);
- if(flag_LA==0){
-     
-    switch(eNB_UE_stats->DL_cqi[0])
-      {
-      case 0:
-	eNB_UE_stats->dlsch_mcs1 = 0;
-	break;
-      case 1:
-	eNB_UE_stats->dlsch_mcs1 = 0;
-	break;
-      case 2:
-	eNB_UE_stats->dlsch_mcs1 = 0;
-	break;	
-      case 3:
-	eNB_UE_stats->dlsch_mcs1 = 2;
-	break;
-      case 4:
-	eNB_UE_stats->dlsch_mcs1 = 4;
-	break;
-      case 5:
-	eNB_UE_stats->dlsch_mcs1 = 6;
-	break;
-      case 6:
-	eNB_UE_stats->dlsch_mcs1 = 8;
-	break;
-      case 7:
-	eNB_UE_stats->dlsch_mcs1 = 11;
-	break;
-      case 8:
-	eNB_UE_stats->dlsch_mcs1 = 13;
-	break;
-      case 9:
-	eNB_UE_stats->dlsch_mcs1 = 16;
-	break;
-      case 10:
-	eNB_UE_stats->dlsch_mcs1 = 18;
-	break;
-      case 11:
-	eNB_UE_stats->dlsch_mcs1 = 20;
-	break;
-      case 12:
-	eNB_UE_stats->dlsch_mcs1 = 22;
-	break;
-      case 13:
-	eNB_UE_stats->dlsch_mcs1 = 22;//25
-	break;
-      case 14:
-	eNB_UE_stats->dlsch_mcs1 = 22;//27
-	break;
-      case 15:
-	eNB_UE_stats->dlsch_mcs1 = 22;//28
-	break;
-      default:
-	printf("Invalid CQI");
-	exit(-1);
-      }
-    // for TM5 and TM6, limit the MCS to 16QAM    
-    if((mac_xface->get_transmission_mode(Mod_id,rnti)==5) || (mac_xface->get_transmission_mode(Mod_id,rnti)==6))
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
+    printf("CQI %d\n",eNB_UE_stats->DL_cqi[0]);
+    if(flag_LA==0){
+      
+      switch(eNB_UE_stats->DL_cqi[0])
+	{
+	case 0:
+	  eNB_UE_stats->dlsch_mcs1 = 0;
+	  break;
+	case 1:
+	  eNB_UE_stats->dlsch_mcs1 = 0;
+	  break;
+	case 2:
+	  eNB_UE_stats->dlsch_mcs1 = 0;
+	  break;	
+	case 3:
+	  eNB_UE_stats->dlsch_mcs1 = 2;
+	  break;
+	case 4:
+	  eNB_UE_stats->dlsch_mcs1 = 4;
+	  break;
+	case 5:
+	  eNB_UE_stats->dlsch_mcs1 = 6;
+	  break;
+	case 6:
+	  eNB_UE_stats->dlsch_mcs1 = 8;
+	  break;
+	case 7:
+	  eNB_UE_stats->dlsch_mcs1 = 11;
+	  break;
+	case 8:
+	  eNB_UE_stats->dlsch_mcs1 = 13;
+	  break;
+	case 9:
+	  eNB_UE_stats->dlsch_mcs1 = 16;
+	  break;
+	case 10:
+	  eNB_UE_stats->dlsch_mcs1 = 18;
+	  break;
+	case 11:
+	  eNB_UE_stats->dlsch_mcs1 = 20;
+	  break;
+	case 12:
+	  eNB_UE_stats->dlsch_mcs1 = 22;
+	  break;
+	case 13:
+	  eNB_UE_stats->dlsch_mcs1 = 22;//25
+	  break;
+	case 14:
+	  eNB_UE_stats->dlsch_mcs1 = 22;//27
+	  break;
+	case 15:
+	  eNB_UE_stats->dlsch_mcs1 = 22;//28
+	  break;
+	default:
+	  printf("Invalid CQI");
+	  exit(-1);
+	}
     }
     else
       {
@@ -2431,7 +2428,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     // Note this code is for a specific DCI format
     DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
 
-    for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++){ // initializing the rb allocation indicator for each UE
+    for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){ // initializing the rb allocation indicator for each UE
       eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j] = 0;
     }
 
@@ -2449,16 +2446,16 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       if (nb_rb <= nb_available_rb) {
 	
 	if(nb_rb == pre_nb_available_rbs[next_ue]){
-	  for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++) // for indicating the rballoc for each sub-band
+	  for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++) // for indicating the rballoc for each sub-band
 	    eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j] = rballoc_sub_UE[next_ue][j];}
 	else
 	  {
 	    nb_rb_temp = nb_rb;
 	    j = 0;
-	    while((nb_rb_temp > 0) && (j<mac_xface->lte_frame_parms->N_SUBBANDS_DL)){
+	    while((nb_rb_temp > 0) && (j<mac_xface->lte_frame_parms->N_RBGS)){
 	      if(rballoc_sub_UE[next_ue][j] == 1){
 		eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j] = rballoc_sub_UE[next_ue][j];
-		if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
+		if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
 		  nb_rb_temp = nb_rb_temp - 1;
 		else
 		   nb_rb_temp = nb_rb_temp - 2;
@@ -2476,7 +2473,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].pre_nb_available_rbs = nb_rb;
 	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].dl_pow_off = dl_pow_off[next_ue];
 	
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++)
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++)
 	  PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].rballoc_sub[j] = eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j];
 
 	switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
@@ -2667,16 +2664,16 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	}
 
 	if(nb_rb == pre_nb_available_rbs[next_ue])
-	  for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++) // for indicating the rballoc for each sub-band
+	  for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++) // for indicating the rballoc for each sub-band
 	    eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j] = rballoc_sub_UE[next_ue][j];
 	else
 	  {
 	    nb_rb_temp = nb_rb;
 	    j = 0;
-	    while((nb_rb_temp > 0) && (j<mac_xface->lte_frame_parms->N_SUBBANDS_DL)){
+	    while((nb_rb_temp > 0) && (j<mac_xface->lte_frame_parms->N_RBGS)){
 	      if(rballoc_sub_UE[next_ue][j] == 1){
 		eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j] = rballoc_sub_UE[next_ue][j];
-		if((j == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
+		if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
 		  nb_rb_temp = nb_rb_temp - 1;
 		else 
 		  nb_rb_temp = nb_rb_temp - 2;
@@ -2688,7 +2685,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].pre_nb_available_rbs = nb_rb;
 	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].dl_pow_off = dl_pow_off[next_ue];
 	
-	for(j=0;j<mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++)
+	for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++)
 	  PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].rballoc_sub[j] = eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j];
 
 

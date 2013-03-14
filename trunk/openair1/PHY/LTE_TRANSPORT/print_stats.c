@@ -445,7 +445,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 	}
 	len += sprintf(&buffer[len],"[eNB PROC] RB Allocation on Sub-bands: ");
 	
-	for (j=0;j< mac_xface->lte_frame_parms->N_SUBBANDS_DL;j++)
+	for (j=0;j< mac_xface->lte_frame_parms->N_RBGS;j++)
 	  len += sprintf(&buffer[len],"%d ",
 			 phy_vars_eNB->mu_mimo_mode[UE_id].rballoc_sub[j]);
 	len += sprintf(&buffer[len],"\n");
