@@ -65,7 +65,7 @@ double snr_tm6=0;
 
 
 #define DEBUG_eNB_SCHEDULER 1
-#define DEBUG_HEADER_PARSING 1
+//#define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
 //#define ICIC 0
@@ -692,7 +692,9 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   //msg("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
 
   for (i=0;i<num_sdus;i++) {
-    //msg("MAC num sdu %d len sdu %d\n",num_sdus, sdu_lengths[i]);
+#ifdef DEBUG_HEADER_PARSING
+    LOG_D(MAC,"[eNB] Generate DLSCH header num sdu %d len sdu %d\n",num_sdus, sdu_lengths[i]);
+#endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
       /*msg("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
@@ -1746,7 +1748,7 @@ u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
   for (i=0;i<(mac_xface->lte_frame_parms->N_RB_DL-2);i+=2) {
     if (((*rballoc>>i)&3)==0) {
       *rballoc |= (3<<i);
-      rballoc_dci |= (1<<(i>>1));
+      rballoc_dci |= (1<<((12-i)>>1));
       nb_rb_alloc+=2;
     }
     if (nb_rb_alloc==nb_rb)
@@ -1756,7 +1758,7 @@ u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
   if ((mac_xface->lte_frame_parms->N_RB_DL&1)==1) {
     if ((*rballoc>>(mac_xface->lte_frame_parms->N_RB_DL-1)&1)==0) {
       *rballoc |= (1<<(mac_xface->lte_frame_parms->N_RB_DL-1));
-      rballoc_dci |= (1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
+      rballoc_dci |= 1;//(1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
     }
   }
   return(rballoc_dci);
@@ -1772,7 +1774,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
   //msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
   while((nb_rb >0) && (check2 < mac_xface->lte_frame_parms->N_SUBBANDS_DL)){
     if(rballoc[check2] == 1){
-      rballoc_dci |= (1<<(check1>>1));
+      rballoc_dci |= (1<<((12-check1)>>1));
       if((check2 == mac_xface->lte_frame_parms->N_SUBBANDS_DL-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
      	nb_rb = nb_rb -1;
       else
@@ -2742,12 +2744,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    ta_len,next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
 	//#endif
-	/*	      
+		      
 	msg("[MAC][eNB %d] First 16 bytes of DLSCH : \n");
 	for (i=0;i<16;i++)
 	  msg("%x.",dlsch_buffer[i]);
 	msg("\n");
-	*/
+	
 	// cycle through SDUs and place in dlsch_buffer
 	memcpy(&eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0][offset],dlsch_buffer,sdu_length_total);
 	// memcpy(&eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);

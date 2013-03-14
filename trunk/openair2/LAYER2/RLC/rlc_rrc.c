@@ -21,8 +21,11 @@
 
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP) {
-//-----------------------------------------------------------------------------
+#ifdef Rel10
+rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP) {
+#else
+rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP) {
+#endif//-----------------------------------------------------------------------------
   long int        rb_id        = 0;
   long int        lc_id        = 0;
   DRB_Identity_t  drb_id       = 0;
@@ -34,7 +37,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
   if (srb2add_listP != NULL) {
       for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
-          rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
+          rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
 
           srb_toaddmod = srb2add_listP->list.array[cnt];
 
@@ -107,10 +110,10 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
       for (cnt=0;cnt<drb2add_listP->list.count;cnt++) {
           drb_toaddmod = drb2add_listP->list.array[cnt];
 
-          drb_id = drb_toaddmod->drb_Identity;
+          drb_id = (UE_index * MAX_NUM_RB) + drb_toaddmod->drb_Identity;
           
           if (drb_toaddmod->logicalChannelIdentity != null) {
-              lc_id = *drb_toaddmod->logicalChannelIdentity;
+              lc_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;
           } else {
               lc_id = -1;
           }
@@ -168,7 +171,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   if (drb2release_listP != NULL) {
       for (cnt=0;cnt<drb2add_listP->list.count;cnt++) {
           pdrb_id = drb2release_listP->list.array[cnt];
-          rrc_rlc_remove_rlc(module_idP, *pdrb_id, frameP);
+          rrc_rlc_remove_rlc(module_idP, (UE_index * MAX_NUM_RB) + *pdrb_id, frameP);
       }
   }
   return RLC_OP_STATUS_OK;
