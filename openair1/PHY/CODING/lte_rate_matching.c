@@ -184,9 +184,13 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
 
 void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w) {
 
-  uint32_t RCC = (D>>5), ND, ND3;
+  //WANG_Hao uint32_t RCC = (D>>5), ND, ND3;
+  uint32_t RCC = (D>>5);
+  ptrdiff_t   ND, ND3;
   uint32_t row,col,Kpi,index;
-  uint32_t index3,k;
+  //WANG_Hao uint32_t index3,k;
+  ptrdiff_t index3;
+  uint32_t k;
 
   if ((D&0x1f) > 0)
     RCC++;
