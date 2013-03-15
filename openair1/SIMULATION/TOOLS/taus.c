@@ -34,7 +34,7 @@ void set_taus_seed(unsigned int seed_init) {
 
 #ifdef USER_MODE
   struct drand48_data buffer;
-  unsigned int result = 0;
+  unsigned long result = 0;
 #endif
 
   if (seed_init == 0) {
