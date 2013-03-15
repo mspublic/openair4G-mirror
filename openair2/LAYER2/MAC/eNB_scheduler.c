@@ -1767,21 +1767,21 @@ u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
 
 u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
 
-  u8 check1=0,check2=0;
+  u8 check;//check1=0,check2=0;
   u16 rballoc_dci=0;
   //u8 number_of_subbands=13;
 
   //msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
-  while((nb_rb >0) && (check2 < mac_xface->lte_frame_parms->N_RBGS)){
-    if(rballoc[check2] == 1){
-      rballoc_dci |= (1<<(((mac_xface->lte_frame_parms->N_RBGS-1)-check1)>>1));
-      if((check2 == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
+  while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBGS)){
+    if(rballoc[check] == 1){
+      rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBGS-1)-check));
+      if((check == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1))
      	nb_rb = nb_rb -1;
       else
 	nb_rb = nb_rb -2;
     }
-    check2 = check2+1;
-    check1 = check1+2;
+    check = check+1;
+    //    check1 = check1+2;
   }
   // rballoc_dci = (rballoc_dci)&(0x1fff);
   //msg("*********RBALLOC : %x\n",rballoc_dci);
@@ -2031,8 +2031,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
       /// Synchronizing rballoc with rballoc_sub
       for(i=0;i<mac_xface->lte_frame_parms->N_RBGS;i++){
 	rballoc_sub[i] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_subband[harq_pid][i];
-	if(rballoc_sub[i] == 1)
-	  rballoc |= (0x0001<<i);
+	if(rballoc_sub[i] == 1)  
+	  rballoc |= (0x0001<<i);  // TO be FIXED!!!!!!
       }
 
 
