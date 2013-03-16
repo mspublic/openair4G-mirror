@@ -29,13 +29,12 @@
 
 /*! \file virtual_link.h
 * \brief structures and data types related to virtual links
-* \author Philippe Agostini
+* \author Philippe Agostini and navid nikaein 
 * \date 2012
 * \version 0.1
 * @ingroup _mac
 */
 
-/* TCS LOLAmesh */
 
 #ifndef __VIRTUAL_LINK_H__
 #define __VIRTUAL_LINK_H__
@@ -44,8 +43,8 @@
  * Includes *
  ************/
 
-#include "defs.h"
-#include "PHY/defs.h"
+//#include "defs.h"
+//#include "PHY/defs.h"
 
 /***********
  * Defines * 
@@ -69,13 +68,14 @@
  * Structures and data types *
  *****************************/
 
+/* virtual link and collaborative RNTI definition */
 struct mr_array {
 	int count; /* Nb of MR currently in the list */
 	unsigned char array[MAX_MR_PER_VLINK]; /* List of UE_index */
 };
 
 struct virtual_link {
-	unsigned char virtualLinkID;
+	unsigned char vlinkID;
 	unsigned short PCellIdsourceCH;
 	unsigned short PCellIddestCH;
 	struct mr_array MRarray;
@@ -96,11 +96,21 @@ struct cornti_array {
 	u16 array[MAX_VLINK_PER_CH];
 };
 
+/* Forwarding table definition */
 
-/********************
- * Global variables *
- ********************/
+#define MAX_FW_ENTRY 10 
 
-extern struct virtual_links virtualLinksTable[NB_MAX_CH];
+struct forwardingTableEntry { 
+	u8 vlid;
+	u16 cornti1;
+	u16 cornti2;
+};
+
+struct forwarding_Table { 
+	u8 count;
+	struct forwardingTableEntry array[MAX_FW_ENTRY];
+};
+
+
 
 #endif

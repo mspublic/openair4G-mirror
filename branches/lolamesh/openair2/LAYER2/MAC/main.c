@@ -361,12 +361,13 @@ void init_mac_xface(void){
   mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
-  mac_xface->get_SB_size	      	   = Get_SB_size;
+  mac_xface->get_SB_size	       = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->Msg1_transmitted          = Msg1_tx;
   mac_xface->ra_failed                 = ra_failed;
-
+  mac_xface->vlink_init                = vlink_init;
+  
   LOG_I(MAC,"MAX/PHY xface init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;

@@ -323,44 +323,32 @@ s8 find_active_UEs(unsigned char Mod_id){
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
 
-  	//A user is active if its rnti is != 0 or if it has at least one cornti
-
-  	//A user is active if its rnti is != 0
-  	rnti = eNB_mac_inst[Mod_id].UE_template[UE_id].rnti;
-
+    //A user is active if its rnti is != 0 or if it has at least one cornti
+    //A user is active if its rnti is != 0
+    rnti = eNB_mac_inst[Mod_id].UE_template[UE_id].rnti;
     if (rnti !=0) {
-
       if (mac_xface->get_eNB_UE_stats(Mod_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
       	nb_active_ue++;
       	continue;//go to the next UE_id
       }
-
       else { // this ue is removed at the phy => remove it at the mac as well
       	mac_remove_ue(Mod_id, UE_id);
       }
-
     }// if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0)
-
-  	//A user is active if it has at least one cornti
+    
+    //A user is active if it has at least one cornti
     if ((eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count != 0)) {
-
-    	nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;
-
-    	for (i=0;i<nb_corntis;i++) {
-
-    		cornti = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i];
-
-				if (mac_xface->get_eNB_UE_stats(Mod_id,cornti) != NULL){ // check at the phy enb_ue state for this rnti
-					nb_active_ue++;
-					continue;//go to the next UE_id
-				}
-
-				else { // this ue is removed at the phy => remove it at the mac as well
-					mac_remove_ue(Mod_id, UE_id);
-				}
-
-    	}
-
+      nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;
+      for (i=0;i<nb_corntis;i++) {
+	cornti = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i];
+	if (mac_xface->get_eNB_UE_stats(Mod_id,cornti) != NULL){ // check at the phy enb_ue state for this rnti
+	  nb_active_ue++;
+	  continue;//go to the next UE_id
+	}
+	else { // this ue is removed at the phy => remove it at the mac as well
+	  mac_remove_ue(Mod_id, UE_id);
+	}
+      }
     }// if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0
 
   }//end for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++)
@@ -5048,15 +5036,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   unsigned int nCCE=0;
   u32 RBalloc=0;
 
-  //TCS LOLAmesh
-  int i;
-  int j;
-  u16 UE_index = 0;
-  u8 vlink_status = 1;
-  u16 cornti;
-  u8 vlid;
-  u8 status;
-  u8 nb_corntis; //length of the cornti array
+  
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
@@ -5068,86 +5048,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   eNB_mac_inst[Mod_id].frame = frame;
   eNB_mac_inst[Mod_id].subframe = subframe;
-
-  //TCS LOLAmesh
-  /* Each 100 frames check if it is possible to setup a collaborative RB */
-  if ((frame % 100 == 0)&&(subframe == 1)) {
-
-  	LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, check for collaborative DRB\n",Mod_id, frame, subframe);
-
-  	/* We go through the virtual links of the table */
-  	for (i=0;i<virtualLinksTable[Mod_id].count;i++) {
-
-  		/* If the VL has not been established yet, try to establish it */
-  		if (virtualLinksTable[Mod_id].array[i].status == VLINK_NOT_CONNECTED) {
-
-  			/* Get the virtual link ID */
-  			vlid = virtualLinksTable[Mod_id].array[i].virtualLinkID;
-
-  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d not connected\n",Mod_id, frame, subframe, vlid);
-
-  			/* We go through all the MRs belonging to a VL */
-  			for (j=0;j<virtualLinksTable[Mod_id].array[i].MRarray.count;j++) {
-
-  				/* We get the ID of the MR */
-  				UE_index = virtualLinksTable[Mod_id].array[i].MRarray.array[j];
-
-  				/* If the default RB is not active for this MR */
-  				/* We can't establish a RB */
-  				status = mac_get_rrc_status(Mod_id,1,UE_index);
-  				if (status != RRC_RECONFIGURED) {
-  					LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d UE %d in RRC_IDLE (%d), can't establish virtual link\n",Mod_id, frame, subframe, vlid, UE_index,status);
-  					vlink_status = 0;
-  					break;
-  				}
-
-  			}// end for(j=0;j<virtualLinksTable[Mod_id].array[i].MRarray.count;j++)
-
-  			/* If the VL is ready to be established */
-  			if (vlink_status == 1) {
-
-  				LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d ready to be established\n",Mod_id, frame, subframe, vlid);
-
-  				/* We chose the cornti randomly */
-  				cornti = (u16)taus();
-
-					/* Keep track of the CORNTI */
-					//MAC layer structure
-					nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
-					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[nb_corntis] = cornti;
-					eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count++;
-					//PHY layer structure
-					nb_corntis = PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count;
-					PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.array[nb_corntis] = cornti;
-					PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count++;
-
-  				/* For all the MR of the VL we establish a CO-DRB */
-  				for (j=0;j<virtualLinksTable[Mod_id].array[i].MRarray.count;j++) {
-
-  					/* We get the UE_index of the MR */
-  					UE_index = virtualLinksTable[Mod_id].array[i].MRarray.array[j];
-
-  					// Generate and send RRCConnectionReconfiguration
-  					rrc_eNB_generate_RRCConnectionReconfiguration_co(Mod_id,UE_index,frame,cornti,vlid);
-
-  				}// end for (j=0;j<virtualLinksTable[Mod_id].array[i].MRList.count;j++)
-
-  				/* We mark the virtual link as established */
-  				virtualLinksTable[Mod_id].array[i].status = VLINK_CONNECTED;
-
-  			}// end if (vlink_status == 1)
-
-  		}// end if (virtualLinksTable.table[i].status == VLINK_NOT_CONNECTED)
-
-  		/* Else go to the next VL */
-  		else {
-  			LOG_D(MAC,"[eNB %d][TCS DEBUG] Frame %d, Subframe %d, VLINK %d connected\n",Mod_id, frame, subframe, virtualLinksTable[Mod_id].array[i].virtualLinkID);
-				break;
-			}
-
-  	}// end for (i=0;i<virtualLinksTable[Mod_id].count;i++)
-
-  }//end if (frame % 100 == 0)
+  
+   if ((frame % 100 == 0)&&(subframe == 1)) 
+     vlink_setup(Mod_id, frame, subframe);
 
   //if (subframe%5 == 0)
   pdcp_run(frame, 1, 0, Mod_id);

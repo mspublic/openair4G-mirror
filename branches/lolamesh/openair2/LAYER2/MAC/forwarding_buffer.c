@@ -208,7 +208,7 @@ mem_element_t * mac_buffer_data_req(mac_list_buffer *mac_buf,  int seq_num, int 
       return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
     }else{
       while(ptr_h!=NULL){
-	if(ptr_h-> pdu_size <= size ){
+	if(ptr_h-> pdu_size <= size ){ // the intellegent would be to find the 
 	  if(ptr_h==help_head){
 	    return  (mem_element_t*)(mac_list_buffer_remove_head(mac_buf));
 	  }

@@ -551,10 +551,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_IN);
 
-  // FIXME? there is memory leak on the sr_ConfigIndex
-  LOG_W(PHY,"FIXME:there is memory leak on the sr_ConfigIndex, resetting manually sr_ConfigIndex to 7\n");
-  phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex=7;
-
   subframe = next_slot>>1;
 
   switch(phy_vars_ue->UE_mode[eNB_id]) {

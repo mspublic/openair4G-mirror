@@ -20,9 +20,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#include "LAYER2/MAC/virtual_link.h" //LOLAmesh
-extern eNB_MAC_INST *eNB_mac_inst; //LOLAmesh
-extern UE_MAC_INST *UE_mac_inst; //LOLAmesh
+
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 //#endif
@@ -164,6 +162,8 @@ help (void) {
   printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
   printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
   printf ("-H Set the number of connected eNBs \n ");
+  printf ("-w Set the number of virtual link per eNBs \n ");
+  printf ("-W Set the number of UE per virtual link \n ");
   printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
   printf ("-G Enable background traffic \n");
   printf ("-O [mme ipv4 address] Enable MME mode\n");
@@ -649,7 +649,7 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
-  u8 nb_connected_eNB=1; 
+  u8 nb_connected_eNB=1, nb_vlink_eNB=0, nb_ue_per_vlink=0; 
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -727,7 +727,7 @@ main (int argc, char **argv)
   }
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:")) != -1) {
 
     switch (c) {
 
@@ -910,6 +910,12 @@ main (int argc, char **argv)
     case 'H': 
       nb_connected_eNB = atoi(optarg);
       break;
+    case 'w': 
+      nb_vlink_eNB = atoi(optarg);
+      break;
+    case 'W': 
+      nb_ue_per_vlink = atoi(optarg);
+      break;
     case 'V':
       ouput_vcd = 1;
       oai_emulation.info.vcd_enabled = 1;
@@ -966,14 +972,22 @@ main (int argc, char **argv)
     LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit (-1);
   }
-  if (nb_connected_eNB > NUMBER_OF_CONNECTED_eNB_MAX){ // navid
+  if (nb_connected_eNB > NUMBER_OF_CONNECTED_eNB_MAX){ 
     nb_connected_eNB = NUMBER_OF_CONNECTED_eNB_MAX;
-    LOG_E(EMU,"Adjust the number of connected eNB to the max (%d)\n", NUMBER_OF_CONNECTED_eNB_MAX);
+    LOG_W(EMU,"Adjust the number of connected eNB to the max (%d)\n", NUMBER_OF_CONNECTED_eNB_MAX);
   }
-  if (nb_connected_eNB > oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote){ // navid 
+  if (nb_connected_eNB > oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote){ 
     nb_connected_eNB = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
-    LOG_E(EMU,"Adjust the number of connected eNB to the total number of eNBs (%d)\n", oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote);
-    }
+    LOG_W(EMU,"Adjust the number of connected eNB to the total number of eNBs (%d)\n", oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote);
+  }
+  if (nb_vlink_eNB > MAX_VLINK_PER_CH ) {
+    nb_vlink_eNB = MAX_VLINK_PER_CH;
+    LOG_W(EMU,"Adjust the number of vlink to eNB to the max (%d)\n", MAX_VLINK_PER_CH);
+  }
+  if (nb_ue_per_vlink > MAX_MR_PER_VLINK) {
+    nb_ue_per_vlink= MAX_MR_PER_VLINK;
+    LOG_W(EMU,"Adjust the number of UE per vlink to the max (%d)\n", MAX_MR_PER_VLINK);
+  }
     
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
@@ -1234,19 +1248,12 @@ main (int argc, char **argv)
   }
 #endif
 
-  printf ("before L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
-  printf ("before L2 init: frame_type %d,tdd_config %d\n", 
-	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
-
-
+  // LOG_D (EMU,"after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  // LOG_D (EMU,"after L2 init: frame_type %d,tdd_config %d\n", 
+  // PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+  // PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
 
 #ifdef OPENAIR2
-  printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
-  printf ("after L2 init: frame_type %d,tdd_config %d\n", 
-	  PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-	  PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
-
 
   for (i = 0; i < NB_eNB_INST; i++)
     l2_init (i, &PHY_vars_eNB_g[i]->lte_frame_parms);
@@ -1258,10 +1265,13 @@ main (int argc, char **argv)
       for (eNB_id =0 ; eNB_id < nb_connected_eNB; eNB_id++) //  call phy_sync_success among the UE and all potential connected eNBs
 	mac_xface->dl_phy_sync_success (UE_id, 0, eNB_id,1);	//UE_id%NB_eNB_INST);
 	}*/
+  mac_xface->macphy_exit = exit_fun;
+  // initilizing the virtula link creation
+  mac_xface->vlink_init(nb_connected_eNB, nb_vlink_eNB, nb_ue_per_vlink);
+  
 #endif
 
-  mac_xface->macphy_exit = exit_fun;
-
+ 
   // time calibration for OAI 
   clock_gettime (CLOCK_REALTIME, &time_spec);
   time_now = (unsigned long) time_spec.tv_nsec;
@@ -1276,42 +1286,7 @@ main (int argc, char **argv)
     Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
 #endif 
   
-  //TCS LOLAmesh
-  /* Virtual links table initialization */
-  // CH 0 = eNB 0 = Mod_id 0 => virtualLinksTable index
-  // CH 1 = eNB 1 = Mod_id 1
-  // 1 virtual link to be defined with 1 MRs => virtualLinksTable.array index
-  // MR 0 = UE 0 = UE_index 0 => virtualLinksTable.array.MRarray.array index
-  virtualLinksTable[0].count = 1; // Nb of virtual links
-  virtualLinksTable[0].array[0].virtualLinkID = 1; // Virtual link ID
-  virtualLinksTable[0].array[0].PCellIddestCH = 1; // dummy value
-  virtualLinksTable[0].array[0].PCellIdsourceCH = 2; // dummy value
-  virtualLinksTable[0].array[0].status = VLINK_NOT_CONNECTED; // Virtual link state
-  virtualLinksTable[0].array[0].MRarray.count = 1; // Nb of MRs in the virtual link
-  virtualLinksTable[0].array[0].MRarray.array[0] = 0; // UE_index of the MR
-  //virtualLinksTable[0].array[0].MRarray.array[1] = 1; // UE_index of the MR
-
-  /*virtualLinksTable[1].count = 1; // Nb of virtual links
-  virtualLinksTable[1].array[0].virtualLinkID = 1; // Virtual link ID
-  virtualLinksTable[1].array[0].PCellIddestCH = 1; // dummy value
-  virtualLinksTable[1].array[0].PCellIdsourceCH = 2; // dummy value
-  virtualLinksTable[1].array[0].status = VLINK_NOT_CONNECTED; // Virtual link state
-  virtualLinksTable[1].array[0].MRarray.count = 1; // Nb of MRs in the virtual link
-  virtualLinksTable[1].array[0].MRarray.array[0] = 0; // UE_index of the MR
-  virtualLinksTable[1].array[0].MRarray.array[0] = 1; // UE_index of the MR*/
-
-  /* CORNTIs tables initialization */
-  for (k=0;k<NB_eNB_INST;k++) {
-  	for (l=0;l<NB_UE_INST;l++) {
-  		//MAC layer structure
-  		eNB_mac_inst[k].UE_template[l].corntis.count = 0;
-			UE_mac_inst[l].corntis.count = 0;
-			//PHY layer structure
-			PHY_vars_eNB_g[k]->dlsch_eNB[l][0]->corntis.count = 0;
-			PHY_vars_UE_g[l]->dlsch_ue[k][0]->corntis.count = 0;
-  	}
-  }
-
+  
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after init: frame_type %d,tdd_config %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);

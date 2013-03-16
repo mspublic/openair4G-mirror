@@ -74,8 +74,6 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
-struct virtual_links virtualLinksTable[NB_MAX_CH];
-
 #endif
 
 
