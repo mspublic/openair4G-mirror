@@ -314,7 +314,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes ""(RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",frame, Mod_id, DCCH, sdu_size, Mod_id);
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.present == RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
       	rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
-				//TCS LOLAmesh
+	//TCS LOLAmesh
       	isCodrb = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.isCODRB);
 	//This is not a collaborative RB
 	if (isCodrb == 0){
@@ -324,7 +324,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 	if (isCodrb == 1){
 	  vlid = (u8)*(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.virtualLinkId);
 	  eNB_rrc_inst[Mod_id].State_CoLink[vlid] = RRC_RECONFIGURED;
-	  LOG_D(RRC,"[TCS DEBUG][eNB %d] UE %d State = RRC_RECONFIGURED on vlid %u\n",Mod_id,UE_index,vlid);
+	  LOG_D(RRC,"[eNB %d][VLINK] UE %d State = RRC_RECONFIGURED on vlid %u\n",Mod_id,UE_index,vlid);
 	}
       }
       break;
@@ -569,93 +569,93 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
   long *coRNTI;
   long *virtualLinkID;
 
-	//Get the eNB RRC instance
-	eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
+  //Get the eNB RRC instance
+  eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
 
   //TCS LOLAmesh RRCConnectionReconfiguration parameters
-	// RadioResourceConfigDedicated
-	// RadioResourceConfigDedicated->SRBToAddModList == NULL
-	// RadioResourceConfigDedicated->DRBToAddModList == NULL
-	DRB_ToAddModList_t *DRB_list;
-	struct DRB_ToAddMod **DRB_config = &rrc_inst->CODRB_config[0]; //TCS LOLAmesh
-	struct DRB_ToAddMod *DRB_config2;
-	struct RLC_Config *DRB_rlc_config;
-	struct LogicalChannelConfig *DRB_lchan_config;
-	struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
-	// RadioResourceConfigDedicated->DRBToReleaseList
-	// RadioResourceConfigDedicated->mac-MainConfig
-	MAC_MainConfig_t *mac_MainConfig;
-	long *logicalchannelgroup,*logicalchannelgroup_drb;
-	long *maxHARQ_Tx, *periodicBSR_Timer;
-	long *lcid;
-	// RadioResourceConfigDedicated->sps-Config == NULL
-	// RadioResourceConfigDedicated->physicalConfigDedicated
-	struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
-
-	/* We generate the RRCConnectionReconfiguration message */
-
-	// RadioResourceConfigDedicated->DRBToAddModList
-	DRB_list = CALLOC(1,sizeof(*DRB_list));
-	// If this is not the first RRCConnectionReconfiguration message sent for a collaborative link, we do not need to allocated a new DRB_config
-	if (*DRB_config == NULL) {
-		DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
-	}
-	*DRB_config = DRB_config2;
-	// RadioResourceConfigDedicated->DRBToAddModList->DRBToAddMod
-	// drb identity
-	DRB_config2->drb_Identity = 1; ///TCS LOLAmesh RB_id 0 since this is the first collaborative RB
+  // RadioResourceConfigDedicated
+  // RadioResourceConfigDedicated->SRBToAddModList == NULL
+  // RadioResourceConfigDedicated->DRBToAddModList == NULL
+  DRB_ToAddModList_t *DRB_list;
+  struct DRB_ToAddMod **DRB_config = &rrc_inst->CODRB_config[0]; //TCS LOLAmesh
+  struct DRB_ToAddMod *DRB_config2;
+  struct RLC_Config *DRB_rlc_config;
+  struct LogicalChannelConfig *DRB_lchan_config;
+  struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
+  // RadioResourceConfigDedicated->DRBToReleaseList
+  // RadioResourceConfigDedicated->mac-MainConfig
+  MAC_MainConfig_t *mac_MainConfig;
+  long *logicalchannelgroup,*logicalchannelgroup_drb;
+  long *maxHARQ_Tx, *periodicBSR_Timer;
+  long *lcid;
+  // RadioResourceConfigDedicated->sps-Config == NULL
+  // RadioResourceConfigDedicated->physicalConfigDedicated
+  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_index];
+  
+  /* We generate the RRCConnectionReconfiguration message */
+  
+  // RadioResourceConfigDedicated->DRBToAddModList
+  DRB_list = CALLOC(1,sizeof(*DRB_list));
+  // If this is not the first RRCConnectionReconfiguration message sent for a collaborative link, we do not need to allocated a new DRB_config
+  if (*DRB_config == NULL) {
+    DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
+  }
+  *DRB_config = DRB_config2;
+  // RadioResourceConfigDedicated->DRBToAddModList->DRBToAddMod
+  // drb identity
+  DRB_config2->drb_Identity = 1; ///TCS LOLAmesh RB_id 0 since this is the first collaborative RB
 	// logical channel ID
-	lcid = CALLOC(1,sizeof(*lcid));
-	*lcid = 3; //we reuse drb lcid values (i.e 3 to 10). 3 correspond to the first codrb and it is stored in the position (11(nb of lcid) * 8(nb max UE)) = 88, so it i shifted of 85 postions
-	DRB_config2->logicalChannelIdentity = lcid;
-	// rlc config
-	DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
-	DRB_config2->rlc_Config   = DRB_rlc_config;
-	DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
-	DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
-	DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
-	DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms35;
-	// logical channel config
-	DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
-	DRB_config2->logicalChannelConfig   = DRB_lchan_config;
-	DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
-	DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-	DRB_ul_SpecificParameters->priority = 2; // lower priority than srb1, srb2
-	DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-	DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-	logicalchannelgroup_drb = CALLOC(1,sizeof(long));
-	*logicalchannelgroup_drb=0;
-	DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-	// CO-RNTI
-	coRNTI = CALLOC(1,sizeof(*coRNTI));
-	*coRNTI = cornti;
-	DRB_config2->co_RNTI = (long)coRNTI;
-	// Virtual Link ID
-	virtualLinkID = CALLOC(1,sizeof(*virtualLinkID));
-	*virtualLinkID = vlid;
-	DRB_config2->virtualLinkID = (long)virtualLinkID;
-	ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
+  lcid = CALLOC(1,sizeof(*lcid));
+  *lcid = 3; //we reuse drb lcid values (i.e 3 to 10). 3 correspond to the first codrb and it is stored in the position (11(nb of lcid) * 8(nb max UE)) = 88, so it i shifted of 85 postions
+  DRB_config2->logicalChannelIdentity = lcid;
+  // rlc config
+  DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
+  DRB_config2->rlc_Config   = DRB_rlc_config;
+  DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
+  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms35;
+  // logical channel config
+  DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
+  DRB_config2->logicalChannelConfig   = DRB_lchan_config;
+  DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
+  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
+  DRB_ul_SpecificParameters->priority = 2; // lower priority than srb1, srb2
+  DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  logicalchannelgroup_drb = CALLOC(1,sizeof(long));
+  *logicalchannelgroup_drb=0;
+  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
+  // CO-RNTI
+  coRNTI = CALLOC(1,sizeof(*coRNTI));
+  *coRNTI = cornti;
+  DRB_config2->co_RNTI = (long)coRNTI;
+  // Virtual Link ID
+  virtualLinkID = CALLOC(1,sizeof(*virtualLinkID));
+  *virtualLinkID = vlid;
+  DRB_config2->virtualLinkID = (long)virtualLinkID;
+  ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
 
-	// RadioResourceConfigDedicated->mac-MainConfig
-	mac_MainConfig = CALLOC(1,sizeof(*mac_MainConfig));
-	eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index] = mac_MainConfig;
-	mac_MainConfig->ul_SCH_Config = CALLOC(1,sizeof(*mac_MainConfig->ul_SCH_Config));
-	maxHARQ_Tx = CALLOC(1,sizeof(long));
-	*maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-	mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
-	periodicBSR_Timer = CALLOC(1,sizeof(long));
-	*periodicBSR_Timer = MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64;
-	mac_MainConfig->ul_SCH_Config->periodicBSR_Timer =  periodicBSR_Timer;
-	mac_MainConfig->ul_SCH_Config->retxBSR_Timer =  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320;
-	mac_MainConfig->ul_SCH_Config->ttiBundling=0; // FALSE
-	mac_MainConfig->drx_Config = NULL;
-	mac_MainConfig->phr_Config = CALLOC(1,sizeof(*mac_MainConfig->phr_Config));
-	mac_MainConfig->phr_Config->present = MAC_MainConfig__phr_Config_PR_setup;
-	mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer= MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
-	mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer=MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
-	mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange=MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1; // Value dB1 =1 dB, dB3 = 3 dB
-
-	size = do_RRCConnectionReconfiguration(Mod_id,
+  // RadioResourceConfigDedicated->mac-MainConfig
+  mac_MainConfig = CALLOC(1,sizeof(*mac_MainConfig));
+  eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index] = mac_MainConfig;
+  mac_MainConfig->ul_SCH_Config = CALLOC(1,sizeof(*mac_MainConfig->ul_SCH_Config));
+  maxHARQ_Tx = CALLOC(1,sizeof(long));
+  *maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+  mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
+  periodicBSR_Timer = CALLOC(1,sizeof(long));
+  *periodicBSR_Timer = MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64;
+  mac_MainConfig->ul_SCH_Config->periodicBSR_Timer =  periodicBSR_Timer;
+  mac_MainConfig->ul_SCH_Config->retxBSR_Timer =  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320;
+  mac_MainConfig->ul_SCH_Config->ttiBundling=0; // FALSE
+  mac_MainConfig->drx_Config = NULL;
+  mac_MainConfig->phr_Config = CALLOC(1,sizeof(*mac_MainConfig->phr_Config));
+  mac_MainConfig->phr_Config->present = MAC_MainConfig__phr_Config_PR_setup;
+  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer= MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer=MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange=MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1; // Value dB1 =1 dB, dB3 = 3 dB
+  
+  size = do_RRCConnectionReconfiguration(Mod_id,
 					 buffer,
 					 UE_index,
 					 0,//Transaction_id,
@@ -669,16 +669,16 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
 					 NULL, //*QuantityConfig
 					 NULL,//measId_list
 					 mac_MainConfig,//mac_macConfig
-					       NULL, //measGapConfig
-					       NULL,
-					       0); 
+					 NULL, //measGapConfig
+					 NULL,
+					 0); 
 
-	LOG_D(RRC,"[eNB %d]Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %u, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, vlid);
-	LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d) --->][RLC][MOD %02d][RB %02d]\n",frame, Mod_id, size, UE_index, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
-
-	/* Send data to lower layer (PDCP) */
-	pdcp_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer,1);
-
+  LOG_D(RRC,"[eNB %d]Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %u, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, vlid);
+  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d) --->][RLC][MOD %02d][RB %02d]\n",frame, Mod_id, size, UE_index, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
+  
+  /* Send data to lower layer (PDCP) */
+  pdcp_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer,1);
+  
 }// end rrc_eNB_generate_RRCConnectionReconfiguration_co
 
 void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length) {
@@ -1123,16 +1123,16 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   // Loop through DRBs and establish if necessary
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
-    	DRB_id = (long)eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->drb_Identity - 1; //TCS LOLAmesh index in the DRB_config table = drb_identity - 1
-			if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
-				LOG_I(RRC,"[TCS DEBUG][eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",Mod_id,frame, UE_index,DRB_id,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
-				rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
-				rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
-				eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
-				LOG_D(RRC,"[TCS DEBUG][eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id, frame, DRB_id);
+      DRB_id = (long)eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->drb_Identity - 1; //TCS LOLAmesh index in the DRB_config table = drb_identity - 1
+      if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
+	LOG_I(RRC,"[eNB %d][VLINK] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",Mod_id,frame, UE_index,DRB_id,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
+	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
+	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
+	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
+	LOG_D(RRC,"[eNB %d][VLINK] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id, frame, DRB_id);
 #ifdef NAS_NETLINK
 // can mean also IPV6 since ether -> ipv6 autoconf
-#    ifndef NAS_DRIVER_TYPE_ETHERNET
+#ifndef NAS_DRIVER_TYPE_ETHERNET
 	if (eNB_rrc_inst[Mod_id].Info.oai_ifup == 0 ){
 	  LOG_I(OIP,"[eNB %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, Mod_id,
 		Mod_id+1,Mod_id+1);
@@ -1165,22 +1165,22 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	}
 #endif
 #endif
-				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- (ADD) MAC_CONFIG_REQ (DRB %d UE %d) --->][MAC_eNB][MOD %02d][]\n",frame, Mod_id, DRB_id, UE_index, Mod_id);
-				DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;
-				rrc_mac_config_req(Mod_id,1,UE_index,0,
-					 (RadioResourceConfigCommonSIB_t *)NULL,
-					 eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
-					 (MeasObjectToAddMod_t **)NULL,
-					 eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
-					 DRB2LCHAN[i],
-					 eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
-					 eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
-					 (TDD_Config_t *)NULL,
-					 (u8 *)NULL,
-					 (u16 *)NULL);
-			}// end if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0)
-			else { // remove LCHAN from MAC/PHY
-				LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, DRB %d/LCID %d already reconfigured \n",Mod_id,frame, UE_index,DRB_id,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- (ADD) MAC_CONFIG_REQ (DRB %d UE %d) --->][MAC_eNB][MOD %02d][]\n",frame, Mod_id, DRB_id, UE_index, Mod_id);
+	DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;
+	rrc_mac_config_req(Mod_id,1,UE_index,0,
+			   (RadioResourceConfigCommonSIB_t *)NULL,
+			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
+			   (MeasObjectToAddMod_t **)NULL,
+			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
+			   DRB2LCHAN[i],
+			   eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
+			   eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
+			   (TDD_Config_t *)NULL,
+			   (u8 *)NULL,
+			   (u16 *)NULL);
+      }// end if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0)
+      else { // remove LCHAN from MAC/PHY
+	LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, DRB %d/LCID %d already reconfigured \n",Mod_id,frame, UE_index,DRB_id,(UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
       }// end else
     }// end if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i])
   }// end for (i=0;i<8;i++)
@@ -1191,31 +1191,29 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   for (i=0;i<4;i++) { // num max CODRB = 4
 
     if (eNB_rrc_inst[Mod_id].CODRB_config[i]) {
-
-
-    	//TCS LOLAmesh
-    	DRB_id = (long)eNB_rrc_inst[Mod_id].CODRB_config[i]->drb_Identity - 1;
-    	logical_channel_id = ((u32)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity) + CO_LCID_SHIFT;
-
-			if (eNB_rrc_inst[Mod_id].CODRB_active[i] == 0) {
-
-				LOG_I(RRC,"[TCS DEBUG][eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring CODRB %d/LCID %d\n",Mod_id,frame,UE_index,DRB_id,logical_channel_id);
-				rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,logical_channel_id);
-				rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,logical_channel_id,RADIO_ACCESS_BEARER,Rlc_info_um);
-				eNB_rrc_inst[Mod_id].CODRB_active[i] = 1;
-				LOG_D(RRC,"[TCS DEBUG][eNB %d] Frame %d: Establish RLC UM Bidirectional, CODRB %d Active\n",Mod_id, frame, DRB_id);
-				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- (ADD) MAC_CONFIG_REQ (CODRB %d UE %d) --->][MAC_eNB][MOD %02d][]\n",frame, Mod_id, DRB_id, UE_index, Mod_id);
-				//DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity;
-				DRB2LCHAN[i] = (u8)logical_channel_id;
-				rrc_mac_config_req(Mod_id,1,UE_index,0,(RadioResourceConfigCommonSIB_t *)NULL,eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],(MeasObjectToAddMod_t **)NULL,eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],DRB2LCHAN[i],eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelConfig,eNB_rrc_inst[Mod_id].measGapConfig[UE_index],(TDD_Config_t *)NULL,(u8 *)NULL,(u16 *)NULL);
-			}// end if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0)
-
-			// CODRB has already been configured
-			else {
-				LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, CODRB %d/LCID %d already reconfigured \n",Mod_id,frame, UE_index,DRB_id,logical_channel_id);
+      //TCS LOLAmesh
+      DRB_id = (long)eNB_rrc_inst[Mod_id].CODRB_config[i]->drb_Identity - 1;
+      logical_channel_id = ((u32)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity) + CO_LCID_SHIFT;
+      
+      if (eNB_rrc_inst[Mod_id].CODRB_active[i] == 0) {
+	
+	LOG_I(RRC,"[eNB %d][VLINK] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring CODRB %d/LCID %d\n",Mod_id,frame,UE_index,DRB_id,logical_channel_id);
+	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,logical_channel_id);
+	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,logical_channel_id,RADIO_ACCESS_BEARER,Rlc_info_um);
+	eNB_rrc_inst[Mod_id].CODRB_active[i] = 1;
+	LOG_D(RRC,"[eNB %d][VLINK] Frame %d: Establish RLC UM Bidirectional, CODRB %d Active\n",Mod_id, frame, DRB_id);
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- (ADD) MAC_CONFIG_REQ (CODRB %d UE %d) --->][MAC_eNB][MOD %02d][]\n",frame, Mod_id, DRB_id, UE_index, Mod_id);
+	//DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity;
+	DRB2LCHAN[i] = (u8)logical_channel_id;
+	rrc_mac_config_req(Mod_id,1,UE_index,0,(RadioResourceConfigCommonSIB_t *)NULL,eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],(MeasObjectToAddMod_t **)NULL,eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],DRB2LCHAN[i],eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelConfig,eNB_rrc_inst[Mod_id].measGapConfig[UE_index],(TDD_Config_t *)NULL,(u8 *)NULL,(u16 *)NULL);
+      }// end if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0)
+      
+      // CODRB has already been configured
+      else {
+	LOG_I(RRC,"[eNB %d][VLINK] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, CODRB %d/LCID %d already reconfigured \n",Mod_id,frame, UE_index,DRB_id,logical_channel_id);
       }// end else
 
-
+      
     }// end if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i])
 
 

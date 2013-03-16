@@ -80,6 +80,12 @@ extern DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 extern DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
+
+extern struct virtual_links vlinksTable[NB_MAX_CH];
+// mac layer forwarding table
+extern struct forwarding_Table forwardingTable[NB_MAX_CH];
+// CO-RNTIs of the UE
+//extern struct cornti_array corntis;
 #endif //DEF_H
 
 

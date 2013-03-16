@@ -60,7 +60,8 @@
 #include "TDD-Config.h"
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
-#include "LAYER2/MAC/virtual_link.h" //TCS LOLAmesh
+
+#include "virtual_link.h"
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
@@ -185,7 +186,7 @@ typedef struct {
 
 //TCS LOLAmesh
 typedef struct {
-	u16 squence_number;
+  u16 squence_number;
 } __attribute__((__packed__))CO_SEQ_NUM;
 
 typedef struct {
@@ -465,20 +466,6 @@ typedef struct {
   s16 bucket_size[MAX_NUM_LCID];
 } UE_SCHEDULING_INFO;
 
-/* Forwarding table definition */
-
-#define MAX_FW_ENTRY 10 //TCS LOLAmesh
-
-struct forwardingTableEntry { //TCS LOLAmesh
-	u8 vlid;
-	u16 cornti1;
-	u16 cornti2;
-};
-
-struct forwardingTable { //TCS LOLAmesh
-	u8 count;
-	struct forwardingTableEntry array[MAX_FW_ENTRY];
-};
 
 typedef struct{
   u16 Node_id[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -539,11 +526,8 @@ typedef struct{
   u8 PHR_reporting_active[NUMBER_OF_CONNECTED_eNB_MAX]; 
  /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
-  // mac layer forwarding table
-  struct forwardingTable forwardingTable; //TCS LOLAmesh
   // CO-RNTIs of the UE
-  struct cornti_array corntis; //TCS LOLAmesh
-
+  struct cornti_array corntis;
 }UE_MAC_INST;
 
 typedef struct {
@@ -1063,26 +1047,27 @@ void dl_phy_sync_success(unsigned char Mod_id,
 
 //TCS LOLAmesh
 /* Add a new entry or fill a new entry in the forwarding table
- * @param forwardingTable
  * @param vlid -> ID of the considered virtual link
  * @param cornti -> cornti associated to the virtual link
  * returns 0 = entry added / -2 = entry found but corrupted */
-int mac_forwarding_add_entry(struct forwardingTable *forwardingTable, u8 Mod_id, u8 eNB_index, u8 vlid, u16 cornti);
+int mac_forwarding_add_entry(u8 Mod_id, u8 eNB_index, u8 vlid, u16 cornti);
 
 //TCS LOLAmesh
 /* Remove an entry in the forwarding table
  * @param vlid -> ID of the considered virtual link
  * @param cornti -> cornti associated to the virtual link
  * return 0 = entry removed / -1 = error */
-int mac_forwarding_remove_entry(struct forwardingTable *forwardingTable, u8 vlid);
+int mac_forwarding_remove_entry(u8 vlid);
 
 //TCS LOLAmesh
 /* Get the output CORNTI associated to an input CORNTI
- * @param forwardingTable
- * @param vlid -> ID of the considered virtual link
+  * @param vlid -> ID of the considered virtual link
  * @param cornti -> cornti associated to the virtual link
  * returns output CORNTI*/
-int mac_forwarding_get_output_CORNTI(struct forwardingTable *forwardingTable, u8 Mod_id, u8 eNB_index, u8 vlid, u16 cornti);
+int mac_forwarding_get_output_CORNTI(u8 Mod_id, u8 eNB_index, u8 vlid, u16 cornti);
+
+void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink);
+int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe );
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

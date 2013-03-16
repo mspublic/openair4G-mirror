@@ -153,7 +153,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
   return(0);
 }
 
-//TCS LOLAmesh
 int rrc_mac_config_co_req(u8 Mod_id,
 			  u8 eNB_index,
 			  u16 co_RNTI,
@@ -161,118 +160,8 @@ int rrc_mac_config_co_req(u8 Mod_id,
   
   int ret = 0;
   
-  ret = mac_forwarding_add_entry(&(UE_mac_inst[Mod_id].forwardingTable), Mod_id, eNB_index, virtualLinkID, co_RNTI);
+  ret = mac_forwarding_add_entry(Mod_id, eNB_index, virtualLinkID, co_RNTI);
   
   return ret;
 }
 
-//TCS LOLAmesh
-/* Add a new entry or fill a new entry in the forwarding table
- * returns 0 = entry added / -1 = error */
-int mac_forwarding_add_entry(struct forwardingTable *forwardingTable,
-			     u8 Mod_id,
-			     u8 eNB_index,
-			     u8 vlid,
-			     u16 cornti) {
-  
-  int ret = 0;
-  int i = 0;
-  int existing_entry = 0;
-  u8 current_vlid = 0;
-  
-  /* We look for an existing entry */
-  while ((i<forwardingTable->count) && (current_vlid != vlid)) {
-    
-    current_vlid = forwardingTable->array[i].vlid;
-    
-    /* We ve found it */
-    if (current_vlid == vlid) {
-      
-      /* We fill the cornti which has an error value */
-      if (forwardingTable->array[i].cornti1 == 0) {
-	forwardingTable->array[i].cornti1 = cornti;
-	existing_entry = 1;
-      }
-      
-      if (forwardingTable->array[i].cornti2 == 0) {
-	forwardingTable->array[i].cornti2 = cornti;
-	existing_entry = 1;
-      }
-      
-      LOG_I(MAC,"[CONFIG][UE %d][TCS DEBUG] Configuring MAC forwarding table from eNB %d, existing entry found in the table => VLID = %u and CO-RNTI1 = %u CO-RNTI2 = %u\n",Mod_id,eNB_index,vlid,forwardingTable->array[i].cornti1,forwardingTable->array[i].cornti2);
-      
-    }//end if (current_vlid == vlid)
-    
-    i++;
-  }//end while ((i<MAX_FW_ENTRY) || (current_vlid != vlid))
-  
-  /* There's no existing entry, we shall create a new one */
-  if (existing_entry == 0) {
-    /* There's some room left in the forwarding table */
-    if (forwardingTable->count < MAX_FW_ENTRY) {
-      forwardingTable->array[forwardingTable->count].vlid = vlid;
-      forwardingTable->array[forwardingTable->count].cornti1 = cornti;
-      forwardingTable->array[forwardingTable->count].cornti2 = 0; // error value
-      LOG_I(MAC,"[CONFIG][UE %d][TCS DEBUG] Configuring MAC forwarding table from eNB %d, creating a new entry in the table => VLID = %u and CO-RNTI1 = %u CO-RNTI2 = %u\n",Mod_id,eNB_index,forwardingTable->array[forwardingTable->count].vlid,forwardingTable->array[forwardingTable->count].cornti1, forwardingTable->array[forwardingTable->count].cornti2);
-      forwardingTable->count++;
-    }
-    /* The forwarding table is full */
-    else {
-      ret = -1;
-    }
-    
-  }// end if (existing_entry == 0)
-  
-  return ret;
-}
-
-//TCS LOLAmesh
-/* Remove an entry in the forwarding table
- * return 0 = entry removed / -1 = error */
-int mac_forwarding_remove_entry(struct forwardingTable *forwardingTable, u8 vlid) {
-  
-  return 0;
-  
-}
-
-//TCS LOLAmesh
-/* Get the output CORNTI associated to an input CORNTI
- * returns output CORNTI*/
-int mac_forwarding_get_output_CORNTI(struct forwardingTable *forwardingTable,
-				     u8 Mod_id,
-				     u8 eNB_index,
-				     u8 vlid,
-				     u16 cornti) {
-  
-  u8 current_vlid = 0;
-  int i = 0;
-  int output_cornti = -1;
-  
-  /* We look for an existing entry */
-  while ((i<forwardingTable->count) && (current_vlid != vlid)) {
-    
-    current_vlid = forwardingTable->array[i].vlid;
-    
-    /* We've found it */
-    if (current_vlid == vlid) {
-      
-      /* We fill the cornti which has an error value */
-      if (forwardingTable->array[i].cornti1 == cornti) {
-	output_cornti = forwardingTable->array[i].cornti2;
-      }
-      
-      if (forwardingTable->array[i].cornti2 == cornti) {
-	output_cornti = forwardingTable->array[i].cornti1;
-      }
-      
-    }//end if (current_vlid == vlid)
-    
-    i++;
-  }//end while ((i<MAX_FW_ENTRY) || (current_vlid != vlid))
-  
-  
-  /* If -1 is returned, the entry is not yet initialized completely
-   * or has not been found */
-  return output_cornti;
-  
-}

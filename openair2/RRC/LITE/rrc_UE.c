@@ -367,24 +367,24 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,struct DRB_ToAddMod *D
     return(-1);
     break;
   case RLC_Config_PR_um_Bi_Directional :
-  	// We need to configure a collaborative DRB
-  	if ((DRB_config->co_RNTI != NULL)&&(DRB_config->virtualLinkID != NULL)) {
-  		logical_channel_id = ((int)*DRB_config->logicalChannelIdentity) + CO_LCID_SHIFT;
-  		LOG_D(RRC,"[TCS DEBUG][UE] Frame %d: RRCConnectionReconfiguration Configuring CODRB %ld/LCID %d\n",frame,DRB_id,logical_channel_id);
-			LOG_D(RRC,"[TCS DEBUG][UE %d] Frame %d: Establish RLC UM Bidirectional, CODRB %d Active\n",Mod_id,frame,DRB_id);
-			//Collaborative DRB are stored at the end of the DRB list /collaborative logicalChannelIdentity = collaborative rab_id = 64 65 66 67 ...
-			rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,logical_channel_id);
-			rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,logical_channel_id,RADIO_ACCESS_BEARER,Rlc_info_um);
-  	}
-  	// We need to configure a DRB
-  	else {
-  		LOG_D(RRC,"[TCS DEBUG][UE] Frame %d: RRCConnectionReconfiguration Configuring DRB %ld/LCID %d\n",frame,DRB_id,(int)*DRB_config->logicalChannelIdentity);
-			LOG_D(RRC,"[TCS DEBUG][UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id,frame,DRB_id);
-			//pdcp_array size is MAX_eNB * MAX_RAB or MAX_UE * MAX_RAB where MAX_RAB = 8 (8*8 = 64), so it includes only DRBs (one UE can have 8 DRBs towards 8 eNB)
-			//DRB0 starts at index 0 for UE0, 8 fort UE1...
-			rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,(eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
-			rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,(eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
-  	}
+    // We need to configure a collaborative DRB
+    if ((DRB_config->co_RNTI != NULL)&&(DRB_config->virtualLinkID != NULL)) {
+      logical_channel_id = ((int)*DRB_config->logicalChannelIdentity) + CO_LCID_SHIFT;
+      LOG_D(RRC,"[UE][VLINK] Frame %d: RRCConnectionReconfiguration Configuring CODRB %ld/LCID %d\n",frame,DRB_id,logical_channel_id);
+      LOG_D(RRC,"[UE %d][VLINK] Frame %d: Establish RLC UM Bidirectional, CODRB %d Active\n",Mod_id,frame,DRB_id);
+      //Collaborative DRB are stored at the end of the DRB list /collaborative logicalChannelIdentity = collaborative rab_id = 64 65 66 67 ...
+      rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,logical_channel_id);
+      rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,logical_channel_id,RADIO_ACCESS_BEARER,Rlc_info_um);
+    }
+    // We need to configure a DRB
+    else {
+      LOG_D(RRC,"[UE %d][VLINK] Frame %d: RRCConnectionReconfiguration Configuring DRB %ld/LCID %d\n",Mod_id, frame,DRB_id,(int)*DRB_config->logicalChannelIdentity);
+      LOG_D(RRC,"[UE %d][VLINK] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id,frame,DRB_id);
+      //pdcp_array size is MAX_eNB * MAX_RAB or MAX_UE * MAX_RAB where MAX_RAB = 8 (8*8 = 64), so it includes only DRBs (one UE can have 8 DRBs towards 8 eNB)
+      //DRB0 starts at index 0 for UE0, 8 fort UE1...
+      rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,(eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
+      rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,(eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,RADIO_ACCESS_BEARER,Rlc_info_um);
+    }
 #ifdef NAS_NETLINK
 #    ifdef OAI_EMU
     ip_addr_offset3 = oai_emulation.info.nb_enb_local;
@@ -714,55 +714,52 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
       	rrc_mac_config_req(Mod_id,0,0,eNB_index,(RadioResourceConfigCommonSIB_t *)NULL,UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],(MeasObjectToAddMod_t **)NULL,UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],*UE_rrc_inst[Mod_id].CODRB_config[DRB_id]->logicalChannelIdentity,UE_rrc_inst[Mod_id].CODRB_config[DRB_id]->logicalChannelConfig,UE_rrc_inst[Mod_id].measGapConfig[eNB_index],(TDD_Config_t*)NULL,(u8 *)NULL,(u16 *)NULL);
 
     	  // MAC/PHY Configuration
-    	  cornti = (u16)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI;
-    	  vlid = (u8)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID;
-    	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][--- MAC_CONFIG_CO_REQ (CODRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %u and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
+	cornti = (u16)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI;
+	vlid = (u8)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID;
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][--- MAC_CONFIG_CO_REQ (CODRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %u and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
 
     	  /* Configure the forwarding table with the given vlid and cornti */
-    	  ret=rrc_mac_config_co_req(Mod_id,eNB_index,cornti,vlid);
-    	  if (ret < 0) {
-    	    LOG_D(RRC, "[TCS DEBUG][MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][CODRB %d eNB %d][MAC_UE][MOD %02d] MAC layer forwarding table configuration failed\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
-    	  } else {
-    	    LOG_D(RRC, "[TCS DEBUG][MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][CODRB %d eNB %d][MAC_UE][MOD %02d] MAC layer forwarding table configuration succeeded\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
-    	  }
-    	  //UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_RECONFIGURED;
-    	  //LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
-    	  collaborative_link = 1;
+	ret=rrc_mac_config_co_req(Mod_id,eNB_index,cornti,vlid);
+	if (ret < 0) {
+	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][CODRB %d eNB %d][MAC_UE][MOD %02d] MAC layer forwarding table configuration failed\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
+	} else {
+	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][CODRB %d eNB %d][MAC_UE][MOD %02d] MAC layer forwarding table configuration succeeded\n",frame,Mod_id, DRB_id, eNB_index, Mod_id);
+	}
+	//UE_rrc_inst[Mod_id].State_CoLink[vlid]= RRC_RECONFIGURED;
+	//LOG_D(RRC,"[UE %d][VLINK] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,eNB_index,vlid);
+	collaborative_link = 1;
 
     	  /* Keep track of the CORNTI */
     	  //MAC layer structures
-    	  nb_corntis = UE_mac_inst[Mod_id].corntis.count;
-    	  UE_mac_inst[Mod_id].corntis.array[nb_corntis] = cornti;
-    	  UE_mac_inst[Mod_id].corntis.count++;
-    	  //PHY layer structures
-    	  nb_corntis = PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.count;
-    	  PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.array[nb_corntis] = cornti;
-    	  PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.count++;
-
+	nb_corntis = UE_mac_inst[Mod_id].corntis.count;
+	UE_mac_inst[Mod_id].corntis.array[nb_corntis] = cornti;
+	UE_mac_inst[Mod_id].corntis.count++;
+	//PHY layer structures
+	nb_corntis = PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.count;
+	PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.array[nb_corntis] = cornti;
+	PHY_vars_UE_g[Mod_id]->dlsch_ue[eNB_index][0]->corntis.count++;
+	
       }// end if ((radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI != NULL)&&(radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID != NULL))
 
       // We need to configure a DRB
       else {
-
+	
         if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) {
-        	memcpy(UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id],radioResourceConfigDedicated->drb_ToAddModList->list.array[i],sizeof(struct DRB_ToAddMod));
+	  memcpy(UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id],radioResourceConfigDedicated->drb_ToAddModList->list.array[i],sizeof(struct DRB_ToAddMod));
         }
-
-        else {
-
-        	UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
-
-        	rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
-
-  				// MAC/PHY Configuration
-  				LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",frame, Mod_id, DRB_id, eNB_index, Mod_id);
-  				rrc_mac_config_req(Mod_id,0,0,eNB_index,(RadioResourceConfigCommonSIB_t *)NULL,UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],(MeasObjectToAddMod_t **)NULL,UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],*UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,UE_rrc_inst[Mod_id].measGapConfig[eNB_index],(TDD_Config_t*)NULL,(u8 *)NULL,(u16 *)NULL);
+	else {
+	  UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
+	  
+	  rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
+	  // MAC/PHY Configuration
+	  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",frame, Mod_id, DRB_id, eNB_index, Mod_id);
+	  rrc_mac_config_req(Mod_id,0,0,eNB_index,(RadioResourceConfigCommonSIB_t *)NULL,UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],(MeasObjectToAddMod_t **)NULL,UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],*UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,UE_rrc_inst[Mod_id].measGapConfig[eNB_index],(TDD_Config_t*)NULL,(u8 *)NULL,(u16 *)NULL);
         }
 
       }// end else
-
+      
     }//end for (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++)
-
+    
   }//end if (radioResourceConfigDedicated->drb_ToAddModList)
   
   //TCS LOLAmesh
@@ -773,9 +770,9 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
   }
   //If this is a collaborative link, we return the id of the link
   else {
-  	ret = vlid;
+    ret = vlid;
   }
-
+  
   return ret;
 
 }
@@ -867,20 +864,20 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
       case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
-				ret = rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
-				//TCS LOLAmesh
-				// If this is not a cooperative link ret == 0
-				if (ret == 0) {
-					rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,0,0);
-					UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
-					LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
-				}
-				// If this is a cooperative link ret == vlid
-				else {
-					rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,1,ret);
-					UE_rrc_inst[Mod_id].State_CoLink[ret] = RRC_RECONFIGURED;
-					LOG_D(RRC,"[TCS DEBUG][UE %d] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,ret,eNB_index);
-				}
+	ret = rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+	//TCS LOLAmesh
+	// If this is not a cooperative link ret == 0
+	if (ret == 0) {
+	  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,0,0);
+	  UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
+	  LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+	}
+	// If this is a cooperative link ret == vlid
+	else {
+	  rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index,1,ret);
+	  UE_rrc_inst[Mod_id].State_CoLink[ret] = RRC_RECONFIGURED;
+	  LOG_D(RRC,"[UE %d][VLINK] State = RRC_RECONFIGURED for vlid %u (eNB %d)\n",Mod_id,ret,eNB_index);
+	}
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
