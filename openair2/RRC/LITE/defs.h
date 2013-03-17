@@ -72,6 +72,7 @@
 #include "MBSFNAreaConfiguration-r9.h"
 #endif
 #include "UE-EUTRA-Capability.h"
+#include "MeasResults.h"
 
 //#include "L3_rrc_defs.h"
 #ifndef NO_RRM
@@ -216,9 +217,8 @@ typedef struct{
   MBSFNAreaConfiguration_r9_t       *mcch_message;  
   SRB_INFO                       MCCH_MESS;
 #endif
-  struct SRB_ToAddMod               *SRB1_config[NUMBER_OF_UE_MAX];
-  struct SRB_ToAddMod               *SRB2_config[NUMBER_OF_UE_MAX];
-  struct DRB_ToAddMod               *DRB_config[NUMBER_OF_UE_MAX][8];
+  SRB_ToAddModList_t                *SRB_configList[NUMBER_OF_UE_MAX];
+  DRB_ToAddModList_t                *DRB_configList[NUMBER_OF_UE_MAX];
   uint8_t                           DRB_active[NUMBER_OF_UE_MAX][8];
   struct PhysicalConfigDedicated    *physicalConfigDedicated[NUMBER_OF_UE_MAX];
   struct SPS_Config                 *sps_Config[NUMBER_OF_UE_MAX];
@@ -421,11 +421,11 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u32 frame, u8 UE_inde
    \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
 
-/**\brief Generate/decode the RRCConnectionReconfiguration at eNB
+/**\brief Generate/decode the Default (first) RRCConnectionReconfiguration at eNB
    \param Mod_id Instance ID for eNB/CH
    \param frame Frame index
    \param UE_index Index of UE transmitting the messages*/
-void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length);
+void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length);
 
 
 //L2_interface.c
@@ -442,7 +442,10 @@ int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index);
 
 void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index);
-void rrc_eNB_generate_UESecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
+void rrc_eNB_generate_SecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
+
+void rrc_eNB_process_MeasurementReport(u8 Mod_id,u16 UE_index,MeasResults_t	 *measResults2) ;
+
 
 //void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index);
 //void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityModeCommand_t *securityModeCommand,uint8_t eNB_index);
