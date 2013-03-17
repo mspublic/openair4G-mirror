@@ -777,6 +777,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   struct SRB_ToAddMod__logicalChannelConfig *SRB2_lchan_config;
   struct LogicalChannelConfig__ul_SpecificParameters *SRB2_ul_SpecificParameters;
   SRB_ToAddModList_t *SRB_configList =   rrc_inst->SRB_configList[UE_index];
+  SRB_ToAddModList_t *SRB_configList2;
 
   struct DRB_ToAddMod *DRB_config;
   struct RLC_Config *DRB_rlc_config;
@@ -811,20 +812,21 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
 
   /// SRB2
   SRB2_config = CALLOC(1,sizeof(*SRB2_config));
-
+  SRB_configList2 = CALLOC(1,sizeof(*SRB_configList2));
+  memset(SRB_configList2,0,sizeof(*SRB_configList2));
+			   
   SRB2_config->srb_Identity = 2;
   SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
   SRB2_config->rlc_Config   = SRB2_rlc_config;
 
   SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
   SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms45;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_pInfinity;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = PollPDU_pInfinity;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t4;
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
-
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms15;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_p8;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = PollByte_kB1000;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t32;
+  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms50;
+  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms10;
 
   SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
   SRB2_config->logicalChannelConfig   = SRB2_lchan_config;
@@ -845,6 +847,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
 
   SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
   ASN_SEQUENCE_ADD(&SRB_configList->list,SRB2_config);
+  ASN_SEQUENCE_ADD(&SRB_configList2->list,SRB2_config);
 
   // Configure DRB
 
@@ -1132,7 +1135,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
                                          buffer,
                                          UE_index,
                                          0,//Transaction_id,
-                                         SRB_configList,
+                                         SRB_configList2,
                                          *DRB_configList,
                                          NULL, // DRB2_list,
                                          NULL, //*sps_Config,

@@ -37,8 +37,8 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
   if (srb2add_listP != NULL) {
       for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
-          rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
-	  printf("Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+	rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
+	printf("Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
           srb_toaddmod = srb2add_listP->list.array[cnt];
 
           if (srb_toaddmod->rlc_Config) {
@@ -110,7 +110,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
       for (cnt=0;cnt<drb2add_listP->list.count;cnt++) {
           drb_toaddmod = drb2add_listP->list.array[cnt];
 
-          drb_id = (UE_index * MAX_NUM_RB) + drb_toaddmod->drb_Identity;
+          drb_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;//drb_toaddmod->drb_Identity;
           
           if (drb_toaddmod->logicalChannelIdentity != null) {
               lc_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;
