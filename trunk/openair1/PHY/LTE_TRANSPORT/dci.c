@@ -1850,6 +1850,9 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 			      subframe,
 			      lte_ue_pdcch_vars[eNB_id],
 			      mimo_mode);
+  if (n_pdcch_symbols>3)
+    n_pdcch_symbols=1;
+
 #ifdef DEBUG_DCI_DECODING
   msg("[PDCCH] subframe %d n_pdcch_symbols from PCFICH =%d\n",subframe,n_pdcch_symbols);
 
@@ -2544,7 +2547,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
   unsigned int CCEmap_cand;
 
   nCCE = get_nCCE(lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,frame_parms,mi);
-
+  if (nCCE > get_nCCE(3,frame_parms,1))
+      return;
   if (nCCE<L2)
     return;
 

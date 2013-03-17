@@ -45,7 +45,7 @@
 #include "defs.h"
 #include "extern.h"
 
-#define DEBUG_INITIAL_SYNCH
+//#define DEBUG_INITIAL_SYNCH
 
 int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 
@@ -120,7 +120,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 			  0,
 			  ALAMOUTI,
 			  frame_mod4);
-    if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+    if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
       pbch_decoded = 1;
       break;
     }
@@ -206,7 +206,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     phy_vars_ue->frame ++;
 #endif
 
-    //#ifdef DEBUG_INITIAL_SYNCH
+#ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
 	  phy_vars_ue->Mod_id,
 	  frame_parms->mode1_flag,
@@ -215,7 +215,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 	  frame_parms->N_RB_DL,
 	  frame_parms->phich_config_common.phich_duration,
 	  phich_resource);  //frame_parms->phich_config_common.phich_resource);
-    //#endif
+#endif
     return(0);
   }
   else {
