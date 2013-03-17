@@ -40,6 +40,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UL-AM-RLC.h"
+#include "DL-AM-RLC.h"
 #define TRACE_RLC_AM_DATA_REQUEST
 //#define TRACE_RLC_AM_TX_STATUS
 #define TRACE_RLC_AM_TX
@@ -121,35 +123,65 @@ void config_req_rlc_am (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
            config_amP->t_status_prohibit);
 
 }
+u32_t pollPDU_tab[PollPDU_pInfinity+1]={4,8,16,32,64,128,256,1024};  // What is PollPDU_pInfinity??? 1024 for now
+u32_t maxRetxThreshold_tab[UL_AM_RLC__maxRetxThreshold_t32+1]={1,2,3,4,6,8,16,32};
+u32_t pollByte_tab[PollByte_spare1]={25,50,75,100,125,250,375,500,750,1000,1250,1500,2000,3000,10000};  // What is PollByte_kBinfinity??? 10000 for now
+u32_t PollRetransmit_tab[T_PollRetransmit_spare9]={5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
+u32_t am_t_Reordering_tab[T_Reordering_spare1]={0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+u32_t t_StatusProhibit_tab[T_StatusProhibit_spare8]={0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
+
 //-----------------------------------------------------------------------------
 void config_req_rlc_am_asn1 (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, struct RLC_Config__am * config_amP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
-  LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d) --->][RLC_AM][MOD %02d][RB %02d]\n",
-	frame,
-	( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
-	module_idP,
-	config_amP->ul_AM_RLC.maxRetxThreshold,
-	config_amP->ul_AM_RLC.pollPDU,
-	config_amP->ul_AM_RLC.pollByte,
-	config_amP->ul_AM_RLC.t_PollRetransmit,
-	config_amP->dl_AM_RLC.t_Reordering,
-	config_amP->dl_AM_RLC.t_StatusProhibit,
-	module_idP,
-	rb_idP);
+  if (	(config_amP->ul_AM_RLC.maxRetxThreshold <= UL_AM_RLC__maxRetxThreshold_t32) &&
+	(config_amP->ul_AM_RLC.pollPDU<=PollPDU_pInfinity) &&
+	(config_amP->ul_AM_RLC.pollByte<PollByte_spare1) &&
+	(config_amP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare9) &&
+	(config_amP->dl_AM_RLC.t_Reordering<T_Reordering_spare1) &&
+	(config_amP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare8) ){
 
-  rlc_am_init(rlcP,frame);
-  rlc_am_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
-  rlc_am_configure(rlcP,frame,
-		   config_amP->ul_AM_RLC.maxRetxThreshold,
-		   config_amP->ul_AM_RLC.pollPDU,
-		   config_amP->ul_AM_RLC.pollByte,
-		   config_amP->ul_AM_RLC.t_PollRetransmit,
-		   config_amP->dl_AM_RLC.t_Reordering,
-		   config_amP->dl_AM_RLC.t_StatusProhibit);
-  
+    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d) --->][RLC_AM][MOD %02d][RB %02d]\n",
+	  frame,
+	  ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+	  module_idP,
+	  maxRetxThreshold_tab[config_amP->ul_AM_RLC.maxRetxThreshold],
+	  pollPDU_tab[config_amP->ul_AM_RLC.pollPDU],
+	  pollByte_tab[config_amP->ul_AM_RLC.pollByte],
+	  PollRetransmit_tab[config_amP->ul_AM_RLC.t_PollRetransmit],
+	  am_t_Reordering_tab[config_amP->dl_AM_RLC.t_Reordering],
+	  t_StatusProhibit_tab[config_amP->dl_AM_RLC.t_StatusProhibit],
+	  module_idP,
+	  rb_idP);
+    
+    rlc_am_init(rlcP,frame);
+    rlc_am_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
+    rlc_am_configure(rlcP,frame,
+		     maxRetxThreshold_tab[config_amP->ul_AM_RLC.maxRetxThreshold],
+		     pollPDU_tab[config_amP->ul_AM_RLC.pollPDU],
+		     pollByte_tab[config_amP->ul_AM_RLC.pollByte],
+		     PollRetransmit_tab[config_amP->ul_AM_RLC.t_PollRetransmit],
+		     am_t_Reordering_tab[config_amP->dl_AM_RLC.t_Reordering],
+		     t_StatusProhibit_tab[config_amP->dl_AM_RLC.t_StatusProhibit]);
+    
+  }
+  else {
+    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- ILLEGAL CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d) --->][RLC_AM][MOD %02d][RB %02d], RLC-AM NOT CONFIGURED\n",
+	  frame,
+	  ( Mac_rlc_xface->Is_cluster_head[module_idP] == 1) ? "eNB":"UE",
+	  module_idP,
+	  config_amP->ul_AM_RLC.maxRetxThreshold,
+	  config_amP->ul_AM_RLC.pollPDU,
+	  config_amP->ul_AM_RLC.pollByte,
+	  config_amP->ul_AM_RLC.t_PollRetransmit,
+	  config_amP->dl_AM_RLC.t_Reordering,
+	  config_amP->dl_AM_RLC.t_StatusProhibit,
+	  module_idP,
+	  rb_idP);
+  }
 }
-//-----------------------------------------------------------------------------
+
+  //-----------------------------------------------------------------------------
 void rlc_am_stat_req     (rlc_am_entity_t *rlcP,
                               unsigned int* tx_pdcp_sdu,
                               unsigned int* tx_pdcp_sdu_discarded,

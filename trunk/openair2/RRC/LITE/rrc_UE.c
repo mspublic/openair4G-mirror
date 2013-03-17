@@ -328,14 +328,15 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Srb_id = 1;
 
     // copy default configuration for now
-  memcpy(&UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-  memcpy(&UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+  //  memcpy(&UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+  //  memcpy(&UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", Mod_id,lchan_id,eNB_index);
 
   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id,UNDEF_SECURITY_MODE);
-  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  //  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
 
@@ -352,14 +353,14 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
   UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id = 2;
 
     // copy default configuration for now
-  memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-  memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+  //  memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+  //  memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",Mod_id,lchan_id,eNB_index);
 
   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id, UNDEF_SECURITY_MODE);
-  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  //  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
@@ -371,23 +372,16 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
 
-    LOG_D(RRC,"[UE] Frame %d: Configuring DRB %ld/LCID %d\n",
-      frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
+  LOG_D(RRC,"[UE] Frame %d: Configuring DRB %ld/LCID %d\n",
+	frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
 
-  switch (DRB_config->rlc_Config->present) {
-  case RLC_Config_PR_NOTHING:
-    LOG_D(RRC,"[UE] Frame %d: Received RLC_Config_PR_NOTHING!! for DRB Configuration\n",frame);
-    return(-1);
-    break;
-  case RLC_Config_PR_um_Bi_Directional :
-
-    rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
-			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
-    LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
-	  Mod_id,frame,DRB_config->drb_Identity);
-    rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
-		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
-		       RADIO_ACCESS_BEARER,Rlc_info_um);
+  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
+		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
+  /*
+  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
+		     (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
+		     RADIO_ACCESS_BEARER,Rlc_info_um);
+  */
 #ifdef NAS_NETLINK
 #    ifdef OAI_EMU
     ip_addr_offset3 = oai_emulation.info.nb_enb_local;
@@ -426,14 +420,6 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 #        endif
 #    endif
 #endif
-    break;
-  case RLC_Config_PR_um_Uni_Directional_UL :
-  case RLC_Config_PR_um_Uni_Directional_DL :
-  case RLC_Config_PR_am:
-    LOG_E(RRC,"[UE] Frame %d: Illegal RLC mode for DRB\n",frame);
-    return(-1);
-    break;
-  }
 
   return(0);
 }
@@ -620,6 +606,16 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
 
+    // Refresh SRBs
+    rrc_rlc_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,0,
+			    radioResourceConfigDedicated->srb_ToAddModList,
+			    (DRB_ToAddModList_t*)NULL,
+			    (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+			    ,(MBMS_SessionInfoList_r9_t *)NULL
+#endif
+			    );
+
     for (cnt=0;cnt<radioResourceConfigDedicated->srb_ToAddModList->list.count;cnt++) {
 
       SRB_id = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -726,6 +722,15 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   // Establish DRBs if present
   if (radioResourceConfigDedicated->drb_ToAddModList) {
 
+    // Refresh DRBs
+    rrc_rlc_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,0,
+			    (SRB_ToAddModList_t*)NULL,
+			    radioResourceConfigDedicated->drb_ToAddModList,
+			    (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+			    ,(MBMS_SessionInfoList_r9_t *)NULL
+#endif
+			    );
     for (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++) {
       DRB_id   = radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity-1;
       if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) {
@@ -738,7 +743,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 	rrc_ue_establish_drb(Mod_id,frame,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
 	// MAC/PHY Configuration
 	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %d eNB %d) --->][MAC_UE][MOD %02d][]\n",
-	      frame, Mod_id, DRB_id, eNB_index, Mod_id);
+	      frame, Mod_id, radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity, eNB_index, Mod_id);
 	rrc_mac_config_req(Mod_id,0,0,eNB_index,
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
