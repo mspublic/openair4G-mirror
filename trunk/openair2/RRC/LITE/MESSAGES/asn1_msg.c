@@ -1012,8 +1012,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      LTE_DL_FRAME_PARMS *frame_parms,
-			      struct SRB_ToAddMod **SRB1_config,
-			      struct SRB_ToAddMod **SRB2_config,
+			      SRB_ToAddModList_t  **SRB_configList,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated) {
 
 
@@ -1022,11 +1021,11 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   long *logicalchannelgroup;
 
-  struct SRB_ToAddMod *SRB1_config2;//,*SRB2_config2;
-  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config;//,*SRB2_rlc_config;
-  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;//,*SRB2_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;//,*SRB2_ul_SpecificParameters;
-  SRB_ToAddModList_t *SRB_list;
+  struct SRB_ToAddMod *SRB1_config;
+  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config;
+  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;
+  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;
+
 #ifdef Rel10
   struct PUSCH_CAConfigDedicated_vlola	*pusch_CAConfigDedicated_vlola;
   long * betaOffset_CA_Index;
@@ -1046,15 +1045,14 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   // RRCConnectionSetup
   // Configure SRB1
 
-  SRB_list = CALLOC(1,sizeof(*SRB_list));
+  *SRB_configList = CALLOC(1,sizeof(*SRB_configList));
 
   /// SRB1
-  SRB1_config2 = CALLOC(1,sizeof(*SRB1_config2));
-  *SRB1_config = SRB1_config2;
+  SRB1_config = CALLOC(1,sizeof(*SRB1_config));
 
-  SRB1_config2->srb_Identity = 1;
+  SRB1_config->srb_Identity = 1;
   SRB1_rlc_config = CALLOC(1,sizeof(*SRB1_rlc_config));
-  SRB1_config2->rlc_Config   = SRB1_rlc_config;
+  SRB1_config->rlc_Config   = SRB1_rlc_config;
 
   SRB1_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
   SRB1_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
@@ -1077,7 +1075,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms0;
 
   SRB1_lchan_config = CALLOC(1,sizeof(*SRB1_lchan_config));
-  SRB1_config2->logicalChannelConfig   = SRB1_lchan_config;
+  SRB1_config->logicalChannelConfig   = SRB1_lchan_config;
 
   SRB1_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
   SRB1_ul_SpecificParameters = CALLOC(1,sizeof(*SRB1_ul_SpecificParameters));
@@ -1098,7 +1096,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
 
 
-  ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
+  ASN_SEQUENCE_ADD(&(*SRB_configList)->list,SRB1_config);
 
   // PhysicalConfigDedicated
 
@@ -1258,7 +1256,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetup->criticalExtensions.present = RRCConnectionSetup__criticalExtensions_PR_c1;
   rrcConnectionSetup->criticalExtensions.choice.c1.present =RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8 ;
-  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.srb_ToAddModList = SRB_list;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.srb_ToAddModList = *SRB_configList;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.drb_ToAddModList = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.drb_ToReleaseList = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
@@ -1284,7 +1282,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   LOG_D(RRC,"RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
-  FREEMEM(SRB_list);
+  //  FREEMEM(SRB_list);
   //  free(SRB1_config);
   //  free(SRB1_rlc_config);
   //  free(SRB1_lchan_config);
@@ -1396,47 +1394,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
                                         uint32_t                           nas_length
                                        ) {
 
-    asn_enc_rval_t enc_rval;
-  /*  
-  struct SRB_ToAddMod **SRB2_config                         = &rrc_inst->SRB2_config[UE_id];
-  struct DRB_ToAddMod **DRB_config                          = &rrc_inst->DRB_config[UE_id][0];
-  struct PhysicalConfigDedicated  **physicalConfigDedicated = &rrc_inst->physicalConfigDedicated[UE_id]; 
-
-
-  struct SRB_ToAddMod *SRB2_config2;
-  struct SRB_ToAddMod__rlc_Config *SRB2_rlc_config;
-  struct SRB_ToAddMod__logicalChannelConfig *SRB2_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *SRB2_ul_SpecificParameters;
-  SRB_ToAddModList_t *SRB_list;
-
-  struct DRB_ToAddMod *DRB_config2;
-  struct RLC_Config *DRB_rlc_config;
-  struct LogicalChannelConfig *DRB_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
-  DRB_ToAddModList_t *DRB_list;
-  MeasObjectToAddModList_t *MeasObj_list;
-  MeasObjectToAddMod_t *MeasObj;
-  ReportConfigToAddModList_t *ReportConfig_list;
-  ReportConfigToAddMod_t *ReportConfig_per,*ReportConfig_A1,*ReportConfig_A2,*ReportConfig_A3,*ReportConfig_A4,*ReportConfig_A5;
-  MeasIdToAddModList_t *MeasId_list;
-  MeasIdToAddMod_t *MeasId0,*MeasId1,*MeasId2,*MeasId3,*MeasId4,*MeasId5;
-#if Rel10
-  long * sr_ProhibitTimer_r9;
-  struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
-#endif
-
-  long *logicalchannelgroup,*logicalchannelgroup_drb;
-  long *maxHARQ_Tx, *periodicBSR_Timer;
-
-
-  long *lcid;
-
-  RSRP_Range_t *rsrp;
-  struct MeasConfig__speedStatePars *Sparams;
-  CellsToAddMod_t *CellToAdd;
-  CellsToAddModList_t *CellsToAddModList;
-  */
-
+  asn_enc_rval_t enc_rval;
+  
   DL_DCCH_Message_t dl_dcch_msg;
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
 
@@ -1447,89 +1406,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
+
   // RRCConnectionReconfiguration
-  /*
-  // Configure SRB2
-
-  SRB_list = CALLOC(1,sizeof(*SRB_list));
-
-  /// SRB2
-  SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
-  *SRB2_config = SRB2_config2;
-
-  SRB2_config2->srb_Identity = 2;
-  SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
-  SRB2_config2->rlc_Config   = SRB2_rlc_config;
-
-  SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
-  SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms45;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_pInfinity;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = PollPDU_pInfinity;
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t4;
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
-
-
-  SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
-  SRB2_config2->logicalChannelConfig   = SRB2_lchan_config;
-
-  SRB2_lchan_config->present                                    = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
-
-
-  SRB2_ul_SpecificParameters = CALLOC(1,sizeof(*SRB2_ul_SpecificParameters));
-
-  SRB2_ul_SpecificParameters->priority           = 1;
-  SRB2_ul_SpecificParameters->prioritisedBitRate = LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  SRB2_ul_SpecificParameters->bucketSizeDuration = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-  logicalchannelgroup = CALLOC(1,sizeof(long));
-  *logicalchannelgroup=0;
-
-  SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
-
-  SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
-  ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
-
-
-  // Configure DRB
-
-  DRB_list = CALLOC(1,sizeof(*DRB_list));
-
-  /// DRB
-  DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
-  *DRB_config = DRB_config2;
-
-  DRB_config2->drb_Identity = 1;
-  lcid = CALLOC(1,sizeof(*lcid));
-  *lcid = 3;
-  DRB_config2->logicalChannelIdentity = lcid;
-  DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
-  DRB_config2->rlc_Config   = DRB_rlc_config;
-
-  DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
-
-  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
-  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
-  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms35;
-  DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
-  DRB_config2->logicalChannelConfig   = DRB_lchan_config;
-  DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
-  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-
-
-  DRB_ul_SpecificParameters->priority = 2; // lower priority than srb1, srb2
-  DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-  logicalchannelgroup_drb = CALLOC(1,sizeof(long));
-  *logicalchannelgroup_drb=0;
-  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-
-
-  ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
-*/
-
   rrcConnectionReconfiguration->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfiguration->criticalExtensions.present = RRCConnectionReconfiguration__criticalExtensions_PR_c1;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.present =RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8 ;
@@ -1540,255 +1418,6 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = NULL;
-  /*
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->present =RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config));
-  
-  maxHARQ_Tx = CALLOC(1,sizeof(long));
-  *maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
-  
-  periodicBSR_Timer = CALLOC(1,sizeof(long));
-  *periodicBSR_Timer = MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config->periodicBSR_Timer =  periodicBSR_Timer;
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config->retxBSR_Timer =  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320;
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.ul_SCH_Config->ttiBundling=0; // FALSE
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.drx_Config = NULL;
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.phr_Config = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.phr_Config));
-  
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.phr_Config->present = MAC_MainConfig__phr_Config_PR_setup;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.phr_Config->choice.setup.periodicPHR_Timer= MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.phr_Config->choice.setup.prohibitPHR_Timer=MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
-
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.phr_Config->choice.setup.dl_PathlossChange=MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1; // Value dB1 =1 dB, dB3 = 3 dB
-
-#ifdef Rel10
-  sr_ProhibitTimer_r9 = CALLOC(1,sizeof(long));
-  *sr_ProhibitTimer_r9=0; // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR 
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.sr_ProhibitTimer_r9=sr_ProhibitTimer_r9;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_RA_ConfigList_rlola = NULL;
-#endif
-
- 
-
- 
-
-
-  // Measurement ID list
-  MeasId_list       = CALLOC(1,sizeof(*MeasId_list));
-  memset((void *)MeasId_list,0,sizeof(*MeasId_list));
-
-  MeasId0            = CALLOC(1,sizeof(*MeasId0));
-  MeasId0->measId = 1;
-  MeasId0->measObjectId = 1;
-  MeasId0->reportConfigId = 1;
-  ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId0);
-
-  MeasId1            = CALLOC(1,sizeof(*MeasId1));
-  MeasId1->measId = 2;
-  MeasId1->measObjectId = 1;
-  MeasId1->reportConfigId = 2;
-  ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId1);
-
-  MeasId2            = CALLOC(1,sizeof(*MeasId2));
-  MeasId2->measId = 3;
-  MeasId2->measObjectId = 1;
-  MeasId2->reportConfigId = 3;
-  ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId2);
-
-  MeasId3            = CALLOC(1,sizeof(*MeasId3));
-  MeasId3->measId = 4;
-  MeasId3->measObjectId = 1;
-  MeasId3->reportConfigId = 4;
-  ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId3);
-
-  MeasId4            = CALLOC(1,sizeof(*MeasId4));
-  MeasId4->measId = 5;
-  MeasId4->measObjectId = 1;
-  MeasId4->reportConfigId = 5;
-  ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId4);
-
-  MeasId5            = CALLOC(1,sizeof(*MeasId5));
-  MeasId5->measId = 6;
-  MeasId5->measObjectId = 1;
-  MeasId5->reportConfigId = 6;
-  ASN_SEQUENCE_ADD(&MeasId_list->list,MeasId5);
-
-
-  // Add one EUTRA Measurement Object
-  MeasObj_list      = CALLOC(1,sizeof(*MeasObj_list));
-  memset((void *)MeasObj_list,0,sizeof(*MeasObj_list));
-
-  // Configure MeasObject
-  
-  MeasObj           = CALLOC(1,sizeof(*MeasObj));
-  memset((void *)MeasObj,0,sizeof(*MeasObj));
-  
-  MeasObj->measObjectId           = 1;
-  MeasObj->measObject.present                = MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
-  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq                 = 36090;
-  MeasObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth        = AllowedMeasBandwidth_mbw25;
-  MeasObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1        = 1;
-  MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf         = CALLOC(1,sizeof(uint8_t));
-  MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0]      = 0;
-  MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size        = 1;
-  MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
-  MeasObj->measObject.choice.measObjectEUTRA.offsetFreq                  = NULL; // Default is 15 or 0dB
-
-  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList = (CellsToAddModList_t *)CALLOC(1,sizeof(*CellsToAddModList));
-
-  CellsToAddModList  = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
-  
-  // Add adjacent cell lists (6 per eNB)
-  for (i=0;i<6;i++) {
-    CellToAdd                       = (CellsToAddMod_t *)CALLOC(1,sizeof(*CellToAdd));
-    CellToAdd->cellIndex            = i+1;
-    CellToAdd->physCellId           = get_adjacent_cell_id(Mod_id,i);
-    CellToAdd->cellIndividualOffset = Q_OffsetRange_dB0;
-
-    ASN_SEQUENCE_ADD(&CellsToAddModList->list,CellToAdd);
-  } 
-  
-  ASN_SEQUENCE_ADD(&MeasObj_list->list,MeasObj);
-
-
-  // Report Configurations for periodical, A1-A5 events
-  ReportConfig_list = CALLOC(1,sizeof(*ReportConfig_list));
-  memset((void *)ReportConfig_list,0,sizeof(*ReportConfig_list));
-
-  ReportConfig_per  = CALLOC(1,sizeof(*ReportConfig_per));
-  memset((void *)ReportConfig_per,0,sizeof(*ReportConfig_per));
-
-  ReportConfig_A1   = CALLOC(1,sizeof(*ReportConfig_A1));
-  memset((void *)ReportConfig_A1,0,sizeof(*ReportConfig_A1));
-
-  ReportConfig_A2   = CALLOC(1,sizeof(*ReportConfig_A2));
-  memset((void *)ReportConfig_A2,0,sizeof(*ReportConfig_A2));
-
-  ReportConfig_A3   = CALLOC(1,sizeof(*ReportConfig_A3));
-  memset((void *)ReportConfig_A3,0,sizeof(*ReportConfig_A3));
-
-  ReportConfig_A4   = CALLOC(1,sizeof(*ReportConfig_A4));
-  memset((void *)ReportConfig_A4,0,sizeof(*ReportConfig_A4));
-
-  ReportConfig_A5   = CALLOC(1,sizeof(*ReportConfig_A5));
-  memset((void *)ReportConfig_A5,0,sizeof(*ReportConfig_A5));
-
-  ReportConfig_per->reportConfigId                                                              = 1;
-  ReportConfig_per->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.triggerType.present                   = ReportConfigEUTRA__triggerType_PR_periodical;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.triggerType.choice.periodical.purpose = ReportConfigEUTRA__triggerType__periodical__purpose_reportStrongestCells;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.maxReportCells                        = 2;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.reportInterval                        = ReportInterval_ms120;
-  ReportConfig_per->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
-
-  ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_per);
-
-  ReportConfig_A1->reportConfigId                                                              = 2;
-  ReportConfig_A1->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA1;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA1.a1_Threshold.present = ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA1.a1_Threshold.choice.threshold_RSRP = 10;
-
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.maxReportCells                        = 2;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportInterval                        = ReportInterval_ms120;
-  ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
-
-  ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A1);
-
-  ReportConfig_A2->reportConfigId                                                              = 3;
-  ReportConfig_A2->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA2.a2_Threshold.present = ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA2.a2_Threshold.choice.threshold_RSRP = 10;
-
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.maxReportCells                        = 2;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportInterval                        = ReportInterval_ms120;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
-
-  ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A2);
-
-  ReportConfig_A3->reportConfigId                                                              = 4;
-  ReportConfig_A3->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 10;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.reportOnLeave = 1;
-
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells                        = 2;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval                        = ReportInterval_ms120;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
-
-  ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A3);
-
-  ReportConfig_A4->reportConfigId                                                              = 5;
-  ReportConfig_A4->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA4.a4_Threshold.present = ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA4.a4_Threshold.choice.threshold_RSRP = 10;
-
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.maxReportCells                        = 2;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportInterval                        = ReportInterval_ms120;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
-
-  ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A4);
-
-  ReportConfig_A5->reportConfigId                                                              = 6;
-  ReportConfig_A5->reportConfig.present                                                        = ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.present                                    = ReportConfigEUTRA__triggerType_PR_event;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present              = ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold1.present = ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold2.present = ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
-
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity                       = ReportConfigEUTRA__triggerQuantity_rsrp;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportQuantity                        = ReportConfigEUTRA__reportQuantity_both;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.maxReportCells                        = 2;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval                        = ReportInterval_ms120;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount                          = ReportConfigEUTRA__reportAmount_infinity;
-
-  ASN_SEQUENCE_ADD(&ReportConfig_list->list,ReportConfig_A5);
-
- 
-  
-  rsrp=CALLOC(1,sizeof(RSRP_Range_t));
-  *rsrp=20;
-  
-
-  Sparams = CALLOC(1,sizeof(*Sparams));
-  Sparams->present=MeasConfig__speedStatePars_PR_setup;
-  Sparams->choice.setup.timeToTrigger_SF.sf_High=SpeedStateScaleFactors__sf_Medium_oDot75;
-  Sparams->choice.setup.timeToTrigger_SF.sf_Medium=SpeedStateScaleFactors__sf_High_oDot5;
-  Sparams->choice.setup.mobilityStateParameters.n_CellChangeHigh=10;
-  Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium=5;
-  Sparams->choice.setup.mobilityStateParameters.t_Evaluation=MobilityStateParameters__t_Evaluation_s60;
-  Sparams->choice.setup.mobilityStateParameters.t_HystNormal=MobilityStateParameters__t_HystNormal_s120;
-  
-  speedStatePars=Sparams;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
-  
-  */
 
   if (mac_MainConfig) {
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
@@ -1834,8 +1463,6 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 
   //#endif
 
-  FREEMEM(SRB_list);
-  FREEMEM(DRB_list);
 
   return((enc_rval.encoded+7)/8);
 }

@@ -38,7 +38,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   if (srb2add_listP != NULL) {
       for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
           rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
-
+	  printf("Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
           srb_toaddmod = srb2add_listP->list.array[cnt];
 
           if (srb_toaddmod->rlc_Config) {

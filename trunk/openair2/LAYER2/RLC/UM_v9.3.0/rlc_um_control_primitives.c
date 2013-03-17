@@ -39,6 +39,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "UTIL/LOG/log.h"
 
 #include "rlc_um_control_primitives.h"
+#include "T-Reordering.h"
+
 //-----------------------------------------------------------------------------
 void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_um_info_t * config_umP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
@@ -63,25 +65,51 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
     }
 }
 //-----------------------------------------------------------------------------
+u32_t t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+
 void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
-    //-----------------------------------------------------------------------------
-    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%d sn_field_length=%d  --->][RLC_UM][MOD %02d][RB %02d]    \n",
-                frame,
-                ( eNB_flagP == 1) ? "eNB":"UE",
-                module_idP,
-                dl_rlcP->t_Reordering,
-                ul_rlcP->sn_FieldLength,
-                module_idP,
-                rb_idP);
+  u32_t sn_FieldLength,t_Reordering;
+
+  //-----------------------------------------------------------------------------
+    LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%dms sn_field_length=%d  --->][RLC_UM][MOD %02d][RB %02d]    \n",
+	  frame,
+	  ( eNB_flagP == 1) ? "eNB":"UE",
+	  module_idP,
+	  (dl_rlcP->t_Reordering<31)?t_Reordering_tab[dl_rlcP->t_Reordering]:-1,
+	  (ul_rlcP->sn_FieldLength<2)?(5*(1+ul_rlcP->sn_FieldLength)):-1,
+	  module_idP,
+	  rb_idP);
     rlc_um_init(rlcP);
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
       rlc_um_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
+      switch (ul_rlcP->sn_FieldLength) {
+      case SN_FieldLength_size5:
+	sn_FieldLength = 5;
+	break;
+      case SN_FieldLength_size10:
+	sn_FieldLength = 10;
+	break;
+      default:
+	LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID sn_FieldLength %d, RLC NOT CONFIGURED\n",
+	      frame, rlcP->module_id, rlcP->rb_id, ul_rlcP->sn_FieldLength);
+	return;
+      }
+
+      if (dl_rlcP->t_Reordering<T_Reordering_spare1) {
+	t_Reordering = t_Reordering_tab[dl_rlcP->t_Reordering];
+      }
+      else {
+	LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID T_Reordering %d, RLC NOT CONFIGURED\n",
+	      frame, rlcP->module_id, rlcP->rb_id, dl_rlcP->t_Reordering);
+	return;
+      }
+
       rlc_um_configure(rlcP,
-               frame,
-               dl_rlcP->t_Reordering,
-               ul_rlcP->sn_FieldLength,
-               0);
+		       frame,
+		       t_Reordering,
+		       sn_FieldLength,
+		       0);
     }
 }
 //-----------------------------------------------------------------------------

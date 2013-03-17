@@ -204,7 +204,7 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
 #ifdef Rel10
-/*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP,  u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP)
+/*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP,  u8_t UE_index, SRB_ToAddMod_t* srb2addmod, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  module_idP         Virtualized module identifier.
 * \param[in]  frame              Frame index.

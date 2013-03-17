@@ -76,7 +76,7 @@ PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting 
 @param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
-@param SRB1_config Pointer (returned) to SRB1_config IE for this UE
+@param SRB_configList Pointer (returned) to SRB1_config/SRB2_config(later) IEs for this UE
 @param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
 @returns Size of encoded bit stream in bytes*/
 uint8_t do_RRCConnectionSetup(uint8_t *buffer,
@@ -84,8 +84,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      LTE_DL_FRAME_PARMS *frame_parms,
-			      struct SRB_ToAddMod **SRB1_config,
-			      struct SRB_ToAddMod **SRB2_config,
+			      SRB_ToAddModList_t **SRB1_configList,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
 
 /** 
