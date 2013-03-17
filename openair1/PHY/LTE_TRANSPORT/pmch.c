@@ -9,7 +9,7 @@
 #define MBSFN_TDD_SF9 0x08
 
 #include "PHY/defs.h"
-
+ 
 #define MBSFN_FDD_SF1 0x80// for FDD
 #define MBSFN_FDD_SF2 0x40
 #define MBSFN_FDD_SF3 0x20
@@ -657,7 +657,7 @@ void mch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     _m_empty();
 }
 
-int avg[4];
+int avg_pmch[4];
 int rx_pmch(PHY_VARS_UE *phy_vars_ue,
 	   unsigned char eNB_id,
 	   u8 subframe,
@@ -679,14 +679,14 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
   if (symbol == 2) {
     mch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 		      frame_parms,
-		      avg,
+		      avg_pmch,
 		      symbol,
 		      frame_parms->N_RB_DL);
   }
 
   avgs = 0;  
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-    avgs = cmax(avgs,avg[aarx]);  
+    avgs = cmax(avgs,avg_pmch[aarx]);  
 
   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);// + 2
 
