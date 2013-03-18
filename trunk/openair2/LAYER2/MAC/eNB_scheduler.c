@@ -1767,11 +1767,11 @@ u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
 
 u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
 
-  u8 check;//check1=0,check2=0;
+  u8 check=0;//check1=0,check2=0;
   u16 rballoc_dci=0;
   //u8 number_of_subbands=13;
 
-  //msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
+  //  msg("*****Check1RBALLOC****: %x%x%x%x\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
   while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBGS)){
     if(rballoc[check] == 1){
       rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBGS-1)-check));
@@ -1784,7 +1784,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
     //    check1 = check1+2;
   }
   // rballoc_dci = (rballoc_dci)&(0x1fff);
-  //msg("*********RBALLOC : %x\n",rballoc_dci);
+  //  msg("*********RBALLOC : %x\n",rballoc_dci);
   // exit(-1);
   return (rballoc_dci);
 }
@@ -2647,9 +2647,12 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
 	
 
-	nb_rb = 2;
+
 
 	mcs = eNB_UE_stats->dlsch_mcs1;
+	if (mcs==0) nb_rb = 4;   // don't let the TBS get too small
+	else nb_rb=2;
+
 	TBS = mac_xface->get_TBS(mcs,nb_rb); 
 	
 	while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len))  {

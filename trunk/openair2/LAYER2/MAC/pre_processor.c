@@ -214,7 +214,8 @@ void assign_rbs_required (unsigned char Mod_id,
     
     if (eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_total> 0) {
       
-      nb_rbs_required[next_ue] = 2;
+      if (eNB_UE_stats->dlsch_mcs1==0) nb_rbs_required[next_ue] = 4;  // don't let the TBS get too small
+      else nb_rbs_required[next_ue] = 2;
       
       
       TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]); 
