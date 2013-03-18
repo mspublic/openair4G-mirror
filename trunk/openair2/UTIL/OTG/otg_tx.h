@@ -153,7 +153,7 @@ int adjust_size(int size);
 * \note 
 * @ingroup  _otg
 */
-int header_size_gen(int src, int dst, int application);
+void header_size_gen(int src, int dst, int application);
 
 
 /*! \fn void init_predef_traffic();
@@ -164,8 +164,6 @@ int header_size_gen(int src, int dst, int application);
 * @ingroup  _otg
 */
 void init_predef_traffic();
-
-
 
 /*! \fn int background_gen(int src, int dst, int ctime);
 * \brief manage idt and packet size for the backgrounf traffic. 
@@ -178,11 +176,19 @@ void init_predef_traffic();
 */
 int background_gen(int src, int dst, int ctime);
 
-
-
 int header_size_gen_background(int src, int dst);
 
 void state_management(int src, int dst,int application, int ctime);
+
+void voip_traffic(int src, int dst, int application, int ctime);
+
+int otg_hdr_size(int src, int dst);
+
+void init_packet_gen(int src, int dst);
+
+int check_data_transmit(int src,int dst, int ctime); 
+
+unsigned int get_application_state(int src, int dst, int application, int ctime);
 
 
 #endif

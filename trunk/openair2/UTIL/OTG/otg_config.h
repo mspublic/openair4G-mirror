@@ -85,6 +85,8 @@
 /*!\brief Define the size of UDP header, in bytes*/
 #define HDR_UDP 8
 
+/*!\brief Define the size of RTP header, in bytes*/
+#define RTP_HEADER 12
 
 /*!\brief Define the max size of the header*/
 #define MAX_HEADER_SIZE  80 
@@ -117,7 +119,7 @@
 #define MAX_ACCESS_DELAY 20
 #define TERMINAL_ACCESS_DELAY 1
 
-/*!\brief Latency budget for M2M access domain(unit millisecond)*/ /* ????? DRX and Handover */
+/*!\brief Latency budget for access domain(unit millisecond)*/ 
 #define MIN_U_PLANE_GW_PROCESSING_DELAY 1
 #define MAX_U_PLANE_GW_PROCESSING_DELAY 4
 #define MIN_U_PLANE_CORE_IP_ACCESS_DELAY 1
@@ -125,7 +127,7 @@
 #define MIN_FW_PROXY_DELAY 1
 #define MAX_FW_PROXY_DELAY 2
 
-/*!\brief Latency budget for M2M core and application domain(unit millisecond)*/  
+/*!\brief Latency budget for core and application domain(unit millisecond)*/  
 #define MIN_NETWORK_ACCESS_DELAY 15
 #define MAX_NETWORK_ACCESS_DELAY 150
 #define MIN_SERVICE_ENABLERS_DELAY 300

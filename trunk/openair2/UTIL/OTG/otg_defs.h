@@ -49,8 +49,6 @@
 	#include "PHY/impl_defs_top.h" /* \brief To define the NUMBER_OF_eNB_MAX and NUMBER_OF_UE_MAX */
 #endif	
 
-
-
 #include "otg_config.h"
 
 /**
@@ -62,6 +60,7 @@
 */
 typedef enum {
 	NO_PREDEFINED_TRAFFIC =0,
+	M2M,
 	SCBR,
 	MCBR,
 	BCBR,
@@ -84,6 +83,8 @@ typedef enum {
 	ALARM_TEMPERATURE,/* SENSOR BASED ALARM : TEMPERATURE */
 	OPENARENA_DL,
 	OPENARENA_UL,
+	VOIP_G711,
+	VOIP_G729,
 }Application;
 
 
@@ -159,6 +160,11 @@ typedef enum {
 	PE_STATE,
 }TRAFFIC_STATE;
 
+typedef enum {  
+	SILENCE=0,
+	SIMPLE_TALK=3,
+}VOIP_STATE;
+
 /**
 * \enum ALPHABET
 *
@@ -200,11 +206,12 @@ TCP_IPV6,
 *
 */
 
+/*
 typedef enum { 
 NO_TYPE=0,
 M2M_TYPE,
 }TRAFFIC_TYPE;
-
+*/
 
 /**
 * \struct otg_t
@@ -273,7 +280,7 @@ typedef struct {
 	unsigned int holding_time_pe_off[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
 	unsigned int pu_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
 	unsigned int ed_size_pkts[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
-	unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
 
 
 	unsigned int throughput_metric;
@@ -283,6 +290,7 @@ typedef struct {
 	unsigned int owd_radio_access;
 	unsigned int background_stats;
 	unsigned int application_idx[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+
 
 }otg_t; 
 
@@ -357,7 +365,7 @@ typedef struct{
 	float rx_owd_max[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay max*/
 	int nb_loss_pkts_ul[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Number of data packets losses for UL*/
 	int nb_loss_pkts_dl[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  Number of data packets losses for DL*/
-	float owd_const[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];		/*!< \brief  One way delay constant*/
+	float owd_const[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];		/*!< \brief  One way delay constant*/
 /*!< \brief KPI part: calculate the KPIs, total */ 
 	float tx_throughput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 	/*!< \brief  Tx throughput: (size of transmitted data)/ctime*/ 
 	float rx_goodput[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  Rx goodput: (size of received data)/ctime*/
@@ -392,6 +400,27 @@ typedef struct{
  	unsigned int total_loss_dl;
 	unsigned int total_loss_ul;
 
+	/* VOIP tarffic parameters*/
+	float voip_transition_prob[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int voip_state[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+  unsigned int start_voip_silence[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int c_holding_time_silence[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int start_voip_talk[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int c_holding_time_talk[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int silence_time[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int simple_talk_time[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+
+
+	unsigned int header_size_app[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
+	unsigned int header_size[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+	unsigned int m2m_aggregation[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int flow_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int traffic_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int traffic_type_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int hdr_size[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+	unsigned int header_type_app[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; ;
+	unsigned int gen_pkts;
+	unsigned int header_size_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
 }otg_info_t;
 
 
