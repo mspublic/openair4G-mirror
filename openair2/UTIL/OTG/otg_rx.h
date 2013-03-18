@@ -73,11 +73,53 @@ int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int si
 *\note 
 *@ingroup  _otg
 */
-void owd_const_gen(int src,int dst, unsigned int flag);
+void owd_const_gen(int src,int dst, int flow_id, unsigned int flag);
+
+/*! \fn float owd_const_capillary();
+*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
+*\param[out] float: capillary delay constant
+*\note 
+*@ingroup  _otg
+*/
 float owd_const_capillary();
+
+/*! \fn float owd_const_mobile_core();
+*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
+*\param[out] float: mobile core delay constant
+*\note 
+*@ingroup  _otg
+*/
 float owd_const_mobile_core();
+
+/*! \fn float owd_const_IP_backbone();
+*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
+*\param[out] float: IP backbone delay constant
+*\note 
+*@ingroup  _otg
+*/
 float owd_const_IP_backbone();
+
+/*! \fn float owd_const_applicatione();
+*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
+*\param[out] float: application delay constant
+*\note 
+*@ingroup  _otg
+*/
 float owd_const_application();
 
+
+/*! \fn void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts);
+*\brief check the number of loss packet/out of sequence
+*\param[in] src
+*\param[in] dst
+*\param[in] flag: background or data
+*\param[in] seq_num: packet sequence number
+*\param[in] seq_num_rx:RX sequence number
+*\param[in] nb_loss_pkts: number of lost packet 
+*\param[out] void
+*\note 
+*@ingroup  _otg
+*/
+void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts);
 
 #endif

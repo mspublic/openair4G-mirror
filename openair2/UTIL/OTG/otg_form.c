@@ -21,7 +21,7 @@ FD_otg *create_form_otg(void)
   obj = fl_add_box(FL_UP_BOX,0,0,900,700,"");
   fdui->owd = fl_add_xyplot(FL_NORMAL_XYPLOT,50,30,450,190,"Delay(ms)"); 
   fl_set_object_color(fdui->owd,FL_BLACK,FL_YELLOW);
-  fdui->throughput = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(KB/s)");
+  fdui->throughput = fl_add_xyplot(FL_NORMAL_XYPLOT,50,300,450,190,"Throughput(Kbit/s)");
   fl_set_object_color(fdui->throughput,FL_BLACK,FL_YELLOW);
    
   
@@ -57,7 +57,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
           fl_set_xyplot_ybounds(form_dl->owd,0,200);
 
  
-      fl_set_xyplot_ybounds(form_dl->throughput,0,50); 
+      fl_set_xyplot_ybounds(form_dl->throughput,0,200); 
 
 
 
@@ -72,7 +72,7 @@ fl_initialize(&tArgc,tArgv,"OTG",0,0);
 
 
 
-      fl_set_xyplot_ybounds(form_ul->throughput,0,50); 
+      fl_set_xyplot_ybounds(form_ul->throughput,0,200); 
 
 
     }
@@ -143,7 +143,7 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 		fl_set_xyplot_key_position(form_ul->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT); 
 		
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[src][dst],
-    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "kB/s"); 
+    otg_forms_info->data_throughput_ul[src][dst], otg_forms_info->idx_ul[src][dst], "", "time", "kbit/s"); 
     fl_set_xyplot_key(form_ul->throughput, 0, curve_label);
 		fl_set_xyplot_key_font(form_ul->throughput, FL_BOLD_STYLE, FL_HUGE_SIZE);
 		fl_set_xyplot_key_position(form_ul->throughput, x_key_position,y_key_position , FL_ALIGN_BOTTOM_LEFT);
@@ -165,7 +165,7 @@ if (otg_forms_info->idx_ul[src][dst]==MAX_SAMPLES-1){
 		
 
     fl_set_xyplot_data (form_ul->throughput, otg_forms_info->data_ctime_ul[otg_forms_info->is_data_plot_ul][dst],
-    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "kB/s"); 
+    otg_forms_info->data_throughput_ul[otg_forms_info->is_data_plot_ul][dst], otg_forms_info->idx_ul[otg_forms_info->is_data_plot_ul][dst], "", "time", "kbit/s"); 
 		sprintf(curve_label, "%d%s%d", otg_forms_info->is_data_plot_ul,"-->", dst);
     fl_set_xyplot_key(form_ul->throughput, 0, curve_label);
 		fl_set_xyplot_key_position(form_ul->throughput, x_key_position,y_key_position , FL_ALIGN_BOTTOM_LEFT);
@@ -241,7 +241,7 @@ if (otg_forms_info->idx_dl[src][dst]==MAX_SAMPLES-1){
     fl_set_xyplot_key(form_dl->owd, 0, curve_label);
 		fl_set_xyplot_key_position(form_dl->owd, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);   
     fl_set_xyplot_data (form_dl->throughput, otg_forms_info->data_ctime_dl[src][dst],
-    otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "kB/s"); 
+    otg_forms_info->data_throughput_dl[src][dst], otg_forms_info->idx_dl[src][dst], "", "time", "kbit/s"); 
 		sprintf(curve_label, "%d%s%d", src,"-->", dst);
     fl_set_xyplot_key(form_dl->throughput, 0, curve_label);
 		fl_set_xyplot_key_position(form_dl->throughput, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);   
