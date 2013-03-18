@@ -271,6 +271,7 @@ int main(int argc, char **argv) {
   double cpu_freq_GHz;
   time_stats_t ts,sts,usts;
   int avg_iter,iter_trials;
+  int rballocset=0;
 
   reset_meas(&ts);
   start_meas(&ts);
@@ -324,6 +325,7 @@ int main(int argc, char **argv) {
 	break;
       case 'r':
 	DLSCH_RB_ALLOC = atoi(optarg);
+	rballocset = 1;
 	break;
       case 'F':
 	forgetting_factor = atof(optarg);
@@ -495,20 +497,20 @@ int main(int argc, char **argv) {
   if (common_flag == 0) { 
     switch (N_RB_DL) {
     case 6:
-      DLSCH_RB_ALLOC = 0x3f;
+      if (rballocset==0) DLSCH_RB_ALLOC = 0x3f;
       BW = 1.92;
       num_pdcch_symbols = 3;
       break;
     case 25:
-      DLSCH_RB_ALLOC = 0x1fff;
+      if (rballocset==0) DLSCH_RB_ALLOC = 0x1fff;
       BW = 7.68;
       break;
     case 50:
-      DLSCH_RB_ALLOC = 0x1ffff;
+      if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffff;
       BW = 15.36;
       break;
     case 100:
-      DLSCH_RB_ALLOC = 0x1ffffff;
+      if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffffff;
       BW = 30.72;
       break;
     }
@@ -1060,6 +1062,7 @@ int main(int argc, char **argv) {
 	  dci_alloc[num_dci].L          = 2;
 	  dci_alloc[num_dci].rnti       = SI_RNTI;
 	  dci_alloc[num_dci].format     = format1A;
+	  dci_alloc[num_dci].nCCE       = 0;
 	  dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);	
 	  for(k=0;k<n_users;k++) {
 	    printf("Generating dlsch params for user %d\n",k);
@@ -2232,8 +2235,8 @@ int main(int argc, char **argv) {
 		Kr_bytes = Kr>>3;
 		    
 		printf("Decoded_output (Segment %d):\n",s);
-        //        for (i=0;i<Kr_bytes;i++)
-        //            printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i],PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c[s][i]);
+                for (i=0;i<Kr_bytes;i++)
+                    printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i],PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c[s][i]);
 	      }
 	      write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 	      write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
