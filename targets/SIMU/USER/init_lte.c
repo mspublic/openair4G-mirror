@@ -47,7 +47,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	exit(-1);
       }
       else {
-	LOG_E(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB->dlsch_eNB[i][j]);
+	LOG_D(PHY,"dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB->dlsch_eNB[i][j]);
 	PHY_vars_eNB->dlsch_eNB[i][j]->rnti=0;
       }
     }
