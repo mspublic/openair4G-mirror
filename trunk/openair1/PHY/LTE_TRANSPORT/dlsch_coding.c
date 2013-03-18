@@ -202,7 +202,7 @@ int dlsch_encoding(unsigned char *a,
   unsigned char harq_pid = dlsch->current_harq_pid;
   unsigned int A; 
   unsigned char mod_order;
-  unsigned int Kr,Kr_bytes,r,r_offset=0;
+  unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
