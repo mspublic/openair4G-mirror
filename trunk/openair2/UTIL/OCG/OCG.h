@@ -514,7 +514,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     int stream[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     int destination_port[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
-		unsigned int m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  
+		char *m2m[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];  
     //M2M_Traffic m2m_traffic;
 		double prob_off_pu[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
 		double prob_off_ed[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
