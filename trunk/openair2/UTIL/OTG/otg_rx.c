@@ -74,6 +74,9 @@ char * hdr_payload=NULL;
 
 
     if (((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb)) && (otg_hdr_info_rx->size ==size )){ //data traffic
+
+ LOG_I(OTG,"MAX_RX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
+
       /*is_size_ok= 0;
       if (( otg_hdr_info_rx->size ) == size ) {*/
       is_size_ok= 1;

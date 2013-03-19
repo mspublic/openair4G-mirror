@@ -85,6 +85,8 @@ typedef enum {
 	OPENARENA_UL,
 	VOIP_G711,
 	VOIP_G729,
+	IQSIM_MANGO,
+	IQSIM_NEWSTEO,
 }Application;
 
 

@@ -163,7 +163,7 @@ void header_size_gen(int src, int dst, int application);
 * \note 
 * @ingroup  _otg
 */
-void init_predef_traffic();
+void init_predef_traffic(unsigned char nb_ue_local, unsigned char nb_enb_local);
 
 /*! \fn int background_gen(int src, int dst, int ctime);
 * \brief manage idt and packet size for the backgrounf traffic. 

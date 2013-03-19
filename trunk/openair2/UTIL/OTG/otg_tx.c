@@ -190,7 +190,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   char *payload=NULL;
   char *header=NULL;
 
-
+ LOG_I(OTG,"MAX_TX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
 
 	set_ctime(ctime);
 	*pkt_size=0;
@@ -507,18 +507,18 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
 }
 
 
-void init_predef_traffic() {
+void init_predef_traffic(unsigned char nb_ue_local, unsigned char nb_enb_local) {
 int i;
 int j;
 int k;
 
 //LOG_I(OTG,"OTG_CONFIG num_node %d\n",  g_otg->num_nodes);
-
+//LOG_I(OTG,"MAX_NODES [MAX UE= %d] [MAX eNB= %d] \n",nb_ue_local,  nb_enb_local);
 
  for (i=0; i<g_otg->num_nodes; i++){ // src 
    for (j=0; j<g_otg->num_nodes; j++){ // dst
      for (k=0; k<g_otg->application_idx[i][j]; k++){  
-     
+
      switch  (g_otg->application_type[i][j][k]) {
      case  SCBR : 
        g_otg->trans_proto[i][j][k] = 1;
@@ -1135,29 +1135,57 @@ case ALARM_TEMPERATURE :
        g_otg->duration[i][j] = 1000;
 #endif 
 			break;
-     default:
-       LOG_D(OTG, "[SRC %d][DST %d] Unknown traffic type\n", i, j);
-/*
      case IQSIM_MANGO : 
-       g_otg->trans_proto[i][j][k] = 2;
-       g_otg->ip_v[i][j][k] = 1;
-       g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
-       LOG_I(OTG,"IQSIM_MANGO, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
-       g_otg->idt_min[i][j][k][PE_STATE] =  100;
-       g_otg->idt_max[i][j][k][PE_STATE] =  500;
-       g_otg->idt_std_dev[i][j][k][PE_STATE] = 0;
-       g_otg->idt_lambda[i][j][k][PE_STATE] = 0;
+       g_otg->trans_proto[i][j][k] = TCP;
+       g_otg->ip_v[i][j][k] = IPV4;
+       g_otg->idt_dist[i][j][k][PE_STATE] = UNIFORM;
+       g_otg->idt_min[i][j][k][PE_STATE] =  5000;
+       g_otg->idt_max[i][j][k][PE_STATE] = 10000;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
-       g_otg->size_min[i][j][k][PE_STATE] =  800;
-       g_otg->size_max[i][j][k][PE_STATE] =  800; 
-       g_otg->size_std_dev[i][j][k][PE_STATE] = 0;
-       g_otg->size_lambda[i][j][k][PE_STATE] = 0;
+			 if (i<nb_enb_local){ 
+       LOG_I(OTG,"IQSIM_MANGO [DL], src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+       g_otg->size_min[i][j][k][PE_STATE] =  141;
+       g_otg->size_max[i][j][k][PE_STATE] =  141; 
+			}
+			else {
+			LOG_I(OTG,"IQSIM_MANGO [UL], src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+       g_otg->size_min[i][j][k][PE_STATE] =  144;
+       g_otg->size_max[i][j][k][PE_STATE] =  144; 
+			}
 
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
 #endif 
-*/
+
+			break;
+     case IQSIM_NEWSTEO : 
+       g_otg->trans_proto[i][j][k] = TCP;
+       g_otg->ip_v[i][j][k] = IPV4;
+       g_otg->idt_dist[i][j][k][PE_STATE] = UNIFORM;
+       g_otg->idt_min[i][j][k][PE_STATE] =  5000;
+       g_otg->idt_max[i][j][k][PE_STATE] = 10000;
+       g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
+			 if (i<nb_enb_local){ 
+       LOG_I(OTG,"IQSIM_NEWSTEO [DL], src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+       g_otg->size_min[i][j][k][PE_STATE] =  467;
+       g_otg->size_max[i][j][k][PE_STATE] =  467; 
+			}
+			else {
+			LOG_I(OTG,"IQSIM_NEWSTEO [UL], src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+       g_otg->size_min[i][j][k][PE_STATE] =  251;
+       g_otg->size_max[i][j][k][PE_STATE] =  251; 
+			}
+
+#ifdef STANDALONE
+       g_otg->dst_port[i][j] = 302;
+       g_otg->duration[i][j] = 1000;
+#endif 
+
+			break;
+     default:
+       LOG_D(OTG, "[SRC %d][DST %d] Unknown traffic type\n", i, j);
+
      }
 	 }
    }
