@@ -75,6 +75,8 @@ mapping otg_app_type_names[] =
 		{"openarena_ul", 23},
 		{"voip_g711", 24},
 		{"voip_g729", 25},
+		{"iqsim_mango", 26},
+		{"iqsim_newsteo", 27},
     {NULL, -1}
 };
 
@@ -649,7 +651,7 @@ int ocg_config_app(){
 		  }
 			g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]] =map_str_to_int(switch_names,oai_emulation.application_config.predefined_traffic.background[predefined_traffic_config_index]);
 			g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
-			LOG_I(OTG,"predef (1):: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application ID = %d background %d, Aggregation=%d , m2m= %d\n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_idx[source_id_index][destination_id_index],g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->m2m[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
+			LOG_I(OTG,"predef (1):: OCG_config_OTG [MAX UE=%d] [MAX eNB=%d]: FORMAT (%d:%d) source = %d, dest = %d, Application ID = %d background %d, Aggregation=%d , m2m= %d\n",oai_emulation.info.nb_ue_local, oai_emulation.info.nb_enb_local,  sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_idx[source_id_index][destination_id_index],g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->m2m[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
 
 		  
 		}
@@ -699,7 +701,7 @@ int ocg_config_app(){
 			g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.predefined_traffic.aggregation_level[predefined_traffic_config_index];
 
 
-LOG_I(OTG,"predef (2):: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, Application ID %d, Background=%d, Aggregation=%d, m2m=%d \n", sid_start, sid_end, source_id_index, destination_id_index,g_otg->application_idx[source_id_index][destination_id_index] , g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->m2m[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
+LOG_I(OTG,"predef (2):: OCG_config_OTG: [MAX UE=%d] [MAX eNB=%d]: FORMAT (%d:%d) source = %d, dest = %d, Application ID %d, Background=%d, Aggregation=%d, m2m=%d \n", oai_emulation.info.nb_ue_local, oai_emulation.info.nb_enb_local, sid_start, sid_end, source_id_index, destination_id_index,g_otg->application_idx[source_id_index][destination_id_index] , g_otg->background[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->aggregation_level[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], g_otg->m2m[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]);
 		 
 		  
 		}
@@ -709,7 +711,7 @@ LOG_I(OTG,"predef (2):: OCG_config_OTG: FORMAT (%d:%d) source = %d, dest = %d, A
 	    }
 
 
-	    init_predef_traffic();
+	    init_predef_traffic(oai_emulation.info.nb_ue_local, oai_emulation.info.nb_enb_local);
 	  }
 	  	  
 	  
@@ -921,7 +923,7 @@ LOG_I(OTG,"OCG_config_OTG (single node config): source = %d, dest = %d\n", sourc
 	      }
 	    }
 	  }
-	  init_predef_traffic();
+	  init_predef_traffic(oai_emulation.info.nb_ue_local, oai_emulation.info.nb_enb_local);
 	}
 	return 1;
 }
