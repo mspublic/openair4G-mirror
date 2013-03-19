@@ -77,6 +77,28 @@
 
 #define EXMIMO_CONTROL2_COOKIE      0x43545232
 
+// Default MODEM configuration in TV whitespace(400.850MHz), using RX/TX switch
+#define TVWS_TDD          0xF7E04002
+
+// 850MHz .. 865MHz
+#define  DD_FDD      0xFAE40041
+#define  DD_TDD      0xF7E04000
+#define  B19G_TDD      0xCBC20084
+#define  B24G_TDD      0xCBA20084
+#define  B26G_TDD      0xCB820084
+#define  B26G_FDD      0xDEE60108
+#define  B35G_TDD      0xE9F01810
+#define  B50G_TDD      0xC079A020
+
+
+// used for DPD and dirty RF validation, TX fed back to RX through attenuators
+#define  TVWS_TDD_DPD  0xF5E04000
+#define  DD_TDD_DPD    0xF5E04000
+#define  B19G_TDD_DPD    0xCDC20080
+#define  B24G_TDD_DPD    0xCDA20080
+#define  B26G_TDD_DPD    0xCD820080
+#define  B35G_TDD_DPD    0xEDF01880
+
 
 // -----------------------------------------------------------
 // structures for communication between ExMIMO and kernel
