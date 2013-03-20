@@ -95,6 +95,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf) {
     break;
   }
 
+  frame_parms->pdcch_pilot_scale = 1.0;
   //  frame_parms->tdd_config=3;
   return(0);
 }

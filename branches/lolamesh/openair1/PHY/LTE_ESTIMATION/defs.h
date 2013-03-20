@@ -6,6 +6,13 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
+#include <emmintrin.h>
+#include <xmmintrin.h>
+#ifdef __SSE3__
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#endif
+
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
 * @{
 */
@@ -200,6 +207,8 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 
 int mrpsch_sync_init(LTE_DL_FRAME_PARMS *frame_parms );
 void mrpsch_sync_free(void);
+
+void print_shorts(char *s,__m128i *x);
 
 /** @} */ 
 #endif
