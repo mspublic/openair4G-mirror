@@ -9,7 +9,7 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -O2
+CFLAGS += -O1
 
 SRC = synctest.c condtest.c
 
@@ -53,6 +53,8 @@ CFLAGS += $(L2_incl) $(UTIL_incl) -DNO_RRM
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
+CFLGAS += -DNEW_FFT
+
 ifeq ($(XFORMS),1)
 CFLAGS += -DXFORMS -I/usr/include/X11
 LDFLAGS += -lforms
@@ -70,7 +72,9 @@ ifdef CBMIMO1
 CFLAGS += -DFW2011 -DBIT8_TX -DCBMIMO1
 else
 #only for EXPRESS MIMO
-CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #162 #560 with PXB
+CFLAGS += -DEXMIMO
+#CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #this is for ExpressMIMO 1
+#CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=45 #this is for ExpressMIMO 2
 endif
 
 ifeq ($(HARD_RT),1)
@@ -79,6 +83,7 @@ endif
 
 ifeq ($(EMOS),1)
 CFLAGS += -DEMOS
+LDFLAGS += -lgps
 endif
 
 ifeq ($(NAS),1)
@@ -138,7 +143,6 @@ run_UE0:
 run_UE0prach: 
 	rtai-load UE0prach --verbose
 
-
 run_UE1prach: 
 	rtai-load UE1prach --verbose
 
@@ -179,16 +183,16 @@ run_eNB2:
 	rtai-load eNB2 --verbose
 
 clean:
-	rm -rf condtest synctest
 	rm -rf $(OBJ) $(RTAI_OBJ)
 
 cleanall: clean
+	rm -rf condtest synctest lte-softmodem
 	rm -rf synctest_eNB synctest_UE
 	rm -rf $(ASN1_MSG_OBJS1)
 
 show:
 	@echo $(CFLAGS)
-	@echo $(OBJ)
+	@echo $(OBJ) $(RTAI_OBJ)
 	@echo $(RTAI_OBJ)
 
 beautiful:

@@ -17,7 +17,7 @@ UE1noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue1 --no-L
 UE2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2;sleep 1;popall:control_c
 UE2prach:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --debug-ue-prach;sleep 1;popall:control_c
 UE2noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --no-L2-connect;sleep 1;popall:control_c
-eNB0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 1917600000 -F enb2tx -d;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000,1917600000 -F enb2tx -d;sleep 1;popall:control_c
 eNB1:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F ue1 -d;sleep 1;popall:control_c
 eNB2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F ue2 -d;sleep 1;popall:control_c
 
