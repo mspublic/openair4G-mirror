@@ -286,7 +286,7 @@ void *scope_thread(void *arg) {
     //fclose (UE_stats);
     //fclose (eNB_stats);
     
-    return (void*)(1);
+    pthread_exit((void*)arg);
 }
 #endif
 
@@ -462,7 +462,7 @@ void *emos_thread (void *arg)
   fclose(dumpfile_id);
   close(fifo);
   
-  return 0;
+  pthread_exit((void*) arg);
 
 }
 #endif
@@ -879,6 +879,7 @@ int main(int argc, char **argv) {
 
   RT_TASK *task;
   int i,j,aa;
+  void *status;
 
   /*
   u32 rf_mode_max[4]     = {55759,55759,55759,55759};
@@ -1071,9 +1072,9 @@ int main(int argc, char **argv) {
   frame_parms->Ncp_UL             = 0;
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
-  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 1 : 1;
-  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 1 : 1;
+  frame_parms->nb_antennas_tx_eNB = 2; //initial value overwritten by initial sync later
+  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 2 : 1;
+  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 2 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
   frame_parms->tdd_config         = 3;
@@ -1139,7 +1140,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
     
     openair_daq_vars.manual_timing_advance = 0;
-    openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
+    //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
     openair_daq_vars.auto_freq_correction = 0;
     openair_daq_vars.use_ia_receiver = 1;
@@ -1147,10 +1148,10 @@ int main(int argc, char **argv) {
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //    rxgain[i] = 20;
-    rxgain[0] = 30;
-    rxgain[1] = 30;
-    rxgain[2] = 30;
-    rxgain[3] = 30;
+    rxgain[0] = 0;
+    rxgain[1] = 0;
+    rxgain[2] = 0;
+    rxgain[3] = 0;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1253,7 +1254,7 @@ int main(int argc, char **argv) {
               printf("Error mapping bigshm");
           if (ret == -3)
               printf("Error mapping RX or TX buffer");
-          return;
+          return(ret);
      }
 
   printf ("Detected %d number of cards, %d number of antennas.\n", openair0_num_detected_cards, openair0_num_antennas[card]);
@@ -1275,10 +1276,10 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];
     p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
 
-    p_exmimo_config->rf.rffe_gain_txlow[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_txhigh[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_rxlow[ant] = 31;
+    p_exmimo_config->rf.rffe_gain_txlow[ant] = 63;
+    p_exmimo_config->rf.rffe_gain_txhigh[ant] = 63;
+    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 63;
+    p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
     p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
   }
   if (UE_flag) {
@@ -1326,6 +1327,10 @@ int main(int argc, char **argv) {
 #endif
 
     number_of_cards = openair0_num_detected_cards;
+    if (p_exmimo_id->board_exmimoversion==1) //ExpressMIMO1
+      openair_daq_vars.timing_advance = 138;
+    else //ExpressMIMO2
+      openair_daq_vars.timing_advance = 45;
 
   // connect the TX/RX buffers
   if (UE_flag==1) {
@@ -1444,12 +1449,14 @@ int main(int argc, char **argv) {
           }
       }
 
-      thread2 = pthread_create(&thread2, NULL, scope_thread, NULL);
+      ret = pthread_create(&thread2, NULL, scope_thread, NULL);
+      printf("Scope thread created, ret=%d\n",ret);
     }
 #endif
 
 #ifdef EMOS
-      thread3 = pthread_create(&thread3, NULL, emos_thread, NULL);
+  ret = pthread_create(&thread3, NULL, emos_thread, NULL);
+  printf("EMOS thread created, ret=%d\n",ret);
 #endif
 
   rt_sleep(nano2count(10*FRAME_PERIOD));
@@ -1463,24 +1470,30 @@ int main(int argc, char **argv) {
     rt_sleep(nano2count(FRAME_PERIOD/10));
     init_dlsch_threads();
 #endif
+    printf("UE threads created\n");
   }
   else {
     thread0 = rt_thread_create(eNB_thread, NULL, 100000000);
 #ifdef ULSCH_THREAD
     init_ulsch_threads();
 #endif
+    printf("eNB threads created\n");
   }
 
-  printf("threads created\n");
 
   // wait for end of program
   printf("TYPE <ENTER> TO TERMINATE\n");
   getchar();
 
+  // stop threads
+  oai_exit=1;
+  rt_sleep(nano2count(FRAME_PERIOD));
+
+  printf("stopping threads\n");
 #ifdef XFORMS
   if (do_forms==1)
     {
-      //pthread_join?
+      pthread_join(thread2,&status);
         fl_hide_form(form_stats->stats_form);
         fl_free_form(form_stats->stats_form);
         if (UE_flag==1) {
@@ -1493,25 +1506,29 @@ int main(int argc, char **argv) {
     }
 #endif
 
-  // stop threads
-  oai_exit=1;
-  rt_sleep(nano2count(FRAME_PERIOD));
+#ifdef EMOS
+  pthread_join(thread3,&status);
+#endif
 
   // cleanup
   if (UE_flag == 1) {
+    rt_thread_join(thread1); 
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
     cleanup_rx_pdsch_threads();
 #endif
   }
   else {
+    rt_thread_join(thread0); 
 #ifdef ULSCH_THREAD
     cleanup_ulsch_threads();
 #endif
   }
   stop_rt_timer();
 
+  printf("stopping card\n");
   openair0_stop(card);
+  printf("closing openair0_lib\n");
   openair0_close();
 
 #ifdef EMOS
