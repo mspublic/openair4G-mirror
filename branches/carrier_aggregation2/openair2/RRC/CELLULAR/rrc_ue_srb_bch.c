@@ -114,42 +114,23 @@ void *rrc_srb_rx (void *unusedP, mem_block_t * sduP, u8 rb_idP){
 */
 
 //-----------------------------------------------------------------------------
-int rrc_ue_srb_rx (char* sduP, u8 ch_idP){
+int rrc_ue_srb_rx (char* sduP, int srb_id,  int UE_Id){
 //-----------------------------------------------------------------------------
-  int srb_id, rb_id;
-  int UE_Id;
+  //int srb_id, rb_id;
+  //int UE_Id;
   int sdu_offset=0;
 
   #ifdef DEBUG_RRC_DETAILS
   //msg ("\n[RRC][SRB-UE] CALL to rrc_ue_srb_rx\n");
   #endif
-  rb_id = ch_idP - RRC_LCHAN_SRB0_ID;
-  srb_id = rb_id % maxRB;
-  UE_Id = (rb_id - srb_id) / maxRB;
-  //if srb_id is SRB2 or SRB1, check multiplexing
-  if (srb_id==RRC_SRB2_ID || srb_id==RRC_SRB1_ID){
-    sdu_offset = 1;
-    switch (sduP[0]){
-      case RRC_SRB2_ID:
-        srb_id=RRC_SRB2_ID;
-        break;
-      case RRC_SRB3_ID:
-        srb_id=RRC_SRB3_ID;
-        break;
-      case RRC_SRB1_ID:
-        srb_id=RRC_SRB1_ID;
-        break;
-      case RRC_MCCH_ID:
-        srb_id=RRC_MCCH_ID;
-        break;
-      default:
-        msg("\n\n[RRC][SRB-UE] rrc_ue_srb_rx: ERROR, Unrecognized srb_id %d", sduP[0]);
-    }
-   }
+  //rb_id = ch_idP - RRC_LCHAN_SRB0_ID;
+  //rb_id = ch_idP;
+  //srb_id = rb_id % maxRB;
+  //UE_Id = (rb_id - srb_id) / maxRB;
 
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC][SRB-UE] LCHAN%d RX in frame %d\n", ch_idP, protocol_ms->rrc.current_SFN);
-  msg ("[RRC][SRB-UE] RB %d, SRB%d received [SRB5=MCCH], UE_Id %d\n", rb_id, srb_id, UE_Id);
+  msg ("[RRC][SRB-UE] LCHAN%d for UE %d RX in frame %d\n", srb_id, UE_Id, protocol_ms->rrc.current_SFN);
+  //msg ("[RRC][SRB-UE] RB %d, SRB%d received [SRB5=MCCH], UE_Id %d\n", rb_id, srb_id, UE_Id);
   //msg ("[RRC-SRB-UE] [UE-DUMMIES] frame received: %s\n", (char*)&sduP[sdu_offset]);
   #endif
 

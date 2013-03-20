@@ -12,7 +12,7 @@ extern char* namepointer_log2;
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
-extern unsigned short rev[2048],rev_times4[8192],rev_half[1024],rev1024[1024],rev256[256],rev512[512],rev2048[2048],rev4096[4096];
+extern unsigned short rev[2048],rev_times4[8192],rev_half[1024],rev1024[1024],rev256[256],rev512[512],rev2048[2048],rev4096[4096],rev8192[8192];
 
 #ifdef OPENAIR_LTE
 #include "PHY/LTE_TRANSPORT/extern.h"
@@ -58,8 +58,10 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 #endif
 
-extern double sinr_bler_map[MCS_COUNT][2][16];
+extern int flag_LA;
+extern double sinr_bler_map[MCS_COUNT][2][20];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
+extern int table_length[MCS_COUNT];
 
 //for MU-MIMO abstraction using MIESM
 //this 2D arrarays contains SINR, MI and RBIR in rows 1, 2, and 3 respectively
@@ -70,6 +72,13 @@ extern double MI_map_64qam[3][227];
 extern double beta1_dlsch_MI[6][MCS_COUNT];
 extern double beta2_dlsch_MI[6][MCS_COUNT];
 
+extern double q_qpsk[8];
+extern double q_qam16[8];
+extern double q_qam64[8];
+
+extern double p_qpsk[8];
+extern double p_qam16[8];
+extern double p_qam64[8];
 
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];

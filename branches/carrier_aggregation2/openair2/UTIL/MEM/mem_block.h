@@ -17,11 +17,7 @@
 #    define public_mem_block(x) extern x
 #    define private_mem_block(x)
 #endif
-
 //-----------------------------------------------------------------------------
-//#include "platform_types.h"
-//#include "platform_constants.h"
-//#include "openair_defs.h"
 
 typedef struct mem_block_t{
   struct mem_block_t *next;

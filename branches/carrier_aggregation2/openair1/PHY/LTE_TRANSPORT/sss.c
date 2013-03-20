@@ -181,24 +181,46 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
     //   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
     //   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
 
+#ifndef NEW_FFT
     pss_rxF        = &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))*2];
-    pss_rxF_ext    = &pss_ext[aarx][0];
     sss_rxF        = &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))*2];
+#else
+    pss_rxF        = &rxdataF[aarx][(rx_offset + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+    sss_rxF        = &rxdataF[aarx][(rx_offset + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+#endif
+    pss_rxF_ext    = &pss_ext[aarx][0];
+
     sss_rxF_ext    = &sss_ext[aarx][0];
 
     for (rb=0; rb<nb_rb; rb++) {
       // skip DC carrier
       if (rb==3) {
+#ifndef NEW_FFT
 	sss_rxF       = &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))*2];
 	pss_rxF       = &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))*2];
+#else
+	sss_rxF       = &rxdataF[aarx][(1 + (sss_symb*(frame_parms->ofdm_symbol_size)))];
+	pss_rxF       = &rxdataF[aarx][(1 + (pss_symb*(frame_parms->ofdm_symbol_size)))];
+#endif
       }
       for (i=0;i<12;i++) {
+#ifndef NEW_FFT
 	pss_rxF_ext[i]=pss_rxF[i<<1];
 	sss_rxF_ext[i]=sss_rxF[i<<1];
+#else
+	pss_rxF_ext[i]=pss_rxF[i];
+	sss_rxF_ext[i]=sss_rxF[i];
+#endif
       }
+#ifndef NEW_FFT
       pss_rxF+=24;
-      pss_rxF_ext+=12;
       sss_rxF+=24;
+#else
+      pss_rxF+=12;
+      sss_rxF+=12;
+#endif
+      pss_rxF_ext+=12;
+
       sss_rxF_ext+=12;
     }
 
@@ -339,7 +361,7 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
   sss5 = (short*)&sss5_ext[0][5];
   for (flip=0;flip<2;flip++) {        //  d0/d5 flip in RX frame
     for (phase=0;phase<=7;phase++) {  // phase offset between PSS and SSS
-      for (Nid1 = 0 ; Nid1 < 167; Nid1++) {  // possible Nid1 values
+      for (Nid1 = 0 ; Nid1 <= 167; Nid1++) {  // 168 possible Nid1 values
 	metric = 0;
 	if (flip==0) {
 	  d0 = &d0_sss[62*(Nid2 + (Nid1*3))];

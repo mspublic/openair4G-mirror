@@ -130,15 +130,15 @@ char quantize(double D,double x,unsigned char B) {
   char maxlev;
 
   qxd = floor(x/D);
-  //  printf("x=%f,qxd=%f\n",x,qxd);
-
+  //    printf("x=%f,qxd=%f\n",x,qxd);
+  
   maxlev = 1<<(B-1);
 
   if (qxd <= -maxlev)
     qxd = -maxlev;
   else if (qxd >= maxlev)
     qxd = maxlev-1;
-
+  
   return((char)qxd);
 }
 
@@ -201,7 +201,10 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 		   &PHY_vars_eNB->lte_frame_parms,
 		   num_pdcch_symbols,
 		   PHY_vars_eNB->dlsch_eNB[0][0],
-		   subframe);
+		   subframe,
+		   &PHY_vars_eNB->dlsch_rate_matching_stats,
+		   &PHY_vars_eNB->dlsch_turbo_encoding_stats,
+		   &PHY_vars_eNB->dlsch_interleaving_stats);
 
     uerr=0;
 
@@ -222,11 +225,12 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
     
     //    memset(decoded_output,0,16);
     //    printf("decoding %d\n",trial);
-    ret = dlsch_decoding(channel_output,
+    ret = dlsch_decoding(PHY_vars_UE,
+			 channel_output,
 			 &PHY_vars_UE->lte_frame_parms,
 			 PHY_vars_UE->dlsch_ue[0][0],
 			 subframe,
-			 num_pdcch_symbols);
+			 num_pdcch_symbols,1);
 
     /*    int diffs = 0,puncts=0;
     for (i=0;i<dlsch_ue->harq_processes[0]->Kplus*3;i++) {
@@ -264,12 +268,12 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
     for (i=0;i<block_length;i++) {
             
       if (dlsch_ue->harq_processes[0]->b[i] != test_input[i]) {
-	/*		
+/*		
 		printf("i %d/%d : Input %x, Output %x (%x, F %d)\n",i,block_length,test_input[i],
 		       dlsch_ue->harq_processes[0]->b[i],
 		       dlsch_ue->harq_processes[0]->c[0][i],
 		       (dlsch_ue->harq_processes[0]->F>>3));
-	*/
+*/	
 	*errors = (*errors) + 1;
 	//	printf("*%d, ret %d\n",*errors,ret);	
 

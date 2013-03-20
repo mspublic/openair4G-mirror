@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 #include <sys/ioctl.h>
-#include <cbmimo1_device.h>
+#include <openair_device.h>
 
 #include "elf.h"
 #include "elftypes.h"

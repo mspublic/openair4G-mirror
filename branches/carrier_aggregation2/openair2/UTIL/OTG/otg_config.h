@@ -86,8 +86,8 @@
 #define HDR_UDP 8
 
 
-/*!\brief Define the max size of OTG header*/
-#define SIZE_OTG_HEADER 8
+/*!\brief Define the max size of the header*/
+#define MAX_HEADER_SIZE  80 
 
 
 /*!\brief Define the Alphabet string to generate the payload of the packet*/
@@ -114,7 +114,7 @@
 #define MIN_FORMATING_TRANSFERRING_DELAY 1
 #define MAX_FORMATING_TRANSFERRING_DELAY 3
 #define MIN_ACCESS_DELAY 1.5
-#define MAX_ACCESS_DELAY 3
+#define MAX_ACCESS_DELAY 20
 #define TERMINAL_ACCESS_DELAY 1
 
 /*!\brief Latency budget for M2M access domain(unit millisecond)*/ /* ????? DRX and Handover */
@@ -131,6 +131,6 @@
 #define MIN_SERVICE_ENABLERS_DELAY 300
 #define MAX_SERVICE_ENABLERS_DELAY 500
 #define MIN_APPLICATION_ACESS_DELAY 1
-#define MAX_APPLICATION_ACESS_DELAY 2
+#define MAX_APPLICATION_ACESS_DELAY 3
 
 #endif

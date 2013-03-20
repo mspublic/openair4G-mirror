@@ -5,10 +5,7 @@
 
 #include <forms.h>
 
-/* Callbacks, globals and object handlers */
-
 extern void ia_receiver_on_off( FL_OBJECT *, long );
-
 
 /* Forms and Objects */
 

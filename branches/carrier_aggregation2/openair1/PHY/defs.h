@@ -120,6 +120,7 @@
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmin(a,b)  ((a<b) ? (a) : (b))
 
+#define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
 
 #ifdef EXPRESSMIMO_TARGET
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
@@ -129,14 +130,17 @@
 #include "impl_defs_top.h"
 #include "impl_defs_lte.h"
 
+#include "PHY/TOOLS/time_meas.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
+
 
 #ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
 
 #include "PHY/LTE_TRANSPORT/defs.h"
+
 
 #define NUM_DCI_MAX 32
 
@@ -170,6 +174,7 @@ typedef struct
   // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
   LTE_eNB_ULSCH_t  *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
+  LTE_eNB_DLSCH_t  *dlsch_eNB_MCH;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats *eNB_UE_stats_ptr[NUMBER_OF_UE_MAX];
 
@@ -193,6 +198,7 @@ typedef struct
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
   double *sinr_dB;
+
  /// N0 (used for abstraction)
   double N0;
 
@@ -273,6 +279,32 @@ typedef struct
   unsigned int total_dlsch_bitrate;
   unsigned int total_transmitted_bits;
   unsigned int total_system_throughput;
+ 
+  time_stats_t ofdm_mod_stats;
+  time_stats_t dlsch_encoding_stats;
+  time_stats_t dlsch_modulation_stats;
+  time_stats_t dlsch_rate_matching_stats;
+  time_stats_t dlsch_turbo_encoding_stats;
+  time_stats_t dlsch_interleaving_stats;
+
+  time_stats_t ofdm_demod_stats;
+  time_stats_t rx_dft_stats;
+  time_stats_t ulsch_channel_estimation_stats;
+  time_stats_t ulsch_freq_offset_estimation_stats;
+  time_stats_t ulsch_decoding_stats;
+  time_stats_t ulsch_demodulation_stats;
+  time_stats_t ulsch_rate_unmatching_stats;
+  time_stats_t ulsch_turbo_decoding_stats;
+  time_stats_t ulsch_deinterleaving_stats;
+  time_stats_t ulsch_demultiplexing_stats;
+  time_stats_t ulsch_llr_stats;
+  time_stats_t ulsch_tc_init_stats;
+  time_stats_t ulsch_tc_alpha_stats;
+  time_stats_t ulsch_tc_beta_stats;
+  time_stats_t ulsch_tc_gamma_stats;
+  time_stats_t ulsch_tc_ext_stats;
+  time_stats_t ulsch_tc_intl1_stats;
+  time_stats_t ulsch_tc_intl2_stats;
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
@@ -316,7 +348,7 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
   LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
-
+  LTE_UE_DLSCH_t   *dlsch_ue_MCH;
   // For abstraction-purposes only
   u8               sr[10];
   u8               pucch_sel[10];
@@ -376,6 +408,9 @@ typedef struct
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
   double *sinr_dB;
+  
+   /// sinr for all subcarriers of first symbol for the CQI Calculation 
+  double *sinr_CQI_dB;
 
   /// N0 (used for abstraction)
   double N0;
@@ -418,6 +453,32 @@ typedef struct
   //PHY_CONFIG_DEDICATED_SCELL phy_config_dedicated_scell_r10[MAX_NUM_CCs-1];
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  time_stats_t ofdm_mod_stats;
+  time_stats_t ulsch_encoding_stats;
+  time_stats_t ulsch_modulation_stats;
+  time_stats_t ulsch_segmentation_stats;
+  time_stats_t ulsch_rate_matching_stats;
+  time_stats_t ulsch_turbo_encoding_stats;
+  time_stats_t ulsch_interleaving_stats;
+  time_stats_t ulsch_multiplexing_stats;
+
+  time_stats_t ofdm_demod_stats;
+  time_stats_t rx_dft_stats;
+  time_stats_t dlsch_channel_estimation_stats;
+  time_stats_t dlsch_freq_offset_estimation_stats;
+  time_stats_t dlsch_decoding_stats;
+  time_stats_t dlsch_demodulation_stats;
+  time_stats_t dlsch_rate_unmatching_stats;
+  time_stats_t dlsch_turbo_decoding_stats;
+  time_stats_t dlsch_deinterleaving_stats;
+  time_stats_t dlsch_llr_stats;
+  time_stats_t dlsch_tc_init_stats;
+  time_stats_t dlsch_tc_alpha_stats;
+  time_stats_t dlsch_tc_beta_stats;
+  time_stats_t dlsch_tc_gamma_stats;
+  time_stats_t dlsch_tc_ext_stats;
+  time_stats_t dlsch_tc_intl1_stats;
+  time_stats_t dlsch_tc_intl2_stats;
 } PHY_VARS_UE;
 
 
@@ -430,6 +491,7 @@ typedef struct
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
+
 
 #endif //  __PHY_DEFS__H__
 

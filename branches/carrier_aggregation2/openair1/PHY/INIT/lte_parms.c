@@ -111,8 +111,6 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   msg("frame_parms->frame_type=%d\n",frame_parms->frame_type);
   msg("frame_parms->tdd_config=%d\n",frame_parms->tdd_config);
   msg("frame_parms->tdd_config_S=%d\n",frame_parms->tdd_config_S);
-  msg("frame_parms->freq_idx=%d\n",frame_parms->freq_idx);
-  msg("frame_parms->dual_tx=%d\n",frame_parms->dual_tx);
   msg("frame_parms->mode1_flag=%d\n",frame_parms->mode1_flag);
   msg("frame_parms->nb_antennas_tx=%d\n",frame_parms->nb_antennas_tx);
   msg("frame_parms->nb_antennas_rx=%d\n",frame_parms->nb_antennas_rx);
@@ -123,7 +121,4 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   msg("frame_parms->first_carrier_offset=%d\n",frame_parms->first_carrier_offset);
   msg("frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
   msg("frame_parms->symbols_per_tti=%d\n",frame_parms->symbols_per_tti);
-  msg("frame_parms->txgain=%d %d %d %d\n",frame_parms->txgain[0],frame_parms->txgain[1],frame_parms->txgain[2],frame_parms->txgain[3]);
-  msg("frame_parms->rxgain=%d %d %d %d\n",frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3]);
- 
 }

@@ -43,17 +43,26 @@
 #include "SCHED/extern.h"
 
 #ifdef EXMIMO
+#ifdef DRIVER2013
+#include "openair0_lib.h"
+extern int card;
+extern int number_of_cards;
+#else
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#else
-extern u8 number_of_cards;
+#endif
 #endif
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
   u8 eNB=0;
   u32 RRC_status;
+#ifdef EXMIMO
+#ifdef DRIVER2013
+  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
+#endif
+#endif
 
   if (phy_vars_ue==NULL)
     return 0;
@@ -63,14 +72,14 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
   len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
 		 phy_vars_ue->frame,
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[1],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[1][1],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[1][0],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[1][1],
 		 phy_vars_ue->PHY_measurements.rx_rssi_dBm[2],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][0],
-		 phy_vars_ue->PHY_measurements.wideband_cqi_dB[2][1],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[2][0],
+		 phy_vars_ue->PHY_measurements.rx_power_dB[2][1],
 		 phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		 phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		 phy_vars_ue->PHY_measurements.n0_power_dB[1]);
@@ -78,7 +87,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
 #else
 #ifdef EXMIMO
+#ifdef DRIVER2013
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],p_exmimo_config->rf.rx_gain[0][0]);
+#else
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],exmimo_pci_interface->rf.rx_gain00);
+#endif
 #else
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
 #endif
@@ -96,7 +109,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][0][1],
 		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][0],
 		   phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB][1][1]);
-    
+
+    len += sprintf(&buffer[len], "[UE PROC] RX total power eNB%d: %d dB, avg: %d dB\n",eNB,phy_vars_ue->PHY_measurements.rx_power_tot_dB[eNB],phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB]);
+    len += sprintf(&buffer[len], "[UE PROC] RX total power lin: %d, avg: %d, RX total noise lin: %d, avg: %d\n",phy_vars_ue->PHY_measurements.rx_power_tot[eNB], phy_vars_ue->PHY_measurements.rx_power_avg[eNB], phy_vars_ue->PHY_measurements.n0_power_tot, phy_vars_ue->PHY_measurements.n0_power_avg);
+    len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d: %d dB, avg: %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB],phy_vars_ue->PHY_measurements.wideband_cqi_avg[eNB]);
+
     len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 0): [%d %d %d %d %d %d %d] dB\n",
 		   eNB,
 		   phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB][0][0],
@@ -162,7 +179,6 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
 		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][5],
 		   phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB][6]);
     
-    len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB]);
     len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (max): %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&phy_vars_ue->PHY_measurements,eNB)));
     len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (both): %x,%x\n",eNB,
 		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,0)),
@@ -197,8 +213,8 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] Frame count: %d, RSSI %3.2f dB (%d dB, %d dB), N0 %3.2f dB (%d dB, %d dB)\n",
 		   phy_vars_ue->frame,
 		   10*log10(phy_vars_ue->PHY_measurements.rssi),
-		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		   phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		   phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
+		   phy_vars_ue->PHY_measurements.rx_power_dB[0][1],
 		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot),
 		   phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		   phy_vars_ue->PHY_measurements.n0_power_dB[1]);
@@ -207,7 +223,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     len += sprintf(&buffer[len], "[UE PROC] rf_mode %d, input level (set by user) %d dBm, VGA gain %d dB ==> total gain %3.2f dB, noise figure %3.2f dB\n",
 		   phy_vars_ue->rx_gain_mode[0],
 		   input_level_dBm, 
+#ifdef DRIVER2013
+		   p_exmimo_config->rf.rx_gain[0][0],
+#else
 		   exmimo_pci_interface->rf.rx_gain00,
+#endif
 		   10*log10(phy_vars_ue->PHY_measurements.rssi)-input_level_dBm,
 		   10*log10(phy_vars_ue->PHY_measurements.n0_power_tot)-phy_vars_ue->rx_total_gain_dB+105);
 #endif

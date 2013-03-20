@@ -28,7 +28,7 @@
       <APPLICATION_TYPE>m2m_traffic</APPLICATION_TYPE>   <!-- options: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR ,m2m_traffic --> 
       <BACKGROUND_TRAFFIC>enable</BACKGROUND_TRAFFIC>    <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
 			<AGGREGATION_LEVEL>1</AGGREGATION_LEVEL>           <!-- options: default=1, the number of traffic to aggregate-->
-      <DESTINATION_ID>1</DESTINATION_ID> 
+      <DESTINATION_ID>1:3</DESTINATION_ID> 
     </PREDEFINED_TRAFFIC>  
 </APPLICATION_CONFIG>
   

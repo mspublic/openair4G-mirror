@@ -64,7 +64,7 @@
 #endif
 
 NOCYGWIN_STATIC short zero[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
-NOCYGWIN_STATIC short ones[8] __attribute__ ((aligned(16))) = {1,1,1,1,1,1,1,1};
+NOCYGWIN_STATIC short ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
 NOCYGWIN_STATIC __m128i rho_rpi __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m128i rho_rmi __attribute__ ((aligned(16)));
 NOCYGWIN_STATIC __m128i rho_rpi_1_1 __attribute__ ((aligned(16)));

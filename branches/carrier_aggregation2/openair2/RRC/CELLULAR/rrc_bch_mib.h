@@ -86,7 +86,7 @@ typedef struct SystemInformation_BCH {
 
 typedef struct MasterInformationBlock {
   MIB_ValueTag    mib_ValueTag;
-  PLMN_Identity   plmn_Identity;
+  RCELL_PLMN_Identity   plmn_Identity;
   SIBSb_ReferenceList sibSb_ReferenceList;
 } MasterInformationBlock;
 
@@ -95,7 +95,7 @@ typedef struct MasterInformationBlock {
 /**************************************************************/
 typedef struct SysInfoType1 {
   NAS_SystemInformation subnet_NAS_SysInfo;
-  UE_TimersAndConstants ue_TimersAndConstants;
+  RCELL_UE_TimersAndConstants ue_TimersAndConstants;
 } SysInfoType1;
 
 /**************************************************************/

@@ -35,7 +35,7 @@ private_multicast_link(void  multicast_link_read ());
 private_multicast_link(void *multicast_link_main_loop (void *param));
 
 public_multicast_link(int   multicast_link_write_sock (int groupP, char *dataP, uint32_t sizeP));
-public_multicast_link( void  multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char multicast_group));
+public_multicast_link( void  multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char multicast_group, char * multicast_ifname));
 #ifdef BYPASS_PHY
 public_multicast_link( pthread_mutex_t Bypass_phy_wr_mutex);
 public_multicast_link( pthread_cond_t Bypass_phy_wr_cond);

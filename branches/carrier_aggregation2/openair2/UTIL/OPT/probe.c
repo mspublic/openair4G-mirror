@@ -175,7 +175,7 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
  * 2. copy the local packet-mac-lte.h and packet-mac-lte.c into epan/dissectors/
  * 3. install it, read INSTALL
  * 4. run the wireshark and capture packets from lo interface, and filter out icmp packet (!icmp)
- * 5. run ./oasim -a -P -n 30 | grep OPT 
+ * 5. run ./oasim -a -P0 -n 30 | grep OPT 
  */
 /* Add framing header to MAC PDU and send. */
 static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,

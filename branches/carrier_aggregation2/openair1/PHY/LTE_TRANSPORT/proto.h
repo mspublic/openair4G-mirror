@@ -89,6 +89,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
     LTE_DL_FRAME_PARMS *frame_parms,
     u8 num_pdcch_symbols,
     LTE_eNB_DLSCH_t *dlsch,
+    int frame,
     u8 subframe)
     \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
     - CRC computation and addition
@@ -100,14 +101,22 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
     @param frame_parms Pointer to frame descriptor structure
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
     @param dlsch Pointer to dlsch to be encoded
+    @param frame Frame number
     @param subframe Subframe number
+    @param rm_stats Time statistics for rate-matching
+    @param te_stats Time statistics for turbo-encoding
+    @param i_stats Time statistics for interleaving
     @returns status
 */
 s32 dlsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
 		   LTE_eNB_DLSCH_t *dlsch,
-		   u8 subframe);
+		   int frame,
+		   u8 subframe,
+		   time_stats_t *rm_stats,
+		   time_stats_t *te_stats,
+		   time_stats_t *i_stats);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
@@ -127,6 +136,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     u8 mod_order,
     u8 precoder_index,
     s16 amp,
+    int16_t *qam_table_s,
     u32 *re_allocated,
     u8 skip_dc,
     u8 skip_half,
@@ -145,6 +155,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     \param mod_order 2=QPSK, 4=16QAM, 6=64QAM
     \param precoder_index 36-211 W precoder column (1 layer) or matrix (2 layer) selection index
     \param amp Amplitude for symbols
+    \param qam_table_s pointer to scaled QAM table (by rho_a or rho_b)
     \param re_allocated pointer to allocation counter
     \param skip_dc offset for positive RBs
     \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
@@ -163,6 +174,7 @@ s32 allocate_REs_in_RB(mod_sym_t **txdataF,
 		       u8 mod_order,
 		       u8 precoder_index,
 		       s16 amp,
+		       int16_t *qam_table_s,
 		       u32 *re_allocated,
 		       u8 skip_dc,
 		       u8 skip_half,
@@ -752,6 +764,7 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     turbo-decoding algorithm for each segment and stops after either after unsuccesful decoding of at least
     one segment or correct decoding of all segments.  Only the segment CRCs are check for the moment, the
     overall CRC is ignored.  Finally transport block reassembly is performed.
+    @param phy_vars_ue Pointer to ue variables
     @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
     @param lte_frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
@@ -760,7 +773,8 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
     @returns 0 on success, 1 on unsuccessful decoding
 */
-u32 dlsch_decoding(s16 *dlsch_llr,
+u32 dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
+		   s16 *dlsch_llr,
 		   LTE_DL_FRAME_PARMS *lte_frame_parms,
 		   LTE_UE_DLSCH_t *dlsch,
 		   u8 subframe,
@@ -945,7 +959,7 @@ u8 get_Qm(u8 I_MCS);
 
 /** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
     @param I_MCS */
-u8 get_Qm(u8 I_MCS);
+u8 get_Qm_ul(u8 I_MCS);
 
 /** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
@@ -977,10 +991,10 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti);
 */
 u32 conv_nprb(u8 ra_header,u32 rb_alloc,int N_RB_DL);
 
-u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,int frame,u8 subframe);
 
-u16 adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe);
-u16 adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol);
+int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe);
+int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol);
 
 
 #ifndef modOrder
@@ -1070,16 +1084,16 @@ void ulsch_extract_rbs_single(s32 **rxdataF,
 u8 subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subframe);
 u8 subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
-s32 generate_ue_dlsch_params_from_dci(u8 subframe,
-				      void *dci_pdu,
-				      u16 rnti,
-				      DCI_format_t dci_format,
-				      LTE_UE_DLSCH_t **dlsch_ue,
-				      LTE_DL_FRAME_PARMS *frame_parms,
-                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-				      u16 si_rnti,
-				      u16 ra_rnti,
-				      u16 p_rnti);
+int generate_ue_dlsch_params_from_dci(uint8_t subframe,
+                                      void *dci_pdu,
+                                      uint16_t rnti,
+                                      DCI_format_t dci_format,
+                                      LTE_UE_DLSCH_t **dlsch,
+                                      LTE_DL_FRAME_PARMS *frame_parms,
+                                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+                                      uint16_t si_rnti,
+                                      uint16_t ra_rnti,
+                                      uint16_t p_rnti);
 
 s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       void *dci_pdu,
@@ -1112,7 +1126,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 s32 generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      u8 eNB_id);
-
+double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
+				      u8 eNB_id);
 int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
@@ -1277,7 +1292,7 @@ void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
 void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats);
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode);
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id,u8 trans_mode,double sinr_eff);
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id);
 u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id);
@@ -1318,14 +1333,14 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 num_pdcch_symbols,
 		      LTE_eNB_DLSCH_t *dlsch,
-		      u16 G,
+		      int G,
 		      u8 q,
 		      u8 Ns);
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 num_pdcch_symbols,
 			LTE_UE_DLSCH_t *dlsch,
-			u16 G,
+			int G,
 			s16* llr,
 			u8 q,
 			u8 Ns);
@@ -1435,6 +1450,15 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
 		       lte_frame_type_t frame_type,
 		       u32 X_u[64][839]);
 
+/*!
+  \brief Return the status of MBSFN in this frame/subframe
+  @param frame Frame index
+  @param subframe Subframe index
+  @param frame_parms Pointer to frame parameters
+  @returns 1 if subframe is for MBSFN
+*/
+int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+ 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);
 //end ALU's algo

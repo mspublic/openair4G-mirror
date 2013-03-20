@@ -88,10 +88,10 @@ typedef int     MIB_ValueTag;
 //typedef int  Digit;  already defined
 
   /*  MCC   */
-typedef struct MCC {
+typedef struct RCELL_MCC {
   unsigned int    numDigits;
   Digit           elem[3];
-} MCC;
+} RCELL_MCC;
 
   /*  MNC  */
 //typedef struct MNC {
@@ -101,10 +101,10 @@ typedef struct MCC {
 typedef unsigned int MNC;
 
   /*  PLMN_Identity */
-typedef struct PLMN_Identity {
-  MCC             mcc;
+typedef struct RCELL_PLMN_Identity {
+  RCELL_MCC       mcc;
   MNC             mnc;
-} PLMN_Identity;
+} RCELL_PLMN_Identity;
 
 /**************************************************************/
 /*  PLMN_ValueTag     */
@@ -196,10 +196,10 @@ typedef struct NAS_SystemInformation {
 } NAS_SystemInformation;
 
     /*  UE_TimersAndConstants */
-typedef struct UE_TimersAndConstants {
+typedef struct RCELL_UE_TimersAndConstants {
   unsigned int    numocts;
   unsigned char   data[8];
-} UE_TimersAndConstants;
+} RCELL_UE_TimersAndConstants;
 
 /**************************************************************/
 /*  SysInfoType2  Information elements                        */

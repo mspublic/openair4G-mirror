@@ -51,7 +51,7 @@ extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
-extern unsigned short RIV_max;
+extern unsigned short RIV_max6,RIV_max25,RIV_max50,RIV_max100;
 
 //#define DEBUG_RAR
 
@@ -75,7 +75,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   
   ulsch->harq_processes[harq_pid]->TPC                = (rar[3]>>2)&7;//rar->TPC;
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
-  if (rballoc>RIV_max) {
+  if (rballoc>RIV_max25) {
     LOG_E(PHY,"[eNB]dci_tools.c: ERROR: rb_alloc (%x)> RIV_max\n",rballoc);
     return(-1);
   }
@@ -150,7 +150,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
   uint16_t rballoc;
   uint8_t cqireq;
-    
+    double sinr_eff;
    
 #ifdef DEBUG_RAR
   LOG_I(PHY,"rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
@@ -163,7 +163,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
   cqireq=rar[3]&1;
 
-  if (rballoc>RIV_max) {
+  if (rballoc>RIV_max25) {
     msg("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
     return(-1);
   }
@@ -198,7 +198,15 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     }
   
     ulsch->uci_format = HLC_subband_cqi_nopmi;
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
+    //int flag_LA = 0;
+    //   if(flag_LA==1)
+    //  {
+    sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, eNB_id);
+    
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode,sinr_eff);
+    //  }
+    // else
+    // fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
     if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
   }
@@ -252,4 +260,3 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     return(0);
 }
 #endif
-

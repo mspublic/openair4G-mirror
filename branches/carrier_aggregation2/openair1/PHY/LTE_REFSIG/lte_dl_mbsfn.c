@@ -17,7 +17,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 		 unsigned char l,
 		 unsigned char p) {
 
-  unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
+  unsigned int mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0,a;
   mod_sym_t qpsk[4];
 
@@ -80,9 +80,9 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
     
     
 #ifdef DEBUG_DL_MBSFN
-    msg("subframe %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-	subframe,l,m,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    msg("subframe %d, l %d, m %d, mprime %d, mprime_dword %d, mprime_qpsk_symbol %d\n",
+	subframe,l,m,mprime,mprime_dword,mprime_qpsk_symb);
+    msg("index = %d (k %d)(%x)\n",(phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,phy_vars_eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
 #endif     
     mprime++;
     
@@ -103,7 +103,7 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
 		    int subframe,
 		    unsigned char l) {
   
-  unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
+  unsigned int mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0;
   unsigned int qpsk[4];
 
@@ -129,9 +129,9 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
     output[k] = qpsk[(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
 	
 #ifdef DEBUG_DL_MBSFN
-    printf("subframe %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-	   subframe,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("subframe %d, l %d, m %d, mprime %d, mprime_dword %d, mprime_qpsk_symbol %d\n",
+	   subframe,l,m,mprime, mprime_dword,mprime_qpsk_symb);
+    printf("index = %d (k %d) (%x)\n",(phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,phy_vars_ue->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
 #endif 
 
     mprime++;
