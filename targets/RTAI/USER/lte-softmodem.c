@@ -898,7 +898,7 @@ int main(int argc, char **argv) {
   u32 txgain[4]      = {25,25,25,25};
 
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1071,9 +1071,9 @@ int main(int argc, char **argv) {
   frame_parms->Ncp_UL             = 0;
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx_eNB = 2; //initial value overwritten by initial sync later
-  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 2 : 1;
-  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 1 : 2;
+  frame_parms->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
+  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 1 : 1;
+  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 1 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
   frame_parms->tdd_config         = 3;
@@ -1142,7 +1142,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
     openair_daq_vars.auto_freq_correction = 0;
-    openair_daq_vars.use_ia_receiver = 0;
+    openair_daq_vars.use_ia_receiver = 1;
 
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
@@ -1221,7 +1221,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=16;
+    openair_daq_vars.target_ue_dl_mcs=0;
     openair_daq_vars.ue_ul_nb_rb=6;
     openair_daq_vars.target_ue_ul_mcs=9;
 
@@ -1274,10 +1274,16 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
     p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];
     p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
+
+    p_exmimo_config->rf.rffe_gain_txlow[ant] = 31;
+    p_exmimo_config->rf.rffe_gain_txhigh[ant] = 31;
+    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 31;
+    p_exmimo_config->rf.rffe_gain_rxlow[ant] = 31;
+    p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
   }
   if (UE_flag) {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
-    p_exmimo_config->rf.rf_mode[2]    = my_rf_mode2;
+    p_exmimo_config->rf.rf_mode[1]    = my_rf_mode2;
   }
   else {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
@@ -1324,7 +1330,13 @@ int main(int argc, char **argv) {
   // connect the TX/RX buffers
   if (UE_flag==1) {
       setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
-    }
+      printf("Setting UE buffer to all-RX\n");
+      // Set LSBs for antenna switch (ExpressMIMO)
+      for (i=0; i<frame_parms->samples_per_tti*10; i++)
+	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+	  PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
+      
+  }
   else {
       setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms);
       if (fs4_test==0)
@@ -1544,14 +1556,14 @@ void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms,
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
       free(phy_vars_ue->lte_ue_common_vars.rxdata[i]);
-      phy_vars_ue->lte_ue_common_vars.rxdata[i] = (s32*) openair0_exmimo_pci[card].adc_head[2*i+carrier];
+      phy_vars_ue->lte_ue_common_vars.rxdata[i] = (s32*) openair0_exmimo_pci[card].adc_head[i+carrier];
 
 
       printf("rxdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.rxdata[i]);
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
       free(phy_vars_ue->lte_ue_common_vars.txdata[i]);
-      phy_vars_ue->lte_ue_common_vars.txdata[i] = (s32*) openair0_exmimo_pci[card].dac_head[2*i+carrier];
+      phy_vars_ue->lte_ue_common_vars.txdata[i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
 
       printf("txdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.txdata[i]);
     }
