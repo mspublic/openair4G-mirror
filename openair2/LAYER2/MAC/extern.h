@@ -40,20 +40,11 @@ extern RRC_XFACE *Rrc_xface;
 
 extern u8 Is_rrc_registered;
 
-#ifndef PHY_EMUL
-#ifndef PHYSIM
-#define NB_INST 1
-#else
 extern unsigned char NB_INST;
-#endif
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 
-#else
-extern EMULATION_VARS *Emul_vars;
-#endif //PHY_EMUL
-
 
 extern u32 RRC_CONNECTION_FLAG;
 

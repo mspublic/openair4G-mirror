@@ -25,7 +25,7 @@ double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 	dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 	
 	
-	//printf("sqrt_rho_a:%d\n",dlsch_eNB->sqrt_rho_a);	
+	//	printf("sqrt_rho_a:%d(eNB)\n",dlsch_eNB->sqrt_rho_a);	
 	
 	return(rho_a_dB);		
 }
@@ -50,7 +50,7 @@ double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 	dlsch_eNB->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
 			
-	//printf("sqrt_rho_b:%d\n",dlsch_eNB->sqrt_rho_b);
+	//	printf("sqrt_rho_b(eNB):%d\n",dlsch_eNB->sqrt_rho_b);
 	
 	return(rho_b_dB);	
 }
@@ -72,7 +72,7 @@ double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 	dlsch_ue->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 	
 	
-	//printf("sqrt_rho_a:%d\n",dlsch_eNB->sqrt_rho_a);	
+	//	printf("sqrt_rho_a(ue):%d\n",dlsch_ue->sqrt_rho_a);	
 	
 	return(rho_a_dB);		
 }
@@ -97,7 +97,7 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 	dlsch_ue->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
 			
-	//printf("sqrt_rho_b:%d\n",dlsch_eNB->sqrt_rho_b);
+	//	printf("sqrt_rho_b(ue):%d\n",dlsch_ue->sqrt_rho_b);
 	
 	return(rho_b_dB);	
 }

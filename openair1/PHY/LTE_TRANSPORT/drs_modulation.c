@@ -50,9 +50,9 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 		       unsigned int first_rb,
 		       unsigned int nb_rb) {
 
-  u16 k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
+  u16 k,l,Msc_RS,Msc_RS_idx,rb,drs_offset;
   u16 * Msc_idx_ptr;
-  int subframe_offset;
+  int subframe_offset,re_offset,symbol_offset;
 
   //u32 phase_shift; // phase shift for cyclic delay in DM RS
   //u8 alpha_ind;

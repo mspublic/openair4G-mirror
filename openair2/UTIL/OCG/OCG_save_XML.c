@@ -69,10 +69,10 @@ int save_XML(int copy_or_move, char *src_file, char *output_dir, char *filename)
 	      putc(ch, ft);
 	    }
 	  }
-	}
-	fclose(fs);
-	fclose(ft);
 
+	  fclose(fs);
+	  fclose(ft);
+	}
 	if (copy_or_move == 2) remove(src_file);
 	
 	LOG_I(OCG, "The file is saved in directory \"%s\"\n", XML_saving_dir);

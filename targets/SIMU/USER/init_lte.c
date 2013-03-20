@@ -88,6 +88,8 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   
   PHY_vars_eNB->check_for_SUMIMO_transmissions = 0;
 
+  PHY_vars_eNB->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+
   return (PHY_vars_eNB);
 }
 
@@ -126,6 +128,8 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
         
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
+  PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+
   return (PHY_vars_UE);
 }
 
@@ -136,7 +140,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u8 extended_prefix_flag, 
 		   u8 N_RB_DL,
 		   u16 Nid_cell,
-		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
+		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag,
+		   int nb_antennas_rx) {
 
   u8 eNB_id,UE_id,CC_id;
 
@@ -157,7 +162,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 2;
+  (*frame_parms)->nb_antennas_rx     = nb_antennas_rx;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
   init_frame_parms(*frame_parms,1);

@@ -175,6 +175,14 @@ int logInit (void) {
     g_log->log_component[OTG_LATENCY].filelog = 0;
     g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
 
+    g_log->log_component[OTG_LATENCY_BG].name = "OTG_LATENCY_BG";
+    g_log->log_component[OTG_LATENCY_BG].level = LOG_FILE;
+    g_log->log_component[OTG_LATENCY_BG].flag =  LOG_MED;
+    g_log->log_component[OTG_LATENCY_BG].interval =  1;
+    g_log->log_component[OTG_LATENCY_BG].fd = 0;
+    g_log->log_component[OTG_LATENCY_BG].filelog = 0;
+    g_log->log_component[OTG_LATENCY_BG].filelog_name = "/tmp/otg_latency_bg.dat";
+
 
     g_log->log_component[OTG_GP].name = "OTG_GP";
     g_log->log_component[OTG_GP].level = LOG_FILE;
@@ -183,6 +191,14 @@ int logInit (void) {
     g_log->log_component[OTG_GP].fd = 0;
     g_log->log_component[OTG_GP].filelog = 0;
     g_log->log_component[OTG_GP].filelog_name = "/tmp/otg_GP.dat";
+
+    g_log->log_component[OTG_GP_BG].name = "OTG_GP_BG";
+    g_log->log_component[OTG_GP_BG].level = LOG_FILE;
+    g_log->log_component[OTG_GP_BG].flag =  LOG_MED;
+    g_log->log_component[OTG_GP_BG].interval =  1;
+    g_log->log_component[OTG_GP_BG].fd = 0;
+    g_log->log_component[OTG_GP_BG].filelog = 0;
+    g_log->log_component[OTG_GP_BG].filelog_name = "/tmp/otg_GP_bg.dat";
 
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;

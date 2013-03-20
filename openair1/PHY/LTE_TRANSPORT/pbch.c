@@ -270,6 +270,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 			 2,
 			 0,
 			 (amp*3)/2,
+			 NULL,
 			 &re_allocated,
 			 0,
 			 0,
@@ -335,13 +336,21 @@ u16 pbch_extract(int **rxdataF,
 	   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
 	   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
     */
+#ifndef NEW_FFT
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
+#else
+    rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
+#endif
     rxF_ext    = &rxdataF_ext[aarx][symbol_mod*(6*12)];
 
     for (rb=0; rb<nb_rb; rb++) {
       // skip DC carrier
       if (rb==3) {
+#ifndef NEW_FFT
 	rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
+#else
+	rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))];
+#endif
       }
       if ((symbol_mod==0) || (symbol_mod==1)) {
 	j=0;
@@ -350,18 +359,33 @@ u16 pbch_extract(int **rxdataF,
 	      (i!=(nushiftmod3+3)) && 
 	      (i!=(nushiftmod3+6)) && 
 	      (i!=(nushiftmod3+9))) {
-
+#ifndef NEW_FFT
 	    rxF_ext[j++]=rxF[i<<1];
+#else
+	    rxF_ext[j++]=rxF[i];
+#endif
 	  }
 	}
+#ifndef NEW_FFT
 	rxF+=24;
+#else
+	rxF+=12;
+#endif
 	rxF_ext+=8;
       }
       else {
 	for (i=0;i<12;i++) {
+#ifndef NEW_FFT
 	  rxF_ext[i]=rxF[i<<1];
+#else
+	  rxF_ext[i]=rxF[i];
+#endif
 	}
+#ifndef NEW_FFT
 	rxF+=24;
+#else
+	rxF+=12;
+#endif
 	rxF_ext+=12;
       }
     }
@@ -689,7 +713,7 @@ void pbch_quantize(s8 *pbch_llr8,
 }
 
 static unsigned char dummy_w_rx[3*3*(16+PBCH_A)];
-static char pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
+static int8_t pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
 
 
 u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
@@ -704,7 +728,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
   int symbol,i;
   u32 nsymb = (frame_parms->Ncp==0) ? 14:12;
-  u32  pbch_E;
+  u16  pbch_E;
   u8 pbch_a[8];
   u8 RCC;
 

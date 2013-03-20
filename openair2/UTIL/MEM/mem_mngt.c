@@ -98,39 +98,6 @@ pool_buffer_init (void *arg)
     }
     mb_index += pool_sizes[pool_index];
   }
-
-  /*for (pool_index = 0; pool_index < 6; pool_index++) {
-     init_list(&memory->mem_raw_lists[pool_index], "RAW");
-     for (index=0; index < pool_raw_sizes[pool_index]; index++) {
-     switch (pool_index) {
-     case 0:
-     (( mem_block_t*)(&memory->mem_pool_raw0[index][0]))->pool_id = pool_index;
-     add_tail((( mem_block_t*)(&memory->mem_pool_raw0[index][0])), &memory->mem_raw_lists[pool_index]);
-     break;
-     case 1:
-     (( mem_block_t*)(&memory->mem_pool_raw1[index][0]))->pool_id = pool_index;
-     add_tail((( mem_block_t*)(&memory->mem_pool_raw1[index][0])), &memory->mem_raw_lists[pool_index]);
-     break;
-     case 2:
-     (( mem_block_t*)(&memory->mem_pool_raw2[index][0]))->pool_id = pool_index;
-     add_tail((( mem_block_t*)(&memory->mem_pool_raw2[index][0])), &memory->mem_raw_lists[pool_index]);
-     break;
-     case 3:
-     (( mem_block_t*)(&memory->mem_pool_raw3[index][0]))->pool_id = pool_index;
-     add_tail((( mem_block_t*)(&memory->mem_pool_raw3[index][0])), &memory->mem_raw_lists[pool_index]);
-     break;
-     case 4:
-     (( mem_block_t*)(&memory->mem_pool_raw4[index][0]))->pool_id = pool_index;
-     add_tail((( mem_block_t*)(&memory->mem_pool_raw4[index][0])), &memory->mem_raw_lists[pool_index]);
-     break;
-     case 5:
-     (( mem_block_t*)(&memory->mem_pool_raw5[index][0]))->pool_id = pool_index;
-     add_tail((( mem_block_t*)(&memory->mem_pool_raw5[index][0])), &memory->mem_raw_lists[pool_index]);
-     break;
-     default: msg("[WCDMA][MEM][INIT] out of bounds\n");
-     }
-     }
-     } */
   return 0;
 }
 
@@ -155,23 +122,6 @@ pool_buffer_clean (void *arg)
 #endif
   return 0;
 }
-
-/*
-//-----------------------------------------------------------------------------
-void rt_free(void *blockP) {
-//-----------------------------------------------------------------------------
-   mem_block_t *mb;
-
-  mb = ( mem_block_t*)((u32_t)blockP - sizeof( mem_block_t) + sizeof(void*));
-#ifdef DEBUG_MEM_MNGT_FREE
-  msg("[MEM_MNGT][FREE] rt_free() %p pool: %d\n", blockP, mb->pool_id);
-#endif
-  if (mb->pool_id <= 6)  {
-    add_tail(mb,  &mem->mem_raw_lists[mb->pool_id]);
-  } else {
-    msg("[MEM_MNGT][FREE] ERROR rt_free() unknown pool_id : %d\n", mb->pool_id);
-  }
-}*/
 //-----------------------------------------------------------------------------
 void
 free_mem_block (mem_block_t * leP)
@@ -200,43 +150,7 @@ free_mem_block (mem_block_t * leP)
   }
 }
 
-/*
-//-----------------------------------------------------------------------------
-// danger : the free function is not really real time (primitive algorithm, poor performance)
-void* rt_alloc(u16_t sizeP) {
-//-----------------------------------------------------------------------------
-   mem_block_t* le = NULL;
-  int               pool_selected;
 
-#ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
-  msg("[MEM_MNGT] ALLOC BLOCK SIZE %d bytes\n",sizeP);
-#endif
-  sizeP = sizeP >> 6;
-  pool_selected = 0;
-
-  while ((sizeP)) {
-    pool_selected +=1;
-    sizeP = sizeP >> 1;
-  }
-
-  // pool is selected according to the size requested, now get a block
-  // if no block is available pick one in an other pool
-  do {
-    if ((le=remove_head( &mem->mem_raw_lists[pool_selected]))) {
-      return (void*)(&(le->data));
-    }
-#ifdef DEBUG_MEM_MNGT_ALLOC
-    msg("[MEM_MNGT][ERROR][MINOR] memory pool %d is empty trying next pool\n",pool_selected);
-    #ifdef USER_MODE
-    display_mem_load();
-    check_mem_area(mem);
-    break_point();
-    #endif
-#endif
-  } while (pool_selected++ <= 5);
-  msg("[MEM_MNGT][ERROR][FATAL] size requested out of bounds or memory pools empty\n");
-  return NULL;
-}*/
 //-----------------------------------------------------------------------------
 mem_block_t      *
 get_free_mem_block (u16_t sizeP)

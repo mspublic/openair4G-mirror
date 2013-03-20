@@ -228,7 +228,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,12*12*7*2,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  //fl_set_xyplot_ybounds(form->demod_out,-100,100);
+  fl_set_xyplot_ybounds(form->demod_out,-500,500);
 
   // DLSCH I/Q
   j=0;

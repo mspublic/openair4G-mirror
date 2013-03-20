@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -62,6 +64,7 @@ static int      highsock;       /* Highest #'d file descriptor, needed for selec
 static pthread_t main_loop_thread;
 static void (*rx_handler) (unsigned int, char*);
 static unsigned char multicast_group; 
+static char *multicast_if; 
 
 //------------------------------------------------------------------------------
 void
@@ -75,18 +78,29 @@ multicast_link_init ()
                                            in TIME_WAIT state. */
   static struct ip_mreq command;
   struct sockaddr_in sin;
-
+  // struct ifreq ifr;
+  
   for (group = 0; group < MULTICAST_LINK_NUM_GROUPS; group++) {
     strcpy (group_list[group].host_addr, multicast_group_list[group]);
     group_list[group].port = 46014 + group;
     group_list[group].socket = make_socket_inet (SOCK_DGRAM, &group_list[group].port, &sin);
-    printf("multicast_link_init(): Created socket %d for group %d, port %d\n",
+    msg("multicast_link_init(): Created socket %d for group %d, port %d\n",
 	   group_list[group].socket,group,group_list[group].port);
     if (setsockopt (group_list[group].socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof (reuse_addr)) < 0) {
             msg ("[MULTICAST] ERROR : setsockopt:SO_REUSEADDR, exiting ...");
       exit (EXIT_FAILURE);
     }
-
+    if (multicast_if != NULL) {
+      /*   memset(&ifr, 0, sizeof(struct ifreq));
+      snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), multicast_if);
+      ioctl(group_list[group].socket, SIOCGIFINDEX, &ifr);
+      if (setsockopt (group_list[group].socket, SOL_SOCKET,SO_BINDTODEVICE,(void*)&ifr, sizeof(struct ifreq)) < 0) { */
+      if (setsockopt (group_list[group].socket, SOL_SOCKET,SO_BINDTODEVICE,multicast_if, 4) < 0) {
+	msg ("[MULTICAST] ERROR : setsockopt:SO_BINDTODEVICE on interface %s, exiting ...\n", multicast_if);
+	msg ("[MULTICAST] make sure that you have a root privilage or run with sudo -E \n");
+	exit (EXIT_FAILURE);
+      }
+    }
     socket_setnonblocking (group_list[group].socket);
 
     //
@@ -194,9 +208,11 @@ multicast_link_read ()
   /* Run through our sockets and check to see if anything
      happened with them, if so 'service' them. */
   
-  for (group = multicast_group; group < MULTICAST_LINK_NUM_GROUPS; group++) {
-    if (FD_ISSET (group_list[group].socket, &socks))
-      multicast_link_read_data (group);
+  for (group = multicast_group; group < MULTICAST_LINK_NUM_GROUPS ; group++) {
+    if (FD_ISSET (group_list[group].socket, &socks)) {
+      multicast_link_read_data (group);    
+      break;
+    }
   }                             /* for (all entries in queue) */
 }
 
@@ -246,19 +262,21 @@ multicast_link_main_loop (void *param)
 
 //-----------------------------------------------------------------------------
 void
-multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char multicast_group)
+multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char multicast_group, char * multicast_ifname)
 {
   //-----------------------------------------------------------------------------
   rx_handler = rx_handlerP;
   multicast_group = multicast_group;
-  msg("[MULTICAST] LINK START: handler=%p\n",rx_handler);
+  multicast_if =  multicast_ifname;
+  msg("[MULTICAST] LINK START on interface=%s for group=%d: handler=%p\n",
+      (multicast_if == NULL) ? "not specified" : multicast_if, multicast_group, rx_handler);
 #ifdef BYPASS_PHY  
   //  pthread_mutex_init(&Bypass_phy_wr_mutex,NULL);
   //pthread_cond_init(&Bypass_phy_wr_cond,NULL);
   //Bypass_phy_wr=0;
 #endif //BYPASS_PHY
   multicast_link_init ();
-  printf("multicast link start thread\n");
+  msg("[MULTICAST] multicast link start thread\n");
   if (pthread_create (&main_loop_thread, NULL, multicast_link_main_loop, NULL) != 0) {
     msg ("[MULTICAST LINK] Thread started\n");
     exit (-2);

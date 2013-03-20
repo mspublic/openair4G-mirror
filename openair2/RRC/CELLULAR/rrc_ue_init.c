@@ -41,7 +41,7 @@ EXPORT_SYMBOL(pt_nas_ue_irq);
 EXPORT_SYMBOL(nas_IMEI);
 #endif
 
-//LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC, DCCH_LCHAN_DESC, DTCH_LCHAN_DESC;
+LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC, DCCH_LCHAN_DESC, DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um;
 rlc_info_t Rlc_info_am_config;
 
@@ -132,7 +132,8 @@ void rrc_ue_init (u8 Mod_id){
   protocol_ms->rrc.protocol_state = RRC_UE_IDLE;
   protocol_ms->rrc.u_rnti = 0;
   protocol_ms->rrc.cell_id = 0;
-  list2_init (&protocol_ms->rrc.rrc_timers, NULL);
+  protocol_ms->rrc.mod_id =1;
+  //list2_init (&protocol_ms->rrc.rrc_timers, NULL);
 
   rrc_ue_bch_init ();
   rrc_rb_ue_init ();
@@ -154,7 +155,7 @@ void rrc_ue_init (u8 Mod_id){
   rrc_init_mac_config();
 
   // TEMP : Only one MT is supported in the MAC interface
-  Rrc_xface->UE_index[0][0]=1;
+  //Rrc_xface->UE_index[0][0]=1;
   //
   printk("\n[RRC CELL][UE-INIT] cell_id %d\n",protocol_ms->rrc.cell_id );
   printk("[RRC CELL][UE-INIT] Init UE function completed\n");

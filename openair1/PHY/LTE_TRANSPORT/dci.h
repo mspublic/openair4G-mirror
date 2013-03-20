@@ -370,7 +370,7 @@ struct DCI0_5MHz_FDD {
 } __attribute__ ((__packed__));
 
 typedef struct DCI0_5MHz_FDD DCI0_5MHz_FDD_t;
-#define sizeof_DCI0_5MHz_FDD_t 23
+#define sizeof_DCI0_5MHz_FDD_t 25
 
 struct DCI1A_5MHz_FDD {
   /// padding
@@ -1498,5 +1498,57 @@ typedef struct __attribute__ ((__packed__)){
   uint32_t TPC:26;
 } DCI3_5MHz_FDD_t;
 #define sizeof_DCI3_5MHz_FDD_t 25
+
+///  DCI Format Type 0 (1.5 MHz,9 bits)
+struct DCI0A_1_5MHz {
+  /// Padding
+  uint32_t padding:19;
+    /// Cyclic shift
+  uint32_t cshift:3;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  uint32_t rballoc:5;
+  /// Hopping flag
+  uint32_t hopping:1;
+} __attribute__ ((__packed__));
+#define sizeof_DCI0A_1_5MHz 9
+
+///  DCI Format Type 0 (5 MHz,13 bits)
+struct DCI0A_5MHz {
+  /// Padding
+  uint32_t padding:19;
+    /// Cyclic shift
+  uint32_t cshift:3;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  uint32_t rballoc:9;
+  /// Hopping flag
+  uint32_t hopping:1;
+} __attribute__ ((__packed__));
+#define sizeof_DCI0A_5MHz 13
+
+///  DCI Format Type 0 (10 MHz,15 bits)
+struct DCI0A_10_MHz {
+  /// Padding
+  uint32_t padding:17;
+    /// Cyclic shift
+  uint32_t cshift:3;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  uint32_t rballoc:11;
+  /// Hopping flag
+  uint32_t hopping:1;
+} __attribute__ ((__packed__));
+#define sizeof_DCI0A_10MHz 15
+
+///  DCI Format Type 0 (20 MHz,17 bits)
+struct DCI0A_20_MHz {
+  /// Padding
+  uint32_t padding:15;
+    /// Cyclic shift
+  uint32_t cshift:3;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  uint32_t rballoc:13;
+  /// Hopping flag
+  uint32_t hopping:1;
+} __attribute__ ((__packed__));
+#define sizeof_DCI0A_20MHz 17
 
 #define MAX_DCI_SIZE_BITS 45

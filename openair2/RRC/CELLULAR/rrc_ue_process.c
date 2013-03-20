@@ -238,14 +238,11 @@ void set_RRC_Transaction_ID (void){
 }
 
 //-----------------------------------------------------------------------------
-void rrc_ue_t300_timeout (void *protoP, void *timer_idP){
+void rrc_ue_t300_timeout (void){
 //-----------------------------------------------------------------------------
   msg ("[RRC] TIME OUT RRC_CONNECTION REQUEST frame %d\n", protocol_ms->rrc.current_SFN);
-  switch ((int) timer_idP) {
-      case RRC_T300:
-        rrc_ue_fsm_control (T300_TO);
-        break;
-      default:
-        break;
-  }
+
+  protocol_ms->rrc.rrc_ue_t300_target = 0;
+  rrc_ue_fsm_control (T300_TO);
+
 }

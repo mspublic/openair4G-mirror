@@ -157,7 +157,10 @@ void generate_pcfich(u8 num_pdcch_symbols,
     pcfich_scrambling(frame_parms,subframe,pcfich_b[num_pdcch_symbols-1],pcfich_bt);
 
   // modulation
-  gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  if (frame_parms->mode1_flag==1) 
+    gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  else
+    gain_lin_QPSK = amp/2;  
 
   if (frame_parms->mode1_flag) { // SISO
 #ifndef IFFT_FPGA

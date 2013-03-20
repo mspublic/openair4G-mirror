@@ -56,7 +56,7 @@
     <PERFORMANCE_METRICS>
       	<THROUGHPUT>enable</THROUGHPUT>	<!-- option: enable, disable. If enable, throughput measurements are plotted in real time-->
       	<LATENCY>enable</LATENCY>        <!-- option: enable, disable. If enable, latency measurements are plotted in real time-->
-       	<OWD_RADIO_ACESS>enable</OWD_RADIO_ACESS>  <!-- option: enable, disable. If enable owd curve shows the one way radio access delay, else it shows end to end owd -->
+       	<OWD_RADIO_ACCESS>enable</OWD_RADIO_ACCESS>  <!-- option: enable, disable. If enable owd curve shows the one way radio access delay, else it shows end to end owd -->
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
       <LEVEL>trace</LEVEL>

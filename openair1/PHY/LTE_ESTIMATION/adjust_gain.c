@@ -4,24 +4,25 @@
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-#ifdef CBMIMO1
+#ifdef EXMIMO
+#ifdef DRIVER2013
+#include "openair0_lib.h"
+extern int card, number_of_cards;
+#else
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
-
-#ifdef EXMIMO
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
 
 void
 phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
 
-  u16 rx_power_fil_dB;
-#ifdef CBMIMO1
-  int i;
+    u16 rx_power_fil_dB,i;
+#ifdef EXMIMO
+#ifdef DRIVER2013
+  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
+#endif
 #endif
 
   //rx_power_fil_dB = dB_fixed(phy_vars_ue->PHY_measurements.rssi);
@@ -65,68 +66,87 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
 #else
 #ifdef EXMIMO
 
-  switch (phy_vars_ue->rx_gain_mode[0]) {
-  case max_gain:
-    if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_max[0]) {
-      phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0];
-      exmimo_pci_interface->rf.rx_gain00 = 30;
-      exmimo_pci_interface->rf.rx_gain10 = 30;
-    }
-    else if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_max[0]-30)) {
-      // for the moment we stay in max gain mode
-      phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0] - 30;
-      exmimo_pci_interface->rf.rx_gain00 = 0;
-      exmimo_pci_interface->rf.rx_gain10 = 0;
-
-      /*
-      phy_vars_ue->rx_gain_mode[0] = byp;
-      phy_vars_ue->rx_gain_mode[1] = byp;
-      exmimo_pci_interface->rf.rf_mode0 = 22991; //bypass
-      exmimo_pci_interface->rf.rf_mode1 = 22991; //bypass
-
-      if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_byp[0]-50)) {
-	exmimo_pci_interface->rf.rx_gain00 = 0;
-	exmimo_pci_interface->rf.rx_gain10 = 0;
-      }
-      */
-    }
-    else {
-      exmimo_pci_interface->rf.rx_gain00 = 30 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
-      exmimo_pci_interface->rf.rx_gain10 = 30 - phy_vars_ue->rx_gain_max[1] + phy_vars_ue->rx_total_gain_dB;
-    }
-    break;
-  case med_gain:
-  case byp_gain:
-    if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_byp[0]) {
-      phy_vars_ue->rx_gain_mode[0]   = max_gain;
-      phy_vars_ue->rx_gain_mode[1]   = max_gain;
-      exmimo_pci_interface->rf.rf_mode0 = 55759; //max gain
-      exmimo_pci_interface->rf.rf_mode1 = 55759; //max gain
- 
+  //switch (phy_vars_ue->rx_gain_mode[0]) {
+  //case max_gain:
       if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_max[0]) {
-	exmimo_pci_interface->rf.rx_gain00 = 50;
-	exmimo_pci_interface->rf.rx_gain10 = 50;
+          phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0];
+#ifdef DRIVER2013
+          for (i=0;i<phy_vars_ue->lte_frame_parms.nb_antennas_rx;i++) {
+              p_exmimo_config->rf.rx_gain[i][0] = 30;
+          }
+#else
+	  exmimo_pci_interface->rf.rx_gain00 = 30;
+	  exmimo_pci_interface->rf.rx_gain10 = 30;
+#endif
+
+      }
+      else if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_max[0]-30)) {
+          // for the moment we stay in max gain mode
+          phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0] - 30;
+#ifdef DRIVER2013
+          for (i=0;i<phy_vars_ue->lte_frame_parms.nb_antennas_rx;i++) {
+              p_exmimo_config->rf.rx_gain[i][0] = 0;
+          }
+#else
+	  exmimo_pci_interface->rf.rx_gain00 = 0;
+	  exmimo_pci_interface->rf.rx_gain10 = 0;
+#endif
+          /*
+            phy_vars_ue->rx_gain_mode[0] = byp;
+            phy_vars_ue->rx_gain_mode[1] = byp;
+            exmimo_pci_interface->rf.rf_mode0 = 22991; //bypass
+            exmimo_pci_interface->rf.rf_mode1 = 22991; //bypass
+            
+            if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_byp[0]-50)) {
+            exmimo_pci_interface->rf.rx_gain00 = 0;
+            exmimo_pci_interface->rf.rx_gain10 = 0;
+            }
+              */
       }
       else {
-	exmimo_pci_interface->rf.rx_gain00 = 50 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
-	exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_max[1] + phy_vars_ue->rx_total_gain_dB;
+#ifdef DRIVER2013
+          for (i=0;i<phy_vars_ue->lte_frame_parms.nb_antennas_rx;i++) {
+              p_exmimo_config->rf.rx_gain[i][0] =  30 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
+          }
+#else
+	  exmimo_pci_interface->rf.rx_gain00 = 30 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
+	  exmimo_pci_interface->rf.rx_gain10 = 30 - phy_vars_ue->rx_gain_max[1] + phy_vars_ue->rx_total_gain_dB;
+#endif
       }
-    }
-    else if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_byp[0]-50)) {
-	exmimo_pci_interface->rf.rx_gain00 = 0;
-	exmimo_pci_interface->rf.rx_gain10 = 0;
+      /*
+        break;
+      case med_gain:
+      case byp_gain:
+          if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_byp[0]) {
+              phy_vars_ue->rx_gain_mode[0]   = max_gain;
+              phy_vars_ue->rx_gain_mode[1]   = max_gain;
+              exmimo_pci_interface->rf.rf_mode0 = 55759; //max gain
+              exmimo_pci_interface->rf.rf_mode1 = 55759; //max gain
+              
+              if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_max[0]) {
+                  exmimo_pci_interface->rf.rx_gain00 = 50;
+                  exmimo_pci_interface->rf.rx_gain10 = 50;
+              }
+              else {
+                  exmimo_pci_interface->rf.rx_gain00 = 50 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
+                  exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_max[1] + phy_vars_ue->rx_total_gain_dB;
+              }
+          }
+          else if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_byp[0]-50)) {
+              exmimo_pci_interface->rf.rx_gain00 = 0;
+              exmimo_pci_interface->rf.rx_gain10 = 0;
+          }
+          else {
+              exmimo_pci_interface->rf.rx_gain00 = 50 - phy_vars_ue->rx_gain_byp[0] + phy_vars_ue->rx_total_gain_dB;
+              exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_byp[1] + phy_vars_ue->rx_total_gain_dB;
+          }
+          break;
+      default:
+          exmimo_pci_interface->rf.rx_gain00 = 50;
+          exmimo_pci_interface->rf.rx_gain10 = 50;
+          break;
       }
-    else {
-      exmimo_pci_interface->rf.rx_gain00 = 50 - phy_vars_ue->rx_gain_byp[0] + phy_vars_ue->rx_total_gain_dB;
-      exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_byp[1] + phy_vars_ue->rx_total_gain_dB;
-    }
-    break;
-  default:
-    exmimo_pci_interface->rf.rx_gain00 = 50;
-    exmimo_pci_interface->rf.rx_gain10 = 50;
-    break;
-  }
-
+          */
 #endif
 #endif
 

@@ -249,7 +249,7 @@ fclose(fid)
 
 k=0;
 
-for i=0:11,
+for i=0:12,
   for n=0:(2^i)-1,
 
       twiddleFFT_8192(1+(4*k))  = fix(16384*cos(2*pi*n/(2^(i+1))));

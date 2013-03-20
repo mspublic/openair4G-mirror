@@ -71,9 +71,14 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
 
 void phy_config_sib2_eNB(u8 Mod_id,
 			 u8 CC_id,
-			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
+			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			 ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+			 long *ul_Bandwidth,
+			 AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			 struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms;
+  int i;
 
   msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,PHY_vars_eNB_g[Mod_id][CC_id]->frame);
 
@@ -160,13 +165,43 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   init_ul_hopping(lte_frame_parms);
 
+
+  // MBSFN
+  if (mbsfn_SubframeConfigList != NULL) {
+    lte_frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
+    for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
+      if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
+	lte_frame_parms->MBSFN_config[i].fourFrames_flag = 0;
+	lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
+	LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+      }
+      else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration 
+	  lte_frame_parms->MBSFN_config[i].fourFrames_flag = 1;
+	  lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = 
+	    mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+	  
+	  LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+		lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+	}
+    }
+  }
 }
 
 
 void phy_config_sib2_ue(u8 Mod_id, u8 CC_id ,u8 CH_index,
-			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
+			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+			long *ul_Bandwidth,
+			AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id][CC_id]->lte_frame_parms;
+  int i;
 
   LOG_I(PHY,"[UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,PHY_vars_UE_g[Mod_id][CC_id]->frame,CH_index);
 
@@ -236,6 +271,33 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
 
   init_ul_hopping(lte_frame_parms);
 
+
+  // MBSFN
+
+  if (mbsfn_SubframeConfigList != NULL) {
+    lte_frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
+    for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod;
+      lte_frame_parms->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset;
+      if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
+	lte_frame_parms->MBSFN_config[i].fourFrames_flag = 0;
+	lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
+	LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+      }
+      else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration 
+	  lte_frame_parms->MBSFN_config[i].fourFrames_flag = 1;
+	  lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = 
+	    mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+	  
+	  LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+		lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+	}
+    }
+  }
+  
 }
 
 void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
@@ -520,7 +582,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-
+  init_td();
 
 #ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);
@@ -1140,6 +1202,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*12*sizeof(double));
   }
 
+   phy_vars_ue->sinr_CQI_dB = (double*) malloc16(frame_parms->N_RB_DL*12*sizeof(double));
   phy_vars_ue->init_averaging = 1;
 
   phy_vars_ue->pdsch_config_dedicated->p_a = PDSCH_ConfigDedicated__p_a_dB0; //defaul value until overwritten by RRCConnectionReconfiguration
@@ -1555,7 +1618,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	
 	for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 	  eNB_pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = 
-	    (int *)malloc16(2*sizeof(int)*frame_parms->ofdm_symbol_size);
+	    (int *)malloc16(2*2*sizeof(int)*frame_parms->ofdm_symbol_size);
 	  if (eNB_pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i]) {
 #ifdef DEBUG_PHY
 	    msg("[openair][LTE_PHY][INIT] lte_eNB_pusch_vars[%d]->drs_ch_estimates_time[%d][%d] allocated at %p\n",UE_id,eNB_id,i,

@@ -226,7 +226,7 @@ uint8_t do_MIB(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t *buffer)
     break;
   }
 
-  printf("systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  mib.message.dl_Bandwidth,frame_parms->phich_config_common.phich_duration,mib.message.phich_Config.phich_Resource,sfn);
+  printf("[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  mib.message.dl_Bandwidth,frame_parms->phich_config_common.phich_duration,mib.message.phich_Config.phich_Resource,sfn);
   mib.message.phich_Config.phich_Duration = frame_parms->phich_config_common.phich_duration;
   mib.message.systemFrameNumber.buf = &sfn;
   mib.message.systemFrameNumber.size = 1;
@@ -575,6 +575,11 @@ uint8_t do_SIB23(uint8_t Mod_id,
     exit(-1);
   }
 
+#ifdef Rel10
+  LOG_I(RRC,"Configuration SIB2/3, MBMS = %d\n",MBMS_flag);
+#else
+  LOG_I(RRC,"Configuration SIB2/3\n");
+#endif
   sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
   sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
   memset(sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -712,6 +717,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->freqInfo.ul_Bandwidth = NULL;
 #ifdef Rel10
   if (MBMS_flag == 1) {
+    LOG_I(RRC,"Adding MBSFN Configuration to SIB2\n");
     MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
     (*sib2)->mbsfn_SubframeConfigList = CALLOC(1,sizeof(struct MBSFN_SubframeConfigList));
     MBSFNSubframeConfigList = (*sib2)->mbsfn_SubframeConfigList;
@@ -893,7 +899,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[4] = rv[4];
 
 
-  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_mo_Data;
+  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_mo_Signalling; //EstablishmentCause_mo_Data;
 
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.buf = &buf2;
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.size=1;
@@ -1310,7 +1316,47 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   return((enc_rval.encoded+7)/8);
 }
+uint8_t do_SecurityModeCommand(uint8_t Mod_id,
+				 uint8_t *buffer,
+				 uint8_t UE_id,
+				 uint8_t Transaction_id) {
+ DL_DCCH_Message_t dl_dcch_msg;
+ asn_enc_rval_t enc_rval;
 
+ memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+
+ dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
+ dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_securityModeCommand;
+ 
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.rrc_TransactionIdentifier = Transaction_id;
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
+ 
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.present = SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
+ // the two following information could be based on the mod_id
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm=SecurityAlgorithmConfig__cipheringAlgorithm_spare1;
+  dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm=SecurityAlgorithmConfig__integrityProtAlgorithm_spare1;
+
+
+#ifdef USER_MODE
+  xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+				   (void*)&dl_dcch_msg,
+				   buffer,
+				   100);
+#ifdef USER_MODE
+  LOG_D(RRC,"[eNB %d] securityModeCommand for UE %d Encoded %d bits (%d bytes)\n",Mod_id,UE_id,enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  if (enc_rval.encoded==-1) {
+    LOG_E(RRC,"[eNB %d] ASN1 : securityModeCommand encoding failed for UE %d\n",Mod_id,UE_id);
+    return(-1);
+  }
+
+  //  rrc_ue_process_ueCapabilityEnquiry(0,1000,&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry,0);
+  //  exit(-1);
+  return((enc_rval.encoded+7)/8);
+}
 uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
 			       uint8_t *buffer,
 			       uint8_t UE_id,

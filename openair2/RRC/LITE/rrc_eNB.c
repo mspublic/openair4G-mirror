@@ -230,11 +230,14 @@ void init_SI(u8 Mod_id) {
 		       (MeasGapConfig_t *)NULL,
 		       eNB_rrc_inst[Mod_id].sib1->tdd_Config,
 		       &SIwindowsize,
-		       &SIperiod
+		       &SIperiod,
+		       eNB_rrc_inst[Mod_id].sib2->freqInfo.ul_CarrierFreq,
+		       eNB_rrc_inst[Mod_id].sib2->freqInfo.ul_Bandwidth,
+		       &eNB_rrc_inst[Mod_id].sib2->freqInfo.additionalSpectrumEmission,
+		       (MBSFN_SubframeConfigList_t *)eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList
 #ifdef Rel10
 		       ,
-		       eNB_rrc_inst[Mod_id].MBMS_flag,		        
-		       (MBSFN_SubframeConfigList_t *)eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList,
+		       eNB_rrc_inst[Mod_id].MBMS_flag,		        		       
 		       (MBSFN_AreaInfoList_r9_t *)&eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9
 #endif 
 		       );
@@ -315,11 +318,19 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
 
 
   /// System Information INIT
-  init_SI(Mod_id);
 
+
+  LOG_I(RRC,"Checking release \n"); 
 #ifdef Rel10
   // This has to come from some top-level configuration
   eNB_rrc_inst[Mod_id].MBMS_flag = 0;
+#else 
+  printf("Rel8 RRC\n");
+#endif
+
+  init_SI(Mod_id);
+
+#ifdef Rel10
   /// MCCH INIT
   init_MCCH(Mod_id);
 #endif
@@ -453,11 +464,31 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
         }
         break;
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
+       LOG_D(RRC,"[eNB %d] Frame %d received securityModeComplete on UL-DCCH %d from UE %d\n",
+	    Mod_id,  frame, DCCH, UE_index );
+       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+	    "(securityModeComplete) --->][RRC_eNB][MOD %02d][]\n",
+	    frame, Mod_id, DCCH, sdu_size, Mod_id);
+       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
+       // confirm with PDCP about the security mode for DCCH
+       rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * MAX_NUM_RB) + DCCH, 0x77);
+       // continue the procedure
+       rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
       break;
     case UL_DCCH_MessageType__c1_PR_securityModeFailure:
-      break;
+       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+	    "(securityModeFailure) --->][RRC_eNB][MOD %02d][]\n",
+	    frame, Mod_id, DCCH, sdu_size, Mod_id);
+       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
+       // cancel the security mode in PDCP
+       
+       // followup with the remaining procedure
+       rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
+       break;
     case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
-      LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+      LOG_D(RRC,"[eNB %d] Frame %d received ueCapabilityInformation on UL-DCCH %d from UE %d\n",
+	    Mod_id,  frame, DCCH, UE_index );
+       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(UECapabilityInformation) --->][RRC_eNB][MOD %02d][]\n",
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
@@ -625,7 +656,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 	//LOG_D(RRC,"[eNB %d] RLC AM allocation index@1 is %d\n",Mod_id,rlc[Mod_id].m_rlc_am_array[1].allocation);
 	LOG_I(RRC,"[eNB %d] CALLING RLC CONFIG SRB1 (rbid %d) for UE %d\n",
 	    Mod_id,Idx,UE_index);
-	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD, Idx);
+	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD, Idx, UNDEF_SECURITY_MODE);
 	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
 	//LOG_D(RRC,"[eNB %d] RLC AM allocation index@0 is %d\n",Mod_id,rlc[Mod_id].m_rlc_am_array[0].allocation);
@@ -678,12 +709,32 @@ void rrc_eNB_process_RRCConnectionSetupComplete(
                                 rrcConnectionSetupComplete->dedicatedInfoNAS.size);
     else
 #endif
-      rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
+      rrc_eNB_generate_SecurityModeCommand(Mod_id,frame,UE_index);
+    //rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
 
 
 }
 
 mui_t rrc_eNB_mui=0;
+
+void rrc_eNB_generate_SecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index) { 
+
+  uint8_t buffer[100];
+  uint8_t size;
+  int i;
+
+  size = do_SecurityModeCommand(Mod_id,buffer,UE_index,0);
+
+  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d, UE id %d)\n",
+        Mod_id,frame, size, UE_index);
+
+
+  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (securityModeCommand to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
+        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id, frame, 1, (UE_index * MAX_NUM_RB) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
+
+}
 
 void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index) { 
 
@@ -1167,7 +1218,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	  (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->logicalChannelIdentity);
       if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
 	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,
-			     (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity);
+			     (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
 	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,
 			   (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
 			   RADIO_ACCESS_BEARER,Rlc_info_um);
@@ -1175,7 +1226,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 
 	LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
 	      Mod_id, frame, (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity);
-	/*
+	
 #ifdef NAS_NETLINK
 // can mean also IPV6 since ether -> ipv6 autoconf
 #    ifndef OAI_NW_DRIVER_TYPE_ETHERNET
@@ -1211,7 +1262,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 #        endif
 #    endif
 #endif
-	*/
+      
 	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
 	      frame, Mod_id, UE_index, Mod_id);
 	DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;
@@ -1228,11 +1279,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 			   (TDD_Config_t *)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL
+			   (u16 *)NULL,
+			   NULL,
+			   NULL,
+			   NULL,
+			   (MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10	       
 			   ,
 			   0,
-			   (MBSFN_SubframeConfigList_t *)NULL,
 			   (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			   );
@@ -1242,7 +1296,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] ==1) {
 	  // DRB has just been removed so remove RLC + PDCP for DRB
 	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,
-			       (UE_index * MAX_NUM_RB) + DRB2LCHAN[i]);
+			       (UE_index * MAX_NUM_RB) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
 	  rrc_rlc_config_req(Mod_id,frame,1,ACTION_REMOVE,
 			     (UE_index * MAX_NUM_RB) + DRB2LCHAN[i],
 			     RADIO_ACCESS_BEARER,Rlc_info_um);
@@ -1264,11 +1318,14 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (MeasGapConfig_t *)NULL,
 			   (TDD_Config_t *)NULL,
 			   (u8 *)NULL,
-			   (u16 *)NULL
+			   (u16 *)NULL,
+			   NULL,
+			   NULL,
+			   NULL,
+			   NULL
 #ifdef Rel10	       
 			   ,
 			   0,
-			   (MBSFN_SubframeConfigList_t *)NULL,
 			   (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 			   );
@@ -1334,11 +1391,15 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 		     eNB_rrc_inst[Mod_id].measGapConfig[UE_index],
 		     (TDD_Config_t *)NULL,
 		     (u8 *)NULL,
-		     (u16 *)NULL
+		     (u16 *)NULL,
+		     NULL,
+		     NULL,
+		     NULL,
+		     (MBSFN_SubframeConfigList_t *)NULL
 #ifdef Rel10	       
 		     ,
 		     0,
-		     (MBSFN_SubframeConfigList_t *)NULL,
+
 		     (MBSFN_AreaInfoList_r9_t *)NULL
 #endif
 		     );

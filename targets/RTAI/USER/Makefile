@@ -13,8 +13,16 @@ CFLAGS += -O2
 
 SRC = synctest.c condtest.c
 
-RTAI_OBJ = synctest.o #sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
-OBJ = $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
+#RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
+OBJ = $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o 
+ifdef DRIVER2013
+RTAI_OBJ += lte-softmodem.o
+OBJ += $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
+CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS
+else
+RTAI_OBJ += synctest.o 
+OBJ += $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
+endif
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -38,24 +46,24 @@ ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS) 
 OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
-CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
+CFLAGS += -DOPENAIR2 -DMAC_CONTEXT=1
 endif
 
-CFLAGS += $(L2_incl) $(UTIL_incl)
+CFLAGS += $(L2_incl) $(UTIL_incl) -DNO_RRM 
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
 ifeq ($(XFORMS),1)
 CFLAGS += -DXFORMS -I/usr/include/X11
 LDFLAGS += -lforms
-OBJ += lte_scope.o
+OBJ += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 OBJ += stats.o
 endif
 
-CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3
+CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
 CFLAGS += -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
-CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 #-DDLSCH_THREAD #-DULSCH_THREAD
+CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DPUCCH #-DDLSCH_THREAD #-DULSCH_THREAD
 
 #only for CBMIMO1
 ifdef CBMIMO1
@@ -83,7 +91,7 @@ LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
 
 CFLAGS += -DRel10
 
-all: condtest synctest
+all: lte-softmodem
 
 $(RTAI_OBJ): %.o : %.c
 	@echo Compiling $< ...
@@ -99,6 +107,9 @@ condtest: condtest.c
 synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
 
+lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem
+
 synctest_eNB: synctest
 	cp synctest synctest_eNB
 
@@ -112,29 +123,29 @@ drivers:
 run: condtest
 	rtai-load condtest --verbose
 
-run_eNB_test: synctest 
+run_eNB_test: 
 	rtai-load eNB_test --verbose
 
-run_eNB: synctest
+run_eNB: 
 	rtai-load eNB --verbose
 
-run_UE: synctest
+run_UE: 
 	rtai-load UE --verbose
 
-run_UE0: synctest
+run_UE0: 
 	rtai-load UE0 --verbose
 
-run_UE0prach: synctest
+run_UE0prach: 
 	rtai-load UE0prach --verbose
 
 
-run_UE1prach: synctest
+run_UE1prach: 
 	rtai-load UE1prach --verbose
 
-run_UE2prach: synctest
+run_UE2prach: 
 	rtai-load UE2prach --verbose
 
-run_UE0noL2: synctest
+run_UE0noL2: 
 	rtai-load UE0noL2 -- verbose
 
 run_UE1noL2: 
@@ -143,13 +154,13 @@ run_UE1noL2:
 run_UE2noL2: 
 	rtai-load UE2noL2 --verbose
 
-run_UE0calib: synctest
+run_UE0calib:
 	rtai-load UE0calib --verbose
 
-run_UE0calibmed: synctest
+run_UE0calibmed:
 	rtai-load UE0calibmed --verbose
 
-run_UE0calibbyp: synctest
+run_UE0calibbyp:
 	rtai-load UE0calibbyp --verbose
 
 run_UE1: 

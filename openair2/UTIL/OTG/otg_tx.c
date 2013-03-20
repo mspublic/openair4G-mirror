@@ -53,12 +53,6 @@ const char FIXED_STRING[]="ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDA
 //packet_t *packet=NULL;
 int type_header=0;
 
-size_t otg_strlen(const char *str) {
-  if (str)
-    return strlen(str);
-  else
-    return 0;
-}
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
 
@@ -66,6 +60,7 @@ size_t otg_strlen(const char *str) {
 int time_dist(int src, int dst,int application, int state) {
 
 int idt=0;
+
  switch (g_otg->idt_dist[src][dst][application][state]) {
  case  UNIFORM:
    idt =  ceil((uniform_dist(g_otg->idt_min[src][dst][application][state], g_otg->idt_max[src][dst][application][state])));
@@ -116,6 +111,7 @@ int size_dist(int src, int dst, int application, int state) {
 
 	if (state==PU_STATE)
 		size_data=g_otg->pu_size_pkts[src][dst][application];
+
 	else if (state==ED_STATE)
 		size_data=g_otg->ed_size_pkts[src][dst][application];
 else{
@@ -154,6 +150,7 @@ else{
   			default:
     			LOG_E(OTG, "PKT Size Distribution unknown \n");
   }
+
 }
   //Case when size overfill min and max values	
   size_data=adjust_size(size_data);
@@ -203,11 +200,13 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   unsigned int i,application;
   unsigned int appli_aggregation=0;
 
+
+
 for (application=0; application<g_otg->application_idx[src][dst]; application++){  
 gen_pkts=0;
 
-LOG_D(OTG,"Node Info (Source= %d, Destination= %d, Application %d, State= %d) \n", 
-				src, dst, application ,state); 
+/*LOG_D(OTG,"Node Info (Source= %d, Destination= %d, Application %d, State= %d, m2m=%d) ctime %d\n", 
+				src, dst, application ,state, g_otg->m2m[src][dst], ctime); */
 
 
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
@@ -229,22 +228,27 @@ LOG_D(OTG,"Node Info (Source= %d, Destination= %d, Application %d, State= %d) \n
 		#endif 
 		//LOG_D(OTG,"MY_STATE %d \n", state);
  
-		if (state!=OFF_STATE){
+		if (state!=OFF_STATE) {
 
-  		if (((state==PU_STATE)||(state==ED_STATE)) || (otg_info->idt[src][dst][application]==0) || (( (ctime-otg_info->ptime[src][dst][application]) >= otg_info->idt[src][dst][application] ) )) {
+  		if (((state==PU_STATE)||(state==ED_STATE))|| (otg_info->idt[src][dst][application]==0) || (( (ctime-otg_info->ptime[src][dst][application]) >= otg_info->idt[src][dst][application] ) )) {
   			LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d, Application %d, State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", 
 				src, dst ,application, state, otg_info->idt[src][dst][application], ctime, otg_info->ptime[src][dst][application]); 
     		otg_info->ptime[src][dst][application]=ctime;	
-				if (state==PE_STATE) /* compute the IDT only for PE STATE*/
-    			otg_info->idt[src][dst][application]=time_dist(src, dst, application,PE_STATE); // update the idt for the next otg_tx
-    		gen_pkts=1;
+
+				if (state==PE_STATE)  //compute the IDT only for PE STATE-
+				otg_info->idt[src][dst][application]=time_dist(src, dst, application,state);
+				gen_pkts=1;
 				appli_aggregation++;
 				for(i=1;i<=g_otg->aggregation_level[src][dst][application];i++)
 			  	size+=size_dist(src, dst, application,state);
-					header_size+=header_size_gen(src,dst, application);
+					if (header_size_gen(src,dst, application) > header_size) /*adapt the header to the application (increment the header if the the new header size is 			largest that the already computed)*/
+						header_size+=header_size_gen(src,dst, application); 
+
+
+
 				/* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
-				if (size>PAYLOAD_MAX){
-					size=PAYLOAD_MAX;
+				if (size>=(PAYLOAD_MAX-(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + header_size))) {
+					size=PAYLOAD_MAX- (sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + header_size);
     			LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
 				}
 
@@ -264,7 +268,7 @@ LOG_D(OTG,"Node Info (Source= %d, Destination= %d, Application %d, State= %d) \n
 }
 
 if ((size>0) || (background_ok==1)) { 
-
+	//LOG_I(OTG,"BACKGROUND_val= %d , size = %d\n ", background_ok, size) ;
 
   hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
 
@@ -276,19 +280,23 @@ if (background_ok==0){
     LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
 	}*/
 
+ //LOG_I(OTG,"[%d][%d] pu_data_size %d \n", src, dst,   g_otg->holding_time_off_pu[src][dst][application]);
+
+
   header = random_string(header_size, g_otg->packet_gen_type, HEADER_ALPHABET);
+
   payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xffff;
   flow=flow_id;
   seq_num=otg_info->seq_num[src][dst];
   otg_info->header_type[src][dst]=type_header;
   otg_info->seq_num[src][dst]+=1;
-    otg_info->tx_num_bytes[src][dst]+=  hdr_size + otg_strlen(header) + otg_strlen(payload) ; 
+  otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt[src][dst]+=1;
-    if (size!=otg_strlen(payload))
-      LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", flag, size, otg_strlen(payload), seq_num, header, payload);
+  if (size!=strlen(payload))
+    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, size, strlen(payload), seq_num, header, payload);
   else 
-    LOG_T(OTG,"[%d][%d] [0x %x] [Aggre %d] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, appli_aggregation, ctime,  size, seq_num,state, header, payload);
+    LOG_T(OTG,"[%d][%d] [0x %x] [Aggre %d] TX INFO pkt at time %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, appli_aggregation, ctime,  size, seq_num,state, header, payload);
   
  } else {
 
@@ -303,23 +311,23 @@ if (background_ok==0){
   flag=0xbbbb;
   flow=flow_id_background;
   seq_num=otg_info->seq_num_background[src][dst];
-    otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + otg_strlen(header) + otg_strlen(payload) ; 
+  otg_info->tx_num_bytes_background[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
   otg_info->tx_num_pkt_background[src][dst]+=1;
   otg_info->seq_num_background[src][dst]+=1;
-    if (otg_info->size_background[src][dst]!=otg_strlen(payload))
-      LOG_E(OTG,"[0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", flag, otg_info->size_background[src][dst], otg_strlen(payload), seq_num, header, payload);
+  if (otg_info->size_background[src][dst]!=strlen(payload))
+    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", src, dst, flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
   else
-      LOG_T(OTG,"[0x %x] The packet size is %d with seq num %d, state=%d : |%s|%s| \n", flag, otg_info->size_background[src][dst], seq_num, state, header, payload);
+    LOG_T(OTG,"[%d][%d][0x %x] TX INFO pkt at time %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime, otg_info->size_background[src][dst], seq_num, state, header, payload);
 }
  
-  buffer_size = hdr_size + otg_strlen(header) + otg_strlen(payload);
+ buffer_size = hdr_size + strlen(header) + strlen(payload);
  *pkt_size = buffer_size;
 	if (src<NB_eNB_INST)
 		otg_info->tx_total_bytes_dl+=buffer_size;
 	else
 		otg_info->tx_total_bytes_ul+=buffer_size;
 
- return serialize_buffer(header, payload, buffer_size, flag, flow, ctime, seq_num, hdr_type, state, g_otg->aggregation_level[src][dst][application]);
+ return serialize_buffer(header, payload, buffer_size, g_otg->m2m[src][dst], flag, flow, ctime, seq_num, hdr_type, state, g_otg->aggregation_level[src][dst][application]);
 }
 
 else 
@@ -363,24 +371,19 @@ return size_header;
 char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type) {
   char *data=NULL;
   int i=0,start=0;
-
-  if (size==0)
-    return NULL;
-
   switch (mode){
   case REPEAT_STRING:
-    start = (int) uniform_dist (0, abs(otg_strlen(FIXED_STRING)- size - 1));
-    //start = 0;
+    start = uniform_dist (0, abs(strlen(FIXED_STRING)- size - 1));
     return str_sub (FIXED_STRING, start, start + size -1);
     break;
   case SUBSTRACT_STRING:
-    //data=strndup(data_string + (otg_strlen(data_string) - size), otg_strlen(data_string));
-    //data=strndup(data_string + (otg_strlen(data_string) - size), size);	
+    //data=strndup(data_string + (strlen(data_string) - size), strlen(data_string));
+    //data=strndup(data_string + (strlen(data_string) - size), size);	
     if (data_type == HEADER_ALPHABET){
-      start = (int) uniform_dist (0, abs(otg_strlen(HEADER_STRING)- size - 1));
+      start = uniform_dist (0, abs(strlen(HEADER_STRING)- size - 1));
       return str_sub (HEADER_STRING, start, start + size -1);
     }else if (data_type == PAYLOAD_ALPHABET) {
-      start = (int) uniform_dist (0, abs(otg_strlen(PAYLOAD_STRING)- size - 1));
+      start = uniform_dist (0, abs(strlen(PAYLOAD_STRING)- size - 1));
       return str_sub (PAYLOAD_STRING, start, start+size - 1 );
     }else 
       LOG_E(OTG, "unsupported alphabet data type \n");
@@ -394,7 +397,7 @@ char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type) {
 	data[i]=PAYLOAD_STRING [(int)uniform_dist(0, 1500)];
       else
 	LOG_E(OTG,"unsupported alphabet data type \n");
-      //pos = rand()%(otg_strlen(data_string));               
+	//pos = rand()%(strlen(data_string));               
       //data[i]=data_string[pos];
       //data[i]= taus(OTG) % (126 - 33 + 1) + 33;
     }
@@ -436,7 +439,7 @@ return(size);
 }
 
 
-unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level){
+unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int traffic_type, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level){
  
   unsigned char *tx_buffer=NULL;
   otg_hdr_info_t *otg_hdr_info_p=NULL;
@@ -459,15 +462,16 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
   otg_hdr_p->hdr_type=hdr_type;
   otg_hdr_p->state = state;
   otg_hdr_p->aggregation_level=aggregation_level;
+	otg_hdr_p->traffic_type=traffic_type;
   byte_tx_count += sizeof(otg_hdr_t);
   
   // copy the header first 
-  memcpy(&tx_buffer[byte_tx_count], header, otg_strlen(header));
-  byte_tx_count += otg_strlen(header);
+  memcpy(&tx_buffer[byte_tx_count], header, strlen(header));
+  byte_tx_count += strlen(header);
   free(header); 
   // now append the payload 
-  memcpy(&tx_buffer[byte_tx_count], payload, otg_strlen(payload));
-  byte_tx_count +=otg_strlen(payload);
+  memcpy(&tx_buffer[byte_tx_count], payload, strlen(payload));
+  byte_tx_count +=strlen(payload);
   free(payload);
   
   return tx_buffer;
@@ -484,7 +488,7 @@ int k;
 
  for (i=0; i<g_otg->num_nodes; i++){ // src 
    for (j=0; j<g_otg->num_nodes; j++){ // dst
- 			for (k=0; k<g_otg->application_idx[i][j]; k++){  
+     for (k=0; k<g_otg->application_idx[i][j]; k++){  
      
      switch  (g_otg->application_type[i][j][k]) {
      case  SCBR : 
@@ -496,10 +500,6 @@ int k;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  50;
        g_otg->size_max[i][j][k][PE_STATE] =  50;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
-	LOG_D(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 
        LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, traffic id %d, dist type for size = %d\n", i, j, k, g_otg->size_dist[i][j][k][PE_STATE]);
 				
@@ -517,10 +517,6 @@ int k;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  512;
        g_otg->size_max[i][j][k][PE_STATE] =  512;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
-	LOG_D(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 
        LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d,  traffic id %d, dist type for size = %d\n", i, j,k , g_otg->size_dist[i][j][k][PE_STATE]);
 #ifdef STANDALONE
@@ -537,10 +533,6 @@ int k;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED; // main param in this mode
        g_otg->size_min[i][j][k][PE_STATE] =  1024;// main param in this mode
        g_otg->size_max[i][j][k][PE_STATE] =  1024;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
-	LOG_D(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 
        LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][k][PE_STATE]);
 #ifdef STANDALONE
@@ -562,9 +554,7 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  800; 
        g_otg->size_std_dev[i][j][k][PE_STATE] = 0;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -584,9 +574,7 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  800;
        g_otg->size_std_dev[i][j][k][PE_STATE] = 0;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -606,9 +594,7 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  43;
        g_otg->size_std_dev[i][j][k][PE_STATE] = 5;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -628,16 +614,14 @@ int k;
        g_otg->size_max[i][j][k][PE_STATE] =  43;
        g_otg->size_std_dev[i][j][k][PE_STATE] = 5;
        g_otg->size_lambda[i][j][k][PE_STATE] = 0;
-	g_otg->prob_off_pe[i][j][PE_STATE]=0.5;
-	g_otg->holding_time_off_pe[i][j][PE_STATE]=100; 
-	g_otg->holding_time_pe_off[i][j][PE_STATE]=300;
+
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
 #endif 
        break;
      case NO_PREDEFINED_TRAFFIC : 
-	LOG_D(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
+       LOG_I(OTG, "[SRC %d][DST %d] No predefined Traffic \n", i, j);
        g_otg->trans_proto[i][j][k] = 0;
        g_otg->ip_v[i][j][k] = 0;
        g_otg->idt_dist[i][j][k][PE_STATE] = 0;
@@ -677,6 +661,7 @@ int k;
        g_otg->holding_time_off_ed[i][j][k]=12; 
        g_otg->holding_time_off_pe[i][j][k]=13; 
        g_otg->holding_time_pe_off[i][j][k]=30;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -704,6 +689,7 @@ case AUTO_PILOT_L :
        g_otg->holding_time_off_pu[i][j][k]=100;
        g_otg->holding_time_off_ed[i][j][k]=10; 
        g_otg->holding_time_pe_off[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j]= 303;
        g_otg->duration[i][j] = 1000;
@@ -729,6 +715,7 @@ case AUTO_PILOT_L :
        g_otg->holding_time_off_pu[j][i][k]=100;
        g_otg->holding_time_off_ed[j][i][k]=10;  
        g_otg->holding_time_pe_off[j][i][k]=1000;
+			 g_otg->m2m[j][i]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;[k]
        g_otg->duration[j][i] = 1000;
@@ -757,6 +744,7 @@ case AUTO_PILOT_M :
        g_otg->holding_time_off_pu[i][j][k]=40;
        g_otg->holding_time_off_ed[i][j][k]=10; 
        g_otg->holding_time_pe_off[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
        g_otg->duration[i][j] = 1000;
@@ -782,6 +770,7 @@ case AUTO_PILOT_M :
        g_otg->holding_time_off_pu[j][i][k]=40;
        g_otg->holding_time_off_ed[j][i][k]=10;  
        g_otg->holding_time_pe_off[j][i][k]=1000;
+			 g_otg->m2m[j][i]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
        g_otg->duration[j][i] = 1000;
@@ -810,6 +799,7 @@ case AUTO_PILOT_H :
        g_otg->holding_time_off_pu[i][j][k]=20;
        g_otg->holding_time_off_ed[i][j][k]=10; 
        g_otg->holding_time_pe_off[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
        g_otg->duration[i][j] = 1000;
@@ -835,6 +825,7 @@ case AUTO_PILOT_H :
        g_otg->holding_time_off_pu[j][i][k]=20;
        g_otg->holding_time_off_ed[j][i][k]=10;  
        g_otg->holding_time_pe_off[j][i][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
        g_otg->duration[j][i] = 1000;
@@ -863,6 +854,7 @@ case AUTO_PILOT_E :
        g_otg->holding_time_off_pu[i][j][k]=10;
        g_otg->holding_time_off_ed[i][j][k]=10; 
        g_otg->holding_time_pe_off[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
        g_otg->duration[i][j] = 1000;
@@ -888,19 +880,21 @@ case AUTO_PILOT_E :
        g_otg->holding_time_off_pu[j][i][k]=10;
        g_otg->holding_time_off_ed[j][i][k]=10;  
        g_otg->holding_time_pe_off[j][i][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
        g_otg->duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_L : 
-       LOG_I(OTG,"AUTO VIRTUAL GAME LOW SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
+       LOG_I(OTG,"VIRTUAL GAME LOW SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
 			 /* DL SCENARIO*/
        g_otg->trans_proto[i][j][k] = 2;
        g_otg->ip_v[i][j][k] = 1;
 			 g_otg->pu_size_pkts[i][j][k]=1000;
        g_otg->prob_off_pu[i][j][k]=1;
        g_otg->holding_time_off_pu[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j][k] = 302;
        g_otg->duration[i][j][k] = 1000;
@@ -911,19 +905,21 @@ case VIRTUAL_GAME_L :
 			 g_otg->pu_size_pkts[j][i][k]=1000;
        g_otg->prob_off_pu[j][i][k]=1;
        g_otg->holding_time_off_pu[j][i][k]=500;
+			 g_otg->m2m[j][i]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
        g_otg->duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_M : 
-       LOG_I(OTG,"AUTO VIRTUAL GAME MEDIUM SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
+       LOG_I(OTG,"VIRTUAL GAME MEDIUM SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
 			 /* DL SCENARIO*/
        g_otg->trans_proto[i][j][k] = 2;
        g_otg->ip_v[i][j][k] = 1;
 			 g_otg->pu_size_pkts[i][j][k]=1000;
        g_otg->prob_off_pu[i][j][k]=1;
        g_otg->holding_time_off_pu[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -934,19 +930,21 @@ case VIRTUAL_GAME_M :
 			 g_otg->pu_size_pkts[j][i][k]=1000;
        g_otg->prob_off_pu[j][i][k]=1;
        g_otg->holding_time_off_pu[j][i][k]=150;
+			 g_otg->m2m[j][i]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
        g_otg->duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_H : 
-       LOG_I(OTG,"AUTO VIRTUAL GAME HIGH SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
+       LOG_I(OTG,"VIRTUAL GAME HIGH SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
 			 /* DL SCENARIO*/
        g_otg->trans_proto[i][j][k] = 2;
        g_otg->ip_v[i][j][k] = 1;
 			 g_otg->pu_size_pkts[i][j][k]=1000;
        g_otg->prob_off_pu[i][j][k]=1;
        g_otg->holding_time_off_pu[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -957,19 +955,21 @@ case VIRTUAL_GAME_H :
 			 g_otg->pu_size_pkts[j][i][k]=1000;
        g_otg->prob_off_pu[j][i][k]=1;
        g_otg->holding_time_off_pu[j][i][k]=100;
+			 g_otg->m2m[j][i]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
        g_otg->duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_F : 
-       LOG_I(OTG,"AUTO VIRTUAL GAME FINISH, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
+       LOG_I(OTG,"VIRTUAL GAME FINISH, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j][k]);
 			 /* DL SCENARIO*/
        g_otg->trans_proto[i][j][k] = 2;
        g_otg->ip_v[i][j][k] = 1;
 			 g_otg->pu_size_pkts[i][j][k]=1000;
        g_otg->prob_off_pu[i][j][k]=1;
        g_otg->holding_time_off_pu[i][j][k]=1000;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -980,6 +980,7 @@ case VIRTUAL_GAME_F :
 			 g_otg->pu_size_pkts[j][i][k]=1000;
        g_otg->prob_off_pu[j][i][k]=1;
        g_otg->holding_time_off_pu[j][i][k]=70;
+			 g_otg->m2m[j][i]=1;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
        g_otg->duration[j][i] = 1000;
@@ -995,8 +996,9 @@ case ALARM_HUMIDITY :
        g_otg->prob_off_pu[i][j][k]=0.5;
        g_otg->prob_off_ed[i][j][k]=0.5;
        g_otg->prob_pu_ed[i][j][k]=0.5;
-       g_otg->holding_time_off_pu[i][j][k]=168/*0000*/;		/* 28 minutes*/
-       g_otg->holding_time_off_ed[i][j][k]=324/*00000*/;  	/* 9 hours*/
+       g_otg->holding_time_off_pu[i][j][k]=1680000;		/* 28 minutes*/
+       g_otg->holding_time_off_ed[i][j][k]=32400000;  	/* 9 hours*/
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
        g_otg->duration[i][j] = 1000;
@@ -1012,8 +1014,9 @@ case ALARM_SMOKE :
        g_otg->prob_off_pu[i][j][k]=0.5;
        g_otg->prob_off_ed[i][j][k]=0.5;
        g_otg->prob_pu_ed[i][j][k]=0.5;
-       g_otg->holding_time_off_pu[i][j][k]=60/*000*/;		/* 1 minute*/
-       g_otg->holding_time_off_ed[i][j][k]=432/*00000*/;  	/* 12 hours*/
+       g_otg->holding_time_off_pu[i][j][k]=60000;		/* 1 minute*/
+       g_otg->holding_time_off_ed[i][j][k]=43200000;  	/* 12 hours*/
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
        g_otg->duration[i][j] = 1000;
@@ -1029,8 +1032,9 @@ case ALARM_TEMPERATURE :
        g_otg->prob_off_pu[i][j][k]=0.5;
        g_otg->prob_off_ed[i][j][k]=0.5;
        g_otg->prob_pu_ed[i][j][k]=0.5;
-       g_otg->holding_time_off_pu[i][j][k]=168/*0000*/;		/* 28 minute*/
-       g_otg->holding_time_off_ed[i][j][k]=180/*00000*/;  	/* 5 hours*/
+       g_otg->holding_time_off_pu[i][j][k]=1680000;		/* 28 minute*/
+       g_otg->holding_time_off_ed[i][j][k]=18000000;  	/* 5 hours*/
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j]= 303;
        g_otg->duration[i][j] = 1000;
@@ -1045,6 +1049,7 @@ case ALARM_TEMPERATURE :
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  42;
        g_otg->size_max[i][j][k][PE_STATE] =  42;
+			 g_otg->m2m[i][j]=1;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
@@ -1059,6 +1064,7 @@ case ALARM_TEMPERATURE :
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  140;
        g_otg->size_max[i][j][k][PE_STATE] =  140;
+			 g_otg->m2m[i][j]=1;
 
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
@@ -1078,33 +1084,33 @@ int background_gen(int src, int dst, int ctime){
 
 /*check if it is time to transmit the background traffic
 - we have different distributions for packet size and idt for the UL and DL */
-	if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) 
-	||  (otg_info->idt_background[src][dst]==0)){
-		LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
-	/* Distinguish between the UL and DL case*/
-	if (src<NB_eNB_INST) // DL case
-		otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
-	else //UL case
-    otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); 
-
-
-		if (otg_info->size_background[src][dst]>1500)
-    	otg_info->size_background[src][dst]=1500;
+  if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) ||  
+      (otg_info->idt_background[src][dst]==0)){
+    LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND TRAFFIC:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
+    /* Distinguish between the UL and DL case*/
+    if (src<NB_eNB_INST) // DL case
+      otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85));
+    else //UL case
+      otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); 
+    
+    // adjust the packet size if needed 
+    if (otg_info->size_background[src][dst]>1500)
+      otg_info->size_background[src][dst]=1500;
     if (otg_info->size_background[src][dst]<=0)
     	otg_info->size_background[src][dst]=10;
 
-   	LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
+    LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
 
 /* Compute the corresponding IDT*/
-		otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
-  	otg_info->ptime_background=ctime;	
+    otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
+    otg_info->ptime_background=ctime;	
     return 1;
   }
-	else {
-		//LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
+  else {
+    //LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
     return 0;
-   }
-
+  }
+  
 }
 
 
@@ -1131,7 +1137,7 @@ int header_size_gen_background(int src, int dst){
    size_header=HDR_IP_v6 + HDR_TCP;
 }
 
-  LOG_D(OTG," [SRC %d]  BACKGROUND TRAFFIC:: size header%d \n", src, size_header);
+  LOG_I(OTG," [SRC %d]  BACKGROUND TRAFFIC:: size header%d \n", src, size_header);
 
 return size_header;
 }
@@ -1140,6 +1146,7 @@ return size_header;
 
 void state_management(int src, int dst, int application, int ctime) {
 
+
 if ((g_otg->holding_time_off_pu[src][dst][application]==0) && (g_otg->holding_time_off_ed[src][dst][application]==0) && (g_otg->holding_time_off_pe[src][dst][application]==0))  
 	otg_info->state[src][dst][application]=PE_STATE;
 else{
@@ -1147,9 +1154,9 @@ else{
     otg_info->state_transition_prob[src][dst][application]=uniform_dist(0,1);
     otg_info->state[src][dst][application]=OFF_STATE;
     LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: OFF INIT \n", src, dst, application);
-    otg_info->start_holding_time_off[src][dst][application]=ctime;
+    otg_info->start_holding_time_off[src][dst][application]=0/*ctime*/;
   }
-  //LOG_D(OTG,"[%d][%d] HOLDING_TIMES OFF_PE: %d, OFF_PU: %d, OFF_ED %d, PE_OFF: %d \n", src, dst, g_otg->holding_time_off_pe[src][dst], g_otg->holding_time_off_pu[src][dst],g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_pe_off[src][dst] );  
+//LOG_D(OTG,"[%d][[%d] HOLDING_TIMES OFF_PE: %d, OFF_PU: %d, OFF_ED %d, PE_OFF: %d \n", src, dst, g_otg->holding_time_off_pe[src][dst], g_otg->holding_time_off_pu[src][dst],g_otg->holding_time_off_ed[src][dst], g_otg->holding_time_pe_off[src][dst] );  
 
  switch (otg_info->state[src][dst][application]){
 
@@ -1162,8 +1169,9 @@ if (ctime>otg_info->start_holding_time_off[src][dst][application]){
 
   if ( ((otg_info->state_transition_prob[src][dst][application]>= 1-(g_otg->prob_off_pu[src][dst][application]+g_otg->prob_off_ed[src][dst][application]+g_otg->prob_off_pe[src][dst][application])) && (otg_info->state_transition_prob[src][dst][application]<1-(g_otg->prob_off_ed[src][dst][application]+g_otg->prob_off_pe[src][dst][application])))  && (otg_info->c_holding_time_off[src][dst][application]>=g_otg->holding_time_off_pu[src][dst][application])){  
 		 otg_info->state[src][dst][application]=PU_STATE;
-     LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->PU \n", src, dst,application, g_otg->aggregation_level[src][dst][application]);
+     LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->PU  %d  (ctime %d, start %d )\n", src, dst,application, g_otg->aggregation_level[src][dst][application], otg_info->c_holding_time_off[src][dst][application], ctime, otg_info->start_holding_time_off[src][dst][application]);
      otg_info->state_transition_prob[src][dst][application]=uniform_dist(0,1);
+
   }
   else if ( ((otg_info->state_transition_prob[src][dst][application]>= 1-(g_otg->prob_off_ed[src][dst][application]+g_otg->prob_off_pe[src][dst][application])) && (otg_info->state_transition_prob[src][dst][application]< 1-g_otg->prob_off_pe[src][dst][application])) && (otg_info->c_holding_time_off[src][dst][application]>=g_otg->holding_time_off_ed[src][dst][application])){
      otg_info->state[src][dst][application]=ED_STATE;
@@ -1189,9 +1197,10 @@ if (ctime>otg_info->start_holding_time_off[src][dst][application]){
        //otg_info->state[src][dst]=OFF_STATE;
        otg_info->state[src][dst][application]=OFF_STATE;
        otg_info->start_holding_time_off[src][dst][application]=ctime; 
+			 otg_info->c_holding_time_off[src][dst][application]=0;
        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: PU-->OFF \n", src, dst,application, g_otg->aggregation_level[src][dst][application]);
        otg_info->state_transition_prob[src][dst][application]=uniform_dist(0,1);
-     }
+     }	
      else if  ((otg_info->state_transition_prob[src][dst][application]<=1-g_otg->prob_pu_pe[src][dst][application]) && (otg_info->state_transition_prob[src][dst][application]>1-(g_otg->prob_pu_ed[src][dst][application]+g_otg->prob_pu_pe[src][dst][application]))){
        //otg_info->state[src][dst]=ON_STATE;
        otg_info->state[src][dst][application]=ED_STATE;
@@ -1211,6 +1220,7 @@ if (ctime>otg_info->start_holding_time_off[src][dst][application]){
        //otg_info->state[src][dst]=OFF_STATE;
        otg_info->state[src][dst][application]=OFF_STATE;
        otg_info->start_holding_time_off[src][dst][application]=ctime; 
+			 otg_info->c_holding_time_off[src][dst][application]=0;
        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: ED-->OFF \n", src, dst,application, g_otg->aggregation_level[src][dst][application]);
        otg_info->state_transition_prob[src][dst][application]=uniform_dist(0,1);
      }
@@ -1237,6 +1247,7 @@ if (ctime>otg_info->start_holding_time_off[src][dst][application]){
        otg_info->c_holding_time_pe_off[src][dst][application]=0;
        otg_info->state_transition_prob[src][dst][application]=uniform_dist(0,1);
        otg_info->start_holding_time_off[src][dst][application]=ctime; 
+			 otg_info->c_holding_time_off[src][dst][application]=0;
      }
      else /* if (g_otg->holding_time_pe_off>otg_info->c_holding_time_pe_off[src][dst])*/{
 		 	if (ctime>otg_info->start_holding_time_pe_off[src][dst][application])
@@ -1252,6 +1263,7 @@ if (ctime>otg_info->start_holding_time_off[src][dst][application]){
 }
 }
 }
+
 
 
 

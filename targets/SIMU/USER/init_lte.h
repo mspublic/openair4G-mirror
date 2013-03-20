@@ -23,4 +23,5 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u16 Nid_cell,
 		   u8 cooperation_flag,
 		   u8 transmission_mode,
-		   u8 abstraction_flag);
+		   u8 abstraction_flag,
+		   int nb_antennas_rx);

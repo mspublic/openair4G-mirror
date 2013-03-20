@@ -1,5 +1,5 @@
 /***************************************************************************
-                          rrc_L2_interface.c  -
+                          rrc_ue_L2_interface.c  -
                           -------------------
     begin                : Sept 9, 2008
     copyright            : (C) 2008, 2010 by Eurecom
@@ -30,7 +30,7 @@
 #include "rrc_L2_proto.h"
 #include "rrc_proto_bch.h"
 //-----------------------------------------------------------------------------
-extern LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC, DCCH_LCHAN_DESC, DTCH_LCHAN_DESC;
+extern LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC, DCCH_LCHAN_DESC, DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 extern rlc_info_t Rlc_info_um;
 extern rlc_info_t Rlc_info_am_config;
 
@@ -41,31 +41,53 @@ s8 rrc_L2_data_req_rx (unsigned char Mod_id, unsigned short Srb_id, unsigned cha
 
 #ifdef DEBUG_RRC_BROADCAST
   msg ("\n[RRC CELL][L2_INTF] rrc_L2_data_req_rx - begin - UE => Rcve only in BCCH\n");
-  //msg ("Received parameters Mod_id %d, Srb_id %d, nb_tb %d, CH_index %d\n",Mod_id, Srb_id,Nb_tb,CH_index);
+  msg ("Received parameters Mod_id %d, Srb_id %d, nb_tb %d, CH_index %d\n",Mod_id, Srb_id,Nb_tb,CH_index);
 #endif
 
-#ifdef DEBUG_RRC_BROADCAST_DETAILS
-  msg ("\n[RRC CELL][L2_INTF] rrc_L2_data_req_rx - end\n");
+  if( protocol_ms->rrc.ccch_buffer_size > 0) {
+    #ifdef DEBUG_RRC_STATE
+    msg ("\n[RRC CELL][L2_INTF] rrc_L2_data_req_rx - begin - Fill CCCH\n");
+    msg ("Received parameters Mod_id %d, Srb_id %d, nb_tb %d, CH_index %d\n",Mod_id, Srb_id,Nb_tb,CH_index);
+    msg ("CCCH buffer size %d\n",protocol_ms->rrc.ccch_buffer_size);
+    #endif
+    memcpy(&Buffer[0],&protocol_ms->rrc.ccch_buffer[0],protocol_ms->rrc.ccch_buffer_size);
+    br_size = protocol_ms->rrc.ccch_buffer_size;
+    protocol_ms->rrc.ccch_buffer_size = 0;
+  }
+#ifdef DEBUG_RRC_STATE
+  msg ("\n[RRC CELL][L2_INTF] rrc_L2_data_req_rx - end, return %d\n", br_size);
 #endif
   return br_size;
 }
 
 //-----------------------------------------------------------------------------
-s8 rrc_L2_mac_data_ind_rx (u8 Mod_id, u16 Srb_id, char *Sdu, u8 CH_index){
+s8 rrc_L2_mac_data_ind_rx (u8 Mod_id, u16 Srb_id, char *Sdu, u16 Sdu_len, u8 eNB_index){
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RRC_BROADCAST
-  msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx - begin\n");
-  msg ("Received parameters Mod_id %d, Srb_id %d, CH_index %d\n",Mod_id, Srb_id,CH_index);
-#endif
+
+  int rxStatus=0;
 
   if((Srb_id & RAB_OFFSET) == BCCH){
+    #ifdef DEBUG_RRC_BROADCAST_DETAILS
+    msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx - begin - BCCH\n");
+    //msg ("Received parameters Mod_id %d, Srb_id %d, CH_index %d\n",Mod_id, Srb_id,CH_index);
+    #endif
     rrc_broadcast_rx (Sdu);
+    #ifdef DEBUG_RRC_BROADCAST_DETAILS
+    msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx - end\n");
+    #endif
   }
+  else 
+    if( (Srb_id & RAB_OFFSET ) == CCCH){
+    #ifdef DEBUG_RRC_STATE
+    msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx - begin - CCCH\n");
+    msg ("Received parameters Mod_id %d, eNB_index %d, SDU length %d\n", Mod_id, eNB_index, Sdu_len);
+    #endif
+    // temp - establish srb1-srb2
+    rrc_ue_config_LTE_srb1_srb2();
 
-#ifdef DEBUG_RRC_BROADCAST_DETAILS
-  msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx - end\n");
-#endif
-  return 0;
+    }
+    else msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx, Srb_id %d unexpected \n" , Srb_id);
+  return rxStatus;
 }
 
 //-----------------------------------------------------------------------------
@@ -75,7 +97,7 @@ void rrc_L2_rlc_data_ind_rx (unsigned char Mod_id, unsigned int Srb_id, unsigned
   msg ("\n[RRC][L2_INTF] rrc_L2_rlc_data_ind_rx - begin\n");
 #endif
   //rrc_ue_test_rlc_intf_rcve (Buffer, Srb_id);
-  rrc_ue_srb_rx (Buffer, Srb_id);
+  rrc_ue_receive_from_srb_rlc (Buffer, Srb_id, Sdu_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -105,10 +127,11 @@ void rrc_L2_def_meas_ind_rx (unsigned char Mod_id, unsigned char Idx2){
 }
 
 //-----------------------------------------------------------------------------
-void rrc_L2_sync_ind_rx (void){
+void rrc_L2_sync_ind_rx (u8 Mod_id){
 //-----------------------------------------------------------------------------
 #ifdef DEBUG_RRC_DETAILS
-  msg ("\n[RRC][L2_INTF] rrc_L2_sync_ind_rx - begin\n");
+  if (!protocol_ms->rrc.current_SFN %100 )
+     msg ("\n[RRC][L2_INTF] rrc_L2_sync_ind_rx at frame %d \n", protocol_ms->rrc.current_SFN);
 #endif
 }
 
@@ -169,9 +192,13 @@ void openair_rrc_lite_top_init(void){
 RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 //-----------------------------------------------------------------------------
 #ifdef DEBUG_RRC_DETAILS
-    msg ("\n[RRC][L2_INTF] rrc_L2_eNB_init - begin\n");
+   // msg ("\n[RRC][L2_INTF] rrc_rx_tx - begin %d \n", frame);
 #endif
-    rrc_ue_main_scheduler(Mod_id, frame, 0, index);
+    // call RRC only if new frame number
+    if (frame > protocol_ms->rrc.current_SFN){
+        protocol_ms->rrc.current_SFN = frame;
+        rrc_ue_main_scheduler(Mod_id, protocol_ms->rrc.current_SFN, 0, index);
+    }
     return 0;
 }
 
@@ -193,7 +220,7 @@ void rrc_init_mac_config(void){
   int UE_index,Idx;
 
   // The content of this function has been commented on 23/03/2012
-  printk("\n rrc_init_mac_config -- COMMENTED\n");
+  printk("\n rrc_init_mac_config -- WORK IN PROGRESS\n");
 
   /*
   //#ifdef DEBUG_RRC_STATE
@@ -263,8 +290,37 @@ void rrc_init_mac_config(void){
   Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH_BD + 4;
   Idx = Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
   Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am);
-
   */
+
+  // Test config on 02/04/2012
+  BCCH_LCHAN_DESC.transport_block_size=BCCH_PAYLOAD_SIZE_MAX;
+  BCCH_LCHAN_DESC.max_transport_blocks=15;//MAX 16 (4bits for Seq_id)
+
+  DCCH_LCHAN_DESC.transport_block_size=4;
+  DCCH_LCHAN_DESC.max_transport_blocks=16;
+  DCCH_LCHAN_DESC.Delay_class=1;
+  DTCH_DL_LCHAN_DESC.transport_block_size=52;
+  DTCH_DL_LCHAN_DESC.max_transport_blocks=20;
+  DTCH_DL_LCHAN_DESC.Delay_class=1;
+  DTCH_UL_LCHAN_DESC.transport_block_size=52;
+  DTCH_UL_LCHAN_DESC.max_transport_blocks=20;
+  DTCH_UL_LCHAN_DESC.Delay_class=1;
+
+  // Config copied from RRC LITE on 02/04/2012
+  Rlc_info_um.rlc_mode=RLC_UM;
+  Rlc_info_um.rlc.rlc_um_info.timer_reordering=0;
+  Rlc_info_um.rlc.rlc_um_info.sn_field_length=10;
+  Rlc_info_um.rlc.rlc_um_info.is_mXch=0;
+  //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;
+
+  Rlc_info_am_config.rlc_mode=RLC_AM;
+  Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 255;
+  Rlc_info_am_config.rlc.rlc_am_info.poll_pdu           = 8;
+  Rlc_info_am_config.rlc.rlc_am_info.poll_byte          = 1000;
+  Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit  = 15;
+  Rlc_info_am_config.rlc.rlc_am_info.t_reordering       = 5000;
+  Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit  = 10;
+
 }
 
 /*------------------------------------------------------------------------------*/
@@ -336,8 +392,6 @@ void rrc_init_mac_default_param(void){
   Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit  = 15;
   Rlc_info_am_config.rlc.rlc_am_info.t_reordering       = 5000;
   Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit  = 10;
-
-
 }
 
 /*------------------------------------------------------------------------------*/
@@ -376,7 +430,6 @@ int rrc_init_global_param(void){
   printk("[RRC]INIT_GLOBAL_PARAM: rrc_rlc_register_rrc %p,rlcrrc_data_ind %p, rrc_L2_rlc_confirm_ind_rx %p\n", rrc_rlc_register_rrc, rlcrrc_data_ind, rrc_L2_rlc_confirm_ind_rx );
   if( rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL|| rrc_L2_rlc_confirm_ind_rx==NULL)
     return -1;
-
   rrc_rlc_register_rrc(rlcrrc_data_ind , rrc_L2_rlc_confirm_ind_rx);
 
   return 0;

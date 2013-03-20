@@ -1,3 +1,3 @@
-system('gcc dump_size.c -I../../.. -DNO_RTAI -msse2');
-[status,result] = system('./a.out');
+system('make dump_size');
+[status,result] = system('./dump_size');
 eval(result);

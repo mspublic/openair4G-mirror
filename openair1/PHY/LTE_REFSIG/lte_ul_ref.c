@@ -5,13 +5,13 @@
 #endif
 #include "defs.h"
 
-unsigned short dftsizes[33] = {12,24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,864,900,960,972,1080,1152,1200};
+uint16_t dftsizes[33] = {12,24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,864,900,960,972,1080,1152,1200};
 
-unsigned short ref_primes[33] = {11,23,31,47,50,71,89,107,113,139,179,191,211,239,283,293,317,359,383,431,479,523,571,599,647,719,863,887,953,971,1069,1151,1193};
+uint16_t ref_primes[33] = {11,23,31,47,50,71,89,107,113,139,179,191,211,239,283,293,317,359,383,431,479,523,571,599,647,719,863,887,953,971,1069,1151,1193};
 
 
-short *ul_ref_sigs[30][2][33];
-short *ul_ref_sigs_rx[30][2][33]; //these contain the sequences in repeated format and quantized to QPSK ifdef IFFT_FPGA
+int16_t *ul_ref_sigs[30][2][33];
+int16_t *ul_ref_sigs_rx[30][2][33]; //these contain the sequences in repeated format and quantized to QPSK ifdef IFFT_FPGA
 
 char ref12[360] = {-1,1,3,-3,3,3,1,1,3,1,-3,3,1,1,3,3,3,-1,1,-3,-3,1,-3,3,1,1,-3,-3,-3,-1,-3,-3,1,-3,1,-1,-1,1,1,1,1,-1,-3,-3,1,-3,3,-1,-1,3,1,-1,1,-1,-3,-1,1,-1,1,3,1,-3,3,-1,-1,1,1,-1,-1,3,-3,1,-1,3,-3,-3,-3,3,1,-1,3,3,-3,1,-3,-1,-1,-1,1,-3,3,-1,1,-3,3,1,1,-3,3,1,-1,-1,-1,1,1,3,-1,1,1,-3,-1,3,3,-1,-3,1,1,1,1,1,-1,3,-1,1,1,-3,-3,-1,-3,-3,3,-1,3,1,-1,-1,3,3,-3,1,3,1,3,3,1,-3,1,1,-3,1,1,1,-3,-3,-3,1,3,3,-3,3,-3,1,1,3,-1,-3,3,3,-3,1,-1,-3,-1,3,1,3,3,3,-1,1,3,-1,1,-3,-1,-1,1,1,3,1,-1,-3,1,3,1,-1,1,3,3,3,-1,-1,3,-1,-3,1,1,3,-3,3,-3,-3,3,1,3,-1,-3,3,1,1,-3,1,-3,-3,-1,-1,1,-3,-1,3,1,3,1,-1,-1,3,-3,-1,-3,-1,-1,-3,1,1,1,1,3,1,-1,1,-3,-1,-1,3,-1,1,-3,-3,-3,-3,-3,1,-1,-3,1,1,-3,-3,-3,-3,-1,3,-3,1,-3,3,1,1,-1,-3,-1,-3,1,-1,1,3,-1,1,1,1,3,1,3,3,-1,1,-1,-3,-3,1,1,-3,3,3,1,3,3,1,-3,-1,-1,3,1,3,-3,-3,3,-3,1,-1,-1,3,-1,-3,-3,-1,-3,-1,-3,3,1,-1,1,3,-3,-3,-1,3,-3,3,-1,3,3,-3,3,3,-1,-1,3,-3,-3,-1,-1,-3,-1,3,-3,3,1,-1};
 
@@ -27,7 +27,7 @@ void generate_ul_ref_sigs(void) {
     for (u=0;u<30;u++) {
       for (v=0;v<2;v++) {
 	qbar = ref_primes[Msc_RS] * (u+1)/(double)31;
-	ul_ref_sigs[u][v][Msc_RS] = (short*)malloc16(2*sizeof(short)*dftsizes[Msc_RS]);
+	ul_ref_sigs[u][v][Msc_RS] = (int16_t*)malloc16(2*sizeof(int16_t)*dftsizes[Msc_RS]);
 	if ((((int)floor(2*qbar))&1) == 0)
 	  q = (int)(floor(qbar+.5)) - v;
 	else
@@ -38,8 +38,8 @@ void generate_ul_ref_sigs(void) {
 	for (n=0;n<dftsizes[Msc_RS];n++) {
 	  m=n%ref_primes[Msc_RS];
 	  phase = (double)q*m*(m+1)/ref_primes[Msc_RS];
-	  ul_ref_sigs[u][v][Msc_RS][n<<1]     =(short)(floor(32767*cos(M_PI*phase)));
-	  ul_ref_sigs[u][v][Msc_RS][1+(n<<1)] =-(short)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs[u][v][Msc_RS][n<<1]     =(int16_t)(floor(32767*cos(M_PI*phase)));
+	  ul_ref_sigs[u][v][Msc_RS][1+(n<<1)] =-(int16_t)(floor(32767*sin(M_PI*phase)));
 #ifdef MAIN
 	  if (Msc_RS<5)
 	    printf("(%d,%d) ",ul_ref_sigs[u][v][Msc_RS][n<<1],ul_ref_sigs[u][v][Msc_RS][1+(n<<1)]);
@@ -55,20 +55,20 @@ void generate_ul_ref_sigs(void) {
 
   // These are the sequences for RB 1
     for (u=0;u<30;u++) {
-      ul_ref_sigs[u][0][0] = (short*)malloc16(2*sizeof(short)*dftsizes[0]);
+      ul_ref_sigs[u][0][0] = (int16_t*)malloc16(2*sizeof(int16_t)*dftsizes[0]);
       for (n=0;n<dftsizes[0];n++) {
-	ul_ref_sigs[u][0][0][n<<1]    =(short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs[u][0][0][1+(n<<1)]=(short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs[u][0][0][n<<1]    =(int16_t)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs[u][0][0][1+(n<<1)]=(int16_t)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
       }
 
     }
 
   // These are the sequences for RB 2
     for (u=0;u<30;u++) {
-      ul_ref_sigs[u][0][1] = (short*)malloc16(2*sizeof(short)*dftsizes[1]);
+      ul_ref_sigs[u][0][1] = (int16_t*)malloc16(2*sizeof(int16_t)*dftsizes[1]);
       for (n=0;n<dftsizes[1];n++) {
-	ul_ref_sigs[u][0][1][n<<1]    =(short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs[u][0][1][1+(n<<1)]=(short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs[u][0][1][n<<1]    =(int16_t)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs[u][0][1][1+(n<<1)]=(int16_t)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
       }
       
       
@@ -86,7 +86,7 @@ void generate_ul_ref_sigs_rx(void) {
     for (u=0;u<30;u++) {
       for (v=0;v<2;v++) {
 	qbar = ref_primes[Msc_RS] * (u+1)/(double)31;
-	ul_ref_sigs_rx[u][v][Msc_RS] = (short*)malloc16(4*sizeof(short)*dftsizes[Msc_RS]);
+	ul_ref_sigs_rx[u][v][Msc_RS] = (int16_t*)malloc16(4*sizeof(int16_t)*dftsizes[Msc_RS]);
 	if ((((int)floor(2*qbar))&1) == 0)
 	  q = (int)(floor(qbar+.5)) - v;
 	else
@@ -98,21 +98,26 @@ void generate_ul_ref_sigs_rx(void) {
 	  m=n%ref_primes[Msc_RS];
 	  phase = (double)q*m*(m+1)/ref_primes[Msc_RS];
 #ifndef IFFT_FPGA
-	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(short)(floor(32767*cos(M_PI*phase)));
-	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =-(short)(floor(32767*sin(M_PI*phase)));
-	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(short)(floor(32767*sin(M_PI*phase)));
-	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(short)(floor(32767*cos(M_PI*phase)));
+#ifndef NEW_FFT
+	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(int16_t)(floor(32767*cos(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =-(int16_t)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(int16_t)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(int16_t)(floor(32767*cos(M_PI*phase)));
+#else
+	  ul_ref_sigs_rx[u][v][Msc_RS][n<<1]     =(int16_t)(floor(32767*cos(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<1)] =-(int16_t)(floor(32767*sin(M_PI*phase)));
+#endif
 #else
 #ifndef OFDMA_ULSCH
-	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(short)(floor(32767*cos(M_PI*phase)));
-	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =-(short)(floor(32767*sin(M_PI*phase)));
-	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(short)(floor(32767*sin(M_PI*phase)));
-	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(short)(floor(32767*cos(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(int16_t)(floor(32767*cos(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =-(int16_t)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(int16_t)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(int16_t)(floor(32767*cos(M_PI*phase)));
 #else
-	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(short) ((cos(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
-	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =(short)((-sin(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
-	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(short)((-sin(M_PI*phase)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
-	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(short) ((cos(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(int16_t) ((cos(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =(int16_t)((-sin(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(int16_t)((-sin(M_PI*phase)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
+	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(int16_t) ((cos(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 #endif
 #endif
 #ifdef MAIN
@@ -130,24 +135,29 @@ void generate_ul_ref_sigs_rx(void) {
 
   // These are the sequences for RB 1
     for (u=0;u<30;u++) {
-      ul_ref_sigs_rx[u][0][0] = (short*)malloc16(4*sizeof(short)*dftsizes[0]);
+      ul_ref_sigs_rx[u][0][0] = (int16_t*)malloc16(4*sizeof(int16_t)*dftsizes[0]);
       for (n=0;n<dftsizes[0];n++) {
 #ifndef IFFT_FPGA
-	ul_ref_sigs_rx[u][0][0][n<<2]    = (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs_rx[u][0][0][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+#ifndef NEW_FFT
+	ul_ref_sigs_rx[u][0][0][n<<2]    = (int16_t)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (int16_t)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][2+(n<<2)]=-(int16_t)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (int16_t)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+#else
+	ul_ref_sigs_rx[u][0][0][n<<1]    = (int16_t)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][1+(n<<1)]= (int16_t)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+#endif
 #else
 #ifndef OFDMA_ULSCH
-	ul_ref_sigs_rx[u][0][0][n<<2]    = (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs_rx[u][0][0][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
-	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][n<<2]    = (int16_t)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (int16_t)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][2+(n<<2)]=-(int16_t)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (int16_t)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
 #else
-	ul_ref_sigs_rx[u][0][0][n<<2]    = (short)((cos(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
-	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (short)((sin(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
-	ul_ref_sigs_rx[u][0][0][2+(n<<2)]= (short)((sin(M_PI*ref12[(u*12) + n]/4)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
-	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (short)((cos(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][0][n<<2]    = (int16_t)((cos(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (int16_t)((sin(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][0][2+(n<<2)]= (int16_t)((sin(M_PI*ref12[(u*12) + n]/4)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (int16_t)((cos(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 #endif
 #endif
       }
@@ -156,24 +166,29 @@ void generate_ul_ref_sigs_rx(void) {
 
   // These are the sequences for RB 2
     for (u=0;u<30;u++) {
-      ul_ref_sigs_rx[u][0][1] = (short*)malloc16(4*sizeof(short)*dftsizes[1]);
+      ul_ref_sigs_rx[u][0][1] = (int16_t*)malloc16(4*sizeof(int16_t)*dftsizes[1]);
       for (n=0;n<dftsizes[1];n++) {
 #ifndef IFFT_FPGA
-	ul_ref_sigs_rx[u][0][1][n<<2]    = (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs_rx[u][0][1][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+#ifndef NEW_FFT
+	ul_ref_sigs_rx[u][0][1][n<<2]    = (int16_t)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (int16_t)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+#else
+	ul_ref_sigs_rx[u][0][1][n<<1]    = (int16_t)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][1+(n<<1)]= (int16_t)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+#endif
+	ul_ref_sigs_rx[u][0][1][2+(n<<2)]=-(int16_t)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (int16_t)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
 #else
 #ifndef OFDMA_ULSCH
-	ul_ref_sigs_rx[u][0][1][n<<2]    = (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs_rx[u][0][1][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
-	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][n<<2]    = (int16_t)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (int16_t)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][2+(n<<2)]=-(int16_t)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (int16_t)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
 #else
-	ul_ref_sigs_rx[u][0][1][n<<2]    = (short)((cos(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
-	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (short)((sin(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
-	ul_ref_sigs_rx[u][0][1][2+(n<<2)]= (short)((sin(M_PI*ref24[(u*24) + n]/4)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
-	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (short)((cos(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][1][n<<2]    = (int16_t)((cos(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (int16_t)((sin(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][1][2+(n<<2)]= (int16_t)((sin(M_PI*ref24[(u*24) + n]/4)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
+	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (int16_t)((cos(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 #endif
 #endif
       }
@@ -191,9 +206,9 @@ void free_ul_ref_sigs(void){
     for (u=0;u<30;u++) {
       for (v=0;v<2;v++) {
 	if (ul_ref_sigs[u][v][Msc_RS])
-	  free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(short)*dftsizes[Msc_RS]);
+	  free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(int16_t)*dftsizes[Msc_RS]);
 	if (ul_ref_sigs_rx[u][v][Msc_RS])
-	  free16(ul_ref_sigs_rx[u][v][Msc_RS],4*sizeof(short)*dftsizes[Msc_RS]);
+	  free16(ul_ref_sigs_rx[u][v][Msc_RS],4*sizeof(int16_t)*dftsizes[Msc_RS]);
       }
     }
   }

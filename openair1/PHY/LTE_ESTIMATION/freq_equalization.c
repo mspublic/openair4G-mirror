@@ -283,7 +283,7 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
     if (amp>255)
       amp=255;
 
-    // printf("freq_eq: symbol %d re %d => %d,%d,%d, (%d) (%d,%d) => ",symbol,re,*((s16*)(&ul_ch_mag128[re])),amp,inv_ch[8*amp],*((s16*)(&ul_ch_mag128[re]))*inv_ch[8*amp],*(s16*)&(rxdataF_comp128[re]),*(1+(s16*)&(rxdataF_comp128[re])));
+    //     printf("freq_eq: symbol %d re %d => %d,%d,%d, (%d) (%d,%d) => ",symbol,re,*((s16*)(&ul_ch_mag128[re])),amp,inv_ch[8*amp],*((s16*)(&ul_ch_mag128[re]))*inv_ch[8*amp],*(s16*)&(rxdataF_comp128[re]),*(1+(s16*)&(rxdataF_comp128[re])));
     rxdataF_comp128[re] = _mm_mullo_epi16(rxdataF_comp128[re],*((__m128i *)&inv_ch[8*amp])); 
     if (Qm==4)
       ul_ch_mag128[re] = _mm_set1_epi16(324);  // this is 512*2/sqrt(10)
@@ -291,7 +291,7 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
       ul_ch_mag128[re]   = _mm_set1_epi16(316);  // this is 512*4/sqrt(42)
       ul_ch_magb128[re] = _mm_set1_epi16(158);  // this is 512*2/sqrt(42)
     }
-    //        printf("(%d,%d)\n",*(s16*)&(rxdataF_comp128[re]),*(1+(s16*)&(rxdataF_comp128[re])));
+    //            printf("(%d,%d)\n",*(s16*)&(rxdataF_comp128[re]),*(1+(s16*)&(rxdataF_comp128[re])));
 
   }
 }

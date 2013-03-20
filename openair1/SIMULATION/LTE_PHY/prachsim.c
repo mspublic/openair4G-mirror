@@ -414,7 +414,7 @@ int main(int argc, char **argv) {
     // multipath channel
   dump_prach_config(&PHY_vars_eNB->lte_frame_parms,subframe);
 
-  for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
+  for (i=0;i<2*frame_parms->samples_per_tti;i++) {
     for (aa=0;aa<1;aa++) {
       if (awgn_flag == 0) {
 	s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
@@ -456,7 +456,7 @@ int main(int argc, char **argv) {
 
       if (awgn_flag == 0) {
 	multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
-			  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+			  2*frame_parms->samples_per_tti,0);
       }
       if (n_frames==1) {
 	printf("rx_level data symbol %f, tx_lev %f\n",
@@ -464,7 +464,7 @@ int main(int argc, char **argv) {
 	       10*log10(tx_lev));
       }
 
-      for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+      for (i=0; i<frame_parms->samples_per_tti; i++) {
 	for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 	
 	  ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
@@ -500,7 +500,7 @@ int main(int argc, char **argv) {
 	  else
 	    printf("preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 	write_output("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-	write_output("prachF0.m","prachF0", &PHY_vars_eNB->lte_eNB_prach_vars.prachF[0],6144,1,1);
+	write_output("prachF0.m","prachF0", &PHY_vars_eNB->lte_eNB_prach_vars.prachF[0],24576,1,1);
 	write_output("rxsig0.m","rxs0", 
 		     &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
 		     frame_parms->samples_per_tti,1,1);
