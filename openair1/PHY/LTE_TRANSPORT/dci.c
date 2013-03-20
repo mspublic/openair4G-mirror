@@ -503,14 +503,14 @@ s32 pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			 s32 **rxdataF_comp,
 			 s32 **rxdataF_comp_i,
 			 s32 **rho_i,
-			 s16 *pdcch_llr16,
-			 s16 *pdcch_llr8in,
+			 u16 *pdcch_llr16,
+			 u16 *pdcch_llr8in,
 			 u8 symbol) {
 
   s16* rxF = (s16*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   s16* rxF_i = (s16*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
   s16* rho = (s16*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  s16* llr16 = &pdcch_llr16[2*symbol*frame_parms->N_RB_DL*12];
+  s16* llr16 = (s16*)&pdcch_llr16[2*symbol*frame_parms->N_RB_DL*12];
   s8* llr = (s8*)&pdcch_llr8in[symbol*frame_parms->N_RB_DL*12];
 
   //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
@@ -518,11 +518,7 @@ s32 pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   int i;
   int len = frame_parms->N_RB_DL*((symbol==0) ? 8 : 12);
 
-  qpsk_qpsk((s16 *)rxF,
-	    (s16 *)rxF_i,
-	    (s16 *)llr16,
-	    (s16 *)rho,
-	    frame_parms->N_RB_DL*((symbol==0) ? 8 : 12));
+  qpsk_qpsk(rxF, rxF_i, llr16, rho, frame_parms->N_RB_DL*((symbol==0) ? 8 : 12));
 
   for(i = 0; i < 2*len; i++) {
     if(llr16[i] < -32)
@@ -700,9 +696,9 @@ void pdcch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
       mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
       
       dl_ch_rho128[2] = _mm_packs_epi32(mmtmpPD2,mmtmpPD3);
-      print_shorts("rx:",dl_ch128i+2);
-      print_shorts("ch:",dl_ch128+2);
-      print_shorts("pack:",dl_ch_rho128+2);
+      //print_shorts("rx:",dl_ch128i+2);
+      //print_shorts("ch:",dl_ch128+2);
+      //print_shorts("pack:",dl_ch_rho128+2);
       
       dl_ch128+=3;
       dl_ch128i+=3;
@@ -1659,166 +1655,196 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   return(0);
 }
 
-s32 rx_pdcch_icancel(LTE_UE_COMMON **lte_ue_common_vars,
-                     LTE_UE_PDCCH **lte_ue_pdcch_vars,
-                     LTE_DL_FRAME_PARMS *frame_parms,
-                     u8 subframe,
-                     u8 eNB_id,
-                     u8 eNB_id_i,
-                     MIMO_mode_t mimo_mode) {
+u8 rx_pdcch_pcfich(LTE_UE_COMMON* common_vars, LTE_UE_PDCCH* pdcch_vars, LTE_DL_FRAME_PARMS* frame_parms,
+    u8 subframe, MIMO_mode_t mimo_mode) {
 
-  u8 log2_maxh,aatx,aarx;
-  s32 avgs,s;
-  u8 n_pdcch_symbols = 3;
-  u8 mi = get_mi(frame_parms,subframe);
-  int i;
+  s32 avgs;
+  u8 log2_maxh;
+  u8 n_pdcch_symbols = 0;
   short* est;
+  int i;
+  int aatx;
+  int aarx;
 
-#ifdef DEBUG_PHY
-  msg("[PDCCH] rx_pdcch_icancel, subframe %d, eNB_id %d, eNB_id_i %d\n", subframe, eNB_id, eNB_id_i);
-#endif
+  pdcch_extract_rbs_single(common_vars->rxdataF, common_vars->dl_ch_estimates[0],
+      pdcch_vars->rxdataF_ext, pdcch_vars->dl_ch_estimates_ext, 0, frame_parms);
 
-  for (s=0;s<n_pdcch_symbols;s++) {
-    pdcch_extract_rbs_single(lte_ue_common_vars[eNB_id]->rxdataF,
-                             lte_ue_common_vars[eNB_id_i]->dl_ch_estimates[0],
-                             lte_ue_pdcch_vars[eNB_id_i]->rxdataF_ext,
-                             lte_ue_pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                             s,
-                             frame_parms);
-
-    pdcch_extract_rbs_single(lte_ue_common_vars[eNB_id]->rxdataF,
-                             lte_ue_common_vars[eNB_id]->dl_ch_estimates[0],
-                             lte_ue_pdcch_vars[eNB_id]->rxdataF_ext,
-                             lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                             s,
-                             frame_parms);
+  for(i = 0; i < 200; i++) {
+    est = (short*)&pdcch_vars->dl_ch_estimates_ext[0][i];
+    est[0] *= frame_parms->pdcch_pilot_scale;
+    est[1] *= frame_parms->pdcch_pilot_scale;
   }
 
-  for(i = 0; i < 600; i++) {
-    est = (short*)&lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext[0][i];
-    est[0] /= 2;
-    est[1] /= 2;
-    est = (short*)&lte_ue_pdcch_vars[eNB_id_i]->dl_ch_estimates_ext[0][i];
-    est[0] /= 2;
-    est[1] /= 2;
-  }
+  // Needed for channel energy estimation
+  pdcch_extract_rbs_single(common_vars->rxdataF, common_vars->dl_ch_estimates[0],
+      pdcch_vars->rxdataF_ext, pdcch_vars->dl_ch_estimates_ext, 1, frame_parms);
 
-  write_output("dl_ch_p_v.m","dl_ch_p",lte_ue_common_vars[eNB_id]->dl_ch_estimates[0][0],14*512,1,1);
-  write_output("dl_ch_ped_v.m","dl_ch_ped",lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext[0],14*300,1,1);
-  write_output("dl_ch_pei_v.m","dl_ch_pei",lte_ue_pdcch_vars[eNB_id_i]->dl_ch_estimates_ext[0],14*300,1,1);
-
-  pdcch_channel_level(lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-		      frame_parms,
-		      avgP,
-		      frame_parms->N_RB_DL);
-
+  pdcch_channel_level(pdcch_vars->dl_ch_estimates_ext, frame_parms, avgP, frame_parms->N_RB_DL);
   avgs = 0;
   for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
-  
+
   log2_maxh = 2+(log2_approx(avgs)/2);
-#ifdef DEBUG_PHY
-  msg("[PDCCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgP[0],avgs);
-#endif
-
-  //n_pdcch_symbols=1;
-
-  for (s=0;s<n_pdcch_symbols;s++) {
-    pdcch_channel_compensation(lte_ue_pdcch_vars[eNB_id]->rxdataF_ext,
-			       lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-			       lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,
-			       (aatx>1) ? lte_ue_pdcch_vars[eNB_id]->rho : NULL,
-			       frame_parms,
-			       s,
-			       log2_maxh); // log2_maxh+I0_shift
-
 
 #ifdef DEBUG_PHY
-    write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+  LOG_D(PHY, "rx_pdcch_pcfich: log2_maxh = %d (%d,%d)\n", log2_maxh, avgP[0], avgs);
 #endif
 
-    //get MF output for interfering stream
-    pdcch_channel_compensation(lte_ue_pdcch_vars[eNB_id_i]->rxdataF_ext,
-                               lte_ue_pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                               lte_ue_pdcch_vars[eNB_id_i]->rxdataF_comp,
-                               (aatx>1) ? lte_ue_pdcch_vars[eNB_id_i]->rho : NULL,
-                               frame_parms,
-                               s,
-                               log2_maxh); // log2_maxh+I0_shift
+  pdcch_channel_compensation(pdcch_vars->rxdataF_ext, pdcch_vars->dl_ch_estimates_ext,
+      pdcch_vars->rxdataF_comp, (frame_parms->nb_antennas_tx_eNB > 1) ? pdcch_vars->rho : NULL,
+      frame_parms, 0, log2_maxh);
+
+  n_pdcch_symbols = rx_pcfich(frame_parms, subframe, pdcch_vars, mimo_mode);
+
+  return n_pdcch_symbols;
+}
+
+s32 rx_pdcch_lola(PHY_VARS_UE *phy_vars_ue,
+                  u8 subframe,
+                  u8 eNB_id,
+                  MIMO_mode_t mimo_mode) {
+
+  u8 log2_maxh,aatx,aarx;
+  u8 log2_maxh_i;
+  s32 avgs,s;
+  u8 n_pdcch_symbols;
+  u8 n_pdcch_symbols_i;
+  u8 mi;
+  u8 eNB_id_i = -1;
+  int i;
+  short* est;
+  LTE_UE_COMMON* common_vars = phy_vars_ue->lte_ue_common_vars[eNB_id];
+  LTE_UE_COMMON* common_vars_i = 0;
+  LTE_UE_PDCCH* pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars[eNB_id];
+  LTE_UE_PDCCH* pdcch_vars_i = 0;
+  LTE_DL_FRAME_PARMS* frame_parms = phy_vars_ue->lte_frame_parms[eNB_id];
+  LTE_DL_FRAME_PARMS* frame_parms_i = 0;
+
+  mi = get_mi(frame_parms,subframe);
+
 #ifdef DEBUG_PHY
-    write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_pdcch_vars[eNB_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+  LOG_D(PHY, "[UE %d] rx_pdcch, subframe %d, eNB_id %d\n", phy_vars_ue->Mod_id, subframe, eNB_id);
 #endif
 
-    pdcch_dual_stream_correlation(frame_parms,
-                                  s,
-                                  lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                                  lte_ue_pdcch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                  lte_ue_pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                                  log2_maxh);
-    
-
-    if (frame_parms->nb_antennas_rx > 1) {
-      pdcch_detection_mrc_i(frame_parms,
-                            lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,
-                            lte_ue_pdcch_vars[eNB_id_i]->rxdataF_comp,
-                            lte_ue_pdcch_vars[eNB_id]->rho,
-                            lte_ue_pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                            s);
-#ifdef DEBUG_PHY
-      write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-#endif
+  for(i = 0; i < phy_vars_ue->n_connected_eNB; i++) {
+    if(i != eNB_id) {
+      if((phy_vars_ue->UE_mode[i] != NOT_SYNCHED) && (phy_vars_ue->UE_mode[i] != PBCH_SEARCH)) {
+        eNB_id_i = i;
+        common_vars_i = phy_vars_ue->lte_ue_common_vars[eNB_id_i];
+        pdcch_vars_i = phy_vars_ue->lte_ue_pdcch_vars[eNB_id_i];
+        frame_parms_i = phy_vars_ue->lte_frame_parms[eNB_id_i];
+        break;
+      }
     }
-  
+  }
+
+#ifdef DEBUG_PHY
+  if(eNB_id_i >= 0)
+    LOG_D(PHY, "[UE %d] using interference cancellation for eNB %d\n", phy_vars_ue->Mod_id, eNB_id_i);
+#endif
+
+  n_pdcch_symbols = rx_pdcch_pcfich(common_vars, pdcch_vars, frame_parms, subframe, mimo_mode);
+  LOG_D(PHY, "[UE %d] desired signal n_pdcch_symbols = %d\n", phy_vars_ue->Mod_id, n_pdcch_symbols);
+  if(eNB_id_i >= 0)
+  {
+    n_pdcch_symbols_i = rx_pdcch_pcfich(common_vars_i, pdcch_vars_i, frame_parms_i, subframe, mimo_mode);
+    LOG_D(PHY, "[UE %d] interfering signal n_pdcch_symbols = %d\n", phy_vars_ue->Mod_id, n_pdcch_symbols_i);
+  }
+  else
+    n_pdcch_symbols_i = 0;
+
+  for(s = 0; s < n_pdcch_symbols; s++) {
+    pdcch_extract_rbs_single(common_vars->rxdataF, common_vars->dl_ch_estimates[0],
+        pdcch_vars->rxdataF_ext, pdcch_vars->dl_ch_estimates_ext, s, frame_parms);
+  }
+
+  for(s = 0; s < n_pdcch_symbols_i; s++) {
+    pdcch_extract_rbs_single(common_vars->rxdataF, common_vars_i->dl_ch_estimates[0],
+        pdcch_vars_i->rxdataF_ext, pdcch_vars_i->dl_ch_estimates_ext, s, frame_parms_i);
+  }
+
+  for(i = 0; i < 200; i++) {
+    est = (short*)&pdcch_vars->dl_ch_estimates_ext[0][i];
+    est[0] *= frame_parms->pdcch_pilot_scale;
+    est[1] *= frame_parms->pdcch_pilot_scale;
+  }
+  if(eNB_id_i >= 0)
+    for(i = 0; i < 200; i++) {
+      est = (short*)&pdcch_vars_i->dl_ch_estimates_ext[0][i];
+      est[0] *= frame_parms_i->pdcch_pilot_scale;
+      est[1] *= frame_parms_i->pdcch_pilot_scale;
+    }
+
+  write_output("dl_ch_p_v.m","dl_ch_p",common_vars->dl_ch_estimates[0][0],14*512,1,1);
+  write_output("dl_ch_ped_v.m","dl_ch_ped",pdcch_vars->dl_ch_estimates_ext[0],14*300,1,1);
+  if(eNB_id_i >= 0)
+    write_output("dl_ch_pei_v.m","dl_ch_pei",pdcch_vars_i->dl_ch_estimates_ext[0],14*300,1,1);
+
+  pdcch_channel_level(pdcch_vars->dl_ch_estimates_ext, frame_parms, avgP, frame_parms->N_RB_DL);
+  avgs = 0;
+  for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
+    for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
+      avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
+
+  log2_maxh = 2+(log2_approx(avgs)/2);
+
+#ifdef DEBUG_PHY
+  LOG_D(PHY, "[UE %d] log2_maxh = %d (%d,%d)\n", phy_vars_ue->Mod_id, log2_maxh, avgP[0], avgs);
+#endif
+
+  if(eNB_id_i >= 0) {
+    pdcch_channel_level(pdcch_vars_i->dl_ch_estimates_ext, frame_parms_i, avgP, frame_parms->N_RB_DL);
+    avgs = 0;
+    for (aatx=0;aatx<frame_parms_i->nb_antennas_tx_eNB;aatx++)
+      for (aarx=0;aarx<frame_parms_i->nb_antennas_rx;aarx++)
+        avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
+    log2_maxh_i = 2+(log2_approx(avgs)/2);
+#ifdef DEBUG_PHY
+    LOG_D(PHY, "[UE %d] log2_maxh_i = %d (%d,%d)\n", phy_vars_ue->Mod_id, log2_maxh_i, avgP[0], avgs);
+#endif
+  }
+
+  for(s = 0; s < n_pdcch_symbols; s++) {
+    pdcch_channel_compensation(pdcch_vars->rxdataF_ext, pdcch_vars->dl_ch_estimates_ext,
+        pdcch_vars->rxdataF_comp, (frame_parms->nb_antennas_tx_eNB > 1) ? pdcch_vars->rho : NULL,
+        frame_parms, s, log2_maxh);
+
+    if(s < n_pdcch_symbols_i) {
+      pdcch_channel_compensation(pdcch_vars_i->rxdataF_ext, pdcch_vars_i->dl_ch_estimates_ext,
+          pdcch_vars_i->rxdataF_comp, (frame_parms_i->nb_antennas_tx_eNB > 1) ? pdcch_vars_i->rho : NULL,
+          frame_parms_i, s, log2_maxh_i);
+
+      pdcch_dual_stream_correlation(frame_parms, s, pdcch_vars->dl_ch_estimates_ext,
+          pdcch_vars_i->dl_ch_estimates_ext, pdcch_vars->dl_ch_rho_ext, log2_maxh);
+
+      if (frame_parms->nb_antennas_rx > 1) {
+        pdcch_detection_mrc_i(frame_parms, pdcch_vars->rxdataF_comp, pdcch_vars_i->rxdataF_comp,
+            pdcch_vars->rho, pdcch_vars->dl_ch_rho_ext, s);
+      }
+
     //if (mimo_mode == SISO) 
     //  pdcch_siso(frame_parms,lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,s);
     //else
     //  pdcch_alamouti(frame_parms,lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,s);
 
-    
-    pdcch_qpsk_qpsk_llr(frame_parms,
-                        lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,
-                        lte_ue_pdcch_vars[eNB_id_i]->rxdataF_comp,
-                        lte_ue_pdcch_vars[eNB_id]->dl_ch_rho_ext,
-                        lte_ue_pdcch_vars[eNB_id]->llr16,
-                        lte_ue_pdcch_vars[eNB_id]->llr,
-                        s);
-
-#ifdef DEBUG_PHY
-    write_output("llr8_seq.m","llr8",&lte_ue_pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
-    //write_output("llr16_seq.m","llr16",&lte_ue_pdcch_vars[eNB_id]->llr16[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
-#endif
+      pdcch_qpsk_qpsk_llr(frame_parms, pdcch_vars->rxdataF_comp, pdcch_vars_i->rxdataF_comp,
+          pdcch_vars->dl_ch_rho_ext, pdcch_vars->llr16, pdcch_vars->llr, s);
+    }
+    else
+      pdcch_llr(frame_parms, pdcch_vars->rxdataF_comp, (char *)pdcch_vars->llr, s);
   }
 
-  // decode pcfich here
-  n_pdcch_symbols = rx_pcfich(frame_parms,
-			      subframe,
-			      lte_ue_pdcch_vars[eNB_id],
-			      mimo_mode);
-#ifdef DEBUG_DCI_DECODING
-  msg("[PDCCH] subframe %d n_pdcch_symbols from PCFICH =%d\n",subframe,n_pdcch_symbols);
+  pdcch_demapping(pdcch_vars->llr, pdcch_vars->wbar, frame_parms, n_pdcch_symbols,
+      get_mi(frame_parms,subframe));
 
-  msg("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
-#endif
-
-  pdcch_demapping(lte_ue_pdcch_vars[eNB_id]->llr,
-		  lte_ue_pdcch_vars[eNB_id]->wbar,
-		  frame_parms,
-		  n_pdcch_symbols,
-		  get_mi(frame_parms,subframe));
-
-  pdcch_deinterleaving(frame_parms,
-		       (u16*)lte_ue_pdcch_vars[eNB_id]->e_rx,
-		       lte_ue_pdcch_vars[eNB_id]->wbar,
-		       n_pdcch_symbols,
-		       mi);
+  pdcch_deinterleaving(frame_parms, (u16*)pdcch_vars->e_rx, pdcch_vars->wbar,
+      n_pdcch_symbols, mi);
   
-  pdcch_unscrambling(frame_parms,
-		     subframe,
-		     lte_ue_pdcch_vars[eNB_id]->e_rx,
-		     get_nCCE(n_pdcch_symbols,frame_parms,mi)*72);
+  pdcch_unscrambling(frame_parms, subframe, pdcch_vars->e_rx,
+      get_nCCE(n_pdcch_symbols,frame_parms,mi)*72);
   
-  lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols = n_pdcch_symbols;
+  pdcch_vars->num_pdcch_symbols = n_pdcch_symbols;
 
   return(0);
 }
@@ -1964,7 +1990,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   //   printf("subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
   //    	 subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
   generate_pcfich(num_pdcch_symbols,
-		  amp,
+		  amp*frame_parms->pdcch_pilot_scale,
 		  frame_parms,
 		  txdataF,
 		  subframe);
@@ -2180,10 +2206,12 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 	    for (i=0;i<6;i++) {
 	      if ((i!=(nushiftmod3))&&(i!=(nushiftmod3+3))) {
-                //if(lprime > 0)
-		txdataF[0][tti_offset+i] = wbar[0][mprime];
-		if (frame_parms->nb_antennas_tx_eNB > 1)
-		  txdataF[1][tti_offset+i] = wbar[1][mprime];
+		((short*)&txdataF[0][tti_offset+i])[0] = ((short*)&wbar[0][mprime])[0]*frame_parms->pdcch_pilot_scale;
+		((short*)&txdataF[0][tti_offset+i])[1] = ((short*)&wbar[0][mprime])[1]*frame_parms->pdcch_pilot_scale;
+		if (frame_parms->nb_antennas_tx_eNB > 1) {
+		  ((short*)&txdataF[1][tti_offset+i])[0] = ((short*)&wbar[1][mprime])[0]*frame_parms->pdcch_pilot_scale;
+		  ((short*)&txdataF[1][tti_offset+i])[1] = ((short*)&wbar[1][mprime])[1]*frame_parms->pdcch_pilot_scale;
+                }
 #ifdef DEBUG_DCI_ENCODING
 		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
