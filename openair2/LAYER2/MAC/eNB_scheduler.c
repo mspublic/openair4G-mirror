@@ -928,7 +928,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 				     1,
 				     Mod_id);
   if (bcch_sdu_length > 0) {
-    LOG_I(MAC,"[eNB %d] Frame %d : BCCH->DLSCH, Received %d bytes \n",Mod_id,frame,bcch_sdu_length);
+    LOG_D(MAC,"[eNB %d] Frame %d : BCCH->DLSCH, Received %d bytes \n",Mod_id,frame,bcch_sdu_length);
 
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
       if (bcch_sdu_length <= (mac_xface->get_TBS(0,3)))
@@ -981,7 +981,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 #endif
 
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
-      LOG_I(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
+      LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
 	    frame,
 	    bcch_sdu_length,
 	    BCCH_alloc_pdu.mcs,
@@ -4259,7 +4259,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
     //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
     // int flag_LA=0;
-  printf("CQI %d\n",eNB_UE_stats->DL_cqi[0]);
+    //printf("CQI %d\n",eNB_UE_stats->DL_cqi[0]);
  if(flag_LA==0){
      
     switch(eNB_UE_stats->DL_cqi[0])

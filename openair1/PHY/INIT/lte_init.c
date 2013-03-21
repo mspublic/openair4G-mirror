@@ -12,6 +12,7 @@
 #include "defs.h"
 #include "SCHED/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -28,7 +29,7 @@ extern u16 prach_root_sequence_map4[138];
 #ifdef DRIVER2013
 #include "openair0_lib.h"
 extern int card;
-extern u32 carrier_freq[4]
+extern u32 carrier_freq[4];
 #endif
 #endif
 
@@ -462,8 +463,8 @@ void phy_config_dedicated_scell_eNB(u8 Mod_id,
 #ifdef EXMIMO
 #ifdef DRIVER2013
     carrier_freq[CC_id] = carrier_freq_local;
-    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
-    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
 #endif
 #endif
   }
@@ -608,8 +609,8 @@ void phy_config_dedicated_scell_ue(u8 Mod_id,u16 CH_index,
 #ifdef EXMIMO
 #ifdef DRIVER2013
     carrier_freq[CC_id] = carrier_freq_local;
-    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
-    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
 #endif
 #endif
   }

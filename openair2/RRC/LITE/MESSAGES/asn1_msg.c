@@ -1483,7 +1483,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 	  sCell1_config_ptr->sCellIndex_r10 = 1;
 	  sCell1_config_ptr->cellIdentification_r10 = CALLOC(1,sizeof(*sCell1_config_ptr->cellIdentification_r10));
 	  sCell1_config_ptr->cellIdentification_r10->physCellId_r10 = 1;
-	  sCell1_config_ptr->cellIdentification_r10->dl_CarrierFreq_r10 = 36176;
+	  sCell1_config_ptr->cellIdentification_r10->dl_CarrierFreq_r10 = 36126;
 
 	  struct RadioResourceConfigDedicatedSCell_r10 *radioResourceConfigDedicatedSCell;
 	  radioResourceConfigDedicatedSCell = CALLOC(1,sizeof(*radioResourceConfigDedicatedSCell));
