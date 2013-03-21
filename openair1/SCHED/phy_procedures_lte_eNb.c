@@ -829,7 +829,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (abstraction_flag==0) {
         generate_pbch(&phy_vars_eNB->lte_eNB_pbch,
                       phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-                      AMP,
+                      AMP*phy_vars_eNB->lte_frame_parms.pbch_scale,
                       &phy_vars_eNB->lte_frame_parms,
                       pbch_pdu,
                       phy_vars_eNB->frame&3);

@@ -60,17 +60,18 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	memcpy((short *)&ue_buffer_vars->rxdata[aa][frame_length_samples],
 	       (short *)&ue_buffer_vars->rxdata[aa][0],
 	       frame_parms->ofdm_symbol_size*sizeof(int));
-	fft((short *)&ue_buffer_vars->rxdata[aa][(sample_offset +
-						slot_offset +
-						nb_prefix_samples0 + 
-						subframe_offset -
-						SOFFSET) % frame_length_samples],
-	  (short*)&ue_buffer_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
-	  frame_parms->twiddle_fft,
-	  frame_parms->rev,
-	  frame_parms->log2_symbol_size,
-	  frame_parms->log2_symbol_size>>1,
-	  0);
+
+      fft((short *)&ue_buffer_vars->rxdata[aa][(sample_offset +
+                                                slot_offset +
+                                                nb_prefix_samples0 + 
+                                                subframe_offset -
+                                                SOFFSET) % frame_length_samples],
+          (short*)&ue_buffer_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+          frame_parms->twiddle_fft,
+          frame_parms->rev,
+          frame_parms->log2_symbol_size,
+          frame_parms->log2_symbol_size>>1,
+          0);
     }
     else {
       if ((sample_offset +
