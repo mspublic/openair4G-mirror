@@ -13,13 +13,15 @@
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
+#include "SCellToAddMod-r10.h"
 #endif
 
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
 #ifdef Rel10
-		       struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+		       SCellToAddMod_r10_t *sCellToAddMod_r10,
+		       //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
 		       MeasObjectToAddMod_t **measObj,
 		       MAC_MainConfig_t *mac_MainConfig,
@@ -174,14 +176,14 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     }
   }
 #ifdef Rel10
-  if (physicalConfigDedicatedSCell_r10 != NULL) {
+  if (sCellToAddMod_r10 != NULL) {
 
 	if (eNB_flag==1){
-	  mac_xface->phy_config_dedicated_scell_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicatedSCell_r10,1);
+	  mac_xface->phy_config_dedicated_scell_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),sCellToAddMod_r10,1);
 	}
 	else {
-	  mac_xface->phy_config_dedicated_scell_ue(Mod_id,eNB_index,physicalConfigDedicatedSCell_r10,1);
-	  UE_mac_inst[Mod_id].physicalConfigDedicatedSCell_r10=physicalConfigDedicatedSCell_r10; // using SCell index 0
+	  mac_xface->phy_config_dedicated_scell_ue(Mod_id,eNB_index,sCellToAddMod_r10,1);
+	  UE_mac_inst[Mod_id].physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10; // using SCell index 0
 	}
   }
 #endif

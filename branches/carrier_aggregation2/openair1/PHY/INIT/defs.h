@@ -7,6 +7,7 @@
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
+#include "SCellToAddMod-r10.h"
 #include "TDD-Config.h"
 #else
 
@@ -182,10 +183,10 @@ void phy_config_dedicated_eNB(u8 Mod_id,u8 CC_id, u16 rnti,
 			      struct PhysicalConfigDedicated *physicalConfigDedicated);
 
 void phy_config_dedicated_scell_eNB(u8 Mod_id,u16 rnti,
-			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
+				    SCellToAddMod_r10_t *sCellToAddMod_r10, u8 CC_id);
 
 void phy_config_dedicated_scell_ue(u8 Mod_id,u16 rnti,
-			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
+				   SCellToAddMod_r10_t *sCellToAddMod_r10, u8 CC_id);
 
 /*!
 \fn void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB)
