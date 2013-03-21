@@ -62,7 +62,7 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
 
 
 #ifdef RM_DEBUG
-      printf("row %d, index %d, index-Nd %d (k,Kpi+2k,Kpi+2k+1) (%d,%d,%d) w(%d,%d,%d)\n",row,index,index-ND,k,Kpi+(k<<1),Kpi+(k<<1)+1,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
+      printf("row %d, index %d, index-Nd %d index-Nd+1 %d (k,Kpi+2k,Kpi+2k+1) (%d,%d,%d) w(%d,%d,%d)\n",row,index,index-ND,((index+1)%Kpi)-ND,k,Kpi+(k<<1),Kpi+(k<<1)+1,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
       
       if (w[k]== LTE_NULL)
 	nulled++;
@@ -78,7 +78,14 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
       k2++;k2++;
     }      
   }
+
+  if (ND>0)
+    w[Kpi-1+k2] = LTE_NULL;
 #ifdef RM_DEBUG
+  if (ND>0) {
+    printf("RM_TX: Nulled last component in pos %d\n",Kpi-1+k2);
+    nulled++;
+  }
   printf("RM_TX: Nulled %d\n",nulled);
 #endif
   return(RTC);
@@ -171,14 +178,15 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
     for (row=0;row<RTC;row++) {
 
       d1[index3]   = w[k];
-      d2[index3] = w[Kpi+k2];  
-      d3[index3] = w[Kpi+1+k2];  
+      d2[index3]   = w[Kpi+k2];  
+      d3[index3]   = w[Kpi+1+k2];  
       index3+=96;
       index+=32;
       k++;k2++;k2++;
     }      
   }
-  d[2] = d[(3*D)+2];
+  if (ND>0)
+    d[2] = LTE_NULL;//d[(3*D)+2];
 
 }
 
@@ -245,9 +253,8 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
   printf("dummy sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d, F=%d (Nulled %d)\n",RTC,Kpi,ND,F,(2*F + 3*ND));
 #endif
-  //  ND3 = ND*3;
-
-  // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
+ 
+ 
   k=0;
   k2=0;
   wKpi = &w[Kpi];
@@ -260,7 +267,7 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
 #endif
     index = bitrev[col];
     
-    if (index<ND+F) {
+    if (index<(ND+F)) {
       w[k]   =  LTE_NULL;
       wKpi[k2] = LTE_NULL;
 #ifdef RM_DEBUG
@@ -269,14 +276,14 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
     }
 
     //bits beyond 32 due to "filler" bits
-    if (index+32<(ND+F)) {
+    if ((index+32)<(ND+F)) {
       w[k+1]   =  LTE_NULL;
       wKpi2[k2] = LTE_NULL;
 #ifdef RM_DEBUG
       nulled+=2;
 #endif
     }
-    if (index+64<(ND+F)) {
+    if ((index+64)<(ND+F)) {
       w[k+2]   =  LTE_NULL;
       wKpi4[k2] = LTE_NULL;
 #ifdef RM_DEBUG
@@ -291,13 +298,21 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
 #endif
     }
 #ifdef RM_DEBUG
-    printf("k %d w (%d,%d,%d) w+1 (%d,%d,%d), index-ND-F %d index+32-ND-F %d\n",k,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)],w[k+1],w[2+Kpi+(k<<1)],w[2+Kpi+1+(k<<1)],index-ND-F,index+32-ND-F);
+    printf("k %d w (%d,%d,%d) w+1 (%d,%d,%d), index %d index-ND-F %d index+32-ND-F %d\n",k,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)],w[k+1],w[2+Kpi+(k<<1)],w[2+Kpi+1+(k<<1)],index,index-ND-F,index+32-ND-F);
 #endif
     k+=RTC;
     k2=k<<1;
   }
 
+ // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212  
+  if (ND>0)
+    w[(3*Kpi)-1] = LTE_NULL;
+  
 #ifdef RM_DEBUG
+  if (ND>0) {
+    nulled++;
+    printf("dummy_w: Nulled final position %d\n",(3*Kpi)-1);
+  }
   printf("Nulled = %d\n",nulled);
 #endif
   return(RTC);
@@ -612,7 +627,9 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
   uint32_t Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
   int16_t *soft_input2;
   s32 w_tmp;
-
+#ifdef RM_DEBUG
+  int nulled=0;
+#endif
   if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
     msg("lte_rate_matching.c: invalid paramters\n");
     return(-1);
@@ -652,6 +669,12 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
       printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);
 #endif
     }
+#ifdef RM_DEBUG
+    else {
+      printf("RM_RX Ind: %d NULL %d\n",ind,nulled);
+      nulled++;
+    }
+#endif
   }
   while(k<E) {
     for (ind=0;(ind<Ncb)&&(k<E);ind++) {
@@ -660,6 +683,12 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 	printf("RM_RX k%d Ind: %d (%d)(soft in %d)\n",k-1,ind,w[ind],soft_input2[k-1]);
 #endif
       }
+#ifdef RM_DEBUG
+      else {
+	printf("RM_RX Ind: %d NULL %d\n",ind,nulled);
+	nulled++;
+      }
+#endif
     }
   }
 
