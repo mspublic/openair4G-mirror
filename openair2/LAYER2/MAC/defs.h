@@ -62,6 +62,7 @@
 #include "MeasObjectToAddModList.h"
 #ifdef Rel10
 #include "MBSFN-AreaInfoList-r9.h"
+#include "SCellToAddMod-r10.h"
 #endif
 
 //#ifdef PHY_EMUL
@@ -638,7 +639,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
 #ifdef Rel10
-		       struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+		       SCellToAddMod_r10_t *sCellToAddMod_r10,
+		       //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
 		       MeasObjectToAddMod_t **measObj,
 		       MAC_MainConfig_t *mac_MainConfig,

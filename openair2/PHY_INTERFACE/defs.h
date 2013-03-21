@@ -88,7 +88,7 @@ typedef struct
 
     /// PHY-Config-SCell-Dedicated UE
     void (*phy_config_dedicated_scell_eNB)(u8 Mod_id,u16 rnti,
-     			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
+     			      SCellToAddMod_r10_t *sCellToAddMod_r10, u8 CC_id);
 #ifdef Rel10
     /// Get MCH sdu and corresponding MCS for particular MBSFN subframe
     MCH_PDU* (*get_mch_sdu)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
@@ -137,7 +137,7 @@ typedef struct
 
     /// PHY-Config-SCell-Dedicated UE
     void (*phy_config_dedicated_scell_ue)(u8 Mod_id,u16 rnti,
-    			      struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id);
+    			      SCellToAddMod_r10_t *sCellToAddMod_r10, u8 CC_id);
 
     /// Configure Common PHY parameters from SIB1
     void (*phy_config_sib1_ue)(u8 Mod_id,

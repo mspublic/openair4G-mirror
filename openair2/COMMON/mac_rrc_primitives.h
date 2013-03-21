@@ -24,6 +24,7 @@ ________________________________________________________________*/
 #ifdef Rel10
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
+#include "SCellToAddMod-r10.h"
 #endif
 //#include "rrm_config_structs.h"
 //#include "platform_types.h"
@@ -364,7 +365,8 @@ typedef struct{
 			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated,
 #ifdef Rel10
-			    struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+			    SCellToAddMod_r10_t *sCellToAddMod_r10,
+			    //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
 			    MeasObjectToAddMod_t **measObj,
 			    MAC_MainConfig_t *mac_MainConfig,

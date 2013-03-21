@@ -15,6 +15,7 @@
 #include "SIMULATION/TOOLS/defs.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
+#include "SCellToAddMod-r10.h"
 #include "TDD-Config.h"
 #include "LAYER2/MAC/extern.h"
 
@@ -22,6 +23,14 @@
 
 extern u16 prach_root_sequence_map0_3[838];
 extern u16 prach_root_sequence_map4[138];
+
+#ifdef EXMIMO
+#ifdef DRIVER2013
+#include "openair0_lib.h"
+extern int card;
+extern u32 carrier_freq[4]
+#endif
+#endif
 
 void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
 		    u8 N_RB_DL,
@@ -427,11 +436,37 @@ void phy_config_dedicated_eNB(u8 Mod_id,
 
 void phy_config_dedicated_scell_eNB(u8 Mod_id,
 				    u16 rnti,
-				    struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, 
+				    SCellToAddMod_r10_t *sCellToAddMod_r10, 
 				    u8 CC_id) {
 
   PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
   u8 UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][0]);
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10;
+  //struct RadioResourceConfigCommonSCell_r10 *physicalConfigCommonSCell_r10 = sCellToAddMod_r10->radioResourceConfigCommonSCell_r10;
+  PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
+  ARFCN_ValueEUTRA_t dl_CarrierFreq_r10 = sCellToAddMod_r10->cellIdentification_r10->dl_CarrierFreq_r10;
+  u32 carrier_freq_local;
+
+#ifdef EXMIMO
+#ifdef DRIVER2013
+  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
+#endif
+#endif
+
+  if ((dl_CarrierFreq_r10<36000) || (dl_CarrierFreq_r10>36199)) {
+    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,phy_vars_eNB->frame,dl_CarrierFreq_r10,CC_id,UE_id);
+  }
+  else {
+    carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,phy_vars_eNB->frame,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+#ifdef EXMIMO
+#ifdef DRIVER2013
+    carrier_freq[CC_id] = carrier_freq_local;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
+#endif
+#endif
+  }
 
   if (physicalConfigDedicatedSCell_r10) {
     phy_vars_eNB->physicalConfigDedicatedSCell_r10[UE_id] = physicalConfigDedicatedSCell_r10;
@@ -446,13 +481,10 @@ void phy_config_dedicated_scell_eNB(u8 Mod_id,
 
 
 void phy_config_dedicated_ue(u8 Mod_id,u8 CC_id, u8 CH_index,
-			     struct PhysicalConfigDedicated *physicalConfigDedicated ) {
+			     struct PhysicalConfigDedicated *physicalConfigDedicated) {
 
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
-
-  
-
-    
+ 
     if (physicalConfigDedicated) {
       msg("[PHY][UE %d] Frame %d: Received physicalConfigDedicated from eNB %d\n",Mod_id, phy_vars_ue->frame,CH_index);
       msg("------------------------------------------------------------------------\n");
@@ -552,9 +584,35 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CC_id, u8 CH_index,
 }
 
 void phy_config_dedicated_scell_ue(u8 Mod_id,u16 CH_index,
-				   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10, u8 CC_id) {
+				   SCellToAddMod_r10_t *sCellToAddMod_r10, u8 CC_id) {
 
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10;
+  //struct RadioResourceConfigCommonSCell_r10 *physicalConfigCommonSCell_r10 = sCellToAddMod_r10->radioResourceConfigCommonSCell_r10;
+  PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
+  ARFCN_ValueEUTRA_t dl_CarrierFreq_r10 = sCellToAddMod_r10->cellIdentification_r10->dl_CarrierFreq_r10;
+  u32 carrier_freq_local;
+
+#ifdef EXMIMO
+#ifdef DRIVER2013
+  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
+#endif
+#endif
+
+  if ((dl_CarrierFreq_r10<36000) || (dl_CarrierFreq_r10>36199)) {
+    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for eNB %d not supported\n",Mod_id,phy_vars_ue->frame,dl_CarrierFreq_r10,CC_id,CH_index);
+  }
+  else {
+    carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for eNB %d\n",Mod_id,phy_vars_ue->frame,CC_id,carrier_freq_local,dl_CarrierFreq_r10,CH_index);
+#ifdef EXMIMO
+#ifdef DRIVER2013
+    carrier_freq[CC_id] = carrier_freq_local;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[i]+openair_daq_vars.freq_offset;
+#endif
+#endif
+  }
 
   if (physicalConfigDedicatedSCell_r10) {
     phy_vars_ue->physicalConfigDedicatedSCell_r10[CH_index] = physicalConfigDedicatedSCell_r10;

@@ -43,7 +43,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
-//#include "RRC/LITE/MESSAGES/asn1_msg.h"
+#include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "RRCConnectionReconfiguration.h"
 #include "UL-CCCH-Message.h"
@@ -73,12 +73,8 @@ extern EMULATION_VARS *Emul_vars;
 #endif
 extern eNB_MAC_INST *eNB_mac_inst;
 extern UE_MAC_INST *UE_mac_inst;
-#ifdef BIGPHYSAREA
-extern void *bigphys_malloc(int);
-#endif
 #ifdef Rel10
-#include <SCellToAddMod-r10.h>
-#define MAX_NUM_CCs 2
+#include "SCellToAddMod-r10.h"
 #endif
 
 extern inline unsigned int taus(void);
@@ -487,7 +483,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 		       (RadioResourceConfigCommonSIB_t *)NULL,
 		       (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-		       (struct PhysicalConfigDedicatedSCell_r10 *) NULL,
+		       (SCellToAddMod_r10_t *) NULL,
 #endif
 		       UE_rrc_inst[Mod_id].MeasObj[eNB_index],
 		       (MAC_MainConfig_t *)NULL,
@@ -607,6 +603,8 @@ void	rrc_ue_process_sCellAdd(u8 Mod_id,u8 eNB_index,SCellToAddMod_r10_t *sCellTo
 			*/
 			memcpy(UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],sCellToAdd,sizeof(SCellToAddMod_r10_t));
 
+			// call rrc_mac_config_req with SCellToAdd here
+
 			//UE_rrc_inst[Mod_id].sCell_config[eNB_index][0] = sCellToAdd;
 		}
 		//UE_rrc_inst[Mod_id].sCell_config[eNB_index][locate_sCell_index(Mod_id, eNB_index, sCellToAdd->sCellIndex_r10)] = sCellToAdd;
@@ -706,7 +704,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			     (RadioResourceConfigCommonSIB_t *)NULL,
 			     UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-			     (PhysicalConfigDedicatedSCell_r10_t *)NULL,
+			     (SCellToAddMod_r10_t *)NULL,
 #endif
 			     (MeasObjectToAddMod_t **)NULL,
 			     UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -758,7 +756,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			 (RadioResourceConfigCommonSIB_t *)NULL,
 			 UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-			 (PhysicalConfigDedicatedSCell_r10_t *)NULL,
+			 (SCellToAddMod_r10_t *)NULL,
 #endif
 			 (MeasObjectToAddMod_t **)NULL,
 			 UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -803,7 +801,8 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-			   (UE_rrc_inst[Mod_id].sCell_config[eNB_index][0] != NULL ? UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
+			   // why is this here and not in SCellToAddMod???
+			   UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],
 #endif
 			   (MeasObjectToAddMod_t **)NULL,
 			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -1264,7 +1263,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-		     (struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+		     (struct SCellToAddMod_r10 *)NULL,
 #endif
 		     (MeasObjectToAddMod_t **)NULL,
 		     (MAC_MainConfig_t *)NULL,
@@ -1428,7 +1427,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
 			 (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-			 (struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			 (struct SCellToAddMod_r10 *)NULL,
 #endif
 			 (MeasObjectToAddMod_t **)NULL,
 			 (MAC_MainConfig_t *)NULL,

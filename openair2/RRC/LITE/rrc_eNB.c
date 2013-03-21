@@ -54,7 +54,8 @@
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
 #ifdef Rel10
-# include "MeasResults.h"
+#include "MeasResults.h"
+#include "SCellToAddMod-r10.h"
 #endif
 
 #ifdef USER_MODE
@@ -221,7 +222,7 @@ void init_SI(u8 Mod_id) {
 		       (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 		       (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
-		       (struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+		       (SCellToAddMod_r10_t *)NULL,
 #endif
 		       (MeasObjectToAddMod_t **)NULL,
 		       (MAC_MainConfig_t *)NULL,
@@ -1270,7 +1271,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 #ifdef Rel10
-			   (eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] != NULL ? eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
+			   eNB_rrc_inst[Mod_id].sCell_config[UE_index][0],
 #endif
 			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
@@ -1309,7 +1310,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 #ifdef Rel10
-			   (eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] != NULL ? eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 : NULL),
+			   eNB_rrc_inst[Mod_id].sCell_config[UE_index][0],
 #endif
 			   (MeasObjectToAddMod_t **)NULL,
 			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
@@ -1382,7 +1383,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 #ifdef Rel10
-		     (PhysicalConfigDedicatedSCell_r10_t *)NULL,
+		     (SCellToAddMod_r10_t *)NULL,
 #endif
 		     (MeasObjectToAddMod_t **)NULL,
 		     eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
