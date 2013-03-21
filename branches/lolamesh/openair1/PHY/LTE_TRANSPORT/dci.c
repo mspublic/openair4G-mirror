@@ -1711,7 +1711,7 @@ s32 rx_pdcch_lola(PHY_VARS_UE *phy_vars_ue,
   u8 n_pdcch_symbols;
   u8 n_pdcch_symbols_i;
   u8 mi;
-  u8 eNB_id_i = -1;
+  s8 eNB_id_i = -1;
   int i;
   short* est;
   LTE_UE_COMMON* common_vars = phy_vars_ue->lte_ue_common_vars[eNB_id];

@@ -500,6 +500,8 @@ typedef struct {
   u8 pcfich_first_reg_idx;
   /// REGs assigned to PHICH
   u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
+  /// PBCH amplitude scaling
+  float pbch_scale;
   /// PDCCH amplitude scaling in pilot symbols
   float pdcch_pilot_scale;
 } LTE_DL_FRAME_PARMS;

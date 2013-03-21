@@ -113,13 +113,13 @@ mapping small_scale_names[] = {
     {"ETU", 7},
     {"Rayleigh8", 8},
     {"Rayleigh1", 9},
-    {"Rayleigh1_corr", 10},
-    {"Rayleigh1_anticorr", 11},
-    {"Rice8", 12},
-    {"Rice1", 13},
-    {"Rice1_corr", 14},
-    {"Rice1_anticorr", 15},
-    {"AWGN", 16},
+    {"Rayleigh1_corr", 11},
+    {"Rayleigh1_anticorr", 12},
+    {"Rice8", 13},
+    {"Rice1", 14},
+    {"Rice1_corr", 15},
+    {"Rice1_anticorr", 16},
+    {"AWGN", 17},
     {NULL, -1}
 };
 
@@ -687,6 +687,9 @@ main (int argc, char **argv)
   s32* ue_rxF_frame[MAX_UE];
   s32* enb_txF_frame[NUMBER_OF_eNB_MAX];
 
+  float pbch_scale = 0.5;
+  float pdcch_pilot_scale = 0.5;
+
 #ifdef ICIC
   remove ("dci.txt");
 #endif
@@ -1196,6 +1199,8 @@ main (int argc, char **argv)
       PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] = NOT_SYNCHED; 
       PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id]->current_dlsch_cqi[eNB_id] = 10;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->pbch_scale = pbch_scale;
+      PHY_vars_UE_g[UE_id]->lte_frame_parms[eNB_id]->pdcch_pilot_scale = pdcch_pilot_scale;
       LOG_I(EMU, "UE %d mode to eNB %d, is initialized to %d\n", UE_id, eNB_id, PHY_vars_UE_g[UE_id]->UE_mode[eNB_id] );
     }
   }
@@ -1214,6 +1219,8 @@ main (int argc, char **argv)
 	LOG_I(EMU, "[eNB%d]State initialized to SYNCHED\n", eNB_id);
       }
     }
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pbch_scale = pbch_scale;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdcch_pilot_scale = pdcch_pilot_scale;
   }
 
   for(UE_id = 0; UE_id < NB_UE_INST; UE_id++) {

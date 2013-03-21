@@ -1546,13 +1546,16 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif
   */
   if (abstraction_flag == 0)  {
-    rx_pdcch(phy_vars_ue->lte_ue_common_vars[eNB_id], 
+    /*rx_pdcch(phy_vars_ue->lte_ue_common_vars[eNB_id], 
 	    phy_vars_ue->lte_ue_pdcch_vars,
 	     phy_vars_ue->lte_frame_parms[eNB_id],
 	     last_slot>>1,
 	     eNB_id,
 	     (phy_vars_ue->lte_frame_parms[eNB_id]->mode1_flag == 1) ? SISO : ALAMOUTI,
-	     phy_vars_ue->is_secondary_ue); 
+	     phy_vars_ue->is_secondary_ue); */
+    rx_pdcch_lola(phy_vars_ue, last_slot>>1, eNB_id, 
+        (phy_vars_ue->lte_frame_parms[eNB_id]->mode1_flag == 1) ? SISO : ALAMOUTI);
+
     dci_cnt = dci_decoding_procedure(phy_vars_ue,
 				     dci_alloc_rx,
 				     eNB_id,last_slot>>1);
