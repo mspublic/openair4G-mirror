@@ -724,7 +724,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	
 	
-	//#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
 	LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, Ndi %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
 	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,
 	      first_rb,nb_rb,
@@ -748,7 +748,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
 		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
 	}
-	//#endif
+#endif
 	
 
 #ifdef EXMIMO
@@ -896,7 +896,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else
 	  phy_vars_ue->tx_power_dBm = UE_TX_POWER;
 #endif
-	  LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d, generating PUSCH, Po_PUSCH: %d dBm, amp %d\n",
+	  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d, generating PUSCH, Po_PUSCH: %d dBm, amp %d\n",
 		phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm,
 #ifdef EXMIMO
 		get_tx_amp(phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm)
@@ -1533,7 +1533,7 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
   openair_daq_vars.synch_wait_cnt=0;
   openair_daq_vars.sched_cnt=-1;
 #if defined(EXMIMO) || defined(CBMIMO1)
-  openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
+  //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
 #endif
   
   phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
@@ -1873,11 +1873,12 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   //  ra_RNTI = (phy_vars_ue->prach_resources[eNB_id]) ? phy_vars_ue->prach_resources[eNB_id]->ra_RNTI : 0;
   for (i=0;i<dci_cnt;i++){
 
-    
+    /*
     if ((last_slot>>1) == 9) { //( phy_vars_ue->frame % 100 == 0)   {
       LOG_I(PHY,"frame %d, subframe %d, rnti %x: dci %d/%d\n",phy_vars_ue->frame,last_slot>>1,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,i,dci_cnt);
       dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
     }
+    */
     
     //if ((phy_vars_ue->UE_mode[eNB_id] != PRACH) && 
     //    (dci_alloc_rx[i].rnti != 0x1234) &&
@@ -2488,12 +2489,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  else {
 
 
-	    //#ifdef DEBUG_PHY_PROC
-	    if ((phy_vars_ue->frame % 100) == 0)
+#ifdef DEBUG_PHY_PROC
+	    //if ((phy_vars_ue->frame % 100) == 0)
 	      LOG_I(PHY,"[UE  %d] Frame %d, subframe %d, received SI for TBS %d\n",
 		    phy_vars_ue->Mod_id,phy_vars_ue->frame,(((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 		    phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS>>3);
-	    //#endif
+#endif
 
 #ifdef OPENAIR2
 	    mac_xface->ue_decode_si(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,
