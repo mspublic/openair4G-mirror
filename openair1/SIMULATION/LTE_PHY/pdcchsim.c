@@ -174,6 +174,7 @@ int main(int argc, char **argv) {
   u32 false_detection_cnt=0;
   u8 common_rx,ul_rx,dl_rx;
   u8 tdd_config=3;
+  int dci_type=-1;
 
   FILE *input_fd=NULL;
   char input_val_str[50],input_val_str2[50];
@@ -206,7 +207,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hapg:d:c:i:n:s:x:y:z:K:L:M:N:I:F:R:S:P:")) != -1) {
+  while ((c = getopt (argc, argv, "hapg:d:c:i:n:s:x:y:z:D:K:L:M:N:I:F:R:S:P:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -297,6 +298,9 @@ int main(int argc, char **argv) {
       case 'K':
         pdcch_pilot_scale = atof(optarg);
         break;
+      case 'D':
+        dci_type = atoi(optarg);
+        break;
       case 'L':
 	log2L=atoi(optarg);
 	
@@ -357,6 +361,7 @@ int main(int argc, char **argv) {
 	printf("-P Number of interfering PHICH\n");
         printf("-i SNR of PDCCH interferer (can be specified multiple times)\n");
         printf("-K Scaling factor for PDCCH data in pilot symbols\n");
+        printf("-D use the specified DCIs (1: common, 2: ul, 4: dl)\n");
 	printf("-L log2 of Aggregation level for UE Specific DCI (1,2,4,8)\n");
 	printf("-M log2 Aggregation level for Common DCI (4,8)\n");
 	printf("-N Format for UE Spec DCI (0 - format1,\n");
@@ -655,11 +660,16 @@ int main(int argc, char **argv) {
           num_common_dci[eNB_id]=0;
           num_ue_spec_dci[eNB_id]=0;
           numCCE[eNB_id]=0;
-            
-          // Do SI_RNTI
-          rv = (n_frames==1) ? 0 : taus();
+
+          if(dci_type >= 0)
+            rv = dci_type;
+          else if(n_frames == 1)
+            rv = 1;
+          else
+            rv = taus();
     
-          if ((rv&1) == 0) {
+          // Do SI_RNTI
+          if (rv&1) {
             memcpy(&dci_alloc[eNB_id][0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
             dci_alloc[eNB_id][0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
             dci_alloc[eNB_id][0].L          = log2Lcommon;
@@ -674,8 +684,7 @@ int main(int argc, char **argv) {
           }
           // Try UL DCI for 0x1234
           if (numCCE[eNB_id] < nCCE_max) {
-            rv = (n_frames==1) ? 1 : taus();
-            if (((rv&1)==0) && 
+            if ((rv&2) && 
                 ((numCCE[eNB_id]+(1<<log2L)) <= nCCE_max)) {
               memcpy(&dci_alloc[eNB_id][num_dci[eNB_id]].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
               dci_alloc[eNB_id][num_dci[eNB_id]].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
@@ -692,8 +701,7 @@ int main(int argc, char **argv) {
           }
           // Now try DL DCI for 0x1234
           if (numCCE[eNB_id] < nCCE_max) {
-            rv = (n_frames==1) ? 1 : taus();
-            if (((rv&1)==0) && 
+            if ((rv&4) && 
                 ((numCCE[eNB_id]+(1<<log2L)) <= nCCE_max)) {
               if (dlsch_pdu==NULL) {
                 printf("DCI format not supported!\n");
