@@ -61,46 +61,56 @@ unsigned int application=0;
 
 int time_dist(int src, int dst,int application, int state) {
 
-int idt=0;
+  int idt=0;
 
- switch (g_otg->idt_dist[src][dst][application][state]) {
- case  UNIFORM:
-   idt =  ceil((uniform_dist(g_otg->idt_min[src][dst][application][state], g_otg->idt_max[src][dst][application][state])));
-   break;
- case GAUSSIAN:
-   idt =  ceil((gaussian_dist((g_otg->idt_max[src][dst][application][state] + g_otg->idt_min[src][dst][application][state])/2 , g_otg->idt_std_dev[src][dst][application][state])));
-   break;
- case EXPONENTIAL :
-   idt=  ceil((exponential_dist(g_otg->idt_lambda[src][dst][application][state])));
-   break;
- case  POISSON:
-   idt =  ceil((poisson_dist(g_otg->idt_lambda[src][dst][application][state])));
-   break;
- case FIXED :
-   idt = ceil((g_otg->idt_min[src][dst][application][state])); //IDT_TH *
-   break;
- case WEIBULL :
-   idt =ceil(weibull_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
-   break;
- case PARETO :
-   idt =ceil(pareto_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
-   break;
- case GAMMA :
-   idt =ceil(gamma_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
-   break;
- case CAUCHY :
-   idt =ceil(cauchy_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
-   break;
- case LOG_NORMAL :
-   idt =ceil((lognormal_dist((g_otg->idt_max[src][dst][application][state] + g_otg->idt_min[src][dst][application][state])/2 , g_otg->idt_std_dev[src][dst][application][state])));
-   break;
- default :
-   idt =0;
-   LOG_W(OTG, "IDT distribution unknown, set to 0 \n");
- }
- 
- LOG_D(OTG,"IDT :: Inter Departure Time Distribution= %d , val= %d\n", g_otg->idt_dist[src][dst][application][state],idt);
- return idt;
+  switch (g_otg->idt_dist[src][dst][application][state]) {
+	case  UNIFORM:
+	  idt =  ceil((uniform_dist(g_otg->idt_min[src][dst][application][state], g_otg->idt_max[src][dst][application][state])));
+	  break;
+	case GAUSSIAN:
+	  idt =  ceil((gaussian_dist((g_otg->idt_max[src][dst][application][state] + g_otg->idt_min[src][dst][application][state])/2 , g_otg->idt_std_dev[src][dst][application][state])));
+	  break;
+	case EXPONENTIAL :
+	  idt=  ceil((exponential_dist(g_otg->idt_lambda[src][dst][application][state])));
+	  break;
+	case  POISSON:
+	  idt =  ceil((poisson_dist(g_otg->idt_lambda[src][dst][application][state])));
+	  break;
+	case FIXED :
+	  idt = ceil((g_otg->idt_min[src][dst][application][state])); //IDT_TH *
+	  break;
+	case WEIBULL :
+	  idt =ceil(weibull_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
+	  break;
+	case PARETO :
+	  idt =ceil(pareto_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
+	  break;
+	case GAMMA :
+	  idt =ceil(gamma_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
+	  break;
+	case CAUCHY :
+	  idt =ceil(cauchy_dist(g_otg->idt_scale[src][dst][application][state],g_otg->idt_shape[src][dst][application][state] ));
+	  break;
+	case LOG_NORMAL :
+	  idt =ceil((lognormal_dist((g_otg->idt_max[src][dst][application][state] + g_otg->idt_min[src][dst][application][state])/2 , g_otg->idt_std_dev[src][dst][application][state])));
+	  break;
+	case TARMA :
+	  idt=ceil(tarmaCalculateSample(otg_info->tarma_stream[src][dst][application]->tarma_input_samples,
+	    	                     &(otg_info->tarma_stream[src][dst][application]->tarma_idt)));
+	  break;
+	case VIDEO :
+	  idt = ceil((g_otg->idt_min[src][dst][application][state])); //IDT_TH *
+	  break;
+	case BACKGROUND_DIST :
+	  idt = ceil((g_otg->idt_min[src][dst][application][state])); //IDT_TH *
+	  break;
+	default :
+	  idt =0;
+	  LOG_W(OTG, "IDT distribution unknown, set to 0 \n");
+  }
+
+  LOG_D(OTG,"IDT :: Inter Departure Time Distribution= %d , val= %d\n", g_otg->idt_dist[src][dst][application][state],idt);
+  return idt;
 }
 
 
@@ -111,51 +121,62 @@ int size_dist(int src, int dst, int application, int state) {
 
   int size_data=0;
 
-	if (state==PU_STATE)
-		size_data=g_otg->pu_size_pkts[src][dst][application];
+  if (state==PU_STATE)
+	size_data=g_otg->pu_size_pkts[src][dst][application];
 
-	else if (state==ED_STATE)
-		size_data=g_otg->ed_size_pkts[src][dst][application];
-else{
-  		LOG_D(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][application][state]);
-  		switch  (g_otg->size_dist[src][dst][application][state]) {
-  			case UNIFORM : 
-    			size_data = ceil(uniform_dist(g_otg->size_min[src][dst][application][state], g_otg->size_max[src][dst][application][state]));
-    			break;
-  			case GAUSSIAN :
-    			size_data = ceil(gaussian_dist((g_otg->size_max[src][dst][application][state] + g_otg->size_min[src][dst][application][state])/2 , g_otg->size_std_dev[src][dst][application][state]));
-    			break;
-  			case EXPONENTIAL :
-    			size_data= ceil(exponential_dist(g_otg->size_lambda[src][dst][application][state])); //SIZE_COEF * 
-    			break;
-  			case POISSON :
-    			size_data =ceil(poisson_dist(g_otg->size_lambda[src][dst][application][state]));
-    			break;
-  			case FIXED :
-    			size_data=ceil(g_otg->size_min[src][dst][application][state]);
-    			break;
-  			case WEIBULL :
-    			size_data =ceil(weibull_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
-    			break;
-  			case PARETO :
-    			size_data =ceil(pareto_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
-    			break;
-  			case GAMMA :
-    			size_data =ceil(gamma_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
-    			break;
-  			case CAUCHY :
-    			size_data =ceil(cauchy_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
-    			break;
- 				case LOG_NORMAL :
-   				size_data =ceil((lognormal_dist((g_otg->size_max[src][dst][application][state] + g_otg->size_min[src][dst][application][state])/2 , g_otg->size_std_dev[src][dst][application][state])));
-   				break;
-  			default:
-    			LOG_E(OTG, "PKT Size Distribution unknown \n");
+  else if (state==ED_STATE)
+	size_data=g_otg->ed_size_pkts[src][dst][application];
+  else{
+	LOG_D(OTG,"Size Distribution idx= %d \n", g_otg->size_dist[src][dst][application][state]);
+	switch  (g_otg->size_dist[src][dst][application][state]) {
+	  case UNIFORM : 
+		size_data = ceil(uniform_dist(g_otg->size_min[src][dst][application][state], g_otg->size_max[src][dst][application][state]));
+		break;
+	  case GAUSSIAN :
+		size_data = ceil(gaussian_dist((g_otg->size_max[src][dst][application][state] + g_otg->size_min[src][dst][application][state])/2 , g_otg->size_std_dev[src][dst][application][state]));
+		break;
+	  case EXPONENTIAL :
+		size_data= ceil(exponential_dist(g_otg->size_lambda[src][dst][application][state])); //SIZE_COEF * 
+		break;
+	  case POISSON :
+		size_data =ceil(poisson_dist(g_otg->size_lambda[src][dst][application][state]));
+		break;
+	  case FIXED :
+		size_data=ceil(g_otg->size_min[src][dst][application][state]);
+		break;
+	  case WEIBULL :
+		size_data =ceil(weibull_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
+		break;
+	  case PARETO :
+		size_data =ceil(pareto_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
+		break;
+	  case GAMMA :
+		size_data =ceil(gamma_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
+		break;
+	  case CAUCHY :
+		size_data =ceil(cauchy_dist(g_otg->size_scale[src][dst][application][state],g_otg->size_shape[src][dst][application][state] ));
+		break;
+	  case LOG_NORMAL :
+		size_data =ceil((lognormal_dist((g_otg->size_max[src][dst][application][state] + g_otg->size_min[src][dst][application][state])/2 , g_otg->size_std_dev[src][dst][application][state])));
+		break;
+	  case TARMA :
+	      size_data=ceil(tarmaCalculateSample(otg_info->tarma_stream[src][dst][application]->tarma_input_samples,
+	                             &(otg_info->tarma_stream[src][dst][application]->tarma_size)));
+	    break;
+	  case VIDEO :
+	    size_data=ceil(tarmaCalculateVideoSample (otg_info->tarma_video[src][dst][application]));
+	    break;
+	  case BACKGROUND_DIST :
+	  	size_data = ceil(backgroundCalculateSize(otg_info->background_stream[src][dst][application],
+		                                      otg_info->ctime, otg_info->idt[src][dst][application]));
+	  	break;
+	  default:
+		LOG_E(OTG, "PKT Size Distribution unknown \n");
+	}
+
   }
-
-}
   //Case when size overfill min and max values	
-  size_data=adjust_size(size_data);
+  //size_data=adjust_size(size_data);
   LOG_D(OTG,"[src %d] [dst %d] [application %d] [state %d]Packet :: Size=%d  Distribution= %d \n", src, dst, application, state, size_data, g_otg->size_dist[src][dst][application][state]);
   
   return size_data;
@@ -190,7 +211,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   char *payload=NULL;
   char *header=NULL;
 
- LOG_I(OTG,"MAX_TX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
+ //LOG_I(OTG,"MAX_TX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
 
 	set_ctime(ctime);
 	*pkt_size=0;
@@ -203,7 +224,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
 	/* No aggregation for background traffic   */
 	if (otg_info->traffic_type_background[src][dst]==0){
   	header = random_string(otg_info->header_size[src][dst], g_otg->packet_gen_type, HEADER_ALPHABET);
-  	payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
+  	payload = random_string(size, RANDOM_STRING, PAYLOAD_ALPHABET);
   	flag=0xffff;
   	flow=otg_info->flow_id[src][dst];
   	seq_num=otg_info->seq_num[src][dst];
@@ -214,18 +235,18 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   	if (size!=strlen(payload))
   	  LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, 	size, strlen(payload), seq_num, header, payload);
   	else 
-  	  LOG_T(OTG,"[%d][%d] [0x %x] [m2m Aggre %d] [Flow %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, otg_info->m2m_aggregation[src][dst],otg_info->flow_id[src][dst], ctime,  size, strlen(header)+strlen(payload), seq_num,state, header, payload);
+  	  LOG_D(OTG,"[%d][%d] [0x %x] [m2m Aggre %d] [Flow %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, otg_info->m2m_aggregation[src][dst],otg_info->flow_id[src][dst], ctime,  size, strlen(header)+strlen(payload), seq_num,state, header, payload);
   
 	 } 	
 	else {
 		if ((g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
 			otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst];
 		else{
-			otg_info->size_background[src][dst]=PAYLOAD_MAX;
-    	LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
+			//otg_info->size_background[src][dst]=PAYLOAD_MAX;
+    	LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX %d\n");
 	}
  	 header =random_string(header_size_gen_background(src,dst),  g_otg->packet_gen_type, HEADER_ALPHABET);
- 	 payload = random_string(otg_info->size_background[src][dst],  g_otg->packet_gen_type, PAYLOAD_ALPHABET);
+ 	 payload = random_string(otg_info->size_background[src][dst],  RANDOM_STRING, PAYLOAD_ALPHABET);
 	  flag=0xbbbb;
  	 flow=flow_id_background;
  	 seq_num=otg_info->seq_num_background[src][dst];
@@ -273,81 +294,82 @@ void init_packet_gen(int src, int dst){
 
 int check_data_transmit(int src,int dst, int ctime){
 
-	unsigned int size=0;
+  unsigned int size=0;
 
 
-	for (application=0; application<g_otg->application_idx[src][dst]; application++){  
+  for (application=0; application<g_otg->application_idx[src][dst]; application++){  
 	otg_info->gen_pkts=0;
 
 	//LOG_D(OTG,"FLOW_INFO [src %d][dst %d] [IDX %d] [APPLICATION TYPE %d] MAX %d [M2M %d ]\n", src, dst, application , g_otg->application_type[src][dst][application],g_otg->application_idx[src][dst], g_otg->m2m[src][dst][application]);
-
-  // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
-  if ((g_otg->application_type[src][dst][application]==0)&&(g_otg->idt_dist[src][dst][application][PE_STATE]==0)){  
-    //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
-    size+=0;	 
-  }
+	
+	// do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
+	if ((g_otg->application_type[src][dst][application]==0)&&(g_otg->idt_dist[src][dst][application][PE_STATE]==0)){  
+	  //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
+	  size+=0;	 
+	}
 
 	else if ((g_otg->application_type[src][dst][application] >0) || (g_otg->idt_dist[src][dst][application][PE_STATE] > 0)) {
-		state = get_application_state(src, dst, application, ctime);
+	  state = get_application_state(src, dst, application, ctime);
 
-		#ifdef STANDALONE
-  	//pre-config for the standalone
-  	if (ctime<otg_info->ptime[src][dst][application]) //it happends when the emulation was finished
-    	otg_info->ptime[src][dst][application]=ctime;
-  	if (ctime==0)
-    	otg_info->idt[src][dst][application]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
-  	//end pre-config
-		#endif 
-		//LOG_D(OTG,"MY_STATE %d \n", state);
- 
-		if (state!=OFF_STATE) {
+#ifdef STANDALONE
+	  //pre-config for the standalone
+	  if (ctime<otg_info->ptime[src][dst][application]) //it happends when the emulation was finished
+		otg_info->ptime[src][dst][application]=ctime;
+	  if (ctime==0)
+		otg_info->idt[src][dst][application]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
+	  //end pre-config
+#endif 
+	  //LOG_D(OTG,"MY_STATE %d \n", state);
 
-  		if (((state==PU_STATE)||(state==ED_STATE))|| (otg_info->idt[src][dst][application]==0) || (( (ctime-otg_info->ptime[src][dst][application]) >= otg_info->idt[src][dst][application] ) )) {
-  			LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d, Application %d, State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", 
-				src, dst ,application, state, otg_info->idt[src][dst][application], ctime, otg_info->ptime[src][dst][application]); 
-    		otg_info->ptime[src][dst][application]=ctime;	
+	  if (state!=OFF_STATE) {
 
-				if (state==PE_STATE)  //compute the IDT only for PE STATE
-				otg_info->idt[src][dst][application]=time_dist(src, dst, application,state);
-				otg_info->gen_pkts=1;
-				header_size_gen(src,dst, application); 
-				//for(i=1;i<=g_otg->aggregation_level[src][dst][application];i++)
-				if   (g_otg->m2m[src][dst][application]==M2M){
-			  size+=size_dist(src, dst, application,state);
-					if (otg_info->header_size_app[src][dst][application] > otg_info->header_size[src][dst]) /*adapt the header to the application (increment the header if the the new header size is 			largest that the already computed)*/
-						otg_info->header_size[src][dst]+=otg_info->header_size_app[src][dst][application]; 
-						otg_info->m2m_aggregation[src][dst]++;
-						otg_info->flow_id[src][dst]=application;
-						otg_info->traffic_type[src][dst]=M2M;
-				}
-				else{ 
-					/* For the case of non M2M traffic: when more than one flows transmit data in the same time
-				 --> the second flow transmit  (because of non data aggragation)  */
-					size=size_dist(src, dst, application,state); 
-					otg_info->header_size[src][dst]=otg_info->header_size_app[src][dst][application]; 
-					otg_info->flow_id[src][dst]=application;
-					otg_info->traffic_type[src][dst]=g_otg->application_type[src][dst][application];
-				} 
+		if (((state==PU_STATE)||(state==ED_STATE))|| (otg_info->idt[src][dst][application]==0) || (( (ctime-otg_info->ptime[src][dst][application]) >= otg_info->idt[src][dst][application] ) )) {
+		  LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d, Application %d, State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", 
+		        src, dst ,application, state, otg_info->idt[src][dst][application], ctime, otg_info->ptime[src][dst][application]); 
+		  otg_info->ptime[src][dst][application]=ctime;	
+
+		  if (state==PE_STATE)  //compute the IDT only for PE STATE
+			tarmaUpdateInputSample(otg_info->tarma_stream[src][dst][application]);
+		  otg_info->idt[src][dst][application]=time_dist(src, dst, application,state);
+		  otg_info->gen_pkts=1;
+		  header_size_gen(src,dst, application); 
+		  //for(i=1;i<=g_otg->aggregation_level[src][dst][application];i++)
+		  if   (g_otg->m2m[src][dst][application]==M2M){
+			size+=size_dist(src, dst, application,state);
+			if (otg_info->header_size_app[src][dst][application] > otg_info->header_size[src][dst]) /*adapt the header to the application (increment the header if the the new header size is 			largest that the already computed)*/
+			  otg_info->header_size[src][dst]+=otg_info->header_size_app[src][dst][application]; 
+			otg_info->m2m_aggregation[src][dst]++;
+			otg_info->flow_id[src][dst]=application;
+			otg_info->traffic_type[src][dst]=M2M;
+		  }
+		  else{ 
+			/* For the case of non M2M traffic: when more than one flows transmit data in the same time
+			 --> the second flow transmit  (because of non data aggragation)  */
+			size=size_dist(src, dst, application,state); 
+			otg_info->header_size[src][dst]=otg_info->header_size_app[src][dst][application]; 
+			otg_info->flow_id[src][dst]=application;
+			otg_info->traffic_type[src][dst]=g_otg->application_type[src][dst][application];
+		  } 
 
 
-				/* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
-				if (size>=(PAYLOAD_MAX-(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + otg_info->header_size[src][dst]))) {
-					size=PAYLOAD_MAX- (sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + otg_info->header_size[src][dst]);
-    			LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
-				}
+		  /* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
+		  if (size>=(PAYLOAD_MAX-(sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + otg_info->header_size[src][dst]))) {
+			//size=PAYLOAD_MAX- (sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t) + otg_info->header_size[src][dst]);
+			LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
+		  }
 
-  		}  //check if there is background traffic to generate
-  		else if ((otg_info->gen_pkts==0) && (g_otg->background[src][dst][application]==1)&&(background_gen(src, dst, ctime)!=0)){ // the gen_pkts condition could be relaxed here
-    		otg_info->traffic_type_background[src][dst]=1;
-    		LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d] \n", otg_info->traffic_type_background[src][dst], src, dst);
-  		}
-  		
-		}	
+		}  //check if there is background traffic to generate
+		else if ((otg_info->gen_pkts==0) && (g_otg->background[src][dst][application]==1)&&(background_gen(src, dst, ctime)!=0)){ // the gen_pkts condition could be relaxed here
+		  otg_info->traffic_type_background[src][dst]=1;
+		  LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d] \n", otg_info->traffic_type_background[src][dst], src, dst);
+		}
+
+	  }	
 
 	}
-}
+  }
 
-return size;
+  return size;
 }
 
 
@@ -553,7 +575,7 @@ int k;
        g_otg->duration[i][j] = 1000;
 #endif 
        break;
-     case BCBR :
+/*     case BCBR :
        g_otg->trans_proto[i][j][k] = 1;
        g_otg->ip_v[i][j][k] = 1;
        g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;// main param in this mode
@@ -567,7 +589,7 @@ int k;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
-#endif  
+#endif  */
        break;
      case AUTO_PILOT : 
        g_otg->trans_proto[i][j][k] = 2;
@@ -1068,6 +1090,7 @@ case ALARM_TEMPERATURE :
        g_otg->dst_port[i][j]= 303;
        g_otg->duration[i][j] = 1000;
 #endif 
+	   break;
    case OPENARENA_UL : 
        g_otg->trans_proto[i][j][k] = 2;
        g_otg->ip_v[i][j][k] = 1;
@@ -1083,7 +1106,7 @@ case ALARM_TEMPERATURE :
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
 #endif 
-
+break;
    case OPENARENA_DL : 
        g_otg->trans_proto[i][j][k] = 2;
        g_otg->ip_v[i][j][k] = 1;
@@ -1100,7 +1123,159 @@ case ALARM_TEMPERATURE :
        g_otg->dst_port[i][j] = 302;
        g_otg->duration[i][j] = 1000;
 #endif
+ 			break;
+
+	   case OPENARENA_DL_TARMA :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = TARMA;
+		 /*the tarma initialization*/
+		 otg_info->tarma_stream[i][j][k]=tarmaInitStream (0);
+		 tarmaSetupOpenarenaDownlink(otg_info->tarma_stream[i][j][k]);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break; 
+
+
+	 case VIDEO_VBR_10MBPS :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+		 tarmaSetupVideoGop12(otg_info->tarma_video[i][j][k],1);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break;
+
+	case VIDEO_VBR_4MBPS :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+		 tarmaSetupVideoGop12(otg_info->tarma_video[i][j][k],2.5);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break;
+
+	case VIDEO_VBR_2MBPS :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+		 tarmaSetupVideoGop12(otg_info->tarma_video[i][j][k],5);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break;
+
+	case VIDEO_VBR_768KBPS :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+		 tarmaSetupVideoGop12(otg_info->tarma_video[i][j][k],13);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break;
+
+	case VIDEO_VBR_384KBPS :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+		 tarmaSetupVideoGop12(otg_info->tarma_video[i][j][k],26);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break;
+
+	case VIDEO_VBR_192KBPS :
+		 g_otg->trans_proto[i][j][k] = 2;
+		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
+		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
+		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
+		 g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+		 tarmaSetupVideoGop12(otg_info->tarma_video[i][j][k],52);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
+		 break;
+
+	case BACKGROUND_USERS:
+	  g_otg->trans_proto[i][j][k] = 2;
+      g_otg->ip_v[i][j][k] = 1;
+	  g_otg->m2m[i][j][k]=1;
+	  g_otg->idt_dist[i][j][k][PE_STATE] = UNIFORM;
+	  g_otg->idt_lambda[i][j][k][PE_STATE] = 1/40;
+      g_otg->idt_min[i][j][k][PE_STATE] =  40;
+      g_otg->idt_max[i][j][k][PE_STATE] =  80;
+      g_otg->size_dist[i][j][k][PE_STATE] = BACKGROUND_DIST;
+		 /*the background initialization*/
+	  otg_info->background_stream[i][j][k]=backgroundStreamInit(0,2);
+	  break;
+
+	case DUMMY : 
+       g_otg->trans_proto[i][j][k] = 2;
+       g_otg->ip_v[i][j][k] = 1;
+		 g_otg->m2m[i][j][k]=1;
+		 /*the tarma initialization*/
+		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
+       g_otg->idt_dist[i][j][k][PE_STATE] = VIDEO;
+       g_otg->idt_min[i][j][k][PE_STATE] =  40;
+       g_otg->idt_max[i][j][k][PE_STATE] =  40;
+       g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+		 otg_info->tarma_video[i][j][k]->tarma_size.inputWeight[0]=1;
+		 otg_info->tarma_video[i][j][k]->tarma_size.maWeight[0]=0.6;
+		 otg_info->tarma_video[i][j][k]->tarma_size.maWeight[1]=-1.04;
+		 otg_info->tarma_video[i][j][k]->tarma_size.maWeight[2]=0.44;
+		 otg_info->tarma_video[i][j][k]->tarma_size.arWeight[0]=1;
+		 otg_info->tarma_video[i][j][k]->tarma_size.arWeight[1]=-1.971;
+		 otg_info->tarma_video[i][j][k]->tarma_size.arWeight[2]=0.971;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[0]=0;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[1]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[2]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[3]=1;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[4]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[5]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[6]=1;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[7]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[8]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[9]=1;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[10]=2;
+		 otg_info->tarma_video[i][j][k]->tarmaVideoGopStructure[11]=2;
+		 otg_info->tarma_video[i][j][k]->polyWeightFrame[0][0]=300;
+		 otg_info->tarma_video[i][j][k]->polyWeightFrame[0][1]=30;
+		 otg_info->tarma_video[i][j][k]->polyWeightFrame[1][0]=200;
+		 otg_info->tarma_video[i][j][k]->polyWeightFrame[1][1]=20;
+		 otg_info->tarma_video[i][j][k]->polyWeightFrame[2][0]=100;
+		 otg_info->tarma_video[i][j][k]->polyWeightFrame[2][1]=10;
+		   tarmaPrintVideoInit(otg_info->tarma_video[i][j][k]);
+		 LOG_I(OTG,"OTG_CONFIG OPENARENA_DL_TARMA, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][PE_STATE]);
  			break; 
+		 
      case VOIP_G711 :  /*http://www.computerweekly.com/feature/VoIP-bandwidth-fundamentals */
 											/* Voice bit rate= 64 Kbps |	Sample time= 20 msec |	Voice payload=160 bytes */
        g_otg->trans_proto[i][j][k] = 1;
@@ -1195,44 +1370,44 @@ case ALARM_TEMPERATURE :
 
 int background_gen(int src, int dst, int ctime){ 
 
-	/*check if it is time to transmit the background traffic
-	- we have different distributions for packet size and idt for the UL and DL */
+  /*check if it is time to transmit the background traffic
+   - we have different distributions for packet size and idt for the UL and DL */
   if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) ||  
       (otg_info->idt_background[src][dst]==0)){
-    LOG_D(OTG,"[SRC %d][DST %d] 	:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
-    /* Distinguish between the UL and DL case*/
-    if (src<NB_eNB_INST) // DL case
-      otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85)); /*lognormal distribution for DL background packet*/
-    else //UL case
-      otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); /*lognormal distribution for DL background packet*/
-    
-    // adjust the packet size if needed 
-    if (otg_info->size_background[src][dst]>1400)
-      otg_info->size_background[src][dst]=1400;
-    if (otg_info->size_background[src][dst]<=0)
-    	otg_info->size_background[src][dst]=10;
+		LOG_D(OTG,"[SRC %d][DST %d] 	:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
+		/* Distinguish between the UL and DL case*/
+		if (src<NB_eNB_INST) // DL case
+		  otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85)); /*lognormal distribution for DL background packet*/
+		else //UL case
+		  otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); /*lognormal distribution for DL background packet*/
 
-   
-/* Compute the corresponding IDT*/
+		// adjust the packet size if needed 
+		if (otg_info->size_background[src][dst]>1400)
+		  otg_info->size_background[src][dst]=1400;
+		if (otg_info->size_background[src][dst]<=10)
+		  otg_info->size_background[src][dst]=10;
 
-	/* Eq. (7) from "Users in Cells: a Data Traffic Analysis (Markus Laner, Philipp Svoboda, Stefan Schwarz, and Markus Rupp)" 
-	Measured traffic consists of a mixture of many different types (e.g., web, video streaming, file download), gives an intuition for the encountered heavy-tails
-	of. Most sessions are short with low data-volume, consisting of small downloads (e.g., e-mail, TCP-acknowledges), whereas some few sessions last very long and 			require high throughput (e.g., VoIP, video streaming, file-download). */
 
-    otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
+		/* Compute the corresponding IDT*/
+
+		/* Eq. (7) from "Users in Cells: a Data Traffic Analysis (Markus Laner, Philipp Svoboda, Stefan Schwarz, and Markus Rupp)" 
+		  Measured traffic consists of a mixture of many different types (e.g., web, video streaming, file download), gives an intuition for the encountered heavy-tails
+			of. Most sessions are short with low data-volume, consisting of small downloads (e.g., e-mail, TCP-acknowledges), whereas some few sessions last very long and 			require high throughput (e.g., VoIP, video streaming, file-download). */
+
+		otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
 		/*if(otg_info->idt_background[src][dst]==0)
-			otg_info->idt_background[src][dst]=10;*/
-    otg_info->ptime_background=ctime;	
+		otg_info->idt_background[src][dst]=10;*/
+		otg_info->ptime_background=ctime;	
 
- LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
+		LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
 
-    return 1;
-  }
+		return 1;
+	  }
   else {
-    //LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
-    return 0;
+	//LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
+	return 0;
   }
-  
+
 }
 
 
@@ -1404,64 +1579,65 @@ Tms = − 0, 456 ln (1 − x3 ) //Tms (length of mutual silence)
 *****************************************************************************************************/
 
 	if (otg_info->silence_time[src][dst][application]==0){
-  	//otg_info->voip_transition_prob[src][dst][application]=uniform_dist(0,1);
-    otg_info->voip_state[src][dst][application]=SILENCE;
-    LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: SILENCE INIT \n", src, dst, application);
-    otg_info->start_voip_silence[src][dst][application]=ctime /*ctime*/;
+		//otg_info->voip_transition_prob[src][dst][application]=uniform_dist(0,1);
+		otg_info->voip_state[src][dst][application]=SILENCE;
+		LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: SILENCE INIT \n", src, dst, application);
+		otg_info->start_voip_silence[src][dst][application]=ctime /*ctime*/;
 		otg_info->c_holding_time_talk[src][dst][application]=0;
 		otg_info->c_holding_time_silence[src][dst][application]=0;
 		otg_info->silence_time[src][dst][application]=ceil((-0.854*log(1-(uniform_dist(0,1))))*1000) + ceil((-0.226*log(1-(uniform_dist(0,1))))*1000);
 		otg_info->simple_talk_time[src][dst][application]=ceil((-0.356*log(1-(uniform_dist(0,1))))*1000) ;
 
-  }
+	}
 
 
 	switch (otg_info->voip_state[src][dst][application]){
 
-	case SILENCE:
+		case SILENCE:
 
-		if (ctime>otg_info->start_voip_silence[src][dst][application]){
-			if (ctime>otg_info->start_voip_silence[src][dst][application])
- 				otg_info->c_holding_time_silence[src][dst][application]= ctime - otg_info->start_voip_silence[src][dst][application];
-    	LOG_D(OTG,"[%d][%d][Appli id %d] VOIP STATE:: SILENCE %d (ctime=%d, start=%d)\n", src, dst,application, 
-			otg_info->c_holding_time_silence[src][dst][application], ctime, otg_info->start_voip_silence[src][dst][application]);
-    }
-
-		if (otg_info->c_holding_time_silence[src][dst][application]>=otg_info->silence_time[src][dst][application]){  
-			otg_info->voip_state[src][dst][application]=SIMPLE_TALK;
-    	LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE :: SILENCE-->TALK  %d  (ctime=%d, start=%d )\n", src, dst,application , 
-			otg_info->c_holding_time_silence[src][dst][application], ctime, otg_info->start_voip_silence[src][dst][application]);
-			otg_info->start_voip_talk[src][dst][application]=ctime;
-			otg_info->c_holding_time_talk[src][dst][application]=0;
-			otg_info->simple_talk_time[src][dst][application]=ceil((-0.854*log(1-(uniform_dist(0,1))))*1000);
-  	}else{
+			if (ctime>otg_info->start_voip_silence[src][dst][application]){
 				if (ctime>otg_info->start_voip_silence[src][dst][application])
- 					otg_info->c_holding_time_silence[src][dst][application]= ctime - otg_info->start_voip_silence[src][dst][application];
-    	LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: SILENCE [timer:%d] \n", src, dst,application, otg_info->c_holding_time_silence[src][dst][application]);
-  	}
-  break;
-	case SIMPLE_TALK:
-		if (otg_info->c_holding_time_talk[src][dst][application]>=otg_info->simple_talk_time[src][dst][application]){  
-			otg_info->voip_state[src][dst][application]=SILENCE;
-    	LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE:: TALK-->SILENCE  %d  (ctime=%d, start=%d )\n", src, dst,application ,
-		  otg_info->c_holding_time_talk[src][dst][application], ctime, otg_info->start_voip_talk[src][dst][application]);
-			otg_info->start_voip_silence[src][dst][application]=ctime;
-			otg_info->c_holding_time_silence[src][dst][application]=0;
-			otg_info->silence_time[src][dst][application]=ceil((-0.456*log(1-(uniform_dist(0,1))))*1000)+ceil((-0.226*log(1-(uniform_dist(0,1))))*1000);
-  	}else{
+					otg_info->c_holding_time_silence[src][dst][application]= ctime - otg_info->start_voip_silence[src][dst][application];
+				LOG_D(OTG,"[%d][%d][Appli id %d] VOIP STATE:: SILENCE %d (ctime=%d, start=%d)\n", src, dst,application, 
+				      otg_info->c_holding_time_silence[src][dst][application], ctime, otg_info->start_voip_silence[src][dst][application]);
+			}
+
+			if (otg_info->c_holding_time_silence[src][dst][application]>=otg_info->silence_time[src][dst][application]){  
+				otg_info->voip_state[src][dst][application]=SIMPLE_TALK;
+				LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE :: SILENCE-->TALK  %d  (ctime=%d, start=%d )\n", src, dst,application , 
+				      otg_info->c_holding_time_silence[src][dst][application], ctime, otg_info->start_voip_silence[src][dst][application]);
+				otg_info->start_voip_talk[src][dst][application]=ctime;
+				otg_info->c_holding_time_talk[src][dst][application]=0;
+				otg_info->simple_talk_time[src][dst][application]=ceil((-0.854*log(1-(uniform_dist(0,1))))*1000);
+			}else{
+				if (ctime>otg_info->start_voip_silence[src][dst][application])
+					otg_info->c_holding_time_silence[src][dst][application]= ctime - otg_info->start_voip_silence[src][dst][application];
+				LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: SILENCE [timer:%d] \n", src, dst,application, otg_info->c_holding_time_silence[src][dst][application]);
+			}
+			break;
+		case SIMPLE_TALK:
+			if (otg_info->c_holding_time_talk[src][dst][application]>=otg_info->simple_talk_time[src][dst][application]){  
+				otg_info->voip_state[src][dst][application]=SILENCE;
+				LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE:: TALK-->SILENCE  %d  (ctime=%d, start=%d )\n", src, dst,application ,
+				      otg_info->c_holding_time_talk[src][dst][application], ctime, otg_info->start_voip_talk[src][dst][application]);
+				otg_info->start_voip_silence[src][dst][application]=ctime;
+				otg_info->c_holding_time_silence[src][dst][application]=0;
+				otg_info->silence_time[src][dst][application]=ceil((-0.456*log(1-(uniform_dist(0,1))))*1000)+ceil((-0.226*log(1-(uniform_dist(0,1))))*1000);
+			}else{
 				if (ctime>otg_info->start_voip_talk[src][dst][application])
- 					otg_info->c_holding_time_talk[src][dst][application]= ctime - otg_info->start_voip_talk[src][dst][application];
-     		LOG_I(OTG,"[%d][%d][Appli id %d] VOIP STATE:: TALK [timer:%d]\n", src, dst,application, otg_info->c_holding_time_talk[src][dst][application]);
+					otg_info->c_holding_time_talk[src][dst][application]= ctime - otg_info->start_voip_talk[src][dst][application];
+				LOG_I(OTG,"[%d][%d][Appli id %d] VOIP STATE:: TALK [timer:%d]\n", src, dst,application, otg_info->c_holding_time_talk[src][dst][application]);
 				LOG_I(OTG, "test_talk [ctime %d] [start talk %d] [%d] \n",ctime, otg_info->start_voip_talk[src][dst][application], otg_info->c_holding_time_talk[src][dst][application] );
-  		}
-	break;
-	default:
-      LOG_W(OTG,"Unknown VOIP state(%d) \n", otg_info->voip_state[src][dst][application]);
-      otg_info->voip_state[src][dst][application]= SILENCE; // switch to default state
-      
-      break;
-}
+			}
+			break;
+		default:
+			LOG_W(OTG,"Unknown VOIP state(%d) \n", otg_info->voip_state[src][dst][application]);
+			otg_info->voip_state[src][dst][application]= SILENCE; // switch to default state
+
+			break;
+	}
 
 
 }
+
 

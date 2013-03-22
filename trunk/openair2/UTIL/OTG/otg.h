@@ -49,6 +49,7 @@
 
 
 #include "otg_defs.h"
+#include "otg_models.h"
 #include "otg_config.h"
 
 
