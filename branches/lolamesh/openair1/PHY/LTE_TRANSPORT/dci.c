@@ -1706,7 +1706,7 @@ s32 rx_pdcch_lola(PHY_VARS_UE *phy_vars_ue,
                   MIMO_mode_t mimo_mode) {
 
   u8 log2_maxh,aatx,aarx;
-  u8 log2_maxh_i;
+  //u8 log2_maxh_i;
   s32 avgs,s;
   u8 n_pdcch_symbols;
   u8 n_pdcch_symbols_i;
@@ -1793,6 +1793,7 @@ s32 rx_pdcch_lola(PHY_VARS_UE *phy_vars_ue,
   LOG_D(PHY, "[UE %d] log2_maxh = %d (%d,%d)\n", phy_vars_ue->Mod_id, log2_maxh, avgP[0], avgs);
 #endif
 
+  /*
   if(eNB_id_i >= 0) {
     pdcch_channel_level(pdcch_vars_i->dl_ch_estimates_ext, frame_parms_i, avgP, frame_parms->N_RB_DL);
     avgs = 0;
@@ -1804,6 +1805,7 @@ s32 rx_pdcch_lola(PHY_VARS_UE *phy_vars_ue,
     LOG_D(PHY, "[UE %d] log2_maxh_i = %d (%d,%d)\n", phy_vars_ue->Mod_id, log2_maxh_i, avgP[0], avgs);
 #endif
   }
+  */
 
   for(s = 0; s < n_pdcch_symbols; s++) {
     pdcch_channel_compensation(pdcch_vars->rxdataF_ext, pdcch_vars->dl_ch_estimates_ext,
@@ -1813,7 +1815,7 @@ s32 rx_pdcch_lola(PHY_VARS_UE *phy_vars_ue,
     if(s < n_pdcch_symbols_i) {
       pdcch_channel_compensation(pdcch_vars_i->rxdataF_ext, pdcch_vars_i->dl_ch_estimates_ext,
           pdcch_vars_i->rxdataF_comp, (frame_parms_i->nb_antennas_tx_eNB > 1) ? pdcch_vars_i->rho : NULL,
-          frame_parms_i, s, log2_maxh_i);
+          frame_parms_i, s, log2_maxh);
 
       pdcch_dual_stream_correlation(frame_parms, s, pdcch_vars->dl_ch_estimates_ext,
           pdcch_vars_i->dl_ch_estimates_ext, pdcch_vars->dl_ch_rho_ext, log2_maxh);
