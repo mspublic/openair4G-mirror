@@ -837,6 +837,7 @@ int main(int argc, char **argv) {
         }
 	  
         for(eNB_id = 0; eNB_id < n_enb; eNB_id++) {
+          tx_lev[eNB_id] = 0;
           for (aa=0; aa<PHY_vars_eNB[eNB_id]->lte_frame_parms.nb_antennas_tx; aa++) {
             if (frame_parms->Ncp == 1) 
               PHY_ofdm_mod(&PHY_vars_eNB[eNB_id]->lte_eNB_common_vars.txdataF[0][aa][subframe*nsymb*PHY_vars_eNB[eNB_id]->lte_frame_parms.ofdm_symbol_size],        // input,
