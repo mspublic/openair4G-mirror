@@ -109,20 +109,42 @@ int get_ctime(void){
 
 
 void free_otg(){
-int i; 
-for (i=0; i<g_otg->num_nodes; i++){
+  int i,j,k; 
+  
+  for (i=0; i<g_otg->num_nodes; i++){
 	if (NULL != g_otg->dst_ip[i]){
-		free(g_otg->dst_ip[i]);
-		}
-}
+	  free(g_otg->dst_ip[i]);
+	}
+  }
 
-if (NULL !=g_otg){
+  if (NULL !=g_otg){
 	free(g_otg);
-}
+  }
 
-if (NULL !=otg_info){
+  printf("OTG DEBUG TARMA: free_otg() called \n");
+  for(i=0; i<NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++){
+	for(j=0; j<NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; j++){
+	  for(k=0; k<MAX_NUM_APPLICATION; k++){
+		if(otg_info->tarma_stream[i][j][k]){
+		  free(otg_info->tarma_stream[i][j][k]);
+		  printf("OTG DEBUG TARMA: freed tarma_stream[%d][%d][%d]\n",i,j,k);
+		}
+		if(otg_info->tarma_video[i][j][k]){
+		  free(otg_info->tarma_video[i][j][k]);
+		  printf("OTG DEBUG TARMA: freed tarma_video[%d][%d][%d]\n",i,j,k);
+		}
+		if(otg_info->background_stream[i][j][k]){
+		  free(otg_info->background_stream[i][j][k]);
+		  printf("OTG DEBUG TARMA: freed background_stream[%d][%d][%d]\n",i,j,k);
+		}
+	  }
+	}
+  }
+
+  if (NULL !=otg_info){
 	free(otg_info);
-}
+  }
+
 
 
 }

@@ -279,8 +279,26 @@ float owd_const_capillary(){
 
 
 float owd_const_mobile_core(){
+  double delay;
+  /* this is a delay model for a loaded GGSN according to 
+	 "M. Laner, P. Svoboda and M. Rupp, Latency Analysis of 3G Network Components, EW'12, Poznan, Poland, 2012", table 2, page 6.*/
+  if(uniform_rng ()<0.3){
+	delay=uniform_dist (0.4,1.2);
+  }else{
+	/* in this case, according to the fit in the paper,
+	     the delay is generalized pareto: GP(k=0.75,s=0.55,t=1.2)
+	     using inverse cdf method we have CDF(x)=1-(k(x-t)/s+1)^(-1/k), 
+		 x=CDF^(-1)(u)=t+s/k*((1-u)^(-k)-1) , hence when u~uniform, than x~GP(k,s,t)   */
+	double k,s,t,u;
+	k=0.75;
+	s=0.55;
+	t=1.2;
+	u=uniform_rng();
+	delay= t + s/k*(pow(1-u,-k)-1);
+  }
+  return delay;
   /*return ( uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) + uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY)); */
-	return ((double)MIN_U_PLANE_CORE_IP_ACCESS_DELAY+ (double)MAX_U_PLANE_CORE_IP_ACCESS_DELAY + (double)MIN_FW_PROXY_DELAY + (double)MAX_FW_PROXY_DELAY)/2;
+/*	return ((double)MIN_U_PLANE_CORE_IP_ACCESS_DELAY+ (double)MAX_U_PLANE_CORE_IP_ACCESS_DELAY + (double)MIN_FW_PROXY_DELAY + (double)MAX_FW_PROXY_DELAY)/2;*/
 }
 
 float owd_const_IP_backbone(){
