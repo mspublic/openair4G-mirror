@@ -375,11 +375,14 @@ typedef struct{
 			    MeasGapConfig_t *measGapConfig, 
 			    TDD_Config_t *tdd_Config,
 			    u8 *SIwindowsize,
-			    u16 *SIperiod
+			    u16 *SIperiod,
+			    ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+			    long *ul_Bandwidth,
+			    AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+			    struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList
 #ifdef Rel10
 			    ,
 			    u8 MBMS_Flag,
-			    struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
 			    MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
 #endif
 			    );

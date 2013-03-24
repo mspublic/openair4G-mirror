@@ -756,6 +756,56 @@ void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index) {
 
 }
 
+
+int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(u8 Mod_id, u32 frame, u16 UE_index, u32 dl_CarrierFreq_r10) {
+
+  u8 size;
+  u8 buffer[100];
+  u8 sCellIndexToAdd = 0; //one SCell so far
+
+  if (eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]) {
+    eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]->cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
+  }
+  else {
+    LOG_E(RRC,"Scell not configured!\n");
+    return(-1);
+  }
+
+  size = do_RRCConnectionReconfiguration(Mod_id,
+                                         buffer,
+                                         UE_index,
+                                         0,//Transaction_id,
+                                         (SRB_ToAddModList_t*)NULL,
+                                         (DRB_ToAddModList_t*)NULL,
+                                         (DRB_ToReleaseList_t*)NULL,
+                                         (struct SPS_Config*)NULL,
+                                         (struct PhysicalConfigDedicated*)NULL,
+#ifdef Rel10
+					 eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd],
+#endif
+                                         (MeasObjectToAddModList_t*)NULL,
+                                         (ReportConfigToAddModList_t*)NULL,
+                                         (QuantityConfig_t*)NULL, 
+                                         (MeasIdToAddModList_t*)NULL,
+                                         (MAC_MainConfig_t*)NULL,
+                                         (MeasGapConfig_t*)NULL,
+                                         (uint8_t*)NULL,
+                                         0); 
+
+  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
+        Mod_id,frame, size, UE_index);
+
+  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
+        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id, frame, 1, (UE_index * MAX_NUM_RB) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
+
+  return(0);
+}
+
+
+
+
 void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_index, u8 *nas_pdu, u32 nas_length) {
 
 
@@ -793,6 +843,11 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
   long * sr_ProhibitTimer_r9;
   struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
   uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(Mod_id, UE_index, 1);
+  SCellToAddModList_r10_t *sCellToAddList;
+  SCellToAddMod_r10_t *sCell1_config_ptr;
+  struct RadioResourceConfigDedicatedSCell_r10 *radioResourceConfigDedicatedSCell;
+  struct RadioResourceConfigCommonSCell_r10 *radioResourceConfigCommonSCell;
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
 #endif
 
   long *logicalchannelgroup,*logicalchannelgroup_drb;
@@ -1130,6 +1185,99 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 
   */
 
+#ifdef Rel10
+  if (sCellIndexToAdd != (uint8_t)MAX_U8) {
+
+ 	  sCell1_config_ptr = CALLOC(1,sizeof(SCellToAddMod_r10_t));
+	  eNB_rrc_inst[Mod_id].sCell_config[UE_index][0] = sCell1_config_ptr;
+
+	  //Check all initialized values
+	  sCell1_config_ptr->sCellIndex_r10 = 1;
+	  sCell1_config_ptr->cellIdentification_r10 = CALLOC(1,sizeof(*sCell1_config_ptr->cellIdentification_r10));
+	  sCell1_config_ptr->cellIdentification_r10->physCellId_r10 = 1;
+	  sCell1_config_ptr->cellIdentification_r10->dl_CarrierFreq_r10 = 36126;
+
+	  radioResourceConfigDedicatedSCell = CALLOC(1,sizeof(*radioResourceConfigDedicatedSCell));
+
+	  radioResourceConfigCommonSCell = CALLOC(1,sizeof(*radioResourceConfigCommonSCell));
+
+	  physicalConfigDedicatedSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10));
+
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10));
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10));
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->transmissionMode_r10 = 1;
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->codebookSubsetRestriction_r10 = NULL;
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->ue_TransmitAntennaSelection.present = AntennaInfoDedicated_r10__ue_TransmitAntennaSelection_PR_setup;
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->antennaInfo_r10->ue_TransmitAntennaSelection.choice.setup = AntennaInfoDedicated_r10__ue_TransmitAntennaSelection__setup_closedLoop;
+
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->crossCarrierSchedulingConfig_r10 = NULL; //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->crossCarrierSchedulingConfig_r10));
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->pdsch_ConfigDedicated_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->pdsch_ConfigDedicated_r10));
+	  physicalConfigDedicatedSCell_r10->nonUL_Configuration_r10->pdsch_ConfigDedicated_r10->p_a = PDSCH_ConfigDedicated__p_a_dB0;
+
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_r10 = NULL, //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_v1020 = NULL; //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicated_v1020));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicatedAperiodic_r10 = NULL; //CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->soundingRS_UL_ConfigDedicatedAperiodic_r10));
+
+	  //pusch_ConfigDedicatedSCell_r10
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->p0_UE_PUSCH_r10 = 0; // 0 dB
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->deltaMCS_Enabled_r10 = \
+	    UplinkPowerControlDedicated__deltaMCS_Enabled_en1;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->accumulationEnabled_r10 = 1; // FALSE
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pSRS_Offset_r10 =  0; // 0 dB
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pSRS_OffsetAp_r10 = NULL;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->filterCoefficient_r10 = \
+	    CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->filterCoefficient_r10));
+	  *(physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->filterCoefficient_r10) = \
+	    FilterCoefficient_fc4; //4db
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->uplinkPowerControlDedicatedSCell_r10->pathlossReferenceLinking_r10 = 0; // Verify this value!
+
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10 = \
+	    CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->transmissionModeUL_r10 = \
+	    CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->transmissionModeUL_r10));
+	  *(physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->transmissionModeUL_r10) = \
+	    AntennaInfoUL_r10__transmissionModeUL_r10_tm1;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->fourAntennaPortActivated_r10 = \
+	    CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->fourAntennaPortActivated_r10));
+	  *(physicalConfigDedicatedSCell_r10->ul_Configuration_r10->antennaInfoUL_r10->fourAntennaPortActivated_r10) = \
+	    AntennaInfoUL_r10__fourAntennaPortActivated_r10_setup;
+
+	  //PUSCH_ConfigDedicatedSCell_r10
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->groupHoppingDisabled_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->groupHoppingDisabled_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->dmrs_WithOCC_Activated_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->pusch_ConfigDedicatedSCell_r10->dmrs_WithOCC_Activated_r10));
+
+	  //cqi_ReportModeAperiodic_r10
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10));
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportModeAperiodic_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportModeAperiodic_r10));
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportModeAperiodic_r10 = NULL;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->nomPDSCH_RS_EPRE_Offset_r10 = NULL;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10 = NULL;
+	  physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10 = NULL;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10));
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10->present = CQI_ReportPeriodic_r10__setup__cqi_FormatIndicatorPeriodic_r10_PR_widebandCQI_r10;
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->cqi_ReportPeriodicSCell_r10->choice.widebandCQI_r10.csi_ReportMode_r10 = NULL; // calloc if reqd
+	  //physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10 = CALLOC(1,sizeof(*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10));
+	  //*physicalConfigDedicatedSCell_r10->ul_Configuration_r10->cqi_ReportConfigSCell_r10->pmi_RI_Report_r10 = init_val;
+
+	  radioResourceConfigDedicatedSCell->physicalConfigDedicatedSCell_r10 = physicalConfigDedicatedSCell_r10;
+	  sCell1_config_ptr->radioResourceConfigDedicatedSCell_r10 = radioResourceConfigDedicatedSCell;
+	  sCell1_config_ptr->radioResourceConfigCommonSCell_r10 = radioResourceConfigCommonSCell; //Check this!!
+
+	  // FK: this is now in asn1_msg.c 
+	  /*
+          sCellToAddList = CALLOC(1,sizeof(*sCellToAddList));
+	  ASN_SEQUENCE_ADD(&sCellToAddList->list,sCell1_config_ptr);
+	  */
+	  LOG_W(RRC,"Adding SCell configuration in RRC Reconfig Req with index %d ...\n",sCell1_config_ptr->sCellIndex_r10);
+  }
+  else {
+	  msg("RRCConnectionReconfiguration SCell addition failed: Not enough SCell resources");
+  }
+#endif
+
 
   size = do_RRCConnectionReconfiguration(Mod_id,
                                          buffer,
@@ -1141,7 +1289,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
                                          NULL, //*sps_Config,
                                          physicalConfigDedicated[UE_index],
 #ifdef Rel10
-					 (sCellIndexToAdd != (uint8_t)MAX_U8 ? &eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd] : NULL),
+					 eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd],
 #endif
                                          MeasObj_list,
                                          ReportConfig_list,

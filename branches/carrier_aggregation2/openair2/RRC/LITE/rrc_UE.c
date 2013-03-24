@@ -597,14 +597,28 @@ void	rrc_ue_process_sCellAdd(u8 Mod_id,u8 eNB_index,SCellToAddMod_r10_t *sCellTo
 			UE_rrc_inst[Mod_id].sCell_config[eNB_index][0]->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10 = \
 							CALLOC(1,sizeof(struct PhysicalConfigDedicatedSCell_r10));
 
-			/*
-			  memcpy((char*)UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],(char*)sCellToAdd,
-			  sizeof(SCellToAddMod_r10_t));
-			*/
+			//This is probably not ok, since we are copying only pointers
 			memcpy(UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],sCellToAdd,sizeof(SCellToAddMod_r10_t));
 
 			// call rrc_mac_config_req with SCellToAdd here
-
+			rrc_mac_config_req(Mod_id,0,0,eNB_index,
+					   (RadioResourceConfigCommonSIB_t *)NULL,
+					   (struct PhysicalConfigDedicated *) NULL,
+					   sCellToAdd,
+					   (MeasObjectToAddMod_t **)NULL,
+					   (MAC_MainConfig_t *) NULL,
+					   0,
+					   (LogicalChannelConfig_t *) NULL,
+					   (MeasGapConfig_t *)NULL,
+					   (TDD_Config_t*)NULL,
+					   (u8 *)NULL,
+					   (u16 *)NULL,
+					   (ARFCN_ValueEUTRA_t *) NULL,
+					   (long*)NULL,
+					   (AdditionalSpectrumEmission_t *) NULL,
+					   (struct MBSFN_SubframeConfigList *)NULL,
+					   0,
+					   (MBSFN_AreaInfoList_r9_t *)NULL);
 			//UE_rrc_inst[Mod_id].sCell_config[eNB_index][0] = sCellToAdd;
 		}
 		//UE_rrc_inst[Mod_id].sCell_config[eNB_index][locate_sCell_index(Mod_id, eNB_index, sCellToAdd->sCellIndex_r10)] = sCellToAdd;
@@ -801,8 +815,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			   (RadioResourceConfigCommonSIB_t *)NULL,
 			   UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 #ifdef Rel10
-			   // why is this here and not in SCellToAddMod???
-			   UE_rrc_inst[Mod_id].sCell_config[eNB_index][0],
+			   (SCellToAddMod_r10_t *) NULL,
 #endif
 			   (MeasObjectToAddMod_t **)NULL,
 			   UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -1069,7 +1082,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
-    if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_CONNECTED) {
+    if (UE_rrc_inst[Mod_id].Info[eNB_index].State >= RRC_CONNECTED) {
 
       switch (dl_dcch_msg->message.choice.c1.present) {
 
