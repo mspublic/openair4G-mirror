@@ -119,7 +119,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
                                         struct SPS_Config                 *sps_Config,
                                         struct PhysicalConfigDedicated    *physicalConfigDedicated,
 #ifdef Rel10
-					SCellToAddMod_r10_t               **sCell_config,
+					SCellToAddMod_r10_t               *sCell_config,
 #endif
                                         MeasObjectToAddModList_t          *MeasObj_list,
                                         ReportConfigToAddModList_t        *ReportConfig_list,

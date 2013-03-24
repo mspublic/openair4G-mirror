@@ -934,6 +934,10 @@ for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sinr_dB=-20;
   }
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
+
+    if (frame==50)
+      rrc_eNB_generate_RRCConnectionReconfiguration_SCell(PHY_vars_eNB_g[0][0]->Mod_id, frame, 0, 36026);
+
     /*
     // Handling the cooperation Flag
     if (cooperation_flag == 2)

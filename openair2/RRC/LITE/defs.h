@@ -481,6 +481,7 @@ void rrc_eNB_generate_UESecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
 //void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index);
 //void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityModeCommand_t *securityModeCommand,uint8_t eNB_index);
 
+int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(u8 Mod_id, u32 frame, u16 UE_index, u32 dl_CarrierFreq_r10);
 
 #endif
 

@@ -1411,7 +1411,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
                                         struct SPS_Config                 *sps_Config,
                                         struct PhysicalConfigDedicated    *physicalConfigDedicated,
 #ifdef Rel10
-					SCellToAddMod_r10_t               **sCell_config,
+					SCellToAddMod_r10_t               *sCell_config,
 #endif
                                         MeasObjectToAddModList_t          *MeasObj_list,
                                         ReportConfigToAddModList_t        *ReportConfig_list,
@@ -1468,7 +1468,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   DL_DCCH_Message_t dl_dcch_msg;
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
   // Sandip: reactivate this code if you want to init using the nested pointer method
-
+  // FK: moved this code one level up
+  /*
 #ifdef Rel10
   SCellToAddModList_r10_t *sCellToAddList;
   sCellToAddList = CALLOC(1,sizeof(*sCellToAddList));
@@ -1564,6 +1565,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 	  msg("RRCConnectionReconfiguration SCell addition failed: Not enough SCell resources");
   }
 #endif
+*/
 
   memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
@@ -1577,7 +1579,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->lateNonCriticalExtension = NULL;
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension = CALLOC(1,sizeof(RRCConnectionReconfiguration_v920_IEs_t));
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension = CALLOC(1,sizeof(RRCConnectionReconfiguration_v1020_IEs_t));
-	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = sCellToAddList;
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = CALLOC(1,sizeof(SCellToAddModList_r10_t));
+	  ASN_SEQUENCE_ADD(&rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list,sCell_config);
+
 	  /*
 	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = CALLOC(1,sizeof(SCellToAddModList_r10_t));
 	  memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10, (void *)sCellToAddList, sizeof(SCellToAddModList_r10_t));
@@ -1978,7 +1982,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   FREEMEM(SRB_list);
   FREEMEM(DRB_list);
 #ifdef Rel10
-  FREEMEM(sCellToAddList);
+  //FREEMEM(sCellToAddList); //FIXME
 #endif
   return((enc_rval.encoded+7)/8);
 }
