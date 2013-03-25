@@ -79,7 +79,7 @@ try:
         pw = getpass.getpass() 
     else :
         print "username: " + user 
-        print "password: " + pw 
+        #print "password: " + pw 
     print "prompt:   " + prompt
     
     oai.connect(user,pw,prompt)
