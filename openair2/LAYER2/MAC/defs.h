@@ -109,6 +109,7 @@
 #define printk printf
 #endif //USER_MODE
 
+#define MAX_NUM_LCGID 4
 #define MAX_NUM_LCID 11
 #define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
@@ -118,6 +119,16 @@
 #define BSR_TABLE_SIZE 64
 // The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1
 #define PHR_MAPPING_OFFSET 23  // if ( x>= -23 ) val = floor (x + 23) 
+
+#define LCGID0 0
+#define LCGID1 1
+#define LCGID2 2
+#define LCGID3 3
+
+
+#define LCID_EMPTY 0
+#define LCID_NOT_EMPTY 1
+
 
 typedef enum {
   CONNECTION_OK=0,
@@ -464,16 +475,18 @@ typedef struct{
 }eNB_MAC_INST;
 
 typedef struct {
-  /// buffer status for each lcid
-  u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
+  /// buffer status for each lcgid
+  u8  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcid
-  u16  BSR_bytes[MAX_NUM_LCID];
-  /// short bsr lcid
-  u8  BSR_short_lcid;
+  u16  BSR_bytes[MAX_NUM_LCGID];
+  /// buffer status for each lcid
+  u8  LCID_status[MAX_NUM_LCID];
   /// SR pending as defined in 36.321
   u8  SR_pending;
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
+  /// logical channel group ide for each LCID
+  u8  LCGID[MAX_NUM_LCID];
   /// retxBSR-Timer, default value is sf2560
   u16 retxBSR_Timer;
   /// retxBSR_SF, number of subframe before triggering a regular BSR 
@@ -1019,6 +1032,12 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 */
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
+/*! \fn  int get_bsr_lcgid (u8 Mod_id);
+\brief determine the lcgid for the bsr
+\param[in] Mod_id instance of the UE
+\param[out] lcgid
+*/
+int get_bsr_lcgid (u8 Mod_id);
 
 /*! \fn  u8 get_bsr_len (u8 Mod_id, u16 bufflen);
 \brief determine whether the bsr is short or long assuming that the MAC pdu is built 
@@ -1044,13 +1063,13 @@ BSR_SHORT *get_bsr_short(u8 Mod_id, u8 bsr_len);
 */
 BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 
-/*! \fn  void update_bsr(u8 Mod_id, u32 frame, u8 lcid)
+/*! \fn  int update_bsr(u8 Mod_id, u32 frame, u8 lcid)
    \brief get the rlc stats and update the bsr level for each lcid 
 \param[in] Mod_id instance of the UE
 \param[in] frame Frame index
 \param[in] lcid logical channel identifier
 */
-void update_bsr(u8 Mod_id, u32 frame, u8 lcid);
+int update_bsr(u8 Mod_id, u32 frame, u8 lcid);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 

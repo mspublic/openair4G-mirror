@@ -58,6 +58,9 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "DRB-ToAddModList.h"
 #    include "SRB-ToAddMod.h"
 #    include "SRB-ToAddModList.h"
+#ifdef Rel10
+#include "MBMS-SessionInfoList-r9.h"
+#endif
 //-----------------------------------------------------------------------------
 #    ifdef RLC_MAC_C
 #        define private_rlc_mac(x) x
@@ -392,7 +395,7 @@ public_rlc(void            rlc_data_conf    (module_id_t, u32_t, u8_t , rb_id_t,
 
 /*! \fn rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
                               u32_t frame,
-			      rb_id_t        rb_idP,
+    		      rb_id_t        rb_idP,
                               unsigned int* tx_pdcp_sdu,
                               unsigned int* tx_pdcp_sdu_discarded,
                               unsigned int* tx_retransmit_pdu_unblock,
@@ -425,20 +428,20 @@ public_rlc(void            rlc_data_conf    (module_id_t, u32_t, u8_t , rb_id_t,
 */
 
 public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t   module_idP,
-					     u32_t         frame,
-					     rb_id_t       rb_idP,
-					     unsigned int* tx_pdcp_sdu,
-					     unsigned int* tx_pdcp_sdu_discarded,
-					     unsigned int* tx_retransmit_pdu_unblock,
-					     unsigned int* tx_retransmit_pdu_by_status,
-					     unsigned int* tx_retransmit_pdu,
-					     unsigned int* tx_data_pdu,
-					     unsigned int* tx_control_pdu,
-					     unsigned int* rx_sdu,
-					     unsigned int* rx_error_pdu,
-					     unsigned int* rx_data_pdu,
-					     unsigned int* rx_data_pdu_out_of_window,
-					     unsigned int* rx_control_pdu) ;)
+    				     u32_t         frame,
+    				     rb_id_t       rb_idP,
+    				     unsigned int* tx_pdcp_sdu,
+    				     unsigned int* tx_pdcp_sdu_discarded,
+    				     unsigned int* tx_retransmit_pdu_unblock,
+    				     unsigned int* tx_retransmit_pdu_by_status,
+    				     unsigned int* tx_retransmit_pdu,
+    				     unsigned int* tx_data_pdu,
+    				     unsigned int* tx_control_pdu,
+    				     unsigned int* rx_sdu,
+    				     unsigned int* rx_error_pdu,
+    				     unsigned int* rx_data_pdu,
+    				     unsigned int* rx_data_pdu_out_of_window,
+    				     unsigned int* rx_control_pdu) ;)
 
 /*! \fn int rlc_module_init(void)
 * \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).

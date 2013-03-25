@@ -1,3 +1,40 @@
+/*******************************************************************************
+
+#  Eurecom OpenAirInterface
+#  Copyright(c) 1999 - 2013 Eurecom
+
+#  This program is free software; you can redistribute it and/or modify it
+#  under the terms and conditions of the GNU General Public License,
+#  version 2, as published by the Free Software Foundation.
+
+#  This program is distributed in the hope it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+#  more details.
+
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+#  The full GNU General Public License is included in this distribution in
+#  the file called "COPYING".
+
+#  Contact Information
+#  Openair Admin: openair_admin@eurecom.fr
+#  Openair Tech : openair_tech@eurecom.fr
+#  Forums       : http://forums.eurecom.fsr/openairinterface
+#  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France
+
+#*****************************************************************************
+
+# \file openair2_proc.c
+# \brief 
+# \author Navid Nikaein
+# \date 2013
+# \version 0.1
+# @ingroup _mac
+*/
+
 #ifndef USER_MODE
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -6,8 +43,8 @@
 #endif
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
-#include "RRC/MESH/extern.h"
-#include "LAYER2/PDCP/pdcp.h"
+//#include "RRC/LITE/extern.h"
+//#include "LAYER2/PDCP/pdcp.h"
 
 #ifndef USER_MODE
 static int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
@@ -18,6 +55,7 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 
   int len = 0,fg,Overhead, Sign;
   unsigned int i,j,k,kk;
+  unsigned int ue_id, eNB_id;
   unsigned int Mod_id = 0,CH_index;
   unsigned int tx_pdcp_sdu;
   unsigned int tx_pdcp_sdu_discarded;
@@ -32,22 +70,25 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
   unsigned int rx_data_pdu_out_of_window;
   unsigned int rx_control_pdu;
 
-  //    if (mac_xface->is_cluster_head == 0) {
-  for (k=0;k<NB_INST;k++){
+  // UE part 
+  for (ue_id=0;ue_id<NUM_UE_INST;ue_id++){
+    // mod_id used for PDCP and RLC
+    Mod_id = NB_eNB_INST + ue_id ; 
 
+      len+=sprintf(&buffer[len],"UE TTI: %d\n",UE_mac_inst[ue_id].frame);
 
-
-    if (Mac_rlc_xface->Is_cluster_head[k] == 0){
-#ifndef PHY_EMUL_ONE_MACHINE
-      Mod_id=k-NB_CH_INST; 
-
-      len+=sprintf(&buffer[len],"UE TTI: %d\n",Mac_rlc_xface->frame);
-
-      for (CH_index = 0;CH_index<NB_CNX_UE;CH_index++) {
+      for (enb_id= 0; enb_id <NUM_eNB_INST;enb_id++) {
 	
-
-	if (UE_mac_inst[Mod_id].Dcch_lchan[CH_index].Active==1) {
-	  len+=sprintf(&buffer[len],"CH %d: Wideband SINR %d dB---\n",
+	switch (mac_get_rrc_status(eNB_id,0,ue_id) > RRC_CONNECTED) {
+	case RRC_RECONFIGURED :
+	case RRC_CONNECTED:
+	case RRC_SI_RECEIVED:
+	case RRC_IDLE:
+	  break;
+	  
+	if (mac_get_rrc_status(eNB_id,0,ue_id) > RRC_CONNECTED) {
+	  //	if (UE_mac_inst[ue_id].Dcch_lchan[CH_index].Active==1) {
+	  len+=sprintf(&buffer[len],"eNB %d: Wideband SINR %d dB---\n",
 		       CH_index,UE_mac_inst[Mod_id].Def_meas[CH_index].Wideband_sinr);
 	  len+=sprintf(&buffer[len],"CH %d: Subband SINR (dB) :",
 		       CH_index);

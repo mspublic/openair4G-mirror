@@ -91,16 +91,18 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
     }
   }
-  
+  // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig!= NULL) {
     if (eNB_flag==0){
       LOG_I(MAC,"[CONFIG][UE %d] Applying RRC logicalChannelConfig from eNB%d\n",Mod_id,eNB_index);
       UE_mac_inst[Mod_id].logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
       UE_mac_inst[Mod_id].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
-      if (logicalChannelConfig->ul_SpecificParameters)
+      if (logicalChannelConfig->ul_SpecificParameters) {
 	UE_mac_inst[Mod_id].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
 	  logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-      else {
+	UE_mac_inst[Mod_id].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+	LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_id,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+	} else {
 	LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_id,logicalChannelIdentity);
 	mac_xface->macphy_exit("");
       }

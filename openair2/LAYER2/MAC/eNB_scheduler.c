@@ -382,9 +382,11 @@ s8 mac_remove_ue(unsigned char Mod_id, unsigned char UE_id) {
   LOG_I(MAC,"Removing UE %d (rnti %x)\n",UE_id,eNB_mac_inst[Mod_id].UE_template[UE_id].rnti);
 
   // clear all remaining pending transmissions
-  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]  = 0;
-  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]  = 0;
-  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = 0;
+  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]  = 0;
+  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]  = 0;
+  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]  = 0;
+  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]  = 0;
+
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR           = 0;
   eNB_mac_inst[Mod_id].UE_template[UE_id].rnti            = 0;
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_active       = 0;
@@ -1435,9 +1437,10 @@ u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
   //  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d\n",Mod_id,rnti,frame,subframe,
   //	UE_id);
 
-  if ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]>0) ||
-      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]>0) ||
-      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]>0) || 
+  if ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]>0) ||
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]>0) ||
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]>0) || 
+      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]>0) || 
       (eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR>0)) // uplink scheduling request
     return(1);
   else 
@@ -1491,9 +1494,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 
 // UE data info;
-
 // check which UE has data to transmit
-
 // function to decide the scheduling
 // e.g. scheduling_rslt = Greedy(granted_UEs, nb_RB)
 
@@ -1535,7 +1536,6 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	    eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
 
       eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0; //// why =0 ???
-
 
       if (rnti==0) // if so, go to next UE
 	continue;
@@ -1579,32 +1579,36 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 	  mcs     = openair_daq_vars.target_ue_ul_mcs;
 	}
 	else  // increment RV
-	  mcs = round + 28; // why 28 ???
+	  mcs = round + 28; 
 
 	LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
 
-
 	if((cooperation_flag > 0) && (next_ue == 1)) { // Allocation on same set of RBs
-	    rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
-						       ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
-						       4);//openair_daq_vars.ue_ul_nb_rb);
+	  // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
+	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL, 
+					  ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
+					  4);//openair_daq_vars.ue_ul_nb_rb);
 	}
 	else if ((ndi==1) && (mcs < 29)) {
 	  rb_table_index = 1;
 	  TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
-	  buffer_occupancy = ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]  == 0) &&
-			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]  == 0) &&
-			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] == 0))?
+	  buffer_occupancy = ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]  == 0) &&
+			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]  == 0) &&
+			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]  == 0) &&
+			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3] == 0))?
 	    BSR_TABLE[1] :   // This is when we've received SR and buffers are fully served
-	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]]+
-	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]]+
-	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]];  // This is when remaining data in UE buffers (even if SR is triggered)
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]]+
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]]+
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]]+
+	    BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]];  // This is when remaining data in UE buffers (even if SR is triggered)
 
-	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (DCCH bsr %d, DCCH1 bsr %d, DTCH bsr %d), BO %d\n",
+	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE, BSR for LCGID0 %d, LCGID1 %d, LCGID2 %d LCGID3 %d, BO %d\n",
 		Mod_id,UE_id,rnti,frame,subframe,
-		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] ,
-		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1],
-		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] ,buffer_occupancy);
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0],
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1],
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2],
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3],
+		buffer_occupancy);
 
 	  while ((TBS < buffer_occupancy) &&
 		 rb_table[rb_table_index]<(mac_xface->lte_frame_parms->N_RB_UL-1-first_rb)){
@@ -1629,38 +1633,51 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 		rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
 */
 	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						     first_rb,
-						     rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
+					  first_rb,
+					  rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
 
 	  first_rb+=rb_table[rb_table_index];  // increment for next UE allocation
 	  buffer_occupancy -= mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 
 	  i = bytes_to_bsr_index((s32)buffer_occupancy);
 
-	  // Adjust BSR entries for DCCH, DCCH1 and DTCH, add others later
+	  // Adjust BSR entries for LCGIDs
 	  if (i>0) {
-	    if (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] <= i) {
-	      tmp_bsr = BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]];
-	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] = 0;
-	      if (BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]] <= (buffer_occupancy-tmp_bsr)) {
-		tmp_bsr += BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]];
-		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = 0;
-		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH]] - ((s32)buffer_occupancy - (s32)tmp_bsr));
+	    if (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0] <= i) {
+	      tmp_bsr = BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]];
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0] = 0;
+	      if (BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]] <= (buffer_occupancy-tmp_bsr)) {
+		tmp_bsr += BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]];
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1] = 0;
+		if (BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]] <= (buffer_occupancy-tmp_bsr)) {
+		  tmp_bsr += BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]];
+		  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2] = 0;
+		  if (BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]] <= (buffer_occupancy-tmp_bsr)) {
+		    tmp_bsr += BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]];
+		    eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3] = 0;
+		  } else {
+		    eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]] - ((s32)buffer_occupancy - (s32)tmp_bsr));
+		  }
+		}
+		else {
+		  eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]] - ((s32)buffer_occupancy -(s32)tmp_bsr));
+		}
 	      }
 	      else {
-		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1]] - ((s32)buffer_occupancy -(s32)tmp_bsr));
+		eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]] - (s32)buffer_occupancy);
 	      }
 	    }
 	    else {
-	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH]] - (s32)buffer_occupancy);
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0] = bytes_to_bsr_index((s32)BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]] - (s32)buffer_occupancy);
 	    }
 	  }
 	  else {  // we have flushed all buffers so clear bsr
-	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH] = 0;
-	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DCCH1] = 0;
-	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[DTCH] = 0;
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0] = 0;
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1] = 0;
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2] = 0; 
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3] = 0;
 	  }
-
+	  
 
 	// Cyclic shift for DM RS
 	if(cooperation_flag == 2) {
@@ -1771,7 +1788,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
   u16 rballoc_dci=0;
   //u8 number_of_subbands=13;
 
-  //  msg("*****Check1RBALLOC****: %x%x%x%x\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
+  msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
   while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBGS)){
     if(rballoc[check] == 1){
       rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBGS-1)-check));
@@ -1784,7 +1801,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
     //    check1 = check1+2;
   }
   // rballoc_dci = (rballoc_dci)&(0x1fff);
-  //  msg("*********RBALLOC : %x\n",rballoc_dci);
+  msg("*********RBALLOC : %x\n",rballoc_dci);
   // exit(-1);
   return (rballoc_dci);
 }

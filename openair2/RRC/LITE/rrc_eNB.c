@@ -840,6 +840,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   SRB2_ul_SpecificParameters->prioritisedBitRate = LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
   SRB2_ul_SpecificParameters->bucketSizeDuration = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
 
+  // LCG for CCCH and DCCH is 0 as defined in 36331
   logicalchannelgroup = CALLOC(1,sizeof(long));
   *logicalchannelgroup=0;
 
@@ -876,9 +877,10 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   DRB_ul_SpecificParameters->priority = 2; // lower priority than srb1, srb2
   DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
   DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
+ 
+  // LCG for DTCH can take the value from 1 to 3 as defined in 36331: normally controlled by upper layers (like RRM)
   logicalchannelgroup_drb = CALLOC(1,sizeof(long));
-  *logicalchannelgroup_drb=0;
+  *logicalchannelgroup_drb=1;
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
 
 
@@ -1221,7 +1223,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
 	      Mod_id,frame, UE_index,
 	      (int)DRB_configList->list.array[i]->drb_Identity,
-	      (UE_index * MAX_NUM_RB) + (int)DRB_configList->list.array[i]->logicalChannelIdentity);
+	      (UE_index * MAX_NUM_RB) + (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
 	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,
 			       (UE_index * MAX_NUM_RB) + *DRB_configList->list.array[i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
