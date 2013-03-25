@@ -372,7 +372,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
 
-  LOG_D(RRC,"[UE] Frame %d: Configuring DRB %ld/LCID %d\n",
+  LOG_D(RRC,"[UE] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
 	frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
 
   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
