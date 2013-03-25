@@ -331,3 +331,21 @@ print:
 
 showcflags:
 	@echo $(CFLAGS)
+
+
+pexpect = $(shell if [ `dpkg -l | grep pexpect -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
+
+pre-ci: 
+	@echo "Pre-commit check"
+
+ifeq 	($(pexpect), 1) 
+ifndef	PW
+	@echo "Usage: make pre-ci PW=mypassword"
+	@echo "Password is used to access the local host through ssh."
+	python $(OPENAIR_TARGETS)/TEST/OAI/test01.py 
+else
+	python $(OPENAIR_TARGETS)/TEST/OAI/test01.py -w $(PW)
+endif
+else
+	@echo "Python pexpect package is missing, plase install"
+endif 
