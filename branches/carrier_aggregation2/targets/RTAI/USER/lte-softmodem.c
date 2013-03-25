@@ -138,7 +138,7 @@ int fs4_test=0;
 char UE_flag=0;
 u8  eNB_id=0,UE_id=0;
 
-u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
+u32 carrier_freq[4]= {1907600000,859600000,0,0};
 
 struct timing_info_t {
   unsigned int frame, hw_slot, last_slot, next_slot;
@@ -896,6 +896,7 @@ int main(int argc, char **argv) {
   RT_TASK *task;
   int i,j,aa;
   void *status;
+  char key;
 
   /*
   u32 rf_mode_max[4]     = {55759,55759,55759,55759};
@@ -909,10 +910,11 @@ int main(int argc, char **argv) {
     //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
 
-  u32 rf_vcocal[4]   = {910,910,910,910};
-  u32 rf_rxdc[4]     = {32896,32896,32896,32896};
-  u32 rxgain[4]      = {20,20,20,20};
-  u32 txgain[4]      = {25,25,25,25};
+  //u32 rf_vcocal[4]   = {910,1885,0,0}; //this is for 1,9GHz and 850MHz
+  u32 rf_vcocal[4]   = {910,2015,0,0}; //this is for 1,9GHz and 850MHz
+  u32 rf_rxdc[4]     = {32896,32896,0,0};
+  u32 rxgain[4]      = {20,20,0,0};
+  u32 txgain[4]      = {25,25,0,0};
 
   u16 Nid_cell = 0;
   u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
@@ -1130,6 +1132,8 @@ int main(int argc, char **argv) {
     g_log->log_component[RLC].flag  = LOG_HIGH;
     g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
+    g_log->log_component[RRC].level = LOG_INFO;
+    g_log->log_component[RRC].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
 
@@ -1220,6 +1224,8 @@ int main(int argc, char **argv) {
     g_log->log_component[RLC].flag  = LOG_HIGH;
     g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
+    g_log->log_component[RRC].level = LOG_INFO;
+    g_log->log_component[RRC].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
 
@@ -1304,11 +1310,12 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rffe_gain_txhigh[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
-    p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
   }
   if (UE_flag) {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
     p_exmimo_config->rf.rf_mode[1]    = my_rf_mode2;
+    p_exmimo_config->rf.rffe_band_mode[0] = B19G_TDD;	    
+    p_exmimo_config->rf.rffe_band_mode[1] = DD_TDD;	    
   }
   else {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
@@ -1510,14 +1517,38 @@ int main(int argc, char **argv) {
 
 
   // wait for end of program
-  printf("TYPE <ENTER> TO TERMINATE\n");
-  getchar();
-
-  // stop threads
-  oai_exit=1;
-  rt_sleep(nano2count(FRAME_PERIOD));
+  printf("TYPE q<ENTER> TO TERMINATE\n");
+  while (!oai_exit) {
+    key = getchar();
+    switch (key) {
+    case '1':
+      printf("key 1 pressed.\n");
+      carrier_freq[1] = 1917600000;
+      p_exmimo_config->rf.rf_freq_rx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
+      p_exmimo_config->rf.rf_freq_tx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
+      break;
+    case '2':
+      printf("key 2 pressed.\n");
+      carrier_freq[1] = 1912600000;
+      p_exmimo_config->rf.rf_freq_rx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
+      p_exmimo_config->rf.rf_freq_tx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
+      break;
+    case 'q':
+      printf("key q pressed. Exiting.\n");
+      oai_exit=1;
+      break;
+    case '\n':
+      // carriage return
+      break;
+    default:
+      printf("key %c pressed.\n",key);
+      break;
+    }
+  }
 
   printf("stopping threads\n");
+  rt_sleep(nano2count(FRAME_PERIOD));
+
 #ifdef XFORMS
   if (do_forms==1)
     {
