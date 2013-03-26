@@ -2097,14 +2097,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   }
   //#ifdef OPENAIR2
   // check if we have to detect PRACH first
+  if (phy_vars_eNB->CC_id==0) {
   if ((last_slot&1)==1){
-    //LOG_I(PHY,"Calling generate_sss : %d\n",last_slot);
-
     //    printf("Checking PRACH for eNB %d, subframe %d\n",phy_vars_eNB->Mod_id,last_slot>>1);
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,last_slot>>1)>0) {
       //     printf("Running prach procedures\n");
       prach_procedures(phy_vars_eNB,last_slot>>1,abstraction_flag);
     }
+  }
   }
   //#endif
   if (abstraction_flag == 0) {
@@ -2569,7 +2569,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			    0,
 			    0);
       
-      //#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
       LOG_I(PHY,"[eNB %d] Frame %d subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n", 
 	    phy_vars_eNB->Mod_id,phy_vars_eNB->frame,last_slot>>1,
 	    phy_vars_eNB->eNB_UE_stats[i].sector, 
@@ -2581,7 +2581,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[i]->o_ACK[1], 
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
-      //#endif
+#endif
 
 
       if (phy_vars_eNB->frame % 100 == 0) {

@@ -1195,7 +1195,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id, u32 frame, u16 UE_
 	  sCell1_config_ptr->sCellIndex_r10 = 1;
 	  sCell1_config_ptr->cellIdentification_r10 = CALLOC(1,sizeof(*sCell1_config_ptr->cellIdentification_r10));
 	  sCell1_config_ptr->cellIdentification_r10->physCellId_r10 = 1;
-	  sCell1_config_ptr->cellIdentification_r10->dl_CarrierFreq_r10 = 36126;
+	  sCell1_config_ptr->cellIdentification_r10->dl_CarrierFreq_r10 = 6425; //36126; //6425;
 
 	  radioResourceConfigDedicatedSCell = CALLOC(1,sizeof(*radioResourceConfigDedicatedSCell));
 

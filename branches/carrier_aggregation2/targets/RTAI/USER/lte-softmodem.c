@@ -684,7 +684,7 @@ static void *UE_thread(void *arg)
   rt_make_hard_real_time();
 #endif
 
-  openair_daq_vars.freq_offset = 0; //-7500;
+  // openair_daq_vars.freq_offset initialized in main thread
   /*
   if (mode == rx_calib_ue) {
     openair_daq_vars.freq_offset = -7500;
@@ -834,13 +834,14 @@ static void *UE_thread(void *arg)
 	      else {
 		is_synchronized = 1;
 		//start the DMA transfers
-        //rt_printk("Before openair0_start_rt_acquisition \n");
-        openair0_start_rt_acquisition(card);
+		//rt_printk("Before openair0_start_rt_acquisition \n");
+		openair0_start_rt_acquisition(card);
 		
 		hw_slot_offset = (PHY_vars_UE_g[0][0]->rx_offset<<1) / PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti;
 		rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
 	      }
 	  }
+	  /*
 	  else {
 	    if (openair_daq_vars.freq_offset >= 0) {
 	      openair_daq_vars.freq_offset += 100;
@@ -863,6 +864,7 @@ static void *UE_thread(void *arg)
 	      
 	    }
 	  }
+	  */
         }
 
       /*
@@ -1166,6 +1168,8 @@ int main(int argc, char **argv) {
     //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
     openair_daq_vars.auto_freq_correction = 0;
+    openair_daq_vars.freq_offset = -6540; //freq offset for primary cell, initially at 1.9GHz
+    openair_daq_vars.freq_offset2 = -6540; //freq offset for primary cell, initially at 1.9GHz
     openair_daq_vars.use_ia_receiver = 1;
 
     // if AGC is off, the following values will be used
@@ -1259,10 +1263,10 @@ int main(int argc, char **argv) {
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //      rxgain[i]=30;
-    rxgain[0] = 30;
-    rxgain[1] = 30;
-    rxgain[2] = 30;
-    rxgain[3] = 30;
+    rxgain[0] = 10;
+    rxgain[1] = 10;
+    rxgain[2] = 10;
+    rxgain[3] = 10;
 
 
     // set eNB to max gain
@@ -1523,15 +1527,29 @@ int main(int argc, char **argv) {
     switch (key) {
     case '1':
       printf("key 1 pressed.\n");
+      if (eNB_rrc_inst[0].sCell_config[0][0]) {
+	rrc_eNB_generate_RRCConnectionReconfiguration_SCell(PHY_vars_eNB_g[0][0]->Mod_id, PHY_vars_eNB_g[0][0]->frame, 0, 6425);
+	printf("setting SCell carrier frequency to %d.\n",
+	       eNB_rrc_inst[PHY_vars_eNB_g[0][0]->Mod_id].sCell_config[0][0]->cellIdentification_r10->dl_CarrierFreq_r10);
+      }
+      /*
       carrier_freq[1] = 1917600000;
-      p_exmimo_config->rf.rf_freq_rx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
-      p_exmimo_config->rf.rf_freq_tx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
+      p_exmimo_config->rf.rf_freq_rx[1] = carrier_freq[1]+openair_daq_vars.freq_offset2;
+      p_exmimo_config->rf.rf_freq_tx[1] = carrier_freq[1]+openair_daq_vars.freq_offset2;
+      */
       break;
     case '2':
       printf("key 2 pressed.\n");
+      if (eNB_rrc_inst[0].sCell_config[0][0]) {
+	rrc_eNB_generate_RRCConnectionReconfiguration_SCell(PHY_vars_eNB_g[0][0]->Mod_id, PHY_vars_eNB_g[0][0]->frame, 0, 6445);
+	printf("setting SCell carrier frequency to %d.\n",
+	       eNB_rrc_inst[PHY_vars_eNB_g[0][0]->Mod_id].sCell_config[0][0]->cellIdentification_r10->dl_CarrierFreq_r10);
+      }
+      /*
       carrier_freq[1] = 1912600000;
-      p_exmimo_config->rf.rf_freq_rx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
-      p_exmimo_config->rf.rf_freq_tx[1] = carrier_freq[1]+openair_daq_vars.freq_offset;
+      p_exmimo_config->rf.rf_freq_rx[1] = carrier_freq[1]+openair_daq_vars.freq_offset2;
+      p_exmimo_config->rf.rf_freq_tx[1] = carrier_freq[1]+openair_daq_vars.freq_offset2;
+      */
       break;
     case 'q':
       printf("key q pressed. Exiting.\n");
