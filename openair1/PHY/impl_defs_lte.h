@@ -60,6 +60,7 @@
 #define SSS_AMP 1148
 
 #define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+#define MAX_NB_RBG 28 // Maximum number of RBGs, (28 for 110 PRBs)
 
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
@@ -504,6 +505,8 @@ typedef struct {
   float pbch_scale;
   /// PDCCH amplitude scaling in pilot symbols
   float pdcch_pilot_scale;
+  /// RBGs used by PDSCH
+  u8 dl_rbg_mask[MAX_NB_RBG];
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {

@@ -1504,5 +1504,8 @@ void compute_sqrt_RhoAoRhoB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 
 unsigned char subframe2_ul_harq(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe);
 
+int get_nb_rbg(int n_rb);
+int get_rbg_size(int n_rb, int rbg);
+
 /**@}*/
 #endif
