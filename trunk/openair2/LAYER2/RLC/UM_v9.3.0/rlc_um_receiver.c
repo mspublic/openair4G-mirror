@@ -95,7 +95,7 @@ void rlc_um_display_rx_window(struct rlc_um_entity *rlcP)
     LOG_T(RLC, "\n");
     LOG_T(RLC, "+------+------------------------------------------------------------------------------------------------+");
     LOG_T(RLC, "\n");
-    if (rlcP->sn_length == 10) {
+    if (rlcP->rx_sn_length == 10) {
         end_sn = RLC_UM_SN_10_BITS_MODULO;
     } else {
         end_sn = RLC_UM_SN_5_BITS_MODULO;

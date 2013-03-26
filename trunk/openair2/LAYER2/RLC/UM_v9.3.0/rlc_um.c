@@ -343,7 +343,7 @@ rlc_um_mac_status_indication (void *rlcP, u32_t frame, u8_t eNB_flag, u16_t tbs_
 
   status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (status_resp.buffer_occupancy_in_bytes > 0) {
-    status_resp.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
+    status_resp.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->tx_header_min_length_in_bytes;
   }
 //msg("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION BO = %d\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, status_resp.buffer_occupancy_in_bytes);
 
@@ -384,7 +384,7 @@ rlc_um_mac_data_request (void *rlcP,u32 frame)
 
   data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc);
   if (data_req.buffer_occupancy_in_bytes > 0) {
-    data_req.buffer_occupancy_in_bytes += l_rlc->header_min_length_in_bytes;
+    data_req.buffer_occupancy_in_bytes += l_rlc->tx_header_min_length_in_bytes;
   }
   data_req.rlc_info.rlc_protocol_state = l_rlc->protocol_state;
   if (data_req.data.nb_elements > 0) {

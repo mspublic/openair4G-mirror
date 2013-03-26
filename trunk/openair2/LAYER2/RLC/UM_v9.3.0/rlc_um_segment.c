@@ -92,8 +92,8 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP,u32_t frame)
             } else {
                 max_li_overhead = (((rlcP->nb_sdu - 1) * 3) / 2) + ((rlcP->nb_sdu - 1) % 2);
             }
-            if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes + max_li_overhead)) {
-                data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes + max_li_overhead;
+            if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->tx_header_min_length_in_bytes + max_li_overhead)) {
+                data_pdu_size = rlcP->buffer_occupancy + rlcP->tx_header_min_length_in_bytes + max_li_overhead;
                 LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n", rlcP->module_id, rlcP->rb_id, frame, data_pdu_size);
             } else {
                 data_pdu_size = nb_bytes_to_transmit;

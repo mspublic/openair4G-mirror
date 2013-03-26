@@ -61,6 +61,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
                frame,
                config_umP->timer_reordering,
                config_umP->sn_field_length,
+               config_umP->sn_field_length,
                config_umP->is_mXch);
     }
 }
@@ -69,7 +70,7 @@ u32_t t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55
 
 void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
-  u32_t sn_FieldLength,t_Reordering;
+  u32_t ul_sn_FieldLength,dl_sn_FieldLength,t_Reordering;
 
   //-----------------------------------------------------------------------------
     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%dms sn_field_length=%d  --->][RLC_UM][MOD %02d][RB %02d]    \n",
@@ -83,33 +84,57 @@ void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP,
     rlc_um_init(rlcP);
     if (rlc_um_fsm_notify_event (rlcP, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
       rlc_um_set_debug_infos(rlcP, frame, eNB_flagP, module_idP, rb_idP, rb_typeP);
-      switch (ul_rlcP->sn_FieldLength) {
-      case SN_FieldLength_size5:
-	sn_FieldLength = 5;
-	break;
-      case SN_FieldLength_size10:
-	sn_FieldLength = 10;
-	break;
-      default:
-	LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID sn_FieldLength %d, RLC NOT CONFIGURED\n",
-	      frame, rlcP->module_id, rlcP->rb_id, ul_rlcP->sn_FieldLength);
-	return;
+      if (ul_rlcP != NULL) {
+          switch (ul_rlcP->sn_FieldLength) {
+          case SN_FieldLength_size5:
+              ul_sn_FieldLength = 5;
+              break;
+          case SN_FieldLength_size10:
+              ul_sn_FieldLength = 10;
+              break;
+          default:
+              LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID Uplink sn_FieldLength %d, RLC NOT CONFIGURED\n",
+                     frame, rlcP->module_id, rlcP->rb_id, ul_rlcP->sn_FieldLength);
+          return;
+          }
+      } 
+      
+      if (dl_rlcP != NULL) {
+          switch (dl_rlcP->sn_FieldLength) {
+          case SN_FieldLength_size5:
+              dl_sn_FieldLength = 5;
+              break;
+          case SN_FieldLength_size10:
+              dl_sn_FieldLength = 10;
+              break;
+          default:
+              LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID Downlink sn_FieldLength %d, RLC NOT CONFIGURED\n",
+                     frame, rlcP->module_id, rlcP->rb_id, dl_rlcP->sn_FieldLength);
+          return;
+          }
+          if (dl_rlcP->t_Reordering<T_Reordering_spare1) {
+              t_Reordering = t_Reordering_tab[dl_rlcP->t_Reordering];
+          } else {
+              LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID T_Reordering %d, RLC NOT CONFIGURED\n",
+                frame, rlcP->module_id, rlcP->rb_id, dl_rlcP->t_Reordering);
+            return;
+          }
       }
-
-      if (dl_rlcP->t_Reordering<T_Reordering_spare1) {
-	t_Reordering = t_Reordering_tab[dl_rlcP->t_Reordering];
+      if (eNB_flagP > 0) {
+          rlc_um_configure(rlcP,
+               frame,
+               t_Reordering,
+               ul_sn_FieldLength,
+               dl_sn_FieldLength,
+               0);
+      } else {
+          rlc_um_configure(rlcP,
+               frame,
+               t_Reordering,
+               dl_sn_FieldLength,
+               ul_sn_FieldLength,
+               0);
       }
-      else {
-	LOG_E(RLC,"[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID T_Reordering %d, RLC NOT CONFIGURED\n",
-	      frame, rlcP->module_id, rlcP->rb_id, dl_rlcP->t_Reordering);
-	return;
-      }
-
-      rlc_um_configure(rlcP,
-		       frame,
-		       t_Reordering,
-		       sn_FieldLength,
-		       0);
     }
 }
 //-----------------------------------------------------------------------------
@@ -139,8 +164,10 @@ rlc_um_init (rlc_um_entity_t *rlcP)
   rlcP->output_sdu_size_to_write = 0;
   rlcP->output_sdu_in_construction = NULL;
 
-  rlcP->sn_length          = 10;
-  rlcP->header_min_length_in_bytes = 2;
+  rlcP->rx_sn_length          = 10;
+  rlcP->rx_header_min_length_in_bytes = 2;
+  rlcP->tx_sn_length          = 10;
+  rlcP->tx_header_min_length_in_bytes = 2;
 
 
   rlcP->tx_pdcp_sdu                 = 0;
@@ -222,34 +249,53 @@ rlc_um_cleanup (rlc_um_entity_t *rlcP)
 //-----------------------------------------------------------------------------
 void rlc_um_configure(rlc_um_entity_t *rlcP,
                       u32_t frame,
-		      u32_t timer_reorderingP,
-                      u32_t sn_field_lengthP,
+		              u32_t timer_reorderingP,
+                      u32_t rx_sn_field_lengthP,
+                      u32_t tx_sn_field_lengthP,
                       u32_t is_mXchP)
 //-----------------------------------------------------------------------------
 {
-    if (sn_field_lengthP == 10) {
-        rlcP->sn_length          = 10;
-        rlcP->sn_modulo          = RLC_UM_SN_10_BITS_MODULO;
-        rlcP->um_window_size     = RLC_UM_WINDOW_SIZE_SN_10_BITS;
-        rlcP->header_min_length_in_bytes = 2;
-    } else if (sn_field_lengthP == 5) {
+    if (rx_sn_field_lengthP == 10) {
+        rlcP->rx_sn_length                  = 10;
+        rlcP->rx_sn_modulo                  = RLC_UM_SN_10_BITS_MODULO;
+        rlcP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;
+        rlcP->rx_header_min_length_in_bytes = 2;
+    } else if (rx_sn_field_lengthP == 5) {
         LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] SN LENGTH 5 BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id);
-        /*rlcP->sn_length          = 5;
-        rlcP->sn_modulo          = RLC_UM_SN_5_BITS_MODULO;
-        rlcP->um_window_size     = RLC_UM_WINDOW_SIZE_SN_5_BITS;
-        rlcP->header_min_length_in_bytes = 1;*/
+        rlcP->rx_sn_length                  = 5;
+        rlcP->rx_sn_modulo                  = RLC_UM_SN_5_BITS_MODULO;
+        rlcP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
+        rlcP->rx_header_min_length_in_bytes = 1;
         return;
     } else {
-        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, sn_field_lengthP);
+        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, rx_sn_field_lengthP);
+        return;
+    }
+
+    if (tx_sn_field_lengthP == 10) {
+        rlcP->tx_sn_length                  = 10;
+        rlcP->tx_sn_modulo                  = RLC_UM_SN_10_BITS_MODULO;
+        rlcP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;
+        rlcP->tx_header_min_length_in_bytes = 2;
+    } else if (tx_sn_field_lengthP == 5) {
+        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] SN LENGTH 5 BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id);
+        rlcP->tx_sn_length                  = 5;
+        rlcP->tx_sn_modulo                  = RLC_UM_SN_5_BITS_MODULO;
+        rlcP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
+        rlcP->tx_header_min_length_in_bytes = 1;
+        return;
+    } else {
+        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, tx_sn_field_lengthP);
         return;
     }
 
     if (is_mXchP > 0) {
-        rlcP->um_window_size = 0;
+        rlcP->tx_um_window_size = 0;
+        rlcP->rx_um_window_size = 0;
     }
 
-    rlcP->last_reassemblied_sn  = rlcP->sn_modulo - 1;
-    rlcP->last_reassemblied_missing_sn  = rlcP->sn_modulo - 1;
+    rlcP->last_reassemblied_sn  = rlcP->rx_sn_modulo - 1;
+    rlcP->last_reassemblied_missing_sn  = rlcP->rx_sn_modulo - 1;
     rlcP->reassembly_missing_sn_detected = 0;
     // timers
     rlcP->timer_reordering         = 0;
