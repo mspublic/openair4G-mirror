@@ -1399,27 +1399,36 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     
     eNB_id = 0;
 
-    if (abstraction_flag == 0)
-      lte_adjust_synch(&phy_vars_ue->lte_frame_parms,
-		       phy_vars_ue,
-		       eNB_id,
-		       0,
-		       16384);
-    if (openair_daq_vars.auto_freq_correction == 1) {
-      if (phy_vars_ue->frame % 100 == 0) {
-	if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
-	  openair_daq_vars.freq_offset+=100;
+    if (abstraction_flag == 0) {
+      if (phy_vars_ue->CC_id==0) 
+	lte_adjust_synch(&phy_vars_ue->lte_frame_parms,
+			 phy_vars_ue,
+			 eNB_id,
+			 0,
+			 16384);
+      else
+	phy_vars_ue->rx_offset =  PHY_vars_UE_g[0][0]->rx_offset; 
+    
+
+	// this code needs to be revisited for multiple CCs
+	/*
+	if (openair_daq_vars.auto_freq_correction == 1) {
+	  if (phy_vars_ue->frame % 100 == 0) {
+	    if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
+	      openair_daq_vars.freq_offset+=100;
 #ifdef CBMIMO1
-	  openair_set_freq_offset(0,openair_daq_vars.freq_offset);
+	      openair_set_freq_offset(0,openair_daq_vars.freq_offset);
 #endif
-	}
-	else if ((phy_vars_ue->lte_ue_common_vars.freq_offset<-100) && (openair_daq_vars.freq_offset > -1000)) {
-	  openair_daq_vars.freq_offset-=100;
+	    }
+	    else if ((phy_vars_ue->lte_ue_common_vars.freq_offset<-100) && (openair_daq_vars.freq_offset > -1000)) {
+	      openair_daq_vars.freq_offset-=100;
 #ifdef CBMIMO1
-	  openair_set_freq_offset(0,openair_daq_vars.freq_offset);
+	      openair_set_freq_offset(0,openair_daq_vars.freq_offset);
 #endif
-	}
-      }
+	    }
+	  }
+	*/
+      
     }
   }
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);

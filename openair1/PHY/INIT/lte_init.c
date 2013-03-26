@@ -454,19 +454,41 @@ void phy_config_dedicated_scell_eNB(u8 Mod_id,
 #endif
 #endif
 
-  if ((dl_CarrierFreq_r10<36000) || (dl_CarrierFreq_r10>36199)) {
-    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,phy_vars_eNB->frame,dl_CarrierFreq_r10,CC_id,UE_id);
-  }
-  else {
+  if ((dl_CarrierFreq_r10>=36000) && (dl_CarrierFreq_r10<=36199)) {
     carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,phy_vars_eNB->frame,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
 #ifdef EXMIMO
 #ifdef DRIVER2013
     carrier_freq[CC_id] = carrier_freq_local;
-    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
-    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
+    openair_daq_vars.freq_offset = -6540;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.tx_gain[CC_id][0] = 25;
+    p_exmimo_config->rf.rf_vcocal[CC_id] = 910;
+    p_exmimo_config->rf.rf_local[CC_id] = 8255063; //this should be taken form calibration file
+    p_exmimo_config->rf.rffe_band_mode[CC_id] = B19G_TDD;
 #endif
 #endif
+  }
+  else if ((dl_CarrierFreq_r10>=6150) && (dl_CarrierFreq_r10<=6449)) {
+    carrier_freq_local = 832000000 + (dl_CarrierFreq_r10-6150)*100000; //band 20 from 3GPP 36.101 v 10.9 Table 5.7.3-1
+    // this is actually for the UL only, but we use it for DL too, since there is no TDD mode for this band
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,phy_vars_eNB->frame,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+#ifdef EXMIMO
+#ifdef DRIVER2013
+    carrier_freq[CC_id] = carrier_freq_local;
+    openair_daq_vars.freq_offset = -2000;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.tx_gain[CC_id][0] = 10;
+    p_exmimo_config->rf.rf_vcocal[CC_id] = 2015;
+    p_exmimo_config->rf.rf_local[CC_id] =  8254992; //this should be taken form calibration file
+    p_exmimo_config->rf.rffe_band_mode[CC_id] = DD_TDD;
+#endif
+#endif
+  }
+  else {
+    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,phy_vars_eNB->frame,dl_CarrierFreq_r10,CC_id,UE_id);
   }
 
   if (physicalConfigDedicatedSCell_r10) {
@@ -600,19 +622,41 @@ void phy_config_dedicated_scell_ue(u8 Mod_id,u16 CH_index,
 #endif
 #endif
 
-  if ((dl_CarrierFreq_r10<36000) || (dl_CarrierFreq_r10>36199)) {
-    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for eNB %d not supported\n",Mod_id,phy_vars_ue->frame,dl_CarrierFreq_r10,CC_id,CH_index);
-  }
-  else {
+  if ((dl_CarrierFreq_r10>=36000) && (dl_CarrierFreq_r10<=36199)) {
     carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for eNB %d\n",Mod_id,phy_vars_ue->frame,CC_id,carrier_freq_local,dl_CarrierFreq_r10,CH_index);
 #ifdef EXMIMO
 #ifdef DRIVER2013
     carrier_freq[CC_id] = carrier_freq_local;
-    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
-    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset;
+    openair_daq_vars.freq_offset2 = -6540;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.rf_vcocal[CC_id] = 910;
+    p_exmimo_config->rf.rf_local[CC_id] =  8256804; //this should be taken form calibration file
+    p_exmimo_config->rf.rf_rxdc[CC_id] =  34756; //this should be taken form calibration file
+    p_exmimo_config->rf.rffe_band_mode[CC_id] = B19G_TDD;
 #endif
 #endif
+  }
+  else if ((dl_CarrierFreq_r10>=6150) && (dl_CarrierFreq_r10<=6449)) {
+    carrier_freq_local = 832000000 + (dl_CarrierFreq_r10-6150)*100000; //band 20 from 3GPP 36.101 v 10.9 Table 5.7.3-1
+    // this is actually for the DL only, but we use it for UL too, since there is no TDD mode for this band
+    LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for eNB %d\n",Mod_id,phy_vars_ue->frame,CC_id,carrier_freq_local,dl_CarrierFreq_r10,CH_index);
+#ifdef EXMIMO
+#ifdef DRIVER2013
+    carrier_freq[CC_id] = carrier_freq_local;
+    openair_daq_vars.freq_offset2 = -2000;
+    p_exmimo_config->rf.rf_freq_rx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.rf_freq_tx[CC_id] = carrier_freq[CC_id]+openair_daq_vars.freq_offset2;
+    p_exmimo_config->rf.rf_vcocal[CC_id] = 2015;
+    p_exmimo_config->rf.rf_local[CC_id] =  8256991; //this should be taken form calibration file
+    p_exmimo_config->rf.rf_rxdc[CC_id] =   36226; //this should be taken form calibration file
+    p_exmimo_config->rf.rffe_band_mode[CC_id] = DD_TDD;
+#endif
+#endif
+  }
+  else {
+    LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for eNB %d not supported\n",Mod_id,phy_vars_ue->frame,dl_CarrierFreq_r10,CC_id,CH_index);
   }
 
   if (physicalConfigDedicatedSCell_r10) {
