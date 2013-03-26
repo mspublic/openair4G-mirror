@@ -119,15 +119,16 @@ protected_rlc_um_control_primitives(void rlc_um_reset_state_variables (rlc_um_en
 */
 public_rlc_um_control_primitives(   void rlc_um_cleanup(rlc_um_entity_t *rlcP);)
 
-/*! \fn void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t frame, u32_t timer_reorderingP, u32_t sn_field_lengthP, u32_t is_mXchP)
+/*! \fn void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t frame, u32_t timer_reorderingP, u32_t rx_sn_field_lengthP, u32_t tx_sn_field_lengthP, u32_t is_mXchP)
 * \brief    Configure RLC UM protocol parameters.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[in]  frame                     Frame index.
 * \param[in]  timer_reorderingP         t-Reordering timer initialization value, units in frame.
-* \param[in]  sn_field_lengthP          Length of the sequence number, 5 or 10 bits.
+* \param[in]  rx_sn_field_lengthP       Length of the sequence number, 5 or 10 bits in reception.
+* \param[in]  tx_sn_field_lengthP       Length of the sequence number, 5 or 10 bits in transmission.
 * \param[in]  is_mXchP                  Is the radio bearer for MCCH, MTCH.
 */
-protected_rlc_um_control_primitives(void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t frame, u32_t timer_reorderingP, u32_t sn_field_lengthP, u32_t is_mXchP);)
+protected_rlc_um_control_primitives(void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t frame, u32_t timer_reorderingP, u32_t rx_sn_field_lengthP, u32_t tx_sn_field_lengthP, u32_t is_mXchP);)
 
 /*! \fn void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 * \brief    Set debug informations for a RLC UM protocol instance, these informations are only for trace purpose.

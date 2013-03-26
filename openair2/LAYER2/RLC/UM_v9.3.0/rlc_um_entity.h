@@ -71,10 +71,14 @@ typedef struct rlc_um_entity {
   //*****************************************************************************
   // CONFIGURATION PARAMETERS
   //*****************************************************************************
-  u8_t              sn_length;                  /*!< \brief Length of sequence number in bits, can be 5 or 10. */
-  u8_t              header_min_length_in_bytes; /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
-  signed int        sn_modulo;                  /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
-  signed int        um_window_size;
+  u8_t              tx_sn_length;                     /*!< \brief Length of sequence number in bits, can be 5 or 10. */
+  u8_t              rx_sn_length;                     /*!< \brief Length of sequence number in bits, can be 5 or 10. */
+  u8_t              tx_header_min_length_in_bytes;    /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
+  u8_t              rx_header_min_length_in_bytes;    /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
+  signed int        tx_sn_modulo;                     /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
+  signed int        rx_sn_modulo;                     /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
+  signed int        rx_um_window_size;
+  signed int        tx_um_window_size;
   //-----------------------------
   // tranmission
   //-----------------------------

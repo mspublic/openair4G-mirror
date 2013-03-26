@@ -187,15 +187,15 @@ void rlc_um_v9_3_0_test_windows()
    rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
    rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
 
-   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, is_mXch);
-   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, is_mXch);
+   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
+   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
 
    // RX window with vr_uh > vr_ur
    for (h = 0; h < RLC_UM_SN_10_BITS_MODULO; h++) {
        um1.vr_uh = h;
        for (w = 1; w < RLC_UM_WINDOW_SIZE_SN_10_BITS; w++) {
            um1.vr_ur = (um1.vr_uh - w) & RLC_UM_SN_10_BITS_MASK;
-           for (sn = ((um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK) ; sn != um1.vr_uh; sn = ((sn+1) & RLC_UM_SN_10_BITS_MASK)) {
+           for (sn = ((um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_10_BITS_MASK) ; sn != um1.vr_uh; sn = ((sn+1) & RLC_UM_SN_10_BITS_MASK)) {
                assert(rlc_um_in_reordering_window(&um1, g_frame, sn) >= 0);
                // returns -2 if lower_bound  > sn
                // returns -1 if higher_bound < sn
@@ -203,18 +203,18 @@ void rlc_um_v9_3_0_test_windows()
                // returns  1 if lower_bound  == sn
                // returns  2 if higher_bound == sn
                // returns  3 if higher_bound == sn == lower_bound
-               result = rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, um1.vr_uh);
+               result = rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, um1.vr_uh);
                assert((result < 2) && (result >=0));
            }
 
-           for (sn = um1.vr_uh ; sn != ((um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK) ; sn = ((sn+1) & RLC_UM_SN_10_BITS_MASK)) {
+           for (sn = um1.vr_uh ; sn != ((um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_10_BITS_MASK) ; sn = ((sn+1) & RLC_UM_SN_10_BITS_MASK)) {
                // returns -2 if lower_bound  > sn
                // returns -1 if higher_bound < sn
                // returns  0 if lower_bound  < sn < higher_bound
                // returns  1 if lower_bound  == sn
                // returns  2 if higher_bound == sn
                // returns  3 if higher_bound == sn == lower_bound
-               assert(rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, (um1.vr_uh -1) & RLC_UM_SN_10_BITS_MASK) < 0);
+               assert(rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, (um1.vr_uh -1) & RLC_UM_SN_10_BITS_MASK) < 0);
                assert(rlc_um_in_reordering_window(&um1, g_frame, sn) < 0);
            }
 
@@ -395,9 +395,9 @@ void rlc_um_v9_3_0_test_exchange_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, 1, g_frame, bytes_txP, tx_status);
   data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, 0, g_frame, bytes_rxP, tx_status);
   data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 
@@ -441,9 +441,9 @@ void rlc_um_v9_3_0_test_exchange_delayed_pdus(rlc_um_entity_t *um_txP,
   memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
   memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, g_frame, bytes_txP, tx_status);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, 1, g_frame, bytes_txP, tx_status);
   data_request_tx        = rlc_um_mac_data_request(um_txP, g_frame);
-  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, g_frame, bytes_rxP, tx_status);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, 0, g_frame, bytes_rxP, tx_status);
   data_request_rx        = rlc_um_mac_data_request(um_rxP, g_frame);
 
 
