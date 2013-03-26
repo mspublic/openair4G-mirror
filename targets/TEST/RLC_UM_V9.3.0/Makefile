@@ -77,7 +77,8 @@ SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_test.c
 
 SOURCES_L2 +=  $(MEM_DIR)/mem_block.c
 
-LOG_OBJS =  $(LOG_DIR)/log.o
+LOG_OBJS =  $(LOG_DIR)/log.o 
+LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
 OPT_OBJS =  $(OPT_DIR)/probe.o
 
 L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS) $(LOG_OBJS) $(OPT_OBJS)
