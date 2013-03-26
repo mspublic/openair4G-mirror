@@ -37,6 +37,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "PHY/LTE_TRANSPORT/proto.h"
 
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
@@ -372,7 +373,7 @@ u16 find_dlgranted_UEs(unsigned char Mod_id){
 // get aggregatiob form phy for a give UE
 unsigned char process_ue_cqi (unsigned char Mod_id, unsigned char UE_id) {
 
-  unsigned char aggregation=1;
+  unsigned char aggregation=3;
   // check the MCS and SNR and set the aggregation accordingly
 
   return aggregation;
@@ -908,7 +909,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
     }
     eNB_mac_inst[Mod_id].bcch_active=1;
     *nprb=3;
-    *nCCE=4;
+    *nCCE=8;
     return;
   }
   eNB_mac_inst[Mod_id].bcch_active=0;
@@ -935,7 +936,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 
       if (RA_template[i].generate_rar == 1) {
 	*nprb= (*nprb) + 3;
-	*nCCE = (*nCCE) + 4;
+	*nCCE = (*nCCE) + 8;
 	RA_template[i].Msg3_subframe=Msg3_subframe;
       }
       else if (RA_template[i].generate_Msg4 == 1) {
@@ -1075,7 +1076,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 	  }
 #endif
 	  *nprb= (*nprb) + 3;
-	  *nCCE = (*nCCE) + 4;
+	  *nCCE = (*nCCE) + 8;
 	}
 	//try here
       } 
@@ -1154,7 +1155,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
-  aggregation = 1; // set to maximum aggregation level
+  aggregation = 3; // set to maximum aggregation level
 
 
 // UE data info;
@@ -1414,6 +1415,8 @@ u32 allocate_prbs(u8 Mod_id, u8 UE_id,u8 nb_rb, u32 *rballoc) {
   unsigned char nb_rb_alloc=0;
 
   for (i=0;i<(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-2);i+=2) {
+    if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i>>1] == 0)
+      continue;
     if (((*rballoc>>i)&3)==0) {
       *rballoc |= (3<<i);
       rballoc_dci |= (1<<(i>>1));
@@ -1494,9 +1497,17 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
   if (eNB_mac_inst[Mod_id].bcch_active == 1) {
     eNB_mac_inst[Mod_id].bcch_active = 0;
 
-    // randomize frequency allocation for SI
+    // choose first available RB in mask
 
-    first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
+    first_rb = 0;
+    while((mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[first_rb>>1] == 0) && 
+        (first_rb < mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4))
+      first_rb += 2;
+    if(first_rb >= mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4) {
+      LOG_E(MAC, "eNB_scheduler.c : can not allocate BCCH!\n");
+      return;
+    }
+
     if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) {
       BCCH_alloc_pdu.rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,first_rb,3);
       rballoc |= mac_xface->get_rballoc(BCCH_alloc_pdu.vrb_type,BCCH_alloc_pdu.rballoc);
@@ -1515,7 +1526,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 		     &BCCH_alloc_pdu,
 		     SI_RNTI,
 		     sizeof(DCI1A_5MHz_TDD_1_6_t),
-		     2,
+		     3,
 		     sizeof_DCI1A_5MHz_TDD_1_6_t,
 		     format1A,0);
     }
@@ -1543,11 +1554,20 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 	      eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt1,
 	      eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bits1);
 	// randomize frequency allocation for RA
-	while (1) {
+	/*while (1) {
 	  first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
 	  if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+2] != 1))
 	    break;
-	}
+	}*/
+        first_rb = 0;
+        while(((mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[first_rb>>1] == 0) ||
+              (vrb_map[first_rb] == 1)) && 
+            (first_rb < mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4))
+          first_rb++;
+        if(first_rb >= mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4) {
+          LOG_E(MAC, "eNB_scheduler.c : can not allocate RAR!\n");
+          return;
+        }
 	vrb_map[first_rb] = 1;
 	vrb_map[first_rb+1] = 1;
 	vrb_map[first_rb+2] = 1;
@@ -1562,7 +1582,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			 (void*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu1[0],
 			 eNB_mac_inst[Mod_id].RA_template[i].RA_rnti,
 			 eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1,
-			 2,
+			 3,
 			 eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bits1,
 			 eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt1,
 			 1);
@@ -1589,11 +1609,20 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
       if (eNB_mac_inst[Mod_id].RA_template[i].generate_Msg4_dci == 1) {
 	
 	// randomize frequency allocation for RA
-	while (1) {
+	/*while (1) {
 	  first_rb = (unsigned char)(taus()%(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4));
 	  if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+2] != 1))
 	    break;
-	}
+	}*/
+        first_rb = 0;
+        while(((mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[first_rb>>1] == 0) ||
+              (vrb_map[first_rb] == 1)) && 
+            (first_rb < mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4))
+          first_rb++;
+        if(first_rb >= mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-4) {
+          LOG_E(MAC, "eNB_scheduler.c : can not allocate Msg4!\n");
+          return;
+        }
 	vrb_map[first_rb] = 1;
 	vrb_map[first_rb+1] = 1;
 	vrb_map[first_rb+2] = 1;
@@ -1612,7 +1641,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			(void*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0],
 			eNB_mac_inst[Mod_id].RA_template[i].rnti,
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes2,
-			2,
+			3,
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bits2,
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt2,
 			0);
@@ -1659,7 +1688,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			  (void*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0],
 			  eNB_mac_inst[Mod_id].RA_template[i].rnti,
 			  eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes2,
-			  2,
+			  3,
 			  eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bits2,
 			  eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt2,
 			  0);
@@ -1878,7 +1907,7 @@ void tm5_pre_processor (unsigned char Mod_id,
     }
   granted_UEs = find_dlgranted_UEs(Mod_id);
   //weight = get_ue_weight(Mod_id,UE_id);
-  aggregation = 2; // set to the maximum aggregation level
+  aggregation = 3; // set to the maximum aggregation level
 
   // set current available nb_rb and nCCE to maximum
   nb_available_rb = mac_xface->lte_frame_parms[Mod_id]->N_RB_DL - nb_rb_used0;
@@ -4230,7 +4259,7 @@ void schedule_ue(u8 Mod_id,u16 rnti,unsigned char UE_id,u32 frame,unsigned char 
   u16 tpmi0=1;
   //int **rballoc_sub = (int **)malloc(1792*sizeof(int *));
   //weight = get_ue_weight(Mod_id,UE_id);
-  aggregation = 1; // set to the maximum aggregation level
+  aggregation = 3; // set to the maximum aggregation level
   int mcs;
   int i;
 
@@ -4792,6 +4821,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   u16 i=0,ii=0;
   u16 nb_available_rb;
   u16 nCCE;
+  int nb_rbg;
 
   granted_UEs = find_dlgranted_UEs(Mod_id);
   LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, granted_UEs = %d\n",Mod_id,frame,subframe,granted_UEs);
@@ -4807,7 +4837,11 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   //  for (UE_id=0;(UE_id<granted_UEs) && (nCCE > aggregation);UE_id++) {
 
   // set current available nb_rb and nCCE to maximum
-  nb_available_rb = mac_xface->lte_frame_parms[Mod_id]->N_RB_DL - nb_rb_used0;
+  nb_rbg = get_nb_rbg(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL);
+  for(i = 0; i < nb_rbg; i++)
+    if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i])
+      nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL, i);
+  nb_available_rb -= nb_rb_used0;
   nCCE = mac_xface->get_nCCE_max(Mod_id) - *nCCE_used;
 
   /// CALLING Pre_Processor for tm5
@@ -4820,7 +4854,11 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       dl_pow_off[UE_id]=1;
       pre_nb_available_rbs[UE_id]=nb_available_rb;
       for (ii=0;ii<7;ii++)
-      	rballoc_sub[UE_id][ii] = 1;
+        if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[2*ii] && mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[2*ii+1])
+          rballoc_sub[UE_id][ii] = 1;
+        else
+          rballoc_sub[UE_id][ii] = 0;
+
       
       for (UE_id2=0;UE_id2<granted_UEs;UE_id2++) {
       	if(UE_id!=UE_id2){

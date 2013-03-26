@@ -1223,6 +1223,17 @@ main (int argc, char **argv)
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdcch_pilot_scale = pdcch_pilot_scale;
   }
 
+  if(nb_connected_eNB == 2) {
+    for(i = 0; i < 6; i++) {
+      PHY_vars_eNB_g[1]->lte_frame_parms.dl_rbg_mask[i] = 1;
+      PHY_vars_eNB_g[1]->lte_frame_parms.dl_rbg_mask[6+i] = 0;
+      PHY_vars_eNB_g[0]->lte_frame_parms.dl_rbg_mask[i] = 0;
+      PHY_vars_eNB_g[0]->lte_frame_parms.dl_rbg_mask[6+i] = 1;
+    }
+    PHY_vars_eNB_g[0]->lte_frame_parms.dl_rbg_mask[12] = 0;
+    PHY_vars_eNB_g[0]->lte_frame_parms.dl_rbg_mask[12] = 0;
+  }
+
   for(UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
     PHY_vars_UE_g[UE_id]->mrpsch_period = 1;
     PHY_vars_UE_g[UE_id]->mrpsch_index = UE_id;
@@ -1607,7 +1618,7 @@ main (int argc, char **argv)
       for(i = 0; i < NB_eNB_INST; i++) {
 	snprintf(fname, 64, "%s/enb%d_f%d_txf_v.m", debug_signals_dir, i, frame);
 	snprintf(vname, 64, "enb%d_f%d_txf", i, frame);
-	write_output(fname, vname, enb_txF_frame[i],
+	write_output(fname, vname, PHY_vars_eNB_g[i]->lte_eNB_common_vars.txdataF[0][0],
 	    10*PHY_vars_eNB_g[i]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[i]->lte_frame_parms.ofdm_symbol_size, 1, 1);
 
 	snprintf(fname, 64, "%s/enb%d_f%d_tx_v.m", debug_signals_dir, i, frame);
@@ -1674,6 +1685,24 @@ main (int argc, char **argv)
 	  snprintf(vname, 64, "ue%d_enb%d_f%d_pbch_llr", i, eNB_id, frame);
           write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pbch_vars[eNB_id]->llr,
               PHY_vars_UE_g[i]->lte_frame_parms[eNB_id]->Ncp == 0 ? 1920 : 1728, 1, 4);
+
+          if(PHY_vars_UE_g[i]->UE_mode[eNB_id] == PRACH || PHY_vars_UE_g[i]->UE_mode[eNB_id] == RA_RESPONSE || PHY_vars_UE_g[i]->UE_mode[eNB_id] == PUSCH) {
+            snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pdcch_dlchest_v.m", debug_signals_dir, i, eNB_id, frame);
+            snprintf(vname, 64, "ue%d_enb%d_f%d_pdcch_dlchest", i, eNB_id, frame);
+            write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pdcch_vars[eNB_id]->dl_ch_estimates_ext[0], 3*300, 1, 1);
+
+            snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pdcch_rxf_ext_v.m", debug_signals_dir, i, eNB_id, frame);
+            snprintf(vname, 64, "ue%d_enb%d_f%d_pdcch_rxf_ext", i, eNB_id, frame);
+            write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pdcch_vars[eNB_id]->rxdataF_ext[0], 3*300, 1, 1);
+
+            snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pdcch_rxf_comp_v.m", debug_signals_dir, i, eNB_id, frame);
+            snprintf(vname, 64, "ue%d_enb%d_f%d_pdcch_rxf_comp", i, eNB_id, frame);
+            write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0], 3*300, 1, 1);
+
+            snprintf(fname, 64, "%s/ue%d_enb%d_f%d_pdcch_llr_v.m", debug_signals_dir, i, eNB_id, frame);
+            snprintf(vname, 64, "ue%d_enb%d_f%d_pdcch_llr", i, eNB_id, frame);
+            write_output(fname, vname, PHY_vars_UE_g[i]->lte_ue_pdcch_vars[eNB_id]->llr, 3*600, 1, 4);
+          }
 	}
       }
     }

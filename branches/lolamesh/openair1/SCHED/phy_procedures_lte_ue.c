@@ -2082,7 +2082,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  if (abstraction_flag == 0) {
 	    dlsch_unscrambling(phy_vars_ue->lte_frame_parms[eNB_id],
 			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			       phy_vars_ue->dlsch_ue[0][0],
+			       phy_vars_ue->dlsch_ue[eNB_id][0],
 			       get_G(phy_vars_ue->lte_frame_parms[eNB_id],
 				     phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
 				     phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,

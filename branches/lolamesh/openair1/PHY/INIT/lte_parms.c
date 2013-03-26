@@ -3,6 +3,7 @@
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf) {
 
   u8 log2_osf;
+  int i;
 
   if (frame_parms->Ncp==1) {
     frame_parms->nb_prefix_samples0=512;
@@ -97,6 +98,12 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf) {
 
   frame_parms->pbch_scale = 1.0;
   frame_parms->pdcch_pilot_scale = 1.0;
+  if(frame_parms->N_RB_DL > 110) {
+    msg("init_frame_parms : N_RB > 110 not supported\n");
+    exit(-1);
+  }
+  for(i = 0; i < MAX_NB_RBG; i++)
+    frame_parms->dl_rbg_mask[i] = 1;
   //  frame_parms->tdd_config=3;
   return(0);
 }
