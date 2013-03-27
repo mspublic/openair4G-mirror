@@ -955,7 +955,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  qam_table_s = NULL;
 
 	if (rb_alloc_ind > 0)
-	  //	  printf("Allocated rb %d, subframe_offset %d\n",rb,subframe_offset);
+	  //	  	  printf("Allocated rb %d, subframe_offset %d\n",rb,subframe_offset);
 	  allocate_REs_in_RB(txdataF,
 			     &jj,
 			     re_offset,
@@ -1003,7 +1003,7 @@ int mch_modulation(mod_sym_t **txdataF,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_eNB_DLSCH_t *dlsch){
   
-  uint8_t nsymb;
+  uint8_t nsymb,nsymb_pmch;
   uint32_t i,jj,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
   uint8_t pilots=0;
@@ -1013,8 +1013,8 @@ int mch_modulation(mod_sym_t **txdataF,
   int16_t qam16_table_a[4],qam64_table_a[8],qam16_table_b[4],qam64_table_b[8];
   int16_t *qam_table_s;
 
-  nsymb = 12;
-
+  nsymb_pmch = 12;
+  nsymb = (frame_parms->Ncp == NORMAL) ? 14 : 12;
   if (mod_order == 4)
     for (i=0;i<4;i++) {
       qam16_table_a[i] = (int16_t)(((int32_t)qam16_table[i]*amp)>>15);
@@ -1027,7 +1027,7 @@ int mch_modulation(mod_sym_t **txdataF,
    jj=0;
   re_allocated=0;
   //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
-  for (l=2;l<nsymb;l++) {
+  for (l=2;l<nsymb_pmch;l++) {
     
 #ifdef DEBUG_DLSCH_MODULATION
     msg("Generating MCH (mod %d) in %d\n",mod_order, l);
