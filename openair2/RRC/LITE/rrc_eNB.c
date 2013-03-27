@@ -1348,18 +1348,18 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   int i;
   int oip_ifup=0;
   int dest_ip_offset=0;
-  // Loop through DRBs and establish if necessary
-  for (i=0;i<8;i++) { // num max DRB (11-3-8)
 
 #ifdef Rel10
-	/* Rel 10 optional parameters - not sure what to do with these */
-	if(rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension != NULL) {
-		eNB_rrc_inst[Mod_id].rrcRel10IEs[0] = malloc(sizeof(RRCConnectionReconfigurationComplete_v1020_IEs_t));
-		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->logMeasAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->logMeasAvailable_r10;
-		eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->rlf_InfoAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->rlf_InfoAvailable_r10;
-	}
+  /* Rel 10 optional parameters - not sure what to do with these */
+  if(rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension != NULL) {
+    eNB_rrc_inst[Mod_id].rrcRel10IEs[0] = malloc(sizeof(RRCConnectionReconfigurationComplete_v1020_IEs_t));
+    eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->logMeasAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->logMeasAvailable_r10;
+    eNB_rrc_inst[Mod_id].rrcRel10IEs[0]->rlf_InfoAvailable_r10 = rrcConnectionReconfigurationComplete->nonCriticalExtension->nonCriticalExtension->rlf_InfoAvailable_r10;
+  }
 #endif
 
+  // Loop through DRBs and establish if necessary
+  for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
       LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
 	    Mod_id,frame, UE_index,
@@ -1440,8 +1440,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 #endif
 			   );
       }
+      
       else { // remove LCHAN from MAC/PHY
-
+	/*
 	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] ==1) {
 	  // DRB has just been removed so remove RLC + PDCP for DRB
 	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,
@@ -1453,36 +1454,36 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 0;
     LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB][MOD %02d][]\n",
             frame, Mod_id, UE_index, Mod_id);
-
-	rrc_mac_config_req(Mod_id,1,UE_index,0,
-			   (RadioResourceConfigCommonSIB_t *)NULL,
-			   eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
-#ifdef Rel10
-			   eNB_rrc_inst[Mod_id].sCell_config[UE_index][0],
-#endif
-			   (MeasObjectToAddMod_t **)NULL,
-			   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
-			   DRB2LCHAN[i],
-			   (LogicalChannelConfig_t *)NULL,
-			   (MeasGapConfig_t *)NULL,
-			   (TDD_Config_t *)NULL,
-			   (u8 *)NULL,
-			   (u16 *)NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL
-#ifdef Rel10	       
-			   ,
-			   0,
-			   (MBSFN_AreaInfoList_r9_t *)NULL
-#endif
-			   );
+	*/
       }
+
     }
   }
-}
 
+#ifdef Rel10
+  if ( eNB_rrc_inst[Mod_id].sCell_config[UE_index][0]) {
+    rrc_mac_config_req(Mod_id,1,UE_index,0,
+		       (RadioResourceConfigCommonSIB_t *)NULL,
+		       NULL,
+		       eNB_rrc_inst[Mod_id].sCell_config[UE_index][0],
+		       (MeasObjectToAddMod_t **)NULL,
+		       NULL,
+		       NULL,
+		       (LogicalChannelConfig_t *)NULL,
+		       (MeasGapConfig_t *)NULL,
+		       (TDD_Config_t *)NULL,
+		       (u8 *)NULL,
+		       (u16 *)NULL,
+		       NULL,
+		       NULL,
+		       NULL,
+		       NULL,
+		       0,
+		       (MBSFN_AreaInfoList_r9_t *)NULL);
+#endif
+    
+  }
+}
 
 void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 
