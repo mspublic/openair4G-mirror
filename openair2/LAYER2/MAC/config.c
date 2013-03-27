@@ -114,18 +114,22 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       LOG_I(MAC,"[CONFIG][UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
       UE_mac_inst[Mod_id].macConfig=mac_MainConfig;
       UE_mac_inst[Mod_id].measGapConfig=measGapConfig;
-      
-      if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
-	UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
-      else
-	UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+      if (mac_MainConfig->ul_SCH_Config) {
 
-      if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx)
-	UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
-      else
-	UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-
-      UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (u16) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+	if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
+	  UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
+	else
+	  UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+	
+	if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx)
+	  UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
+	else
+	  UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+	if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer)
+	  UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (u16) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+	else 
+	  UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (u16)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+      }
 #ifdef Rel10   
       if (mac_MainConfig->sr_ProhibitTimer_r9) 
 	UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (u16) *mac_MainConfig->sr_ProhibitTimer_r9;
@@ -153,8 +157,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer);
       UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer);
       UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_id].scheduling_info.PathlossChange);
-      LOG_D(MAC,"[UE %d] config PHR (%d): periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
-	    Mod_id,mac_MainConfig->phr_Config->present, 
+      LOG_D(MAC,"[UE %d] config PHR : periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
+	    Mod_id, 
 	    UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF,
 	    UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF,
 	    UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db);
