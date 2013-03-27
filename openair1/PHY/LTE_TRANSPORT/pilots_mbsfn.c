@@ -29,7 +29,7 @@
 
 /*! \file PHY/LTE_TRANSPORT/pilots_mbsfn.c
 * \brief Top-level routines for generating DL mbsfn reference signals 
-* \author R. Knopp
+* \authors S. Paranche, R. Knopp
 * \date 2012
 * \version 0.1
 * \company Eurecom
@@ -56,15 +56,10 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
     return(-1);
   }
 
-  Nsymb = 6;
+  Nsymb = (frame_parms->Ncp==NORMAL) ? 7 : 6;
  
-#ifdef IFFT_FPGA
-  subframe_offset = subframe*frame_parms->N_RB_DL*12*Nsymb<<1;
-  samples_per_symbol = frame_parms->N_RB_DL*12;
-#else    
   subframe_offset = subframe*frame_parms->ofdm_symbol_size*Nsymb<<1;
   samples_per_symbol = frame_parms->ofdm_symbol_size;
-#endif
     
     //    printf("tti %d : offset %d (slot %d)\n",tti,tti_offset,slot_offset);
     //Generate Pilots
