@@ -12,8 +12,8 @@ NUMBER_OF_USEFUL_CARRIERS_EMOS = 300;
 N_RB_UL_EMOS = 25;
 N_PILOTS_DL_EMOS = 2;  % ofdm symbols with pilots per slot
 N_PILOTS_UL_EMOS = 2;  % ofdm symbols with pilots per subframe
-N_SLOTS_DL_EMOS = 12;     % we take slots 0,1,10,11,12,13,14,15,16,17,18,19
-N_SUBFRAMES_UL_EMOS = 3;     % we take subframes 2,3,4
+N_SLOTS_DL_EMOS = 2;     % we take slots 10,11
+N_SUBFRAMES_UL_EMOS = 1;     % we take subframes 3
 NB_ANTENNAS_TX_EMOS = 2;
 NB_ANTENNAS_RX_EMOS = 2;
 
@@ -32,6 +32,11 @@ NB_ANTENNAS_TX = 2;
 
 MAX_CQI_BITS = 40;
 MAX_DCI_SIZE_BITS = 45;
+
+EMOS_CHANNEL = 1;
+
+% enable this line to enable error checking
+get_dump_size
 
 phy_measurements_struct = struct(...
     'rssi',                 int32(0),...
@@ -225,7 +230,9 @@ fifo_dump_emos_struct_UE = struct(...
     'rx_total_gain_dB',uint32(0),...
     'eNb_id',uint8(0),...
     'mimo_mode',uint8(0));
-    %'channel',int16(zeros(2*NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS,NB_ANTENNAS_TX_EMOS)));
+if (EMOS_CHANNEL)
+    fifo_dump_emos_struct_UE.channel=int16(zeros(2*NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS,NB_ANTENNAS_TX_EMOS,NB_ANTENNAS_RX_EMOS));
+end
 
 fifo_dump_emos_struct_UE_a = cstruct(fifo_dump_emos_struct_UE,[],4);
 if (exist('fifo_dump_emos_UE_size','var') && (fifo_dump_emos_struct_UE_a.size ~= fifo_dump_emos_UE_size))
@@ -238,8 +245,10 @@ fifo_dump_emos_struct_eNb = struct(...
     'mimo_mode',uint8(0),...   
     'phy_measurements_eNb',phy_measurements_eNb_struct,...
     'eNb_UE_stats',repmat(eNb_UE_stats_struct,1,NUMBER_OF_UE_MAX),...
-    'rx_total_gain_dB',uint32(0),...
-    'channel',int16(zeros(2*N_RB_UL_EMOS*12*N_PILOTS_UL_EMOS*N_SUBFRAMES_UL_EMOS,NB_ANTENNAS_RX_EMOS)));
+    'rx_total_gain_dB',uint32(0)); 
+if (EMOS_CHANNEL)
+  fifo_dump_emos_struct_eNb.channel = int16(zeros(2*N_RB_UL_EMOS*12*N_PILOTS_UL_EMOS*N_SUBFRAMES_UL_EMOS,NB_ANTENNAS_RX_EMOS));
+end
 
 fifo_dump_emos_struct_eNb_a = cstruct(fifo_dump_emos_struct_eNb,[],4);
 if (exist('fifo_dump_emos_eNb_size','var') && (fifo_dump_emos_struct_eNb_a.size ~= fifo_dump_emos_eNb_size))

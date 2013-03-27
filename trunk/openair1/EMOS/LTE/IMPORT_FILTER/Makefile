@@ -23,6 +23,10 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
+ifeq ($(EMOS_CHANNEL),1)
+CFLAGS += -DEMOS_CHANNEL
+endif
+
 all: dump_size cstruct
 
 $(OBJ): %.o : %.c
@@ -35,8 +39,11 @@ cstruct: cstruct.c MatlabCStruct.c
 dump_size: dump_size.c
 	$(CC) $(CFLAGS) $(LDFLAGS) dump_size.c -o dump_size
 
-clean:
+cleanall:
 	rm -rf dump_size cstruct.oct cstruct.mex
+
+clean:
+	rm -rf dump_size 
 
 show:
 	@echo $(CFLAGS)
