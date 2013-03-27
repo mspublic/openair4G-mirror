@@ -33,12 +33,15 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   long int        cnt          = 0;
   SRB_ToAddMod_t* srb_toaddmod = NULL;
   DRB_ToAddMod_t* drb_toaddmod = NULL;
+  int             index;
   
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
   if (srb2add_listP != NULL) {
       for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
-	rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
-	printf("Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+         rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
+
+         index = rlc[module_idP].m_rlc_pointer[rb_id].rlc_index;
+         printf("Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
           srb_toaddmod = srb2add_listP->list.array[cnt];
 
           if (srb_toaddmod->rlc_Config) {
@@ -50,57 +53,67 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                           case RLC_Config_PR_NOTHING:
                               break;
                           case RLC_Config_PR_am:
-                              rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_AM);
-                              config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], 
+                              if (! rlc[module_idP].m_rlc_am_array[index].allocation) {
+                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_AM);
+                                  config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                                  frameP, 
                                                  eNB_flagP, 
                                                  module_idP, 
                                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.am, 
                                                  rb_id, 
                                                  SIGNALLING_RADIO_BEARER);
+                              }
                               break;
                           case RLC_Config_PR_um_Bi_Directional:
-                              rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
-                              config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                  frameP,
-                                  eNB_flagP,
-                                  module_idP,
-                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
-                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
-                                  rb_id, SIGNALLING_RADIO_BEARER);
+                              if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
+                                  config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                      frameP,
+                                      eNB_flagP,
+                                      module_idP,
+                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
+                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
+                                      rb_id, SIGNALLING_RADIO_BEARER);
+                              }
                               break;
                           case RLC_Config_PR_um_Uni_Directional_UL:
-                              rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
-                              config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                  frameP,
-                                  eNB_flagP,
-                                  module_idP,
-                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
-                                  NULL,
-                                  rb_id, SIGNALLING_RADIO_BEARER);
+                              if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
+                                  config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                      frameP,
+                                      eNB_flagP,
+                                      module_idP,
+                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
+                                      NULL,
+                                     rb_id, SIGNALLING_RADIO_BEARER);
+                              }
                               break;
                           case RLC_Config_PR_um_Uni_Directional_DL:
-                              rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
-                              config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                  frameP,
-                                  eNB_flagP,
-                                  module_idP,
-                                  NULL,
-                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
-                                  rb_id, SIGNALLING_RADIO_BEARER);
+                              if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
+                                  config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                      frameP,
+                                      eNB_flagP,
+                                      module_idP,
+                                      NULL,
+                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
+                                      rb_id, SIGNALLING_RADIO_BEARER);
+                              }
                               break;
                       }
                       break;
                   case SRB_ToAddMod__rlc_Config_PR_defaultValue:
-                      rrc_rlc_add_rlc   (module_idP, frameP, rb_id, RLC_UM);
-                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                  frameP,
-                                  eNB_flagP,
-                                  module_idP,
-                                  NULL, // TO DO DEFAULT CONFIG
-                                  NULL, // TO DO DEFAULT CONFIG
-                                  rb_id, SIGNALLING_RADIO_BEARER);
-                       break;
+                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                          rrc_rlc_add_rlc   (module_idP, frameP, rb_id, RLC_UM);
+                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                      frameP,
+                                      eNB_flagP,
+                                      module_idP,
+                                      NULL, // TO DO DEFAULT CONFIG
+                                      NULL, // TO DO DEFAULT CONFIG
+                                      rb_id, SIGNALLING_RADIO_BEARER);
+                      }
+                      break;
                   default:;
               }
           }
@@ -111,6 +124,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
           drb_toaddmod = drb2add_listP->list.array[cnt];
 
           drb_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;//drb_toaddmod->drb_Identity;
+          index = rlc[module_idP].m_rlc_pointer[drb_id].rlc_index;
           
           if (drb_toaddmod->logicalChannelIdentity != null) {
               lc_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;
@@ -123,44 +137,52 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                   case RLC_Config_PR_NOTHING:
                       break;
                   case RLC_Config_PR_am:
-                      rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_AM);
-                      config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index], 
-                                        frameP, 
-                                        eNB_flagP, 
-                                        module_idP, 
-                                        &drb_toaddmod->rlc_Config->choice.am, 
-                                        drb_id, 
-                                        RADIO_ACCESS_BEARER);
+                      if (! rlc[module_idP].m_rlc_am_array[index].allocation) {
+                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_AM);
+                          config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                                            frameP,
+                                            eNB_flagP,
+                                            module_idP,
+                                            &drb_toaddmod->rlc_Config->choice.am,
+                                            drb_id,
+                                            RADIO_ACCESS_BEARER);
+                      }
                       break;
                   case RLC_Config_PR_um_Bi_Directional:
-                      rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
-                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
-                          frameP,
-                          eNB_flagP,
-                          module_idP,
-                          &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
-                          &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
-                          drb_id, RADIO_ACCESS_BEARER);
+                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
+                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                              frameP,
+                              eNB_flagP,
+                              module_idP,
+                              &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
+                              &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
+                              drb_id, RADIO_ACCESS_BEARER);
+                      }
                       break;
                   case RLC_Config_PR_um_Uni_Directional_UL:
-                      rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
-                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
-                          frameP,
-                          eNB_flagP,
-                          module_idP,
-                          &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
-                          NULL,
-                          drb_id, RADIO_ACCESS_BEARER);
+                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
+                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                              frameP,
+                              eNB_flagP,
+                              module_idP,
+                              &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
+                              NULL,
+                              drb_id, RADIO_ACCESS_BEARER);
+                      }
                       break;
                   case RLC_Config_PR_um_Uni_Directional_DL:
-                      rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
-                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
-                          frameP,
-                          eNB_flagP,
-                          module_idP,
-                          NULL,
-                          &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
-                          drb_id, RADIO_ACCESS_BEARER);
+                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
+                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                              frameP,
+                              eNB_flagP,
+                              module_idP,
+                              NULL,
+                              &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
+                              drb_id, RADIO_ACCESS_BEARER);
+                      }
                       break;
                   default:
                       LOG_W(RLC, "[RLC_RRC][MOD_id %d][RB %d] unknown drb_toaddmod->rlc_Config->present \n",module_idP,drb_id);
