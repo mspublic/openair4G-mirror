@@ -5,6 +5,7 @@
 
 #define TPUT_WINDOW_LENGTH 100
 extern int otg_enabled;
+extern int band_choice;
 
 FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 
@@ -37,6 +38,21 @@ static void dl_traffic_on_off( FL_OBJECT *button, long arg) {
         fl_set_object_label(button, "DL Traffic OFF");
         otg_enabled = 0;
         fl_set_object_color(button, FL_RED, FL_RED);
+    }
+}
+
+static void band_select( FL_OBJECT *button, long arg) {
+
+    if (fl_get_choice(button)==1) {
+      printf("selected 1\n");
+      band_choice = 1;
+    }
+    else if (fl_get_choice(button)==2) {
+      printf("selected 2\n");
+      band_choice = 2;
+    } 
+    else {
+      printf("unknown choice\n");
     }
 }
 
@@ -101,6 +117,19 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void ) {
     fl_set_object_label(fdui->button_0, "DL Traffic OFF");
     fl_set_object_color(fdui->button_0, FL_RED, FL_RED);  
     fl_set_object_callback(fdui->button_0, dl_traffic_on_off, 0 );
+
+    // band selector for Scell
+    fdui->band = obj = fl_add_choice( FL_NORMAL_CHOICE2, 660, 530, 100, 40, "" );
+    fl_set_object_callback( obj, band_select, 0 );
+    fl_addto_choice( obj, "859.5MHz" );
+    fl_set_choice_item_mode( obj, 1, FL_PUP_NONE );
+    fl_addto_choice( obj, "861.5MHz" );
+    fl_set_choice_item_mode( obj, 2, FL_PUP_NONE );
+    fl_set_choice( obj, 1 );
+
+    obj = fl_add_text( FL_NORMAL_TEXT, 550, 540, 100, 20, "SCell band" );
+    fl_set_object_lalign( obj, FL_ALIGN_CENTER | FL_ALIGN_INSIDE );
+
 
     fl_end_form( );
     fdui->lte_phy_scope_enb->fdui = fdui;

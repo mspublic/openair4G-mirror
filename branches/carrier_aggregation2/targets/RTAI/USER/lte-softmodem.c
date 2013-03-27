@@ -154,6 +154,7 @@ runmode_t mode;
 int rx_input_level_dBm;
 int otg_enabled = 0;
 int number_of_cards = 1;
+int band_choice = 0;
 
 int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
 
@@ -643,7 +644,30 @@ static void *eNB_thread(void *arg)
         slot=0;
         frame++;
       }
-    }
+
+      if (band_choice==1) {
+	if (eNB_rrc_inst[0].sCell_config[0][0]) {
+	  rrc_eNB_generate_RRCConnectionReconfiguration_SCell(PHY_vars_eNB_g[0][0]->Mod_id, PHY_vars_eNB_g[0][0]->frame, 0, 6425);
+	  printf("setting SCell carrier frequency to %d.\n",
+		 eNB_rrc_inst[PHY_vars_eNB_g[0][0]->Mod_id].sCell_config[0][0]->cellIdentification_r10->dl_CarrierFreq_r10);
+	}
+	else {
+	  printf("SCell not yet configured.\n");
+	}
+	band_choice = 0;
+      }
+      else if (band_choice==2) {
+	if (eNB_rrc_inst[0].sCell_config[0][0]) {
+	  rrc_eNB_generate_RRCConnectionReconfiguration_SCell(PHY_vars_eNB_g[0][0]->Mod_id, PHY_vars_eNB_g[0][0]->frame, 0, 6445);
+	  printf("setting SCell carrier frequency to %d.\n",
+		 eNB_rrc_inst[PHY_vars_eNB_g[0][0]->Mod_id].sCell_config[0][0]->cellIdentification_r10->dl_CarrierFreq_r10);
+	}
+	else {
+	  printf("SCell not yet configured.\n");
+	}
+	band_choice = 0;
+      }
+    } //while(!oai_exit)
 
   rt_printk("eNB_thread: finished, ran %d times.\n",frame);
 

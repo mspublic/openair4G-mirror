@@ -8,6 +8,9 @@
 #include "../impl_defs_top.h"
 #include "../defs.h"
 #include "../../SCHED/defs.h" // for OPENAIR_DAQ_VARS
+//#include "../extern.h"
+//#include "LAYER2/MAC/defs.h"
+//#include "RRC/LITE/extern.h"
 
 extern OPENAIR_DAQ_VARS openair_daq_vars;
 
@@ -21,6 +24,7 @@ typedef struct {
     FL_OBJECT * pusch_llr;
     FL_OBJECT * pusch_tput;
     FL_OBJECT * button_0;
+    FL_OBJECT * band;
 } FD_lte_phy_scope_enb;
 
 typedef struct {
