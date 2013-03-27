@@ -1632,7 +1632,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	else if (rb < 96)
 	  rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
 	else if (rb < 100)
-	  rb_alloc_ind = (rb_alloc[0]>>(rb-96)) & 1;
+	  rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
 	else
 	  rb_alloc_ind = 0;
 	
@@ -1649,7 +1649,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	if (rb_alloc_ind==1) {
 	  *pmi_ext = (pmi>>((rb>>2)<<1))&3;
 	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	  /*	  
+	  /*	  	  
 		  printf("rb %d\n",rb);
 		  for (i=0;i<12;i++)
 		  printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
@@ -1661,8 +1661,9 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	      rxF_ext[i]=rxF[i<<1];
 #else
 	      rxF_ext[i]=rxF[i];
-#endif	      //	      printf("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
-	      //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
+#endif	     /* 
+	      printf("%d : (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),
+	      ((short*)&rxF[i])[0],((short*)&rxF[i])[1]);*/
 	    }
 	    dl_ch0_ext+=12;
 	    rxF_ext+=12;
