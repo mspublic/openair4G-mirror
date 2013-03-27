@@ -70,7 +70,9 @@ u32_t t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55
 
 void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
-  u32_t ul_sn_FieldLength,dl_sn_FieldLength,t_Reordering;
+  u32_t  ul_sn_FieldLength = 0;
+  u32_t  dl_sn_FieldLength = 0;
+  u32_t  t_Reordering;
 
   //-----------------------------------------------------------------------------
     LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_%s][MOD %02d][][--- CONFIG_REQ timer_reordering=%dms sn_field_length=%d  --->][RLC_UM][MOD %02d][RB %02d]    \n",
@@ -267,7 +269,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
         rlcP->rx_header_min_length_in_bytes = 1;
         return;
-    } else {
+    } else if (rx_sn_field_lengthP != 0) {
         LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, rx_sn_field_lengthP);
         return;
     }
@@ -284,7 +286,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
         rlcP->tx_header_min_length_in_bytes = 1;
         return;
-    } else {
+    } else if (tx_sn_field_lengthP != 0) {
         LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, tx_sn_field_lengthP);
         return;
     }
