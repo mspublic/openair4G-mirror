@@ -21,7 +21,7 @@ extern unsigned int   Master_list_rx;
 //extern unsigned short NODE_ID[1];
 extern unsigned char  NB_INST;
 //#define DEBUG_CONTROL 1
-
+//#define DEBUG_EMU   1
 /*
 char is_node_local_neighbor(unsigned short Node_id){
   int i;
@@ -349,9 +349,10 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
 #endif
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
 #ifdef DEBUG_EMU      
-     LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x harq pid is %d \n",
+     /*     LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x harq pid is %d \n",
 	   ue_id, UE_transport_info[ue_id].rnti[n_enb],
 	   PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]);
+     */
 #endif
      rnti = UE_transport_info[ue_id].rnti[n_enb];
      enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
@@ -360,18 +361,28 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
          
      harq_pid = UE_transport_info[ue_id].harq_pid[n_enb];
      
-     ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
+     //ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
      
-     ulsch->o_RI[0]                          = ue_cntl_delay[ue_id][last_slot%2].pusch_ri & 0x1;
-     ulsch->o_RI[1]                          = (ue_cntl_delay[ue_id][last_slot%2].pusch_ri>>1) & 0x1;
+     PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o_RI[0] = ue_cntl_delay[ue_id][last_slot%2].pusch_ri & 0x1;
+     PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o_RI[1] = (ue_cntl_delay[ue_id][last_slot%2].pusch_ri>>1) & 0x1;
      
-     ulsch->o_ACK[0]                          = ue_cntl_delay[ue_id][last_slot%2].pusch_ack & 0x1;
-     ulsch->o_ACK[1]                          = (ue_cntl_delay[ue_id][last_slot%2].pusch_ack>>1) & 0x1;
+     PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o_ACK[0]= ue_cntl_delay[ue_id][last_slot%2].pusch_ack & 0x1;
+     PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o_ACK[1]= (ue_cntl_delay[ue_id][last_slot%2].pusch_ack>>1) & 0x1;
+     //*(u32 *)ulsch->o                        = ue_cntl_delay[ue_id][last_slot%2].pusch_uci;
 
-     *(u32 *)ulsch->o                        = ue_cntl_delay[ue_id][last_slot%2].pusch_uci;
-#ifdef DEBUG_EMU      
-     LOG_D(EMU,"subframe %d copy the payload from eNB %d to UE %d with harq id %d \n",subframe, enb_id, ue_id, harq_pid);
-#endif
+     if (last_slot%2 == 1 ) {
+       PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->O       = ue_cntl_delay[ue_id][last_slot%2].length_uci;
+       memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o,
+	      ue_cntl_delay[ue_id][last_slot%2].pusch_uci,
+	      MAX_CQI_BYTES); 
+     
+       ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
+       // if (((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1)
+       LOG_D(EMU,"[UE %d] subframe %d last slot %d copy the payload from eNB %d to UE %d with harq id %d cqi (val %d, length %d) \n",
+	     ue_id, subframe, last_slot, enb_id, ue_id, harq_pid, 
+	     ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1, 
+	     PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->O);
+     }
      memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
 	    UE_transport_info[ue_id].transport_blocks,
 	    UE_transport_info[ue_id].tbs[enb_id]);

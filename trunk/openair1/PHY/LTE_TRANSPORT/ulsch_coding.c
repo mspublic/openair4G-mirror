@@ -220,8 +220,8 @@ u32 ulsch_encoding(u8 *a,
 
     fill_CQI(ulsch->o,ulsch->uci_format,meas,0,tmode,sinr_eff);
    
-    //LOG_D(PHY,"UE CQI\n");
-    //print_CQI(ulsch->o,ulsch->uci_format,0);
+    LOG_D(PHY,"UE CQI\n");
+    print_CQI(ulsch->o,ulsch->uci_format,0);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
@@ -868,7 +868,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);  
   //UE_transport_info_TB_index[phy_vars_ue->Mod_id]+=phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;
-  // navid: currently more than one is not supported in the code 
+  // navid: currently more than one eNB is not supported in the code 
   UE_transport_info[phy_vars_ue->Mod_id].num_eNB = 1; 
   UE_transport_info[phy_vars_ue->Mod_id].rnti[0] = phy_vars_ue->lte_ue_pdcch_vars[0]->crnti; 
   UE_transport_info[phy_vars_ue->Mod_id].eNB_id[0]  = eNB_id;
@@ -877,7 +877,13 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   // msg("\nphy_vars_ue->Mod_id%d\n",phy_vars_ue->Mod_id);
   
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_flag = 1;
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u32 *)ulsch->o;
+  //UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u32 *)ulsch->o;
+  memcpy(UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci,
+	 ulsch->o,
+	 MAX_CQI_BYTES); 
+  // msg("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
+  
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.length_uci = ulsch->O;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
   //msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);

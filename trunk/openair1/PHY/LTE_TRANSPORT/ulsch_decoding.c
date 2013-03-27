@@ -1608,25 +1608,26 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
 #ifdef DEBUG_PHY
-  msg("[PHY] EMUL RRC eNB %d ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
+  LOG_D(PHY,"[eNB %d] ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
 #endif
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
       break;
-
+    /*
     msg("[PHY] EMUL eNB %d ulsch_decoding_emul : subframe ue id %d crnti %x nb ue %d\n",
 	phy_vars_eNB->Mod_id,
 	UE_id,
 	PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti,
 	NB_UE_INST); 
+    */
   }
 
   if (UE_id==NB_UE_INST) {
-    msg("ulsch_decoding_emul: FATAL, didn't find UE with rnti %x\n",rnti);
+    LOG_W(PHY,"[eNB %d] ulsch_decoding_emul: FATAL, didn't find UE with rnti %x\n",phy_vars_eNB->Mod_id, rnti);
     return(1+MAX_TURBO_ITERATIONS);
   }
   else {
-    msg("found UE with rnti %x => UE_id %d\n",rnti,UE_id);
+    LOG_D(PHY,"[eNB %d] Found UE with rnti %x => UE_id %d\n",phy_vars_eNB->Mod_id, rnti,UE_id);
   }
   // Do abstraction here to determine if packet it in error
  /* if (ulsch_abstraction_MIESM(phy_vars_eNB->sinr_dB_eNB,1, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb) == 1) 
@@ -1640,7 +1641,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
  nrbPost = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
  frbPost = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb; 
  
- /*
+
  if(nrbPost > 0)
  {
  SINRdbPost = phy_vars_eNB->sinr_dB_eNB;
@@ -1664,7 +1665,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   
  // if (ulsch_abstraction(phy_vars_eNB->sinr_dB,1, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb) == 1) {
   if (1) {
-    msg("[PHY] ulsch_decoding_emul abstraction ok\n");
+    LOG_D(PHY,"ulsch_decoding_emul abstraction successful\n");
 
     memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->b,
 	   PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->b,
@@ -1681,7 +1682,13 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     }
 
     // Do abstraction of PUSCH feedback
-    msg("[PHY] EMUL eNB %d : subframe %d : o_ACK %d %d\n",phy_vars_eNB->Mod_id,subframe,phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0],phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1]); 
+#ifdef DEBUG_PHY    
+    LOG_D(PHY,"[eNB %d][EMUL] ue index %d UE_id %d: subframe %d : o_ACK (%d %d), cqi (val %d, len %d)\n",
+	  phy_vars_eNB->Mod_id,UE_index, UE_id, subframe,phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0],
+	  phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1],
+	  ((HLC_subband_cqi_rank1_2A_5MHz *)PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o)->cqi1,
+	  PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O); 
+#endif 
 
     phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
     phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
@@ -1693,7 +1700,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     return(1);   
   }
   else {
-    msg("[PHY] ulsch_decoding_emul abstraction not ok\n");
+    LOG_W(PHY,"[eNB %d] ulsch_decoding_emul abstraction failed for UE %d\n",phy_vars_eNB->Mod_id,UE_index);
 
     phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 0;
 

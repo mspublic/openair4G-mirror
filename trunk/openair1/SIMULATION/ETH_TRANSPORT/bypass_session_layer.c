@@ -135,17 +135,17 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	  for (m_id=0;m_id < messg->master_id; m_id++ ){
 	    oai_emulation.info.master[messg->master_id].first_enb+=oai_emulation.info.master[m_id].nb_enb;
 	  }
-	  LOG_I(EMU, "WAIT_SYNC_TRANSPORT state:  for master %d (first enb %d, totan enb %d)\n",
+	  LOG_I(EMU, "[ENB] WAIT_SYNC_TRANSPORT state:  for master %d (first enb %d, totan enb %d)\n",
 	  	messg->master_id, 
 		oai_emulation.info.master[messg->master_id].first_enb,
 		oai_emulation.info.master[messg->master_id].nb_enb);	  
 	}
-	// store param fo ue per master
+	// store param for ue per master
 	if ((oai_emulation.info.master[messg->master_id].nb_ue  = messg->nb_ue) > 0){
 	  for (m_id=0;m_id < messg->master_id; m_id++ ){
 	    oai_emulation.info.master[messg->master_id].first_ue+=oai_emulation.info.master[m_id].nb_ue;
 	  }
-	  LOG_I(EMU, "WAIT_SYNC_TRANSPORT state: for master %d (first ue %d, total ue%d)\n",
+	  LOG_I(EMU, "[UE]WAIT_SYNC_TRANSPORT state: for master %d (first ue %d, total ue%d)\n",
 		messg->master_id, 
 		oai_emulation.info.master[messg->master_id].first_ue,
 		oai_emulation.info.master[messg->master_id].nb_ue );	
@@ -400,6 +400,8 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
   }
   else if(Type==SYNC_TRANSPORT){
     messg->Message_type = SYNC_TRANSPORT_INFO;
+    // make sure that sync messages from the masters are received in increasing order of master id
+    sleep(oai_emulation.info.master_id+1);
     LOG_T(EMU,"[TX_DATA] SYNC TRANSPORT\n");
   }
   else if(Type==ENB_TRANSPORT){
