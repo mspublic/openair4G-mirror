@@ -246,14 +246,16 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 			   frame_parms,
 			   (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
 
-  sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+  if (sync_pos >= frame_parms->nb_prefix_samples)
+    sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+  else
+    sync_pos2 = sync_pos + FRAME_LENGTH_COMPLEX_SAMPLES - frame_parms->nb_prefix_samples;
+
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif
 
-  //estimate signal power based on PSS for AGC
-  //this needs to be improved
-  rx_power = 0;
+
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) 
     rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][sync_pos2],
 			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
