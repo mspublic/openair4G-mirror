@@ -109,7 +109,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 			  0,
 			  SISO,
 			  frame_mod4);
-    if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+    if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
       pbch_decoded = 1;
       break;
     }
