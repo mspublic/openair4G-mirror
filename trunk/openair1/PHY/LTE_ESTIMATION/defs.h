@@ -136,7 +136,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
-			 unsigned char abstraction_flag) __attribute__ ((force_align_arg_pointer));
+			 unsigned char abstraction_flag);
 
 //! \brief This function performance RSRP/RSCP measurements
 void ue_rrc_measurements(PHY_VARS_UE *phy_vars_ue,
