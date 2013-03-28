@@ -234,7 +234,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   //  u8 i;
   int ret=-1;
-  int aarx,rx_power;
+  int aarx,rx_power=0;
 
   //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
