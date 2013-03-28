@@ -128,6 +128,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
     lte_frame_parms[eNB_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
     LOG_D(PHY,"initial_sync enb %d lte_frame_parms %p %d %d %d \n",
 	  eNB_id, lte_frame_parms[eNB_id], lte_frame_parms[eNB_id]->N_RB_DL ,lte_frame_parms[eNB_id]->tdd_config, frame_parms->nb_antennas_tx);
+    lte_frame_parms[eNB_id]->pdcch_pilot_scale = 0.0;
       
     init_frame_parms(lte_frame_parms[eNB_id],1);
     phy_init_top(lte_frame_parms[eNB_id]);
@@ -238,6 +239,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   phy_init_top(*frame_parms);
 
   phy_init_lte_top(*frame_parms);
+
+  (*frame_parms)->pdcch_pilot_scale = 0.0;
+  (*frame_parms)->force_num_pdcch_symbols = 3;
 
   PHY_vars_eNB_g = malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB*));
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 

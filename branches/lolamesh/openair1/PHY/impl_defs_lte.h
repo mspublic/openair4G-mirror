@@ -501,10 +501,16 @@ typedef struct {
   u8 pcfich_first_reg_idx;
   /// REGs assigned to PHICH
   u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
+  /// Force number of PDCCH symbols, if >= 0
+  int force_num_pdcch_symbols;
   /// PBCH amplitude scaling
   float pbch_scale;
   /// PDCCH amplitude scaling in pilot symbols
   float pdcch_pilot_scale;
+  /// PCFICH amplitude scaling in pilot symbols
+  float pcfich_pilot_scale;
+  /// PHICH amplitude scaling in pilot symbols
+  float phich_pilot_scale;
   /// RBGs used by PDSCH
   u8 dl_rbg_mask[MAX_NB_RBG];
 } LTE_DL_FRAME_PARMS;

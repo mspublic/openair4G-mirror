@@ -96,8 +96,11 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf) {
     break;
   }
 
+  frame_parms->force_num_pdcch_symbols = -1;
   frame_parms->pbch_scale = 1.0;
   frame_parms->pdcch_pilot_scale = 1.0;
+  frame_parms->pcfich_pilot_scale = 1.0;
+  frame_parms->phich_pilot_scale = 1.0;
   if(frame_parms->N_RB_DL > 110) {
     msg("init_frame_parms : N_RB > 110 not supported\n");
     exit(-1);
