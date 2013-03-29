@@ -718,8 +718,8 @@ struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct
               memset((u8*)&pclassifier->daddr.ipv6,0,16);
               printk("[OAI_IP_DRV][%s] ADD DEFAULT TX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv6 %X:%X:%X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X:%X:%X \n",
                       __FUNCTION__, rab_id, NIP6ADDR(&pclassifier->saddr.ipv6), NIP6ADDR(&pclassifier->daddr.ipv6));
-              pclassifier->splen                 = 64;
-              pclassifier->dplen                 = 64;
+              pclassifier->splen                 = 0;
+              pclassifier->dplen                 = 0;
               pclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
               pclassifier->protocol_message_type = 0; //LG ??
               pclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
@@ -736,14 +736,14 @@ struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct
               memset((u8*)&rclassifier->daddr.ipv6,0,16);
               printk("[OAI_IP_DRV][%s] ADD DEFAULT RX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv6 %X:%X:%X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X:%X:%X \n",
                       __FUNCTION__, rab_id, NIP6ADDR(&rclassifier->saddr.ipv6), NIP6ADDR(&rclassifier->daddr.ipv6));
-              rclassifier->splen                 = 64;
-              rclassifier->dplen                 = 64;
+              rclassifier->splen                 = 0;
+              rclassifier->dplen                 = 0;
               rclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
               rclassifier->protocol_message_type = 0; //LG ??
               rclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
               rclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
             }
-            pclassifier=oai_nw_drv_class_add_send_classifier(cx, OAI_NW_DRV_DSCP_DEFAULT, 0);
+            pclassifier=oai_nw_drv_class_add_send_classifier(cx, OAI_NW_DRV_DSCP_DEFAULT, 2);
             if (pclassifier != NULL) {
               pclassifier->rab_id      = rab_id;
               pclassifier->rb          = rb;
@@ -753,15 +753,15 @@ struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct
               memset((u8*)&pclassifier->daddr.ipv4,0,4);
               printk("[OAI_IP_DRV][%s] ADD DEFAULT TX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv4 %d:%d:%d:%d -> %d.%d.%d.%d\n",
                       __FUNCTION__, rab_id, NIPADDR(pclassifier->saddr.ipv4), NIPADDR(pclassifier->daddr.ipv4));
-              pclassifier->splen                 = 32;
-              pclassifier->dplen                 = 32;
+              pclassifier->splen                 = 0;
+              pclassifier->dplen                 = 0;
               pclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
               pclassifier->protocol_message_type = 0; //LG ??
               pclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
               pclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
             }
             // first RAB added, add default classification rule for multicast signalling
-            rclassifier=oai_nw_drv_class_add_recv_classifier(OAI_NW_DRV_DSCP_DEFAULT, 1, gpriv);
+            rclassifier=oai_nw_drv_class_add_recv_classifier(OAI_NW_DRV_DSCP_DEFAULT, 3, gpriv);
             if (rclassifier != NULL) {
               rclassifier->rab_id      = rab_id;
               rclassifier->rb          = rb;
@@ -771,8 +771,8 @@ struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct
               memset((u8*)&rclassifier->daddr.ipv4,0,4);
               printk("[OAI_IP_DRV][%s] ADD DEFAULT RX CLASSIFIER ON RAB %d OAI_NW_DRV_DSCP_DEFAULT Adding IPv4 %d:%d:%d:%d -> %d.%d.%d.%d\n",
                       __FUNCTION__, rab_id, NIPADDR(rclassifier->saddr.ipv4), NIPADDR(rclassifier->daddr.ipv4));
-              rclassifier->splen                 = 32;
-              rclassifier->dplen                 = 32;
+              rclassifier->splen                 = 0;
+              rclassifier->dplen                 = 0;
               rclassifier->protocol              = OAI_NW_DRV_PROTOCOL_DEFAULT;
               rclassifier->protocol_message_type = 0; //LG ??
               rclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);

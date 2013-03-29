@@ -186,7 +186,7 @@
 
 #define OAI_NW_DRV_MPLS_VERSION_CODE  99
 
-#define OAI_NW_DRV_NB_INSTANCES_MAX       2
+#define OAI_NW_DRV_NB_INSTANCES_MAX       8
 
 
 #endif
