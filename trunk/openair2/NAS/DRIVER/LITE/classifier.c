@@ -147,8 +147,8 @@
          && ((((__const uint8_t *) (a))[3] & (((__const uint8_t *) (m))[3])) == (((__const uint8_t *) (b))[3] & (((__const uint8_t *) (m))[3]))))
 
 
-//#define OAI_DRV_DEBUG_CLASS         
-//#define OAI_DRV_DEBUG_SEND
+#define OAI_DRV_DEBUG_CLASS
+#define OAI_DRV_DEBUG_SEND
 //---------------------------------------------------------------------------
 void oai_nw_drv_create_mask_ipv6_addr(struct in6_addr *masked_addrP, int prefix_len){
   //---------------------------------------------------------------------------
@@ -763,6 +763,9 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                         for (i=0; i<OAI_NW_DRV_CX_MAX; i++){
                             pclassifier=(&gpriv->cx[i])->sclassifier[OAI_NW_DRV_DSCP_DEFAULT];
                             while (pclassifier!=NULL) {
+                                #ifdef OAI_DRV_DEBUG_CLASS
+                                printk("[NAS][%s] TRYING default DSCP classifier IP Version %d, Dest ADDR %X:%X:%X:%X:%X:%X:%X:%X/%u\n",__FUNCTION__, pclassifier->ip_version, NIP6ADDR(&(pclassifier->daddr.ipv6)), pclassifier->dplen);
+                                #endif
                                 if ((pclassifier->ip_version == OAI_NW_DRV_IP_VERSION_6) || (pclassifier->ip_version == OAI_NW_DRV_IP_VERSION_ALL)) {
                                     // ok found default classifier for this packet
                                     oai_nw_drv_create_mask_ipv6_addr(&masked6_addr, pclassifier->dplen);
@@ -781,6 +784,8 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                                         #endif
                                         dscp = OAI_NW_DRV_DSCP_DEFAULT;
                                         break;
+                                    } else {
+                                        printk("[NAS][%s] TRYING default DSCP classifier: NO MATCH\n",__FUNCTION__);
                                     }
                                 }
                                 pclassifier = pclassifier->next;
