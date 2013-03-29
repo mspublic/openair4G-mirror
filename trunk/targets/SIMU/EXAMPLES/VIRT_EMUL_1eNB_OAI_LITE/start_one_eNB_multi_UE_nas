@@ -1,8 +1,8 @@
 #!/bin/bash
 echo "Bash version ${BASH_VERSION}..."
 
-declare GENERATE_SEQ_DIAGRAM="yes"
-declare LOG_FILE_LTE="yes"
+declare GENERATE_SEQ_DIAGRAM="no"
+declare LOG_FILE_LTE="no"
 #------------------------------------------------
 declare MAKE_IP_DRIVER_TARGET="naslite_netlink_ether"
 declare MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim"
@@ -451,7 +451,7 @@ iptables -t nat -nvL
 #                      #
 ########################
 # Loop Cx 0 -> NUM_MOBILES - 1 for configuring default RABS on eNB
-CLASSIFIER_ID=0
+CLASSIFIER_ID=4
 for ((instance=0 ; instance < $NUM_ENB ; instance++ ))
 do
     let IP_SRC=instance+1
@@ -462,14 +462,14 @@ do
         then
             # ON eNB
             let RB_ID=(cx*8)+3
-            bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z64 -s 10.0.$IP_DEST.$IP_SRC/32   -t 10.0.$IP_SRC.$IP_DEST/32   -r $RB_ID"
+            bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$cx -i$instance -f$CLASSIFIER_ID -z0 -s 10.0.$IP_DEST.$IP_SRC/32   -t 10.0.$IP_SRC.$IP_DEST/32   -r $RB_ID"
             let CLASSIFIER_ID=CLASSIFIER_ID+2
 
             # ON UE
             let IP_SOURCE=instance+1
             let instance_ue=cx+$NUM_ENB
             RB_ID=3
-            bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$instance -i$instance_ue -f$CLASSIFIER_ID -z64 -s 10.0.$IP_SRC.$IP_DEST/32 -t 10.0.$IP_DEST.$IP_SRC/32      -r $RB_ID"
+            bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c$instance -i$instance_ue -f$CLASSIFIER_ID -z0 -s 10.0.$IP_SRC.$IP_DEST/32 -t 10.0.$IP_DEST.$IP_SRC/32      -r $RB_ID"
             let CLASSIFIER_ID=CLASSIFIER_ID+2
 
             # ON eNB
@@ -523,7 +523,7 @@ else
         $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /tmp/lte_log.txt
         chmod 777 /tmp/lte_log.txt
     else
-        $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null
+        $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 -F
     fi
     echo "End of emulation"
 fi
