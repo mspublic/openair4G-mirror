@@ -33,15 +33,15 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   long int        cnt          = 0;
   SRB_ToAddMod_t* srb_toaddmod = NULL;
   DRB_ToAddMod_t* drb_toaddmod = NULL;
-  int             index;
+  rlc_mode_t      rlc_type;
   
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
   if (srb2add_listP != NULL) {
       for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
          rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
 
-         index = rlc[module_idP].m_rlc_pointer[rb_id].rlc_index;
-         printf("Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+         rlc_type = rlc[module_idP].m_rlc_pointer[rb_id].rlc_type;
+         LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
           srb_toaddmod = srb2add_listP->list.array[cnt];
 
           if (srb_toaddmod->rlc_Config) {
@@ -53,7 +53,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                           case RLC_Config_PR_NOTHING:
                               break;
                           case RLC_Config_PR_am:
-                              if (! rlc[module_idP].m_rlc_am_array[index].allocation) {
+                              if (rlc_type == RLC_NONE) {
                                   rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_AM);
                                   config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                                  frameP, 
@@ -62,10 +62,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.am, 
                                                  rb_id, 
                                                  SIGNALLING_RADIO_BEARER);
+                              } else {
+                            	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d AM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                           case RLC_Config_PR_um_Bi_Directional:
-                              if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                              if (rlc_type == RLC_NONE) {
                                   rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
                                   config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                       frameP,
@@ -74,10 +76,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                       &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
                                       &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
                                       rb_id, SIGNALLING_RADIO_BEARER);
+                              } else {
+                            	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                           case RLC_Config_PR_um_Uni_Directional_UL:
-                              if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                              if (rlc_type == RLC_NONE) {
                                   rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
                                   config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                       frameP,
@@ -86,10 +90,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                       &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
                                       NULL,
                                      rb_id, SIGNALLING_RADIO_BEARER);
+                              } else {
+                            	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                           case RLC_Config_PR_um_Uni_Directional_DL:
-                              if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                              if (rlc_type == RLC_NONE) {
                                   rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
                                   config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                       frameP,
@@ -98,12 +104,14 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                       NULL,
                                       &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
                                       rb_id, SIGNALLING_RADIO_BEARER);
+                              } else {
+                            	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                       }
                       break;
                   case SRB_ToAddMod__rlc_Config_PR_defaultValue:
-                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                      if (rlc_type == RLC_NONE) {
                           rrc_rlc_add_rlc   (module_idP, frameP, rb_id, RLC_UM);
                           config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                       frameP,
@@ -112,6 +120,8 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                       NULL, // TO DO DEFAULT CONFIG
                                       NULL, // TO DO DEFAULT CONFIG
                                       rb_id, SIGNALLING_RADIO_BEARER);
+                      } else {
+                    	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d DEFAULT UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                       }
                       break;
                   default:;
@@ -124,7 +134,8 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
           drb_toaddmod = drb2add_listP->list.array[cnt];
 
           drb_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;//drb_toaddmod->drb_Identity;
-          index = rlc[module_idP].m_rlc_pointer[drb_id].rlc_index;
+          rlc_type = rlc[module_idP].m_rlc_pointer[drb_id].rlc_type;
+          LOG_D(RLC, "Adding DRB %d, rb_id %d\n",drb_toaddmod->logicalChannelIdentity,drb_id);
           
           if (drb_toaddmod->logicalChannelIdentity != null) {
               lc_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;
@@ -137,7 +148,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                   case RLC_Config_PR_NOTHING:
                       break;
                   case RLC_Config_PR_am:
-                      if (! rlc[module_idP].m_rlc_am_array[index].allocation) {
+                      if (rlc_type == RLC_NONE) {
                           rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_AM);
                           config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
                                             frameP,
@@ -146,10 +157,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                             &drb_toaddmod->rlc_Config->choice.am,
                                             drb_id,
                                             RADIO_ACCESS_BEARER);
+                      } else {
+                    	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d AM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   case RLC_Config_PR_um_Bi_Directional:
-                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                      if (rlc_type == RLC_NONE) {
                           rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
                           config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
                               frameP,
@@ -158,10 +171,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                               &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
                               &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
                               drb_id, RADIO_ACCESS_BEARER);
+                      } else {
+                    	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   case RLC_Config_PR_um_Uni_Directional_UL:
-                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                      if (rlc_type == RLC_NONE) {
                           rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
                           config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
                               frameP,
@@ -170,10 +185,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                               &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
                               NULL,
                               drb_id, RADIO_ACCESS_BEARER);
+                      } else {
+                    	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   case RLC_Config_PR_um_Uni_Directional_DL:
-                      if (! rlc[module_idP].m_rlc_um_array[index].allocation) {
+                      if (rlc_type == RLC_NONE) {
                           rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
                           config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
                               frameP,
@@ -182,6 +199,8 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                               NULL,
                               &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
                               drb_id, RADIO_ACCESS_BEARER);
+                      } else {
+                    	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   default:
@@ -196,6 +215,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
           rrc_rlc_remove_rlc(module_idP, (UE_index * MAX_NUM_RB) + *pdrb_id, frameP);
       }
   }
+  LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 END \n",module_idP);
   return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
