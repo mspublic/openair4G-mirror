@@ -63,14 +63,14 @@ def execute(oai, logfile):
     else:
         log.ok(case, test, name, conf, '', logfile)
     
-    oai.send('cd $OPENAIR_TARGETS/SIMU/USER')   
-
+    oai.send('cd SIMU/USER')   
+    #oai.send('cd /home/raymond/Devel/openair4G/trunk/targets/SIMU/USER')
     try:
         test = '01'
         name = 'Compile oai.rel8'
         conf = 'make'
         diag = "check the compilation errors for oai"
-        oai.send('make cleanall')
+        oai.send('make cleanall',20)
         oai.send('rm -f ./oaisim.rel8')
         oai.send_expect_false('make -j2', makerr1,  80)
         oai.send('cp ./oaisim ./oaisim.rel8')
