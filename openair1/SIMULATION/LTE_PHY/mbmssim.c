@@ -306,12 +306,12 @@ int main(int argc, char **argv) {
 
   // check that subframe is legal for eMBMS
 
- if ((subframe == 0) || (subframe == 5) ||    // TDD and FDD SFn 0,5;
-     ((frame_type == FDD) && ((subframe == 4) || (subframe == 9))) || // FDD SFn 4,9;
-     ((frame_type == TDD ) && ((subframe<3) || (subframe==6)))) 	  {  // TDD SFn 1,2,6;
-	  
-	printf("Illegal subframe %d for eMBMS transmission (frame_type %d)\n",subframe,frame_type);
-	exit(-1);
+  if ((subframe == 0) || (subframe == 5) ||    // TDD and FDD SFn 0,5;
+      ((frame_type == FDD) && ((subframe == 4) || (subframe == 9))) || // FDD SFn 4,9;
+      ((frame_type == TDD ) && ((subframe<3) || (subframe==6)))) 	  {  // TDD SFn 1,2,6;
+    
+    printf("Illegal subframe %d for eMBMS transmission (frame_type %d)\n",subframe,frame_type);
+    exit(-1);
   } 
   if (transmission_mode==2)
     n_tx=2;
@@ -505,18 +505,9 @@ int main(int argc, char **argv) {
 	  ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = 
 	    (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	}
-      }   
-      
-      if (n_frames==1) {
-	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
-	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
-	printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
-	printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
       }
 
-      
-
-      for (l=2;l<12;l++) {
+     for (l=2;l<12;l++) {
 	
 	slot_fep_mbsfn(PHY_vars_UE,
 		       l,
@@ -551,7 +542,7 @@ int main(int argc, char **argv) {
     printf("errors %d/%d (Pe %e)\n",errs[round],trials,(double)errs[round]/trials);
     if (errs[round] < (trials/100))
       break;
-  }
+    }
 
 
   if (n_frames==1) {
@@ -580,5 +571,5 @@ int main(int argc, char **argv) {
   //  lte_sync_time_free();
   
   return(0);
-}
+  }
   

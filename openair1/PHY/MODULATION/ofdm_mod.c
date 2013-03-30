@@ -19,8 +19,13 @@ This section deals with basic functions for OFDM Modulation.
 void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *frame_parms) {
 
   u8 i;
+  int short_offset=0;
+
+  if ((2*nsymb) < frame_parms->symbols_per_tti)
+    short_offset = 1;
+
   //  printf("nsymb %d\n",nsymb);
-  for (i=0;i<2*nsymb/frame_parms->symbols_per_tti;i++) {
+  for (i=0;i<((short_offset)+2*nsymb/frame_parms->symbols_per_tti);i++) {
 
 #ifdef DEBUG_OFDM_MOD
         printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),

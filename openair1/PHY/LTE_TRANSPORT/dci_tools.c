@@ -186,15 +186,15 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
     if (ra_header == 0) {// Type 0 Allocation
       
       for (i=0;i<16;i++) {
-	if (((rb_alloc>>i)&1) != 0)
+	if (((rb_alloc>>(16-i))&1) != 0)
 	  rb_alloc2[(3*i)>>5] |= (7<<((3*i)%32));
-	if ((i==10)&&((rb_alloc&(1<<10))!=0))
+	if ((i==10)&&((rb_alloc&(1<<6))!=0))
 	  rb_alloc2[1] = 1;
 	//	printf("rb_alloc2[%d] (type 0) %x ((%x>>%d)&1=%d)\n",(3*i)>>5,rb_alloc2[(3*i)>>5],rb_alloc,i,(rb_alloc>>i)&1);
 
       }
       // fill in 2 from last bit instead of 3
-      if (((rb_alloc>>i)&1) != 0)
+      if ((rb_alloc&1) != 0)
 	rb_alloc2[1] |= (3<<i);
       //    printf("rb_alloc2[%d] (type 0) %x ((%x>>%d)&1=%d)\n",(3*i)>>5,rb_alloc2[(3*i)>>5],rb_alloc,i,(rb_alloc>>i)&1);
     }
@@ -222,7 +222,7 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
   case 100:
     if (ra_header == 0) {// Type 0 Allocation
       for (i=0;i<25;i++) {
-	if ((rb_alloc&(1<<i)) != 0)
+	if ((rb_alloc&(1<<(24-i))) != 0)
 	  rb_alloc2[(4*i)>>5] |= (0xf<<((4*i)%32));
 	//	printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
       }
@@ -288,10 +288,10 @@ uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL) {
     if (ra_header == 0) {// Type 0 Allocation
       
       for (i=0;i<16;i++) {
-	if ((rb_alloc&(1<<i)) != 0)
+	if ((rb_alloc&(1<<(16-i))) != 0)
 	  nprb += 3;
       }
-      if ((rb_alloc&(1<<16)) != 0)
+      if ((rb_alloc&1) != 0)
 	nprb += 2;
     }
     else {
@@ -305,7 +305,7 @@ uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL) {
     if (ra_header == 0) {// Type 0 Allocation
       
       for (i=0;i<25;i++) {
-	if ((rb_alloc&(1<<i)) != 0)
+	if ((rb_alloc&(1<<(24-i))) != 0)
 	  nprb += 4;
       }
     }
@@ -1857,7 +1857,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     //    printf("PDSCH NPRB %d, rah %d, rballoc %x, rballoc2 %x\n",NPRB,rah,rballoc,dlsch[0]->rb_alloc[0]);
 
     if (NPRB==0) {
-      msg("dci_tools.c: ERROR: Format 1: NPRB=0 (rballoc %x,mcs %d, frame_type %d, N_RB_DL %d)\n",rballoc,mcs,frame_parms->frame_type,frame_parms->N_RB_DL);
+      msg("dci_tools.c: ERROR: Format 1: NPRB=0 (rballoc %x,mcs %d, frame_type %d N_RB_DL %d)\n",rballoc,mcs,frame_parms->frame_type,frame_parms->N_RB_DL);
       return(-1);
     }
 
@@ -2246,13 +2246,13 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe) {
 
 #ifdef DEBUG_DCI
-  if (frame_parms->frame_type == 1)
+  if (frame_parms->frame_type == TDD)
     msg("dci_tools.c: subframe2_harq_pid, subframe %d for TDD configuration %d\n",subframe,frame_parms->tdd_config);
   else
     msg("dci_tools.c: subframe2_harq_pid, subframe %d for FDD \n",subframe);
 #endif
 
-  if (frame_parms->frame_type == 0) {
+  if (frame_parms->frame_type == FDD) {
     return(((frame<<1)+subframe)&7);
   }
   else {
@@ -2324,15 +2324,15 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
 
 uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n){
 
-  if ((frame_parms->frame_type == 1) && 
+  if ((frame_parms->frame_type == TDD) && 
       (frame_parms->tdd_config == 1) &&
       ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
     return((n+6)%10);
-  else if ((frame_parms->frame_type == 1) && 
+  else if ((frame_parms->frame_type == TDD) && 
 	   (frame_parms->tdd_config == 6) &&
 	   ((n==0)||(n==1)||(n==5)||(n==6)))  
     return((n+7)%10);
-  else if ((frame_parms->frame_type == 1) && 
+  else if ((frame_parms->frame_type == TDD) && 
 	   (frame_parms->tdd_config == 6) &&
 	   (n==9)) // tdd_config 6 SF 9
     return((n+5)%10);
@@ -2343,15 +2343,15 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n){
 
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n){
 
-  if ((frame_parms->frame_type == 1) && 
+  if ((frame_parms->frame_type == TDD) && 
       (frame_parms->tdd_config == 1) &&
       ((n==7)||(n==2))) // tdd_config 0,1 SF 1,5
     return((n==7)? 1 : 6);
-  else if ((frame_parms->frame_type == 1) && 
+  else if ((frame_parms->frame_type == TDD) && 
 	   (frame_parms->tdd_config == 6) &&
 	   ((n==7)||(n==8)||(n==2)||(n==3)))  
     return((n+3)%10);
-  else if ((frame_parms->frame_type == 1) && 
+  else if ((frame_parms->frame_type == TDD) && 
 	   (frame_parms->tdd_config == 6) &&
 	   (n==4)) // tdd_config 6 SF 9
     return(9);
@@ -2362,15 +2362,15 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 
 uint8_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n){
 
-  if ((frame_parms->frame_type == 1) && 
+  if ((frame_parms->frame_type == TDD) && 
       (frame_parms->tdd_config == 1) &&
       ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
     return(frame + (n==1 ? 0 : 1));
-  else if ((frame_parms->frame_type == 1) && 
+  else if ((frame_parms->frame_type == TDD) && 
 	   (frame_parms->tdd_config == 6) &&
 	   ((n==0)||(n==1)||(n==5)||(n==6)))  
     return(frame + (n>=5 ? 1 : 0));
-  else if ((frame_parms->frame_type == 1) && 
+  else if ((frame_parms->frame_type == TDD) && 
 	   (frame_parms->tdd_config == 6) &&
 	   (n==9)) // tdd_config 6 SF 9
     return(frame+1);
@@ -3205,7 +3205,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 						      phy_vars_eNB->frame,
 						      subframe),
 				 pdcch_alloc2ul_subframe(frame_parms,subframe));
-    
+
+
 
     switch (frame_parms->N_RB_DL) {
     case 6:
