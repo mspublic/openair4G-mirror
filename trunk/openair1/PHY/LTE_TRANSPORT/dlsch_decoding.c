@@ -288,7 +288,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     }
 
     msg("decoder input(segment %d) :",r);
-    for (i=0;i<(3*8*Kr_bytes)+12;i++)
+    int i; for (i=0;i<(3*8*Kr_bytes)+12;i++)
       msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
     msg("\n");
 #endif

@@ -83,5 +83,6 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
+
 #endif /*__PHY_EXTERN_H__ */
  

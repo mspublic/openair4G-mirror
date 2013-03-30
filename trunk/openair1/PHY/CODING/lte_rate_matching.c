@@ -80,7 +80,7 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
   }
 
   if (ND>0)
-    w[Kpi-1+k2] = LTE_NULL;
+    w[(3*Kpi) - 1] = LTE_NULL;
 #ifdef RM_DEBUG
   if (ND>0) {
     printf("RM_TX: Nulled last component in pos %d\n",Kpi-1+k2);

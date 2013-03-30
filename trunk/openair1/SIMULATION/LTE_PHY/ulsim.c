@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
   u8 extended_prefix_flag=0;
-  int cqi_flag=0,cqi_error,cqi_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
+  int cqi_flag=0,cqi_error,cqi_errors,ack_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
   int ch_realization;
   int eNB_id = 0;
   int chMod = 0 ;
@@ -209,7 +209,7 @@ FILE *csv_fdUL;
   u8 cyclic_shift = 0;
   u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-  u8 tdd_config=3,frame_type=TDD;
+  u8 tdd_config=3,frame_type=FDD;
 
   u8 N0=30;
   double tx_gain=1.0;
@@ -330,7 +330,7 @@ FILE *csv_fdUL;
       break;
     case 'T':
       tdd_config=atoi(optarg);
-      frame_type=1;
+      frame_type=TDD;
       break;
     case 'p':
       extended_prefix_flag=1;
@@ -669,6 +669,7 @@ FILE *csv_fdUL;
   PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
   PHY_vars_UE->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   PHY_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+  PHY_vars_UE->frame=1;PHY_vars_eNB->frame=1;
   msg("Init UL hopping UE\n");
   init_ul_hopping(&PHY_vars_UE->lte_frame_parms);
   msg("Init UL hopping eNB\n");
@@ -714,7 +715,7 @@ FILE *csv_fdUL;
 				     P_RNTI,
 				     srs_flag);
 
-  PHY_vars_UE->ulsch_ue[0]->o_ACK[0] = 1;
+
 
 
   
@@ -733,7 +734,9 @@ FILE *csv_fdUL;
 	
 //fprintf(ulchanest_f,"chanreal%d,",ch_realization);
 
-
+  if ((subframe>5) || (subframe < 4))
+    PHY_vars_UE->frame++;
+ 
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
     errs[0]=0;
     errs[1]=0;
@@ -744,16 +747,16 @@ FILE *csv_fdUL;
     round_trials[2] = 0;
     round_trials[3] = 0;
     cqi_errors=0;
+    ack_errors=0;
     cqi_crc_falsepositives=0;
     cqi_crc_falsenegatives=0;
     round=0;
 	
     //randominit(0);
 
-    PHY_vars_UE->frame=0;
-    PHY_vars_eNB->frame=0;
+   PHY_vars_eNB->frame = PHY_vars_UE->frame;
     harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->frame,subframe);
-    //    printf("harq_pid %d\n",harq_pid);
+    printf("UL frame %d, harq_pid %d\n",PHY_vars_UE->frame,harq_pid);
     if (input_fdUL == NULL) {
       input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       input_buffer = (unsigned char *)malloc(input_buffer_length+4);
@@ -825,8 +828,8 @@ FILE *csv_fdUL;
 
     for (trials = 0;trials<n_frames;trials++) {
       //      printf("*");
-        PHY_vars_UE->frame++;
-        PHY_vars_eNB->frame++;
+      //        PHY_vars_UE->frame++;
+      //        PHY_vars_eNB->frame++;
       
       fflush(stdout);
       round=0;
@@ -885,6 +888,8 @@ FILE *csv_fdUL;
 		   PHY_vars_UE->ulsch_ue[0]->o[0],PHY_vars_UE->ulsch_ue[0]->o[1]);
 	    print_CQI(PHY_vars_UE->ulsch_ue[0]->o,PHY_vars_UE->ulsch_ue[0]->uci_format,0);
 	  }
+
+	  PHY_vars_UE->ulsch_ue[0]->o_ACK[0] = taus()&1;
 
 	  start_meas(&PHY_vars_UE->ulsch_encoding_stats);	      
 	  if (ulsch_encoding(input_buffer,
@@ -1199,6 +1204,8 @@ if(abstx){
 	      cqi_crc_falsenegatives++;
 	  }
 	}
+	if (PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
+	  ack_errors++;
     //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
       
 	
@@ -1291,21 +1298,22 @@ if(abstx){
 	     cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
 	     cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
     }
-
-fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
-            SNR,
-            mcs,
-            PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
-            rate,
-            errs[0],
-            round_trials[0],
-            errs[1],
-            round_trials[1],
-            errs[2],
-            round_trials[2],
-            errs[3],
-            round_trials[3]);
-	    
+    if (PHY_vars_eNB->O_ACK > 0) {
+      printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
+      fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
+	      SNR,
+	      mcs,
+	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[harq_pid]->TBS,
+	      rate,
+	      errs[0],
+	      round_trials[0],
+	      errs[1],
+	      round_trials[1],
+	      errs[2],
+	      round_trials[2],
+	      errs[3],
+	      round_trials[3]);
+    }
 	    // fprintf(bler_fdUL,"%f\n",tx_lev);
 
      ////hhh

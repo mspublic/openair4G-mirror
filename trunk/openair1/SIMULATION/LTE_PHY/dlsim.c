@@ -44,6 +44,8 @@ extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
 
+int otg_enabled=0;
+
 void handler(int sig) {
   void *array[10];
   size_t size;
@@ -519,6 +521,8 @@ int main(int argc, char **argv) {
   else 
     NB_RB = 4;
 
+  NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
+
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
   form_ue = create_lte_phy_scope_ue();
@@ -969,13 +973,13 @@ int main(int argc, char **argv) {
 	      dci_length_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,4);
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,3);
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs;  
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 1;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
@@ -2208,7 +2212,7 @@ int main(int argc, char **argv) {
 	    avg_iter += ret;
 	    iter_trials++;
 	    if (n_frames==1) 
-	      printf("No DLSCH errors found\n");
+	      printf("No DLSCH errors found,uncoded ber %f\n",uncoded_ber);
 	    //	    exit(-1);
 	    if (fix_rounds==0)
 	      round=5;
@@ -2332,7 +2336,7 @@ int main(int argc, char **argv) {
 	     rate,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
-      /*
+      
       printf("eNB TX function statistics (per 1ms subframe)\n\n");
       printf("OFDM_mod time                     :%f us (%d trials)\n",(double)PHY_vars_eNB->ofdm_mod_stats.diff/PHY_vars_eNB->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ofdm_mod_stats.trials);
       printf("DLSCH modulation time             :%f us (%d trials)\n",(double)PHY_vars_eNB->dlsch_modulation_stats.diff/PHY_vars_eNB->dlsch_modulation_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_modulation_stats.trials);
@@ -2383,7 +2387,7 @@ int main(int argc, char **argv) {
 	     (double)PHY_vars_UE->dlsch_tc_intl2_stats.diff/PHY_vars_UE->dlsch_tc_intl2_stats.trials,
 	     PHY_vars_UE->dlsch_tc_intl2_stats.trials);
 
-      */ 
+       
 
 
       fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",

@@ -774,18 +774,20 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//	debug_LOG_D(PHY,"[UE  %d] Frame %d, Subframe %d ulsch harq_pid %d : O %d, O_ACK %d, O_RI %d, TBS %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,harq_pid,phy_vars_ue->ulsch_ue[eNB_id]->O,phy_vars_ue->ulsch_ue[eNB_id]->O_ACK,phy_vars_ue->ulsch_ue[eNB_id]->O_RI,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS);
 	//#endif
 	if (Msg3_flag == 1) {
-	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d next slot %d Generating (RRCConnectionRequest) Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) Msg3: %x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1, next_slot, 
-	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,
-	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,
-	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
-	      phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rvidx,
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[0],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[1],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[2],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[3],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[4],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[5],
-	      phy_vars_ue->prach_resources[eNB_id]->Msg3[6]);
+	  LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d next slot %d Generating (RRCConnectionRequest) Msg3 (nb_rb %d, first_rb %d, Ndi %d, rvidx %d) Msg3: %x.%x.%x|%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1, next_slot, 
+		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,
+		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,
+		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi,
+		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rvidx,
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[0],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[1],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[2],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[3],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[4],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[5],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[6],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[7],
+		phy_vars_ue->prach_resources[eNB_id]->Msg3[8]);
 
 	  if (abstraction_flag==0) {
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,
@@ -837,12 +839,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    }
 	    */
 	  }
-#ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+	  //#ifdef DEBUG_PHY_PROC
+	  LOG_I(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
 	    msg("%x.",ulsch_input_buffer[i]);
 	  msg("\n");
-#endif
+	  //#endif
 #else //OPENAIR2
       // the following lines were necessary for the calibration in CROWN
       /*

@@ -2836,7 +2836,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     if (phy_vars_ue->prach_resources[eNB_id])
       ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
     
-    // First check common search spaces at aggregation 8 (SI_RNTI and RA_RNTI format 1A), 
+    // First check common search spaces at aggregation 8 (SI_RNTI and RA_RNTI format 0/1A), 
     // and UE_SPEC format0 (PUSCH) too while we're at it
     dci_decoding_procedure0(lte_ue_pdcch_vars,1,subframe,
 			    dci_alloc,
@@ -2896,14 +2896,14 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 
   }
 
-  if (phy_vars_ue->UE_mode[eNB_id] < PUSCH)
+  if (phy_vars_ue->UE_mode[eNB_id] <= PRACH)
     return(dci_cnt);
 
   if (phy_vars_ue->prach_resources[eNB_id])
     ra_rnti = phy_vars_ue->prach_resources[eNB_id]->ra_RNTI;
 
-  // Now check UE_SPEC format0 search spaces at aggregation 1 
-  //  printf("[DCI search] Format 0 aggregation 1\n");
+  // Now check UE_SPEC format0/1A ue_spec search spaces at aggregation 8 
+  //  printf("[DCI search] Format 0/1A aggregation 8\n");
   dci_decoding_procedure0(lte_ue_pdcch_vars,0,
 			  subframe,
 			  dci_alloc,
@@ -2928,6 +2928,35 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   if ((CCEmap0==0xffff)|| 
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
+  //  printf("[DCI search] Format 0 aggregation 4\n");
+  // Now check UE_SPEC format 0 search spaces at aggregation 4 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,0,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  SI_RNTI,
+			  ra_rnti,
+			  2,
+			  format1A,
+			  format1A,
+			  format0,
+			  format0_size_bits,
+			  format0_size_bytes,
+			  &dci_cnt,
+			  &format0_found,
+			  &format_c_found,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if ((CCEmap0==0xffff)|| 
+      ((format0_found==1)&&(format_c_found==1)))
+    return(dci_cnt);
+
+  if ((CCEmap0==0xffff)|| 
+      ((format0_found==1)&&(format_c_found==1)))
+    return(dci_cnt);
   //  printf("[DCI search] Format 0 aggregation 2\n");
   // Now check UE_SPEC format 0 search spaces at aggregation 2 
   dci_decoding_procedure0(lte_ue_pdcch_vars,0,
@@ -2938,7 +2967,33 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  mi,
 			  SI_RNTI,
 			  ra_rnti,
-			  2,
+			  1,
+			  format1A,
+			  format1A,
+			  format0,
+			  format0_size_bits,
+			  format0_size_bytes,
+			  &dci_cnt,
+			  &format0_found,
+			  &format_c_found,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if ((CCEmap0==0xffff)|| 
+      ((format0_found==1)&&(format_c_found==1)))
+    return(dci_cnt);
+
+  //  printf("[DCI search] Format 0 aggregation 4\n");
+  // Now check UE_SPEC format 0 search spaces at aggregation 1 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,0,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  SI_RNTI,
+			  ra_rnti,
+			  0,
 			  format1A,
 			  format1A,
 			  format0,
@@ -2968,7 +3023,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    mi,
 			    SI_RNTI,
 			    ra_rnti,
-			    1,
+			    0,
 			    format1A,
 			    format1A,
 			    format1,
@@ -2981,7 +3036,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    &CCEmap1,
 			    &CCEmap2);
     if ((CCEmap0==0xffff) || 
-	((format0_found==1)&&(format_c_found==1)))
+	(format_c_found==1))
       return(dci_cnt);
     
     if (dci_cnt>old_dci_cnt)
@@ -2996,7 +3051,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    mi,
 			    SI_RNTI,
 			    ra_rnti,
-			    0,
+			    1,
 			    format1A,
 			    format1A,
 			    format1,
@@ -3011,12 +3066,12 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 
 
     if ((CCEmap0==0xffff)|| 
-	((format0_found==1)&&(format_c_found==1)))
+	(format_c_found==1))
       return(dci_cnt);
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);    
 
-    // Now check UE_SPEC format 1 search spaces at aggregation 8 
+    // Now check UE_SPEC format 1 search spaces at aggregation 4 
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(lte_ue_pdcch_vars,0,subframe,
 			    dci_alloc,
@@ -3025,7 +3080,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    mi,
 			    SI_RNTI,
 			    ra_rnti,
-			    3,
+			    2,
 			    format1A,
 			    format1A,
 			    format1,
@@ -3044,7 +3099,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
       return(dci_cnt);
 
     //#ifdef ALL_AGGREGATION
-    // Now check UE_SPEC format 1 search spaces at aggregation 4 
+    // Now check UE_SPEC format 1 search spaces at aggregation 8
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(lte_ue_pdcch_vars,0,subframe,
 			    dci_alloc,
@@ -3053,7 +3108,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			    mi,
 			    SI_RNTI,
 			    ra_rnti,
-			    2,
+			    3,
 			    format1A,
 			    format1A,
 			    format1,
