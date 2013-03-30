@@ -45,84 +45,60 @@
  int number_rb_ul;
  int first_rbUL ;
 
-void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
+void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame,u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
   int aa, slot_offset, slot_offset_F;
 
-#ifdef IFFT_FPGA
-  s32 **txdataF2;
-  int i, l;
-
-  txdataF2    = (s32 **)malloc(2*sizeof(s32*));
-  txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  
-  bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
-  
-  slot_offset_F = (next_slot)*(frame_parms->N_RB_DL*12)*((frame_parms->Ncp==1) ? 6 : 7);
-  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
-  
-  //write_output("eNB_txsigF0.m","eNB_txsF0", lte_eNB_common_vars->txdataF[eNB_id][0],300*120,1,4);
-  //write_output("eNB_txsigF1.m","eNB_txsF1", lte_eNB_common_vars->txdataF[eNB_id][1],300*120,1,4);
-  
-  
-  // do talbe lookup and write results to txdataF2
-  for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-    
-    l = slot_offset_F;	
-    for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7);i++) 
-      if ((i%512>=1) && (i%512<=150))
-	txdataF2[aa][i] = ((s32*)mod_table)[txdataF[aa][l++]];
-      else if (i%512>=362)
-	txdataF2[aa][i] = ((s32*)mod_table)[txdataF[aa][l++]];
-      else 
-	txdataF2[aa][i] = 0;
-    
-  }
-  
-  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    if (frame_parms->Ncp == 1)
-      PHY_ofdm_mod(txdataF2[aa],        // input
-		   &txdata[aa][slot_offset],         // output
-		   frame_parms->log2_symbol_size,                // log2_fft_size
-		   6,                 // number of symbols
-		   frame_parms->nb_prefix_samples,               // number of prefix samples
-		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		   frame_parms->rev,           // bit-reversal permutation
-		   CYCLIC_PREFIX);
-    else {
-      normal_prefix_mod(txdataF2[aa],&txdata[aa][slot_offset],7,frame_parms);
-    }
-  }
-  
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  
-#else //IFFT_FPGA
-  
   slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
   
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    if (frame_parms->Ncp == 1)
-      PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
-		   &txdata[aa][slot_offset],         // output
-		   frame_parms->log2_symbol_size,                // log2_fft_size
-		   6,                 // number of symbols
-		   frame_parms->nb_prefix_samples,               // number of prefix samples
-		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		   frame_parms->rev,           // bit-reversal permutation
-		   CYCLIC_PREFIX);
-    else {
-      normal_prefix_mod(&txdataF[aa][slot_offset_F],
-			&txdata[aa][slot_offset],
-			7,
-			frame_parms);
+    if (is_pmch_subframe(frame,next_slot>>1,frame_parms)) {
+      if ((next_slot%2)==0) {
+	PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
+		     &txdata[aa][slot_offset],         // output
+		     frame_parms->log2_symbol_size,                // log2_fft_size
+		     12,                 // number of symbols
+		     frame_parms->ofdm_symbol_size>>2,               // number of prefix samples
+		     frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		     frame_parms->rev,           // bit-reversal permutation
+		     CYCLIC_PREFIX);
+     
+	if (frame_parms->Ncp == EXTENDED)
+	  PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
+		       &txdata[aa][slot_offset],         // output
+		       frame_parms->log2_symbol_size,                // log2_fft_size
+		       2,                 // number of symbols
+		       frame_parms->nb_prefix_samples,               // number of prefix samples
+		       frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		       frame_parms->rev,           // bit-reversal permutation
+		       CYCLIC_PREFIX);
+	else {
+	  normal_prefix_mod(&txdataF[aa][slot_offset_F],
+			    &txdata[aa][slot_offset],
+			    2,
+			    frame_parms);
+	}      
+      }
     }
-  }  
-#endif //IFFT_FPGA
+    else {
+      if (frame_parms->Ncp == EXTENDED)
+	PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
+		     &txdata[aa][slot_offset],         // output
+		     frame_parms->log2_symbol_size,                // log2_fft_size
+		     6,                 // number of symbols
+		     frame_parms->nb_prefix_samples,               // number of prefix samples
+		     frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		     frame_parms->rev,           // bit-reversal permutation
+		     CYCLIC_PREFIX);
+      else {
+	normal_prefix_mod(&txdataF[aa][slot_offset_F],
+			  &txdata[aa][slot_offset],
+			  7,
+			  frame_parms);
+      }
+    }  
+  }
   
 }
 
@@ -259,15 +235,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
 		  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
-		  next_slot,
+		  PHY_vars_eNB_g[eNB_id]->frame,next_slot,
 		  &PHY_vars_eNB_g[eNB_id]->lte_frame_parms);
-      /*
-      do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
-		  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata,
-		  next_slot,
-		  &PHY_vars_eNB_g[eNB_id]->lte_frame_parms);
-      return;
-      */
     }
 
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {

@@ -338,11 +338,12 @@ main (int argc, char **argv)
   oai_emulation.info.n_frames_flag = 0;//fixme
   snr_dB = 30;
   cooperation_flag = 0;         // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
+  int eMBMS_active = 0;
 
   init_oai_emulation(); // to initialize everything !!!
-
+  
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:y:X:z:Z:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:")) != -1) {
 
     switch (c) {
     case 'L':                   // set FDD
@@ -358,6 +359,9 @@ main (int argc, char **argv)
         LOG_E(EMU,"Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
         exit (-1);
       }
+      break;
+    case 'Q':
+      eMBMS_active=1;
       break;
     case 'R':
       oai_emulation.info.N_RB_DL = atoi (optarg);
@@ -893,7 +897,7 @@ for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 
 
 #ifdef OPENAIR2
-  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
+  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,eMBMS_active);
   printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after L2 init: frame_type %d,tdd_config %d\n", 
           PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,

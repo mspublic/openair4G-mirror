@@ -56,6 +56,8 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       LOG_E(PHY,"Can't get eNB ulsch structures\n");
       exit(-1);
     }
+
+    PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,0);
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
@@ -75,7 +77,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
   printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
   
-  PHY_vars_eNB->rx_total_gain_eNB_dB=150;
+  PHY_vars_eNB->rx_total_gain_eNB_dB=140;
   
   for(i=0;i<NUMBER_OF_UE_MAX;i++)
     PHY_vars_eNB->mu_mimo_mode[i].dl_pow_off = 2;
