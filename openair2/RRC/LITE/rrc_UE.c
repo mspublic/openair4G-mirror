@@ -376,10 +376,10 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 	frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
 
   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
-		       (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
+		       (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
   /*
   rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
-		     (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
+		     (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity,
 		     RADIO_ACCESS_BEARER,Rlc_info_um);
   */
 #ifdef NAS_NETLINK
@@ -403,12 +403,12 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
       LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
 	    Mod_id,
 	    ip_addr_offset3+Mod_id,
-	    (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity);
+	    (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity);
 
 	    rb_conf_ipv4(0,//add
 			 Mod_id,//cx align with the UE index
 			 ip_addr_offset3+Mod_id,//inst num_enb+ue_index
-			 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
+			 (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity,//rb
 			 0,//dscp
 			 ipv4_address(ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1),//saddr
 			 ipv4_address(ip_addr_offset3+Mod_id+1,eNB_index+1));//daddr

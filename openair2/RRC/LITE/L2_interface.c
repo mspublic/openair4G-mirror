@@ -274,8 +274,8 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
 
-  u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
-  u8 DCCH_index = Srb_id % MAX_NUM_RB;
+  u8 UE_index=(Srb_id-1)/NB_RB_MAX;
+  u8 DCCH_index = Srb_id % NB_RB_MAX;
 
   LOG_D(RRC,"[SRB %d]RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
 	Srb_id-1, DCCH_index,UE_index,sdu_size);

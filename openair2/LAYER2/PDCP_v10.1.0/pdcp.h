@@ -71,6 +71,7 @@
   #include "COMMON/mac_rrc_primitives.h"
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
+#include "COMMON/platform_constants.h"
 #include "DRB-ToAddMod.h"
 #include "DRB-ToAddModList.h"
 #include "SRB-ToAddMod.h"
