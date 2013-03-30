@@ -38,7 +38,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
   if (srb2add_listP != NULL) {
       for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
-         rb_id = (UE_index * MAX_NUM_RB) + srb2add_listP->list.array[cnt]->srb_Identity;
+         rb_id = (UE_index * NB_RB_MAX) + srb2add_listP->list.array[cnt]->srb_Identity;
 
          rlc_type = rlc[module_idP].m_rlc_pointer[rb_id].rlc_type;
          LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
@@ -133,12 +133,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
       for (cnt=0;cnt<drb2add_listP->list.count;cnt++) {
           drb_toaddmod = drb2add_listP->list.array[cnt];
 
-          drb_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;//drb_toaddmod->drb_Identity;
+          drb_id = (UE_index * NB_RB_MAX) + *drb_toaddmod->logicalChannelIdentity;//drb_toaddmod->drb_Identity;
           rlc_type = rlc[module_idP].m_rlc_pointer[drb_id].rlc_type;
           LOG_D(RLC, "Adding DRB %d, rb_id %d\n",drb_toaddmod->logicalChannelIdentity,drb_id);
           
           if (drb_toaddmod->logicalChannelIdentity != null) {
-              lc_id = (UE_index * MAX_NUM_RB) + *drb_toaddmod->logicalChannelIdentity;
+              lc_id = (UE_index * NB_RB_MAX) + *drb_toaddmod->logicalChannelIdentity;
           } else {
               lc_id = -1;
           }
@@ -212,7 +212,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   if (drb2release_listP != NULL) {
       for (cnt=0;cnt<drb2add_listP->list.count;cnt++) {
           pdrb_id = drb2release_listP->list.array[cnt];
-          rrc_rlc_remove_rlc(module_idP, (UE_index * MAX_NUM_RB) + *pdrb_id, frameP);
+          rrc_rlc_remove_rlc(module_idP, (UE_index * NB_RB_MAX) + *pdrb_id, frameP);
       }
   }
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 END \n",module_idP);

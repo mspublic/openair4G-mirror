@@ -52,8 +52,6 @@
 #include "COMMON/platform_constants.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "PHY/defs.h"
-#include "COMMON/platform_types.h"
-#include "COMMON/platform_constants.h"
 #include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
@@ -111,7 +109,7 @@
 
 #define MAX_NUM_LCGID 4
 #define MAX_NUM_LCID 11
-#define MAX_NUM_RB 8
+//#define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
 
 #define NB_RA_PROC_MAX 4
@@ -469,6 +467,9 @@ typedef struct{
   u8 mcch_active;
   /// MBSFN Area Info
   struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+
+  /// Outgoing MCH pdu for PHY
+  MCH_PDU MCH_pdu;
 #endif
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
@@ -762,7 +763,7 @@ void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
 
 void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
 
-int mac_top_init(void);
+int mac_top_init(int eMBMS_active);
 
 char layer2_init_UE(u8 Mod_id);
 
@@ -1016,7 +1017,7 @@ u8 *parse_ulsch_header(u8 *mac_header,
 		       u16 tx_lenght);
 
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active);
 int mac_init(void);
 void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);

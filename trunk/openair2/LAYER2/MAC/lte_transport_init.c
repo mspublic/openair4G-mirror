@@ -1,6 +1,6 @@
 #define UL_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,24)
-#define BCCH_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,3)
-#define RA_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,3)
+#define BCCH_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,4)
+#define RA_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,4)
 #define DLSCH_RB_ALLOC 0x1fff
 #include "extern.h"
 
@@ -59,8 +59,8 @@ void init_transport_channels(unsigned char transmission_mode) {
   RA_alloc_pdu.vrb_type           = 0;
   RA_alloc_pdu.rballoc            = RA_RB_ALLOC;
   RA_alloc_pdu.ndi      = 1;
-  RA_alloc_pdu.rv       = 1;
-  RA_alloc_pdu.mcs      = 1;
+  RA_alloc_pdu.rv       = 0;
+  RA_alloc_pdu.mcs      = 0;
   RA_alloc_pdu.harq_pid = 0;
   RA_alloc_pdu.TPC      = 1;
 

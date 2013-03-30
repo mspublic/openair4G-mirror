@@ -321,8 +321,7 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
   LOG_I(RRC,"Checking release \n"); 
 #ifdef Rel10
   // This has to come from some top-level configuration
-  printf("Rel10 RRC detected, setting MBMS flag\n");
-  eNB_rrc_inst[Mod_id].MBMS_flag = 1;
+  printf("Rel10 RRC detected, MBMS flag %d\n",eNB_rrc_inst[Mod_id].MBMS_flag);
 #else 
   printf("Rel8 RRC\n");
 #endif
@@ -469,7 +468,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
       // confirm with PDCP about the security mode for DCCH
-      rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * MAX_NUM_RB) + DCCH, 0x77);
+      rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * NB_RB_MAX) + DCCH, 0x77);
       // continue the procedure
       rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
       break;
@@ -633,7 +632,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 #else
 
 
-	Idx = (UE_index * MAX_NUM_RB) + DCCH;
+	Idx = (UE_index * NB_RB_MAX) + DCCH;
 	// SRB1
 	eNB_rrc_inst[Mod_id].Srb1[UE_index].Active = 1;
 	eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Srb_id = Idx;
@@ -734,9 +733,9 @@ void rrc_eNB_generate_SecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index) {
 
 
   LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (securityModeCommand to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
-        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
-  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id, frame, 1, (UE_index * MAX_NUM_RB) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
+        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*NB_RB_MAX)+DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
 
 }
 
@@ -752,9 +751,9 @@ void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index) {
 
 
   LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (UECapabilityEnquiry to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
-        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
-  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id, frame, 1, (UE_index * MAX_NUM_RB) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
+        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*NB_RB_MAX)+DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
 
 }
 
@@ -1157,9 +1156,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
 
 
   LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
-        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
-  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-  pdcp_data_req(Mod_id, frame, 1, (UE_index * MAX_NUM_RB) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
+        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*NB_RB_MAX)+DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
 
 }
 
@@ -1223,13 +1222,13 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	LOG_I(RRC,"[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
 	      Mod_id,frame, UE_index,
 	      (int)DRB_configList->list.array[i]->drb_Identity,
-	      (UE_index * MAX_NUM_RB) + (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
+	      (UE_index * NB_RB_MAX) + (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
 	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,
-			       (UE_index * MAX_NUM_RB) + *DRB_configList->list.array[i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
+			       (UE_index * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
 	  /*
 	    rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,
-	    (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
+	    (UE_index * NB_RB_MAX) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
 	    RADIO_ACCESS_BEARER,Rlc_info_um);*/
 	  eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
 
@@ -1254,11 +1253,11 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	    LOG_I(OIP,"[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
 		  Mod_id,
 		  Mod_id,
-		  (UE_index * MAX_NUM_RB) + *DRB_configList->list.array[i]->logicalChannelIdentity);
+		  (UE_index * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity);
 	    rb_conf_ipv4(0,//add
 			 UE_index, //cx
 			 Mod_id,//inst
-			 (UE_index * MAX_NUM_RB) + *DRB_configList->list.array[i]->logicalChannelIdentity,
+			 (UE_index * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity,
 			 0,//dscp
 			 ipv4_address(Mod_id+1,Mod_id+1),//saddr
 			 ipv4_address(Mod_id+1,dest_ip_offset+UE_index+1));//daddr
@@ -1303,9 +1302,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	  if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] ==1) {
 	    // DRB has just been removed so remove RLC + PDCP for DRB
 	    rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,
-				 (UE_index * MAX_NUM_RB) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
+				 (UE_index * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
 	    rrc_rlc_config_req(Mod_id,frame,1,ACTION_REMOVE,
-			       (UE_index * MAX_NUM_RB) + DRB2LCHAN[i],
+			       (UE_index * NB_RB_MAX) + DRB2LCHAN[i],
 			       RADIO_ACCESS_BEARER,Rlc_info_um);
 	  }
 	  eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 0;

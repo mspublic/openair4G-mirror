@@ -27,8 +27,8 @@ ________________________________________________________________*/
 /*! \brief MACPHY Interface */
 typedef struct
   {
-    /// Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC
-    void (*macphy_init)(void);
+    /// Pointer function that initializes L2
+    void (*macphy_init)(int eMBMS_active);
 
     /// Pointer function that stops the low-level scheduler due an exit condition        
     void (*macphy_exit)(const char *);          

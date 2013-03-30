@@ -239,13 +239,13 @@ void cancel_ra_proc(u8 Mod_id, u32 frame, u16 rnti) {
 void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *msg3, u16 msg3_len) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
-  unsigned char rx_lcids[MAX_NUM_RB];
-  u16 rx_lengths[MAX_NUM_RB];
+  unsigned char rx_lcids[NB_RB_MAX];
+  u16 rx_lengths[NB_RB_MAX];
   s8 UE_id;
 
-  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Received msg3 %x.%x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
+  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Received msg3 %x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
 	Mod_id,frame,
-	msg3[0],msg3[1],msg3[2],msg3[3],msg3[4],msg3[5],msg3[6], rnti);
+	msg3[3],msg3[4],msg3[5],msg3[6],msg3[7], msg3[8], rnti);
 
   for (i=0;i<NB_RA_PROC_MAX;i++) {
     LOG_D(MAC,"[RAPROC] Checking proc %d : rnti (%x, %x), active %d\n",i,
@@ -257,7 +257,7 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *msg3, u16 msg
       payload_ptr = parse_ulsch_header(msg3,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,msg3_len);
 	LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Received CCCH: length %d, offset %d\n",
 	      Mod_id,frame,rx_lengths[0],payload_ptr-msg3);
-      if ((num_ce == 0) && (num_sdu==1) && (rx_lcids[0] == CCCH)) { // This is an RRCConnectionRequest
+      if ((num_ce == 0) && (num_sdu==1) && (rx_lcids[0] == CCCH)) { // This is an RRCConnectionRequest/Restablishment
 	memcpy(&eNB_mac_inst[Mod_id].RA_template[i].cont_res_id[0],payload_ptr,6);
 	LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Received CCCH: length %d, offset %d\n",
 	      Mod_id,frame,rx_lengths[0],payload_ptr-msg3);
@@ -445,10 +445,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	  length -= rx_lengths[num_sdu_cnt]; 
       }
       else {
-	if (lcid == CCCH ){
-	  length= tb_length-(mac_header_ptr-mac_header);
-	  mac_header_ptr += 1;//sizeof(SCH_SUBHEADER_FIXED);
-	} else if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
+	if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
 	  length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
 	  mac_header_ptr += 2;//sizeof(SCH_SUBHEADER_SHORT);
 	}
@@ -497,12 +494,12 @@ void SR_indication(u8 Mod_id,u32 frame, u16 rnti, u8 subframe) {
 void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
-  unsigned char rx_lcids[MAX_NUM_RB];
-  unsigned short rx_lengths[MAX_NUM_RB];
+  unsigned char rx_lcids[NB_RB_MAX];
+  unsigned short rx_lengths[NB_RB_MAX];
   unsigned char UE_id = find_UE_id(Mod_id,rnti);
   BSR_LONG *tmp;
   int ii;
-  for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
+  for(ii=0; ii<NB_RB_MAX; ii++) rx_lengths[ii] = 0;
 
   LOG_D(MAC,"[eNB %d] Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,rnti,UE_id);
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
@@ -558,7 +555,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 	      Mod_id,frame, rx_lengths[i], UE_id);
 
 	mac_rlc_data_ind(Mod_id,frame,1,
-			 rx_lcids[i]+(UE_id)*MAX_NUM_RB,
+			 rx_lcids[i]+(UE_id)*NB_RB_MAX,
 			 (char *)payload_ptr,
 			 rx_lengths[i],
 			 1,
@@ -575,7 +572,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 	    Mod_id,frame, rx_lengths[i], UE_id,rx_lcids[i]);
       if (rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) {   // MAX SIZE OF transport block
 	mac_rlc_data_ind(Mod_id,frame,1,
-			 DTCH+(UE_id)*MAX_NUM_RB,
+			 DTCH+(UE_id)*NB_RB_MAX,
 			 (char *)payload_ptr,
 			 rx_lengths[i],
 			 1,
@@ -1252,8 +1249,13 @@ void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb, u8 mcch_f
   }
 
 }
-#endif
 
+MCH_PDU *get_mch_sdu(uint8_t Mod_id,uint32_t frame, uint32_t subframe) {
+  eNB_mac_inst[Mod_id].MCH_pdu.mcs=0;
+  return(&eNB_mac_inst[Mod_id].MCH_pdu);
+}
+
+#endif
 // First stage of Random-Access Scheduling
 void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned char Msg3_subframe,unsigned char *nprb,unsigned int *nCCE) {
 
@@ -1969,7 +1971,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
 			(void*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0],
 			eNB_mac_inst[Mod_id].RA_template[i].rnti,
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes2,
-			2,
+			1,
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bits2,
 			eNB_mac_inst[Mod_id].RA_template[i].RA_dci_fmt2,
 			0);
@@ -2575,14 +2577,14 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 
 
     
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+(MAX_NUM_RB*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+(NB_RB_MAX*next_ue),
 				      (TBS-ta_len-header_len_dcch)); // transport block set size
 
       sdu_lengths[0]=0;
       if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
 	LOG_D(MAC,"[eNB %d] Frame %d, DL-DCCH->DLSCH, Requesting %d bytes from RLC (RRC message)\n",Mod_id,frame,TBS-header_len_dcch);
 	sdu_lengths[0] += mac_rlc_data_req(Mod_id,frame,
-					 DCCH+(MAX_NUM_RB*next_ue),
+					 DCCH+(NB_RB_MAX*next_ue),
 					 (char *)&dlsch_buffer[sdu_lengths[0]]);
 
     	LOG_D(MAC,"[eNB %d][DCCH] Got %d bytes from RLC\n",Mod_id,sdu_lengths[0]);
@@ -2603,7 +2605,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
 
       // check for DCCH1 and update header information (assume 2 byte sub-header)
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+1+(MAX_NUM_RB*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+1+(NB_RB_MAX*next_ue),
 				      (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
                                                                                  // DCCH SDU
 
@@ -2611,7 +2613,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, Requesting %d bytes from RLC (RRC message)\n",
 	      Mod_id,frame,TBS-header_len_dcch-sdu_length_total);
 	sdu_lengths[num_sdus] += mac_rlc_data_req(Mod_id,frame,
-						  DCCH+1+(MAX_NUM_RB*next_ue),
+						  DCCH+1+(NB_RB_MAX*next_ue),
 						  (char *)&dlsch_buffer[sdu_lengths[0]]);
 	sdu_lcids[num_sdus] = DCCH1;
 	sdu_length_total += sdu_lengths[num_sdus];
@@ -2625,10 +2627,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       header_len_dtch = 3; // 3 bytes DTCH SDU subheader
 
       LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, Checking RLC status (rab %d, tbs %d, len %d)\n",
-	    Mod_id,frame,DTCH+(MAX_NUM_RB*next_ue),TBS,
+	    Mod_id,frame,DTCH+(NB_RB_MAX*next_ue),TBS,
 	    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DTCH+(MAX_NUM_RB*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DTCH+(NB_RB_MAX*next_ue),
 				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
       if (rlc_status.bytes_in_buffer > 0) {
@@ -2636,10 +2638,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB], Frame %d, DTCH->DLSCH, Requesting %d bytes from RLC (hdr len dtch %d)\n",
 	      Mod_id,frame,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
 	sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,
-						 DTCH+(MAX_NUM_RB*next_ue),
+						 DTCH+(NB_RB_MAX*next_ue),
 						 (char*)&dlsch_buffer[sdu_length_total]);
 	
-	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",Mod_id,sdu_lengths[num_sdus],DTCH+(MAX_NUM_RB*next_ue));
+	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",Mod_id,sdu_lengths[num_sdus],DTCH+(NB_RB_MAX*next_ue));
 	sdu_lcids[num_sdus] = DTCH;
 	sdu_length_total += sdu_lengths[num_sdus];
 	if (sdu_lengths[num_sdus] < 128)
@@ -3147,7 +3149,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // Schedule ULSCH for FDD or subframe 4 (TDD config 0,3,6)
     // Schedule Normal DLSCH
     
-    //    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+    schedule_RA(Mod_id,frame,subframe,2,&nprb,&nCCE);
 
     if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
       // schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
@@ -3160,7 +3162,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       
       // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE,mbsfn_status);
 
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status);
+      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
     break;
 
   case 1:
@@ -3320,9 +3322,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 	switch (mac_xface->lte_frame_parms->tdd_config) {
 	case 3:
 	case 4:
-	  schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
+	  //	  schedule_RA(Mod_id,frame,subframe,3,&nprb,&nCCE);  // 3 = Msg3 subframe, not
 	  schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);
-	  fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,1,mbsfn_status);
+	  fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0,mbsfn_status); //1,mbsfn_status);
 	  break;
 	case 5:
 	  schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE,mbsfn_status);

@@ -292,7 +292,7 @@ typedef struct{
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);
-void openair_rrc_top_init(void);
+void openair_rrc_top_init(int eMBMS_active);
 char openair_rrc_lite_eNB_init(u8 Mod_id);
 char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);

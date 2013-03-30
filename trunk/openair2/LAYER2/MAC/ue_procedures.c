@@ -258,8 +258,8 @@ void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
-  unsigned char rx_lcids[MAX_NUM_RB];
-  unsigned short rx_lengths[MAX_NUM_RB];
+  unsigned char rx_lcids[NB_RB_MAX];
+  unsigned short rx_lengths[NB_RB_MAX];
   unsigned char *tx_sdu;
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
@@ -288,11 +288,14 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n");
 	  UE_mac_inst[Mod_id].RA_active=0;
 	  // check if RA procedure has finished completely (no contention)
-	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[1];//1=sizeof(SCH_SUBHEADER_FIXED);
+	  tx_sdu = &UE_mac_inst[Mod_id].CCCH_pdu.payload[3];
+	  //Note: 3 assumes sizeof(SCH_SUBHEADER_SHORT) + PADDING CE, which is when UL-Grant has TBS >= 9 (64 bits)
+	  // (other possibility is 1 for TBS=7 (SCH_SUBHEADER_FIXED), or 2 for TBS=8 (SCH_SUBHEADER_FIXED+PADDING or SCH_SUBHEADER_SHORT)
 	  for (i=0;i<6;i++)
 	    if (tx_sdu[i] != payload_ptr[i]) {
 	      LOG_I(MAC,"[UE %d][RAPROC] Contention detected, RA failed\n",Mod_id);
 	      mac_xface->ra_failed(Mod_id,eNB_index);
+	      UE_mac_inst[Mod_id].RA_contention_resolution_timer_active = 0;
               vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 	      return;
 	    }
@@ -574,13 +577,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
 
     }
-     if  (sdu_lcids[i] == CCCH){
-      ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R    = 0; 
-      ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E    = 0;
-      ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID = sdu_lcids[i];
-      last_size=1;
-      }
-      else if (sdu_lengths[i] < 128) {
+    if (sdu_lengths[i] < 128) {
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0; // 3
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;

@@ -132,7 +132,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 
 
 /***********************************************************************/
-int mac_top_init(){
+int mac_top_init(int eMBMS_active){
 /***********************************************************************/
   unsigned char  Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -170,7 +170,7 @@ int mac_top_init(){
   if (Is_rrc_registered == 1){
     LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
-    openair_rrc_top_init();
+    openair_rrc_top_init(eMBMS_active);
 #endif
   }
     else {
@@ -248,7 +248,7 @@ int mac_top_init(){
 
 
 /***********************************************************************/
-int mac_init_global_param(){
+int mac_init_global_param(void){
   /***********************************************************************/
 
   Is_rrc_registered=0;
@@ -323,7 +323,7 @@ void mac_top_cleanup(void){
   free( Mac_rlc_xface);
 }
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active) {
 
 
 
@@ -401,14 +401,13 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
 #ifdef Rel10
-  // not currently used in the code
-  //mac_xface->get_mch_sdu                = get_mch_sdu;
+  mac_xface->get_mch_sdu                = get_mch_sdu;
 #endif
 
   mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
-  mac_xface->macphy_init();
+  mac_xface->macphy_init(eMBMS_active);
 
   //Mac_rlc_xface->Is_cluster_head[0] = 1;
   //Mac_rlc_xface->Is_cluster_head[1] = 0;
