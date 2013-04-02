@@ -117,10 +117,9 @@ is_process_started () {
 
 echo "Bringup UE interface"
 pkill oaisim
-pkill oaisim
 /sbin/rmmod oai_nw_drv
 make naslite_netlink_ether oaisim
-insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/oai_nw_drv.ko  oai_nw_drv_IMEI=3,9,1,8,3,6,7,3,0,5,0,0,0,0
+/sbin/insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/oai_nw_drv.ko  oai_nw_drv_IMEI=3,9,1,8,3,6,7,3,0,5,0,0,0,0
 
 #avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
 #route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
@@ -142,13 +141,15 @@ ip addr add dev oai0 2001:1::6/64
 # -x    -> source ipv6 address
 # -y    -> destination ipv6 address
 # -r    -> radio bearer id
-$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z0  -x 0::0/128 -y 0::0/128 -r 3
-$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z0  -s 10.0.1.6/32  -t 10.0.1.1/32  -r 3
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x 0::0/128    -y 0::0/128    -r 3
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s 10.0.1.6/32 -t 10.0.0.0/32 -r 3
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -x 0::0/128    -y 0::0/128    -r 3
+$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32  -t 0.0.0.0/32  -r 3
 
 echo "to see UE stats, pleasae run : watch_ue script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p3 -g1 > /dev/null"
 pkill oaisim
-nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 5432  -b0 -M2 -p3 -g1 -l1 
+nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 5432  -b0 -M2 -p3 -g1 -l3 > /dev/null 2>&1
 #gdb $OPENAIR_TARGETS/SIMU/USER/oaisim 
 echo "End"
 

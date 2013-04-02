@@ -116,6 +116,26 @@ wait_process_ended () {
   return 0
 }
 
+assert() {
+  # If condition false
+  # exit from script with error message
+  E_PARAM_ERR=98
+  E_PARAM_FAILED=99
+  
+  if [ -z "$2" ] # Not enought parameters passed.
+  then
+    return $E_PARAM_ERR
+  fi
+  
+  lineno=$2
+  if [ ! $1 ]
+  then
+    echo "Assertion failed:  \"$1\""
+    echo "File \"$0\", line $lineno"
+    exit $E_ASSERT_FAILED
+  fi
+}
+
 control_c()
 # run if user hits control-c
 {
@@ -161,7 +181,7 @@ rm -f /tmp/lte_enb.log
 
 echo "to see eNB stats, pleasae run : watch_enb script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3  > /dev/null"
-nice  --adjustment=-10 /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p3 -g1 -l7  | grep PDCP &
+nice  --adjustment=-10 /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p3 -g1 -l7  > /dev/null 2>&1 &
 #nice -10 gdb --args /usr/local/src/targets/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3
 
 wait_process_started oaisim
@@ -176,13 +196,27 @@ ip addr add dev oai0 2001:1::1/64
 # LG EURECOM 2001:10::1 for testing only
 ip addr add dev oai0 2001:10::1/64
 
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0 -x 0::0/128  -y 2001:1::3/128 -r 3
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2 -z0 -s 10.0.1.1/32   -t 10.0.1.3/32   -r 3
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f4 -z64 -s 10.0.1.1/32   -t 10.0.1.3/32   -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0  -x 0::0/128    -y 2001:1::3/128 -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2 -z0  -s 10.0.1.1/32 -t 10.0.1.3/32   -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f4 -z64 -x 0::0/128    -y 2001:1::3/128 -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f6 -z64 -s 0.0.0.0/32  -t 10.0.1.3/24   -r 3
 
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f6 -z0 -x 0::0/128  -y 2001:1::6/128 -r 14
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f8 -z0 -s 10.0.1.1/32   -t 10.0.1.6/32   -r 14
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f10 -z64 -s 10.0.1.1/32   -t 10.0.1.6/32   -r 14
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f8  -z0  -x 0::0/128    -y 2001:1::6/128 -r 14
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f10 -z0  -s 10.0.1.1/32 -t 10.0.1.6/32   -r 14
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f12 -z64 -x 0::0/128    -y 2001:1::6/128 -r 14
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f14 -z64 -s 0.0.0.0/32  -t 10.0.1.6/24   -r 14
+
+echo "   Enabling ipv4 forwarding.."
+bash_exec "sysctl -w net.ipv4.ip_forward=1"
+assert "`sysctl -n net.ipv4.ip_forward` -eq 1" $LINENO
+
+bash_exec "sysctl -w net.ipv4.conf.all.forwarding=1"
+assert "`sysctl -n net.ipv4.conf.all.forwarding` -eq 1" $LINENO
+
+echo "   Enabling ipv6 forwarding.."
+bash_exec "sysctl -w net.ipv6.conf.all.forwarding=1"
+assert "`sysctl -n net.ipv6.conf.all.forwarding` -eq 1" $LINENO
+
 while true; do sleep 10000; done
 
 echo "End"
