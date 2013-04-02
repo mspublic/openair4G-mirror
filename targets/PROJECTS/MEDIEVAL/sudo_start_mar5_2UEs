@@ -1,0 +1,140 @@
+#!/bin/bash
+#set -x
+###########################################################
+THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
+declare -x OPENAIR_DIR="/usr/local/src/trunk"
+declare -x OPENAIR1_DIR="/usr/local/src/trunk/openair1"
+declare -x OPENAIR2_DIR="/usr/local/src/trunk/openair2"
+declare -x OPENAIR3_DIR="/usr/local/src/trunk/openair3"
+declare -x OPENAIR_TARGETS="/usr/local/src/trunk/targets"
+###########################################################
+
+black='\E[30m'
+red='\E[31m'
+green='\E[32m'
+yellow='\E[33m'
+blue='\E[34m'
+magenta='\E[35m'
+cyan='\E[36m'
+white='\E[37m'
+
+ROOT_UID=0
+E_NOTROOT=67
+
+trim ()
+{
+    echo "$1" | sed -n '1h;1!H;${;g;s/^[ \t]*//g;s/[ \t]*$//g;p;}'
+}
+
+
+cecho()   # Color-echo
+# arg1 = message
+# arg2 = color
+{
+    local default_msg="No Message."
+    message=${1:-$default_msg}
+    color=${2:-$black}
+    echo -e "$color"
+    echo -n "$message"
+    tput sgr0
+    echo
+    return
+}
+
+echo_error() {
+    local my_string=""
+    until [ -z "$1" ]
+    do
+        my_string="$my_string$1"
+        shift
+        done
+        cecho "$my_string" $red
+}
+
+echo_warning() {
+    local my_string=""
+    until [ -z "$1" ]
+    do
+        my_string="$my_string$1"
+        shift
+    done
+    cecho "$my_string" $yellow
+}
+
+echo_success() {
+    local my_string=""
+    until [ -z "$1" ]
+    do
+        my_string="$my_string$1"
+        shift
+    done
+    cecho "$my_string" $green
+}
+
+bash_exec() {
+    output=$($1 2>&1)
+    result=$?
+    if [ $result -eq 0 ]
+    then
+        echo_success "$1"
+    else
+        echo_error "$1: $output"
+    fi
+}
+
+echo "OPENAIR1_DIR="$OPENAIR1_DIR
+echo "OPENAIR2_DIR="$OPENAIR2_DIR
+echo "OPENAIR3_DIR="$OPENAIR3_DIR
+echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
+
+export OPENAIR1_DIR
+export OPENAIR2_DIR
+export OPENAIR3_DIR
+export OPENAIR_TARGETS
+
+echo "Bringup eNB interface"
+pkill oaisim
+pkill oaisim
+/sbin/rmmod oai_nw_drv
+echo "REMOVING MULTICAST ROUTING RULE"
+ip route del 239.0.0.160/28 dev eth3
+#sudo make  naslite_netlink_ether oaisim
+make  naslite_netlink_ether oaisim
+insmod /usr/local/src/trunk/openair2/NAS/DRIVER/LITE/oai_nw_drv.ko oai_nw_drv_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
+sleep 1
+ip link set oai0 broadcast ff:ff:ff:ff:ff:ff
+macchanger oai0 -m 90:f6:52:0c:60:aa
+ip link set oai0 up
+sleep 1
+
+#avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
+#sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
+echo " ADDING MULTICAST ROUTING RULE"
+ip route add 239.0.0.160/28 dev eth3
+#ip route add 239.0.0.0/8 dev eth4
+
+echo "CONFIGURING OAI INTERFACE"
+ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
+sleep 1
+ip addr add dev oai0 2001:1::1/64
+# LG EURECOM 2001:10::1 for testing only
+ip addr add dev oai0 2001:10::1/64
+
+echo "rb_tool -a -c0 -i0 -f0 -z0 -x 0::0/128  -y 2001:1::3/128 -r 3"
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0 -x 0::0/128  -y 2001:1::3/128 -r 3
+
+echo "rb_tool -a -c1 -i0 -f2 -z0 -x 0::0/128  -y 2001:1::6/128 -r 11"
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f2 -z0 -x 0::0/128  -y 2001:1::6/128 -r 11
+
+echo "rb_tool -a -c0 -i0 -f4 -z64 -s 10.0.1.1/32   -t 10.0.1.3/32   -r 3"
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f4 -z64 -s 10.0.1.1/32   -t 10.0.1.3/32   -r 3
+
+echo "rb_tool -a -c1 -i0 -f6 -z64 -s 10.0.1.1/32   -t 10.0.1.6/32   -r 11"
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f6 -z64 -s 10.0.1.1/32   -t 10.0.1.6/32   -r 11
+rm -f /tmp/lte_enb.log
+
+echo "to see eNB stats, pleasae run : watch_enb script"
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3  > /dev/null"
+nice  --adjustment=-10 /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p3 -g1 -l3 > /dev/null
+#nice -10 gdb --args /usr/local/src/targets/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3
+echo "End"
