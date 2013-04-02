@@ -458,7 +458,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     if (eNB_flag == 1) { // search for DL traffic
       for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
-	if (mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/  && (frame > 200)) { 
+	if (mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/) { 
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
 	    rb_id = (/*NB_eNB_INST +*/ dst_id -1 ) * NB_RB_MAX + DTCH;
@@ -471,7 +471,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     }else {
       src_id = module_id+NB_eNB_INST;
       dst_id = eNB_index;	
-      if ((mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) && (frame > 200)) { 
+      if (mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) { 
 	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
 	if (otg_pkt != NULL){
 	  rb_id= eNB_index * NB_RB_MAX + DTCH;
@@ -513,18 +513,6 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 
   // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus(frame,eNB_flag);
-
-//OTG
-/*
-  if ( eNB_flag == 0){
-    char *rx_packet_out;
-    rx_packet_out=check_packet(0, 0, frame, packet_gen(0, 0, 0, frame));
-    if (rx_packet_out!=NULL){
-      rx_packet_out=NULL;
-      free(rx_packet_out);
-    }
-  }
-*/
 
 }
 
