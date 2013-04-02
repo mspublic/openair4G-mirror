@@ -115,8 +115,10 @@ ip addr add dev oai0 2001:1::1/64
 # LG EURECOM 2001:10::1 for testing only
 #ip addr add dev oai0 2001:10::1/64
 
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0 -x 0::0/128  -y 0::0/128 -r 3
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2 -z0 -s 10.0.1.1/32   -t 10.0.1.0/24   -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0  -x 0::0/128    -y 0::0/128    -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2 -z0  -s 10.0.1.1/32 -t 10.0.1.0/24 -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f4 -z64 -x 0::0/128    -y 0::0/128    -r 3
+/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f6 -z64 -s 0.0.0.0/32  -t 0.0.0.0/24  -r 3
 
 #avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
 echo " ADDING MULTICAST ROUTING RULE"
@@ -125,7 +127,7 @@ ip route add 239.0.0.160/28 dev eth3
 
 echo "to see eNB stats, pleasae run : watch_enb script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p2 -g1 -l3  > /dev/null"
-nice  --adjustment=-10 /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p2 -g1 -l3 > /dev/null 2>&1 
+nice  --adjustment=-10 /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p2 -g1 -l3  > /dev/null 2>&1 
 #gdb --args /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p2 -g1 -l7  
 
 
