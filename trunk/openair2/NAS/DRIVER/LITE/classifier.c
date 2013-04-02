@@ -756,7 +756,6 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
             // find in default DSCP a valid classification
             if (cx == NULL) {
                 switch (addr_type) {
-                        break;
                     case OAI_NW_DRV_IPV6_ADDR_TYPE_MC_SIGNALLING:
                     case OAI_NW_DRV_IPV6_ADDR_TYPE_UNICAST:
 
