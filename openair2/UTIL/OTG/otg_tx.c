@@ -54,7 +54,7 @@ const char FIXED_STRING[]="ABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDABCDA
 int type_header=0;
 unsigned int state=OFF_STATE; // default traffic state 
 unsigned int application=0;
-
+int ptime=0;
 
 // Time Distribution function to distribute the inter-departure time using the required distribution
 
@@ -176,7 +176,7 @@ int size_dist(int src, int dst, int application, int state) {
 
   }
   //Case when size overfill min and max values	
-  //size_data=adjust_size(size_data);
+  size_data=adjust_size(size_data);
   LOG_D(OTG,"[src %d] [dst %d] [application %d] [state %d]Packet :: Size=%d  Distribution= %d \n", src, dst, application, state, size_data, g_otg->size_dist[src][dst][application][state]);
   
   return size_data;
@@ -211,15 +211,21 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   char *payload=NULL;
   char *header=NULL;
 
- //LOG_I(OTG,"MAX_TX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
+ LOG_I(OTG,"[src %d] [dst %d ]MY_CTIME %d, MAX_FRAME %d\n",src,  dst, ctime, g_otg->max_nb_frames);
 
-	set_ctime(ctime);
+
 	*pkt_size=0;
-
-	init_packet_gen(src, dst);
+	init_packet_gen(src, dst,ctime);
 	size=check_data_transmit(src,dst,ctime);
 
-	if ((size>0) || (otg_info->traffic_type_background[src][dst]==1)) { 
+/*
+Send Packets when:
+- there is data to send
+- time to transmit background traffic
+- when (emutime- ctime)>20m ==> to avoid the fact that TX transmit and RX 
+	can't received due to the end of the emulation 
+*/
+	if (((size>0) || (otg_info->traffic_type_background[src][dst]==1)) && (((g_otg->max_nb_frames*10)-ctime)>20))   { 
 
 	/* No aggregation for background traffic   */
 	if (otg_info->traffic_type_background[src][dst]==0){
@@ -227,16 +233,16 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   	payload = random_string(size, RANDOM_STRING, PAYLOAD_ALPHABET);
   	flag=0xffff;
   	flow=otg_info->flow_id[src][dst];
-  	seq_num=otg_info->seq_num[src][dst];
+  	seq_num=otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]];
   	otg_info->header_type[src][dst]=type_header;
-  	otg_info->seq_num[src][dst]+=1;
-  	otg_info->tx_num_bytes[src][dst]+=  otg_hdr_size(src,dst) + strlen(header) + strlen(payload) ; 
-  	otg_info->tx_num_pkt[src][dst]+=1;
+  	otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]]+=1;
+  	otg_info->tx_num_bytes[src][dst][otg_info->traffic_type[src][dst]]+=  otg_hdr_size(src,dst) + strlen(header) + strlen(payload) ; 
+  	otg_info->tx_num_pkt[src][dst][otg_info->traffic_type[src][dst]]+=1;
   	if (size!=strlen(payload))
   	  LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, 	size, strlen(payload), seq_num, header, payload);
   	else 
   	  LOG_D(OTG,"[%d][%d] [0x %x] [m2m Aggre %d] [Flow %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, otg_info->m2m_aggregation[src][dst],otg_info->flow_id[src][dst], ctime,  size, strlen(header)+strlen(payload), seq_num,state, header, payload);
-  
+  LOG_D(OTG, "[%d]MY_SEQ %d \n", otg_info->traffic_type[src][dst], otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]] );  
 	 } 	
 	else {
 		if ((g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
@@ -283,14 +289,25 @@ int otg_hdr_size(int src, int dst){
 	return otg_info->hdr_size[src][dst];
 }
 
-void init_packet_gen(int src, int dst){
+void init_packet_gen(int src, int dst,int ctime){
+	check_ctime(ctime);
+	set_ctime(ctime);
 	otg_info->m2m_aggregation[src][dst]=0;
 	otg_info->flow_id[src][dst]=0;
 	otg_info->traffic_type[src][dst]=0;
 	otg_info->traffic_type_background[src][dst]=0;
+	/* init background traffic*/
+	if (otg_info->idt_background[src][dst]==0){ 
+		otg_info->idt_background[src][dst]= exponential_dist(0.025);
+ 		otg_info->background_stream[src][dst][0]=backgroundStreamInit(0,1);	
+	}
 }
 
-
+void check_ctime(int ctime){
+	if (ptime>ctime) 
+		LOG_W(OTG, "ERROR ctime: current time [%d] less than previous time [%d] \n",ctime,ptime);
+		ptime=ctime;
+}
 
 int check_data_transmit(int src,int dst, int ctime){
 
@@ -334,22 +351,22 @@ int check_data_transmit(int src,int dst, int ctime){
 		  otg_info->gen_pkts=1;
 		  header_size_gen(src,dst, application); 
 		  //for(i=1;i<=g_otg->aggregation_level[src][dst][application];i++)
-		  if   (g_otg->m2m[src][dst][application]==M2M){
+	/*	  if   (g_otg->m2m[src][dst][application]==M2M){ //TO FIX FOR M2M
 			size+=size_dist(src, dst, application,state);
-			if (otg_info->header_size_app[src][dst][application] > otg_info->header_size[src][dst]) /*adapt the header to the application (increment the header if the the new header size is 			largest that the already computed)*/
+			if (otg_info->header_size_app[src][dst][application] > otg_info->header_size[src][dst]) //adapt the header to the application (increment the header if the the new header size is 			largest that the already computed)
 			  otg_info->header_size[src][dst]+=otg_info->header_size_app[src][dst][application]; 
 			otg_info->m2m_aggregation[src][dst]++;
 			otg_info->flow_id[src][dst]=application;
-			otg_info->traffic_type[src][dst]=M2M;
+			otg_info->traffic_type[src][dst]=g_otg->application_type[src][dst][application] //M2M;
 		  }
-		  else{ 
+		  else{ */
 			/* For the case of non M2M traffic: when more than one flows transmit data in the same time
 			 --> the second flow transmit  (because of non data aggragation)  */
 			size=size_dist(src, dst, application,state); 
 			otg_info->header_size[src][dst]=otg_info->header_size_app[src][dst][application]; 
 			otg_info->flow_id[src][dst]=application;
 			otg_info->traffic_type[src][dst]=g_otg->application_type[src][dst][application];
-		  } 
+		  /*} */
 
 
 		  /* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
@@ -361,7 +378,10 @@ int check_data_transmit(int src,int dst, int ctime){
 		}  //check if there is background traffic to generate
 		else if ((otg_info->gen_pkts==0) && (g_otg->background[src][dst][application]==1)&&(background_gen(src, dst, ctime)!=0)){ // the gen_pkts condition could be relaxed here
 		  otg_info->traffic_type_background[src][dst]=1;
-		  LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d] \n", otg_info->traffic_type_background[src][dst], src, dst);
+ 			if   (g_otg->m2m[src][dst][application]==M2M)
+				otg_info->traffic_type[src][dst]=M2M;
+
+		  LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d][APPLI %d] \n", otg_info->traffic_type_background[src][dst], src, dst, application);
 		}
 
 	  }	
@@ -1020,8 +1040,8 @@ Traffic Modeling Framework for Machine Type Communincation (Navid NiKaein, Marku
 #endif 
 break;
 	   case OPENARENA_DL_TARMA :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->m2m[i][j][k]=1;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
@@ -1035,9 +1055,8 @@ break;
 
 
 	 case VIDEO_VBR_10MBPS :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
 		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
@@ -1049,9 +1068,8 @@ break;
 		 break;
 
 	case VIDEO_VBR_4MBPS :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
 		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
@@ -1063,9 +1081,8 @@ break;
 		 break;
 
 	case VIDEO_VBR_2MBPS :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
 		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
@@ -1077,9 +1094,8 @@ break;
 		 break;
 
 	case VIDEO_VBR_768KBPS :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
 		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
@@ -1091,9 +1107,8 @@ break;
 		 break;
 
 	case VIDEO_VBR_384KBPS :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
 		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
@@ -1105,9 +1120,8 @@ break;
 		 break;
 
 	case VIDEO_VBR_192KBPS :
-		 g_otg->trans_proto[i][j][k] = 2;
-		 g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+		 g_otg->trans_proto[i][j][k] = TCP;
+		 g_otg->ip_v[i][j][k] = IPV4;
 		 g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
 		 g_otg->idt_min[i][j][k][PE_STATE] =  40;
 		 g_otg->idt_max[i][j][k][PE_STATE] =  40;
@@ -1119,28 +1133,26 @@ break;
 		 break;
 
 	case BACKGROUND_USERS:
-	  g_otg->trans_proto[i][j][k] = 2;
-      g_otg->ip_v[i][j][k] = 1;
-	  g_otg->m2m[i][j][k]=1;
+	  g_otg->trans_proto[i][j][k] = TCP;
+    g_otg->ip_v[i][j][k] = IPV4;
 	  g_otg->idt_dist[i][j][k][PE_STATE] = UNIFORM;
 	  g_otg->idt_lambda[i][j][k][PE_STATE] = 1/40;
-      g_otg->idt_min[i][j][k][PE_STATE] =  40;
-      g_otg->idt_max[i][j][k][PE_STATE] =  80;
-      g_otg->size_dist[i][j][k][PE_STATE] = BACKGROUND_DIST;
-		 /*the background initialization*/
+    g_otg->idt_min[i][j][k][PE_STATE] =  40;
+    g_otg->idt_max[i][j][k][PE_STATE] =  80;
+    g_otg->size_dist[i][j][k][PE_STATE] = BACKGROUND_DIST;
+		/*the background initialization*/
 	  otg_info->background_stream[i][j][k]=backgroundStreamInit(0,2);
 	  break;
 
 	case DUMMY : 
-       g_otg->trans_proto[i][j][k] = 2;
-       g_otg->ip_v[i][j][k] = 1;
-		 g_otg->m2m[i][j][k]=1;
+     g_otg->trans_proto[i][j][k] = TCP;
+     g_otg->ip_v[i][j][k] = IPV4;
 		 /*the tarma initialization*/
 		 otg_info->tarma_video[i][j][k]=tarmaInitVideo(0);
-       g_otg->idt_dist[i][j][k][PE_STATE] = VIDEO;
-       g_otg->idt_min[i][j][k][PE_STATE] =  40;
-       g_otg->idt_max[i][j][k][PE_STATE] =  40;
-       g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
+     g_otg->idt_dist[i][j][k][PE_STATE] = VIDEO;
+     g_otg->idt_min[i][j][k][PE_STATE] =  40;
+     g_otg->idt_max[i][j][k][PE_STATE] =  40;
+     g_otg->size_dist[i][j][k][PE_STATE] = VIDEO;
 		 otg_info->tarma_video[i][j][k]->tarma_size.inputWeight[0]=1;
 		 otg_info->tarma_video[i][j][k]->tarma_size.maWeight[0]=0.6;
 		 otg_info->tarma_video[i][j][k]->tarma_size.maWeight[1]=-1.04;
@@ -1172,8 +1184,8 @@ break;
 		 
      case VOIP_G711 :  /*http://www.computerweekly.com/feature/VoIP-bandwidth-fundamentals */
 											/* Voice bit rate= 64 Kbps |	Sample time= 20 msec |	Voice payload=160 bytes */
-       g_otg->trans_proto[i][j][k] = 1;
-       g_otg->ip_v[i][j][k] = 1;
+       g_otg->trans_proto[i][j][k] = UDP;
+       g_otg->ip_v[i][j][k] = IPV4;
        g_otg->idt_dist[i][j][k][SIMPLE_TALK] = FIXED;
        LOG_I(OTG,"OTG_CONFIG VOIP G711, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][SIMPLE_TALK]);
        g_otg->idt_min[i][j][k][SIMPLE_TALK] =  20;
@@ -1189,8 +1201,8 @@ break;
 			break;
      case VOIP_G729 :  /*http://www.computerweekly.com/feature/VoIP-bandwidth-fundamentals */  
 											/* Voice bit rate= 8 Kbps |	Sample time= 30 msec |	Voice payload=30 bytes */
-       g_otg->trans_proto[i][j][k] = 1;
-       g_otg->ip_v[i][j][k] = 1;
+       g_otg->trans_proto[i][j][k] = UDP;
+       g_otg->ip_v[i][j][k] = IPV4;
        g_otg->idt_dist[i][j][k][SIMPLE_TALK] = FIXED;
        LOG_I(OTG,"OTG_CONFIG  VOIP G729, src = %d, dst = %d, dist IDT = %d\n", i, j, g_otg->idt_dist[i][j][k][SIMPLE_TALK]);
        g_otg->idt_min[i][j][k][SIMPLE_TALK] =  30;
@@ -1221,6 +1233,7 @@ break;
        g_otg->size_min[i][j][k][PE_STATE] =  144;
        g_otg->size_max[i][j][k][PE_STATE] =  144; 
 			}
+			 g_otg->m2m[i][j][k]=1;
 
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
@@ -1244,6 +1257,7 @@ break;
        g_otg->size_min[i][j][k][PE_STATE] =  251;
        g_otg->size_max[i][j][k][PE_STATE] =  251; 
 			}
+			 g_otg->m2m[i][j][k]=1;
 
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
@@ -1265,16 +1279,36 @@ break;
 
 int background_gen(int src, int dst, int ctime){ 
 
-  /*check if it is time to transmit the background traffic
+int ptime_background;
+  
+	if (src<NB_eNB_INST) // DL case
+		ptime_background=otg_info->ptime_background_dl;
+	else  //UL case
+		ptime_background=otg_info->ptime_background_ul;
+
+
+/*check if it is time to transmit the background traffic
    - we have different distributions for packet size and idt for the UL and DL */
-  if ((((ctime-otg_info->ptime_background) >=  otg_info->idt_background[src][dst])) ||  
+  if ((((ctime-ptime_background) >=  otg_info->idt_background[src][dst])) ||  
       (otg_info->idt_background[src][dst]==0)){
-		LOG_D(OTG,"[SRC %d][DST %d] 	:: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, otg_info->ptime_background);
-		/* Distinguish between the UL and DL case*/
+
+		LOG_D(OTG,"[SRC %d][DST %d] BACKGROUND :: OK (idt=%d, ctime=%d,ptime=%d ) !!\n", src, dst, otg_info->idt_background[src][dst], ctime, ptime_background);
+		otg_info->size_background[src][dst]=adjust_size(ceil(backgroundCalculateSize(otg_info->background_stream[src][dst][0], ctime, otg_info->idt_background[src][dst])));
+
+		if (src<NB_eNB_INST){ // DL case
+		otg_info->idt_background[src][dst]= exponential_dist(0.025);
+		otg_info->ptime_background_dl=ctime;
+		}
+		else{  //UL case
+		otg_info->idt_background[src][dst]= uniform_dist(500,1000);
+		otg_info->ptime_background_ul=ctime;
+		}
+/*
+		// Distinguish between the UL and DL case
 		if (src<NB_eNB_INST) // DL case
-		  otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85)); /*lognormal distribution for DL background packet*/
+		  otg_info->size_background[src][dst]=ceil(lognormal_dist(5.46,0.85)); //lognormal distribution for DL background packet
 		else //UL case
-		  otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); /*lognormal distribution for DL background packet*/
+		  otg_info->size_background[src][dst]=ceil(lognormal_dist(3.03,0.5)); //lognormal distribution for DL background packet
 
 		// adjust the packet size if needed 
 		if (otg_info->size_background[src][dst]>1400)
@@ -1283,23 +1317,21 @@ int background_gen(int src, int dst, int ctime){
 		  otg_info->size_background[src][dst]=10;
 
 
-		/* Compute the corresponding IDT*/
+		// Compute the corresponding IDT
 
-		/* Eq. (7) from "Users in Cells: a Data Traffic Analysis (Markus Laner, Philipp Svoboda, Stefan Schwarz, and Markus Rupp)" 
-		  Measured traffic consists of a mixture of many different types (e.g., web, video streaming, file download), gives an intuition for the encountered heavy-tails
-			of. Most sessions are short with low data-volume, consisting of small downloads (e.g., e-mail, TCP-acknowledges), whereas some few sessions last very long and 			require high throughput (e.g., VoIP, video streaming, file-download). */
+		// Eq. (7) from "Users in Cells: a Data Traffic Analysis (Markus Laner, Philipp Svoboda, Stefan Schwarz, and Markus Rupp)" - Measured traffic consists of a mixture of many different types (e.g., web, video streaming, file download), gives an intuition for the encountered heavy-tails of. Most sessions are short with low data-volume, consisting of small downloads (e.g., e-mail, TCP-acknowledges), whereas some few sessions last very long and require high throughput (e.g., VoIP, video streaming, file-download). 
 
 		otg_info->idt_background[src][dst]=ceil(((otg_info->size_background[src][dst])*8000)/pow(10, lognormal_dist(1.3525, 0.1954)));
-		/*if(otg_info->idt_background[src][dst]==0)
-		otg_info->idt_background[src][dst]=10;*/
+		//if(otg_info->idt_background[src][dst]==0)
+		//otg_info->idt_background[src][dst]=10;
 		otg_info->ptime_background=ctime;	
-
+*/
 		LOG_D(OTG,"[BACKGROUND] TRAFFIC:: (src=%d, dst=%d) pkts size=%d idt=%d  \n", src, dst, otg_info->size_background[src][dst],otg_info->idt_background[src][dst]);
 
 		return 1;
 	  }
   else {
-	//LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, otg_info->ptime_background, otg_info->size_background[src][dst]);
+	LOG_D(OTG,"[SRC %d][DST %d] [BACKGROUND] TRAFFIC:: not the time to transmit= (idt=%d, ctime=%d,ptime=%d ) size= %d \n", src, dst, otg_info->idt_background[src][dst], 	ctime, ptime_background, otg_info->size_background[src][dst]);
 	return 0;
   }
 

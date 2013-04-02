@@ -52,6 +52,9 @@
 /*!\brief Define the max number of application runing in the  same time*/
 #define MAX_NUM_APPLICATION 5 
 
+/*!\brief Define the max number of traffic runing in the  same time - using their ID in the customized traffic*/
+#define MAX_EMU_TRAFFIC 100
+
 #define OTG_FLAG_SIZE 3
 #define OTG_FLAG "OTG"
 
