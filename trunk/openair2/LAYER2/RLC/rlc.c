@@ -49,8 +49,8 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, uns
   }
 
 
-  LOG_D(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-  LOG_D(componentP, "------+-------------------------------------------------|\n");
+  LOG_T(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+  LOG_T(componentP, "------+-------------------------------------------------|\n");
   for (octet_index = 0; octet_index < sizeP; octet_index++) {
     if ((octet_index % 16) == 0){
       if (octet_index != 0) {
@@ -200,7 +200,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
   mem_block_t* new_sdu;
 
 #ifdef DEBUG_RLC_DATA_REQ
-  msg("rlc_data_req: module_idP %d (%d), rb_idP %d (%d), muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,MAX_MODULES,rb_idP,MAX_RAB,muiP,confirmP,sdu_sizeP,sduP);
+  LOG_D(RLC,"rlc_data_req: module_idP %d (%d), rb_idP %d (%d), muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,MAX_MODULES,rb_idP,MAX_RAB,muiP,confirmP,sdu_sizeP,sduP);
 #endif
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {

@@ -151,8 +151,8 @@ help (void) {
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error) \n");
-  printf
-    ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
+  printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
+  printf ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-T activate the traffic generator: 0 for NONE, 1 for CBR, 2 for M2M, 3 for FPS Gaming, 4 for mix\n");
@@ -343,7 +343,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
   
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:")) != -1) {
 
     switch (c) {
     case 'L':                   // set FDD
@@ -468,6 +468,9 @@ main (int argc, char **argv)
       break;
     case 'l':
       oai_emulation.info.g_log_level = atoi(optarg);
+      break;
+   case 'Y':
+      oai_emulation.info.g_log_verbosity = optarg;
       break;
     case 'c':
       strcpy(oai_emulation.info.local_server, optarg);

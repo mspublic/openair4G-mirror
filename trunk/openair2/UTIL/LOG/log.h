@@ -75,7 +75,7 @@ extern "C" {
  *  @ingroup _macro
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
-#define MAX_LOG_ITEM 50 /*!< \brief the maximum length of a LOG item, what is LOG_ITEM ??? */
+#define MAX_LOG_ITEM 70 /*!< \brief the maximum length of a LOG item, what is LOG_ITEM ??? */
 #define MAX_LOG_INFO 1000 /*!< \brief the maximum length of a log */
 #define MAX_LOG_TOTAL 1500 /*!< \brief the maximum length of a log */
 /* @}*/
@@ -183,6 +183,7 @@ extern "C" {
 
 #define LOG_RED "\033[1;31m"	/*!< \brief VT100 sequence for bold red foreground */
 #define LOG_GREEN "\033[32m"	/*!< \brief VT100 sequence for green foreground */
+#define LOG_ORANGE "\033[93m"   /*!< \brief VT100 sequence for orange foreground */
 #define LOG_BLUE "\033[34m"	/*!< \brief VT100 sequence for blue foreground */
 #define LOG_CYBL "\033[40;36m"	/*!< \brief VT100 sequence for cyan foreground on black background */
 #define LOG_RESET "\033[0m"	/*!< \brief VT100 sequence for reset (black) foreground */
@@ -206,10 +207,10 @@ extern "C" {
 #define FLAG_TIME      0x100
 
 #define LOG_NONE        0x00
-#define LOG_LOW         0x14
-#define LOG_MED         0x14
-#define LOG_HIGH        0x34
-#define LOG_FULL        0x175
+#define LOG_LOW         0x5
+#define LOG_MED         0x15
+#define LOG_HIGH        0x35
+#define LOG_FULL        0x75
 
 #define OAI_OK 0		/*!< \brief all ok */
 #define OAI_ERR 1		/*!< \brief generic error */

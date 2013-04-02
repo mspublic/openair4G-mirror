@@ -223,7 +223,7 @@ void rrc_ue_generate_MeasurementReport(u8 Mod_id,u8 eNB_index) {
 
   u8 buffer[32], size;
 
-  msg("[RRC][UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
+  LOG_D(RRC,"[UE %d] Frame %d : Generating Measurement Report\n",Mod_id,Mac_rlc_xface->frame);
 
   size = do_MeasurementReport(buffer,1,0,3,4,5,6);
 
@@ -308,7 +308,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 	rval= 0;
 	break;
       default:
-	LOG_I(RRC,"[UE%d] Frame %d : Unknown message\n",Mod_id,frame);
+	LOG_E(RRC,"[UE%d] Frame %d : Unknown message\n",Mod_id,frame);
 	rval= -1;
       }
     }
@@ -372,7 +372,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
 
-  LOG_D(RRC,"[UE] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
+  LOG_I(RRC,"[UE] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
 	frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
   /*
   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
@@ -440,13 +440,13 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
     }
   }
   if (measConfig->measObjectToAddModList != NULL) {
-    LOG_I(RRC,"Measurement Object List is present\n");
+    LOG_D(RRC,"Measurement Object List is present\n");
     for (i=0;i<measConfig->measObjectToAddModList->list.count;i++) {
       measObj = measConfig->measObjectToAddModList->list.array[i];
       ind   = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
 
       if (UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind-1]) {
-	LOG_I(RRC,"Modifying measurement object %d\n",ind);
+	LOG_D(RRC,"Modifying measurement object %d\n",ind);
 	memcpy((char*)UE_rrc_inst[Mod_id].MeasObj[eNB_index][ind],
 	       (char*)measObj,
 	       sizeof(MeasObjectToAddMod_t));
@@ -504,7 +504,7 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 	       sizeof(ReportConfigToAddMod_t));
       }
       else {
-	LOG_I(RRC,"Adding Report Configuration %d\n",ind);
+	LOG_D(RRC,"Adding Report Configuration %d\n",ind);
 	UE_rrc_inst[Mod_id].ReportConfig[eNB_index][ind] = measConfig->reportConfigToAddModList->list.array[i];
       }
     }
@@ -512,12 +512,12 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 
   if (measConfig->quantityConfig != NULL) {
     if (UE_rrc_inst[Mod_id].QuantityConfig[eNB_index]) {
-      LOG_I(RRC,"Modifying Quantity Configuration \n");
+      LOG_D(RRC,"Modifying Quantity Configuration \n");
       memcpy((char*)UE_rrc_inst[Mod_id].QuantityConfig[eNB_index],(char*)measConfig->quantityConfig,
 	     sizeof(QuantityConfig_t));
     }
     else {
-      LOG_I(RRC,"Adding Quantity configuration\n");
+      LOG_D(RRC,"Adding Quantity configuration\n");
       UE_rrc_inst[Mod_id].QuantityConfig[eNB_index] = measConfig->quantityConfig;
     }
   }
@@ -533,13 +533,13 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
     for (i=0;i<measConfig->measIdToAddModList->list.count;i++) {
       ind   = measConfig->measIdToAddModList->list.array[i]->measId;
       if (UE_rrc_inst[Mod_id].MeasId[eNB_index][ind]) {
-	LOG_I(RRC,"Modifying Measurement ID %d\n",ind);
+	LOG_D(RRC,"Modifying Measurement ID %d\n",ind);
 	memcpy((char*)UE_rrc_inst[Mod_id].MeasId[eNB_index][ind-1],
 	       (char*)measConfig->measIdToAddModList->list.array[i],
 	       sizeof(MeasIdToAddMod_t));
       }
       else {
-	LOG_I(RRC,"Adding Measurement ID %d\n",ind);
+	LOG_D(RRC,"Adding Measurement ID %d\n",ind);
 	UE_rrc_inst[Mod_id].MeasId[eNB_index][ind] = measConfig->measIdToAddModList->list.array[i];
       }
     }
@@ -791,7 +791,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   }
 
   UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_CONNECTED;
-  LOG_D(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",Mod_id,eNB_index);
+  LOG_I(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",Mod_id,eNB_index);
 
 
 }
@@ -873,8 +873,8 @@ void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityMo
 	  LOG_D(RRC,"securityModeComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 	  for (i=0;i<(enc_rval.encoded+7)/8;i++) 
-	    printf("%02x.",buffer[i]);
-	  printf("\n");
+	    LOG_T(RRC,"%02x.",buffer[i]);
+	  LOG_T(RRC,"\n");
 	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,(enc_rval.encoded+7)/8,(char*)buffer,1);
     }
   }
@@ -934,8 +934,8 @@ void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabili
 	  LOG_D(RRC,"UECapabilityInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 	  for (i=0;i<(enc_rval.encoded+7)/8;i++) 
-	    printf("%02x.",buffer[i]);
-	  printf("\n");
+	    LOG_T(RRC,"%02x.",buffer[i]);
+	  LOG_T(RRC,"\n");
 	  pdcp_data_req(Mod_id+NB_eNB_INST,frame, 0 ,DCCH,rrc_mui++,0,(enc_rval.encoded+7)/8,(char*)buffer,1);
 	}
       }
@@ -988,7 +988,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
   int i;
 
   if (Srb_id != 1) {
-    LOG_D(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB1), should not have ...\n",Mod_id,frame);
+    LOG_E(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB1), should not have ...\n",Mod_id,frame);
     return;
   }
 
@@ -1031,16 +1031,16 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,frame,eNB_index);
 	UE_rrc_inst[Mod_id].Info[eNB_index].State = RRC_RECONFIGURED;
-	LOG_D(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
+	LOG_I(RRC,"[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",Mod_id,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
 	break;
       case DL_DCCH_MessageType__c1_PR_securityModeCommand:
-	LOG_D(RRC,"[UE %d] Received securityModeCommand (eNB %d)\n",Mod_id,eNB_index);
+	LOG_I(RRC,"[UE %d] Received securityModeCommand (eNB %d)\n",Mod_id,eNB_index);
 	rrc_ue_process_securityModeCommand(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.securityModeCommand,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
-	LOG_D(RRC,"[UE %d] Received Capability Enquiry (eNB %d)\n",Mod_id,eNB_index);
+	LOG_I(RRC,"[UE %d] Received Capability Enquiry (eNB %d)\n",Mod_id,eNB_index);
 	rrc_ue_process_ueCapabilityEnquiry(Mod_id,frame,&dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_counterCheck:
@@ -1162,32 +1162,32 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 
   //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
 
-  msg("cellAccessRelatedInfo.cellIdentity : %x.%x.%x.%x\n",
+  LOG_T(RRC,"cellAccessRelatedInfo.cellIdentity : %x.%x.%x.%x\n",
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[0],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[1],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[2],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3]);
 
-  msg("cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
-  msg("freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
-  msg("siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
+  LOG_T(RRC,"cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
+  LOG_T(RRC,"freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
+  LOG_T(RRC,"siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
   if ((*sib1)->schedulingInfoList.list.count>0) {
     for (i=0;i<(*sib1)->schedulingInfoList.list.count;i++) {
-      msg("siSchedulingInfoPeriod[%d]          : %s\n",i,SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity]);
+      LOG_T(RRC,"siSchedulingInfoPeriod[%d]          : %s\n",i,SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity]);
       if ((*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count>0)
-	msg("siSchedulingInfoSIBType[%d]         : %s\n",i,SIBType[(int)(*(*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0])]);
+	LOG_T(RRC,"siSchedulingInfoSIBType[%d]         : %s\n",i,SIBType[(int)(*(*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0])]);
       else {
-	msg("mapping list %d is null\n",i);
+	LOG_W(RRC,"mapping list %d is null\n",i);
       }
     }
   }
   else {
-    msg("siSchedulingInfoPeriod[0]          : PROBLEM!!!\n");
+   LOG_E(RRC,"siSchedulingInfoPeriod[0]          : PROBLEM!!!\n");
    return -1;
   }
 
   if ((*sib1)->tdd_Config)
-    msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment,(int)(*sib1)->tdd_Config->specialSubframePatterns);
+    LOG_T(RRC,"TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment,(int)(*sib1)->tdd_Config->specialSubframePatterns);
 
 
   UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod     = siPeriod_int[(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity];

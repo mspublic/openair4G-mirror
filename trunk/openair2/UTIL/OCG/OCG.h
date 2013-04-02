@@ -669,7 +669,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     double time_s;
     double time_ms;
     unsigned int g_log_level;
-    unsigned int g_log_verbosity;
+    char * g_log_verbosity;
     // phy related params
     unsigned int n_frames;
     unsigned int n_frames_flag;	// if set, then let the emulation goes to infinity

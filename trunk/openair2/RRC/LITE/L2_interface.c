@@ -91,8 +91,8 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 #ifdef DEBUG_RRC
 	LOG_D(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_id,frame);
 	for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_SIB1;i++)
-	  msg("%x.",Buffer[i]);
-	msg("\n");
+	  LOG_T(RRC,"%x.",Buffer[i]);
+	LOG_T(RRC,"\n");
 #endif
 
 	return (eNB_rrc_inst[Mod_id].sizeof_SIB1);
@@ -102,8 +102,8 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 #ifdef DEBUG_RRC
 	LOG_D(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_id,frame);
 	for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_SIB23;i++)
-	  msg("%x.",Buffer[i]);
-	msg("\n");
+	  LOG_T(RRC,"%x.",Buffer[i]);
+	LOG_T(RRC,"\n");
 #endif
 	return(eNB_rrc_inst[Mod_id].sizeof_SIB23);
       }
@@ -145,8 +145,8 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 #ifdef DEBUG_RRC
       LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE 1\n",Mod_id,frame);
       for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE;i++)
-	msg("%x.",Buffer[i]);
-      msg("\n");
+	LOG_T(RRC,"%x.",Buffer[i]);
+      LOG_T(RRC,"\n");
 #endif
       
       return (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);

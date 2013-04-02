@@ -627,8 +627,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING   
     LOG_D(PHY,"SI Decoded\n");
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
+      LOG_T(PHY,"%x.",dlsch_eNB->harq_processes[0]->b[i]);
+    LOG_T(PHY,"\n");
 #endif
     return(1);
     break;
@@ -639,8 +639,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING   
     LOG_D(PHY,"RA Decoded\n");
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    msg("\n");
+      LOG_T(PHY,"%x.",dlsch_eNB->harq_processes[0]->b[i]);
+    LOG_T(PHY,"\n");
 #endif
     return(1);
     break;
@@ -652,8 +652,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef DEBUG_DLSCH_DECODING
     for (i=0;i<dlsch_ue->harq_processes[harq_pid]->TBS>>3;i++)
-      msg("%x.",dlsch_eNB->harq_processes[harq_pid]->b[i]);
-    msg("\n current harq pid is %d ue id %d \n", harq_pid, ue_id);
+      LOG_T(PHY,"%x.",dlsch_eNB->harq_processes[harq_pid]->b[i]);
+    LOG_T(PHY,"\n current harq pid is %d ue id %d \n", harq_pid, ue_id);
 #endif
 
     if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs,PHY_vars_eNB_g[eNB_id]->mu_mimo_mode[ue_id].dl_pow_off) == 1) {

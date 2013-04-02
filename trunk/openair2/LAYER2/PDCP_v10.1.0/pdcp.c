@@ -176,8 +176,8 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
     /* Print octets of outgoing data in hexadecimal form */
     LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n",
 	  pdcp_pdu_size);
-    //util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
-    util_flush_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
+    util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
+    //util_flush_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
     /*
@@ -258,7 +258,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 sequence_number;
 
-  LOG_D(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rb_id, sdu_buffer_size);
+  LOG_I(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rb_id, sdu_buffer_size);
 
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
@@ -685,7 +685,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   if (mbms_SessionInfoList_r9 != NULL){
     for (cnt=0;cnt<mbms_SessionInfoList_r9->list.count;cnt++) {
       MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[cnt];
-      lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // MRB?
+      lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
       pdrb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
       rb_id = (index * NB_RB_MAX) + pdrb_id;
       if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
@@ -776,7 +776,7 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, rlc_
     pdcp_array[module_id][rb_id].last_submitted_pdcp_rx_sn = 4095;
     pdcp_array[module_id][rb_id].seq_num_size = 0;
     pdcp_array[module_id][rb_id].first_missing_pdu = -1;
-    LOG_D(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
+    LOG_I(PDCP,"[%s %d] Config request : ACTION_REMOVE: Frame %d radio bearer id %d configured\n",
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rb_id);
 
     break;

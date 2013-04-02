@@ -30,11 +30,12 @@ mapping log_level_names[] =
 };
 mapping log_verbosity_names[] =
 {
-    {"low", 0x4},
-    {"medium", 0x14},
-    {"high", 0x34}, 
-    {"full", 0x174},
-    {NULL, -1}
+  {"none", 0x0},
+  {"low", 0x5},
+  {"medium", 0x15},
+  {"high", 0x35}, 
+  {"full", 0x75},
+  {NULL, -1}
 };
 mapping omg_model_names[] =
 {
@@ -330,8 +331,8 @@ void init_oai_emulation() {
    oai_emulation.info.ethernet_id=0;
    oai_emulation.info.multicast_group=0; 
    oai_emulation.info.multicast_ifname=NULL;
-   oai_emulation.info.g_log_level= LOG_DEBUG;
-   oai_emulation.info.g_log_verbosity= LOG_LOW;
+   oai_emulation.info.g_log_level= LOG_INFO;
+   oai_emulation.info.g_log_verbosity= "medium";
     
     oai_emulation.info.frame_type=1;
     oai_emulation.info.tdd_config=3;
@@ -387,12 +388,16 @@ void oaisim_config() {
 int olg_config() {
   int comp;
   int ocg_log_level = map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
+  int ocg_log_verbosity= map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
+  LOG_I(EMU, "ocg log level %d, oai log level%d \n ",ocg_log_level, oai_emulation.info.g_log_level);
   oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level : oai_emulation.info.g_log_level;
-  oai_emulation.info.g_log_verbosity = map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
+  oai_emulation.info.g_log_verbosity = (((oai_emulation.info.ocg_enabled == 1) && (ocg_log_verbosity != -1)) ? ocg_log_verbosity : 
+					map_str_to_int(log_verbosity_names, oai_emulation.info.g_log_verbosity));
+  
   LOG_N(EMU,"global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n", 
 	map_int_to_str (log_level_names, oai_emulation.info.g_log_level), 
 	oai_emulation.info.g_log_level,
-	oai_emulation.emulation_config.log_emu.verbosity,
+	map_int_to_str (log_verbosity_names,oai_emulation.info.g_log_verbosity),
 	oai_emulation.info.g_log_verbosity,
 	oai_emulation.emulation_config.log_emu.interval );
   set_glog(oai_emulation.info.g_log_level, oai_emulation.info.g_log_verbosity ); //g_glog
