@@ -85,11 +85,11 @@ char * hdr_payload=NULL;
 	 bytes_read += sizeof (otg_hdr_t);
 
         if (otg_hdr_info_rx->flag == 0xffff){
-          seq_num_rx=otg_info->seq_num_rx[src][dst];
+          seq_num_rx=otg_info->seq_num_rx[src][dst][otg_hdr_rx->traffic_type];
 					if (src<NB_eNB_INST)
-          	nb_loss_pkts=otg_info->nb_loss_pkts_dl[src][dst];
+          	nb_loss_pkts=otg_info->nb_loss_pkts_dl[src][dst][otg_hdr_rx->traffic_type];
 					else
-          	nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst];
+          	nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst][otg_hdr_rx->traffic_type];
         }
 	else{
           seq_num_rx=otg_info->seq_num_rx_background[src][dst];
@@ -137,13 +137,13 @@ float owd_const_application_v=owd_const_application()/2;
 
 
 	if (otg_hdr_info_rx->flag == 0xffff){
-		if (otg_info->rx_owd_max[src][dst]==0){
-	  	otg_info->rx_owd_max[src][dst]=otg_info->rx_pkt_owd[src][dst];
-	  	otg_info->rx_owd_min[src][dst]=otg_info->rx_pkt_owd[src][dst];
+		if (otg_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]==0){
+	  	otg_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]=otg_info->rx_pkt_owd[src][dst];
+	  	otg_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type]=otg_info->rx_pkt_owd[src][dst];
 		}		
 		else {
-	  	otg_info->rx_owd_max[src][dst]=MAX(otg_info->rx_owd_max[src][dst],otg_info->rx_pkt_owd[src][dst] );
-	  	otg_info->rx_owd_min[src][dst]=MIN(otg_info->rx_owd_min[src][dst],otg_info->rx_pkt_owd[src][dst] );
+	  	otg_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]=MAX(otg_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type],otg_info->rx_pkt_owd[src][dst] );
+	  	otg_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type]=MIN(otg_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type],otg_info->rx_pkt_owd[src][dst] );
 		}
 	}
 	//LOG_I(OTG,"RX INFO :: RTT MIN(one way) ms: %.2f, RTT MAX(one way) ms: %.2f \n", otg_info->rx_owd_min[src][dst], otg_info->rx_owd_max[src][dst]);
@@ -169,13 +169,13 @@ else
 
 
  	if (otg_hdr_info_rx->flag == 0xffff){
- 	  otg_info->rx_num_pkt[src][dst]+=1;
-	  otg_info->rx_num_bytes[src][dst]+=otg_hdr_info_rx->size;
-    otg_info->seq_num_rx[src][dst]=seq_num_rx;
+ 	  otg_info->rx_num_pkt[src][dst][otg_hdr_rx->traffic_type]+=1;
+	  otg_info->rx_num_bytes[src][dst][otg_hdr_rx->traffic_type]+=otg_hdr_info_rx->size;
+    otg_info->seq_num_rx[src][dst][otg_hdr_rx->traffic_type]=seq_num_rx;
 		if (src<NB_eNB_INST)
-    	otg_info->nb_loss_pkts_dl[src][dst]=nb_loss_pkts;
+    	otg_info->nb_loss_pkts_dl[src][dst][otg_hdr_rx->traffic_type]=nb_loss_pkts;
 		else
-      otg_info->nb_loss_pkts_ul[src][dst]=nb_loss_pkts;		
+      otg_info->nb_loss_pkts_ul[src][dst][otg_hdr_rx->traffic_type]=nb_loss_pkts;		
 
 /*Plots of latency and goodput are only plotted for the data traffic*/
 /*measurements are done for the data and background traffic */
@@ -253,18 +253,17 @@ void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned in
 }
 
 
+
+
 void owd_const_gen(int src, int dst, int flow_id, unsigned int flag){
   otg_info->owd_const[src][dst][flow_id]=(owd_const_mobile_core()+owd_const_IP_backbone()+owd_const_application())/2;
 
-
-
-	flag==M2M /*_TYPE*/;
-	if (flag==M2M) {
+	if ((flag==M2M)||(flag==M2M_TRAFFIC)||(flag==AUTO_PILOT_L)||(flag==AUTO_PILOT_M)||(flag==AUTO_PILOT_H)||(flag==VIRTUAL_GAME_L)||(flag==VIRTUAL_GAME_M)|| (flag==VIRTUAL_GAME_H)||(flag==VIRTUAL_GAME_F)||(flag==ALARM_HUMIDITY)||(flag==ALARM_SMOKE)||(flag==ALARM_TEMPERATURE)||(flag==OPENARENA)||(flag==IQSIM_MANGO)||(flag==IQSIM_NEWSTEO)) {
 		otg_info->owd_const[src][dst][flow_id]+=(owd_const_capillary()/2);
-			LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC TYPE IS M2M [Add Capillary const]\n", src, dst, flow_id);
+			LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC_TYPE IS M2M [Add Capillary const]\n", src, dst, flow_id);
 		}
 	else 
-		LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC WITHOUT M2M [Capillary const]\n", src, dst, flow_id);
+		LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC_TYPE WITHOUT M2M [Capillary const]\n", src, dst, flow_id);
 }
 
 
@@ -279,16 +278,17 @@ float owd_const_capillary(){
 
 
 float owd_const_mobile_core(){
-  double delay;
-  /* this is a delay model for a loaded GGSN according to 
-	 "M. Laner, P. Svoboda and M. Rupp, Latency Analysis of 3G Network Components, EW'12, Poznan, Poland, 2012", table 2, page 6.*/
+  /*double delay;
+  // this is a delay model for a loaded GGSN according to 
+	//"M. Laner, P. Svoboda and M. Rupp, Latency Analysis of 3G Network Components, EW'12, Poznan, Poland, 2012", table 2, page 6.
   if(uniform_rng ()<0.3){
 	delay=uniform_dist (0.4,1.2);
   }else{
-	/* in this case, according to the fit in the paper,
-	     the delay is generalized pareto: GP(k=0.75,s=0.55,t=1.2)
-	     using inverse cdf method we have CDF(x)=1-(k(x-t)/s+1)^(-1/k), 
-		 x=CDF^(-1)(u)=t+s/k*((1-u)^(-k)-1) , hence when u~uniform, than x~GP(k,s,t)   */
+	// in this case, according to the fit in the paper,
+	//     the delay is generalized pareto: GP(k=0.75,s=0.55,t=1.2)
+	//     using inverse cdf method we have CDF(x)=1-(k(x-t)/s+1)^(-1/k), 
+	//	 x=CDF^(-1)(u)=t+s/k*((1-u)^(-k)-1) , hence when u~uniform, than x~GP(k,s,t)  
+
 	double k,s,t,u;
 	k=0.75;
 	s=0.55;
@@ -296,9 +296,9 @@ float owd_const_mobile_core(){
 	u=uniform_rng();
 	delay= t + s/k*(pow(1-u,-k)-1);
   }
-  return delay;
+  return delay; */
   /*return ( uniform_dist(MIN_U_PLANE_CORE_IP_ACCESS_DELAY, MAX_U_PLANE_CORE_IP_ACCESS_DELAY) + uniform_dist(MIN_FW_PROXY_DELAY,MAX_FW_PROXY_DELAY)); */
-/*	return ((double)MIN_U_PLANE_CORE_IP_ACCESS_DELAY+ (double)MAX_U_PLANE_CORE_IP_ACCESS_DELAY + (double)MIN_FW_PROXY_DELAY + (double)MAX_FW_PROXY_DELAY)/2;*/
+  return ((double)MIN_U_PLANE_CORE_IP_ACCESS_DELAY+ (double)MAX_U_PLANE_CORE_IP_ACCESS_DELAY + (double)MIN_FW_PROXY_DELAY + (double)MAX_FW_PROXY_DELAY)/2;
 }
 
 float owd_const_IP_backbone(){

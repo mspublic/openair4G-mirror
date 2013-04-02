@@ -183,11 +183,12 @@ void voip_traffic(int src, int dst, int application, int ctime);
 
 int otg_hdr_size(int src, int dst);
 
-void init_packet_gen(int src, int dst);
+void init_packet_gen(int src, int dst, int ctime);
 
 int check_data_transmit(int src,int dst, int ctime); 
 
 unsigned int get_application_state(int src, int dst, int application, int ctime);
 
+void check_ctime(int ctime);
 
 #endif

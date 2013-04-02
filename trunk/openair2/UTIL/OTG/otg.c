@@ -46,7 +46,7 @@
 
 // Defining initial and default values of OTG structures 
 
-void init_all_otg()  {
+void init_all_otg(int max_nb_frames)  {
 
 	//set otg params to 0
  	g_otg = calloc(1, sizeof(otg_t));
@@ -69,6 +69,8 @@ void init_all_otg()  {
    	/* Memory could not be allocated */
    		LOG_E(OTG,"Couldn't allocate memory for otg_forms_info_t\n");
  	memset(otg_forms_info, 0, sizeof(otg_forms_info_t));
+
+g_otg->max_nb_frames=max_nb_frames;
 
 	LOG_I(OTG,"init done: init_all_otg\n");
 
@@ -121,21 +123,21 @@ void free_otg(){
 	free(g_otg);
   }
 
-  printf("OTG DEBUG TARMA: free_otg() called \n");
+  LOG_D(OTG,"DEBUG TARMA: free_otg() called \n");
   for(i=0; i<NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++){
 	for(j=0; j<NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; j++){
 	  for(k=0; k<MAX_NUM_APPLICATION; k++){
 		if(otg_info->tarma_stream[i][j][k]){
 		  free(otg_info->tarma_stream[i][j][k]);
-		  printf("OTG DEBUG TARMA: freed tarma_stream[%d][%d][%d]\n",i,j,k);
+		  LOG_D(OTG,"DEBUG TARMA: freed tarma_stream[%d][%d][%d]\n",i,j,k);
 		}
 		if(otg_info->tarma_video[i][j][k]){
 		  free(otg_info->tarma_video[i][j][k]);
-		  printf("OTG DEBUG TARMA: freed tarma_video[%d][%d][%d]\n",i,j,k);
+		  LOG_D(OTG,"DEBUG TARMA: freed tarma_video[%d][%d][%d]\n",i,j,k);
 		}
 		if(otg_info->background_stream[i][j][k]){
 		  free(otg_info->background_stream[i][j][k]);
-		  printf("OTG DEBUG TARMA: freed background_stream[%d][%d][%d]\n",i,j,k);
+		  LOG_D(OTG,"DEBUG TARMA: freed background_stream[%d][%d][%d]\n",i,j,k);
 		}
 	  }
 	}

@@ -77,7 +77,7 @@
 * \note 
 * @ingroup  _otg
 */
-void init_all_otg(void);
+void init_all_otg(int max_nb_frames);
 
 /*! \fn void set_ctime(int ctime)
 * \brief set the simulation time to the ctime 
