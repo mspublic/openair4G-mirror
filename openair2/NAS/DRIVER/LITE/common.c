@@ -706,7 +706,7 @@ struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct
         } else {
             printk("[OAI_IP_DRV][%s] NAS_ADD_CTL_RB: no memory\n",__FUNCTION__);
         }
-        if (cx->num_rb == 1) {
+        /*if (cx->num_rb == 1) {
             // first RAB added, add default classification rule for multicast signalling
             pclassifier=oai_nw_drv_class_add_send_classifier(cx, OAI_NW_DRV_DSCP_DEFAULT, 0);
             if (pclassifier != NULL) {
@@ -778,7 +778,7 @@ struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct
               rclassifier->sport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
               rclassifier->dport                 = htons(OAI_NW_DRV_PORT_DEFAULT);
             }
-        }
+        }*/
     }
     #ifdef OAI_DRV_DEBUG_CLASS
     printk("[OAI_IP_DRV][%s] end \n",__FUNCTION__ );
