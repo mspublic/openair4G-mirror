@@ -180,29 +180,17 @@ void init_SI(u8 Mod_id) {
       &eNB_rrc_inst[Mod_id].sib2);
     */
     if (eNB_rrc_inst[Mod_id].sizeof_SIB23 == 255)
-      mac_xface->macphy_exit("");
+      mac_xface->macphy_exit("eNB_rrc_inst[Mod_id].sizeof_SIB23 == 255");
 
-    LOG_D(RRC,"[eNB %d] SIB2/3 Contents (partial)\n", Mod_id);
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.n_SB = %ld\n", Mod_id,eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
-
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.hoppingMode = %ld\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.pusch_HoppingOffset = %ld\n", Mod_id,eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.enable64QAM = %d\n", Mod_id,(int)eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.groupHoppingEnabled = %d\n", Mod_id,(int)eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
-
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.groupAssignmentPUSCH = %ld\n", Mod_id,eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
-
-
-    LOG_D(RRC,"[eNB %d] pusch_config_common.sequenceHoppingEnabled = %d\n", Mod_id,(int)eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
-
-
-    LOG_D(RRC, "[eNB %d] pusch_config_common.cyclicShift  = %ld\n",Mod_id, eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
+    LOG_T(RRC,"[eNB %d] SIB2/3 Contents (partial)\n", Mod_id);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.n_SB = %ld\n", Mod_id,eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.hoppingMode = %ld\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.pusch_HoppingOffset = %ld\n", Mod_id,eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.enable64QAM = %d\n", Mod_id,(int)eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.groupHoppingEnabled = %d\n", Mod_id,(int)eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.groupAssignmentPUSCH = %ld\n", Mod_id,eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+    LOG_T(RRC,"[eNB %d] pusch_config_common.sequenceHoppingEnabled = %d\n", Mod_id,(int)eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
+    LOG_T(RRC, "[eNB %d] pusch_config_common.cyclicShift  = %ld\n",Mod_id, eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
 #ifdef Rel10
     if (eNB_rrc_inst[Mod_id].MBMS_flag ==1) {
       //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.count);
@@ -407,8 +395,8 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
                          0,
                          0);
   for (i=0;i<sdu_size;i++)
-    msg("%x.",Rx_sdu[i]);
-  msg("\n");
+    LOG_T(RRC,"%x.",Rx_sdu[i]);
+  LOG_T(RRC,"\n");
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
     LOG_E(RRC,"[UE %d] Frame %d : Failed to decode UL-DCCH (%d bytes)\n",Mod_id,frame,dec_rval.consumed);
@@ -436,7 +424,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.present == RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
         rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,frame,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
         eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
-        LOG_D(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
+        LOG_I(RRC,"[eNB %d] UE %d State = RRC_RECONFIGURED \n",Mod_id,UE_index);
       }
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
@@ -453,7 +441,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 	if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
 	  rrc_eNB_process_RRCConnectionSetupComplete(Mod_id, frame, UE_index, &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
 	  eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
-	  LOG_D(RRC, "[eNB %d] UE %d State = RRC_CONNECTED \n", Mod_id, UE_index);
+	  LOG_I(RRC, "[eNB %d] UE %d State = RRC_CONNECTED \n", Mod_id, UE_index);
 	  LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\n"
 		"Now CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
 		frame, Mod_id, UE_index, Mod_id);
@@ -461,7 +449,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       }
       break;
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
-      LOG_D(RRC,"[eNB %d] Frame %d received securityModeComplete on UL-DCCH %d from UE %d\n",
+      LOG_I(RRC,"[eNB %d] Frame %d received securityModeComplete on UL-DCCH %d from UE %d\n",
 	    Mod_id,  frame, DCCH, UE_index );
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(securityModeComplete) --->][RRC_eNB][MOD %02d][]\n",
@@ -483,7 +471,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
       break;
     case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
-      LOG_D(RRC,"[eNB %d] Frame %d received ueCapabilityInformation on UL-DCCH %d from UE %d\n",
+      LOG_I(RRC,"[eNB %d] Frame %d received ueCapabilityInformation on UL-DCCH %d from UE %d\n",
 	    Mod_id,  frame, DCCH, UE_index );
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(UECapabilityInformation) --->][RRC_eNB][MOD %02d][]\n",
@@ -570,7 +558,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 
   //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
-  LOG_D(RRC,"[eNB %d] Frame %d: Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n", Mod_id,frame,
+  LOG_T(RRC,"[eNB %d] Frame %d: Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n", Mod_id,frame,
 	((uint8_t*)Srb_info->Rx_buffer.Payload)[0],
 	((uint8_t*)Srb_info->Rx_buffer.Payload)[1],
 	((uint8_t*)Srb_info->Rx_buffer.Payload)[2],
@@ -584,7 +572,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 			 (uint8_t*)Srb_info->Rx_buffer.Payload,
 			 100,0,0);
   for (i=0;i<8;i++)
-    msg("%x.",((u8*)&ul_ccch_msg)[i]);
+    LOG_T(RRC,"%x.",((u8*)&ul_ccch_msg)[i]);
   if (dec_rval.consumed == 0) {
     LOG_E(RRC,"[eNB %d] FATAL Error in receiving CCCH\n", Mod_id);
     return -1; //mac_xface->macphy_exit(""); //exit(-1);

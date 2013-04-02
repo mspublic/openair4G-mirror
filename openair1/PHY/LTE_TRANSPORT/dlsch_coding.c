@@ -355,8 +355,8 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	  harq_pid);
 
     for (i=0;i<dlsch->harq_processes[harq_pid]->TBS>>3;i++)
-      msg("%x.",DLSCH_pdu[i]);
-    msg("\n");
+      LOG_T(PHY,"%x.",DLSCH_pdu[i]);
+    LOG_T(PHY,"\n");
 
     memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
 	   //	    memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],

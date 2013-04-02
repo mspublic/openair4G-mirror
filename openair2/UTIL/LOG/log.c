@@ -52,7 +52,7 @@
 //#include "UTIL/OCG/OCG.h"
 //#include "UTIL/OCG/OCG_extern.h"
 #include <string.h>
-#include <time.h>
+
 #else
 #    define FIFO_PRINTF_MAX_STRING_SIZE   1000
 #    define FIFO_PRINTF_NO              62
@@ -68,9 +68,9 @@ static char g_buff_total[MAX_LOG_TOTAL];
 
 static int gfd;
 
-static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};	/*!< \brief Optional start-format strings for highlighting */
+static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_ORANGE, LOG_BLUE, "", ""};	/*!< \brief Optional start-format strings for highlighting */
+static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET,LOG_RESET,  "",""};	/*!< \brief Optional end-format strings for highlighting */
 
-static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
 static int bypass_log_hdr;
 
@@ -322,20 +322,11 @@ void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
- vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
 
- int len, i;
+  int len, i;
   va_list args;
   log_component_t *c;
-#ifdef USER_MODE
-  struct timespec time_spec;
-  unsigned int time_now_ns;
-  unsigned int time_now_s;
-//  clock_gettime (CLOCK_REALTIME, &time_spec);
-  time_now_ns = (unsigned int) time_spec.tv_nsec;
-  //time_now_s = (unsigned int) time_spec.tv_sec;
-   //clock_t time_now = clock() / (CLOCKS_PER_SEC / 1000);// time in ms
-#endif
 
   g_buff_total[0] = '\0';
   c = &g_log->log_component[comp];
@@ -357,29 +348,18 @@ void logRecord( const char *file, const char *func,
   va_start(args, format);
   len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
   va_end(args);
-
+  if (level == LOG_TRACE)
+    exit(-1);
   //printf (g_buff_info);
   //return; 
  // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if ((level == LOG_FILE) ||  (c->flag == LOG_NONE) ){
-    bypass_log_hdr = 1;
-  }
-  else if (((level < LOG_TRACE) && (level >= LOG_EMERG)) ) {
-    bypass_log_hdr = 0;
-  }
-   
-  if (bypass_log_hdr == 0){ 
-
-#ifdef USER_MODE
-    if ( (g_log->flag & FLAG_TIME) || (c->flag & FLAG_TIME)  )  {
-      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%u]",
-		     time_now_ns);
-      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
-    }
-#endif    
+  if ((level == LOG_FILE) ||  (c->flag == LOG_NONE)  || (level ==LOG_TRACE )){
+    strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
+  } 
+  else{
     if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
-		    log_level_highlight_start[g_log->level]);
+		    log_level_highlight_start[level]);
       strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
     }
     
@@ -406,24 +386,27 @@ void logRecord( const char *file, const char *func,
 		    file,line);
       strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
     }
+    strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
     
+   
     if (  (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
       len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
-		    log_level_highlight_end[g_log->level]);
+		    log_level_highlight_end[level]);
       strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
     }
-  }
-  // log trace and not reach a new line with 3 bytes
+
+  /* // log trace and not reach a new line with 3 bytes
   if ((level == LOG_TRACE) && (is_newline(g_buff_info,3) == 0 )){
       bypass_log_hdr = 1;
   }
   else
     bypass_log_hdr = 0;
-  
+  */
   
 
-  strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
+ 
   //  strncat(g_buff_total, "\n", MAX_LOG_TOTAL);
+}
 
 #ifdef USER_MODE
   // OAI printf compatibility 

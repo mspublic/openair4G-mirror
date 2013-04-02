@@ -127,9 +127,9 @@ u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe) {
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   u8 i;
 
-#ifdef DEBUG_PHY_PROC
+  //#ifdef DEBUG_PHY_PROC
   LOG_I(PHY,"[eNB %d] Adding UE with rnti %x\n",phy_vars_eNB->Mod_id,rnti);
-#endif
+  //#endif
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
       LOG_E(PHY,"Can't add UE, not enough memory allocated\n");
@@ -137,7 +137,7 @@ s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
     }
     else {
       if (phy_vars_eNB->eNB_UE_stats[i].crnti==0) {
-	LOG_I(PHY,"UE_id %d\n",i);
+	LOG_I(PHY,"UE_id %d associated with rnti %x\n",i, rnti);
 	phy_vars_eNB->dlsch_eNB[i][0]->rnti = rnti;
 	phy_vars_eNB->ulsch_eNB[i]->rnti = rnti;
 	phy_vars_eNB->eNB_UE_stats[i].crnti = rnti;
@@ -151,9 +151,9 @@ s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
 s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB, u8 abstraction_flag) {
   u8 i;
 
-#ifdef DEBUG_PHY_PROC
+  //#ifdef DEBUG_PHY_PROC
   LOG_I(PHY,"eNB %d removing UE with rnti %x\n",phy_vars_eNB->Mod_id,rnti);
-#endif
+  //#endif
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
       LOG_E(PHY,"Can't remove UE, not enough memory allocated\n");
@@ -182,7 +182,7 @@ s8 find_next_ue_index(PHY_VARS_eNB *phy_vars_eNB) {
       /*if ((phy_vars_eNB->dlsch_eNB[i]) && 
 	(phy_vars_eNB->dlsch_eNB[i][0]) && 
 	(phy_vars_eNB->dlsch_eNB[i][0]->rnti==0))*/ 
-      LOG_I(PHY,"next free UE %d\n",i);
+      LOG_D(PHY,"Next free UE id is %d\n",i);
       return(i);
     }
   }
@@ -200,7 +200,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
   u32 frame = PHY_vars_eNB_g[Mod_id]->frame;
 
   if (UE_id==-1) {
-    msg("[PHY] Cannot find UE with rnti %x\n",rnti);
+    LOG_E(PHY,"Cannot find UE with rnti %x\n",rnti);
     *round=0;
     return(-1);
   }
@@ -471,7 +471,7 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_e
     }
     else {
       if (phy_vars_eNB->frame%100==0) {
-        LOG_I(PHY,"[eNB %d] Frame %d (%d), slot %d, Writing %d bytes EMOS data to FIFO\n",
+        LOG_D(PHY,"[eNB %d] Frame %d (%d), slot %d, Writing %d bytes EMOS data to FIFO\n",
               phy_vars_eNB->Mod_id,phy_vars_eNB->frame, ((fifo_dump_emos_eNB*)&emos_dump_eNB)->frame_tx, last_slot, bytes);
       }
     }
@@ -1281,8 +1281,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	LOG_D(PHY,"[eNB %d][SI] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d, num_pdcch_symbols %d\n",
 	      phy_vars_eNB->Mod_id,phy_vars_eNB->frame, next_slot, input_buffer_length,num_pdcch_symbols);
 	for (i=0;i<input_buffer_length;i++)
-	  msg(PHY,"%x.",i,DLSCH_pdu[i]);
-	msg(PHY,"\n");
+	  LOG_T(PHY,"%x.",i,DLSCH_pdu[i]);
+	LOG_T(PHY,"\n");
 #endif
 #endif
 
@@ -1344,8 +1344,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				    input_buffer_length);
 	/*
 	  for (i=0;i<input_buffer_length;i++)
-	  msg("%x.",dlsch_input_buffer[i]);
-	  msg("\n");
+	  LOG_T(PHY,"%x.",dlsch_input_buffer[i]);
+	  LOG_T(PHY,"\n");
 	*/
 	UE_id = add_ue(crnti,phy_vars_eNB);
 	if (UE_id==-1) {
@@ -1484,10 +1484,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 #ifdef DEBUG_PHY_PROC
 #ifdef DEBUG_DLSCH
-	    LOG_D(PHY,"eNB DLSCH SDU: \n");
+	    LOG_T(PHY,"eNB DLSCH SDU: \n");
 	    for (i=0;i<phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->TBS>>3;i++)
-	      LOG_D(PHY,"%x.",(u8)DLSCH_pdu[i]);
-	    LOG_D(PHY,"\n");
+	      LOG_T(PHY,"%x.",(u8)DLSCH_pdu[i]);
+	    LOG_T(PHY,"\n");
 #endif
 #endif
 	  }
@@ -1761,7 +1761,7 @@ void process_HARQ_feedback(u8 UE_id,
 	      dlsch->harq_processes[dl_harq_pid[m]]->rvidx,
 	      dlsch->harq_processes[dl_harq_pid[m]]->TBS);
 	if (dlsch_harq_proc->status==DISABLED)
-	  LOG_E(PHY,"why?\n");
+	  LOG_E(PHY,"dlsch_harq_proc is disabled? \n");
 #endif
 	if ((dl_harq_pid[m]<dlsch->Mdlharq) &&
 	    (dlsch_harq_proc->status == ACTIVE)) {
@@ -1784,7 +1784,7 @@ void process_HARQ_feedback(u8 UE_id,
 	    if (dlsch_harq_proc->round == dlsch->Mdlharq) {
 	      // This was the last round for DLSCH so reset round and increment l2_error counter
 #ifdef DEBUG_PHY_PROC	
-	      LOG_I(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
+	      LOG_W(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
 		    dlsch->rnti,dl_harq_pid[m]);
 #endif
 	      dlsch_harq_proc->round = 0;
@@ -2053,7 +2053,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   }
 
   /*  
-      msg("[PHY][RAPROC] Most likely preamble %d, energy %d dB delay %d\n",
+      LOG_T(PHY,"[RAPROC] Most likely preamble %d, energy %d dB delay %d\n",
       preamble_max,
       preamble_energy_list[preamble_max],
       preamble_delay_list[preamble_max]);
@@ -2257,13 +2257,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   
 #ifdef DEBUG_PHY_PROC
       if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1){
-	LOG_I(PHY,"[eNB %d] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for Msg3 in Sector %d\n",
+	LOG_D(PHY,"[eNB %d] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for Msg3 in Sector %d\n",
 	      phy_vars_eNB->Mod_id,
 	      (((last_slot>>1)==9)?-1:0)+phy_vars_eNB->frame,
 	      last_slot,last_slot>>1,
 	      phy_vars_eNB->eNB_UE_stats[i].sector);
       } else {
-	LOG_F(PHY,"[eNB %d] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for UE %d Mode %s sect_id %d\n",
+	LOG_D(PHY,"[eNB %d] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for UE %d Mode %s sect_id %d\n",
 	      phy_vars_eNB->Mod_id,
 	      (((last_slot>>1)==9)?-1:0)+phy_vars_eNB->frame,
 	      last_slot,last_slot>>1,
@@ -2408,7 +2408,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  #endif*/
 
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
-	  LOG_I(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
+	  LOG_D(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
 		phy_vars_eNB->Mod_id,
 		phy_vars_eNB->frame,last_slot,last_slot>>1, i,
 		phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round-1,
@@ -2416,7 +2416,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round == 
 	      phy_vars_eNB->lte_frame_parms.maxHARQ_Msg3Tx) {
-	    LOG_I(PHY,"[eNB %d][RAPROC] maxHARQ_Msg3Tx reached, abandoning RA procedure for UE %d\n",
+	    LOG_D(PHY,"[eNB %d][RAPROC] maxHARQ_Msg3Tx reached, abandoning RA procedure for UE %d\n",
 		  phy_vars_eNB->Mod_id, i);
 	    phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
 #ifdef OPENAIR2
@@ -2450,14 +2450,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
 	  
 	  dump_ulsch(phy_vars_eNB, last_slot>>1, i);
-	  LOG_I(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
+	  LOG_D(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
-	    msg("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->c[0][j]);
-	  msg("\n");	  
+	    LOG_T(PHY,"%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->c[0][j]);
+	  LOG_T(PHY,"\n");	  
 	  exit(-1);
-	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round==
-	      phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
+	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round== phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
 	    LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mdlharq %d reached\n",
 		  phy_vars_eNB->Mod_id,harq_pid,
 		  phy_vars_eNB->frame,last_slot>>1, i,
@@ -2529,8 +2528,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  LOG_D(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
-	    msg("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
-	  msg("\n");
+	    LOG_T(PHY,"%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b[j]);
+	  LOG_T(PHY,"\n");
 #endif
 #endif
 	  
