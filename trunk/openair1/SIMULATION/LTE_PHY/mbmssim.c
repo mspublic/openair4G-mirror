@@ -382,8 +382,8 @@ int main(int argc, char **argv) {
   PHY_vars_UE->lte_frame_parms.MBSFN_config[0].radioframeAllocationOffset = 0;
   PHY_vars_UE->lte_frame_parms.MBSFN_config[0].mbsfn_SubframeConfig=0xff; // activate all possible subframes
 
-  fill_eNB_dlsch_MCH(PHY_vars_eNB,mcs);
-  fill_UE_dlsch_MCH(PHY_vars_UE,mcs,0);
+  fill_eNB_dlsch_MCH(PHY_vars_eNB,mcs,1,0);
+  fill_UE_dlsch_MCH(PHY_vars_UE,mcs,1,0,0);
   if (is_pmch_subframe(0,subframe,&PHY_vars_eNB->lte_frame_parms)==0) {
     printf("eNB is not configured for MBSFN in subframe %d\n",subframe);
     exit(-1);

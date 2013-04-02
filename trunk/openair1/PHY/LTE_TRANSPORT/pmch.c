@@ -126,15 +126,16 @@ int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_par
   return(0);
 } 
 
-void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs) {
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx) {
 
   LTE_eNB_DLSCH_t *dlsch = phy_vars_eNB->dlsch_eNB_MCH;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
 
-  dlsch->harq_processes[0]->mcs = mcs;
-  dlsch->harq_processes[0]->Ndi = 1;
-  dlsch->harq_processes[0]->Nl  = 1;
-  dlsch->harq_processes[0]->TBS = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
+  dlsch->harq_processes[0]->mcs   = mcs;
+  dlsch->harq_processes[0]->Ndi   = ndi;
+  dlsch->harq_processes[0]->rvidx = rvidx;
+  dlsch->harq_processes[0]->Nl    = 1;
+  dlsch->harq_processes[0]->TBS   = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
   dlsch->current_harq_pid = 0;
   dlsch->nb_rb = frame_parms->N_RB_DL;
 
@@ -158,14 +159,15 @@ void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs) {
   }
 }
 
-void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int eNB_id) {
+void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int ndi,int rvidx,int eNB_id) {
 
   LTE_UE_DLSCH_t *dlsch = phy_vars_ue->dlsch_ue_MCH[eNB_id];
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
-  dlsch->harq_processes[0]->mcs = mcs;
-  dlsch->harq_processes[0]->Ndi = 1;
-  dlsch->harq_processes[0]->Nl  = 1;
+  dlsch->harq_processes[0]->mcs   = mcs;
+  dlsch->harq_processes[0]->rvidx = rvidx;
+  dlsch->harq_processes[0]->Ndi   = ndi;
+  dlsch->harq_processes[0]->Nl    = 1;
   dlsch->harq_processes[0]->TBS = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
   dlsch->current_harq_pid = 0;
   dlsch->nb_rb = frame_parms->N_RB_DL;

@@ -228,14 +228,14 @@ void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a);
     @param phy_vars_eNB Pointer to eNB variables
     @param mcs MCS for MBSFN
 */
-void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs);
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_ue Pointer to UE variables
     @param mcs MCS for MBSFN
     @param eNB_id index of eNB in ue variables
 */
-void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int eNB_id);
+void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int ndi,int rvidx,int eNB_id);
 
 /** \brief Receiver processing for MBSFN, symbols can be done separately for time/CPU-scheduling purposes
     @param phy_vars_ue Pointer to UE variables
