@@ -856,6 +856,7 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                             printk("[NAS][%s] ETH_P_ARP FOUND OAI_NW_DRV_DSCP_DEFAULT with IN_ARE_ADDR_MASKED_EQUAL(%d bits)\n",__FUNCTION__, pclassifier->dplen);
                             #endif
                             dscp = OAI_NW_DRV_DSCP_DEFAULT;
+                            i = OAI_NW_DRV_CX_MAX;
                             break;
                         } else if(INADDR_ANY == pclassifier->daddr.ipv4) {
                             cx = &gpriv->cx[i];
@@ -863,6 +864,7 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                             printk("[NAS][%s] ETH_P_ARP FOUND OAI_NW_DRV_DSCP_DEFAULT with INADDR_ANY\n",__FUNCTION__);
                             #endif
                             dscp = OAI_NW_DRV_DSCP_DEFAULT;
+                            i = OAI_NW_DRV_CX_MAX;
                             break;
                         }
                     }
