@@ -775,6 +775,7 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                                         printk("[NAS][%s] ETH_P_IPV6 FOUND OAI_NW_DRV_DSCP_DEFAULT with IN6_ARE_ADDR_MASKED_EQUAL(%d bits)\n",__FUNCTION__, pclassifier->dplen);
                                         #endif
                                         dscp = OAI_NW_DRV_DSCP_DEFAULT;
+                                        i = OAI_NW_DRV_CX_MAX;
                                         break;
                                     } else if(IN6_IS_ADDR_UNSPECIFIED(&pclassifier->daddr.ipv6)) {
                                         cx = &gpriv->cx[i];
@@ -782,6 +783,7 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                                         printk("[NAS][%s] ETH_P_IPV6 FOUND OAI_NW_DRV_DSCP_DEFAULT with IN6_IS_ADDR_UNSPECIFIED\n",__FUNCTION__);
                                         #endif
                                         dscp = OAI_NW_DRV_DSCP_DEFAULT;
+                                        i = OAI_NW_DRV_CX_MAX;
                                         break;
                                     } else {
                                         printk("[NAS][%s] TRYING default DSCP classifier: NO MATCH\n",__FUNCTION__);
@@ -904,6 +906,7 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                                                __FUNCTION__, i, NIPADDR(pclassifier->daddr.ipv4), NIPADDR(ip_hdr(skb)->daddr), NIPADDR(masked_addr.s_addr), pclassifier->dplen);
                                         #endif
                                         dscp = OAI_NW_DRV_DSCP_DEFAULT;
+                                        i = OAI_NW_DRV_CX_MAX;
                                         break;
                                     } else if(INADDR_ANY == pclassifier->daddr.ipv4) {
                                         cx = &gpriv->cx[i];
@@ -911,6 +914,7 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
                                         printk("[NAS][%s] ETH_P_IP FOUND OAI_NW_DRV_DSCP_DEFAULT with INADDR_ANY\n",__FUNCTION__);
                                         #endif
                                         dscp = OAI_NW_DRV_DSCP_DEFAULT;
+                                        i = OAI_NW_DRV_CX_MAX;
                                         break;
                                     }
                                 }
