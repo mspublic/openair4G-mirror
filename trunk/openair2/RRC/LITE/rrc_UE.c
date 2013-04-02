@@ -334,7 +334,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u32 frame,u8 eNB_index,
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", Mod_id,lchan_id,eNB_index);
 
-  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id,UNDEF_SECURITY_MODE);
+  //rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id,UNDEF_SECURITY_MODE);
   //  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
@@ -359,7 +359,7 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u32 frame,u8 eNB_index,
 
   LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",Mod_id,lchan_id,eNB_index);
 
-  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id, UNDEF_SECURITY_MODE);
+  //rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD, lchan_id, UNDEF_SECURITY_MODE);
   //  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
@@ -374,11 +374,11 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
 
   LOG_D(RRC,"[UE] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
 	frame,DRB_config->drb_Identity,(int)*DRB_config->logicalChannelIdentity);
-
+  /*
   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, frame, 0, ACTION_ADD,
 		       (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
-  /*
-  rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
+ 
+ rrc_rlc_config_req(Mod_id+NB_eNB_INST,frame,0,ACTION_ADD,
 		     (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity,
 		     RADIO_ACCESS_BEARER,Rlc_info_um);
   */
@@ -606,6 +606,16 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
 
+// Refresh SRBs
+    rrc_pdcp_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,eNB_index,
+			    radioResourceConfigDedicated->srb_ToAddModList,
+			    (DRB_ToAddModList_t*)NULL,
+			    (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+			    ,(MBMS_SessionInfoList_r9_t *)NULL
+#endif
+			    );
+
     // Refresh SRBs
     rrc_rlc_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,0,
 			    radioResourceConfigDedicated->srb_ToAddModList,
@@ -723,6 +733,16 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   if (radioResourceConfigDedicated->drb_ToAddModList) {
 
     // Refresh DRBs
+    rrc_pdcp_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,eNB_index,
+			    (SRB_ToAddModList_t*)NULL,
+			    radioResourceConfigDedicated->drb_ToAddModList,
+			    (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+			    ,(MBMS_SessionInfoList_r9_t *)NULL
+#endif
+			    );
+  
+  // Refresh DRBs
     rrc_rlc_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,0,
 			    (SRB_ToAddModList_t*)NULL,
 			    radioResourceConfigDedicated->drb_ToAddModList,
