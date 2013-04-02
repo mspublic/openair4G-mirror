@@ -722,6 +722,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   MCH_PDU *mch_pdu;
 #endif
 
+  // Get scheduling info for next subframe during odd slot of previous subframe (next_slot is even)
+  if (next_slot%2 == 0) 
+    mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1);//,1);
+
   for (sect_id = 0 ; sect_id < number_of_cards; sect_id++) {
 
     if (abstraction_flag==0) {
@@ -967,7 +971,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       //    if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
       //      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,phy_vars_eNB->frame,next_slot>>1);//,1);
       //    else
-      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->frame,next_slot>>1);//,1);
+
       
       // Parse DCI received from MAC
       DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
