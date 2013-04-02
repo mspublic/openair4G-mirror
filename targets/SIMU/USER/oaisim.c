@@ -1059,7 +1059,7 @@ for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
         last_slot+=20;
       next_slot = (slot + 1)%20;
       
-      oai_emulation.info.time_ms = frame * 10 + (next_slot>>1) ;
+      oai_emulation.info.time_ms = frame * 10 + (slot>>1) ;
       
       direction = subframe_select(frame_parms,next_slot>>1);
 #ifdef PROC      

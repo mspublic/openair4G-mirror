@@ -100,9 +100,10 @@ typedef struct pdcp_t {
   u8 cipheringAlgorithm;
   u8 integrityProtAlgorithm;
   
+  u8 rlc_mode; 
   u8 status_report;
   u8 seq_num_size;
-
+  
   /*
    * Sequence number state variables
    *
@@ -257,7 +258,7 @@ public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u
 * \param[in]  security_mode      set the integrity and ciphering algs
 * \return     A status about the processing, OK or error code.
 */
-public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
+public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
 
 /*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused

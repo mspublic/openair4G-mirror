@@ -468,7 +468,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
       // confirm with PDCP about the security mode for DCCH
-      rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * NB_RB_MAX) + DCCH, 0x77);
+      //rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * NB_RB_MAX) + DCCH, 0x77);
       // continue the procedure
       rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
       break;
@@ -653,8 +653,19 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 	//LOG_D(RRC,"[eNB %d] RLC AM allocation index@1 is %d\n",Mod_id,rlc[Mod_id].m_rlc_am_array[1].allocation);
 	LOG_I(RRC,"[eNB %d] CALLING RLC CONFIG SRB1 (rbid %d) for UE %d\n",
 	      Mod_id,Idx,UE_index);
-	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD, Idx, UNDEF_SECURITY_MODE);
+	//	rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD, idx, UNDEF_SECURITY_MODE);
+			     
 	//	rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+	
+	rrc_pdcp_config_asn1_req(Mod_id,frame,1,UE_index,
+				 eNB_rrc_inst[Mod_id].SRB_configList[UE_index],
+				 (DRB_ToAddModList_t*)NULL, 
+				 (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+				 ,(MBMS_SessionInfoList_r9_t *)NULL
+#endif
+				 );
+	
 	rrc_rlc_config_asn1_req(Mod_id,frame,1,UE_index,
 				eNB_rrc_inst[Mod_id].SRB_configList[UE_index],
 				(DRB_ToAddModList_t*)NULL, 
@@ -780,6 +791,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
 
   struct DRB_ToAddMod *DRB_config;
   struct RLC_Config *DRB_rlc_config;
+  struct PDCP_Config *DRB_pdcp_config;
+  struct PDCP_Config__rlc_UM *PDCP_rlc_UM;
   struct LogicalChannelConfig *DRB_lchan_config;
   struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
   DRB_ToAddModList_t **DRB_configList = &rrc_inst->DRB_configList[UE_index];
@@ -862,11 +875,20 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   *(DRB_config->logicalChannelIdentity) = (long) 3;
   DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
   DRB_config->rlc_Config   = DRB_rlc_config;
-
   DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
   DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size10;
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size10;
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms5;
+
+  DRB_pdcp_config = CALLOC(1,sizeof(*DRB_pdcp_config));
+  DRB_config->pdcp_Config   = DRB_pdcp_config;
+  DRB_pdcp_config->discardTimer=NULL;
+  DRB_pdcp_config->rlc_AM = NULL;
+  PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
+  DRB_pdcp_config->rlc_UM =PDCP_rlc_UM;  
+  PDCP_rlc_UM->pdcp_SN_Size = PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
+  DRB_pdcp_config->headerCompression.present = PDCP_Config__headerCompression_PR_notUsed;
+
   DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
   DRB_config->logicalChannelConfig   = DRB_lchan_config;
   DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
@@ -1204,6 +1226,15 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   DRB_ToAddModList_t *DRB_configList = eNB_rrc_inst[Mod_id].DRB_configList[UE_index];
   SRB_ToAddModList_t *SRB_configList = eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
 
+ // Refresh SRBs/DRBs
+  rrc_pdcp_config_asn1_req(Mod_id,frame,1,UE_index,
+			  SRB_configList,
+			  DRB_configList,
+			  (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+			  ,(MBMS_SessionInfoList_r9_t *)NULL
+#endif
+			  );
   // Refresh SRBs/DRBs
   rrc_rlc_config_asn1_req(Mod_id,frame,1,UE_index,
 			  SRB_configList,
@@ -1224,12 +1255,13 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	      (int)DRB_configList->list.array[i]->drb_Identity,
 	      (UE_index * NB_RB_MAX) + (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 	if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
+	  /*
 	  rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_ADD,
 			       (UE_index * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
-	  /*
 	    rrc_rlc_config_req(Mod_id,frame,1,ACTION_ADD,
 	    (UE_index * NB_RB_MAX) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
-	    RADIO_ACCESS_BEARER,Rlc_info_um);*/
+	    RADIO_ACCESS_BEARER,Rlc_info_um);
+	  */
 	  eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
 
 	  LOG_D(RRC,"[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
@@ -1301,8 +1333,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	
 	  if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] ==1) {
 	    // DRB has just been removed so remove RLC + PDCP for DRB
-	    rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,
+	    /*	    rrc_pdcp_config_req (Mod_id, frame, 1, ACTION_REMOVE,
 				 (UE_index * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
+	    */
 	    rrc_rlc_config_req(Mod_id,frame,1,ACTION_REMOVE,
 			       (UE_index * NB_RB_MAX) + DRB2LCHAN[i],
 			       RADIO_ACCESS_BEARER,Rlc_info_um);
