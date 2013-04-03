@@ -492,7 +492,7 @@ int ue_query_mch(uint8_t Mod_id, uint32_t frame, uint32_t subframe) {
   int mch_scheduling_period; 
 
   if (UE_mac_inst[Mod_id].pmch_Config[0])
-    mch_scheduling_period = = 8<<(UE_mac_inst[Mod_id].pmch_Config[0]->mch_SchedulingPeriod_r9);
+    mch_scheduling_period = 8<<(UE_mac_inst[Mod_id].pmch_Config[0]->mch_SchedulingPeriod_r9);
 
   if (frame % mbsfn_period == UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset){ // MBSFN frame
     if (UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame){// one-frame format

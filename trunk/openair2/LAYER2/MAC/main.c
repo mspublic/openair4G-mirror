@@ -367,6 +367,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active) {
   mac_xface->ue_send_sdu               = ue_send_sdu;
 #ifdef Rel10
   mac_xface->ue_send_mch_sdu           = ue_send_mch_sdu;
+  mac_xface->ue_query_mch              = ue_query_mch;
 #endif
   mac_xface->ue_get_SR                 = ue_get_SR;
   mac_xface->ue_get_sdu                = ue_get_sdu;
