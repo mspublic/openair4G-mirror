@@ -68,7 +68,12 @@ __m128i zero;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over
 //#define DEBUG_PHY 1
 __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b,avg128D;
 int avg[4];
-int offset_mumimo_llr_drange[29]={8,7,7,7,6,6,6,5,4,3,6,5,5,3,2,2,2,3,3,3,3,2,2,0,0,0,0,0,0};
+
+// [MCS][i_mod (0,1,2) = (2,4,6)]
+unsigned char offset_mumimo_llr_drange[29][3]={{8,8,8},{7,7,7},{7,7,7},{7,7,7},{6,6,6},{6,6,6},{6,6,6},{5,5,5},{4,4,0},{3,3,0}, // QPSK
+                                               {6,6,0},{5,5,0},{5,5,0},{3,3,0},{2,2,0},{2,2,0},{2,2,2}, // 16-QAM
+                                               {3,3,3},{3,3,3},{3,3,3},{3,0,0},{2,2,0},{2,2,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}; //64-QAM
+
 int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
              PDSCH_t type,
              unsigned char eNB_id,
@@ -77,7 +82,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
              unsigned char symbol,
              unsigned char first_symbol_flag,
              unsigned char dual_stream_flag,
-             unsigned char i_mod) {
+             unsigned char i_mod,
+             unsigned char harq_pid) {
   
   LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars;
   LTE_UE_PDSCH **lte_ue_pdsch_vars;
@@ -85,7 +91,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   PHY_MEASUREMENTS *phy_measurements = &phy_vars_ue->PHY_measurements;
   LTE_UE_DLSCH_t   **dlsch_ue;
 
-  unsigned char aatx,aarx,harq_pid0;    
+  unsigned char aatx,aarx;    
   unsigned short nb_rb;
   int avgs, rb;  
   
@@ -144,19 +150,17 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     pilots=0;
   */
 
-  harq_pid0 = dlsch_ue[0]->current_harq_pid;
-  
   if (frame_parms->nb_antennas_tx_eNB>1) {
 #ifdef DEBUG_DLSCH_MOD     
-    msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->rb_alloc[0]);
+    msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc[0]);
 #endif
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				   lte_ue_common_vars->dl_ch_estimates[eNB_id],
 				   lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
 				   lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				   dlsch_ue[0]->pmi_alloc,
+				   dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc,
 				   lte_ue_pdsch_vars[eNB_id]->pmi_ext,
-				   dlsch_ue[0]->rb_alloc,
+				   dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,
 				   symbol,
 				   subframe,
 				   frame_parms);
@@ -167,9 +171,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				       lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
 				       lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 				       lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-				       dlsch_ue[0]->pmi_alloc,
+				       dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc,
 				       lte_ue_pdsch_vars[eNB_id_i]->pmi_ext,
-				       dlsch_ue[0]->rb_alloc,
+				       dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,
 				       symbol,
 				       subframe,
 				       frame_parms);
@@ -178,9 +182,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				       lte_ue_common_vars->dl_ch_estimates[eNB_id],
 				       lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 				       lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-				       dlsch_ue[0]->pmi_alloc,
+				       dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc,
 				       lte_ue_pdsch_vars[eNB_id_i]->pmi_ext,
-				       dlsch_ue[0]->rb_alloc,
+				       dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,
 				       symbol,
 				       subframe,
 				       frame_parms);
@@ -191,9 +195,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				     lte_ue_common_vars->dl_ch_estimates[eNB_id],
 				     lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
 				     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				     dlsch_ue[0]->pmi_alloc,
+				     dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc,
 				     lte_ue_pdsch_vars[eNB_id]->pmi_ext,
-				     dlsch_ue[0]->rb_alloc,
+				     dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,
 				     symbol,
 				     subframe,
 				     frame_parms);
@@ -204,9 +208,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 					 lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
 					 lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 					 lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,    
-					 dlsch_ue[0]->pmi_alloc,
+					 dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc,
 					 lte_ue_pdsch_vars[eNB_id_i]->pmi_ext,
-					 dlsch_ue[0]->rb_alloc,
+					 dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,
 					 symbol,
 					 subframe,
 					 frame_parms);
@@ -215,9 +219,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 					 lte_ue_common_vars->dl_ch_estimates[eNB_id],
 					 lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
 					 lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,    
-					 dlsch_ue[0]->pmi_alloc,
+					 dlsch_ue[0]->harq_processes[harq_pid]->pmi_alloc,
 					 lte_ue_pdsch_vars[eNB_id_i]->pmi_ext,
-					 dlsch_ue[0]->rb_alloc,
+					 dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,
 					 symbol,
 					 subframe,
 					 frame_parms);
@@ -261,9 +265,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
         //      + log2_approx(frame_parms->nb_antennas_rx-1);
 
-    if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
-	(dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
-	(dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
+    if ((dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode>=UNIFORM_PRECODING11) &&
+	(dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
+	(dlsch_ue[0]->harq_processes[harq_pid]->dl_power_off==1)) // we are in TM 6
       lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
 
     // this version here applies the factor .5 also to the extra terms. however, it does not work so well as the one above
@@ -272,9 +276,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
        Nb_tx^2*Nb_rx in TM6 */
     /*
       K = frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx_eNB; //that also covers TM1 since Nb_tx=1
-      if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11) &&
-      (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
-      (dlsch_ue[0]->dl_power_off==1)) // we are in TM 6
+      if ((dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode>=UNIFORM_PRECODING11) &&
+      (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
+      (dlsch_ue[0]->harq_processes[harq_pid]->dl_power_off==1)) // we are in TM 6
       K *= frame_parms->nb_antennas_tx_eNB;
 
       lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(K*avgs)/2);
@@ -282,13 +286,13 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef DEBUG_PHY
     msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
-    msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
+    msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode);
 #endif
   }
   aatx = frame_parms->nb_antennas_tx_eNB;
   aarx = frame_parms->nb_antennas_rx;
 
-  if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
+  if (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
 
     dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
 			       lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -299,7 +303,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			       frame_parms,
 			       symbol,
 			       first_symbol_flag,
-			       get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
+			       get_Qm(dlsch_ue[0]->harq_processes[harq_pid]->mcs),
 			       nb_rb,
 			       lte_ue_pdsch_vars[eNB_id]->log2_maxh,
 			       phy_measurements); // log2_maxh+I0_shift
@@ -341,7 +345,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh);
     }
   }
-  else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
+  else if (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
     //    printf("Channel compensation for precoding\n");
     //    if ((dual_stream_flag==1) && (eNB_id_i==NUMBER_OF_CONNECTED_eNB_MAX)) {
     if ((dual_stream_flag==1) && (eNB_id_i==phy_vars_ue->n_connected_eNB)) {
@@ -358,13 +362,14 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// effective channel of desired user is always stronger than interfering eff. channel
 	dlsch_channel_level_prec(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext,	avg, symbol, nb_rb);
 	
-    avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid0]->mcs];
+    //    msg("llr_offset = %d\n",offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid]->mcs][(i_mod>>1)-1]);
+    avg[0] = log2_approx(avg[0]) - 13;// + offset_mumimo_llr_drange[dlsch_ue[0]->harq_processes[harq_pid]->mcs][(i_mod>>1)-1];
 
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
 	//printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }      
 
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id]->pmi_ext, frame_parms, phy_measurements, eNB_id, symbol, get_Qm(dlsch_ue[0]->harq_processes[harq_pid]->mcs), nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->harq_processes[harq_pid]->dl_power_off);
 
       // if interference source is MU interference, assume opposite precoder was used at eNB
 
@@ -389,7 +394,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	
       }
 
-      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->dl_power_off);
+      dlsch_channel_compensation_prec(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag, lte_ue_pdsch_vars[eNB_id_i]->dl_ch_magb, lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp, lte_ue_pdsch_vars[eNB_id_i]->pmi_ext, frame_parms, phy_measurements, eNB_id_i, symbol, i_mod, nb_rb, lte_ue_pdsch_vars[eNB_id]->log2_maxh, dlsch_ue[0]->harq_processes[harq_pid]->dl_power_off);
         
 #ifdef DEBUG_PHY
       if (symbol==5) {
@@ -412,7 +417,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				      phy_measurements,
 				      eNB_id,
 				      symbol,
-				      get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
+				      get_Qm(dlsch_ue[0]->harq_processes[harq_pid]->mcs),
 				      nb_rb,
 				      lte_ue_pdsch_vars[eNB_id]->log2_maxh,
 				      1);
@@ -436,11 +441,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
   //  printf("Combining");
   // Single-layer transmission formats
-  if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
+  if (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
       
-      if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||
-          ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode >= UNIFORM_PRECODING11) &&
-           (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode <= PUSCH_PRECODING0))) {
+      if ((dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode == SISO) ||
+          ((dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode >= UNIFORM_PRECODING11) &&
+           (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode <= PUSCH_PRECODING0))) {
           /*
           dlsch_siso(frame_parms,
                      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
@@ -448,7 +453,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                      symbol,
                      nb_rb);
           */
-      } else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ALAMOUTI) {
+      } else if (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode == ALAMOUTI) {
           
           dlsch_alamouti(frame_parms,
                          lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
@@ -457,7 +462,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                          symbol,
                          nb_rb);
           
-      } else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ANTCYCLING) {
+      } else if (dlsch_ue[0]->harq_processes[harq_pid]->mimo_mode == ANTCYCLING) {
           
           dlsch_antcyc(frame_parms,
                        lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
@@ -473,111 +478,147 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
     //    printf("LLR");
 
-    switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
-    case 2 : 
-      if (dual_stream_flag == 0)
-	dlsch_qpsk_llr(frame_parms,
-		       lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-		       lte_ue_pdsch_vars[eNB_id]->llr[0],
-		       symbol,first_symbol_flag,nb_rb,
-		       adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-		       lte_ue_pdsch_vars[eNB_id]->llr128);
-      else if (i_mod == 2) {
-	dlsch_qpsk_qpsk_llr(frame_parms,
-			    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			    lte_ue_pdsch_vars[eNB_id]->llr[0],
-			    symbol,first_symbol_flag,nb_rb,
-			    adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-			    lte_ue_pdsch_vars[eNB_id]->llr128);}
-      else if (i_mod == 4) { 
-	dlsch_qpsk_16qam_llr(frame_parms,
-			     lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			     lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			     lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
-			     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			     lte_ue_pdsch_vars[eNB_id]->llr[0],
-			     symbol,first_symbol_flag,nb_rb,
-			     adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-			     lte_ue_pdsch_vars[eNB_id]->llr128);}
-      else {
-	msg("rx_dlsch.c : IC receiver only implemented for 4QAM-4QAM and 4QAM=16QAM\n");
-	return(-1);
-      }
-      
-      break;
-    case 4 :
-      if (dual_stream_flag == 0)
-	dlsch_16qam_llr(frame_parms,
-			lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id]->llr[0],
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			symbol,first_symbol_flag,nb_rb,
-			adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,4,subframe,symbol),
-			lte_ue_pdsch_vars[eNB_id]->llr128);
-      else if (i_mod == 2) {
-        dlsch_16qam_qpsk_llr(frame_parms,
+      switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid]->mcs)) {
+      case 2 : 
+          if (dual_stream_flag == 0)
+              dlsch_qpsk_llr(frame_parms,
                              lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-                             lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-                             lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-                             lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
                              lte_ue_pdsch_vars[eNB_id]->llr[0],
                              symbol,first_symbol_flag,nb_rb,
-                             adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-                             lte_ue_pdsch_vars[eNB_id]->llr128);}
-      else if (i_mod == 4) {
-	dlsch_16qam_16qam_llr(frame_parms,
-			      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			      lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			      lte_ue_pdsch_vars[eNB_id]->llr[0],
-			      symbol,first_symbol_flag,nb_rb,
-			      adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-			      lte_ue_pdsch_vars[eNB_id]->llr128);}
-      else {
-	msg("rx_dlsch.c : IC receiver only implemented for 16QAM-4QAM and 16QAM-16QAM\n");
-	return(-1);
+                             adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                             lte_ue_pdsch_vars[eNB_id]->llr128);
+          else if (i_mod == 2) {
+              dlsch_qpsk_qpsk_llr(frame_parms,
+                                  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                  lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                  lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                  lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                  symbol,first_symbol_flag,nb_rb,
+                                  adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                  lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          else if (i_mod == 4) { 
+              dlsch_qpsk_16qam_llr(frame_parms,
+                                   lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+                                   lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                   lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                   symbol,first_symbol_flag,nb_rb,
+                                   adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                   lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          else {
+              dlsch_qpsk_64qam_llr(frame_parms,
+                                   lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+                                   lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                   lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                   symbol,first_symbol_flag,nb_rb,
+                                   adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                   lte_ue_pdsch_vars[eNB_id]->llr128);
+
+          }          
+          break;
+      case 4 :
+          if (dual_stream_flag == 0) {
+              dlsch_16qam_llr(frame_parms,
+                              lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                              lte_ue_pdsch_vars[eNB_id]->llr[0],
+                              lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                              symbol,first_symbol_flag,nb_rb,
+                              adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,4,subframe,symbol),
+                              lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          else if (i_mod == 2) {
+              dlsch_16qam_qpsk_llr(frame_parms,
+                                   lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                                   lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                   lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                   symbol,first_symbol_flag,nb_rb,
+                                   adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                   lte_ue_pdsch_vars[eNB_id]->llr128);
+          } 
+          else if (i_mod == 4) {
+              dlsch_16qam_16qam_llr(frame_parms,
+                                    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                    lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                    symbol,first_symbol_flag,nb_rb,
+                                    adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                    lte_ue_pdsch_vars[eNB_id]->llr128);
+          } else {
+              dlsch_16qam_64qam_llr(frame_parms,
+                                    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                    lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                    symbol,first_symbol_flag,nb_rb,
+                                    adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                    lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          break;
+      case 6 :
+          if (dual_stream_flag == 0) {
+              dlsch_64qam_llr(frame_parms,
+                              lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                              lte_ue_pdsch_vars[eNB_id]->llr[0],
+                              lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                              lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
+                              symbol,first_symbol_flag,nb_rb,
+                              adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,6,subframe,symbol),
+                              lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          else if (i_mod == 2) {              
+              dlsch_64qam_qpsk_llr(frame_parms,
+                                   lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                   lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                                   lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                   lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                   symbol,first_symbol_flag,nb_rb,
+                                   adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                   lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          else if (i_mod == 4) {
+              dlsch_64qam_16qam_llr(frame_parms,
+                                    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                    lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                    symbol,first_symbol_flag,nb_rb,
+                                    adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                    lte_ue_pdsch_vars[eNB_id]->llr128);
+              
+          }
+          else {	  
+              dlsch_64qam_64qam_llr(frame_parms,
+                                    lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
+                                    lte_ue_pdsch_vars[eNB_id]->llr[0],
+                                    symbol,first_symbol_flag,nb_rb,
+                                    adjust_G2(frame_parms,dlsch_ue[0]->harq_processes[harq_pid]->rb_alloc,2,subframe,symbol),
+                                    lte_ue_pdsch_vars[eNB_id]->llr128);
+          }
+          break;
+      default:
+          msg("rx_dlsch.c : Unknown mod_order!!!!\n");
+          return(-1);
+          break;
       }
-      break;
-    case 6 :
-      if (dual_stream_flag == 0)
-	dlsch_64qam_llr(frame_parms,
-			lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			lte_ue_pdsch_vars[eNB_id]->llr[0],
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			lte_ue_pdsch_vars[eNB_id]->dl_ch_magb,
-			symbol,first_symbol_flag,nb_rb,
-			adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,6,subframe,symbol),
-			lte_ue_pdsch_vars[eNB_id]->llr128);
-      else if (i_mod == 2) {
-	msg("rx_dlsch.c : IC receiver only implemented for 64QAM-64QAM\n");
-	return(-1);
-      }
-      else if (i_mod == 4) {
-	msg("rx_dlsch.c : IC receiver only implemented for 64QAM-64QAM\n");
-	return(-1);
-      }
-      else {	  
-	dlsch_64qam_64qam_llr(frame_parms,
-			      lte_ue_pdsch_vars[eNB_id]->rxdataF_comp,
-			      lte_ue_pdsch_vars[eNB_id_i]->rxdataF_comp,
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag,
-			      lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag,
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext,
-			      lte_ue_pdsch_vars[eNB_id]->llr[0],
-			      symbol,first_symbol_flag,nb_rb,
-			      adjust_G2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
-			      lte_ue_pdsch_vars[eNB_id]->llr128);
-      }
-      break;
-    default:
-      msg("rx_dlsch.c : Unknown mod_order!!!!\n");
-      return(-1);
-      break;
-    }
   } // single-layer transmission
   else  {
     msg("rx_dlsch.c : Dualstream not yet implemented\n");

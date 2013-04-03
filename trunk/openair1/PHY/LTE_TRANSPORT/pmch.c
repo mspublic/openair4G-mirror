@@ -170,24 +170,24 @@ void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int ndi,int rvidx,int eN
   dlsch->harq_processes[0]->Nl    = 1;
   dlsch->harq_processes[0]->TBS = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
   dlsch->current_harq_pid = 0;
-  dlsch->nb_rb = frame_parms->N_RB_DL;
+  dlsch->harq_processes[0]->nb_rb = frame_parms->N_RB_DL;
   
   switch(frame_parms->N_RB_DL) {
   case 6:
-    dlsch->rb_alloc[0] = 0x3f;
+    dlsch->harq_processes[0]->rb_alloc[0] = 0x3f;
     break;
   case 25:
-    dlsch->rb_alloc[0] = 0x1ffffff;
+    dlsch->harq_processes[0]->rb_alloc[0] = 0x1ffffff;
     break;
   case 50:
-    dlsch->rb_alloc[0] = 0xffffffff;
-    dlsch->rb_alloc[1] = 0x3ffff;
+    dlsch->harq_processes[0]->rb_alloc[0] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[1] = 0x3ffff;
     break;
   case 100:
-    dlsch->rb_alloc[0] = 0xffffffff;
-    dlsch->rb_alloc[1] = 0xffffffff;
-    dlsch->rb_alloc[2] = 0xffffffff;
-    dlsch->rb_alloc[3] = 0xf;
+    dlsch->harq_processes[0]->rb_alloc[0] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[1] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[2] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[3] = 0xf;
     break;
   }
 }

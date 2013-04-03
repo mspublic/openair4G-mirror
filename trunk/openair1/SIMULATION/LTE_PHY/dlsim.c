@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:w:B:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -312,6 +312,7 @@ int main(int argc, char **argv) {
 	break;
       case 't':
 	mcs_i = atoi(optarg);
+    i_mod = get_Qm(mcs_i);
 	break;
       case 'n':
 	n_frames = atoi(optarg);
@@ -466,6 +467,13 @@ int main(int argc, char **argv) {
 	  exit(-1);
 	}
 	break;
+      case 'v':
+          i_mod = atoi(optarg);
+          if (i_mod!=2 && i_mod!=4 && i_mod!=6) {
+              msg("Wrong i_mod %d, should be 2,4 or 6\n",i_mod);
+              exit(-1);
+          }
+    break;
       case 'h':
       default:
 	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -x transmission mode (1,2,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
@@ -597,7 +605,7 @@ int main(int argc, char **argv) {
    csv_fd = fopen(csv_fname,"w");
    fprintf(csv_fd,"data_all%d=[",mcs);
     }
- 
+
  //sprintf(tikz_fname, "second_bler_tx%d_u2=%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
  sprintf(tikz_fname, "second_bler_tx%d_u2%d_mcs%d_chan%d_nsimus%d",transmission_mode,dual_stream_UE,mcs,channel_model,n_frames);
  tikz_fd = fopen(tikz_fname,"w");
@@ -1428,12 +1436,12 @@ int main(int argc, char **argv) {
 	    }
 
 	    for (k=0;k<n_users;k++) {
-	      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
-					      PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb,
-					      PHY_vars_eNB->dlsch_eNB[k][0]->rb_alloc,
-					      get_Qm(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs),
-					      num_pdcch_symbols,
-					      0,subframe);
+            coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+                                            PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb,
+                                            PHY_vars_eNB->dlsch_eNB[k][0]->rb_alloc,
+                                            get_Qm(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs),
+                                            num_pdcch_symbols,
+                                            0,subframe);
 	      
 #ifdef TBS_FIX   // This is for MESH operation!!!
 	      tbs = (double)3*TBStable[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][0]->nb_rb-1]/4;
@@ -1466,10 +1474,10 @@ int main(int argc, char **argv) {
 		
 	      // use the PMI from previous trial
 	      if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
-		PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0);
-		PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0);
-		if (n_users>1) 
-		  PHY_vars_eNB->dlsch_eNB[1][0]->pmi_alloc = (PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc ^ 0x1555); 
+              PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0);
+              PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0);
+              if (n_users>1) 
+                  PHY_vars_eNB->dlsch_eNB[1][0]->pmi_alloc = (PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc ^ 0x1555); 
 		/*
 		if ((trials<10) && (round==0)) {
 		  printf("tx PMI UE0 %x (pmi_feedback %d)\n",pmi2hex_2Ar1(PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc),pmi_feedback);
@@ -1775,9 +1783,7 @@ int main(int argc, char **argv) {
 	    pilot1 = 3;
 	    pilot2 = 6;
 	    pilot3 = 9;
-	  }
-	  
-	  i_mod = get_Qm(mcs_i);
+	  }	  
 	  
 	  // Inner receiver scheduling for 3 slots
 	  for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
@@ -1935,12 +1941,12 @@ int main(int argc, char **argv) {
 							   0,
 							   P_RNTI)==0)) {
 		      //dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
-		      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
-						      PHY_vars_UE->dlsch_ue[0][0]->nb_rb,
-						      PHY_vars_UE->dlsch_ue[0][0]->rb_alloc,
-						      get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
-						      PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-						      0,subframe);
+                coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+                                                PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->nb_rb,
+                                                PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->rb_alloc,
+                                                get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
+                                                PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
+                                                0,subframe);
 		      /*
 			rate = (double)dlsch_tbs25[get_I_TBS(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs)][PHY_vars_UE->dlsch_ue[0][0]->nb_rb-1]/(coded_bits_per_codeword);
 			rate*=get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs);
@@ -2008,7 +2014,7 @@ int main(int argc, char **argv) {
 		if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
           if ((transmission_mode == 5) && 
-              (PHY_vars_UE->dlsch_ue[eNB_id][0]->dl_power_off==0) &&
+              (PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->dl_power_off==0) &&
               (openair_daq_vars.use_ia_receiver ==1)) {
               dual_stream_UE = 1;
           } else {
@@ -2030,7 +2036,8 @@ int main(int argc, char **argv) {
 				   m,
 				   (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
 				   dual_stream_UE,
-				   i_mod)==-1)
+                   i_mod,
+                   PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid)==-1)
 			{
 			  dlsch_active = 0;
 			  break;
@@ -2054,7 +2061,8 @@ int main(int argc, char **argv) {
 				     m,
 				     0,
 				     dual_stream_UE,
-				     i_mod)==-1)
+                     i_mod,
+                     PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid)==-1)
 			  {
 			    dlsch_active=0;
 			    break;
@@ -2078,7 +2086,8 @@ int main(int argc, char **argv) {
 				     m,
 				     0,
 				     dual_stream_UE,
-				     i_mod)==-1)
+                     i_mod,
+                     PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid)==-1)
 			  {
 			    dlsch_active=0;
 			    break;
@@ -2178,11 +2187,13 @@ int main(int argc, char **argv) {
 	  */
 	  PHY_vars_UE->dlsch_ue[0][0]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
 	  coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
-					  PHY_vars_eNB->dlsch_eNB[0][0]->nb_rb,
-					  PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
-					  get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
-					  num_pdcch_symbols,
-					  0,subframe);
+                                      PHY_vars_eNB->dlsch_eNB[0][0]->nb_rb,
+                                      PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
+                                      get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+                                      num_pdcch_symbols,
+                                      0,subframe);
+
+      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->G = coded_bits_per_codeword;
 	  start_meas(&usts);	      
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
 			     0,
@@ -2199,12 +2210,13 @@ int main(int argc, char **argv) {
 	  */
 	  start_meas(&PHY_vars_UE->dlsch_decoding_stats);
 	  ret = dlsch_decoding(PHY_vars_UE,
-			       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],		 
-			       &PHY_vars_UE->lte_frame_parms,
-			       PHY_vars_UE->dlsch_ue[0][0],
-			       subframe,
-			       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
-			       1);
+                           PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[0],		 
+                           &PHY_vars_UE->lte_frame_parms,
+                           PHY_vars_UE->dlsch_ue[0][0],
+                           PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid],
+                           subframe,
+                           PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid,
+                           1);
 	  stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
 
 	  if (ret <= MAX_TURBO_ITERATIONS) {
@@ -2266,7 +2278,7 @@ int main(int argc, char **argv) {
 			     PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 	      
 	      //pdsch_vars
-	      dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
+          dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword);
 	      write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
 	      write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
 	      write_output("dlsch_eNB_w.m","w",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
@@ -2277,7 +2289,6 @@ int main(int argc, char **argv) {
 	    }
 	    //	    printf("round %d errors %d/%d\n",round,errs[round],trials);
 
-	
 	    round++;
 		
 	    if (n_frames==1)
@@ -2336,7 +2347,7 @@ int main(int argc, char **argv) {
 	     rate,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
 	     (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
-      
+
       printf("eNB TX function statistics (per 1ms subframe)\n\n");
       printf("OFDM_mod time                     :%f us (%d trials)\n",(double)PHY_vars_eNB->ofdm_mod_stats.diff/PHY_vars_eNB->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->ofdm_mod_stats.trials);
       printf("DLSCH modulation time             :%f us (%d trials)\n",(double)PHY_vars_eNB->dlsch_modulation_stats.diff/PHY_vars_eNB->dlsch_modulation_stats.trials/cpu_freq_GHz/1000.0,PHY_vars_eNB->dlsch_modulation_stats.trials);
@@ -2405,8 +2416,7 @@ int main(int argc, char **argv) {
 	      round_trials[3],
 	      dci_errors);
 
-      fprintf(tikz_fd,"(%f,%f)", SNR, (float)errs[0]/round_trials[0]);
-    
+
       if(abstx){ //ABSTRACTION         
 	blerr[0] = (double)errs[0]/(round_trials[0]);
         if(num_rounds>2){
@@ -2450,8 +2460,6 @@ int main(int argc, char **argv) {
     fprintf(csv_fd,"];");
     fclose(csv_fd);
   }
-  
-  
   
   
   printf("Freeing dlsch structures\n");
