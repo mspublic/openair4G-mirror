@@ -1246,7 +1246,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
     sdu_lcids[num_sdus] = MCH_SCHDL_INFO;
     sdu_lengths[num_sdus] = msi_length;
     sdu_length_total += sdu_lengths[num_sdus];
-    LOG_D(MAC,"[eNB %d] Create %d bytes for MSI\n",Mod_id,sdu_lengths[num_sdus]); 
+    LOG_I(MAC,"[eNB %d] Create %d bytes for MSI\n",Mod_id,sdu_lengths[num_sdus]); 
     num_sdus++;
     }
 
@@ -1265,14 +1265,14 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
       
        header_len_mcch = 2; 
       if (mac_xface->lte_frame_parms->frame_type == TDD) {
-	LOG_D(MAC,"[eNB %d] Frame %d : Scheduling MCCH->MCH (TDD) for MCCH message %d bytes (mcs %d )\n", 
+	LOG_I(MAC,"[eNB %d] Frame %d : Scheduling MCCH->MCH (TDD) for MCCH message %d bytes (mcs %d )\n", 
 	      Mod_id,
 	      frame,
 	      mcch_sdu_length,
 	      mcch_mcs);
       }
       else {
-	LOG_D(MAC,"[eNB %d] Frame %d : Scheduling MCCH->MCH (FDD) for MCCH message %d bytes (mcs %d)\n",
+	LOG_I(MAC,"[eNB %d] Frame %d : Scheduling MCCH->MCH (FDD) for MCCH message %d bytes (mcs %d)\n",
 	      Mod_id,
 	      frame,
 	      mcch_sdu_length,

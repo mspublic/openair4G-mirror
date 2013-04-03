@@ -233,7 +233,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
       mbms_dl_UM_RLC = CALLOC(1,sizeof(DL_UM_RLC_t));
       mbms_dl_UM_RLC->sn_FieldLength = SN_FieldLength_size10;
       mbms_dl_UM_RLC->t_Reordering = T_Reordering_ms5;
-      printf("t_reordering value is %d\n",mbms_dl_UM_RLC->t_Reordering);
+      //printf("t_reordering value is %d\n",mbms_dl_UM_RLC->t_Reordering);
     for (cnt=0;cnt<SessionInfo_listP->list.count;cnt++) {
       mbms_session = SessionInfo_listP->list.array[cnt];
       
