@@ -104,6 +104,7 @@ typedef struct
     void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
     /// Function to check if UE PHY needs to decode MCH for MAC
+    /// Return MCS value if need to decode, otherwise -1
     int (*ue_query_mch)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 #endif
 

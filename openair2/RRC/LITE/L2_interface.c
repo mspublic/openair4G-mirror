@@ -134,8 +134,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
 #ifdef Rel10
     if((Srb_id & RAB_OFFSET) == MCCH){
-      if(eNB_rrc_inst[Mod_id].MCCH_MESS.Active==0) return 0; // this parameter can be set in rrc_common.c together with the SI.Active and SRB0.active
-                                                                                    // double check the declaration in defs.h??
+      if(eNB_rrc_inst[Mod_id].MCCH_MESS.Active==0) return 0; // this parameter is set in function init_mcch in rrc_eNB.c                                                                              
       if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE == 255) {
 	LOG_E(RRC,"[eNB %d] MAC Request for MCCH MESSAGE and MCCH MESSAGE is not initialized\n",Mod_id);
 	mac_xface->macphy_exit("");
@@ -143,7 +142,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
       memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].MCCH_MESSAGE,eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
       
 #ifdef DEBUG_RRC
-      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE 1\n",Mod_id,frame);
+      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_id,frame);
       for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE;i++)
 	LOG_T(RRC,"%x.",Buffer[i]);
       LOG_T(RRC,"\n");
@@ -244,7 +243,6 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 
     if((Srb_id & RAB_OFFSET) == CCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[eNB_index];
-
       
       if (Sdu_len>0) {
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
@@ -252,6 +250,14 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
 	rrc_ue_decode_ccch(Mod_id,frame,Srb_info,eNB_index);
       }
     }
+      
+#ifdef Rel10
+    if ((Srb_id & RAB_OFFSET) == MCCH) {
+
+       decode_MCCH_Message(Mod_id, frame, eNB_index, Sdu, Sdu_len);
+    }
+#endif // Rel10
+
   }
 
   else{  // This is an eNB

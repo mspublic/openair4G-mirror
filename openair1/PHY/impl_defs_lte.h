@@ -61,6 +61,9 @@
 
 #define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
 
+#define MAX_MBSFN_AREA 8
+
+
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
@@ -514,6 +517,9 @@ typedef struct {
   u8 pcfich_first_reg_idx;
   /// REGs assigned to PHICH
   u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
+
+  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
+
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {

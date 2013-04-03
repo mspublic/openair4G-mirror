@@ -61,6 +61,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #ifdef Rel10
 #include "MBMS-SessionInfoList-r9.h"
 #endif
+
 //-----------------------------------------------------------------------------
 #    ifdef RLC_MAC_C
 #        define private_rlc_mac(x) x
