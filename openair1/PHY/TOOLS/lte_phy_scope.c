@@ -418,10 +418,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     u32 total_dlsch_bitrate = phy_vars_ue->bitrate[eNB_id];
     int coded_bits_per_codeword = 0;
     int mcs = 0;
+    unsigned char harq_pid = 0;
     if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
-        mcs = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs;    
+        harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
+        mcs = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs;    
         // Button 0
-        if(!phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off) {
+        if(!phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
             // we are in TM5
             fl_show_object(form->button_0);
         } 
@@ -434,8 +436,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     //    coded_bits_per_codeword = frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
     if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
         coded_bits_per_codeword = get_G(frame_parms,
-                                        phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
-                                        phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
+                                        phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+                                        phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc,
                                         get_Qm(mcs),
                                         num_pdcch_symbols,
                                         frame,
@@ -464,6 +466,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     pdcch_llr = (s8*) phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->llr;
     pdcch_comp = (s16*) phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0];
     pdsch_llr = (s16*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0]; // stream 0
+    //    pdsch_llr = (s16*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
     pdsch_comp = (s16*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0];
     
     // Received signal in time domain of receive antenna 0

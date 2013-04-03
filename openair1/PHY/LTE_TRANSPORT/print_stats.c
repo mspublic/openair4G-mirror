@@ -195,9 +195,9 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mod
     if (phy_vars_ue->transmission_mode[eNB] == 6)
       len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
     if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
-      len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
+      len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
 
-      len += sprintf(&buffer[len], "[UE PROC] eNB %d: dl_power_off = %d\n",eNB,phy_vars_ue->dlsch_ue[0][0]->dl_power_off);
+      len += sprintf(&buffer[len], "[UE PROC] eNB %d: dl_power_off = %d\n",eNB,phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->dl_power_off);
 
       len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->mcs);
       len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
@@ -445,7 +445,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 	}
 	len += sprintf(&buffer[len],"[eNB PROC] RB Allocation on Sub-bands: ");
 	
-	for (j=0;j< mac_xface->lte_frame_parms->N_RBGS;j++)
+    //	for (j=0;j< mac_xface->lte_frame_parms->N_RBGS;j++)
+	for (j=0;j<7;j++)
 	  len += sprintf(&buffer[len],"%d ",
 			 phy_vars_eNB->mu_mimo_mode[UE_id].rballoc_sub[j]);
 	len += sprintf(&buffer[len],"\n");

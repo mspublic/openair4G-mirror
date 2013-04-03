@@ -66,37 +66,30 @@
 #endif // CBMIMO1
 
 
+RTIME time0,time1;
 
 #define DEBUG_PHY
 
 /// Mutex for instance count on rx_pdsch scheduling 
-pthread_mutex_t rx_pdsch_mutex[8];
+pthread_mutex_t rx_pdsch_mutex;
 /// Condition variable for rx_pdsch thread
-pthread_cond_t rx_pdsch_cond[8];
+pthread_cond_t rx_pdsch_cond;
 
-pthread_t rx_pdsch_threads[8];
-pthread_attr_t attr_rx_pdsch_threads;
+pthread_t rx_pdsch_thread_var;
+pthread_attr_t attr_rx_pdsch_thread;
 
 // activity indicators for harq_pid's
-int rx_pdsch_instance_cnt[8];
+int rx_pdsch_instance_cnt;
 // process ids for cpu
-int rx_pdsch_cpuid[8];
+int rx_pdsch_cpuid;
 // subframe number for each harq_pid (needed to store ack in right place for UL)
-int rx_pdsch_slot[8];
+int rx_pdsch_slot;
 
 extern int oai_exit;
 extern pthread_mutex_t dlsch_mutex[8];
 extern int dlsch_instance_cnt[8];
 extern int dlsch_subframe[8];
 extern pthread_cond_t dlsch_cond[8];
-/*
-extern int rx_pdsch_errors;
-extern int rx_pdsch_received;
-extern int rx_pdsch_errors_last;
-extern int rx_pdsch_received_last;
-extern int rx_pdsch_fer;
-extern int current_rx_pdsch_cqi;
-*/
 
 /** RX_PDSCH Decoding Thread */
 static void * rx_pdsch_thread(void *param) {
@@ -117,21 +110,14 @@ static void * rx_pdsch_thread(void *param) {
   int eNB_id_i = 1;
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[0];
 
-  if ((rx_pdsch_thread_index <0) || (rx_pdsch_thread_index>7)) {
-    LOG_E(PHY,"[SCHED][RX_PDSCH] Illegal rx_pdsch_thread_index %d!!!!\n",rx_pdsch_thread_index);
-    return 0;
-  }
-
   task = rt_task_init_schmod(nam2num("RX_PDSCH_THREAD"), 0, 0, 0, SCHED_FIFO, 0xF);
 
   if (task==NULL) {
-    LOG_E(PHY,"[SCHED][RX_PDSCH] Problem starting rx_pdsch_thread_index %d!!!!\n",rx_pdsch_thread_index);
+    LOG_E(PHY,"[SCHED][RX_PDSCH] Problem starting rx_pdsch thread!!!!\n");
     return 0;
   }
   else {
-    LOG_I(PHY,"[SCHED][RX_PDSCH] rx_pdsch_thread for process %d started with id %p\n",
-	  rx_pdsch_thread_index,
-	  task);
+    LOG_I(PHY,"[SCHED][RX_PDSCH] rx_pdsch_thread started for with id %p\n",task);
   }
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -142,8 +128,6 @@ static void * rx_pdsch_thread(void *param) {
 #ifdef HARD_RT
   rt_make_hard_real_time();
 #endif
-
-  //rx_pdsch_cpuid[rx_pdsch_thread_index] = cpuid;
 
   if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -159,188 +143,187 @@ static void * rx_pdsch_thread(void *param) {
 
   while (!oai_exit){
     
-    if (pthread_mutex_lock(&rx_pdsch_mutex[rx_pdsch_thread_index]) != 0) {
-      LOG_E(PHY,"[SCHED][RX_PDSCH] error locking mutex.\n");
-    }
-    else {
-
-      while (rx_pdsch_instance_cnt[rx_pdsch_thread_index] < 0) {
-	pthread_cond_wait(&rx_pdsch_cond[rx_pdsch_thread_index],&rx_pdsch_mutex[rx_pdsch_thread_index]);
+      if (pthread_mutex_lock(&rx_pdsch_mutex) != 0) {
+          LOG_E(PHY,"[SCHED][RX_PDSCH] error locking mutex.\n");
+      }
+      else {
+          while (rx_pdsch_instance_cnt < 0) {
+              pthread_cond_wait(&rx_pdsch_cond,&rx_pdsch_mutex);
+          }
+          
+          if (pthread_mutex_unlock(&rx_pdsch_mutex) != 0) {	
+              LOG_E(PHY,"[SCHED][RX_PDSCH] error unlocking mutex.\n");
+          }
       }
 
-      if (pthread_mutex_unlock(&rx_pdsch_mutex[rx_pdsch_thread_index]) != 0) {	
-	LOG_E(PHY,"[SCHED][RX_PDSCH] error unlocking mutex.\n");
-      }
-    }
+      last_slot = rx_pdsch_slot;
+      subframe = last_slot>>1;
+      // Important! assumption that PDCCH procedure of next SF is not called yet
+      harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
+      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->G = get_G(&phy_vars_ue->lte_frame_parms,
+                                                                            phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+                                                                            phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc,
+                                                                            get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),  
+                                                                            phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+                                                                            phy_vars_ue->frame,subframe);
 
-    last_slot = rx_pdsch_slot[rx_pdsch_thread_index];
-    subframe = last_slot>>1;
-    harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
     
-    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
-	(phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0) &&
-	(openair_daq_vars.use_ia_receiver ==1)) {
+      if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && 
+          (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off==0) &&
+          (openair_daq_vars.use_ia_receiver ==1)) {
       dual_stream_UE = 1;
       eNB_id_i = phy_vars_ue->n_connected_eNB;
       i_mod =  get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
-    }
-    else {
-      dual_stream_UE = 0;
-      eNB_id_i = eNB_id+1;
-      i_mod = 0;
-    }
-
+      }
+      else {
+          dual_stream_UE = 0;
+          eNB_id_i = eNB_id+1;
+          i_mod = 0;
+      }
 
     if (oai_exit) break;
 
-    LOG_D(PHY,"[SCHED][RX_PDSCH] Frame %d, slot %d: Calling rx_pdsch_decoding with rx_pdsch_thread_index = %d, harq_pid %d\n",phy_vars_ue->frame,last_slot,rx_pdsch_thread_index,harq_pid);
+    LOG_D(PHY,"[SCHED][RX_PDSCH] Frame %d, slot %d: Calling rx_pdsch_decoding with harq_pid %d\n",phy_vars_ue->frame,last_slot,harq_pid);
 
     time_in = rt_get_time();
 
     // Check if we are in even or odd slot
     if (last_slot%2) { // odd slots
 
-      for (m=pilot2;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++) {
+        // measure time
+        //time0 = rt_get_time_ns();
+        //        rt_printk("[SCHED][RX_PDSCH][before rx_pdsch] Frame %d, slot %d, time %llu\n",phy_vars_ue->frame,last_slot,rt_get_time_ns());
+        for (m=pilot2;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++) {
 
-	rx_pdsch(phy_vars_ue,
-		 PDSCH,
-		 eNB_id,
-		 eNB_id_i,
-		 subframe,
-		 m,
-		 0,
-		 dual_stream_UE,
-		 i_mod);
+            rx_pdsch(phy_vars_ue,
+                     PDSCH,
+                     eNB_id,
+                     eNB_id_i,
+                     subframe,
+                     m,
+                     0,
+                     dual_stream_UE,
+                     i_mod,
+                     harq_pid);
+            
+        }
+        //        time1 = rt_get_time_ns();
+        //        rt_printk("[SCHED][RX_PDSCH] Frame %d, slot %d, start %llu, end %llu, proc time: %llu ns\n",phy_vars_ue->frame,last_slot,time0,time1,(time1-time0));
 
-      }
-      // trigger DLSCH decoding thread
-      //phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
-
-      dlsch_thread_index = 0;
+        dlsch_thread_index = harq_pid;
 	
-      if (pthread_mutex_lock (&dlsch_mutex[dlsch_thread_index]) != 0) {               // Signal MAC_PHY Scheduler
-	LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
-	//	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	//return(-1);
-      }
-      dlsch_instance_cnt[dlsch_thread_index]++;
-      //dlsch_subframe[dlsch_thread_index] = (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1));
-      dlsch_subframe[dlsch_thread_index] = subframe;
-      pthread_mutex_unlock (&dlsch_mutex[dlsch_thread_index]);
-	
-      if (dlsch_instance_cnt[dlsch_thread_index] == 0) {
-	if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0) {
-	  LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for dlsch_cond[%d]\n",phy_vars_ue->Mod_id,dlsch_thread_index);
-	  //	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	  //return(-1);
-	}
-      }
-      else {
-	LOG_W(PHY,"[UE  %d] DLSCH thread for dlsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,dlsch_thread_index);
-	//	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-	//return(-1);
-      }
-      
-
-    
+        if (pthread_mutex_lock (&dlsch_mutex[dlsch_thread_index]) != 0) {               // Signal MAC_PHY Scheduler
+            LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",phy_vars_ue->Mod_id);     // lock before accessing shared resource
+            //	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+            //return(-1);
+        }
+        dlsch_instance_cnt[dlsch_thread_index]++;
+        dlsch_subframe[dlsch_thread_index] = subframe;
+        pthread_mutex_unlock (&dlsch_mutex[dlsch_thread_index]);
+        
+        if (dlsch_instance_cnt[dlsch_thread_index] == 0) {
+            if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0) {
+                LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for dlsch_cond[%d]\n",phy_vars_ue->Mod_id,dlsch_thread_index);
+                //	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+                //return(-1);
+            }
+        }
+        else {
+            LOG_W(PHY,"[UE  %d] DLSCH thread for dlsch_thread_index %d busy!!!\n",phy_vars_ue->Mod_id,dlsch_thread_index);
+            //	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
+            //return(-1);
+        }
+        
     } else { // even slots
 
-      for (m=phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols;m<pilot2;m++) { 
+        for (m=phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols;m<pilot2;m++) { 
 
-	rx_pdsch(phy_vars_ue,
-		 PDSCH,
-		 eNB_id,
-		 eNB_id_i,
-		 subframe,
-		 m,
-		 (m==phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols)?1:0,   // first_symbol_flag
-		 dual_stream_UE,
-		 i_mod);
-      }
+            rx_pdsch(phy_vars_ue,
+                     PDSCH,
+                     eNB_id,
+                     eNB_id_i,
+                     subframe,
+                     m,
+                     (m==phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols)?1:0,   // first_symbol_flag
+                     dual_stream_UE,
+                     i_mod,
+                     harq_pid);
+        }
     }    
-
+    
     time_out = rt_get_time();
     
-    if (pthread_mutex_lock(&rx_pdsch_mutex[rx_pdsch_thread_index]) != 0) {
-      msg("[openair][SCHED][RX_PDSCH] error locking mutex.\n");
+    if (pthread_mutex_lock(&rx_pdsch_mutex) != 0) {
+        msg("[openair][SCHED][RX_PDSCH] error locking mutex.\n");
     }
     else {
-      rx_pdsch_instance_cnt[rx_pdsch_thread_index]--;
-      
-      if (pthread_mutex_unlock(&rx_pdsch_mutex[rx_pdsch_thread_index]) != 0) {	
-	msg("[openair][SCHED][RX_PDSCH] error unlocking mutex.\n");
-      }
+        rx_pdsch_instance_cnt--;
+        
+        if (pthread_mutex_unlock(&rx_pdsch_mutex) != 0) {	
+            msg("[openair][SCHED][RX_PDSCH] error unlocking mutex.\n");
+        }
     }
-
+    
   }
 
 #ifdef HARD_RT
   rt_make_soft_real_time();
 #endif
 
-  msg("[openair][SCHED][RX_PDSCH] RX_PDSCH thread %d exiting\n",rx_pdsch_thread_index);  
+  LOG_D(PHY,"[openair][SCHED][RX_PDSCH] RX_PDSCH thread exiting\n");  
 
   return 0;
 }
 
-int init_rx_pdsch_threads(void) {
+int init_rx_pdsch_thread(void) {
   
   int error_code;
   struct sched_param p;
-  int rx_pdsch_thread_index;
 
-  // later loop on all harq_pids, do 0 for now
-  rx_pdsch_thread_index=0;
-
-  pthread_mutex_init(&rx_pdsch_mutex[rx_pdsch_thread_index],NULL);
+  pthread_mutex_init(&rx_pdsch_mutex,NULL);
   
-  pthread_cond_init(&rx_pdsch_cond[rx_pdsch_thread_index],NULL);
+  pthread_cond_init(&rx_pdsch_cond,NULL);
 
-  pthread_attr_init (&attr_rx_pdsch_threads);
-  pthread_attr_setstacksize(&attr_rx_pdsch_threads,OPENAIR_THREAD_STACK_SIZE);
+  pthread_attr_init (&attr_rx_pdsch_thread);
+  pthread_attr_setstacksize(&attr_rx_pdsch_thread,OPENAIR_THREAD_STACK_SIZE);
   
-  //attr_rx_pdsch_threads.priority = 1;
+  //attr_rx_pdsch_thread.priority = 1;
 
   p.sched_priority = OPENAIR_THREAD_PRIORITY;
-  pthread_attr_setschedparam  (&attr_rx_pdsch_threads, &p);
+  pthread_attr_setschedparam  (&attr_rx_pdsch_thread, &p);
 #ifndef RTAI_ISNT_POSIX
-  pthread_attr_setschedpolicy (&attr_rx_pdsch_threads, SCHED_FIFO);
+  pthread_attr_setschedpolicy (&attr_rx_pdsch_thread, SCHED_FIFO);
 #endif
 
-  rx_pdsch_instance_cnt[rx_pdsch_thread_index] = -1;
-  rt_printk("[openair][SCHED][RX_PDSCH][INIT] Allocating RX_PDSCH thread for rx_pdsch_thread_index %d\n",rx_pdsch_thread_index);
-  error_code = pthread_create(&rx_pdsch_threads[rx_pdsch_thread_index],
-  			      &attr_rx_pdsch_threads,
-  			      rx_pdsch_thread,
-  			      (void *)&rx_pdsch_thread_index);
+  rx_pdsch_instance_cnt = -1;
+  rt_printk("[openair][SCHED][RX_PDSCH][INIT] Allocating RX_PDSCH thread\n");
+  error_code = pthread_create(&rx_pdsch_thread_var,
+                              &attr_rx_pdsch_thread,
+                              rx_pdsch_thread,
+                              0);
 
   if (error_code!= 0) {
-    rt_printk("[openair][SCHED][RX_PDSCH][INIT] Could not allocate rx_pdsch_thread %d, error %d\n",rx_pdsch_thread_index,error_code);
+    rt_printk("[openair][SCHED][RX_PDSCH][INIT] Could not allocate rx_pdsch_thread, error %d\n",error_code);
     return(error_code);
   }
   else {
-    rt_printk("[openair][SCHED][RX_PDSCH][INIT] Allocate rx_pdsch_thread %d successful\n",rx_pdsch_thread_index);
+    rt_printk("[openair][SCHED][RX_PDSCH][INIT] Allocate rx_pdsch_thread successful\n");
     return(0);
   }
    
 }
 
-void cleanup_rx_pdsch_threads(void) {
+void cleanup_rx_pdsch_thread(void) {
 
-  int rx_pdsch_thread_index = 0;
+  rt_printk("[openair][SCHED][RX_PDSCH] Scheduling rx_pdsch_thread to exit\n");
 
-  // later loop on all harq_pid's
-
-  //  pthread_exit(&rx_pdsch_threads[rx_pdsch_thread_index]);
-  rt_printk("[openair][SCHED][RX_PDSCH] Scheduling rx_pdsch_thread %d to exit\n",rx_pdsch_thread_index);
-
-  rx_pdsch_instance_cnt[rx_pdsch_thread_index] = 0;
-  if (pthread_cond_signal(&rx_pdsch_cond[rx_pdsch_thread_index]) != 0)
+  rx_pdsch_instance_cnt = 0;
+  if (pthread_cond_signal(&rx_pdsch_cond) != 0)
     rt_printk("[openair][SCHED][RX_PDSCH] ERROR pthread_cond_signal\n");
   else
-    rt_printk("[openair][SCHED][RX_PDSCH] Signalled rx_pdsch_thread %d to exit\n",rx_pdsch_thread_index);
+    rt_printk("[openair][SCHED][RX_PDSCH] Signalled rx_pdsch_thread to exit\n");
     
   rt_printk("[openair][SCHED][RX_PDSCH] Exiting ...\n");
-  pthread_cond_destroy(&rx_pdsch_cond[rx_pdsch_thread_index]);
-  pthread_mutex_destroy(&rx_pdsch_mutex[rx_pdsch_thread_index]);
+  pthread_cond_destroy(&rx_pdsch_cond);
+  pthread_mutex_destroy(&rx_pdsch_mutex);
 }

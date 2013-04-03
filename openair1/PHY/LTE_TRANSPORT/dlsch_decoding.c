@@ -110,21 +110,19 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag) {
 }
 
 uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
-			 short *dlsch_llr,
-			 LTE_DL_FRAME_PARMS *frame_parms,
-			 LTE_UE_DLSCH_t *dlsch,
-			 u8 subframe,
-			 u8 num_pdcch_symbols,
-			 u8 is_crnti){
+                         short *dlsch_llr,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         LTE_UE_DLSCH_t *dlsch,
+                         LTE_DL_UE_HARQ_t *harq_process,
+                         u8 subframe,
+                         u8 harq_pid,
+                         u8 is_crnti) {
   
   
   time_stats_t *dlsch_rate_unmatching_stats=&phy_vars_ue->dlsch_rate_unmatching_stats;
   time_stats_t *dlsch_turbo_decoding_stats=&phy_vars_ue->dlsch_turbo_decoding_stats;
   time_stats_t *dlsch_deinterleaving_stats=&phy_vars_ue->dlsch_deinterleaving_stats;
-  u16 nb_rb;
-  u8 harq_pid;
   uint32_t A,E;
-  u8 mod_order;
   uint32_t G;
   uint32_t ret,offset;
   u16 iind;
@@ -140,60 +138,59 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     return(MAX_TURBO_ITERATIONS);
   }
 
-  if (!dlsch) {
-    msg("dlsch_decoding.c: NULL dlsch pointer\n");
-    return(MAX_TURBO_ITERATIONS);
+  if (!harq_process) {
+      msg("dlsch_decoding.c: NULL harq_process pointer\n");
+      return(MAX_TURBO_ITERATIONS);
   }
 
   if (!frame_parms) {
-    msg("dlsch_decoding.c: NULL frame_parms pointer\n");
-    return(MAX_TURBO_ITERATIONS);
+      msg("dlsch_decoding.c: NULL frame_parms pointer\n");
+      return(MAX_TURBO_ITERATIONS);
   }
-
+  
   if (subframe>9) {
-    msg("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
-    return(MAX_TURBO_ITERATIONS);
+      msg("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
+      return(MAX_TURBO_ITERATIONS);
   }
 
-  nb_rb = dlsch->nb_rb;
+  //  nb_rb = dlsch->nb_rb;
 
-
+  /*
   if (nb_rb > frame_parms->N_RB_DL) {
     msg("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
     return(MAX_TURBO_ITERATIONS);
-  }
+    }*/
 
-  harq_pid = dlsch->current_harq_pid;
+  /*harq_pid = dlsch->current_harq_pid;
   if (harq_pid >= 8) {
     msg("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
     return(MAX_TURBO_ITERATIONS);
   }
+  */
+  A = harq_process->TBS; //2072 for QPSK 1/3
 
-  A = dlsch->harq_processes[harq_pid]->TBS; //2072 for QPSK 1/3
-
-  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  //  mod_order = get_Qm(harq_process->mcs);
 
   ret = MAX_TURBO_ITERATIONS;
 
 
-  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
+  G = harq_process->G;
+  //get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
+  //  msg("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
 
-
-  //  msg("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,dlsch->harq_processes[harq_pid]->Ndi);
-
-  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
+  if (harq_process->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation
-    dlsch->harq_processes[harq_pid]->B = A+24;
+    harq_process->B = A+24;
     lte_segmentation(NULL,
 		     NULL,
-		     dlsch->harq_processes[harq_pid]->B,
-		     &dlsch->harq_processes[harq_pid]->C,
-		     &dlsch->harq_processes[harq_pid]->Cplus,
-		     &dlsch->harq_processes[harq_pid]->Cminus,
-		     &dlsch->harq_processes[harq_pid]->Kplus,
-		     &dlsch->harq_processes[harq_pid]->Kminus,		     
-		     &dlsch->harq_processes[harq_pid]->F);
+		     harq_process->B,
+		     &harq_process->C,
+		     &harq_process->Cplus,
+		     &harq_process->Cminus,
+		     &harq_process->Kplus,
+		     &harq_process->Kminus,		     
+		     &harq_process->F);
     //  CLEAR LLR's HERE for first packet in process
   }
   /*
@@ -204,13 +201,13 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   */
   err_flag = 0;
   r_offset = 0;
-  for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
+  for (r=0;r<harq_process->C;r++) {
 
     // Get Turbo interleaver parameters
-    if (r<dlsch->harq_processes[harq_pid]->Cminus)
-      Kr = dlsch->harq_processes[harq_pid]->Kminus;
+    if (r<harq_process->Cminus)
+      Kr = harq_process->Kminus;
     else
-      Kr = dlsch->harq_processes[harq_pid]->Kplus;
+      Kr = harq_process->Kplus;
     Kr_bytes = Kr>>3;
     
     if (Kr_bytes<=64)
@@ -227,38 +224,38 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? harq_process->F : 0);
 #endif
 
     start_meas(dlsch_rate_unmatching_stats);
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
-    dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
+    harq_process->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
 							       (u8*) &dummy_w[r][0],
-							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+							       (r==0) ? harq_process->F : 0);
 
 #ifdef DEBUG_DLSCH_DECODING    
     msg("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
 	harq_pid,r, G,
 	   Kr*3,
-	   mod_order,
-	   nb_rb,
-	   dlsch->harq_processes[harq_pid]->Nl);
+	   get_Qm(harq_process->mcs),
+	   harq_process->nb_rb,
+	   harq_process->Nl);
 #endif    
 
 
-    if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
+    if (lte_rate_matching_turbo_rx(harq_process->RTC[r],
 				   G,
-				   dlsch->harq_processes[harq_pid]->w[r],
+				   harq_process->w[r],
 				   (u8*)&dummy_w[r][0],
 				   dlsch_llr,
-				   dlsch->harq_processes[harq_pid]->C,
+				   harq_process->C,
 				   NSOFT,
 				   dlsch->Mdlharq,
 				   dlsch->Kmimo,
-				   dlsch->harq_processes[harq_pid]->rvidx,
-				   dlsch->harq_processes[harq_pid]->Ndi,
-				   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
-				   dlsch->harq_processes[harq_pid]->Nl,
+				   harq_process->rvidx,
+				   harq_process->Ndi,
+				   get_Qm(harq_process->mcs),
+				   harq_process->Nl,
 				   r,
 				   &E)==-1) {
       stop_meas(dlsch_rate_unmatching_stats);
@@ -271,33 +268,33 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
     /*
     msg("Subblock deinterleaving, d %p w %p\n",
-	   dlsch->harq_processes[harq_pid]->d[r],
-	   dlsch->harq_processes[harq_pid]->w);
+	   harq_process->d[r],
+	   harq_process->w);
     */
     start_meas(dlsch_deinterleaving_stats);
     sub_block_deinterleaving_turbo(4+Kr, 
-				   &dlsch->harq_processes[harq_pid]->d[r][96], 
+				   &harq_process->d[r][96], 
 
-				   dlsch->harq_processes[harq_pid]->w[r]); 
+				   harq_process->w[r]); 
     stop_meas(dlsch_deinterleaving_stats);
     
 #ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
-      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-      write_output("decoder_in.m","dec",&dlsch->harq_processes[harq_pid]->d[0][96],(3*8*Kr_bytes)+12,1,0);
+        //      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
+        //      write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
-
+    /*
     msg("decoder input(segment %d) :",r);
     int i; for (i=0;i<(3*8*Kr_bytes)+12;i++)
-      msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
-    msg("\n");
+      msg("%d : %d\n",i,harq_process->d[r][96+i]);
+      msg("\n");*/
 #endif
     
 
-    //    msg("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
-    memset(dlsch->harq_processes[harq_pid]->c[r],0,Kr_bytes);
+    //    msg("Clearing c, %p\n",harq_process->c[r]);
+    memset(harq_process->c[r],0,Kr_bytes);
     //    msg("done\n");
-    if (dlsch->harq_processes[harq_pid]->C == 1) 
+    if (harq_process->C == 1) 
       crc_type = CRC24_A;
     else 
       crc_type = CRC24_B;
@@ -305,9 +302,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     /*            
     msg("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
-      if ((dlsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
-	  (dlsch->harq_processes[harq_pid]->d[r][96+i] < -8))
-	msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
+      if ((harq_process->d[r][96+i]>7) || 
+	  (harq_process->d[r][96+i] < -8))
+	msg("%d : %d\n",i,harq_process->d[r][96+i]);
     msg("\n");
     */
 
@@ -319,14 +316,14 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #else
       ret = phy_threegpplte_turbo_decoder
 #endif
-	(&dlsch->harq_processes[harq_pid]->d[r][96],
-	 dlsch->harq_processes[harq_pid]->c[r],
+	(&harq_process->d[r][96],
+	 harq_process->c[r],
 	 Kr,
 	 f1f2mat_old[iind*2],   
 	 f1f2mat_old[(iind*2)+1], 
 	 MAX_TURBO_ITERATIONS,
 	 crc_type,
-	 (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+	 (r==0) ? harq_process->F : 0,
 	 &phy_vars_ue->dlsch_tc_init_stats,
 	 &phy_vars_ue->dlsch_tc_alpha_stats,
 	 &phy_vars_ue->dlsch_tc_beta_stats,
@@ -352,17 +349,17 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
-    dlsch->harq_processes[harq_pid]->round++;
-    //    msg("DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",subframe,harq_pid,dlsch->harq_processes[harq_pid]->round);
-    if (dlsch->harq_processes[harq_pid]->round >= dlsch->Mdlharq) {
-      dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
+    harq_process->round++;
+    //    msg("DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",subframe,harq_pid,harq_process->round);
+    if (harq_process->round >= dlsch->Mdlharq) {
+      harq_process->status = SCH_IDLE;
     }
     
     return((1+MAX_TURBO_ITERATIONS));
   }
   else {
-    dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
-    dlsch->harq_processes[harq_pid]->round  = 0;
+    harq_process->status = SCH_IDLE;
+    harq_process->round  = 0;
     dlsch->harq_ack[subframe].ack = 1;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
@@ -372,34 +369,34 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   offset = 0;
   /*  
   msg("harq_pid %d\n",harq_pid);
-  msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
-  msg("C %d\n",dlsch->harq_processes[harq_pid]->C);
+  msg("F %d, Fbytes %d\n",harq_process->F,harq_process->F>>3);
+  msg("C %d\n",harq_process->C);
   */
-  for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
-    if (r<dlsch->harq_processes[harq_pid]->Cminus)
-      Kr = dlsch->harq_processes[harq_pid]->Kminus;
+  for (r=0;r<harq_process->C;r++) {
+    if (r<harq_process->Cminus)
+      Kr = harq_process->Kminus;
     else
-      Kr = dlsch->harq_processes[harq_pid]->Kplus;
+      Kr = harq_process->Kplus;
 
     Kr_bytes = Kr>>3;
     //    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
     if (r==0) {
-      memcpy(dlsch->harq_processes[harq_pid]->b,
-	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
-	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3)- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3) - ((dlsch->harq_processes[harq_pid]->C>1)?3:0);
+      memcpy(harq_process->b,
+	     &harq_process->c[0][(harq_process->F>>3)],
+	     Kr_bytes - (harq_process->F>>3)- ((harq_process->C>1)?3:0));
+      offset = Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0);
       //            msg("copied %d bytes to b sequence (harq_pid %d)\n",
-      //      	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
+      //      	  Kr_bytes - (harq_process->F>>3),harq_pid); 
     //          msg("b[0] = %x,c[%d] = %x\n",
-    //  	  dlsch->harq_processes[harq_pid]->b[0],
-    //  	  dlsch->harq_processes[harq_pid]->F>>3,
-    //  	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
+    //  	  harq_process->b[0],
+    //  	  harq_process->F>>3,
+    //  	  harq_process->c[0][(harq_process->F>>3)]);
     }
     else {
-      memcpy(dlsch->harq_processes[harq_pid]->b+offset,
-	     dlsch->harq_processes[harq_pid]->c[r],
-	     Kr_bytes- ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
-      offset += (Kr_bytes - ((dlsch->harq_processes[harq_pid]->C>1)?3:0));
+      memcpy(harq_process->b+offset,
+	     harq_process->c[r],
+	     Kr_bytes- ((harq_process->C>1)?3:0));
+      offset += (Kr_bytes - ((harq_process->C>1)?3:0));
     }
   }
   
