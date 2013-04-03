@@ -373,7 +373,8 @@ typedef struct{
 			    ,
 			    u8 MBMS_Flag,
 			    struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
-			    MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
+			    MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+			    struct PMCH_InfoList_r9 *pmch_InfoList
 #endif
 			    );
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);

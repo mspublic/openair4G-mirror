@@ -29,6 +29,7 @@
 #include "DRB-ToAddModList.h"
 #ifdef Rel10
 #include "MCCH-Message.h"
+#define MRB1 16
 #endif
 
 #include "RRC/LITE/defs.h"
@@ -571,7 +572,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
     LOG_E(RRC,"sib3 is null, exiting\n");
     exit(-1);
   }
-
 #ifdef Rel10
   LOG_I(RRC,"Configuration SIB2/3, MBMS = %d\n",MBMS_flag);
 #else
@@ -712,16 +712,18 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->freqInfo.additionalSpectrumEmission = 1;
   (*sib2)->freqInfo.ul_CarrierFreq = NULL;
   (*sib2)->freqInfo.ul_Bandwidth = NULL;
+  //  (*sib2)->mbsfn_SubframeConfigList = NULL;
+
 #ifdef Rel10
   if (MBMS_flag == 1) {
     LOG_I(RRC,"Adding MBSFN Configuration to SIB2\n");
     MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
     (*sib2)->mbsfn_SubframeConfigList = CALLOC(1,sizeof(struct MBSFN_SubframeConfigList));
     MBSFNSubframeConfigList = (*sib2)->mbsfn_SubframeConfigList;
-
+    
     sib2_mbsfn_SubframeConfig1= CALLOC(1,sizeof(*sib2_mbsfn_SubframeConfig1));
     memset((void*)sib2_mbsfn_SubframeConfig1,0,sizeof(*sib2_mbsfn_SubframeConfig1));
-
+    
     sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
     sib2_mbsfn_SubframeConfig1->radioframeAllocationOffset= 1;
     sib2_mbsfn_SubframeConfig1->subframeAllocation.present= MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
@@ -734,13 +736,12 @@ uint8_t do_SIB23(uint8_t Mod_id,
     else {   // pattern 101010 for FDD)
       sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x2a<<2;
     }
-     ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
+    ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
   }
-  else {// no MBMS transmission
+#else // no MBMS transmission
     (*sib2)->mbsfn_SubframeConfigList = NULL;
-  }
 #endif
-
+    
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
@@ -797,7 +798,12 @@ uint8_t do_SIB23(uint8_t Mod_id,
     //  Subframe Allocation Info
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf= MALLOC(1);
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
-    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x08<<2; //TDD: SF7 // FDD: SF3
+    if (frame_parms->frame_type == TDD) {//TDD: SF7
+      MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x08<<2; 
+    } 
+    else {
+      MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x20<<2;  // FDD: SF1
+    }
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
 
     MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n2;
@@ -1452,8 +1458,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 
   //#endif
 
-
   return((enc_rval.encoded+7)/8);
+
 }
 
 uint8_t TMGI[6] = {0,1,2,3,4,5};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
@@ -1475,7 +1481,7 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
   *mbsfnAreaConfiguration = &mcch_message->message.choice.c1.choice.mbsfnAreaConfiguration_r9;
 
   // Common Subframe Allocation (CommonSF-Alloc-r9)
-  //  (*mbsfnAreaConfiguration)->commonSF_Alloc_r9 = CALLOC(1,sizeof(struct CommonSF_AllocPatternList_r9));
+
     mbsfn_SubframeConfig1= CALLOC(1,sizeof(*mbsfn_SubframeConfig1));
     memset((void*)mbsfn_SubframeConfig1,0,sizeof(*mbsfn_SubframeConfig1));
 
@@ -1498,13 +1504,13 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
 
   // PMCHs Information List (PMCH-InfoList-r9)
   // PMCH_1  Config
-  // (*mbsfnAreaConfiguration)->pmch_InfoList_r9 = CALLOC(1,sizeof(struct PMCH_InfoList_r9));
   pmch_Info_1 = CALLOC(1,sizeof(*pmch_Info_1));
   memset((void*)pmch_Info_1,0,sizeof(*pmch_Info_1));
-  // set value
-  pmch_Info_1->pmch_Config_r9.sf_AllocEnd_r9= 15;//only one PMCH for this mbsfn area
-  pmch_Info_1->pmch_Config_r9.dataMCS_r9= 2;
-  pmch_Info_1->pmch_Config_r9.mch_SchedulingPeriod_r9= PMCH_Config_r9__mch_SchedulingPeriod_r9_rf32;
+  
+  pmch_Info_1->pmch_Config_r9.sf_AllocEnd_r9= 11;//take the value of last mbsfn subframe in this CSA period because there is only one PMCH in this mbsfn area
+  pmch_Info_1->pmch_Config_r9.dataMCS_r9= 7;
+  pmch_Info_1->pmch_Config_r9.mch_SchedulingPeriod_r9= PMCH_Config_r9__mch_SchedulingPeriod_r9_rf16;
+
   // MBMSs-SessionInfoList-r9
   //  pmch_Info_1->mbms_SessionInfoList_r9 = CALLOC(1,sizeof(struct MBMS_SessionInfoList_r9));
   //  Session 1
@@ -1516,13 +1522,16 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
   // Service ID 
   memset(&mbms_Session_1.tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));// need to check
   OCTET_STRING_fromBuf(&mbms_Session_1.tmgi_r9.serviceId_r9,(const char*)&TMGI[3],3);
-  // Session ID is still missing here
- 
+  // Session ID is still missing here, it can be used as an rab id or mrb id
+  mbms_Session_1.sessionId_r9 = CALLOC(1,sizeof(OCTET_STRING_t));
+  mbms_Session_1.sessionId_r9->buf= MALLOC(1);
+  mbms_Session_1.sessionId_r9->size= 1;
+  mbms_Session_1.sessionId_r9->buf[0]= MRB1; 
   // Logical Channel ID
-  mbms_Session_1.logicalChannelIdentity_r9= 1;
+  mbms_Session_1.logicalChannelIdentity_r9= MTCH;
   ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,&mbms_Session_1);
   
-   //  Session 2
+  /*    //  Session 2
   //mbms_Session_2 = CALLOC(1,sizeof(mbms_Session_2));
   memset(&mbms_Session_2,0,sizeof(mbms_Session_2));
   // TMGI value  
@@ -1532,11 +1541,13 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
   memset(&mbms_Session_2.tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));// need to check
   OCTET_STRING_fromBuf(&mbms_Session_2.tmgi_r9.serviceId_r9,(const char*)&TMGI[3],3);
   // Session ID is still missing here
-
-  // Logical Chennel ID
+  mbms_Session_2.sessionID_r9->buf= MALLOC(1);
+  mbms_Session_2.sessionID_r9->size= 1;
+  mbms_Session_2.sessionID_r9->buf[0]= 0x11; 
+  // Logical Channel ID
   mbms_Session_2.logicalChannelIdentity_r9= 2;
   ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,&mbms_Session_2);
-  
+ */ 
   ASN_SEQUENCE_ADD(&(*mbsfnAreaConfiguration)->pmch_InfoList_r9.list,pmch_Info_1);
 
 #ifdef USER_MODE
@@ -1671,7 +1682,8 @@ OAI_UECapability_t *fill_ue_capability() {
 
   Bandlist[0].bandEUTRA  = 33;  // 1900-1920 TDD
   Bandlist[0].halfDuplex = 0;
-  Bandlist[1].bandEUTRA  = 38;  // 2570-2620 TDD
+  Bandlist[1].bandEUTRA  = 38;  // 2570-2620 TDD 
+
   Bandlist[1].halfDuplex = 0;
   Bandlist[2].bandEUTRA  = 5;   // 824-849 , 869-894 FDD
   Bandlist[2].halfDuplex = 0;

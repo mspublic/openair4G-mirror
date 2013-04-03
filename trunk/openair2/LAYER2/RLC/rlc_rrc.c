@@ -18,6 +18,11 @@
 #include "DRB-ToAddModList.h"
 #include "SRB-ToAddMod.h"
 #include "SRB-ToAddModList.h"
+#include "DL-UM-RLC.h"
+#ifdef Rel10
+#include "MBMS-SessionInfoList-r9.h"
+#include "MBMS-SessionInfo-r9.h"
+#endif
 
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
@@ -34,6 +39,11 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   SRB_ToAddMod_t* srb_toaddmod = NULL;
   DRB_ToAddMod_t* drb_toaddmod = NULL;
   rlc_mode_t      rlc_type;
+#ifdef Rel10
+  long int        mrb_id       = 0;
+  MBMS_SessionInfo_r9_t* mbms_session = NULL;
+  DL_UM_RLC_t* mbms_dl_UM_RLC;
+#endif
   
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
   if (srb2add_listP != NULL) {
@@ -215,6 +225,40 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
           rrc_rlc_remove_rlc(module_idP, (UE_index * NB_RB_MAX) + *pdrb_id, frameP);
       }
   }
+
+
+#ifdef Rel10
+  if (SessionInfo_listP != NULL) {
+      // set here the param for RLC config, need to check the value
+      mbms_dl_UM_RLC = CALLOC(1,sizeof(DL_UM_RLC_t));
+      mbms_dl_UM_RLC->sn_FieldLength = SN_FieldLength_size10;
+      mbms_dl_UM_RLC->t_Reordering = T_Reordering_ms5;
+      printf("t_reordering value is %d\n",mbms_dl_UM_RLC->t_Reordering);
+    for (cnt=0;cnt<SessionInfo_listP->list.count;cnt++) {
+      mbms_session = SessionInfo_listP->list.array[cnt];
+      
+      mrb_id = (NUMBER_OF_UE_MAX+1)*NB_RB_MAX + mbms_session->logicalChannelIdentity_r9;
+
+      if (mbms_session->logicalChannelIdentity_r9 > 0) {
+	lc_id = (NUMBER_OF_UE_MAX+1)*NB_RB_MAX + mbms_session->logicalChannelIdentity_r9;
+      } 
+      else {
+	LOG_D(RLC, "[RLC_RRC] Invalid LogicalChannelIdentity for MTCH --- Value 0 is reserved for MCCH\n");
+	lc_id = -1;
+      }
+      
+      rrc_rlc_add_rlc (module_idP, frameP, mrb_id, RLC_UM);
+      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[mrb_id].rlc_index],
+			     frameP,
+			     eNB_flagP,
+			     module_idP,
+			     NULL,
+			     mbms_dl_UM_RLC,
+			     mrb_id, RADIO_ACCESS_BEARER);
+    }
+  }
+#endif
+
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 END \n",module_idP);
   return RLC_OP_STATUS_OK;
 }

@@ -60,6 +60,8 @@
 #include "MeasObjectToAddModList.h"
 #ifdef Rel10
 #include "MBSFN-AreaInfoList-r9.h"
+#include "MBSFN-SubframeConfigList.h"
+#include "PMCH-InfoList-r9.h"
 #endif
 
 //#ifdef PHY_EMUL
@@ -73,7 +75,7 @@
 
 #define BCCH_PAYLOAD_SIZE_MAX 128  
 #define CCCH_PAYLOAD_SIZE_MAX 128
-#define MCCH_PAYLOAD_SIZE_MAX 128   
+ 
 #define SCH_PAYLOAD_SIZE_MAX 1024
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 #define BCCH 3  // SI 
@@ -83,8 +85,8 @@
 #define DTCH  3 // DTCH + lcid < 11
 
 #ifdef Rel10
-#define MCCH 4 //MCCH :: need to be fixed
-#define MTCH 5 //MTCH :: need to be fixed
+#define MCCH 4 // MCCH
+#define MTCH 5 // MTCH
 
 
 // Mask for identifying subframe for MBMS 
@@ -101,6 +103,10 @@
 #define MBSFN_FDD_SF8 0x04
 
 #define MAX_MBSFN_AREA 8
+#define MAX_PMCH_perMBSFN 15
+
+#define MCCH_PAYLOAD_SIZE_MAX 128
+#define MCH_PAYLOAD_SIZE_MAX 1024
 #endif
 
 #ifdef USER_MODE
@@ -189,7 +195,7 @@ typedef struct {
   u8 E:1;
   u8 R:2;      // octet 1 MSB
   u8 L_MSB:7;
-  u8 F:1;      // octet 3 MSB  
+  u8 F:1;      // octet 2 MSB  
   u8 L_LSB:8;
   u8 padding;
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
@@ -225,7 +231,6 @@ typedef struct {
   u8 R:2;
 } __attribute__((__packed__))POWER_HEADROOM_CMD;
 
-
 typedef struct {
   u8 Num_ue_spec_dci ; 
   u8 Num_common_dci  ;
@@ -241,9 +246,17 @@ typedef struct {
   u8 payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
 } __attribute__((__packed__))BCCH_PDU;
 
+#ifdef Rel10
 typedef struct {
   u8 payload[MCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief MCCH payload */
 } __attribute__((__packed__))MCCH_PDU;
+#endif
+
+typedef struct{
+  u8 stop_sf_MSB:3; // octet 1 LSB
+  u8 lcid:5;        // octet 2 MSB
+  u8 stop_sf_LSB:8;
+} __attribute__((__packed__))MSI_ELEMENT;
 
 // DLSCH LCHAN IDs
 #define CCCH_LCHANID 0
@@ -256,6 +269,7 @@ typedef struct {
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 #define MCCH_LCHANID 0
 #define MCH_SCHDL_INFO 30
+
 #endif
 
 // ULSCH LCHAN IDs
@@ -458,7 +472,7 @@ typedef struct{
   u8 bcch_active;
   /// MBSFN SubframeConfig
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
- #ifdef Rel10 
+#ifdef Rel10 
   /// MBMS Flag
   u8 MBMS_flag;
   /// Outgoing MCCH pdu for PHY
@@ -468,9 +482,15 @@ typedef struct{
   /// MBSFN Area Info
   struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
 
+  /// PMCH Config
+  struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
+  /// MBMS session info list
+  struct MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
+
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
 #endif
+
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
 }eNB_MAC_INST;
@@ -595,8 +615,22 @@ typedef struct{
   u8 PHR_state; 
   /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 PHR_reporting_active; 
- /// power backoff due to power management (as allowed by P-MPRc) for this cell
+  /// power backoff due to power management (as allowed by P-MPRc) for this cell
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
+  /// MBSFN_Subframe Configuration
+  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
+
+#ifdef Rel10
+  /// MBSFN Area Info
+  struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+  /// PMCH Config
+  struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
+  /// MCCH status
+  u8 mcch_status;
+  /// MSI status
+  u8 msi_status;// could be an array if there are >1 MCH in one MBSFN area
+#endif
+
 }UE_MAC_INST;
 
 typedef struct {
@@ -647,6 +681,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param MBMS_Flag indicates MBMS transmission
 @param mbsfn_SubframeConfigList pointer to mbsfn subframe configuration list from SIB2
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
+@param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
 */
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
@@ -666,7 +701,9 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 #ifdef Rel10
 		       ,
 		       u8 MBMS_Flag,
-		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
+		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+		       PMCH_InfoList_r9_t *pmch_InfoList
+
 #endif
 		       );
 
@@ -691,24 +728,13 @@ void schedule_RA(u8 Mod_id,u32 frame,u8 subframe,u8 Msg3_subframe,u8 *nprb,unsig
 */
 void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
 
-/** \brief MBMS Scheduling. Checking the position for MBSFN subframes. Return 1 if there are MBSFN data being allocated, otherwise return 0;
+/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
-@param nprb Pointer to current PRB count
-@param nCCE Pointer to current nCCE count
 */
-int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe, unsigned char *nprb,unsigned int *nCCE);
+int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe);
 
-/** \brief MCH Scheduling.  Call function to transfer MCCH from RRC to MAC or transfer MTCH data from RLC to MAC.
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
-@param nprb Pointer to current PRB count
-@param nCCE Pointer to current nCCE count
-@param mcch_flag indicates the  MCCH subframe
-*/
-void MCH_schedule(unsigned char Mod_id,u32 frame, unsigned char *nprb, u8 mcch_flag); 
 
 /** \brief ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
@@ -922,6 +948,7 @@ void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
 
 void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
+
 
 #ifdef Rel10
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.

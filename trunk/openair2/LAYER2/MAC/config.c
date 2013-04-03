@@ -13,6 +13,7 @@
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
+#include "PMCH-InfoList-r9.h"
 #endif
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
@@ -32,7 +33,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 #ifdef Rel10
 		       ,
 		       u8 MBMS_Flag,
-		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList
+		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+		       PMCH_InfoList_r9_t *pmch_InfoList
 #endif 
 		       ) {
 
@@ -199,27 +201,69 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       eNB_mac_inst[Mod_id].MBMS_flag = MBMS_Flag;
 #endif
     }
-    else {
-      // UE
+    else { // UE
+      for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
+	LOG_I(MAC, "[UE %d] Configuring MBSFN_SubframeConfig from received SIB2 \n", Mod_id); 
+	UE_mac_inst[Mod_id].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
+	//	LOG_I("[UE %d] MBSFN_SubframeConfig[%d] pattern is  %ld\n", Mod_id, 
+	//    UE_mac_inst[Mod_id].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]); 
+      }
     }
   }
 
 #ifdef Rel10
   if (mbsfn_AreaInfoList != NULL) {
     if (eNB_flag == 1) {
-      LOG_I(MAC, "[CONFIG] SIB13 Contents (partial)\n");
-      LOG_I(MAC, "[CONFIG] Number of Area Info list %d\n", mbsfn_AreaInfoList->list.count);
+     LOG_I(MAC, "[CONFIG] Number of MBSFN Area Info in the list %d\n", mbsfn_AreaInfoList->list.count);
       for (i =0; i< mbsfn_AreaInfoList->list.count; i++) {
 	eNB_mac_inst[Mod_id].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
 	LOG_I(MAC, "[CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", i, 
 	      eNB_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9); 
       }
     }
-    else { 
-      // UE
+    else {  // UE
+      LOG_I(MAC, "[UE %d] Configuring mbsfn_AreaInfo from received SIB13 \n", Mod_id);
+      for (i =0; i< mbsfn_AreaInfoList->list.count; i++) {
+	UE_mac_inst[Mod_id].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
+	LOG_I(MAC, "[UE %d] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n",Mod_id, i, 
+	      UE_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9); 
+      }
     }
   }
-#endif  
+
+  
+  if (pmch_InfoList != NULL) {
+    if (eNB_flag == 1) {
+      LOG_I(MAC, "[CONFIG] Number of PMCH in this MBSFN Area %d\n", pmch_InfoList->list.count);
+      for (i =0; i< pmch_InfoList->list.count; i++) {
+	eNB_mac_inst[Mod_id].pmch_Config[i] = &pmch_InfoList->list.array[i]->pmch_Config_r9;
+
+	LOG_I(MAC, "[CONFIG] PMCH[%d]: This PMCH stop at subframe  %ldth\n", i, 
+	      eNB_mac_inst[Mod_id].pmch_Config[i]->sf_AllocEnd_r9); 
+	LOG_I(MAC, "[CONFIG] PMCH[%d]: mch_Scheduling_Period = %ld\n", i, 
+	      eNB_mac_inst[Mod_id].pmch_Config[i]->mch_SchedulingPeriod_r9); 
+	LOG_I(MAC, "[CONFIG] PMCH[%d]: dataMCS = %ld\n", i, 
+	      eNB_mac_inst[Mod_id].pmch_Config[i]->dataMCS_r9); 
+
+	// MBMS session info list in each MCH
+	//	for (j=0;j< pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9.list.count;j++) {
+	  eNB_mac_inst[Mod_id].mbms_SessionList[i] = &pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9;
+	  LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n",i, eNB_mac_inst[Mod_id].mbms_SessionList[i]->list.count);
+	  //	}
+      }
+    }
+    else { // UE  
+      LOG_I(MAC, "[UE %d] Configuring PMCH_config from MCCH MESSAGE \n",Mod_id);
+      for (i =0; i< pmch_InfoList->list.count; i++) {
+	UE_mac_inst[Mod_id].pmch_Config[i] = &pmch_InfoList->list.array[i]->pmch_Config_r9;
+	LOG_I(MAC, "[UE %d] PMCH[%d]: MCH_Scheduling_Period = %ld\n", Mod_id, 
+	      UE_mac_inst[Mod_id].pmch_Config[i]->mch_SchedulingPeriod_r9); 
+      }
+      UE_mac_inst[Mod_id].mcch_status = 1;
+    }
+  }
+ 
+#endif
 
   return(0);
 }

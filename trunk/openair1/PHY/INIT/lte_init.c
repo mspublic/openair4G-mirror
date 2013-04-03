@@ -17,7 +17,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "LAYER2/MAC/extern.h"
-
+#include "MBSFN-SubframeConfigList.h"
 //#define DEBUG_PHY
 
 extern u16 prach_root_sequence_map0_3[838];
@@ -164,7 +164,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   init_ul_hopping(lte_frame_parms);
 
-
+  
   // MBSFN
   if (mbsfn_SubframeConfigList != NULL) {
     lte_frame_parms->num_MBSFN_config = mbsfn_SubframeConfigList->list.count;
@@ -178,15 +178,15 @@ void phy_config_sib2_eNB(u8 Mod_id,
 	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
       }
       else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration 
-	  lte_frame_parms->MBSFN_config[i].fourFrames_flag = 1;
-	  lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = 
-	    mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
-	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
-	    (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
-	  
-	  LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
-		lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
-	}
+	lte_frame_parms->MBSFN_config[i].fourFrames_flag = 1;
+	lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig = 
+	  mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+	  (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+	  (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+	
+	LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %ld\n", i, 
+	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
+      }
     }
   }
 }
@@ -298,6 +298,7 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
   }
   
 }
+
 
 void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB) {
 

@@ -8,6 +8,7 @@
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "MBSFN-SubframeConfigList.h"
 #else
 
 /**
