@@ -489,17 +489,22 @@ int ue_query_mch(uint8_t Mod_id, uint32_t frame, uint32_t subframe) {
   int mcch_flag=0, mtch_flag=0, msi_flag=0;
   int mbsfn_period = 1<<(UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
   int mcch_period = 32<<(UE_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-  int mch_scheduling_period = 8<<(UE_mac_inst[Mod_id].pmch_Config[0]->mch_SchedulingPeriod_r9); 
+  int mch_scheduling_period; 
+
+  if (UE_mac_inst[Mod_id].pmch_Config[0])
+    mch_scheduling_period = = 8<<(UE_mac_inst[Mod_id].pmch_Config[0]->mch_SchedulingPeriod_r9);
 
   if (frame % mbsfn_period == UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset){ // MBSFN frame
     if (UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame){// one-frame format
       
-      //  Find the first subframe in this MCH to transmit MSI
-      if (frame % mch_scheduling_period == UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset ) {
-	while (ii == 0) {
-	  ii = UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & (0x80>>msi_pos);
-	  msi_pos++;
-	}
+      if (UE_mac_inst[Mod_id].pmch_Config[0]) {
+	  //  Find the first subframe in this MCH to transmit MSI
+	  if (frame % mch_scheduling_period == UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationOffset ) {
+	    while (ii == 0) {
+	      ii = UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->subframeAllocation.choice.oneFrame.buf[0] & (0x80>>msi_pos);
+	      msi_pos++;
+	    }
+	  }
       }
       
       // Check if the subframe is for MSI, MCCH or MTCHs and Set the correspoding flag to 1
