@@ -132,6 +132,8 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   }
   PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
+  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,0);
+
   return (PHY_vars_UE);
 }
 
