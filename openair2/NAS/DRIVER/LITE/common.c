@@ -674,8 +674,8 @@ struct classifier_entity *oai_nw_drv_common_search_class_for_rb(OaiNwDrvRadioBea
 struct rb_entity *oai_nw_drv_common_add_rb(struct oai_nw_drv_priv *gpriv, struct cx_entity *cx, OaiNwDrvRadioBearerId_t rab_id, OaiNwDrvQoSTrafficClass_t qos){
   //--------------------------------------------------------------------------
     struct rb_entity         *rb;
-    struct classifier_entity *pclassifier;
-    struct classifier_entity *rclassifier;
+    //struct classifier_entity *pclassifier;
+    //struct classifier_entity *rclassifier;
 
     #ifdef OAI_DRV_DEBUG_CLASS
     printk("[OAI_IP_DRV][%s] begin for rab_id %d , qos %d\n",__FUNCTION__, rab_id, qos );

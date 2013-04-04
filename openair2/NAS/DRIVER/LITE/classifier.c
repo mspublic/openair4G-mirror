@@ -23,7 +23,7 @@
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
   Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+  Address      : Eurecom, 2229, route des crÃªtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
 
@@ -33,6 +33,7 @@
 * \company Eurecom
 * \email:  michelle.wetterwald@eurecom.fr, knopp@eurecom.fr, navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
 */
+
 
 #include "local.h"
 #include "proto_extern.h"
@@ -136,9 +137,9 @@
 
 #define IN6_ARE_ADDR_MASKED_EQUAL(a,b,m) \
            (((((__const uint32_t *) (a))[0] & (((__const uint32_t *) (m))[0])) == (((__const uint32_t *) (b))[0] & (((__const uint32_t *) (m))[0])))  \
-         && ((((__const uint32_t *) (a))[1] & (((__const uint32_t *) (m))[1])) == (((__const uint32_t *) (b))[1] & (((__const uint32_t *) (m))[0])))  \
-         && ((((__const uint32_t *) (a))[2] & (((__const uint32_t *) (m))[2])) == (((__const uint32_t *) (b))[2] & (((__const uint32_t *) (m))[0])))  \
-         && ((((__const uint32_t *) (a))[3] & (((__const uint32_t *) (m))[3])) == (((__const uint32_t *) (b))[3] & (((__const uint32_t *) (m))[0]))))
+         && ((((__const uint32_t *) (a))[1] & (((__const uint32_t *) (m))[1])) == (((__const uint32_t *) (b))[1] & (((__const uint32_t *) (m))[1])))  \
+         && ((((__const uint32_t *) (a))[2] & (((__const uint32_t *) (m))[2])) == (((__const uint32_t *) (b))[2] & (((__const uint32_t *) (m))[2])))  \
+         && ((((__const uint32_t *) (a))[3] & (((__const uint32_t *) (m))[3])) == (((__const uint32_t *) (b))[3] & (((__const uint32_t *) (m))[3]))))
 
 #define IN_ARE_ADDR_MASKED_EQUAL(a,b,m) \
            (((((__const uint8_t *) (a))[0] & (((__const uint8_t *) (m))[0])) == (((__const uint8_t *) (b))[0] & (((__const uint8_t *) (m))[0])))  \
@@ -161,15 +162,54 @@ void oai_nw_drv_create_mask_ipv6_addr(struct in6_addr *masked_addrP, int prefix_
   masked_addrP->s6_addr32[2] = 0xFFFFFFFF;
   masked_addrP->s6_addr32[3] = 0xFFFFFFFF;
 
-  u6_addr8_index = prefix_len >> 3;
-  u6_addr1_index = prefix_len & 0x07;
+  switch (prefix_len) {
+  case 128:
+	  return;
+  case 112:
+	  masked_addrP->s6_addr32[3] = htonl(0xFFFF0000);
+	  return;
+  case 96:
+	  masked_addrP->s6_addr32[3] = 0x00000000;
+	  return;
+  case 80:
+	  masked_addrP->s6_addr32[2] = htonl(0xFFFF0000);
+	  masked_addrP->s6_addr32[3] = 0x00000000;
+	  return;
+  case 64:
+	  masked_addrP->s6_addr32[2] = 0x00000000;
+	  masked_addrP->s6_addr32[3] = 0x00000000;
+	  return;
+  case 48:
+	  masked_addrP->s6_addr32[1] = htonl(0xFFFF0000);
+	  masked_addrP->s6_addr32[2] = 0x00000000;
+	  masked_addrP->s6_addr32[3] = 0x00000000;
+	  return;
+  case 32:
+	  masked_addrP->s6_addr32[1] = 0x00000000;
+	  masked_addrP->s6_addr32[2] = 0x00000000;
+	  masked_addrP->s6_addr32[3] = 0x00000000;
+	  return;
+  case 16:
+	  masked_addrP->s6_addr32[0] = htonl(0xFFFF0000);
+	  masked_addrP->s6_addr32[1] = 0x00000000;
+	  masked_addrP->s6_addr32[2] = 0x00000000;
+	  masked_addrP->s6_addr32[3] = 0x00000000;
+	  return;
+  default:
+      u6_addr8_index = prefix_len >> 3;
+      u6_addr1_index = prefix_len & 0x07;
 
-  for (index = u6_addr8_index + 1; index < 16; index++) {
-      masked_addrP->s6_addr[index] = 0;
+      for (index = u6_addr8_index ; index < 16; index++) {
+          masked_addrP->s6_addr[index] = 0;
+      }
+      if (u6_addr1_index > 0) {
+          masked_addrP->s6_addr[u6_addr8_index+1] = htons(0xFF << (8-u6_addr1_index));
+      }
+      for (index = 0 ; index < 4; index++) {
+    	  masked_addrP->s6_addr32[index] = htonl(masked_addrP->s6_addr32[index]);
+      }
   }
-  if (u6_addr1_index > 0) {
-    masked_addrP->s6_addr[u6_addr8_index] = 0xFF << (8-u6_addr1_index);
-  }
+
 }
 //---------------------------------------------------------------------------
 void oai_nw_drv_create_mask_ipv4_addr(struct in_addr *masked_addrP, int prefix_len){
@@ -588,23 +628,39 @@ struct cx_entity *oai_nw_drv_find_cx4(struct sk_buff  *skb,
         daddr = ((struct iphdr*)(skb_network_header(skb)))->daddr;
         if (daddr != INADDR_ANY) {
 
-            #ifdef OAI_DRV_DEBUG_CLASS
-            printk("SOURCE ADDR %d.%d.%d.%d",NIPADDR(ip_hdr(skb)->saddr));
-            printk("    DEST   ADDR %d.%d.%d.%d\n",NIPADDR(ip_hdr(skb)->daddr));
-            #endif
             if (ipv4_is_multicast(ip_hdr(skb)->daddr)) {
                 // TO BE CHECKED
                 *paddr_type = OAI_NW_DRV_IPV4_ADDR_TYPE_MC_SIGNALLING;
-
+                 #ifdef OAI_DRV_DEBUG_CLASS
+                 printk("SOURCE ADDR %d.%d.%d.%d",NIPADDR(ip_hdr(skb)->saddr));
+                 printk("    DEST   ADDR %d.%d.%d.%d MULTICAST\n",NIPADDR(ip_hdr(skb)->daddr));
+                 #endif
+            	return NULL;
             } else if (ipv4_is_lbcast(ip_hdr(skb)->daddr)) {
                 // TO BE CHECKED
                 *paddr_type = OAI_NW_DRV_IPV4_ADDR_TYPE_BROADCAST;
+                #ifdef OAI_DRV_DEBUG_CLASS
+                printk("SOURCE ADDR %d.%d.%d.%d",NIPADDR(ip_hdr(skb)->saddr));
+                printk("    DEST   ADDR %d.%d.%d.%d LOCAL BROADCAST\n",NIPADDR(ip_hdr(skb)->daddr));
+                #endif
+            	return NULL;
+            } else if (IN_CLASSA(htonl(ip_hdr(skb)->daddr)) ||
+                       IN_CLASSB(htonl(ip_hdr(skb)->daddr)) ||
+                       IN_CLASSC(htonl(ip_hdr(skb)->daddr))) {
 
-            } else if (IN_CLASSA(ip_hdr(skb)->daddr) ||
-                       IN_CLASSB(ip_hdr(skb)->daddr) ||
-                       IN_CLASSC(ip_hdr(skb)->daddr)) {
-
+                if ( ((ip_hdr(skb)->daddr & 0xFF000000) >> 24) == 0x000000FF) {
+                    *paddr_type = OAI_NW_DRV_IPV4_ADDR_TYPE_BROADCAST;
+                    #ifdef OAI_DRV_DEBUG_CLASS
+                    printk("SOURCE ADDR %d.%d.%d.%d",NIPADDR(ip_hdr(skb)->saddr));
+                    printk("    DEST   ADDR %d.%d.%d.%d BROADCAST\n",NIPADDR(ip_hdr(skb)->daddr));
+                    #endif
+                	return NULL;
+                }
                 *paddr_type = OAI_NW_DRV_IPV4_ADDR_TYPE_UNICAST;
+                #ifdef OAI_DRV_DEBUG_CLASS
+                printk("SOURCE ADDR %d.%d.%d.%d",NIPADDR(ip_hdr(skb)->saddr));
+                printk("    DEST   ADDR %d.%d.%d.%d UNICAST\n",NIPADDR(ip_hdr(skb)->daddr));
+                #endif
 
                 for (cxi=*cx_searcher; cxi<OAI_NW_DRV_CX_MAX; ++cxi) {
 
@@ -628,6 +684,10 @@ struct cx_entity *oai_nw_drv_find_cx4(struct sk_buff  *skb,
                 }
             } else {
                 *paddr_type = OAI_NW_DRV_IPV4_ADDR_TYPE_UNKNOWN;
+                #ifdef OAI_DRV_DEBUG_CLASS
+                printk("SOURCE ADDR %d.%d.%d.%d",NIPADDR(ip_hdr(skb)->saddr));
+                printk("    DEST   ADDR %d.%d.%d.%d TYPE UNKNOWN\n",NIPADDR(ip_hdr(skb)->daddr));
+                #endif
             }
         }
     }
@@ -698,12 +758,13 @@ struct cx_entity *oai_nw_drv_find_cx_mpls(struct sk_buff *skb,
 // Search the sending function
 void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
   //---------------------------------------------------------------------------
-    struct classifier_entity  *pclassifier, *sp;
+    struct classifier_entity  *pclassifier = NULL, *sp = NULL;
+    struct sk_buff            *skb_cloned = NULL;
     u8                        *protocolh = NULL;
     u8                         version;
     u8                         protocol, dscp;
     u16                        classref;
-    struct cx_entity          *cx;
+    struct cx_entity          *cx        = NULL;
     unsigned int               i;
     struct net_device         *dev        = oai_nw_drv_dev[inst];
     struct oai_nw_drv_priv    *gpriv      = netdev_priv(dev);
@@ -712,10 +773,10 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
     struct in6_addr            masked6_addr;
     struct in_addr             masked_addr;
     // RARP vars
-    struct arphdr             *rarp;
-    unsigned char             *rarp_ptr;
+    struct arphdr             *rarp = NULL;
+    unsigned char             *rarp_ptr = NULL;
     __be32                     sip, tip;
-    unsigned char              *sha, *tha;         /* s for "source", t for "target" */
+    unsigned char              *sha = NULL, *tha = NULL;         /* s for "source", t for "target" */
 
     #ifdef OAI_DRV_DEBUG_CLASS
     printk("[NAS][%s] begin - inst %d\n",__FUNCTION__, inst);
@@ -738,9 +799,6 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
     cx_searcher   = 0;
     no_connection = 1;
 
-
-    cx = NULL;
-
     // Address classification
     switch (ntohs(skb->protocol)) {
         case ETH_P_IPV6:
@@ -757,6 +815,52 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
             if (cx == NULL) {
                 switch (addr_type) {
                     case OAI_NW_DRV_IPV6_ADDR_TYPE_MC_SIGNALLING:
+                        for (i=0; i<OAI_NW_DRV_CX_MAX; i++){
+                            pclassifier=(&gpriv->cx[i])->sclassifier[OAI_NW_DRV_DSCP_DEFAULT];
+                            while (pclassifier!=NULL) {
+                                if ((pclassifier->ip_version == OAI_NW_DRV_IP_VERSION_6) || (pclassifier->ip_version == OAI_NW_DRV_IP_VERSION_ALL)) {
+                                    // ok found default classifier for this packet
+                                    oai_nw_drv_create_mask_ipv6_addr(&masked6_addr, pclassifier->dplen);
+                                    #ifdef OAI_DRV_DEBUG_CLASS
+                                    printk("[NAS][%s] IPv6 MULTICAST CX %u TRYING default DSCP classifier IP Version %d, Dest ADDR %X:%X:%X:%X:%X:%X:%X:%X/%u Mask %X:%X:%X:%X:%X:%X:%X:%X/%u \n",
+                                    		__FUNCTION__, i, pclassifier->ip_version,
+                                    		NIP6ADDR(&(pclassifier->daddr.ipv6)), pclassifier->dplen,
+                                    		NIP6ADDR(&masked6_addr), pclassifier->dplen);
+                                    #endif
+                                    if (IN6_ARE_ADDR_MASKED_EQUAL(&pclassifier->daddr.ipv6, &ipv6_hdr(skb)->daddr, &masked6_addr)) {
+                                        cx = &gpriv->cx[i];
+                                        #ifdef OAI_DRV_DEBUG_CLASS
+                                        printk("[NAS][%s] IPv6 MULTICAST CX %u ETH_P_IPV6 FOUND OAI_NW_DRV_DSCP_DEFAULT with IN6_ARE_ADDR_MASKED_EQUAL(%d bits)\n",__FUNCTION__, i, pclassifier->dplen);
+                                        #endif
+                                        skb_cloned =  skb_clone (skb, 0);
+                                        if (skb_cloned) {
+                                            pclassifier->fct(skb_cloned, cx, pclassifier,inst);
+                                            dev_kfree_skb(skb_cloned);
+                                        } else {
+                                            printk("[NAS][%s] IPv6 MULTICAST CX %u could not send packet, skb_clone() failed)\n",__FUNCTION__, i);
+                                        }
+                                        break;
+                                    } else if(IN6_IS_ADDR_UNSPECIFIED(&pclassifier->daddr.ipv6)) {
+                                        cx = &gpriv->cx[i];
+                                        #ifdef OAI_DRV_DEBUG_CLASS
+                                        printk("[NAS][%s] IPv6 MULTICAST CX %u ETH_P_IPV6 FOUND OAI_NW_DRV_DSCP_DEFAULT with IN6_IS_ADDR_UNSPECIFIED\n",__FUNCTION__, i);
+                                        #endif
+                                        skb_cloned =  skb_clone (skb, 0);
+                                        if (skb_cloned) {
+                                            pclassifier->fct(skb_cloned, cx, pclassifier,inst);
+                                            dev_kfree_skb(skb_cloned);
+                                        } else {
+                                            printk("[NAS][%s] IPv6 MULTICAST CX %u could not send packet, skb_clone() failed)\n",__FUNCTION__, i);
+                                        }
+                                        break;
+                                    }
+                                }
+                                pclassifier = pclassifier->next;
+                            }
+                        }
+                        cx = NULL;
+                        break;
+
                     case OAI_NW_DRV_IPV6_ADDR_TYPE_UNICAST:
 
                         for (i=0; i<OAI_NW_DRV_CX_MAX; i++){
@@ -885,8 +989,54 @@ void oai_nw_drv_class_send(struct sk_buff *skb,int inst){
             if (cx == NULL) {
                 switch (addr_type) {
                     case OAI_NW_DRV_IPV4_ADDR_TYPE_MC_SIGNALLING:
-                    case OAI_NW_DRV_IPV4_ADDR_TYPE_UNICAST:
                     case OAI_NW_DRV_IPV4_ADDR_TYPE_BROADCAST:
+                        for (i=0; i<OAI_NW_DRV_CX_MAX; i++){
+                            pclassifier=(&gpriv->cx[i])->sclassifier[OAI_NW_DRV_DSCP_DEFAULT];
+                            while (pclassifier!=NULL) {
+                                if ((pclassifier->ip_version == OAI_NW_DRV_IP_VERSION_4) || (pclassifier->ip_version == OAI_NW_DRV_IP_VERSION_ALL)) {
+                                    // ok found default classifier for this packet
+                                    oai_nw_drv_create_mask_ipv4_addr(&masked_addr, pclassifier->dplen);
+                                    #ifdef OAI_DRV_DEBUG_CLASS
+                                    printk("[NAS][%s] IPv4 MULTICAST CX %u TRYING default DSCP classifier IP Version %d, Dest ADDR %u.%u.%u.%u/%u Mask %u.%u.%u.%u/%u \n",
+                                    		__FUNCTION__, i, pclassifier->ip_version,
+                                    		NIPADDR(pclassifier->daddr.ipv4), pclassifier->dplen,
+                                    		NIPADDR(masked_addr.s_addr), pclassifier->dplen);
+                                    #endif
+                                    if (IN_ARE_ADDR_MASKED_EQUAL(&pclassifier->daddr.ipv4, &ip_hdr(skb)->daddr, &masked_addr.s_addr)) {
+                                        cx = &gpriv->cx[i];
+                                        #ifdef OAI_DRV_DEBUG_CLASS
+                                        printk("[NAS][%s][CX %u] ETH_P_IP FOUND OAI_NW_DRV_DSCP_DEFAULT with IN_ARE_ADDR_MASKED_EQUAL(IP CLASS %d.%d.%d.%d, IP DEST %d.%d.%d.%d, MASK = %d.%d.%d.%d %d bits)\n",
+                                               __FUNCTION__, i, NIPADDR(pclassifier->daddr.ipv4), NIPADDR(ip_hdr(skb)->daddr), NIPADDR(masked_addr.s_addr), pclassifier->dplen);
+                                        #endif
+                                        skb_cloned =  skb_clone (skb, 0);
+                                        if (skb_cloned) {
+                                            pclassifier->fct(skb_cloned, cx, pclassifier,inst);
+                                            dev_kfree_skb(skb_cloned);
+                                        } else {
+                                            printk("[NAS][%s] IPv4 MULTICAST CX %u could not send packet, skb_clone() failed)\n",__FUNCTION__, i);
+                                        }
+                                        break;
+                                    } else if(INADDR_ANY == pclassifier->daddr.ipv4) {
+                                        cx = &gpriv->cx[i];
+                                        #ifdef OAI_DRV_DEBUG_CLASS
+                                        printk("[NAS][%s][CX %u] ETH_P_IP FOUND OAI_NW_DRV_DSCP_DEFAULT with INADDR_ANY\n",__FUNCTION__, i);
+                                        #endif
+                                        skb_cloned =  skb_clone (skb, 0);
+                                        if (skb_cloned) {
+                                            pclassifier->fct(skb_cloned, cx, pclassifier,inst);
+                                            dev_kfree_skb(skb_cloned);
+                                        } else {
+                                            printk("[NAS][%s] IPv6 MULTICAST CX %u could not send packet, skb_clone() failed)\n",__FUNCTION__, i);
+                                        }
+                                        break;
+                                    }
+                                }
+                                pclassifier = pclassifier->next;
+                            }
+                        }
+                        cx = NULL;
+                        break;
+                    case OAI_NW_DRV_IPV4_ADDR_TYPE_UNICAST:
 
                         for (i=0; i<OAI_NW_DRV_CX_MAX; i++){
                             //if ((pclassifier=cx->sclassifier[OAI_NW_DRV_DSCP_DEFAULT])!=NULL) {
