@@ -686,8 +686,8 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
     for (cnt=0;cnt<mbms_SessionInfoList_r9->list.count;cnt++) {
       MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[cnt];
       lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
-      pdrb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
-      rb_id = (index * NB_RB_MAX) + pdrb_id;
+      drb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
+      rb_id = (index * NB_RB_MAX) + lc_id;
       if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
 	action = ACTION_MODIFY;
       else 
@@ -698,7 +698,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 			    rlc_type,
 			    action, 
 			    rb_id, 
-			    0,
+			    srb_sn, // set to deafult
 			    0,
 			    0,
 			    0xff);
