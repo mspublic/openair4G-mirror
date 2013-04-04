@@ -146,10 +146,12 @@ $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s 10.0.1.6/32
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -x 0::0/128    -y 0::0/128    -r 3
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32  -t 0.0.0.0/32  -r 3
 
+
+
 echo "to see UE stats, pleasae run : watch_ue script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p3 -g1 > /dev/null"
 pkill oaisim
 nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 5432  -b0 -M2 -p3 -g1 -l3 > /dev/null 2>&1
-#gdb $OPENAIR_TARGETS/SIMU/USER/oaisim 
+#gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -E 5432  -b0 -M2 -p3 -g1 -l3
 echo "End"
 

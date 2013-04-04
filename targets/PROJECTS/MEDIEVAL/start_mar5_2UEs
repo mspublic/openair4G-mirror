@@ -148,18 +148,38 @@ control_c()
   exit $?
 }
 
+
+set_openair() {
+    path=`pwd`
+    declare -i length_path
+    declare -i index
+    length_path=${#path}
+
+    index=`echo $path | grep -b -o 'targets' | cut -d: -f1`
+    #echo ${path%$token*}
+    if [[ $index -lt $length_path  && index -gt 0 ]]
+       then
+           declare -x OPENAIR_DIR
+           index=`expr $index - 1`
+           openair_path=`echo $path | cut -c1-$index`
+           #openair_path=`echo ${path:0:$index}`
+           export OPENAIR_DIR=$openair_path
+           export OPENAIR1_DIR=$openair_path/openair1
+           export OPENAIR2_DIR=$openair_path/openair2
+           export OPENAIR3_DIR=$openair_path/openair3
+           export OPENAIR_TARGETS=$openair_path/targets
+           return 0
+    fi
+    return -1
+}
+
+
+trap control_c SIGINT
+set_openair
 echo "OPENAIR1_DIR="$OPENAIR1_DIR
 echo "OPENAIR2_DIR="$OPENAIR2_DIR
 echo "OPENAIR3_DIR="$OPENAIR3_DIR
 echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
-
-export OPENAIR1_DIR
-export OPENAIR2_DIR
-export OPENAIR3_DIR
-export OPENAIR_TARGETS
-
-trap control_c SIGINT
-
 echo "Bringup eNB interface"
 pkill oaisim
 pkill oaisim
@@ -168,7 +188,7 @@ echo "REMOVING MULTICAST ROUTING RULE"
 ip route del 239.0.0.160/28 dev eth3
 #sudo make  naslite_netlink_ether oaisim
 make  naslite_netlink_ether oaisim
-insmod /usr/local/src/trunk/openair2/NAS/DRIVER/LITE/oai_nw_drv.ko oai_nw_drv_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
+/sbin/insmod $OPENAIR2_DIR/NAS/DRIVER/LITE/oai_nw_drv.ko oai_nw_drv_IMEI=3,9,1,8,3,6,6,2,0,0,0,0,0,0
 sleep 1
 ip link set oai0 broadcast ff:ff:ff:ff:ff:ff
 macchanger oai0 -m 90:f6:52:0c:60:aa
@@ -181,8 +201,8 @@ rm -f /tmp/lte_enb.log
 
 echo "to see eNB stats, pleasae run : watch_enb script"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3  > /dev/null"
-nice  --adjustment=-10 /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p3 -g1 -l7  > /dev/null 2>&1 &
-#nice -10 gdb --args /usr/local/src/targets/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3
+nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234 -u0 -M0 -p3 -g1 -l7  > /dev/null 2>&1 &
+#nice -10 gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim  -E 1234 -u0 -M0 -p3 -g1 -l3
 
 wait_process_started oaisim
 
@@ -194,17 +214,23 @@ ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
 sleep 1
 ip addr add dev oai0 2001:1::1/64
 # LG EURECOM 2001:10::1 for testing only
-ip addr add dev oai0 2001:10::1/64
+#ip addr add dev oai0 2001:10::1/64
 
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0 -z0  -x 0::0/128    -y 2001:1::3/128 -r 3
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2 -z0  -s 10.0.1.1/32 -t 10.0.1.3/32   -r 3
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f4 -z64 -x 0::0/128    -y 2001:1::3/128 -r 3
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f6 -z64 -s 0.0.0.0/32  -t 10.0.1.3/24   -r 3
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f0  -z0  -x 0::0/128    -y 2001:1::3/128 -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f2  -z0  -s 10.0.1.1/32 -t 10.0.1.3/32   -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f4  -z64 -x 0::0/128    -y 2001:1::3/128 -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f6  -z64 -x 0::0/128    -y FF02::0/16    -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f8  -z64 -s 0.0.0.0/32  -t 10.0.1.3/24   -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f10 -z64 -s 0.0.0.0/32  -t 10.0.1.255/32 -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -i0 -f12 -z64 -s 0.0.0.0/32  -t 224.0.0.0/8   -r 3"
 
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f8  -z0  -x 0::0/128    -y 2001:1::6/128 -r 14
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f10 -z0  -s 10.0.1.1/32 -t 10.0.1.6/32   -r 14
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f12 -z64 -x 0::0/128    -y 2001:1::6/128 -r 14
-/usr/local/src/trunk/openair2/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f14 -z64 -s 0.0.0.0/32  -t 10.0.1.6/24   -r 14
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f14 -z0  -x 0::0/128    -y 2001:1::6/128 -r 14"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f16 -z0  -s 10.0.1.1/32 -t 10.0.1.6/32   -r 14"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f18 -z64 -x 0::0/128    -y 2001:1::6/128 -r 14"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f20 -z64 -x 0::0/128    -y FF02::0/16    -r 14"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f22 -z64 -s 0.0.0.0/32  -t 10.0.1.6/24   -r 14"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f24 -z64 -s 0.0.0.0/32  -t 10.0.1.255/32 -r 14"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c1 -i0 -f26 -z64 -s 0.0.0.0/32  -t 224.0.0.0/8   -r 14"
 
 echo "   Enabling ipv4 forwarding.."
 bash_exec "sysctl -w net.ipv4.ip_forward=1"

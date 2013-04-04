@@ -115,6 +115,51 @@ is_process_started () {
     return 0
 }
 
+assert() {
+  # If condition false
+  # exit from script with error message
+  E_PARAM_ERR=98
+  E_PARAM_FAILED=99
+  
+  if [ -z "$2" ] # Not enought parameters passed.
+  then
+    return $E_PARAM_ERR
+  fi
+  
+  lineno=$2
+  if [ ! $1 ]
+  then
+    echo "Assertion failed:  \"$1\""
+    echo "File \"$0\", line $lineno"
+    exit $E_ASSERT_FAILED
+  fi
+}
+
+set_openair() {
+    path=`pwd`
+    declare -i length_path
+    declare -i index
+    length_path=${#path}
+
+    index=`echo $path | grep -b -o 'targets' | cut -d: -f1`
+    #echo ${path%$token*}
+    if [[ $index -lt $length_path  && index -gt 0 ]]
+       then
+           declare -x OPENAIR_DIR
+           index=`expr $index - 1`
+           openair_path=`echo $path | cut -c1-$index`
+           #openair_path=`echo ${path:0:$index}`
+           export OPENAIR_DIR=$openair_path
+           export OPENAIR1_DIR=$openair_path/openair1
+           export OPENAIR2_DIR=$openair_path/openair2
+           export OPENAIR3_DIR=$openair_path/openair3
+           export OPENAIR_TARGETS=$openair_path/targets
+           return 0
+    fi
+    return -1
+}
+
+
 echo "Bringup UE interface"
 pkill oaisim
 /sbin/rmmod oai_nw_drv
@@ -146,7 +191,13 @@ $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s 10.0.1.3/32
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -x 0::0/128    -y 0::0/128 -r 3
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32  -t 0.0.0.0/32  -r 3
 
+echo "   Enabling ping broadcast"
+bash_exec "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0"
+assert "`sysctl -n net.ipv4.icmp_echo_ignore_broadcasts` -eq 0" $LINENO
+
+
 nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p3 -g1 -l3 > /dev/null 2>&1
+#gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p3 -g1 -l3 
 
 echo "End"
 
