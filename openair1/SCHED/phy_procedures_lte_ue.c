@@ -2864,18 +2864,18 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     } // abstraction_flag==0   
   }// l loop
 
-  if (is_pmch_subframe(phy_vars_ue->frame,last_slot>>1,&phy_vars_ue->lte_frame_parms)) {
+  if (is_pmch_subframe(((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1,&phy_vars_ue->lte_frame_parms)) {
     if ((last_slot%2)==1) {
       LOG_I(PHY,"[UE %d] Frame %d, subframe %d: Querying for PMCH demodulation\n",
-	    phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
+	    phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1);
 #ifdef Rel10
-      pmch_mcs = mac_xface->ue_query_mch(phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
+      pmch_mcs = mac_xface->ue_query_mch(phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1);
 #else
       pmch_mcs=-1;
 #endif
       
       if (pmch_mcs>=0) {
-	LOG_I(PHY,"[UE %d] Frame %d, subframe %d: Programming PMCH demodulation for mcs %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,pmch_mcs);
+	LOG_I(PHY,"[UE %d] Frame %d, subframe %d: Programming PMCH demodulation for mcs %d\n",phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1,pmch_mcs);
 	fill_UE_dlsch_MCH(phy_vars_ue,pmch_mcs,1,0,0);
 	
 	for (l=2;l<12;l++) {
@@ -2899,7 +2899,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 								   phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->rb_alloc,
 								   get_Qm(phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->mcs),
 								   2,
-								   phy_vars_ue->frame,last_slot>>1);
+								   ((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1);
 	dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,1,phy_vars_ue->dlsch_ue_MCH[0],
 			   phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G,
 			   phy_vars_ue->lte_ue_pdsch_vars_MCH[0]->llr[0],0,last_slot-1);
@@ -2915,17 +2915,17 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	  phy_vars_ue->dlsch_mch_errors[eNB_id]++;
-	  LOG_I(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error, not passing to L2\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
+	  LOG_I(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error, not passing to L2\n",phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1);
 	  //	  dump_mch(phy_vars_ue,0,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G);
 	  //	  exit(-1);
 	  for (i=0;i<32;i++){
-	    printf("%2x.",phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->b[i]);
+	    printf("%2x.",phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->c[0][i]);
 	  }
 	}
 	else {
 #ifdef Rel10
 	  mac_xface->ue_send_mch_sdu(phy_vars_ue->Mod_id,
-				     phy_vars_ue->frame,
+				     ((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,
 				     phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->b,
 				     phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->TBS>>3,
 				     eNB_id);
