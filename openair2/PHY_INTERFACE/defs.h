@@ -78,6 +78,11 @@ typedef struct
 				AdditionalSpectrumEmission_t *additionalSpectrumEmission,
 				struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList);
     
+#ifdef Rel10
+    /// Configure Common PHY parameters from SIB13
+    void (*phy_config_sib13_eNB)(u8 Mod_id,int mbsfn_Area_idx,
+				long mbsfn_AreaId_r9);
+#endif
 
     /// PHY-Config-Dedicated eNB
     void (*phy_config_dedicated_eNB)(u8 Mod_id,u16 rnti,
@@ -144,6 +149,11 @@ typedef struct
 			       AdditionalSpectrumEmission_t *additionalSpectrumEmission,
 			       struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList);
 
+#ifdef Rel10
+    /// Configure Common PHY parameters from SIB13
+    void (*phy_config_sib13_ue)(u8 Mod_id,u8 CH_index,int mbsfn_Area_idx,
+				long mbsfn_AreaId_r9);
+#endif
 
     /// Function to indicate failure of contention resolution or RA procedure
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);

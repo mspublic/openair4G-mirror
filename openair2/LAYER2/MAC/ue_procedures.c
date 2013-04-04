@@ -395,7 +395,7 @@ void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
 #ifdef Rel10
 unsigned char *parse_mch_header(unsigned char *mac_header,
-				unsigned char num_sdu,
+				unsigned char *num_sdu,
 				unsigned char *rx_lcids,
 				unsigned short *rx_lengths,
 				unsigned short tb_length) {
@@ -435,7 +435,7 @@ unsigned char *parse_mch_header(unsigned char *mac_header,
 	mac_header_ptr++;
     }
   }
-  num_sdu = num_sdus;
+  *num_sdu = num_sdus;
   return(mac_header_ptr);
 }
 
@@ -448,11 +448,12 @@ void ue_send_mch_sdu(u8 Mod_id, u32 frame, u8 *sdu, u16 sdu_len, u8 eNB_index) {
 
 
   //  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_MCH_SDU, VCD_FUNCTION_IN);
-  LOG_D(MAC,"entering ue_send_mch_sdu\n");
-  LOG_D(MAC, "sdu: %x.%x\n", sdu[0], sdu[1]);
-  LOG_I(MAC,"parse_mch_header, demultiplex\n");
+  LOG_I(MAC,"[UE %d] Frame %d : entering ue_send_mch_sdu\n",Mod_id,frame);
+  LOG_I(MAC,"[UE %d] sdu: %x.%x\n", Mod_id,sdu[0], sdu[1]);
+  LOG_I(MAC,"[UE %d] parse_mch_header, demultiplex\n",Mod_id);
 
-  payload_ptr = parse_mch_header(sdu, num_sdu, rx_lcids, rx_lengths, sdu_len);
+  payload_ptr = parse_mch_header(sdu, &num_sdu, rx_lcids, rx_lengths, sdu_len);
+  LOG_I(MAC,"[UE %d] parse_mch_header, found %d sdus\n",Mod_id,num_sdu);
 
   for (i=0; i<num_sdu; i++) {
     if (rx_lcids[i] == MCH_SCHDL_INFO) {
@@ -465,7 +466,7 @@ void ue_send_mch_sdu(u8 Mod_id, u32 frame, u8 *sdu, u16 sdu_len, u8 eNB_index) {
       }
     }
     else if (rx_lcids[i] == MCCH_LCHANID) {
-      LOG_D(MAC,"[UE %d] Frame %d : MCH -> MCCH, RRC message (eNB %d, %d bytes)\n",Mod_id,frame, eNB_index, rx_lengths[i]);
+      LOG_I(MAC,"[UE %d] Frame %d : MCH -> MCCH, RRC message (eNB %d, %d bytes)\n",Mod_id,frame, eNB_index, rx_lengths[i]);
       mac_rrc_data_ind(Mod_id, 
 		       frame, 
 		       MCCH, 
@@ -490,6 +491,8 @@ int ue_query_mch(uint8_t Mod_id, uint32_t frame, uint32_t subframe) {
   int mbsfn_period = 1<<(UE_mac_inst[Mod_id].mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
   int mcch_period = 32<<(UE_mac_inst[Mod_id].mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
   int mch_scheduling_period; 
+
+  LOG_I(MAC,"[UE %d] Frame %d, subframe %d: query mch\n",Mod_id,frame,subframe);
 
   if (UE_mac_inst[Mod_id].pmch_Config[0])
     mch_scheduling_period = 8<<(UE_mac_inst[Mod_id].pmch_Config[0]->mch_SchedulingPeriod_r9);
