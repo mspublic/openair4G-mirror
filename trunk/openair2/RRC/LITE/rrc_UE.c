@@ -1503,10 +1503,11 @@ int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len)
     if (mcch->message.present == MCCH_MessageType_PR_c1) {
       LOG_D(RRC,"[UE %d] Found First MCCH_MESSAGE\n",Mod_id);
       if(mcch->message.choice.c1.present == MCCH_MessageType__c1_PR_mbsfnAreaConfiguration_r9) {
-	
+	/*	
 	memcpy((void*)*mcch_message,
 	       (void*)&mcch->message.choice.c1.choice.mbsfnAreaConfiguration_r9,
-	       sizeof(MBSFNAreaConfiguration_r9_t));
+	       sizeof(MBSFNAreaConfiguration_r9_t)); */
+	*mcch_message = &mcch->message.choice.c1.choice.mbsfnAreaConfiguration_r9;
 	LOG_D(RRC,"[UE %d] Found MBSFNAreaConfiguration\n",Mod_id);
 	decode_MBSFNAreaConfiguration(Mod_id,eNB_index);
 

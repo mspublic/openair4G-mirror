@@ -219,6 +219,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	eNB_mac_inst[Mod_id].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
 	LOG_I(MAC, "[CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", i, 
 	      eNB_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9); 
+	mac_xface->phy_config_sib13_eNB(Mod_id,i,eNB_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
       }
     }
     else {  // UE
@@ -227,6 +228,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	UE_mac_inst[Mod_id].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
 	LOG_I(MAC, "[UE %d] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n",Mod_id, i, 
 	      UE_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9); 
+	mac_xface->phy_config_sib13_ue(Mod_id,eNB_index,i,UE_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
       }
     }
   }
