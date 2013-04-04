@@ -1,12 +1,7 @@
 #!/bin/bash
-
+#set -x
 ###########################################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
-declare -x OPENAIR_DIR="/usr/local/src/trunk"
-declare -x OPENAIR1_DIR="/usr/local/src/trunk/openair1"
-declare -x OPENAIR2_DIR="/usr/local/src/trunk/openair2"
-declare -x OPENAIR3_DIR="/usr/local/src/trunk/openair3"
-declare -x OPENAIR_TARGETS="/usr/local/src/trunk/targets"
 ###########################################################
 
 black='\E[30m'
@@ -82,38 +77,104 @@ bash_exec() {
     fi
 }
 
-
 wait_process_started () {
-    if  [ -z "$1" ]
-    then
-        echo_error "WAITING FOR PROCESS START: NO PROCESS"
-        return 1
-    fi
+  if  [ -z "$1" ]
+  then
+    echo_error "WAITING FOR PROCESS START: NO PROCESS"
+    return 1
+  fi
+  ps -C $1 > /dev/null 2>&1
+  while [ $? -ne 0 ]; do
+    echo_warning "WAITING FOR $1 START"
+    sleep 2
     ps -C $1 > /dev/null 2>&1
-    while [ $? -ne 0 ]; do
-        echo_warning "WAITING FOR $1 START"
-        sleep 2
-        ps -C $1 > /dev/null 2>&1
-    done
-    echo_success "PROCESS $1 STARTED"
-    return 0
+  done
+  echo_success "PROCESS $1 STARTED"
+  return 0
 }
 
-is_process_started () {
-    if  [ -z "$1" ]
-    then
-        echo_error "WAITING FOR PROCESS START: NO PROCESS"
-        return 1
-    fi
+wait_process_ended () {
+  if  [ -z "$1" ]
+  then
+    echo_error "WAITING FOR PROCESS START: NO PROCESS"
+    return 1
+  fi
+  pkill $1
+  ps -C $1 > /dev/null 2>&1
+  while [ $? -eq 0 ]; do
+    echo_warning "WAITING FOR $1 END"
+    pkill $1
+    sleep 2
     ps -C $1 > /dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo_success "PROCESS $1 NOT STARTED"
-        return 1
-    fi
-    echo_success "PROCESS $1 STARTED"
-    return 0
+  done
+  echo_success "PROCESS $1 ENDED"
+  return 0
 }
+
+assert() {
+  # If condition false
+  # exit from script with error message
+  E_PARAM_ERR=98
+  E_PARAM_FAILED=99
+  
+  if [ -z "$2" ] # Not enought parameters passed.
+  then
+    return $E_PARAM_ERR
+  fi
+  
+  lineno=$2
+  if [ ! $1 ]
+  then
+    echo "Assertion failed:  \"$1\""
+    echo "File \"$0\", line $lineno"
+    exit $E_ASSERT_FAILED
+  fi
+}
+
+control_c()
+# run if user hits control-c
+{
+  echo -en "\n*** Exiting ***\n"
+  pkill oaisim
+  wait_process_ended oaisim
+  sleep 2
+  ip link set oai0 down
+  /sbin/rmmod oai_nw_drv
+  exit $?
+}
+
+
+set_openair() {
+    path=`pwd`
+    declare -i length_path
+    declare -i index
+    length_path=${#path}
+
+    index=`echo $path | grep -b -o 'targets' | cut -d: -f1`
+    #echo ${path%$token*}
+    if [[ $index -lt $length_path  && index -gt 0 ]]
+       then
+           declare -x OPENAIR_DIR
+           index=`expr $index - 1`
+           openair_path=`echo $path | cut -c1-$index`
+           #openair_path=`echo ${path:0:$index}`
+           export OPENAIR_DIR=$openair_path
+           export OPENAIR1_DIR=$openair_path/openair1
+           export OPENAIR2_DIR=$openair_path/openair2
+           export OPENAIR3_DIR=$openair_path/openair3
+           export OPENAIR_TARGETS=$openair_path/targets
+           return 0
+    fi
+    return -1
+}
+
+
+trap control_c SIGINT
+set_openair
+echo "OPENAIR1_DIR="$OPENAIR1_DIR
+echo "OPENAIR2_DIR="$OPENAIR2_DIR
+echo "OPENAIR3_DIR="$OPENAIR3_DIR
+echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
 
 echo "Bringup UE interface"
 pkill oaisim
@@ -146,11 +207,10 @@ $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s 10.0.1.6/32
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -x 0::0/128    -y 0::0/128    -r 3
 $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32  -t 0.0.0.0/32  -r 3
 
+echo "   Enabling ping broadcast"
+bash_exec "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0"
+assert "`sysctl -n net.ipv4.icmp_echo_ignore_broadcasts` -eq 0" $LINENO
 
-
-echo "to see UE stats, pleasae run : watch_ue script"
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p3 -g1 > /dev/null"
-pkill oaisim
 nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 5432  -b0 -M2 -p3 -g1 -l3 > /dev/null 2>&1
 #gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -E 5432  -b0 -M2 -p3 -g1 -l3
 echo "End"

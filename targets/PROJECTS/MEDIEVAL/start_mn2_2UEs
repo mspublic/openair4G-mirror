@@ -1,12 +1,7 @@
 #!/bin/bash
-
+#set -x
 ###########################################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
-declare -x OPENAIR_DIR="/usr/local/src/trunk"
-declare -x OPENAIR1_DIR="/usr/local/src/trunk/openair1"
-declare -x OPENAIR2_DIR="/usr/local/src/trunk/openair2"
-declare -x OPENAIR3_DIR="/usr/local/src/trunk/openair3"
-declare -x OPENAIR_TARGETS="/usr/local/src/trunk/targets"
 ###########################################################
 
 black='\E[30m'
@@ -82,37 +77,38 @@ bash_exec() {
     fi
 }
 
-
 wait_process_started () {
-    if  [ -z "$1" ]
-    then
-        echo_error "WAITING FOR PROCESS START: NO PROCESS"
-        return 1
-    fi
+  if  [ -z "$1" ]
+  then
+    echo_error "WAITING FOR PROCESS START: NO PROCESS"
+    return 1
+  fi
+  ps -C $1 > /dev/null 2>&1
+  while [ $? -ne 0 ]; do
+    echo_warning "WAITING FOR $1 START"
+    sleep 2
     ps -C $1 > /dev/null 2>&1
-    while [ $? -ne 0 ]; do
-        echo_warning "WAITING FOR $1 START"
-        sleep 2
-        ps -C $1 > /dev/null 2>&1
-    done
-    echo_success "PROCESS $1 STARTED"
-    return 0
+  done
+  echo_success "PROCESS $1 STARTED"
+  return 0
 }
 
-is_process_started () {
-    if  [ -z "$1" ]
-    then
-        echo_error "WAITING FOR PROCESS START: NO PROCESS"
-        return 1
-    fi
+wait_process_ended () {
+  if  [ -z "$1" ]
+  then
+    echo_error "WAITING FOR PROCESS START: NO PROCESS"
+    return 1
+  fi
+  pkill $1
+  ps -C $1 > /dev/null 2>&1
+  while [ $? -eq 0 ]; do
+    echo_warning "WAITING FOR $1 END"
+    pkill $1
+    sleep 2
     ps -C $1 > /dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo_success "PROCESS $1 NOT STARTED"
-        return 1
-    fi
-    echo_success "PROCESS $1 STARTED"
-    return 0
+  done
+  echo_success "PROCESS $1 ENDED"
+  return 0
 }
 
 assert() {
@@ -134,6 +130,19 @@ assert() {
     exit $E_ASSERT_FAILED
   fi
 }
+
+control_c()
+# run if user hits control-c
+{
+  echo -en "\n*** Exiting ***\n"
+  pkill oaisim
+  wait_process_ended oaisim
+  sleep 2
+  ip link set oai0 down
+  /sbin/rmmod oai_nw_drv
+  exit $?
+}
+
 
 set_openair() {
     path=`pwd`
@@ -160,6 +169,13 @@ set_openair() {
 }
 
 
+trap control_c SIGINT
+set_openair
+echo "OPENAIR1_DIR="$OPENAIR1_DIR
+echo "OPENAIR2_DIR="$OPENAIR2_DIR
+echo "OPENAIR3_DIR="$OPENAIR3_DIR
+echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
+
 echo "Bringup UE interface"
 pkill oaisim
 /sbin/rmmod oai_nw_drv
@@ -167,7 +183,6 @@ make naslite_netlink_ether oaisim
 /sbin/insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/oai_nw_drv.ko  oai_nw_drv_IMEI=3,9,1,8,3,6,7,3,0,2,0,0,0,0
 
 #avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
-#sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 ip link set oai0 broadcast ff:ff:ff:ff:ff:ff
 ip route add 239.0.0.160/28 dev eth1
 ip link set oai0 up
@@ -194,7 +209,6 @@ $OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32 
 echo "   Enabling ping broadcast"
 bash_exec "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0"
 assert "`sysctl -n net.ipv4.icmp_echo_ignore_broadcasts` -eq 0" $LINENO
-
 
 nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p3 -g1 -l3 > /dev/null 2>&1
 #gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p3 -g1 -l3 
