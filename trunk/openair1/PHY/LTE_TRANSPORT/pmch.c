@@ -52,6 +52,10 @@ void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword) {
   write_output("mch00_ch0.m","pmch00_ch0",
 	       &(phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][0][0]),
 	       phy_vars_ue->lte_frame_parms.ofdm_symbol_size*12,1,1);
+
+  write_output("rxsig_mch.m","rxs_mch",
+	       &phy_vars_ue->lte_ue_common_vars.rxdata[0][7*phy_vars_ue->lte_frame_parms.samples_per_tti],
+	       phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
 }
 
 int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms) {
@@ -219,7 +223,7 @@ void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a) {
 		     )<0)
     exit(-1);
 
-  dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,0,phy_vars_eNB->dlsch_eNB_MCH,G,0,subframe<<1);
+  dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,1,phy_vars_eNB->dlsch_eNB_MCH,G,0,subframe<<1);
 
 
   mch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],

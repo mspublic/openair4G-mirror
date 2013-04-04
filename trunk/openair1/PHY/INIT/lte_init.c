@@ -188,6 +188,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
 	      lte_frame_parms->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
+
   }
 }
 
@@ -297,6 +298,37 @@ lte_frame_parms->ul_power_control_config_common.deltaF_PUCCH_Format1  = radioRes
     }
   }
   
+}
+
+void phy_config_sib13_ue(u8 Mod_id,u8 CH_index,int mbsfn_Area_idx,
+			 long mbsfn_AreaId_r9) {
+
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+
+
+  LOG_I(PHY,"[UE%d] Frame %d: Applying MBSFN_Area_id %d for index %d\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame,mbsfn_AreaId_r9,mbsfn_Area_idx);
+
+  if (mbsfn_Area_idx == 0) {
+    lte_frame_parms->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
+  }
+
+  lte_gold_mbsfn(lte_frame_parms,PHY_vars_UE_g[Mod_id]->lte_gold_mbsfn_table,lte_frame_parms->Nid_cell_mbsfn);   
+}
+
+
+void phy_config_sib13_eNB(u8 Mod_id,int mbsfn_Area_idx,
+			  long mbsfn_AreaId_r9) {
+
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+
+
+  LOG_I(PHY,"[eNB%d] Frame %d: Applying MBSFN_Area_id %d for index %d\n",Mod_id,PHY_vars_eNB_g[Mod_id]->frame,mbsfn_AreaId_r9,mbsfn_Area_idx);
+
+  if (mbsfn_Area_idx == 0) {
+    lte_frame_parms->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
+  }
+
+  lte_gold_mbsfn(lte_frame_parms,PHY_vars_eNB_g[Mod_id]->lte_gold_mbsfn_table,lte_frame_parms->Nid_cell_mbsfn);   
 }
 
 

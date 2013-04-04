@@ -175,7 +175,8 @@ void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
 int generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
 			 s16 amp,
-			 u16 slot) {
+			 u16 slot,
+			 int first_pilot_only) {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;  
   u32 slot_offset,Nsymb,samples_per_symbol;
@@ -210,46 +211,47 @@ int generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 		   0);
 
     
-    
+  if (first_pilot_only==0) {
     //antenna 0 symbol 3 slot 0
-  lte_dl_cell_spec(phy_vars_eNB,
-		   &txdataF[0][slot_offset+(second_pilot*samples_per_symbol)],
-		   amp,
-		   slot,
-		   1,
-		   0);
-    
+    lte_dl_cell_spec(phy_vars_eNB,
+		     &txdataF[0][slot_offset+(second_pilot*samples_per_symbol)],
+		     amp,
+		     slot,
+		     1,
+		     0);
+  }
 
-    if (frame_parms->nb_antennas_tx > 1) {
-      if (frame_parms->mode1_flag) {
+  if (frame_parms->nb_antennas_tx > 1) {
+    if (frame_parms->mode1_flag) {
       // antenna 1 symbol 0 slot 0
-	lte_dl_cell_spec(phy_vars_eNB,
-			 &txdataF[1][slot_offset],
-			 amp,
-			 slot,
-			 0,
-			 0);
-      
-      // antenna 1 symbol 3 slot 0
+      lte_dl_cell_spec(phy_vars_eNB,
+		       &txdataF[1][slot_offset],
+		       amp,
+		       slot,
+		       0,
+		       0);
+      if (first_pilot_only==0) {
+	// antenna 1 symbol 3 slot 0
 	lte_dl_cell_spec(phy_vars_eNB,
 			 &txdataF[1][slot_offset+(second_pilot*samples_per_symbol)],
 			 amp,
 			 slot,
 			 1,
 			 0);
-
       }
-      else {
-
-      // antenna 1 symbol 0 slot 0
-	lte_dl_cell_spec(phy_vars_eNB,
-			 &txdataF[1][slot_offset],
-			 amp,
-			 slot,
-			 0,
-			 1);
+    }
+    else {
       
-      // antenna 1 symbol 3 slot 0
+      // antenna 1 symbol 0 slot 0
+      lte_dl_cell_spec(phy_vars_eNB,
+		       &txdataF[1][slot_offset],
+		       amp,
+		       slot,
+		       0,
+		       1);
+
+      if (first_pilot_only == 0) {
+	// antenna 1 symbol 3 slot 0
 	lte_dl_cell_spec(phy_vars_eNB,
 			 &txdataF[1][slot_offset+(second_pilot*samples_per_symbol)],
 			 amp,
@@ -258,7 +260,8 @@ int generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 1);
       }
     }
+  }
 
-    return(0);
+  return(0);
 }
 

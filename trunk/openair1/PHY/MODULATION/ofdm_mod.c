@@ -55,7 +55,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
 #endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
-		 6,                 // number of symbols
+		 nsymb-1,//6,                 // number of symbols
 		 frame_parms->nb_prefix_samples,               // number of prefix samples
 		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 frame_parms->rev,           // bit-reversal permutation
@@ -138,14 +138,6 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
     //memset(temp,0,1<<log2fftsize);
     
-   
-#ifdef DEBUG_OFDM_MOD
-    for (j=0;j<(1<<log2fftsize);j++) {
-      msg("twiddle_ifft(%d) = (%d, %d),rev(%d) = %d\n", j, twiddle_ifft[2*j], twiddle_ifft[2*j+1],j,rev[j]);
-    }
-#endif
-    
-
   
     // Copy to frame buffer with Cyclic Extension
     // Note:  will have to adjust for synchronization offset!

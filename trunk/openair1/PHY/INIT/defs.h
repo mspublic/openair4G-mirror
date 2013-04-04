@@ -153,6 +153,27 @@ void phy_config_sib2_eNB(u8 Mod_id,
 @param physicalConfigDedicated PHY Configuration information
 
 */
+
+/**
+\brief Configure UE MBSFN common parameters. Invoked upon reception of SIB13 from eNB.
+@param Mod_id Instance ID for UE
+@param CH_index eNB id (for multiple eNB reception)
+@param mbsfn_Area_idx Index of MBSFN-Area for which this command operates
+@param mbsfn_AreaId_r9 MBSFN-Area Id
+*/
+
+void phy_config_sib13_ue(u8 Mod_id,u8 CH_index,int mbsfn_Area_idx,
+			 long mbsfn_AreaId_r9);
+
+/**
+\brief Configure eNB MBSFN common parameters. Invoked upon transmission of SIB13 from eNB.
+@param Mod_id Instance ID for eNB
+@param mbsfn_Area_idx Index of MBSFN-Area for which this command operates
+@param mbsfn_AreaId_r9 MBSFN-Area Id
+*/
+void phy_config_sib13_eNB(u8 Mod_id,int mbsfn_Area_idx,
+			  long mbsfn_AreaId_r9);
+
 void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated);
 

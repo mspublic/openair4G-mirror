@@ -55,7 +55,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->Nid_cell_mbsfn     = 0;
+  lte_frame_parms->Nid_cell_mbsfn     = 1;
   lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
@@ -141,7 +141,6 @@ int main(int argc, char **argv) {
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
-  unsigned int coded_bits_per_codeword;
  
   unsigned int trials,errs[4]={0,0,0,0};//,round_trials[4]={0,0,0,0};
   
@@ -393,11 +392,6 @@ int main(int argc, char **argv) {
     exit(-1);    
   }
 
-  coded_bits_per_codeword = get_G(&PHY_vars_UE->lte_frame_parms,
-				  PHY_vars_UE->lte_frame_parms.N_RB_DL,
-				  PHY_vars_UE->dlsch_ue_MCH[0]->rb_alloc,
-				  get_Qm(mcs),
-				  2,0,subframe);
 
   input_buffer_length = PHY_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS/8;
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
@@ -524,16 +518,24 @@ int main(int argc, char **argv) {
 	
 	
       }
-      dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,0,PHY_vars_UE->dlsch_ue_MCH[0],coded_bits_per_codeword,
+
+      PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,
+								 PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->nb_rb,
+								 PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->rb_alloc,
+								 get_Qm(PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->mcs),
+								 2,
+								 PHY_vars_UE->frame,subframe);
+      dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,1,PHY_vars_UE->dlsch_ue_MCH[0],
+			 PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G,
 			 PHY_vars_UE->lte_ue_pdsch_vars_MCH[0]->llr[0],0,subframe<<1);
       
       ret = dlsch_decoding(PHY_vars_UE,
 			   PHY_vars_UE->lte_ue_pdsch_vars_MCH[0]->llr[0],		 
 			   &PHY_vars_UE->lte_frame_parms,
 			   PHY_vars_UE->dlsch_ue_MCH[0],
+			   PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0],
 			   subframe,
-			   2,
-			   1);    
+			   0,0);    
       if (n_frames==1)
 	printf("MCH decoding returns %d\n",ret);
       if (ret == (1+MAX_TURBO_ITERATIONS))
@@ -546,9 +548,9 @@ int main(int argc, char **argv) {
 
 
   if (n_frames==1) {
-    printf("Dumping PMCH files ( G %d)\n",coded_bits_per_codeword);
+    printf("Dumping PMCH files ( G %d)\n",PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G);
     dump_mch(PHY_vars_UE,0,
-	     coded_bits_per_codeword);
+	     PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G);
   }
   printf("Freeing dlsch structures\n");
   free_eNB_dlsch(PHY_vars_eNB->dlsch_eNB_MCH);
