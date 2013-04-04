@@ -63,14 +63,14 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   else {
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
   }
-  //    printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
+  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
  
     for (j=0;j<32;j++,k++) {
       //            printf("scrambling %d : %d => ",k,e[k]);
       e[k] = (e[k]&1) ^ ((s>>j)&1);
-      //            printf("%d\n",e[k]);
+      //                  printf("%d\n",e[k]);
     }
    s = lte_gold_generic(&x1, &x2, 0);
   }
@@ -97,13 +97,13 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
     x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   else
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
-  //    printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
+  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
     for (j=0;j<32;j++,k++) {
-      //       printf("unscrambling %d : %d => ",k,llr[k]);
+      //               printf("unscrambling %d : %d => ",k,llr[k]);
       llr[k] = ((2*((s>>j)&1))-1)*llr[k];
-      //       printf("%d\n",llr[k]);
+      //             printf("%d\n",llr[k]);
     }
     s = lte_gold_generic(&x1, &x2, 0);
   }

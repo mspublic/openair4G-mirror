@@ -761,7 +761,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  generate_pilots_slot(phy_vars_eNB,
 			       phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			       AMP,
-			       next_slot);
+			       next_slot,1);
 
 #ifdef Rel10
 	  // get MCH from MAC
@@ -777,7 +777,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	generate_pilots_slot(phy_vars_eNB,
 			     phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 			     AMP,
-			     next_slot);
+			     next_slot,0);
 	
 	if (next_slot == 0) {
 	  

@@ -377,6 +377,7 @@ typedef struct
   int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_mch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
   u8               generate_prach;

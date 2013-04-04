@@ -275,11 +275,13 @@ void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
    @param txdataF Table of pointers for frequency-domain TX signals
    @param amp Amplitude of signal
    @param slot index (0..19)
+   @param first_pilot_only (0 no)
 */
 s32 generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
 			 s16 amp,
-			 u16 slot);
+			 u16 slot,
+			 int first_pilot_only);
 			 
 s32 generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 			 mod_sym_t **txdataF,
