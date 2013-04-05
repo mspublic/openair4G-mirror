@@ -22,19 +22,21 @@ void mexFunction( int nlhs, mxArray *plhs[],
     /* Declare */
 	unsigned char *input_buffer;
 	unsigned char *e; // encoded bits = output
-	unsigned char mcs;	
-	unsigned char mod_order;
-	unsigned char num_pdcch_symbols;
-	unsigned char harq_pid;
-	unsigned char subframe;
-	unsigned char Kmimo;
-	unsigned char Mdlharq;
+	unsigned char mcs=0;	
+	unsigned char mod_order=2;
+	unsigned char num_pdcch_symbols=1;
+	unsigned char harq_pid=0;
+	unsigned char subframe=0;
+	unsigned char Kmimo=0;
+	unsigned char Mdlharq=8;
 	unsigned char abstraction_flag;
 	int ret, input_buffer_length;
 	unsigned int G;
 	mxArray *tmp;
 	LTE_eNB_DLSCH_t* dlsch;
 	LTE_DL_FRAME_PARMS *frame_parms;
+	time_stats_t dlsch_rate_matching_stats, dlsch_turbo_encoding_stats, dlsch_interleaving_stats;
+	
 	
 	/* Check proper input and output. */
 	if(nrhs!=3)
@@ -167,7 +169,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	}
 	
  	mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
-	G = get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
+	G = get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,0,subframe);
 	
 	#ifdef DEBUG_DLSCH_ENCODING
 	mexPrintf("dlsch->current_harq_pid = %d\n", dlsch->current_harq_pid);
@@ -187,7 +189,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	e = (unsigned char*) mxGetPr(plhs[0]); 
         
     /* Algo */    	
-	ret = dlsch_encoding(input_buffer, frame_parms, num_pdcch_symbols, dlsch, subframe);		
+	ret = dlsch_encoding(input_buffer, frame_parms, num_pdcch_symbols, dlsch, 0, subframe,&dlsch_rate_matching_stats, &dlsch_turbo_encoding_stats, &dlsch_interleaving_stats);		
 	
 	/* Assign output */
 	memcpy(e,dlsch->e,G);
