@@ -157,6 +157,24 @@ wait_process_started () {
   return 0
 }
 
+wait_process_ended () {
+  if  [ -z "$1" ]
+  then
+    echo_error "WAITING FOR PROCESS START: NO PROCESS"
+    return 1
+  fi
+  pkill $1
+  ps -C $1 > /dev/null 2>&1
+  while [ $? -eq 0 ]; do
+    echo_warning "WAITING FOR $1 END"
+    pkill $1
+    sleep 2
+    ps -C $1 > /dev/null 2>&1
+  done
+  echo_success "PROCESS $1 ENDED"
+  return 0
+}
+
 assert() {
   # If condition false
   # exit from script with error message
@@ -177,13 +195,36 @@ assert() {
   fi
 }
 
-#bash_exec "set_openair"
+control_c()
+# run if user hits control-c
+{
+  echo -en "\n*** Exiting ***\n"
+  pkill oaisim
+  wait_process_ended oaisim
+  sleep 2
+  ip link set oai0 down
+  /sbin/rmmod $IP_DRIVER_NAME
+  exit $?
+  bash_exec "$IPTABLES -P INPUT ACCEPT"
+  bash_exec "$IPTABLES -F INPUT"
+  bash_exec "$IPTABLES -P OUTPUT ACCEPT"
+  bash_exec "$IPTABLES -F OUTPUT"
+  bash_exec "$IPTABLES -P FORWARD DROP"
+  bash_exec "$IPTABLES -F FORWARD"
+  bash_exec "$IPTABLES -t nat    -F"
+  bash_exec "$IPTABLES -t mangle -F"
+  bash_exec "$IPTABLES -t filter -F"
+}
+
+
 set_openair
 cecho "OPENAIR_DIR     = $OPENAIR_DIR" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
 cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
 cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
+
+trap ctrl_c INT
 
 
 echo "Bringup UE interface"
@@ -299,8 +340,9 @@ sleep 1
 # -y    -> destination ipv6 address
 # -r    -> radio bearer id
 bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x $ENB_IPv6      -y $UE_IPv6     -r 3"
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z64 -s $ENB_IPv4/32   -t $UE_IPv4/32  -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s $ENB_IPv4/32   -t $UE_IPv4/32  -r 3"
 bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -s 0.0.0.0/32     -t 0.0.0.0/32   -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -x 0::0/128       -y 0::0/128     -r 3"
 sleep 1
 
 echo "#####################################################################"
@@ -312,7 +354,8 @@ echo "ip route show table main"
 echo "---------------------------------------------------------------------"
 ip route show table main
 
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  -g3 -l3  > /dev/null"
-nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  -g3 -l3 > /dev/null
 
+nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  -g3 -l3 -D $EMULIF > /dev/null 2>&1
+#gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  -g3 -l3 -D $EMULIF
 
+control_c
