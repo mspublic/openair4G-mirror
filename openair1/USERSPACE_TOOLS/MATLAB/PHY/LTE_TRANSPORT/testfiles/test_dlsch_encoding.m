@@ -25,3 +25,8 @@ data0 = uint8(randi([0,255],codeword.TBS/8+4,1));
 
 %% mex
 edata0 = dlsch_encoding(data0,simparms,codeword);
+llr = int16((double(edata0)-0.5)*128);
+ret0 = dlsch_decoding(llr,simparms,codeword);
+
+%% Print
+disp(ret0);

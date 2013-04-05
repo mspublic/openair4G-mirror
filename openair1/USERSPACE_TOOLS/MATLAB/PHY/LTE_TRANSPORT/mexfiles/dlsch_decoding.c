@@ -16,12 +16,13 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	unsigned char Kmimo;
 	unsigned char Mdlharq;
 	unsigned char abstraction_flag;
-	unsigned int G;
 	LTE_UE_DLSCH_t* dlsch;
 	LTE_DL_FRAME_PARMS *frame_parms;
+	PHY_VARS_UE *phy_vars_ue;
 	
 	// Init CRC tables
 	crcTableInit();	
+	init_td();
 	
 	/* Allocate input */
 	dlsch_llr = (short*) mxGetData(prhs[0]);
@@ -40,14 +41,16 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	dlsch->harq_processes[harq_pid]->Nl = (unsigned char) mxGetScalar(mxGetField(prhs[2],0,"Nl"));
 	dlsch->harq_processes[harq_pid]->Ndi = (unsigned char) mxGetScalar(mxGetField(prhs[2],0,"Ndi"));
 	dlsch->harq_processes[harq_pid]->mcs = mcs;
-	dlsch->rb_alloc[0] = (unsigned int) mxGetScalar(mxGetField(prhs[1],0,"rb_alloc"));
-	dlsch->nb_rb = (unsigned short) mxGetScalar(mxGetField(prhs[1],0,"nb_rb"));
-		
-	dlsch->harq_processes[harq_pid]->TBS = dlsch_tbs25[get_I_TBS(mcs)][dlsch->nb_rb-1];
+	dlsch->harq_processes[harq_pid]->rb_alloc[0] = (unsigned int) mxGetScalar(mxGetField(prhs[1],0,"rb_alloc"));
+	dlsch->harq_processes[harq_pid]->nb_rb = (unsigned short) mxGetScalar(mxGetField(prhs[1],0,"nb_rb"));
 				
+	dlsch->harq_processes[harq_pid]->TBS = dlsch_tbs25[get_I_TBS(mcs)][dlsch->harq_processes[harq_pid]->nb_rb-1];
+				
+	
 	num_pdcch_symbols = (unsigned char) mxGetScalar(mxGetField(prhs[1],0,"num_pdcch_symbols"));
 	subframe = (unsigned char) mxGetScalar(mxGetField(prhs[1],0,"subframe"));
 	
+	phy_vars_ue = malloc(sizeof(PHY_VARS_UE));	
 	
 	// Create a LTE_DL_FRAME_PARMS structure and assign required params
 	frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));	
@@ -57,22 +60,23 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	frame_parms->Ncp = (unsigned char) mxGetScalar(mxGetField(prhs[1],0,"Ncp"));
 	
  	mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
-	G = get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
+	dlsch->harq_processes[harq_pid]->G = get_G(frame_parms,dlsch->harq_processes[harq_pid]->nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,num_pdcch_symbols,0,subframe);
 	
-	if (G != mxGetM(prhs[0])) {
+	if (dlsch->harq_processes[harq_pid]->G != mxGetM(prhs[0])) {
 		free_ue_dlsch(dlsch);
 		free(frame_parms);
 		mexErrMsgTxt("Length of the LLR vector is incorrect.");		
 	}
-			
+	
 	/* Allocate Output */	
 	plhs[0] = mxCreateNumericMatrix(1, 1, mxUINT32_CLASS, mxREAL);
 	ret = (unsigned int*) mxGetPr(plhs[0]);         	
 	
     /* Algo */	
-	*ret = dlsch_decoding(dlsch_llr, frame_parms, dlsch, subframe, num_pdcch_symbols);
+	*ret = dlsch_decoding(phy_vars_ue, dlsch_llr, frame_parms, dlsch, dlsch->harq_processes[harq_pid], subframe, dlsch->current_harq_pid, 1);
 					
 	/* free dlsch */
 	free_ue_dlsch(dlsch);
 	free(frame_parms);
+	free(phy_vars_ue);
 }
