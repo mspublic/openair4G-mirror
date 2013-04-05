@@ -321,9 +321,10 @@ assert "`sysctl -n net.ipv4.conf.all.proxy_arp` -eq 1" $LINENO
 # -x    -> source ipv6 address
 # -y    -> destination ipv6 address
 # -r    -> radio bearer id
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x $UE_IPv6     -y $ENB_IPv6     -r 3"
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z64 -s $UE_IPv4/32  -t $ENB_IPv4/32  -r 3"
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -s 0.0.0.0/32   -t 0.0.0.0/32   -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x $UE_IPv6/128 -y $ENB_IPv6/128 -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s $UE_IPv4/32  -t $ENB_IPv4/32  -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -x 0::0/128     -y 0::0/128      -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32   -t 0.0.0.0/32    -r 3"
 sleep 1
 
 echo "   External Interface:  $EXTIF"
@@ -415,10 +416,7 @@ ip route show table main
 
 trap ctrl_c INT
 
-echo "to see UE stats, please run : watch_ue script"
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3  > /dev/null"
-nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3 > /dev/null
-#gdb $OPENAIR_TARGETS/SIMU/USER/oaisim
+nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p2 -g3 -l3 > /dev/null 2>&1
 echo "End"
 ctrl_c
 
