@@ -51,11 +51,11 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 Ns) {
 
   int i,j,k=0;
-  u8 reset;
+  //  u8 reset;
   u32 x1, x2, s=0;
   u8 *e=dlsch->e;
 
-  reset = 1;
+  //  reset = 1;
   // x1 is set in lte_gold_generic
   if (mbsfn_flag == 0) {
     x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
@@ -63,7 +63,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   else {
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
   }
-  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
+  //  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
  
@@ -87,17 +87,17 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 Ns) {
 
   int i,j,k=0;
-  u8 reset;
+  //  u8 reset;
   u32 x1, x2, s=0;
   
-  reset = 1;
+  //  reset = 1;
   // x1 is set in first call to lte_gold_generic
 
   if (mbsfn_flag == 0)
     x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   else
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
-  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
+  //  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
     for (j=0;j<32;j++,k++) {
