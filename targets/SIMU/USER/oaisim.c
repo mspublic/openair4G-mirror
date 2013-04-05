@@ -343,7 +343,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
   
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:")) != -1) {
 
     switch (c) {
     case 'L':                   // set FDD
@@ -480,8 +480,8 @@ main (int argc, char **argv)
       oai_emulation.info.multicast_group = atoi (optarg);
       break;
     case 'D':
-      oai_emulation.info.multicast_ifname = malloc(4*sizeof(char)); // allocate 4 byte for the interface name
-      oai_emulation.info.multicast_ifname=optarg;
+    	oai_emulation.info.multicast_ifname = malloc (strlen(optarg) + 1);
+        strcpy(oai_emulation.info.multicast_ifname, optarg);
       break;
     case 'B':
       oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = optarg;
