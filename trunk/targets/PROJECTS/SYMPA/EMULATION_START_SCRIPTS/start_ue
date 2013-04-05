@@ -18,7 +18,7 @@ UE_IPv4="10.0.1.2"
 UE_IPv6="2001:1::2"
 UE_IPv6_CIDR=$UE_IPv6"/64"
 UE_IPv4_CIDR=$UE_IPv4"/24"
-UE_IMEI="3,9,1,8,3,6,7,3,0,0,0,0,0,0"
+UE_IMEI="3,9,1,8,3,6,7,3,0,2,0,0,0,0"
 #----------------------------------------------------------
 
 #         +-------+                     +-------+ 
@@ -226,9 +226,10 @@ bash_exec "ip addr add dev $LTEIF $UE_IPv6_CIDR"
 # -x    -> source ipv6 address
 # -y    -> destination ipv6 address
 # -r    -> radio bearer id
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x $UE_IPv6     -y $ENB_IPv6     -r 3"
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z64 -s $UE_IPv4/32  -t $ENB_IPv4/32  -r 3"
-bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -s 0.0.0.0/32   -t 0.0.0.0/32   -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f0 -i0 -z0  -x $UE_IPv6/128 -y $ENB_IPv6/128 -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f2 -i0 -z0  -s $UE_IPv4/32  -t $ENB_IPv4/32  -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f4 -i0 -z64 -x 0::0/128     -y 0::0/128      -r 3"
+bash_exec "$OPENAIR2_DIR/NAS/DRIVER/LITE/RB_TOOL/rb_tool -a -c0 -f6 -i0 -z64 -s 0.0.0.0/32   -t 0.0.0.0/32    -r 3"
 sleep 1
 
 bash_exec "sysctl -w net.ipv4.conf.all.log_martians=1"
@@ -248,10 +249,7 @@ ip route show table main
 
 trap ctrl_c INT
 
-echo "to see UE stats, please run : watch_ue script"
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3  > /dev/null"
-nice -10 $OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2 -g3 -l3 > /dev/null
-#gdb $OPENAIR_TARGETS/SIMU/USER/oaisim
+nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p2 -g3 -l3 -D $EMULIF > /dev/null 2>&1
 echo "End"
 ctrl_c
 
