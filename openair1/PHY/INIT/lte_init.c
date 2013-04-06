@@ -459,6 +459,18 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
     
 }
 
+void  phy_config_cornti (u8 Mod_id,u8 eNB_flag, u8 index, u16 co_RNTI, u16 vlid){
+  int  nb_corntis=0;
+  if (eNB_flag == 0 ) {
+    nb_corntis = PHY_vars_UE_g[Mod_id]->dlsch_ue[vlid][0]->corntis.count;
+    PHY_vars_UE_g[Mod_id]->dlsch_ue[vlid][0]->corntis.array[nb_corntis] = co_RNTI;
+    PHY_vars_UE_g[Mod_id]->dlsch_ue[vlid][0]->corntis.count++;
+  }else {
+    nb_corntis = PHY_vars_eNB_g[Mod_id]->dlsch_eNB[vlid][0]->corntis.count;
+    PHY_vars_eNB_g[Mod_id]->dlsch_eNB[vlid][0]->corntis.array[nb_corntis] = co_RNTI;
+    PHY_vars_eNB_g[Mod_id]->dlsch_eNB[vlid][0]->corntis.count++;
+  }
+}
 
 void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 

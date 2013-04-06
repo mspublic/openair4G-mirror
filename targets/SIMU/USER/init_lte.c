@@ -26,7 +26,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 			   u8 transmission_mode,
 			   u8 abstraction_flag) {
 
-  int i,j;
+  int i,j,vlink_id;
   PHY_VARS_eNB* PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
   memset(PHY_vars_eNB,0,sizeof(PHY_VARS_eNB));
   PHY_vars_eNB->Mod_id=eNB_id;
@@ -74,7 +74,26 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   printf("eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
   PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
   printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
-  
+   
+  for(vlink_id = 0; vlink_id < MAX_VLINK_PER_CH; vlink_id++) {
+    for(j = 0; j < 2; j++) {
+      PHY_vars_eNB->dlsch_eNB_co[vlink_id][j] = new_eNB_dlsch(1, 1, abstraction_flag);
+      if(!PHY_vars_eNB->dlsch_eNB_co[vlink_id][j]) {
+	LOG_E(PHY, "Can't get ue dlsch_eNB_co structure\n");
+	exit(-1);
+      }
+      else
+	LOG_D(PHY, "dlsch_eNB_co[%d][%d] => %p\n", eNB_id, vlink_id, PHY_vars_eNB->dlsch_eNB_co[vlink_id][j]);
+    }
+
+    PHY_vars_eNB->ulsch_eNB_co[vlink_id] = new_eNB_ulsch(8, abstraction_flag);
+    if(!PHY_vars_eNB->ulsch_eNB_co[vlink_id]) {
+      LOG_E(PHY, "Can't get ulsch_eNB_co structure\n");
+      exit(-1);
+    } else 
+      LOG_D(PHY, "ulsch_eNB_co[%d][%d] => %p\n", eNB_id, vlink_id, PHY_vars_eNB->dlsch_eNB_co[vlink_id][j]);
+  }
+
   PHY_vars_eNB->rx_total_gain_eNB_dB=150;
   
   for(i=0;i<NUMBER_OF_UE_MAX;i++)

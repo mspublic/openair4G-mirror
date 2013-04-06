@@ -85,17 +85,23 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].macConfig=mac_MainConfig;
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].measGapConfig=measGapConfig;
       
-      if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
-	UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicBSR_Timer = (u16) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
-      else
-	UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicBSR_Timer = (u16) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+      if (mac_MainConfig->ul_SCH_Config) {
+	
+	if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicBSR_Timer = (u16) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
+	else
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicBSR_Timer = (u16) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
 
-      if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx)
-	UE_mac_inst[Mod_id].scheduling_info[eNB_index].maxHARQ_Tx     = (u16) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
-      else
-	UE_mac_inst[Mod_id].scheduling_info[eNB_index].maxHARQ_Tx     = (u16) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].retxBSR_Timer     = (u16) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+	if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx)
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].maxHARQ_Tx     = (u16) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
+	else
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].maxHARQ_Tx     = (u16) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+      	
+	if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer)
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].retxBSR_Timer     = (u16) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+	else 
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].retxBSR_Timer     = (u16)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+      }
 #ifdef Rel10   
       if (mac_MainConfig->sr_ProhibitTimer_r9) 
 	UE_mac_inst[Mod_id].scheduling_info[eNB_index].sr_ProhibitTimer  = (u16) *mac_MainConfig->sr_ProhibitTimer_r9;
@@ -123,8 +129,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicPHR_Timer);
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_id].scheduling_info[eNB_index].prohibitPHR_Timer);
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_id].scheduling_info[eNB_index].PathlossChange);
-      LOG_D(MAC,"[UE %d] config PHR (%d) for eNB %d: periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
-	    Mod_id,mac_MainConfig->phr_Config->present, eNB_index, 
+      LOG_D(MAC,"[UE %d] config PHR for eNB %d: periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
+	    Mod_id,eNB_index, 
 	    UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicPHR_SF,
 	    UE_mac_inst[Mod_id].scheduling_info[eNB_index].prohibitPHR_SF,
 	    UE_mac_inst[Mod_id].scheduling_info[eNB_index].PathlossChange_db);
@@ -154,14 +160,30 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 }
 
 int rrc_mac_config_co_req(u8 Mod_id,
-			  u8 eNB_index,
+			  u8 eNB_flag, 
+			  u8 index,
 			  u16 co_RNTI,
 			  u8 virtualLinkID) {
   
   int ret = 0;
+  int nb_corntis=0;
   
-  ret = mac_forwarding_add_entry(Mod_id, eNB_index, virtualLinkID, co_RNTI);
+  ret = mac_forwarding_add_entry(Mod_id, eNB_flag, index, virtualLinkID, co_RNTI);
   
+  if (eNB_flag == 0 ) { // this is a UE
+    nb_corntis = UE_mac_inst[Mod_id].corntis.count;
+    UE_mac_inst[Mod_id].corntis.array[nb_corntis] = co_RNTI;
+    UE_mac_inst[Mod_id].corntis.count++;
+    mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI,virtualLinkID);
+   
+  } else { // this is an eNB
+    nb_corntis = eNB_mac_inst[Mod_id].UE_template[index].corntis.count;
+    eNB_mac_inst[Mod_id].UE_template[index].corntis.array[nb_corntis] = co_RNTI;
+    eNB_mac_inst[Mod_id].UE_template[index].corntis.count++;
+    mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI, virtualLinkID);  
+  
+  }
+      
   return ret;
 }
 

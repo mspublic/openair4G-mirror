@@ -78,7 +78,7 @@ MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
 MAC_OBJS += $(MAC_DIR)/config.o
 
 #ifeq ($(OPENAIR_MESH),1)
-#MAC_OBJS += $(MAC_DIR)/forwarding_buffer.o
+MAC_OBJS += $(MAC_DIR)/forwarding_buffer.o
 MAC_OBJS += $(MAC_DIR)/virtual_link.o
 #endif
 

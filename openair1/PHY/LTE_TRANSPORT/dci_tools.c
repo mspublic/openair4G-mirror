@@ -2363,7 +2363,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 }
 
 int get_nb_rbg(int n_rb) {
-  int size = 0;
+  int size = 1;
   int n_rbg;
   if(n_rb <= 10)
     size = 1;
@@ -2373,7 +2373,7 @@ int get_nb_rbg(int n_rb) {
     size = 3;
   else if(n_rb <= 110)
     size = 4;
-
+ 
   n_rbg = n_rb/size;
   if(n_rb > n_rbg*size)
     n_rbg++;
@@ -2381,7 +2381,7 @@ int get_nb_rbg(int n_rb) {
 }
 
 int get_rbg_size(int n_rb, int rbg) {
-  int size = 0;
+  int size = 1;
   int nb_rbg = get_nb_rbg(n_rb);
   if(n_rb <= 10)
     size = 1;

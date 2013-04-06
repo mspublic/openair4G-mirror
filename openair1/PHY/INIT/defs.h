@@ -121,9 +121,8 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 void phy_config_sib2_eNB(u8 Mod_id,
 			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
-
 /*!
-\fn void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
+\fn void phy_config_dedicated_ue (u8 Mod_id,u8 CH_index,
  			         struct PhysicalConfigDedicated *physicalConfigDedicated)
 \brief Configure UE dedicated parameters. Invoked upon reception of RRCConnectionSetup or RRCConnectionReconfiguration from eNB.
 @param Mod_id Instance ID for eNB
@@ -133,6 +132,18 @@ void phy_config_sib2_eNB(u8 Mod_id,
 */
 void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated);
+
+/*!
+\fn void void phy_config_dedicated_ue(u8 Mod_id,u8 eNB_flag,u8 index, u16 co_RNTI, u16 vlid);
+\brief Configure cornti for both UE/eNB when establishing a vlink
+@param Mod_id Instance ID for eNB
+@param eNB_flag flag indicating the node type
+@param CH_index Index of eNB for this configuration
+@param co_RNTI collaborative rnti
+@param vlid virtual link id 
+
+*/
+void phy_config_cornti(u8 Mod_id,u8 eNB_flag,u8 index, u16 co_RNTI, u16 vlid);
 
 /** \brief Configure RRC inter-cell measurements procedures
 @param Mod_id Index of UE

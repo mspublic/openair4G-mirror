@@ -121,8 +121,14 @@ typedef struct
     /// Send a received DLSCH sdu to MAC
     void (*ue_send_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
-    /// Retrieve ULSCH sdu from MAC
+    /// Send a received DLSCH sdu to MAC for a virtual link
+    void (*ue_send_sdu_co)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 cornti);
+
+   /// Retrieve ULSCH sdu from MAC for a physical p2p link
     void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+    
+    /// Retrieve ULSCH sdu from MAC for a virtual link
+    void (*ue_get_sdu_co)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen,u16 seq_num);
 
     /// Retrieve RRCConnectionReq from MAC
     PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);
@@ -148,7 +154,10 @@ typedef struct
 			       TDD_Config_t *tdd_config,
 			       u8 SIwindowsize,
 			       u16 SIperiod);
-    
+
+    // Configure corntis for vlink
+    void (*phy_config_cornti) (u8 Mod_id,u8 eNB_flag,u8 index, u16 co_RNTI, u16 vlid);
+
     /// Configure Common PHY parameters from SIB2
     void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
 			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);

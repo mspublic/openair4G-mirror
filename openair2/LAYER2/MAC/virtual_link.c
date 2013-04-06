@@ -44,8 +44,6 @@
 #include "RRC/LITE/defs.h"
 
 #include "virtual_link.h" 
-//extern eNB_MAC_INST *eNB_mac_inst; 
-//extern UE_MAC_INST *UE_mac_inst; 
 
 extern inline unsigned int taus(void);
 
@@ -53,8 +51,11 @@ extern inline unsigned int taus(void);
  * Global variables *
  ********************/
 
-struct virtual_links vlinksTable[NB_MAX_CH];
-struct forwarding_Table forwardingTable[NB_MAX_CH];
+virtual_links vlinksTable[NB_MAX_CH];
+// for each CH there is a dedicated FT
+forwarding_Table eNB_forwardingTable[NB_MAX_CH];
+forwarding_Table UE_forwardingTable[NB_MAX_MR];
+
 //struct cornti_array corntis;
 
 //LOLAmesh
@@ -103,13 +104,21 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
 
   /* CORNTIs tables initialization */
   for (i=0;i<NB_eNB_INST;i++) {
+    //eNB_mac_inst[i].corntis.count=0;
     for (j=0;j<NB_UE_INST;j++) {
-      //MAC layer structure
+      //MAC layer structure :
       eNB_mac_inst[i].UE_template[j].corntis.count = 0;
       UE_mac_inst[j].corntis.count = 0;
+      
       //PHY layer structure
-      PHY_vars_eNB_g[i]->dlsch_eNB[j][0]->corntis.count = 0;
-      PHY_vars_UE_g[j]->dlsch_ue[i][0]->corntis.count = 0;
+      // mac_xface->phy_config_cornti(i, 1, j, j,j);
+      // mac_xface->phy_config_cornti(j,0,i,i,i); 
+      PHY_vars_eNB_g[i]->dlsch_eNB_co[j][0]->corntis.count = 0;
+      PHY_vars_UE_g[j]->dlsch_ue_co[i][0]->corntis.count = 0;
+      for (k=0; k <MAX_VLINK_PER_CH; k++ ) {
+	eNB_mac_inst[i].UE_template[j].corntis.array[k]=0;
+	eNB_mac_inst[i].UE_template[j].corntis.sn[k]=0;
+      }
     }
   }
   
@@ -163,15 +172,16 @@ int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe ){
 	  cornti = (u16)taus();
 	  
 	  /* Keep track of the CORNTI */
-	  //MAC layer structure
-	  nb_corntis = eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count;
-	  eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.array[nb_corntis] = cornti;
-	  eNB_mac_inst[Mod_id].UE_template[UE_index].corntis.count++;
+	  	  //MAC layer structure
+	 /*  nb_corntis = eNB_mac_inst[Mod_id].corntis.count;
+	  eNB_mac_inst[Mod_id].corntis.array[nb_corntis] = cornti;
+	  //eNB_mac_inst[Mod_id].corntis.count++;
 	  //PHY layer structure
 	  nb_corntis = PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count;
 	  PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.array[nb_corntis] = cornti;
 	  PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count++;
-	  
+	  */	  
+	  rrc_mac_config_co_req (Mod_id, 1,UE_index,cornti, vlid);
 	  /* For all the MR of the VL we establish a CO-DRB */
 	  for (j=0;j<vlinksTable[Mod_id].array[i].MRarray.count;j++) {
 
@@ -182,7 +192,9 @@ int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe ){
 	    rrc_eNB_generate_RRCConnectionReconfiguration_co(Mod_id,UE_index,frame,cornti,vlid);
 	    
 	  }// end for (j=0;j<vlinksTable[Mod_id].array[i].MRList.count;j++)
-	  
+
+
+
 	  /* We mark the virtual link as established */
 	  vlinksTable[Mod_id].array[i].status = VLINK_CONNECTED;
 	  
@@ -207,7 +219,8 @@ int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe ){
 /* Add a new entry or fill a new entry in the forwarding table
  * returns 0 = entry added / -1 = error */
 int mac_forwarding_add_entry(u8 Mod_id,
-			     u8 eNB_index,
+			     u8 eNB_flag,
+			     u8 index, 
 			     u8 vlid,
 			     u16 cornti) {
   
@@ -215,27 +228,30 @@ int mac_forwarding_add_entry(u8 Mod_id,
   int i = 0;
   int existing_entry = 0;
   u8 current_vlid = 0;
-  
+
+  forwarding_Table *ft= (eNB_flag==1) ? &eNB_forwardingTable[Mod_id] : &UE_forwardingTable[Mod_id];
+
   /* We look for an existing entry */
-  while ((i<forwardingTable->count) && (current_vlid != vlid)) {
+  while ((i<ft->count) && (current_vlid != vlid)) {
     
-    current_vlid = forwardingTable->array[i].vlid;
+    current_vlid = ft->array[i].vlid;
     
     /* We ve found it */
     if (current_vlid == vlid) {
       
       /* We fill the cornti which has an error value */
-      if (forwardingTable->array[i].cornti1 == 0) {
-	forwardingTable->array[i].cornti1 = cornti;
+      if (ft->array[i].cornti1 == 0) {
+	ft->array[i].cornti1 = cornti;
 	existing_entry = 1;
       }
       
-      if (forwardingTable->array[i].cornti2 == 0) {
-	forwardingTable->array[i].cornti2 = cornti;
+      if (ft->array[i].cornti2 == 0) {
+	ft->array[i].cornti2 = cornti;
 	existing_entry = 1;
       }
       
-      LOG_I(MAC,"[CONFIG][UE %d][TCS DEBUG] Configuring MAC forwarding table from eNB %d, existing entry found in the table => VLID = %u and CO-RNTI1 = %u CO-RNTI2 = %u\n",Mod_id,eNB_index,vlid,forwardingTable->array[i].cornti1,forwardingTable->array[i].cornti2);
+      LOG_I(MAC,"[%s %d][FT] Configuring MAC forwarding table from %s %d, existing entry found in the table => VLID = %u and CO-RNTI1 = %x CO-RNTI2 = %x\n",
+	    (eNB_flag ==1) ? "eNB" : "UE", Mod_id,(eNB_flag ==1) ? "UE" : "eNB", index, vlid,ft->array[i].cornti1,ft->array[i].cornti2);
       
     }//end if (current_vlid == vlid)
     
@@ -245,12 +261,13 @@ int mac_forwarding_add_entry(u8 Mod_id,
   /* There's no existing entry, we shall create a new one */
   if (existing_entry == 0) {
     /* There's some room left in the forwarding table */
-    if (forwardingTable->count < MAX_FW_ENTRY) {
-      forwardingTable->array[forwardingTable->count].vlid = vlid;
-      forwardingTable->array[forwardingTable->count].cornti1 = cornti;
-      forwardingTable->array[forwardingTable->count].cornti2 = 0; // error value
-      LOG_I(MAC,"[CONFIG][UE %d][TCS DEBUG] Configuring MAC forwarding table from eNB %d, creating a new entry in the table => VLID = %u and CO-RNTI1 = %u CO-RNTI2 = %u\n",Mod_id,eNB_index,forwardingTable->array[forwardingTable->count].vlid,forwardingTable->array[forwardingTable->count].cornti1, forwardingTable->array[forwardingTable->count].cornti2);
-      forwardingTable->count++;
+    if (ft->count < MAX_FW_ENTRY) {
+      ft->array[ft->count].vlid = vlid;
+      ft->array[ft->count].cornti1 = cornti;
+      ft->array[ft->count].cornti2 = 0; // error value
+      LOG_I(MAC,"[%s %d][FT] Configuring MAC forwarding table for %s %d, creating a new entry in the table => VLID = %u and CO-RNTI1 = %x CO-RNTI2 = %x\n",
+	    (eNB_flag ==1) ? "eNB" : "UE", Mod_id,(eNB_flag ==1) ? "UE" : "eNB", index, ft->array[ft->count].vlid,ft->array[ft->count].cornti1, ft->array[ft->count].cornti2);
+      ft->count++;
     }
     /* The forwarding table is full */
     else {
@@ -275,7 +292,7 @@ int mac_forwarding_remove_entry(u8 vlid) {
 /* Get the output CORNTI associated to an input CORNTI
  * returns output CORNTI*/
 int mac_forwarding_get_output_CORNTI(u8 Mod_id,
-				     u8 eNB_index,
+				     u8 eNB_flag,
 				     u8 vlid,
 				     u16 cornti) {
   
@@ -283,21 +300,23 @@ int mac_forwarding_get_output_CORNTI(u8 Mod_id,
   int i = 0;
   int output_cornti = -1;
   
+  forwarding_Table *ft= (eNB_flag==1) ? &eNB_forwardingTable[Mod_id] : &UE_forwardingTable[Mod_id];
+
   /* We look for an existing entry */
-  while ((i<forwardingTable->count) && (current_vlid != vlid)) {
+  while ((i<ft->count) && (current_vlid != vlid)) {
     
-    current_vlid = forwardingTable->array[i].vlid;
+    current_vlid = ft->array[i].vlid;
     
     /* We've found it */
     if (current_vlid == vlid) {
       
       /* We fill the cornti which has an error value */
-      if (forwardingTable->array[i].cornti1 == cornti) {
-	output_cornti = forwardingTable->array[i].cornti2;
+      if (ft->array[i].cornti1 == cornti) {
+	output_cornti = ft->array[i].cornti2;
       }
       
-      if (forwardingTable->array[i].cornti2 == cornti) {
-	output_cornti = forwardingTable->array[i].cornti1;
+      if (ft->array[i].cornti2 == cornti) {
+	output_cornti = ft->array[i].cornti1;
       }
       
     }//end if (current_vlid == vlid)
@@ -309,5 +328,36 @@ int mac_forwarding_get_output_CORNTI(u8 Mod_id,
   /* If -1 is returned, the entry is not yet initialized completely
    * or has not been found */
   return output_cornti;
+  
+}
+
+//TCS LOLAmesh
+/* Get the output CORNTI associated to an input CORNTI
+ * returns output CORNTI*/
+int mac_forwarding_get_vlid(u8 Mod_id,
+			    u8 eNB_flag,
+			    u16 cornti) {
+  
+  u8 vlid = 0;
+  int i = 0;
+
+  forwarding_Table *ft= (eNB_flag==1) ? &eNB_forwardingTable[Mod_id] : &UE_forwardingTable[Mod_id];
+ 
+  /* We look for an existing entry */
+  while (i<ft->count ) {
+    
+    /* We fill the cornti which has an error value */
+    if ((ft->array[i].cornti1 == cornti) || (ft->array[i].cornti2 == cornti)) {
+      vlid = ft->array[i].vlid;
+      break;
+    }
+    
+    i++;
+  }//end while ((i<MAX_FW_ENTRY) || (current_vlid != vlid))
+  
+  
+  /* If -1 is returned, the entry is not yet initialized completely
+   * or has not been found */
+  return vlid;
   
 }

@@ -601,14 +601,17 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
     DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
   }
   *DRB_config = DRB_config2;
+  /*  } else
+    DRB_config2=*DRB_config; 
+  */ 
   // RadioResourceConfigDedicated->DRBToAddModList->DRBToAddMod
   // drb identity
   DRB_config2->drb_Identity = 1; ///TCS LOLAmesh RB_id 0 since this is the first collaborative RB
 	// logical channel ID
   lcid = CALLOC(1,sizeof(*lcid));
-  *lcid = 3; //we reuse drb lcid values (i.e 3 to 10). 3 correspond to the first codrb and it is stored in the position (11(nb of lcid) * 8(nb max UE)) = 88, so it i shifted of 85 postions
+  *lcid = DTCH+vlid; //we reuse drb lcid values (i.e 3 to 10). 3 correspond to the first codrb and it is stored in the position (11(nb of lcid) * 8(nb max UE)) = 88, so it i shifted of 85 postions
   DRB_config2->logicalChannelIdentity = lcid;
-  // rlc config
+   // rlc config
   DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
   DRB_config2->rlc_Config   = DRB_rlc_config;
   DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
@@ -624,7 +627,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
   DRB_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
   DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
   logicalchannelgroup_drb = CALLOC(1,sizeof(long));
-  *logicalchannelgroup_drb=0;
+  *logicalchannelgroup_drb=2;
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
   // CO-RNTI
   coRNTI = CALLOC(1,sizeof(*coRNTI));
@@ -1188,12 +1191,12 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   //TCS LOLAmesh
   //loop through CODRBs and establish if necessary
 
-  for (i=0;i<4;i++) { // num max CODRB = 4
+  for (i=0;i<MAX_NUM_CO_RB;i++) { // num max CODRB = 4
 
     if (eNB_rrc_inst[Mod_id].CODRB_config[i]) {
       //TCS LOLAmesh
       DRB_id = (long)eNB_rrc_inst[Mod_id].CODRB_config[i]->drb_Identity - 1;
-      logical_channel_id = ((u32)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity) + CO_LCID_SHIFT;
+      logical_channel_id = ((u32)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity) + MAX_NUM_RB * NUMBER_OF_UE_MAX ;// + CO_LCID_SHIFT;
       
       if (eNB_rrc_inst[Mod_id].CODRB_active[i] == 0) {
 	
@@ -1206,6 +1209,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 	//DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity;
 	DRB2LCHAN[i] = (u8)logical_channel_id;
 	rrc_mac_config_req(Mod_id,1,UE_index,0,(RadioResourceConfigCommonSIB_t *)NULL,eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],(MeasObjectToAddMod_t **)NULL,eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],DRB2LCHAN[i],eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelConfig,eNB_rrc_inst[Mod_id].measGapConfig[UE_index],(TDD_Config_t *)NULL,(u8 *)NULL,(u16 *)NULL);
+
+	//rrc_mac_config_co_req (Mod_id, 1,UE_index,cornti, vlid);
+
       }// end if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0)
       
       // CODRB has already been configured
