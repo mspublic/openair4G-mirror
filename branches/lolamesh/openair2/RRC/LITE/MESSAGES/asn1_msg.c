@@ -891,22 +891,21 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer, uint8_t isCODRB
   rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = 0x2;
   rrcConnectionReconfigurationComplete->criticalExtensions.present = RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
 
-  //TCS LOLAmesh
   //Collaborative RB acknowledged
-	is_codrb = CALLOC(1,sizeof(*is_codrb));
-	*is_codrb = (long)isCODRB;
-	virtuallink_id = CALLOC(1,sizeof(*virtuallink_id));
-	*virtuallink_id = (long)virtualLinkID;
+  is_codrb = CALLOC(1,sizeof(*is_codrb));
+  *is_codrb = (long)isCODRB;
+  virtuallink_id = CALLOC(1,sizeof(*virtuallink_id));
+  *virtuallink_id = (long)virtualLinkID;
 
-	rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.isCODRB = is_codrb;
-	rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.virtualLinkId = virtuallink_id;
-	rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
-
-	enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
-					 (void*)&ul_dcch_msg,
-					 buffer,
-					 100);
-
+  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.isCODRB = is_codrb;
+  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.virtualLinkId = virtuallink_id;
+  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
+  
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				   (void*)&ul_dcch_msg,
+				   buffer,
+				   100);
+  
 #ifdef USER_MODE
  LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif

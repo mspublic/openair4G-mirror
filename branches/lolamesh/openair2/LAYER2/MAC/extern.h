@@ -48,6 +48,7 @@ extern unsigned char NB_INST;
 #endif
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
+//extern unsigned char NB_vUE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 
 #else
@@ -81,9 +82,10 @@ extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 extern DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
 
-extern struct virtual_links vlinksTable[NB_MAX_CH];
+extern virtual_links vlinksTable[NB_MAX_CH];
 // mac layer forwarding table
-extern struct forwarding_Table forwardingTable[NB_MAX_CH];
+extern forwarding_Table eNB_forwardingTable[NB_MAX_CH];
+extern forwarding_Table UE_forwardingTable[NB_MAX_MR];
 // CO-RNTIs of the UE
 //extern struct cornti_array corntis;
 #endif //DEF_H

@@ -63,53 +63,57 @@
 
 /* Number max of CH in OpenAirInterface */
 #define NB_MAX_CH 7
+#define NB_MAX_MR 16
 
 /*****************************
  * Structures and data types *
  *****************************/
-
+// MAC structure 
 /* virtual link and collaborative RNTI definition */
 struct mr_array {
 	int count; /* Nb of MR currently in the list */
 	unsigned char array[MAX_MR_PER_VLINK]; /* List of UE_index */
 };
 
-struct virtual_link {
-	unsigned char vlinkID;
-	unsigned short PCellIdsourceCH;
-	unsigned short PCellIddestCH;
-	struct mr_array MRarray;
-	unsigned char status;
+typedef struct  {
+  unsigned char vlinkID;
+  unsigned short PCellIdsourceCH;
+  unsigned short PCellIddestCH;
+  struct mr_array MRarray;
+  unsigned char status;
+  
+  /* For now M-TMSI replaced by UE_indexes */
+  //unsigned int MRMTMSIlist[MAX_MR_PER_VLINK];
+}virtual_link;
 
-	/* For now M-TMSI replaced by UE_indexes */
-	//unsigned int MRMTMSIlist[MAX_MR_PER_VLINK];
-};
-
-struct virtual_links {
+typedef struct  {
 	int count; //the number of virtual link in the table
-	struct virtual_link array[MAX_VLINK_PER_CH];
-};
+	virtual_link array[MAX_VLINK_PER_CH];
+}virtual_links;
 
 // CORNTIs array for UE/eNB MAC/PHY structures
-struct cornti_array {
-	u8 count;
-	u16 array[MAX_VLINK_PER_CH];
-};
+typedef struct  {
+  u8 count;
+  // Collaborative data sequence number;
+  u16 sn[MAX_VLINK_PER_CH];
+  u16 array[MAX_VLINK_PER_CH];
+}cornti_array;
+
 
 /* Forwarding table definition */
-
 #define MAX_FW_ENTRY 10 
 
-struct forwardingTableEntry { 
-	u8 vlid;
-	u16 cornti1;
-	u16 cornti2;
-};
+typedef struct  { 
+  u8  vlid;
+  // u16 lcid; 
+  u16 cornti1;
+  u16 cornti2;
+}forwardingTableEntry;
 
-struct forwarding_Table { 
-	u8 count;
-	struct forwardingTableEntry array[MAX_FW_ENTRY];
-};
+typedef struct  { 
+  u8 count;
+  forwardingTableEntry array[MAX_FW_ENTRY];
+}forwarding_Table;
 
 
 

@@ -284,6 +284,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 				NULL,  // truncated bsr
 				NULL, // short bsr
 				NULL, // long_bsr
+				0, // sequence number 
 				0); //post_padding
 
 	  return(&UE_mac_inst[Mod_id].RA_prach_resources);

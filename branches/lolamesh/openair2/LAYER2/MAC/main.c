@@ -213,9 +213,9 @@ int mac_top_init(){
     }
 
 
-    UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
-    for (j=0;j<NUMBER_OF_UE_MAX;j++) {
-      UE_template[j].rnti=0;
+    for (j=0;j<NB_UE_INST;j++) {
+      UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[j];
+      memset (UE_template, 0, sizeof(UE_template));
     }
   }
 
@@ -239,8 +239,10 @@ int mac_top_init(){
   }
 #endif
 //end ALU's algo
+  
+  mac_buffer_top_init();
 
-   LOG_I(MAC,"[MAIN][INIT] Init function finished\n");
+  LOG_I(MAC,"[MAIN][INIT] Init function finished\n");
 
   return(0);
 
@@ -370,9 +372,11 @@ void init_mac_xface(void){
   
   LOG_I(MAC,"MAX/PHY xface init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
+  mac_xface->ue_send_sdu_co            = ue_send_sdu_co;
   mac_xface->ue_send_sdu               = ue_send_sdu;
   mac_xface->ue_get_SR                 = ue_get_SR;
   mac_xface->ue_get_sdu                = (void *)ue_get_sdu;
+  mac_xface->ue_get_sdu_co             = ue_get_sdu_co;
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;
@@ -397,6 +401,7 @@ void init_mac_xface(void){
 
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
+  mac_xface->phy_config_cornti          = phy_config_cornti;
 
   mac_xface->get_PHR = get_PHR;
   LOG_D(MAC," MAC/PHY xface init done\n");

@@ -82,8 +82,11 @@ mem_element_t *packet_list_find_pivot_seq_num(int seq_num, packet_list_t *listP,
 mem_element_t *packet_list_find_pivot_pdu_size(int pdu_size, packet_list_t *listP, int *after);
 
 // MAC API
+int mac_buffer_get_sdu_size(u8 Mod_id, u16 seq_num, u8 eid);
+
 int  mac_buffer_total_size(u8 Mod_id);
 int  mac_buffer_nb_elements(u8 Mod_id);
-mem_element_t * mac_buffer_data_req( u8 Mod_id, int seq_num, int size, int HARQ_proccess_ID); 
-int mac_buffer_data_ind( u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID); // returns 1 for success otherwise 0 // returns 1 for success otherwise 0; // mod_id, add and sort the pdu according to the flag
+mem_element_t * mac_buffer_data_req( u8 Mod_id, u8 eNB_index, int seq_num, int size, int HARQ_proccess_ID); 
+int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);
+//int mac_buffer_data_ind( u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID); // returns 1 for success otherwise 0 // returns 1 for success otherwise 0; // mod_id, add and sort the pdu according to the flag
 #endif

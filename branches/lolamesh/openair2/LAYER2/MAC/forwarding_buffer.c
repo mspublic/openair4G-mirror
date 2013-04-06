@@ -7,44 +7,48 @@
 
 #include "extern.h"
 #include "defs.h"
+#include "UTIL/LOG/log.h"
 
 #include "forwarding_buffer.h"
 
-void mac_buffer_top_init(){
+void mac_buffer_top_init(void){
   u8 UE_id;
 	
-	int sorting_flag = SORT_PDU_SEQN;//SORT_FIFO; //SORT_PDU_SEQN or SORT_PDU_SIZE!
-	
-	char *string=malloc(sizeof(char)*3);
-	char *string1=malloc(sizeof(char)*23);
-	char *string2=malloc(sizeof(char)*23);
-	
+  int sorting_flag = SORT_PDU_SEQN;//SORT_FIFO; //SORT_PDU_SEQN or SORT_PDU_SIZE!
+  
+  char *string=malloc(sizeof(char)*3);
+  char *string1=malloc(sizeof(char)*23);
+  char *string2=malloc(sizeof(char)*23);
+  
+  LOG_I(MAC, "initilizing the MAC buffer for vlink support \n");
   mac_buffer_g = malloc(NB_UE_INST*sizeof(MAC_BUFFER));
-	if(mac_buffer_g==NULL)
-	{
-	 //msg("[MEM_MGT][WARNING] Memory allocation failure for mac_buffer/mac_buffer_top_init");
-	}
-	for (UE_id=0; UE_id<NB_UE_INST;UE_id++){  
-	  sprintf(string,"%d",UE_id);
-		strcpy(string1,"mac_buffer id: ");
-		strcpy(string2,"packet_list id: ");
-		strcat(string1,string);
-		strcat(string2,string);
+  if(mac_buffer_g==NULL){
+    LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer/mac_buffer_top_init\n");
+    mac_xface->macphy_exit("out of memory for MAC buffer init");
+  }
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){  
+    sprintf(string,"%d",UE_id);
+    strcpy(string1,"mac_buffer id: ");
+    strcpy(string2,"packet_list id: ");
+    strcat(string1,string);
+    strcat(string2,string);
     mac_buffer_g[UE_id] = mac_buffer_init(string1,string2,UE_id,sorting_flag);
-		string[0]='\0'; // flush string buffer
-		string1[0]='\0';
-		string2[0]='\0';
- }
+    if (mac_buffer_g[UE_id] == NULL)
+      mac_xface->macphy_exit("out of memory for MAC buffer init");
+    string[0]='\0'; // flush string buffer
+    string1[0]='\0';
+    string2[0]='\0';
+  }
 }
 
 MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 Mod_id, u8 sorting_flag){
  
- MAC_BUFFER * mac_buff;
- mac_buff = malloc(sizeof(MAC_BUFFER));
- if(mac_buff==NULL){
-	//msg("[MEM_MGT][WARNING] Memory allocation failure for mac_buff for Mod_id %d \n",Mod_id);
-	return NULL;
- }
+  MAC_BUFFER * mac_buff;
+  mac_buff = malloc(sizeof(MAC_BUFFER));
+  if(mac_buff==NULL){
+    //msg("[MEM_MGT][WARNING] Memory allocation failure for mac_buff for Mod_id %d \n",Mod_id);
+    return NULL;
+  }
  strcpy(mac_buff->name, nameB);
  mac_buff->sorting_flag=sorting_flag;
  mac_buff->maximum_capacity = MAC_BUFFER_MAXIMUM_CAPACITY;
@@ -166,7 +170,7 @@ mem_element_t *mac_buffer_get_head(u8 Mod_id){
   }
 }
 
-mem_element_t *mac_buffer_data_req(u8 Mod_id, int seq_num, int size, int HARQ_proccess_ID){
+mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, int seq_num, int size, int HARQ_proccess_ID){
 
  mem_element_t *ptr_h;
  mem_element_t *help_head;
@@ -329,17 +333,22 @@ void packet_list_add_after_ref(mem_element_t * new_elementP, mem_element_t *elem
   }
 }
 
-int mac_buffer_data_ind(u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID){
- if (elementP == NULL || mac_buffer_nb_elements(Mod_id)==MAC_BUFFER_MAXIMUM_CAPACITY){
-	return 0;
- }
- else{
+int mac_buffer_data_ind(u8 Mod_id,u8 eNB_index, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID){
+  //int mac_buffer_data_ind(u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID){
+  mem_element_t *elementP;
+  elementP = malloc(sizeof(struct mem_element_t));
+
+  if (elementP == NULL || mac_buffer_nb_elements(Mod_id)==MAC_BUFFER_MAXIMUM_CAPACITY){
+    LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
+    return 0;
+  }
+  else{
 	elementP->seq_num = seq_num;
 	elementP->pdu_size = pdu_size;
 	elementP->HARQ_proccess_ID = HARQ_proccess_ID;
-	// ask Navid about the pool_id and data, if this values should be assigned here or outside this function!
-	//elementP->pool_id = pool_id;
-	//elementP->data = data;
+	elementP->pool_id = 1; // as we have only one memory pool 
+	memcpy (elementP->data, data, pdu_size);
+
 	if (mac_buffer_g[Mod_id]->sorting_flag == SORT_FIFO){ // FIFO Queue-list, PDUs are inserted on the tail as they arrive!
 	 if (mac_buffer_add_tail(Mod_id, elementP) == 1)
 		return 1;

@@ -176,7 +176,7 @@ typedef struct{
   struct SRB_ToAddMod               *SRB1_config[NUMBER_OF_UE_MAX];
   struct SRB_ToAddMod               *SRB2_config[NUMBER_OF_UE_MAX];
   struct DRB_ToAddMod               *DRB_config[NUMBER_OF_UE_MAX][8];
-  struct DRB_ToAddMod								*CODRB_config[4]; //LOLAmesh
+  struct DRB_ToAddMod		    *CODRB_config[4]; //LOLAmesh
   uint8_t                           DRB_active[NUMBER_OF_UE_MAX][8];
   uint8_t                           CODRB_active[4];
   struct PhysicalConfigDedicated    *physicalConfigDedicated[NUMBER_OF_UE_MAX];

@@ -191,18 +191,17 @@ typedef struct {
   //  int calibration_flag;
 } LTE_UL_UE_HARQ_t;
 
-//TCS LOLAmesh
 // CORNTIs array for UE/eNB MAC/PHY structures
-struct cornti_array_t {
+typedef struct {
 	u8 count;
 	u16 array[4];
-};
+}cornti_array_t ;
 
 typedef struct {
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   u16 rnti; 
   // CORNTIs list
-  struct cornti_array_t corntis; //TCS LOLAmesh
+  cornti_array_t corntis;
   /// Active flag for baseband transmitter processing
   u8 active;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
@@ -572,7 +571,7 @@ typedef struct {
   /// RNTI
   u16 rnti;
   // CORNTIs list
-  struct cornti_array_t corntis; //TCS LOLAmesh
+  cornti_array_t corntis; //TCS LOLAmesh
   /// Active flag for DLSCH demodulation
   u8 active;
   /// Transmission mode
