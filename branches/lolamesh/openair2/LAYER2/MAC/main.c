@@ -358,6 +358,7 @@ void init_mac_xface(void){
   mac_xface->cancel_ra_proc            = cancel_ra_proc;
   mac_xface->SR_indication             = SR_indication;
   mac_xface->rx_sdu                    = rx_sdu;
+  mac_xface->rx_sdu_co                 = rx_sdu_co;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
   mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
   mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;

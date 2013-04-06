@@ -508,6 +508,34 @@ void SR_indication(u8 Mod_id,u32 frame, u16 rnti, u8 subframe) {
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 1;
 
 }
+void rx_sdu_co(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
+  unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
+  unsigned char rx_lcids[MAX_NUM_RB];
+  unsigned short rx_lengths[MAX_NUM_RB];
+  unsigned char UE_id = find_UE_id(Mod_id,rnti);
+  BSR_LONG *tmp;
+  int ii;
+  int offset =  MAX_NUM_RB * NUMBER_OF_UE_MAX ;
+  for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
+
+  payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
+  if (num_ce > 0 )
+    LOG_E(MAC,"[eNB %d] not expecting the control element for vlink \n", Mod_id);
+ 
+  for (i=0;i<num_sdu;i++) {
+  
+    mac_rlc_data_ind(Mod_id,frame,1,
+		     rx_lcids[i]+offset,
+		     (char *)payload_ptr,
+		     rx_lengths[i],
+		     1,
+		     NULL);//(unsigned int*)crc_status);
+    
+    payload_ptr+=rx_lengths[i];
+  }
+
+}
+
 void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
@@ -549,6 +577,13 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
       eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[0] = tmp->Buffer_size0; 
       payload_ptr+=(sizeof(LONG_BSR)-1);
       break;
+    case CO_BSR_SHORT:
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received CO BSR short\n", rx_ces[i]);
+   
+      break;
+    case CO_BSR_LONG:
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received co BSR long \n", rx_ces[i]);
+    break;
     default:
       break;
     }
@@ -4111,7 +4146,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 	sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,co_lcid,(char*)&dlsch_buffer[sdu_length_total]);
 	
 	LOG_I(MAC,"[eNB %d] Got %d bytes for CODTCH %d \n",Mod_id,sdu_lengths[num_sdus],co_lcid);
-	sdu_lcids[num_sdus] = co_lcid;
+	sdu_lcids[num_sdus] = vlid;
 	sdu_length_total += sdu_lengths[num_sdus];
 	if (sdu_lengths[num_sdus] < 128)
 	  header_len_codtch=2;
