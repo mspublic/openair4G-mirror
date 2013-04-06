@@ -609,7 +609,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
   DRB_config2->drb_Identity = 1; ///TCS LOLAmesh RB_id 0 since this is the first collaborative RB
 	// logical channel ID
   lcid = CALLOC(1,sizeof(*lcid));
-  *lcid = DTCH+vlid; //we reuse drb lcid values (i.e 3 to 10). 3 correspond to the first codrb and it is stored in the position (11(nb of lcid) * 8(nb max UE)) = 88, so it i shifted of 85 postions
+  *lcid = vlid+VLID_OFFSET; 
   DRB_config2->logicalChannelIdentity = lcid;
    // rlc config
   DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));

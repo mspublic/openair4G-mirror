@@ -88,6 +88,9 @@ typedef struct
     /// Send ULSCH sdu to MAC for given rnti
     void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu,u16 sdu_len);
 
+    /// Send ULSCH sdu to MAC for given cornti 
+    void (*rx_sdu_co)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu,u16 sdu_len);
+
     /// Indicate failure to synch to external source
     void (*mrbch_phy_sync_failure) (u8 Mod_id,u32 frame, u8 Free_ch_index);
 

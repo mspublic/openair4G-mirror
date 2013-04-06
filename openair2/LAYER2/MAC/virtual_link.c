@@ -65,7 +65,7 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
   for (i=0; i< NB_eNB_INST;i++ ){ 
     vlinksTable[i].count = nb_vlink_eNB; // Nb of virtual links
     for (j=0; j < nb_vlink_eNB; j++) {
-      vlinksTable[i].array[j].vlinkID = j+1; 
+      vlinksTable[i].array[j].vlinkID = j; 
       vlinksTable[i].array[j].PCellIddestCH = 1; // dummy value
       vlinksTable[i].array[j].PCellIdsourceCH = 2; // dummy value
       vlinksTable[i].array[j].status = VLINK_NOT_CONNECTED; // Virtual link state

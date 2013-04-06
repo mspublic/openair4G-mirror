@@ -85,8 +85,7 @@
 #define DCCH1 2 // srb2
 #define DTCH  3 // DTCH + lcid < 11
 
-//TCS LOLAmesh 11 is used since in MAC sub-headers LCIDs are coded on 5bits, so 88 (collaborative lcid or rab id) is not possible <=> lcid 11 -> 88 / 12 -> 89 / ...
-#define CODTCH1 10 
+#define VLID_OFFSET  3 
 
 #ifdef USER_MODE
 #define printk printf
@@ -238,6 +237,9 @@ typedef struct {
 #define SHORT_PADDING 31
 
 // ULSCH LCHAN IDs
+#define CO_BSR_SHORT 23
+#define CO_BSR_LONG 24
+
 #define EXTENDED_POWER_HEADROOM 25
 #define POWER_HEADROOM 26
 #define CRNTI 27
@@ -343,6 +345,9 @@ typedef struct{
   /// UE BSR info for each logical channel
   u8 bsr_info[MAX_NUM_LCID]; 
   
+  /// UE coBSR info for each logical channel
+  //  u8 cobsr_info[MAX_NUM_CO_RB]; 
+
   /// phr information 
    u8 phr_info; 
 } UE_TEMPLATE;
@@ -796,6 +801,13 @@ void cancel_ra_proc(u8 Mod_id,u32 frame, u16 preamble_index);
 @param sdu Pointer to received SDU
 */
 void rx_sdu(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu, u16 sdu_len);
+
+/* \brief Function to indicate a received SDU on ULSCH for virtual link 
+@param Mod_id Instance ID of eNB
+@param rnti RNTI of UE transmitting the SR
+@param sdu Pointer to received SDU
+*/
+void rx_sdu_co(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu, u16 sdu_len);
 
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
 @param Mod_id Instance ID of eNB
