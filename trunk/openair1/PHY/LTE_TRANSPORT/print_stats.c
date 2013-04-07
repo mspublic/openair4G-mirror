@@ -42,7 +42,7 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
-extern int number_of_cards;
+//extern int number_of_cards;
 
 #ifdef EXMIMO
 #ifdef DRIVER2013

@@ -1298,7 +1298,7 @@ if(abstx){
 	     cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
 	     cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
     }
-    if (PHY_vars_eNB->O_ACK > 0) {
+    if (PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0] > 0) {
       printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
       fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
 	      SNR,
