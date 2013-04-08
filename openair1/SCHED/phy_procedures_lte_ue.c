@@ -1530,7 +1530,7 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
   openair_daq_vars.synch_wait_cnt=0;
   openair_daq_vars.sched_cnt=-1;
 #if defined(EXMIMO) || defined(CBMIMO1)
-  openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
+  //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
 #endif
   
   phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;

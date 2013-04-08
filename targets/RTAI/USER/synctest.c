@@ -1356,7 +1356,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
     
     openair_daq_vars.manual_timing_advance = 0;
-    openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
+    //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
     openair_daq_vars.use_ia_receiver = 0;
 
@@ -1464,7 +1464,8 @@ int main(int argc, char **argv) {
   mac_xface = malloc(sizeof(MAC_xface));
   
 #ifdef OPENAIR2
-  l2_init(frame_parms);
+  int eMBMS_active=0;
+  l2_init(frame_parms,eMBMS_active);
   if (UE_flag == 1)
     mac_xface->dl_phy_sync_success (0, 0, 0, 1);
   else
@@ -1476,7 +1477,7 @@ int main(int argc, char **argv) {
 
 #ifdef OPENAIR2
   //if (otg_enabled) {
-    init_all_otg();
+    init_all_otg(0);
     g_otg->seed = 0;
     init_seeds(g_otg->seed);
     g_otg->num_nodes = 2;
@@ -1676,7 +1677,7 @@ int main(int argc, char **argv) {
   if (UE_flag == 1) {
     thread1 = rt_thread_create(UE_thread, NULL, 100000000);
 #ifdef DLSCH_THREAD
-    init_rx_pdsch_threads();
+    //init_rx_pdsch_threads();
     rt_sleep(nano2count(FRAME_PERIOD/10));
     init_dlsch_threads();
 #endif
@@ -1717,7 +1718,7 @@ int main(int argc, char **argv) {
   if (UE_flag == 1) {
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
-    cleanup_rx_pdsch_threads();
+    //cleanup_rx_pdsch_threads();
 #endif
   }
   else {

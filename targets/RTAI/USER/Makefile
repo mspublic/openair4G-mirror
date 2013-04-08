@@ -62,7 +62,8 @@ OBJ += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 OBJ += stats.o
 endif
 
-CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
+#CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
+CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
 CFLAGS += -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
@@ -92,7 +93,7 @@ OBJ += $(NAS_OBJS)
 endif
 
 RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
-LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm
+LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm -lforms
 
 all: condtest synctest
 
@@ -111,7 +112,7 @@ synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
 
 lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem
+	$(CC) $(CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS)
 
 synctest_eNB: synctest
 	cp synctest synctest_eNB
