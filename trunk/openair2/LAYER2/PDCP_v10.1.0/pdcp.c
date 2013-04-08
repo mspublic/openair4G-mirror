@@ -456,7 +456,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     //rb_id    = (eNB_flag == 1) ? eNB_index * NB_RB_MAX + DTCH : (NB_eNB_INST + UE_index -1 ) * NB_RB_MAX + DTCH ;
     ctime = oai_emulation.info.time_ms; // current simulation time in ms
     if (eNB_flag == 1) { // search for DL traffic
-      for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
+      for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST ; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
 	if (mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/) { 
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
@@ -686,8 +686,9 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
     for (cnt=0;cnt<mbms_SessionInfoList_r9->list.count;cnt++) {
       MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[cnt];
       lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
-      drb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
-      rb_id = (index * NB_RB_MAX) + lc_id;
+      // drb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
+      rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + lc_id;
+      pdcp_array[module_id][rb_id].MBMS_flag=1;
       if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
 	action = ACTION_MODIFY;
       else 
@@ -920,10 +921,10 @@ pdcp_layer_init ()
       for (j=0; j < MAX_RB; j++) {
           memset((void*)&pdcp_array[i][j], 0, sizeof(pdcp_t));
       }
+      
   }
 
   LOG_I(PDCP, "PDCP layer has been initialized\n");
-
   pdcp_output_sdu_bytes_to_write=0;
   pdcp_output_header_bytes_to_write=0;
   pdcp_input_sdu_remaining_size_to_read=0;

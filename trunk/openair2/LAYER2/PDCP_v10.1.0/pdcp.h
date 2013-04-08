@@ -132,6 +132,8 @@ typedef struct pdcp_t {
    * which is not also a valid sequence number
    */
   short int first_missing_pdu;
+ // mbms active
+  uint8_t               MBMS_flag;
 } pdcp_t;
 
 /*

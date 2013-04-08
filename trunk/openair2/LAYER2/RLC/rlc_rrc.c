@@ -237,10 +237,10 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
     for (cnt=0;cnt<SessionInfo_listP->list.count;cnt++) {
       mbms_session = SessionInfo_listP->list.array[cnt];
       
-      mrb_id = (NUMBER_OF_UE_MAX+1)*NB_RB_MAX + mbms_session->logicalChannelIdentity_r9;
+      //mrb_id = (NUMBER_OF_UE_MAX)*NB_RB_MAX + mbms_session->logicalChannelIdentity_r9;
 
       if (mbms_session->logicalChannelIdentity_r9 > 0) {
-	lc_id = (NUMBER_OF_UE_MAX+1)*NB_RB_MAX + mbms_session->logicalChannelIdentity_r9;
+	lc_id = (NUMBER_OF_UE_MAX*NB_RB_MAX) + mbms_session->logicalChannelIdentity_r9;
       } 
       else {
 	LOG_D(RLC, "[RLC_RRC] Invalid LogicalChannelIdentity for MTCH --- Value 0 is reserved for MCCH\n");
