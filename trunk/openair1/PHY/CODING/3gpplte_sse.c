@@ -210,10 +210,9 @@ void threegpplte_turbo_encoder(unsigned char *input,
     cur_s1=input[i];
     cur_s2=systematic2[i];
     for ( code_rate=0; code_rate<3; code_rate++) {
-      *ptr_output++=_mm_add_pi8(all_treillis[state0][cur_s1].systematic_64[code_rate],
-				_mm_add_pi8(
-					    all_treillis[state0][cur_s1].parity1_64[code_rate],
-					    all_treillis[state1][cur_s2].parity2_64[code_rate]));
+        *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_64[code_rate],
+                        _mm_add_pi8(all_treillis[state0][cur_s1].parity1_64[code_rate],
+                                    all_treillis[state1][cur_s2].parity2_64[code_rate]));
     }
     state0=all_treillis[state0][cur_s1].exit_state;
     state1=all_treillis[state1][cur_s2].exit_state;
@@ -252,6 +251,8 @@ void threegpplte_turbo_encoder(unsigned char *input,
   printf("term: x0 %d, x1 %d, state1 %d\n",x[10],x[11],state1);
 #endif //DEBUG_TURBO_ENCODER
 
+  _mm_empty();
+  _m_empty();
 }
 
 
