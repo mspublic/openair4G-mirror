@@ -18,6 +18,7 @@
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
+#include "LAYER2/MAC/forwarding_buffer.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 
@@ -1098,6 +1099,7 @@ main (int argc, char **argv)
 	PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
 	PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
 
+	//mac_buffer_top_init();
 
   /* Added for PHY abstraction */
   if (abstraction_flag) 
