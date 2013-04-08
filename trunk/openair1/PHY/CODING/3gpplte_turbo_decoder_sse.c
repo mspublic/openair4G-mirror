@@ -2453,6 +2453,9 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     }
   }
 
+  _mm_empty();
+  _m_empty();
+
   return(iteration_cnt);
 }
 
