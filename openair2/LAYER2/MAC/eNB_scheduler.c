@@ -4130,7 +4130,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       sdu_length_total=0;
       
       header_len_codtch = 3; // 3 bytes CODTCH SDU subheader
-      vlid = mac_forwarding_get_vlid(Mod_id, rnti);
+      vlid = mac_forwarding_get_vlid(Mod_id, rnti); // a cornti might be associated with multiple vlink 
       co_lcid = (DTCH+vlid) + MAX_NUM_RB * NUMBER_OF_UE_MAX;
       LOG_D(MAC,"[eNB %d], Frame %d, vlid%d->DLSCH, Checking RLC status (rab %d, tbs %d, len %d)\n",
 	    Mod_id,frame, vlid,TBS,

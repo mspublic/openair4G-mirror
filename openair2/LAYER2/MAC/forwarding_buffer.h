@@ -37,15 +37,18 @@ typedef struct {
 }packet_list_t;
 
 typedef struct {
- packet_list_t *my_p;
- u8 sorting_flag;
- int maximum_capacity;
- char name[LIST_NAME_MAX_CHAR];
+  packet_list_t *my_p;
+  u8 sorting_flag;
+  u8 mode; //0:  1x buffer per CH, 1:  1x buffer per cornti
+  int maximum_capacity;
+  char name[LIST_NAME_MAX_CHAR];
 }MAC_BUFFER;
 
 MAC_BUFFER **mac_buffer_g;
 
-void mac_buffer_top_init();
+int mac_buffer_instantiate (u8 Mod_id, u16 index, u16 co_RNTI);
+
+void mac_buffer_top_init(u8 mode);
 MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 Mod_id, u8 sorting_flag); 
 // sorting_flag denotes the way that packets are sorted when inserted into the mac buffer's packet list (i.e FIFO, pdu_size, seq_num)
 void packet_list_init (packet_list_t*, char *nameP);
@@ -86,7 +89,7 @@ int mac_buffer_get_sdu_size(u8 Mod_id, u16 seq_num, u8 eid);
 
 int  mac_buffer_total_size(u8 Mod_id);
 int  mac_buffer_nb_elements(u8 Mod_id);
-mem_element_t * mac_buffer_data_req( u8 Mod_id, u8 eNB_index, int seq_num, int size, int HARQ_proccess_ID); 
-int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);
+mem_element_t * mac_buffer_data_req( u8 Mod_id, u16 eNB_index,  u16 cornti, int seq_num, int size, int HARQ_proccess_ID); 
+int mac_buffer_data_ind(u8 Mod_id, u16 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);
 //int mac_buffer_data_ind( u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID); // returns 1 for success otherwise 0 // returns 1 for success otherwise 0; // mod_id, add and sort the pdu according to the flag
 #endif

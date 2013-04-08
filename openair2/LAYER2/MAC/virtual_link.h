@@ -106,6 +106,8 @@ typedef struct  {
 typedef struct  { 
   u8  vlid;
   // u16 lcid; 
+  u16 eNB1;
+  u16 eNB2;
   u16 cornti1;
   u16 cornti2;
 }forwardingTableEntry;

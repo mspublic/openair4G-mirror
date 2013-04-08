@@ -66,8 +66,8 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
     vlinksTable[i].count = nb_vlink_eNB; // Nb of virtual links
     for (j=0; j < nb_vlink_eNB; j++) {
       vlinksTable[i].array[j].vlinkID = j; 
-      vlinksTable[i].array[j].PCellIddestCH = 1; // dummy value
-      vlinksTable[i].array[j].PCellIdsourceCH = 2; // dummy value
+      vlinksTable[i].array[j].PCellIddestCH = i; // dummy value
+      vlinksTable[i].array[j].PCellIdsourceCH = (i+1)%2; // dummy value
       vlinksTable[i].array[j].status = VLINK_NOT_CONNECTED; // Virtual link state
       vlinksTable[i].array[j].MRarray.count = nb_ue_per_vlink; // Nb of MRs in the virtual link
       for (k=0; k<nb_ue_per_vlink; k++ ) {
@@ -242,11 +242,13 @@ int mac_forwarding_add_entry(u8 Mod_id,
       /* We fill the cornti which has an error value */
       if (ft->array[i].cornti1 == 0) {
 	ft->array[i].cornti1 = cornti;
+	ft->array[i].eNB1 = (eNB_flag==0)? index:0;
 	existing_entry = 1;
       }
       
       if (ft->array[i].cornti2 == 0) {
 	ft->array[i].cornti2 = cornti;
+	ft->array[i].eNB2 = (eNB_flag==0)? index:0;
 	existing_entry = 1;
       }
       
@@ -263,6 +265,8 @@ int mac_forwarding_add_entry(u8 Mod_id,
     /* There's some room left in the forwarding table */
     if (ft->count < MAX_FW_ENTRY) {
       ft->array[ft->count].vlid = vlid;
+      ft->array[ft->count].eNB1 = (eNB_flag==0)? index:0;
+      ft->array[ft->count].eNB2 = 0;
       ft->array[ft->count].cornti1 = cornti;
       ft->array[ft->count].cornti2 = 0; // error value
       LOG_I(MAC,"[%s %d][FT] Configuring MAC forwarding table for %s %d, creating a new entry in the table => VLID = %u and CO-RNTI1 = %x CO-RNTI2 = %x\n",
@@ -296,7 +300,7 @@ int mac_forwarding_get_output_CORNTI(u8 Mod_id,
 				     u8 vlid,
 				     u16 cornti) {
   
-  u8 current_vlid = 0;
+  int current_vlid = -1;
   int i = 0;
   int output_cornti = -1;
   
@@ -360,4 +364,40 @@ int mac_forwarding_get_vlid(u8 Mod_id,
    * or has not been found */
   return vlid;
   
+}
+
+mac_forwarding_get_output_eNB(u8 Mod_id, u16 eNB_index, u8 vlid) {
+  
+  int current_vlid = -1;
+  int i = 0;
+  int output_eNB = -1;
+  
+  forwarding_Table *ft= &UE_forwardingTable[Mod_id];
+
+  /* We look for an existing entry */
+  while ((i<ft->count) && (current_vlid != vlid)) {
+    
+    current_vlid = ft->array[i].vlid;
+    
+    /* We've found it */
+    if (current_vlid == vlid) {
+      
+      /* We fill the cornti which has an error value */
+      if (ft->array[i].eNB1 == eNB_index ) {
+	output_eNB = ft->array[i].eNB2;
+      }
+      
+      if (ft->array[i].eNB2 == eNB_index) {
+	output_eNB = ft->array[i].eNB1;
+      }
+      
+    }//end if (current_vlid == vlid)
+    
+    i++;
+  }//end while ((i<MAX_FW_ENTRY) || (current_vlid != vlid))
+  
+  
+  /* If -1 is returned, the entry is not yet initialized completely
+   * or has not been found */
+  return output_eNB;
 }

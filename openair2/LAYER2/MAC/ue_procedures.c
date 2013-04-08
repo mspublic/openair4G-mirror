@@ -246,7 +246,9 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
   u8 vlid=0;
   unsigned short  size=0;
   unsigned char *payload_ptr= sdu;
-  u16 o_cornti=0x0;
+  u16 dst_cornti=0x0;
+  u16 dst_eNB=0;
+  int ;
   lcid = ((SCH_SUBHEADER_FIXED *)payload_ptr)->LCID;
   if (lcid == CO_SEQ_NUM_LCID) {
     payload_ptr ++; // 1 bytes for lcid
@@ -256,9 +258,10 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     payload_ptr+=2;
     size = sdu_len-3;
     vlid = mac_forwarding_get_vlid(cornti);
-    o_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,eNB_index,cornti);
-    LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d o_cornti %x (eNB %d, %d bytes)\n", Mod_id, frame,vlid, o_cornti, eNB_index,size);
-    if (mac_buffer_data_ind(Mod_id,eNB_index, (char *)payload_ptr,UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ) 
+    dst_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,eNB_index,cornti);
+    dst_eNB = mac_forwarding_get_output_eNB(Mod_id,eNB_index,vlid);
+    LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d o_cornti %x (eNB %d, %d bytes)\n", Mod_id, frame,vlid, dst_cornti, eNB_index,size);
+    if (mac_buffer_data_ind(Mod_id, dst_eNB, dst_cornti, (char *)payload_ptr,UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ) 
       LOG_D (MAC, "[UE %d] Frame %d : PDU is stored in the MAC buffer \n", Mod_id);
     else 
       LOG_E(MAC, "[UE %d] Frame %d : failed to store the MAC PDU in the buffer\n", Mod_id);
@@ -664,10 +667,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }
-void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,s16 seq_num) {
+void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u16 cornti, s16 seq_num) {
  
-  /*  
-  u16 sdu_lengths[8];
+  /*  u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
   u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
   u16 sdu_length_total=0;
@@ -676,11 +678,11 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
   int i;
   
   if (seq_num >= 0) { // only one sdu with the given sn is allowed
-    element = mac_buffer_data_req(Mod_id, eNB_index, seq_num, -1, -1); 
+    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, seq_num, -1, -1); 
     
   }else { // if seq num not defined, multiplex multiple MAC PDUs into ULSCH buffer until the buflen is reached
     // for the moment, we consider only one MAC PDU avoiding additional header generation
-    element = mac_buffer_data_req(Mod_id, eNB_index, -1, buflen, -1); 
+    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, -1, buflen, -1); 
     
   }
   
