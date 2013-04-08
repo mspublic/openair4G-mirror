@@ -11,7 +11,15 @@
 
 #include "forwarding_buffer.h"
 
-void mac_buffer_top_init(void){
+int mac_buffer_instantiate (u8 Mod_id, u16 index, u16 co_RNTI){
+  
+  LOG_I(MAC, "[UE %d] instantiate the buffer for eNB %d and cornti %x \n ", Mod_id, index,co_RNTI);
+
+  return 1; // for success 
+
+}
+
+void mac_buffer_top_init(u8 mode){
   u8 UE_id;
 	
   int sorting_flag = SORT_PDU_SEQN;//SORT_FIFO; //SORT_PDU_SEQN or SORT_PDU_SIZE!
@@ -20,7 +28,9 @@ void mac_buffer_top_init(void){
   char *string1=malloc(sizeof(char)*23);
   char *string2=malloc(sizeof(char)*23);
   
-  LOG_I(MAC, "initilizing the MAC buffer for vlink support \n");
+  LOG_I(MAC, "initilizing the MAC buffer for vlink support mode %d\n",
+	(mode == 0 ) ? "1xbuffer:1xeNB" : "1xbuffer:1xCORNTI");
+  
   mac_buffer_g = malloc(NB_UE_INST*sizeof(MAC_BUFFER));
   if(mac_buffer_g==NULL){
     LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer/mac_buffer_top_init\n");
@@ -170,11 +180,11 @@ mem_element_t *mac_buffer_get_head(u8 Mod_id){
   }
 }
 
-mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, int seq_num, int size, int HARQ_proccess_ID){
+mem_element_t *mac_buffer_data_req(u8 Mod_id, u16 eNB_index,  u16 cornti, int seq_num, int size, int HARQ_proccess_ID){
 
- mem_element_t *ptr_h;
- mem_element_t *help_head;
- mem_element_t *help_tail;
+  mem_element_t *ptr_h;
+  mem_element_t *help_head;
+  mem_element_t *help_tail;
  
  help_head = mac_buffer_g[Mod_id]->my_p->head;
  help_tail = mac_buffer_g[Mod_id]->my_p->tail;
@@ -333,7 +343,7 @@ void packet_list_add_after_ref(mem_element_t * new_elementP, mem_element_t *elem
   }
 }
 
-int mac_buffer_data_ind(u8 Mod_id,u8 eNB_index, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID){
+int mac_buffer_data_ind(u8 Mod_id,u16 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID){
   //int mac_buffer_data_ind(u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID){
   mem_element_t *elementP;
   elementP = malloc(sizeof(struct mem_element_t));

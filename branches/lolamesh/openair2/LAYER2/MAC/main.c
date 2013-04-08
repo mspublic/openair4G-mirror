@@ -240,7 +240,7 @@ int mac_top_init(){
 #endif
 //end ALU's algo
   
-  mac_buffer_top_init();
+  mac_buffer_top_init(0);
 
   LOG_I(MAC,"[MAIN][INIT] Init function finished\n");
 

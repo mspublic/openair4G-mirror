@@ -170,11 +170,14 @@ int rrc_mac_config_co_req(u8 Mod_id,
   
   ret = mac_forwarding_add_entry(Mod_id, eNB_flag, index, virtualLinkID, co_RNTI);
   
+ 
+  
   if (eNB_flag == 0 ) { // this is a UE
     nb_corntis = UE_mac_inst[Mod_id].corntis.count;
     UE_mac_inst[Mod_id].corntis.array[nb_corntis] = co_RNTI;
     UE_mac_inst[Mod_id].corntis.count++;
-    mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI,virtualLinkID);
+    mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI,virtualLinkID); 
+    ret = mac_buffer_instantiate (Mod_id, index, co_RNTI);
    
   } else { // this is an eNB
     nb_corntis = eNB_mac_inst[Mod_id].UE_template[index].corntis.count;

@@ -908,7 +908,7 @@ void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 @param subframe subframe number
 
 */
-void ue_get_sdu_co(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen, s16 seq_num);
+void ue_get_sdu_co(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen, u16 cornti, s16 seq_num);
 
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
@@ -1117,26 +1117,28 @@ void dl_phy_sync_success(unsigned char Mod_id,
 			 unsigned char eNB_index,
 			 u8 first_sync);
 
-//TCS LOLAmesh
+
 /* Add a new entry or fill a new entry in the forwarding table
  * @param vlid -> ID of the considered virtual link
  * @param cornti -> cornti associated to the virtual link
  * returns 0 = entry added / -2 = entry found but corrupted */
 int mac_forwarding_add_entry(u8 Mod_id, u8 eNB_flag, u8 index, u8 vlid, u16 cornti);
 
-//TCS LOLAmesh
+
 /* Remove an entry in the forwarding table
  * @param vlid -> ID of the considered virtual link
  * @param cornti -> cornti associated to the virtual link
  * return 0 = entry removed / -1 = error */
 int mac_forwarding_remove_entry(u8 vlid);
 
-//TCS LOLAmesh
+
 /* Get the output CORNTI associated to an input CORNTI
   * @param vlid -> ID of the considered virtual link
  * @param cornti -> cornti associated to the virtual link
  * returns output CORNTI*/
 int mac_forwarding_get_output_CORNTI(u8 Mod_id, u8 eNB_flag, u8 vlid, u16 cornti);
+
+int mac_forwarding_get_output_eNB(u8 Mod_id, u16 eNB_index, u8 vlid);
 
 void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink);
 int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe );
