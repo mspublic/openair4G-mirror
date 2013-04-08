@@ -10,6 +10,7 @@
 #include "UTIL/LOG/log.h"
 
 #include "forwarding_buffer.h"
+#include "avl_tree.h"
 
 int mac_buffer_instantiate (u8 Mod_id, u16 index, u16 co_RNTI){
   
@@ -19,53 +20,56 @@ int mac_buffer_instantiate (u8 Mod_id, u16 index, u16 co_RNTI){
 
 }
 
-void mac_buffer_top_init(u8 mode){
-  u8 UE_id;
+
+void mac_buffer_top_init(){
+u8 UE_id;
+	char *string=malloc(sizeof(char)*3);
+	char *string1=malloc(sizeof(char)*23);
+	char *string2=malloc(sizeof(char)*23);
 	
-  int sorting_flag = SORT_PDU_SEQN;//SORT_FIFO; //SORT_PDU_SEQN or SORT_PDU_SIZE!
-  
-  char *string=malloc(sizeof(char)*3);
-  char *string1=malloc(sizeof(char)*23);
-  char *string2=malloc(sizeof(char)*23);
-  
-  LOG_I(MAC, "initilizing the MAC buffer for vlink support mode %d\n",
-	(mode == 0 ) ? "1xbuffer:1xeNB" : "1xbuffer:1xCORNTI");
+	
+//	LOG_E(MAC,"[MAC] initializing the MAC buffer for vlink support mode %d",(mode == 0 ) ? "1xbuffer:1xeNB" : "1xbuffer:1xCORNTI");
   
   mac_buffer_g = malloc(NB_UE_INST*sizeof(MAC_BUFFER));
   if(mac_buffer_g==NULL){
     LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer/mac_buffer_top_init\n");
     mac_xface->macphy_exit("out of memory for MAC buffer init");
   }
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){  
-    sprintf(string,"%d",UE_id);
-    strcpy(string1,"mac_buffer id: ");
-    strcpy(string2,"packet_list id: ");
-    strcat(string1,string);
-    strcat(string2,string);
-    mac_buffer_g[UE_id] = mac_buffer_init(string1,string2,UE_id,sorting_flag);
-    if (mac_buffer_g[UE_id] == NULL)
-      mac_xface->macphy_exit("out of memory for MAC buffer init");
-    string[0]='\0'; // flush string buffer
-    string1[0]='\0';
-    string2[0]='\0';
-  }
+	
+	for (UE_id=0; UE_id<NB_UE_INST;UE_id++){  
+	  sprintf(string,"%d",UE_id);
+		strcpy(string1,"mac_buffer id: ");
+		strcpy(string2,"packet_list id: ");
+		strcat(string1,string);
+		strcat(string2,string);
+    mac_buffer_g[UE_id] = mac_buffer_init(string1,string2,UE_id);
+		if (mac_buffer_g[UE_id] == NULL){
+     LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure calling mac_buffer/mac_buffer_init for UE_id %d\n",UE_id);
+		 mac_xface->macphy_exit("out of memory for MAC buffer init");
+		}
+		string[0]='\0'; // flush string buffer
+		string1[0]='\0';
+		string2[0]='\0';
+ }
 }
 
-MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 Mod_id, u8 sorting_flag){
+MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 Mod_id){
  
-  MAC_BUFFER * mac_buff;
-  mac_buff = malloc(sizeof(MAC_BUFFER));
-  if(mac_buff==NULL){
-    //msg("[MEM_MGT][WARNING] Memory allocation failure for mac_buff for Mod_id %d \n",Mod_id);
-    return NULL;
-  }
+ MAC_BUFFER * mac_buff;
+ mac_buff = malloc(sizeof(MAC_BUFFER));
+ if(mac_buff==NULL){
+	 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure in mac_buffer_init\n");
+	 mac_xface->macphy_exit("out of memory for MAC buffer init");
+	return NULL;
+ }
  strcpy(mac_buff->name, nameB);
- mac_buff->sorting_flag=sorting_flag;
+
  mac_buff->maximum_capacity = MAC_BUFFER_MAXIMUM_CAPACITY;
  
  mac_buff->my_p = (packet_list_t*)malloc(sizeof(packet_list_t));
  if(mac_buff->my_p==NULL){
-	//msg("[MEM_MGT][WARNING] Memory allocation failure for packet_list in the mac_buff for Mod_id %d \n",Mod_id);
+	LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure in mac_buffer_init for packet_list\n");
+	mac_xface->macphy_exit("out of memory for MAC buffer init");
 	return NULL;
  }
   packet_list_init(mac_buff->my_p, nameP);
@@ -84,7 +88,7 @@ void packet_list_init(packet_list_t *listP, char *nameP){
   listP->total_size = 0;
 }
 
-void packet_list_free (packet_list_t* listP){
+void packet_list_free(packet_list_t* listP){
  mem_element_t	*le;
 	while ((le = packet_list_remove_head (listP))){
 	 free(le);
@@ -95,66 +99,176 @@ void mac_buffer_free(u8 Mod_id){
 	packet_list_free(mac_buffer_g[Mod_id]->my_p);
 }
 
-mem_element_t *packet_list_remove_head (packet_list_t * listP){
+mem_element_t *packet_list_remove_head(packet_list_t * listP){
 //-----------------------------------------------------------------------------
-  // access optimisation
-  mem_element_t      *head;
-  head = listP->head;
-  // almost one element
-  if (head != NULL) {
-    listP->head = head->next;
-    listP->nb_elements = listP->nb_elements - 1;
-    listP->total_size = listP->total_size - head->pdu_size;
+// access optimisation
+ mem_element_t	*head;
+ head = listP->head;
+ // almost one element
+ if(head != NULL){
+	
+	head->avl_node_pdu_seqn = NULL;
+	head->avl_node_pdu_size = NULL;
+	
+	listP->head = head->next;
+	listP->nb_elements = listP->nb_elements - 1;
+	listP->total_size = listP->total_size - head->pdu_size;
     // if only one element, update tail
-    if (listP->head == NULL) {
-      listP->tail = NULL;
-    } else {
-      listP->head->previous = NULL;
-      head->next = NULL;
-    }
-  } else {
-    //msg("[MEM_MGT][WARNING] remove_head_from_list(%s) no elements\n",listP->name);
-  }
-  return head;
+	if (listP->head == NULL){
+	 listP->tail = NULL;
+	}
+	else{
+	 listP->head->previous = NULL;
+	 head->next = NULL;
+	}
+ }
+ else{
+    LOG_E(MAC,"[MEM_MGT][WARNING]  packet_list_remove_head (%s) \n",listP->name);
+ }
+ return head;
 }
 
-mem_element_t *mac_buffer_remove_head(u8 Mod_id){
-  if(mac_buffer_g[Mod_id]->my_p->nb_elements!=0){
-    return (mem_element_t*)( packet_list_remove_head(mac_buffer_g[Mod_id]->my_p));
-  }else{
-    return NULL;
-  }
-}
-
-mem_element_t *packet_list_remove_tail (packet_list_t * listP){
+mem_element_t *packet_list_remove_head_2(packet_list_t * listP){
 //-----------------------------------------------------------------------------
-  // access optimisation;
-  mem_element_t      *tail;
-  tail = listP->tail;
-  // almost one element;
-  if (tail != NULL) {
-    listP->nb_elements = listP->nb_elements - 1;
-    listP->total_size = listP->total_size - tail->pdu_size;
-    // if only one element, update head, tail;
-    if (listP->head == tail) {
-      listP->head = NULL;
-      listP->tail = NULL;
-    } else {
-      listP->tail = tail->previous;
-      tail->previous->next = NULL;
-    }
-    tail->previous = NULL;
-  } else {
-    //msg("[MEM_MGT][WARNING] remove_head_from_list(%s) no elements\n",listP->name);
+// access optimisation
+ mem_element_t	*head;
+ head = listP->head;
+ // almost one element
+ if(head != NULL){
+	listP->head = head->next;
+	listP->nb_elements = listP->nb_elements - 1;
+	listP->total_size = listP->total_size - head->pdu_size;
+    // if only one element, update tail
+	if (listP->head == NULL){
+	 listP->tail = NULL;
+	}
+	else{
+	 listP->head->previous = NULL;
+	 head->next = NULL;
+	}
+ }
+ else{
+   LOG_E(MAC,"[MEM_MGT][WARNING]  packet_list_remove_head_2 (%s) \n",listP->name);
+ }
+ return head;
+}
+
+mem_element_t *mac_buffer_remove_head(u8 Mod_id, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size){
+ if(avl_node_pdu_seqn==NULL || avl_node_pdu_size == NULL ){
+	LOG_E(MAC,"[MEM_MGT][WARNING]  mac_buffer_remove_head() avl_node_pdu_seqn or avl_node_pdu_size is NULL \n");
+	return NULL;
+ }
+ if(mac_buffer_g[Mod_id]->my_p->nb_elements!=0){
+ int d1 = avl_node_pdu_seqn->pdu_seq_num_tree;
+ int d2 = avl_node_pdu_seqn->pdu_size_tree;
+ int d3 = avl_node_pdu_seqn->pdu_size_tree_in_next;
+ int seq_num = avl_node_pdu_seqn->key;
+ int pdu_size = avl_node_pdu_seqn->second_key;
+
+ mac_buffer_g[Mod_id]->tree_pdu_seqn = avl_tree_delete_node(mac_buffer_g[Mod_id]->tree_pdu_seqn, seq_num, d1,d2,d3);
+ mac_buffer_g[Mod_id]->tree_pdu_size = avl_tree_delete_node_pdu_size_tree(mac_buffer_g[Mod_id]->tree_pdu_size, pdu_size, seq_num);
+ return (mem_element_t*)(packet_list_remove_head(mac_buffer_g[Mod_id]->my_p));
+ }else{
+	return NULL;
+ }
+}
+
+mem_element_t *packet_list_remove_tail(packet_list_t * listP){
+//-----------------------------------------------------------------------------
+// access optimisation;
+ mem_element_t      *tail;
+ tail = listP->tail;
+ // almost one element;
+ if(tail != NULL){
+	tail->avl_node_pdu_seqn = NULL;
+	tail->avl_node_pdu_size = NULL;
+	
+	listP->nb_elements = listP->nb_elements - 1;
+	listP->total_size = listP->total_size - tail->pdu_size;
+	
+	// if only one element, update head, tail;
+	if(listP->head == tail){
+	 listP->head = NULL;
+	 listP->tail = NULL;
+	}
+	else{
+	 listP->tail = tail->previous;
+	 tail->previous->next = NULL;
+	}
+	tail->previous = NULL;
+ }
+ else{
+    //msg("[MEM_MGT][WARNING] packet_list_remove_tail (%s) \n",listP->name);
+    LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_remove_tail (%s) \n",listP->name);
   }
   return tail;
 }
 
-mem_element_t *mac_buffer_remove_tail(u8 Mod_id){
-  if(mac_buffer_g[Mod_id]->my_p->nb_elements!=0){
-    return (mem_element_t *)( packet_list_remove_tail(mac_buffer_g[Mod_id]->my_p));
-  }else{
-    return NULL;
+
+mem_element_t *packet_list_remove_middle(packet_list_t * listP, mem_element_t *ptr){
+//-----------------------------------------------------------------------------
+// access optimisation;
+ if(ptr != NULL){
+	listP->nb_elements = listP->nb_elements - 1;
+	listP->total_size = listP->total_size - ptr->pdu_size;
+	
+	ptr -> avl_node_pdu_seqn = NULL;
+	ptr -> avl_node_pdu_size = NULL;
+	
+	ptr -> previous -> next = ptr -> next;
+	ptr -> next -> previous = ptr -> previous;
+	ptr -> next = NULL;
+	ptr -> previous = NULL;
+	return ptr;
+  }
+  else{
+    //msg("[MEM_MGT][WARNING] packet_list_remove_middle (%s) \n",listP->name);
+    LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_remove_middle (%s) \n",listP->name);
+  return NULL;
+	}
+  
+}
+
+mem_element_t *mac_buffer_remove_middle(u8 Mod_id, mem_element_t *packet, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size){
+ if(avl_node_pdu_seqn==NULL || avl_node_pdu_size == NULL ){
+	//printf("Error: in mac_buffer_remove_middle() avl_node_pdu_seqn or avl_node_pdu_size is NULL\n");
+	LOG_E(MAC,"[MEM_MGT][WARNING]  in mac_buffer_remove_middle() avl_node_pdu_seqn or avl_node_pdu_size is NULL\n");
+	return NULL;
+ }
+ if(mac_buffer_g[Mod_id]->my_p->nb_elements!=0){
+ int d1 = avl_node_pdu_seqn->pdu_seq_num_tree;
+ int d2 = avl_node_pdu_seqn->pdu_size_tree;
+ int d3 = avl_node_pdu_seqn->pdu_size_tree_in_next;
+ int seq_num = avl_node_pdu_seqn->key;
+ int pdu_size = avl_node_pdu_seqn->second_key;
+ 
+ mac_buffer_g[Mod_id]->tree_pdu_seqn = avl_tree_delete_node(mac_buffer_g[Mod_id]->tree_pdu_seqn, seq_num, d1,d2,d3);
+ mac_buffer_g[Mod_id]->tree_pdu_size = avl_tree_delete_node_pdu_size_tree(mac_buffer_g[Mod_id]->tree_pdu_size, pdu_size, seq_num);
+ return (mem_element_t *)( packet_list_remove_middle(mac_buffer_g[Mod_id]->my_p, packet));
+ }else{
+	return NULL;
+ }
+}
+
+mem_element_t *mac_buffer_remove_tail(u8 Mod_id, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size){
+if(avl_node_pdu_seqn==NULL || avl_node_pdu_size == NULL ){
+	//printf("Error: in mac_buffer_remove_tail() avl_node_pdu_seqn or avl_node_pdu_size is NULL\n");
+	LOG_E(MAC,"[MEM_MGT][WARNING] in mac_buffer_remove_tail() avl_node_pdu_seqn or avl_node_pdu_size is NULL\n");
+	return NULL;
+ }
+ if(mac_buffer_g[Mod_id]->my_p->nb_elements!=0){
+ int d1 = avl_node_pdu_seqn->pdu_seq_num_tree;
+ int d2 = avl_node_pdu_seqn->pdu_size_tree;
+ int d3 = avl_node_pdu_seqn->pdu_size_tree_in_next;
+ int seq_num = avl_node_pdu_seqn->key;
+ int pdu_size = avl_node_pdu_seqn->second_key;
+
+ mac_buffer_g[Mod_id]->tree_pdu_seqn = avl_tree_delete_node(mac_buffer_g[Mod_id]->tree_pdu_seqn, seq_num, d1,d2,d3);
+ mac_buffer_g[Mod_id]->tree_pdu_size = avl_tree_delete_node_pdu_size_tree(mac_buffer_g[Mod_id]->tree_pdu_size, pdu_size, seq_num);
+
+ return (mem_element_t *)( packet_list_remove_tail(mac_buffer_g[Mod_id]->my_p));
+ }else{
+	return NULL;
   }
 }
 
@@ -164,7 +278,8 @@ mem_element_t *packet_list_get_head(packet_list_t * listP){
   mem_element_t  *head;
   head = listP->head;
   if (head == NULL) {
-    //msg("[MEM_MGT][WARNING] return NULL head from empty list \n",listP->name);
+    //msg("[MEM_MGT][WARNING] packet_list_get_head() return NULL head from empty list %s \n",listP->name);
+    LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_get_head() return NULL head from empty list %s \n",listP->name);
     return NULL;
   }
   return head;
@@ -175,239 +290,235 @@ mem_element_t *mac_buffer_get_head(u8 Mod_id){
     return  (mem_element_t*)( packet_list_get_head(mac_buffer_g[Mod_id]->my_p) );
   }
   else{
-   // msg("[MEM_MGT][WARNING] return NULL head from empty list \n");
+   // msg("[MEM_MGT][WARNING] mac_buffer_get_head() return NULL head from empty list\n");
+   LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_get_head() return NULL head from empty list\n");
   return NULL;
   }
 }
 
-mem_element_t *mac_buffer_data_req(u8 Mod_id, u16 eNB_index,  u16 cornti, int seq_num, int size, int HARQ_proccess_ID){
-
-  mem_element_t *ptr_h;
-  mem_element_t *help_head;
-  mem_element_t *help_tail;
- 
- help_head = mac_buffer_g[Mod_id]->my_p->head;
- help_tail = mac_buffer_g[Mod_id]->my_p->tail;
- ptr_h = mac_buffer_g[Mod_id]->my_p->head;
- 
- if(!(seq_num<0) && !(HARQ_proccess_ID<0)){
-	if(ptr_h==NULL){
+mem_element_t *mac_buffer_data_req(u8 Mod_id, int seq_num, int requested_size, int HARQ_proccess_ID){
+ mem_element_t *help_head = mac_buffer_g[Mod_id]->my_p->head;
+ mem_element_t *help_tail = mac_buffer_g[Mod_id]->my_p->tail;
+ avl_node_t *ptr_t,*ptr_k;
+  
+ if(help_head==NULL){
 	 return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
-	}else{
-	 while(ptr_h!=NULL){
-		if(ptr_h->seq_num == seq_num && ptr_h->HARQ_proccess_ID==HARQ_proccess_ID){
-		 if(ptr_h==help_head){
-			return  (mem_element_t*)(mac_buffer_remove_head(Mod_id));
+	}
+	else{
+	 if(!(seq_num<0) && !(HARQ_proccess_ID<0)){
+		ptr_t = avl_tree_find(mac_buffer_g[Mod_id]->tree_pdu_seqn, seq_num);
+		if(ptr_t!=NULL){
+		 	ptr_k = ptr_t->packet->avl_node_pdu_size;
+		 if( ptr_k!=NULL && ptr_t->key == ptr_t->packet->seq_num && ptr_t->packet->HARQ_proccess_ID==HARQ_proccess_ID){
+			if(ptr_k->key!=ptr_t->key){
+			 //printf("Error data_req ptr_k->key!=ptr_t->key (%d, %d)\n",ptr_k->key,ptr_t->key);
+			 LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() mismatch/incompatible keys in the avl_trees\n");
+			 mac_xface->macphy_exit("mac_buffer_data_req() mismatch/incompatible keys in the avl_trees");
+			}
+			if(ptr_k->packet!=ptr_t->packet){
+			 //printf("Error data_req ptr_k->packet!=ptr_t->packet\n");
+			 LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() mismatch/incompatible packet in the avl_trees\n");
+			 mac_xface->macphy_exit("mac_buffer_data_req() mismatch/incompatible packet in the avl_trees");
+			}
+			if(ptr_t->packet==help_head){
+			 return  (mem_element_t*)(mac_buffer_remove_head(Mod_id, ptr_t, ptr_k));
+			}
+			else if(ptr_t->packet==help_tail){
+			 return  (mem_element_t*)(mac_buffer_remove_tail(Mod_id, ptr_t, ptr_k));
+			}
+			else{			 
+			 return (mem_element_t*) (mac_buffer_remove_middle(Mod_id, ptr_t->packet, ptr_t, ptr_k));
+			}
 		 }
-		 else if(ptr_h==help_tail){
-			return  (mem_element_t*)(mac_buffer_remove_tail(Mod_id));
+		}else{
+		 // I didn't find anything so I return NULL;
+		 //printf("I did not find a packet anything\n");
+		 LOG_E(MAC,"[WARNING] mac_buffer_data_req() packet not found for given seq_num %d and HARQ_proccess_ID %d \n",seq_num,HARQ_proccess_ID);
+		 return  NULL;
+		}
+	 }
+	 else if(!(requested_size<0)){
+		 ptr_k = avl_tree_find_less_or_equal(mac_buffer_g[Mod_id]->tree_pdu_size, requested_size);
+		 if(ptr_k!=NULL ){
+			 ptr_t = ptr_k->next->packet->avl_node_pdu_seqn;
+			 if(ptr_t!=NULL){
+				if(ptr_k->next->packet==help_head){
+				 return  (mem_element_t*)(mac_buffer_remove_head(Mod_id, ptr_t, ptr_k));
+				}
+			  else if(ptr_k->next->packet==help_tail){
+				 return  (mem_element_t*)(mac_buffer_remove_tail(Mod_id, ptr_t, ptr_k));
+				}
+			  else{
+				 return (mem_element_t*) (mac_buffer_remove_middle(Mod_id, ptr_k->next->packet, ptr_t, ptr_k));
+				}
+			 }
 		 }
 		 else{
-			ptr_h -> previous -> next = ptr_h -> next;
-			ptr_h -> next -> previous = ptr_h -> previous;
-			ptr_h -> next = NULL;
-			ptr_h -> next = NULL;
-			mac_buffer_g[Mod_id]->my_p->nb_elements = mac_buffer_g[Mod_id]->my_p->nb_elements - 1;
-			mac_buffer_g[Mod_id]->my_p->total_size = mac_buffer_g[Mod_id]->my_p->total_size - ptr_h->pdu_size;
-			return ptr_h;
+			// I didn't find anything so I return NULL;
+		 //printf("I did not find a packet anything\n");
+		 LOG_E(MAC,"[WARNING] mac_buffer_data_req() packet not found for given requested_size %d\n",requested_size);
+		 return  NULL;
 		 }
-		}
-		ptr_h = ptr_h->next;//printf("Prev % d, Curr %d\n",ptr_h_prev->seq_num,ptr_h->seq_num);
-	 }
-	 // I didn't find anything so I return NULL;
-	 return  NULL;
-	 }
-  }
-  else if (!(size<0)){
-	 if(ptr_h==NULL){
-		return NULL; // empty list no packet seq_num exists, it returns 0 !!!
-	 }else{
-		while(ptr_h!=NULL){
-		 if(ptr_h-> pdu_size <= size ){
-			if(ptr_h==help_head){
-			 return  (mem_element_t*)(mac_buffer_remove_head(Mod_id));
-			}
-			else if(ptr_h==help_tail){
-			 return  (mem_element_t*)(mac_buffer_remove_tail(Mod_id));
-			}
-			else{
-			 ptr_h -> previous -> next = ptr_h -> next;
-			 ptr_h -> next -> previous = ptr_h -> previous;
-			 ptr_h -> next = NULL;
-			 ptr_h -> next = NULL;
-			 mac_buffer_g[Mod_id]->my_p->nb_elements = mac_buffer_g[Mod_id]->my_p->nb_elements - 1;
-			 mac_buffer_g[Mod_id]->my_p->total_size = mac_buffer_g[Mod_id]->my_p->total_size - ptr_h->pdu_size;
-			 return ptr_h;
-			}
-		 }
-		 ptr_h = ptr_h->next;
-		}
-		// I didn't find anything so I return NULL;
-		return NULL; 
-		}
-	}
-	else{ //return  NULL
-	 return NULL;
-	}
+	 }//end if requested_size<0 
+	}//end else
 }
 
-int packet_list_find_pdu_seq_num(packet_list_t *listP, int seq_num){
- mem_element_t *ptr;
- ptr = listP->head;
- if(ptr==NULL){
-	return 0; // empty list no packet seq_num exists, it returns 0 !!!    
-	}else{
-	 while(ptr!=NULL){
-		if(ptr->seq_num == seq_num ){
-			return 1; // seq_num found it returns 1
-		}
-    ptr = ptr->next;
-	}
- return 0; // finished all elements in list but no seq_num found, so it returns 0;
- }
-}
 
-void packet_list_add_tail (mem_element_t * elementP, packet_list_t * listP ){
-  mem_element_t      *tail;
+void packet_list_add_tail_2(mem_element_t * elementP, packet_list_t * listP){
+ mem_element_t *tail;
 //-----------------------------------------------------------------------------
-  if (elementP != NULL) {
-    // access optimisation
-    elementP->next = NULL;
-   
-    tail = listP->tail;
-    // almost one element
-    if (tail == NULL) {
-      elementP->previous = NULL;
-      listP->head = elementP;
-    } else {
-      tail->next = elementP;
-      elementP->previous = tail;
+	if(elementP != NULL){
+	 // access optimisation
+	 elementP->next = NULL;
+	 tail = listP->tail;
+	 // almost one element
+	 if(tail == NULL){
+		elementP->previous = NULL;
+		listP->head = elementP;
     }
+    else{
+		 tail->next = elementP;
+		 elementP->previous = tail;
+		}
     listP->tail = elementP;
-    listP->total_size = listP->total_size + elementP->pdu_size;
+		
+		//elementP ->avl_node_pdu_seqn = NULL;
+		//elementP ->avl_node_pdu_size = NULL;
+		//printf("elementP->avl_node_pdu_size->key %d\n",elementP->avl_node_pdu_size->key);
+    //printf("elementP->avl_node_pdu_size->second_key %d\n",elementP->avl_node_pdu_size->second_key);
+
+		listP->total_size = listP->total_size + elementP->pdu_size;
     listP->nb_elements = listP->nb_elements + 1;
-  } else {
+  }
+  else{
     //msg("[CNT_LIST][ERROR] add_cnt_tail() element NULL\n");
+     LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_add_tail_2() trying to add an uninitialized elementP in packet_list %s\n",listP->name);
+  }
+}
+
+
+void packet_list_add_tail(mem_element_t * elementP, packet_list_t * listP){
+ mem_element_t *tail;
+//-----------------------------------------------------------------------------
+	if(elementP != NULL){
+	 // access optimisation
+	 elementP->next = NULL;
+	 tail = listP->tail;
+	 // almost one element
+	 if(tail == NULL){
+		elementP->previous = NULL;
+		listP->head = elementP;
+    }
+    else{
+		 tail->next = elementP;
+		 elementP->previous = tail;
+		}
+    listP->tail = elementP;
+		
+		elementP ->avl_node_pdu_seqn = NULL;
+		elementP ->avl_node_pdu_size = NULL;
+    
+		listP->total_size = listP->total_size + elementP->pdu_size;
+    listP->nb_elements = listP->nb_elements + 1;
+  }
+  else{
+    //msg("[CNT_LIST][ERROR] add_cnt_tail() element NULL\n");
+    LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_add_tail() trying to add an uninitialized elementP in packet_list %s\n",listP->name);
   }
 }
 
 void packet_list_add_head(mem_element_t *elementP, packet_list_t * listP){
 //-----------------------------------------------------------------------------
-  // access optimisation;
-  mem_element_t  *head;
+// access optimisation;
+ mem_element_t  *head;
+ 
+ if (elementP != NULL){
+	head = listP->head;
+	// almost one element
+	if(head == NULL){
+	 elementP->next = NULL;
+	 elementP->previous = NULL;
+	 listP->head = elementP; 
+	 listP->tail = elementP;
+	}
+	else{
+	 elementP->next = head;
+	 head->previous = elementP;
+	 elementP->previous = NULL;
+	 listP->head = elementP;
+	}
 
-  if (elementP != NULL) {
-    head = listP->head;
-
-    // almost one element
-    if (head == NULL) {
-		  elementP->next = NULL;
-			elementP->previous = NULL;
-      listP->head = elementP; 
-      listP->tail = elementP;
-    }else{
-      elementP->next = head;
-      head->previous = elementP;
-      elementP->previous = NULL;
-      listP->head = elementP;
-    }
-    listP->nb_elements = listP->nb_elements + 1;
-		listP->total_size = listP->total_size + elementP->pdu_size;
-  }
+	elementP->avl_node_pdu_seqn = NULL;
+	elementP->avl_node_pdu_size = NULL;
+	
+	listP->nb_elements = listP->nb_elements + 1;
+	listP->total_size = listP->total_size + elementP->pdu_size;
+ }
 }
 
 void packet_list_add_after_ref(mem_element_t * new_elementP, mem_element_t *elementP_ref, packet_list_t * listP){
-  mem_element_t *tail;
-//-----------------------------------------------------------------------------
-  if (new_elementP != NULL && elementP_ref!=NULL) {
-    // access optimisation
-    tail = listP->tail;
-    // almost one element
-    if (tail == NULL){
-      new_elementP->previous = NULL;
-      listP->head = new_elementP;
-    }else{
-		 new_elementP->next = elementP_ref->next;
-		 new_elementP->previous = elementP_ref;
-		 if(elementP_ref->next == NULL){
-			listP->tail = new_elementP;
-		 }else{
-		  elementP_ref->next->previous = new_elementP;
-		 }
-      elementP_ref->next = new_elementP;
-    }
-    listP->total_size = listP->total_size + new_elementP->pdu_size;
-    listP->nb_elements = listP->nb_elements + 1;
-  }else{
+ mem_element_t *tail;
+ //-----------------------------------------------------------------------------
+ if(new_elementP != NULL && elementP_ref!=NULL){
+	// access optimisation
+	tail = listP->tail;
+	// almost one element
+	if(tail == NULL){
+	 new_elementP->previous = NULL;
+	 listP->head = new_elementP;
+	}
+	else{
+	 new_elementP->next = elementP_ref->next;
+	 new_elementP->previous = elementP_ref;
+	 if(elementP_ref->next == NULL){
+		listP->tail = new_elementP;
+	 }
+	 else{
+		elementP_ref->next->previous = new_elementP;
+	 }
+	 elementP_ref->next = new_elementP;
+
+	 new_elementP -> avl_node_pdu_seqn = NULL;
+	 new_elementP -> avl_node_pdu_size = NULL;
+	}
+	listP->total_size = listP->total_size + new_elementP->pdu_size;
+	listP->nb_elements = listP->nb_elements + 1;
+ }
+ else{
     //msg("[CNT_LIST][ERROR] add_cnt_tail() element NULL\n");
+    LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_add_after_ref() trying to add an uninitialized elementP and elementP_ref in packet_list %s\n",listP->name);
   }
 }
 
-int mac_buffer_data_ind(u8 Mod_id,u16 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID){
-  //int mac_buffer_data_ind(u8 Mod_id, mem_element_t *elementP, int seq_num, int pdu_size, int HARQ_proccess_ID){
-  mem_element_t *elementP;
-  elementP = malloc(sizeof(struct mem_element_t));
-
-  if (elementP == NULL || mac_buffer_nb_elements(Mod_id)==MAC_BUFFER_MAXIMUM_CAPACITY){
-    LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
-    return 0;
-  }
-  else{
+int mac_buffer_data_ind(u8 Mod_id, u16 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID){
+ mem_element_t *elementP;
+ elementP = malloc(sizeof(struct mem_element_t));
+ if (elementP == NULL || mac_buffer_nb_elements(Mod_id)==MAC_BUFFER_MAXIMUM_CAPACITY){
+	LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
+	return 0;
+ }
+ else{
 	elementP->seq_num = seq_num;
 	elementP->pdu_size = pdu_size;
 	elementP->HARQ_proccess_ID = HARQ_proccess_ID;
-	elementP->pool_id = 1; // as we have only one memory pool 
-	memcpy (elementP->data, data, pdu_size);
-
-	if (mac_buffer_g[Mod_id]->sorting_flag == SORT_FIFO){ // FIFO Queue-list, PDUs are inserted on the tail as they arrive!
-	 if (mac_buffer_add_tail(Mod_id, elementP) == 1)
+	// ask Navid about the pool_id and data, if this values should be assigned here or outside this function!
+	//elementP->pool_id = pool_id;
+	//elementP->data = data;
+	 if(mac_buffer_add_tail(Mod_id, elementP) == 1)
 		return 1;
 	 else
 		return 0;
-	}else if(mac_buffer_g[Mod_id]->sorting_flag == SORT_PDU_SEQN || mac_buffer_g[Mod_id]->sorting_flag == SORT_PDU_SIZE){
-	 if (mac_buffer_add_sorted( Mod_id, elementP) == 1)
-		return 1;
-	 else
-		return 0;
-	}else{
-	 //msg("[MAC] UNSPECIFIED SORTING in PDU Insertion, Packet not inserted!\n");
-	 return 0;
-	}
  }
 }
 
 int mac_buffer_add_tail(u8 Mod_id, mem_element_t *elementP){
-  if(packet_list_find_pdu_seq_num(mac_buffer_g[Mod_id]->my_p, elementP->seq_num) == 0 ){ // packet element with seq_num not found, then I add the element to the buffer
-    packet_list_add_tail(elementP, mac_buffer_g[Mod_id]->my_p);
-    return 1;
-  }
-  else{
-    return 0;
-  }
-}
-
-int mac_buffer_add_sorted(u8 Mod_id, mem_element_t *elementP){
- mem_element_t *pivot;
- int after=-1;
- if(packet_list_find_pdu_seq_num(mac_buffer_g[Mod_id]->my_p, elementP->seq_num) == 0 ){ // packet element with seq_num not found, then I add the element to the buffer
-	if (mac_buffer_g[Mod_id]->sorting_flag == SORT_PDU_SEQN){ 
-	 pivot=packet_list_find_pivot_seq_num(elementP->seq_num, mac_buffer_g[Mod_id]->my_p, &after);
-	}else if(mac_buffer_g[Mod_id]->sorting_flag == SORT_PDU_SIZE){
-	 pivot=packet_list_find_pivot_pdu_size(elementP->pdu_size, mac_buffer_g[Mod_id]->my_p, &after);
-	}
-	if(pivot==NULL){
-	 packet_list_add_tail(elementP, mac_buffer_g[Mod_id]->my_p);
-	 return 1;
-	}else if(pivot==mac_buffer_g[Mod_id]->my_p->head && after == 1){
-	 packet_list_add_after_ref(elementP, pivot, mac_buffer_g[Mod_id]->my_p);
-	 return 1; 
-	}else if(pivot==mac_buffer_g[Mod_id]->my_p->head && after == 0){
-	 packet_list_add_head(elementP, mac_buffer_g[Mod_id]->my_p);
-	 return 1; 
-	}else{ // if(pivot!=NULL){
-	 packet_list_add_after_ref(elementP, pivot, mac_buffer_g[Mod_id]->my_p);
-	 return 1;
-	}
+ avl_node_t *ptr_t;
+ ptr_t=avl_tree_find(mac_buffer_g[Mod_id]->tree_pdu_seqn, elementP->seq_num);
+ if(ptr_t == NULL){ // pdu with the seq_num does not exist in the tree so I can add it into the list and then to the tree!
+	packet_list_add_tail(elementP, mac_buffer_g[Mod_id]->my_p);
+	mac_buffer_g[Mod_id]->tree_pdu_seqn = avl_tree_insert_node(mac_buffer_g[Mod_id]->tree_pdu_seqn, elementP, 1, 0, 0);
+	mac_buffer_g[Mod_id]->tree_pdu_size = avl_tree_insert_node_pdu_size(mac_buffer_g[Mod_id]->tree_pdu_size, elementP);	
+	return 1;
  }
  else{
 	return 0;
@@ -415,59 +526,30 @@ int mac_buffer_add_sorted(u8 Mod_id, mem_element_t *elementP){
 }
 
 
-mem_element_t *packet_list_find_pivot_seq_num(int seq_num, packet_list_t *listP, int *after){
- mem_element_t *ptr_p;
- ptr_p = listP->head;
- if(ptr_p==NULL){
-	// printf("Empty help list!!!");
-	return NULL; 
- }
- else{
-	while(ptr_p!=NULL){
-	 if(ptr_p->seq_num > seq_num){
-		if (ptr_p==listP->head){
-		 *after=0;
-		 return ptr_p;
-		}
-		else if(ptr_p->previous==listP->head){
-		 *after=1;
-		 return (ptr_p->previous);
-		}
-		else{
-		 return (ptr_p->previous);
-		}
-	 }
-	 ptr_p = ptr_p->next;
-	}
-	return ptr_p;
- }
+int  mac_buffer_total_size(u8 Mod_id){
+  return mac_buffer_g[Mod_id]->my_p->total_size;
 }
 
-mem_element_t *packet_list_find_pivot_pdu_size(int pdu_size, packet_list_t *listP, int *after){
+int  mac_buffer_nb_elements(u8 Mod_id){
+  return mac_buffer_g[Mod_id]->my_p->nb_elements;
+}
+
+
+//DEBUGGING functions
+void packet_list_print(packet_list_t *listP){
  mem_element_t *ptr_p;
  ptr_p = listP->head;
  if(ptr_p==NULL){
-	  printf("Empty help list!!!");
-    return NULL; 
+    printf("Empty help list!!!");
+	 return; 
   }else{
     while(ptr_p!=NULL){
-     if(ptr_p->pdu_size > pdu_size){
-			if (ptr_p==listP->head){
-			 *after=0;
-			 return ptr_p;
-			}else if(ptr_p->previous==listP->head)
-			{
-			 *after=1;
-			 return (ptr_p->previous);
-			}
-			else{
-			 return (ptr_p->previous);
-			}
-		 }
-     ptr_p = ptr_p->next;
-		 }
-		 return ptr_p;
-   }
+     // int seq_num, int pdu_size, int total_size, int HARQ_proccess_ID
+     // printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+      printf("ptr_p->avl_node_pdu_size->key ptr_p->avl_node_pdu_size->second_key %d %d \n",ptr_p->avl_node_pdu_size->key,ptr_p->avl_node_pdu_size->second_key);
+			ptr_p = ptr_p->next;
+    }
+  }
 }
 
 void mac_buffer_print(u8 Mod_id){
@@ -488,27 +570,232 @@ void mac_buffer_print(u8 Mod_id){
 }
 
 void mac_buffer_print_reverse(u8 Mod_id){
-  mem_element_t *ptr_p;
+  mem_element_t *ptr_p, *head, *tail;
+	tail = mac_buffer_g[Mod_id]->my_p->tail;
   ptr_p = mac_buffer_g[Mod_id]->my_p->tail;
+	head = mac_buffer_g[Mod_id]->my_p->head;
+
 	printf("\n\nREVERSE| %s | %s \n",mac_buffer_g[Mod_id]->name,mac_buffer_g[Mod_id]->my_p->name);
 	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id), mac_buffer_nb_elements(Mod_id));
   if(ptr_p==NULL){
 	  printf("Empty help list!!!");
     return; 
   }else{
-    while(ptr_p!=NULL){
+    while(ptr_p!=head){
      // int seq_num, int pdu_size, int total_size, int HARQ_proccess_ID
       printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
       ptr_p = ptr_p->previous;
     }
+    printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+  }
+  if(head->next!=NULL){
+	 if(tail->previous->next!=tail){printf("provlima\n");}
+	}
+}
+
+void mac_buffer_print_2(u8 Mod_id){
+  mem_element_t *ptr_p;
+  ptr_p = mac_buffer_g[Mod_id]->my_p->head;
+	printf("\n\n%s | %s \n",mac_buffer_g[Mod_id]->name,mac_buffer_g[Mod_id]->my_p->name);
+	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id), mac_buffer_nb_elements(Mod_id));
+  if(ptr_p==NULL){
+    printf("Empty list!!!");
+	 return; 
+  }else{
+    while(ptr_p!=NULL){
+      //int seq_num, int pdu_size, int total_size, int HARQ_proccess_ID
+      printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+      if(ptr_p->avl_node_pdu_seqn == NULL){
+			 printf("Error 1a: ptr_p->avl_node_pdu_seqn == NULL\n");
+			}
+			if(ptr_p->avl_node_pdu_size == NULL){
+			 printf("Error 1a: ptr_p->avl_node_pdu_seqn == NULL\n");
+			}
+			if(ptr_p->avl_node_pdu_seqn->packet!=ptr_p){
+			 printf("Error 2a: ptr_p->avl_node_pdu_seqn->packet!=ptr_p \n");
+			}
+			if(ptr_p->avl_node_pdu_size->packet!=ptr_p){
+			 printf("Error 2b: ptr_p->avl_node_pdu_size->packet!=ptr_p \n");
+			}
+			if(ptr_p->avl_node_pdu_seqn->key!=ptr_p->seq_num){
+			 printf("Error 3a: ptr_p->avl_node_pdu_seqn->key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_seqn->key,ptr_p->seq_num);
+			}
+			if(ptr_p->avl_node_pdu_size->second_key!=ptr_p->seq_num){
+			  printf("Error 3b: ptr_p->avl_node_pdu_size->second_key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_size->second_key, ptr_p->seq_num);
+			}
+			ptr_p = ptr_p->next;
+    }
   }
 }
 
-int  mac_buffer_total_size(u8 Mod_id){
-  return mac_buffer_g[Mod_id]->my_p->total_size;
+void mac_buffer_print_3(u8 Mod_id){
+  mem_element_t *ptr_p;
+  ptr_p = mac_buffer_g[Mod_id]->my_p->head;
+	int flag=0;
+	printf("\n\n%s | %s \n",mac_buffer_g[Mod_id]->name,mac_buffer_g[Mod_id]->my_p->name);
+	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id), mac_buffer_nb_elements(Mod_id));
+  if(ptr_p==NULL){
+    printf("Empty list!!!");
+	 return; 
+  }else{
+    while(ptr_p!=NULL){
+      //int seq_num, int pdu_size, int total_size, int HARQ_proccess_ID
+      //printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+      if(ptr_p->avl_node_pdu_seqn == NULL){
+			 flag=1;
+			 //printf("Error a: ptr_p->avl_node_pdu_seqn == NULL\n");
+			 //printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+			}
+			
+			if(ptr_p->avl_node_pdu_seqn->pdu_seq_num_tree == 1){
+			 flag=1;
+				if(ptr_p->avl_node_pdu_seqn->packet!=ptr_p){
+				 flag=1;
+				 //printf("Error a1: ptr_p->avl_node_pdu_seqn->packet!=ptr_p \n");
+				 //printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+				}
+				if(ptr_p->avl_node_pdu_seqn->key!=ptr_p->seq_num){
+				 flag=1;
+				 //printf("Error a2: ptr_p->avl_node_pdu_seqn->key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_seqn->key,ptr_p->seq_num);
+				 //printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 			 
+			 }
+			}
+			
+			if(ptr_p->avl_node_pdu_size == NULL){
+			 flag=1;
+			 //printf("Error b: ptr_p->avl_node_pdu_seqn == NULL\n");
+			 //printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+			 if(ptr_p->avl_node_pdu_size->pdu_size_tree == 1){
+				flag=1;
+				if(ptr_p->avl_node_pdu_size->packet!=ptr_p){flag=1;
+				 //printf("Error b1: ptr_p->avl_node_pdu_size->packet!=ptr_p \n");
+				 //printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+				}
+				if(ptr_p->avl_node_pdu_size->second_key!=ptr_p->seq_num){flag=1;
+				 //printf("Error b2: ptr_p->avl_node_pdu_size->second_key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_size->second_key,ptr_p->seq_num);
+				 //printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id);
+				}
+			 }
+			 if(ptr_p->avl_node_pdu_size->pdu_size_tree_in_next == 1){
+				 flag=1;
+				 if(ptr_p->avl_node_pdu_size->packet!=ptr_p){
+					flag=1;
+					//printf("Error c1: ptr_p->avl_node_pdu_size->packet!=ptr_p \n");
+					//printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id);
+				 }
+				 if(ptr_p->avl_node_pdu_size->key!=ptr_p->seq_num){
+					flag=1;
+					//printf("Error c2: ptr_p->avl_node_pdu_size->key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_size->key,ptr_p->seq_num);
+					//printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id);
+				 }
+				}
+			 }
+			 
+			ptr_p = ptr_p->next;
+    }
+  }
+  if(flag==1){
+	 ptr_p = mac_buffer_g[Mod_id]->my_p->head;
+	 //printf("\n\n%s | %s \n",mac_buffer_g[Mod_id]->name,mac_buffer_g[Mod_id]->my_p->name);
+	 //printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id), mac_buffer_nb_elements(Mod_id));
+	  while(ptr_p!=NULL){
+      //int seq_num, int pdu_size, int total_size, int HARQ_proccess_ID
+      //printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+      if(ptr_p->avl_node_pdu_seqn == NULL){
+			 flag=1;
+			 printf("Error a: ptr_p->avl_node_pdu_seqn == NULL\n");
+			 printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+			}
+			
+			if(ptr_p->avl_node_pdu_seqn->pdu_seq_num_tree == 1){
+			 flag=1;
+				if(ptr_p->avl_node_pdu_seqn->packet!=ptr_p){
+				 flag=1;
+				 printf("Error a1: ptr_p->avl_node_pdu_seqn->packet!=ptr_p \n");
+				 printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+				}
+				if(ptr_p->avl_node_pdu_seqn->key!=ptr_p->seq_num){
+				 flag=1;
+				 printf("Error a2: ptr_p->avl_node_pdu_seqn->key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_seqn->key,ptr_p->seq_num);
+				 printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 			 
+			 }
+			}
+			
+			if(ptr_p->avl_node_pdu_size == NULL){
+			 flag=1;
+			 printf("Error b: ptr_p->avl_node_pdu_seqn == NULL\n");
+			 printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+			 if(ptr_p->avl_node_pdu_size->pdu_size_tree == 1){
+				flag=1;
+				if(ptr_p->avl_node_pdu_size->packet!=ptr_p){flag=1;
+				 printf("Error b1: ptr_p->avl_node_pdu_size->packet!=ptr_p \n");
+				 printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+				}
+				if(ptr_p->avl_node_pdu_size->second_key!=ptr_p->seq_num){flag=1;
+				 printf("Error b2: ptr_p->avl_node_pdu_size->second_key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_size->second_key,ptr_p->seq_num);
+				 printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id);
+				}
+			 }
+			 if(ptr_p->avl_node_pdu_size->pdu_size_tree_in_next == 1){
+				 flag=1;
+				 if(ptr_p->avl_node_pdu_size->packet!=ptr_p){
+					flag=1;
+					printf("Error c1: ptr_p->avl_node_pdu_size->packet!=ptr_p \n");
+					printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id);
+				 }
+				 if(ptr_p->avl_node_pdu_size->key!=ptr_p->seq_num){
+					flag=1;
+					printf("Error c2: ptr_p->avl_node_pdu_size->key!=ptr_p->seq_num %d, %d \n",ptr_p->avl_node_pdu_size->key,ptr_p->seq_num);
+					printf("Error --> Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id);
+				 }
+				}
+			 }
+			ptr_p = ptr_p->next;
+    }
+ }
 }
 
-int  mac_buffer_nb_elements(u8 Mod_id){
-  return mac_buffer_g[Mod_id]->my_p->nb_elements;
+
+void mac_buffer_print_4(u8 Mod_id){
+  mem_element_t *ptr_p, *ptr_h1,* ptr_h2;
+	avl_node_t *ptr_r1,* ptr_r2;
+  ptr_p = mac_buffer_g[Mod_id]->my_p->head;
+	
+	int flag=0;
+	printf("\n\n%s | %s \n",mac_buffer_g[Mod_id]->name,mac_buffer_g[Mod_id]->my_p->name);
+	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id), mac_buffer_nb_elements(Mod_id));
+  if(ptr_p==NULL){
+    printf("Empty list!!!");
+	 return; 
+  }else{
+    while(ptr_p!=NULL){
+			ptr_h1 = ptr_p->avl_node_pdu_seqn->packet;
+			ptr_h2 = ptr_p->avl_node_pdu_size->packet;
+			ptr_r1 = ptr_p->avl_node_pdu_seqn;
+			ptr_r2 = ptr_p->avl_node_pdu_size;
+			if(ptr_p!=ptr_h1){
+			  printf("ptr_p->seq_num %d\n",ptr_p->seq_num);
+			 printf("Error 1: ptr_p != ptr_p->avl_node_pdu_seqn->packet\n");
+			}
+			if(ptr_p!=ptr_h2){
+			 printf("ptr_p->seq_num %d\n",ptr_p->seq_num);
+			 printf("Error 2: ptr_p != ptr_p->avl_node_pdu_size->packet\n");
+			}
+			if(ptr_p->seq_num!=ptr_r1->key || ptr_p->seq_num!=ptr_r2->key){
+			 printf("ptr_p->seq_num %d\n",ptr_p->seq_num);
+			 printf("Error 3: ptr_p->seq_num!=ptr_r1->key (%d, %d)|| ptr_p->seq_num!=ptr_r2->key (%d, %d)\n",ptr_p->seq_num, ptr_r1->key, ptr_p->seq_num, ptr_r2->key);
+			}
+			if(ptr_p->pdu_size!=ptr_r1->second_key || ptr_p->pdu_size!=ptr_r2->second_key){
+			 printf("ptr_p->seq_num %d\n",ptr_p->seq_num);
+			 printf("Error 4: ptr_p->pdu_size!=ptr_r1->second_key (%d, %d)|| ptr_p->pdu_size!=ptr_r2->second_key (%d, %d)\n",ptr_p->pdu_size, ptr_r1->second_key, ptr_p->pdu_size, ptr_r2->second_key);
+			}
+			ptr_p = ptr_p->next;
+    }
+  }
+ 
 }
+
+
+
+
 
