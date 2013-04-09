@@ -18,6 +18,9 @@ end
 
 j = sqrt(-1);
 
+% LLRs are computed for 8RE make sure enough valid memory is allocated
+LLR_GUARD = 8*6; % max mod_order 6 for 8 REs
+
 %% Custom parameters 
 simparms.nb_antennas_tx = nb_antennas_tx;
 simparms.nb_antennas_tx_eNB = simparms.nb_antennas_tx;
@@ -33,8 +36,8 @@ simparms.num_pdcch_symbols = 3;
 simparms.subframe = 7;
 simparms.abstraction_flag = 0;
 simparms.nb_rb = 25; % fixed number of RB per OFDM symbol
-simparms.rb_alloc = hex2dec('1FFFFFF'); % 25 ones
-simparms.MAX_TURBO_ITERATIONS = 4;
+simparms.rb_alloc = hex2dec('1FFF'); % 25 RBs
+simparms.MAX_TURBO_ITERATIONS = 5;
 simparms.nb_re = 3000; % there are 3000 REs in subframe 7
 simparms.frame_type = 1; % TDD frame
 simparms.mode1_flag = 0; % is TM1 active?
@@ -45,6 +48,7 @@ simparms.dl_power_offset= 0; % 0 = 3dB power offset
 simparms.nb_slots = 14;
 simparms.nb_re_per_symbol = simparms.nb_rb*12;
 simparms.nb_re_per_frame = simparms.nb_slots*simparms.nb_re_per_symbol;
+simparms.LLR_GUARD = LLR_GUARD;
 simparms.frame_errors = zeros(length(simparms.snr),1);
 simparms.CB = [[1;1],[1;-1],[1;j],[1;-j]]; % codebook
 simparms.tseeds = set_taus_seed(1); % taus seeds
