@@ -185,20 +185,22 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, si
                 rlc_um_clear_rx_sdu(rlcP);
             }
             rlcP->last_reassemblied_sn = sn;
-            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, frame, sn);
             tb_ind = (struct mac_tb_ind *)(pdu_mem->data);
             if (rlcP->rx_sn_length == 10) {
+                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY 10 PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, frame, sn);
                 e  = (((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->b1 & 0x04) >> 2;
                 fi = (((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->b1 & 0x18) >> 3;
                 e_li = (rlc_um_e_li_t*)((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->data;
                 size   = tb_ind->size - 2;
                 data = &tb_ind->data_ptr[2];
             } else {
-                e  = (((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1 & 0x20) >> 5;
-                fi = (((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1 & 0xC0) >> 6;
+                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY 5 PDU SN=%03d Byte 0=%02X\n", rlcP->module_id, rlcP->rb_id, frame, sn, ((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1);
+                e  = (((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1 & 0x00000020) >> 5;
+                fi = (((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1 & 0x000000C0) >> 6;
                 e_li = (rlc_um_e_li_t*)((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->data;
                 size   = tb_ind->size - 1;
                 data = &tb_ind->data_ptr[1];
+                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] e=%01X fi=%01X\n", rlcP->module_id, rlcP->rb_id, frame, e, fi);
             }
             if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
                 switch (fi) {
@@ -577,11 +579,19 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     int g_record_number, g_hours, g_minutes, g_seconds, g_milliseconds; // to be set in logging facilities
     u8* first_byte = &pduP->b1;
 #endif
-    //unsigned int sn_tmp;
-    signed int sn = ((pduP->b1 & 0x00000003) << 8) + pduP->b2;
-    signed int in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_uh - rlcP->rx_um_window_size, sn, rlcP->vr_ur);
+    signed int sn;
+    signed int in_window;
 
-    //rlc_util_print_hex_octets(RLC, pdu_memP->data, tb_sizeP + 32);
+    if (rlcP->rx_sn_length == 10) {
+        sn = ((pduP->b1 & 0x00000003) << 8) + pduP->b2;
+    } else if (rlcP->rx_sn_length == 5) {
+        sn = pduP->b1 & 0x1F;
+    } else {
+    	free_mem_block(pdu_memP);
+    }
+    in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_uh - rlcP->rx_um_window_size, sn, rlcP->vr_ur);
+
+    rlc_util_print_hex_octets(RLC, &pduP->b1, tb_sizeP);
 
 
     #ifdef DEBUG_DISPLAY_NVIDIA
@@ -667,7 +677,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     //      -if VR(UR) falls outside of the reordering window:
     //          -set VR(UR) to (VR(UH) – UM_Window_Size);
     if (rlc_um_in_reordering_window(rlcP, frame, sn) < 0) {
-        LOG_W(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->vr_uh, rlcP->rx_um_window_size);
+        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, frame, sn, rlcP->vr_uh, rlcP->rx_um_window_size);
         rlcP->vr_uh = (sn + 1) % rlcP->rx_sn_modulo;
 
         if (rlc_um_in_reordering_window(rlcP, frame, rlcP->vr_ur) != 0) {

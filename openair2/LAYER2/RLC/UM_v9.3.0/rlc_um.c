@@ -113,7 +113,12 @@ rlc_um_get_pdus (void *argP,u32_t frame)
         // - enters the LOCAL_SUSPEND state.
 
         // SEND DATA TO MAC
-        rlc_um_segment_10 (rlc,frame);
+    	  if (rlc->tx_sn_length == 10) {
+              rlc_um_segment_10 (rlc,frame);
+    	  }
+    	  if (rlc->tx_sn_length == 5) {
+              rlc_um_segment_5 (rlc,frame);
+    	  }
         break;
 
       case RLC_LOCAL_SUSPEND_STATE:

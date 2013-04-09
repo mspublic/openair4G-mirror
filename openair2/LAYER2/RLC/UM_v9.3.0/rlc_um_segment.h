@@ -68,5 +68,13 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 * \param[in]  frame       Frame Index.
 */
 protected_rlc_um_segment(void rlc_um_segment_10 (struct rlc_um_entity *rlcP,u32_t frame));
+
+
+/*! \fn void rlc_um_segment_5 (struct rlc_um_entity *rlcP,u32_t frame)
+* \brief    Segmentation procedure with 5 bits sequence number, segment the first SDU in buffer and create a PDU of the size (nb_bytes_to_transmit) requested by MAC if possible and put it in the list "pdus_to_mac_layer".
+* \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame Index.
+*/
+protected_rlc_um_segment(void rlc_um_segment_5 (struct rlc_um_entity *rlcP,u32_t frame));
 /** @} */
 #    endif

@@ -113,6 +113,11 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame, u8_t eNB_flag)
     if (rlcP->output_sdu_size_to_write > 0) {
         rlcP->rx_sdus += 1;
 #ifdef TEST_RLC_UM
+        #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
+        rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
+        LOG_T(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] DATA :", rlcP->module_id, rlcP->rb_id, frame);
+        rlc_util_print_hex_octets(RLC, rlcP->output_sdu_in_construction->data, rlcP->output_sdu_size_to_write);
+        #endif
         rlc_um_v9_3_0_test_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
 #else
         // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id, frame,rlcP->output_sdu_size_to_write);

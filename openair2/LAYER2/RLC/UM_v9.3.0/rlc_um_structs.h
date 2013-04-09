@@ -72,9 +72,6 @@ typedef struct rlc_um_tx_sdu_management {
 * \brief Structure helping coding and decoding the first byte of a UMD PDU.
 */
 typedef struct rlc_um_pdu_sn_5 {
-/*  u8_t fi:2;
-  u8_t e:1;
-  u8_t sn:5;*/
   u8_t     b1;      /*!< \brief 1st byte. */
   u8_t     data[3]; /*!< \brief Following bytes. */
 } __attribute__((__packed__)) rlc_um_pdu_sn_5_t ;
@@ -87,6 +84,7 @@ typedef struct rlc_um_pdu_sn_10 {
     u8_t  b2;      /*!< \brief 2nd byte. */
     u8_t  data[2]; /*!< \brief Following bytes. */
 }__attribute__((__packed__)) rlc_um_pdu_sn_10_t ;
+
 
 /*! \struct  rlc_am_e_li_t
 * \brief Structure helping coding and decoding LI and e bits in UMD PDUs.
