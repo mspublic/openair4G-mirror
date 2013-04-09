@@ -27,7 +27,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	unsigned char num_pdcch_symbols=1;
 	unsigned char harq_pid=0;
 	unsigned char subframe=0;
-	unsigned char Kmimo=0;
+	unsigned char Kmimo=1;
 	unsigned char Mdlharq=8;
 	unsigned char abstraction_flag;
 	int ret, input_buffer_length;
@@ -192,7 +192,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	ret = dlsch_encoding(input_buffer, frame_parms, num_pdcch_symbols, dlsch, 0, subframe,&dlsch_rate_matching_stats, &dlsch_turbo_encoding_stats, &dlsch_interleaving_stats);		
 	
 	/* Assign output */
-	memcpy(e,dlsch->e,G);
+	memcpy((void*) e, (void*) dlsch->e,G);
 	
 	/* free */
 	free_eNB_dlsch(dlsch);

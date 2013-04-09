@@ -23,7 +23,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	int *rxdataF_comp[NB_ANTENNAS_RX*NB_ANTENNAS_TX], *ymf_out, *hmag_out, *hmagb_out, *heff_out, *heff;
 	unsigned int nb_re_per_symbol, nb_re, nb_re_per_frame;
 	unsigned char *pmi_ext, mod_order, output_shift,dl_power_off;
-	unsigned char symbol, symbol_mod;
+	unsigned char symbol;
 	int eNB_id = 0,i; // dummy
 	mxArray *tmp;
 	
@@ -125,8 +125,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	phy_measurements->n0_power[1] = 1;
 	phy_measurements->n0_power_tot = 1;
 			
-	// Adapt the channel estimates and receive signal
-	symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+	// Adapt the channel estimates and receive signal	
 	nb_re_per_symbol = frame_parms->N_RB_DL*12;
 	
     // Assign pointers
@@ -175,10 +174,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	
 		
 	#ifdef DEBUG_CHANNEL_COMP
-	mexPrintf("symbol = %d\n", symbol);
-	mexPrintf("symbol_mod = %d\n", symbol_mod);
+	mexPrintf("symbol = %d\n", symbol);	
 	mexPrintf("nb_re_per_symbol = %d\n", nb_re_per_symbol);
-	mexPrintf("nb_re_per_frame = %d\n", nb_re_per_frame);
+	mexPrintf("nb_re_per_frame = %d\n", nb_re_per_frame);    
 	for(i=0;i<25;i++)
 		mexPrintf("pmi_ext = %d\n", pmi_ext[i]);
 	#endif
@@ -215,10 +213,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	memcpy(&hmagb_out[2*nb_re_per_symbol],&dl_ch_magb[2][symbol*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
 	memcpy(&hmagb_out[3*nb_re_per_symbol],&dl_ch_magb[3][symbol*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
 	
-	memcpy(heff_out,&dl_ch_estimates_ext[0][symbol_mod*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
-	memcpy(&heff_out[nb_re_per_symbol],&dl_ch_estimates_ext[1][symbol_mod*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
-	memcpy(&heff_out[2*nb_re_per_symbol],&dl_ch_estimates_ext[2][symbol_mod*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
-	memcpy(&heff_out[3*nb_re_per_symbol],&dl_ch_estimates_ext[3][symbol_mod*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);	
+	memcpy(heff_out,&dl_ch_estimates_ext[0][symbol*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
+	memcpy(&heff_out[nb_re_per_symbol],&dl_ch_estimates_ext[1][symbol*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
+	memcpy(&heff_out[2*nb_re_per_symbol],&dl_ch_estimates_ext[2][symbol*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);
+	memcpy(&heff_out[3*nb_re_per_symbol],&dl_ch_estimates_ext[3][symbol*frame_parms->N_RB_DL*12],nb_re_per_symbol<<2);	
 	
 	/* free */
 	free(frame_parms);

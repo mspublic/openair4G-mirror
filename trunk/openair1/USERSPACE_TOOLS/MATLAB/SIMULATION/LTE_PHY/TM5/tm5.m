@@ -11,6 +11,7 @@
 
 clear all;
 close all;
+clear mex;
 
 addpath('../../../PHY/LTE_TRANSPORT/mexfiles');
 addpath('../../../PHY/TOOLS/mexfiles');
@@ -26,10 +27,10 @@ nSNR = 1;
 SNRdB = 30;
 % nSNR = 13;
 % SNRdB = linspace(8,20,nSNR);
-MCS = [16 16]; % MCS for the 2 users, currently it is assumed that mcs(2)=mcs(1)
+MCS = [9 9]; % MCS for the 2 users, currently it is assumed that mcs(2)=mcs(1)
 j = sqrt(-1);
 amp = 1/32;
-XFORMS = 1;
+XFORMS = 0;
 
 %% Initialize simparms
 simparms = InitSimparms( nt, nr, MCS, N, SNRdB);
@@ -47,17 +48,17 @@ data_idx_int_i = data_idx_int(2:2:length(data_idx_int));
 llr0 = zeros(simparms.codeword(1).G, 1,'int16');
 y_fxp = zeros(simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,simparms.nb_re_per_frame,'int16');
 y_fxp_t = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-ymf0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+ymf0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
 
 % Effective channel will contain the channel estimate at pilot positions
-Heff0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmag0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmagb0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-ymf1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Heff1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmag1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmagb1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-rho10 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Heff0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmag0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmagb0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+ymf1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Heff1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmag1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmagb1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+rho10 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
 H = zeros(simparms.NB_ANTENNAS_RX,simparms.NB_ANTENNAS_TX);
 noise = zeros(simparms.NB_ANTENNAS_RX,simparms.nb_re);
 
@@ -164,26 +165,26 @@ for iSNR=1:length(simparms.snr)
 				
 		%% Inner receiver loop
 		llrp = 1; % LLR pointer
-		for slot = 4:14
-			idxs = 2*(slot-1)*simparms.nb_re_per_symbol + 1;
-			idxe = 2*(slot-1)*simparms.nb_re_per_symbol + 2*simparms.nb_re_per_symbol;
+		for symbol = 4:14
+			idxs = 2*(symbol-1)*simparms.nb_re_per_symbol + 1;
+			idxe = 2*(symbol-1)*simparms.nb_re_per_symbol + 2*simparms.nb_re_per_symbol;
 			
 			%% Preprocessing
 			[ymf0(idxs:idxe,:)...
 				Heff0(idxs:idxe,:)...
 				Hmag0(idxs:idxe,:)...
 				Hmagb0(idxs:idxe,:)]...
-				= dlsch_channel_compensation_prec(y_fxp_t,H_fxp_t,pmi_ext,simparms,simparms.codeword(1),slot-1);
+				= dlsch_channel_compensation_prec(y_fxp_t,H_fxp_t,pmi_ext,simparms,simparms.codeword(1),symbol-1);
 			
 			% Interfering user
 			[ymf1(idxs:idxe,:)...
 				Heff1(idxs:idxe,:)...
 				Hmag1(idxs:idxe,:)...
 				Hmagb1(idxs:idxe,:)]...
-				= dlsch_channel_compensation_prec(y_fxp_t,H_fxp_t,pmi_ext_o,simparms,simparms.codeword(2),slot-1);
+				= dlsch_channel_compensation_prec(y_fxp_t,H_fxp_t,pmi_ext_o,simparms,simparms.codeword(2),symbol-1);
 			
 			%% Correlation coefficient
-			rho10(idxs:idxe,:) = dlsch_dual_stream_correlation(Heff0,Heff1,simparms,slot-1);
+			rho10(idxs:idxe,:) = dlsch_dual_stream_correlation(Heff0,Heff1,simparms,symbol-1);
 			
 			%% Combining
 			if (nr>1)
@@ -194,21 +195,21 @@ for iSNR=1:length(simparms.snr)
 					Hmag1(idxs:idxe,:)...
 					Hmagb1(idxs:idxe,:)...
 					rho10(idxs:idxe,:)]...
-					= dlsch_detection_mrc(ymf0,ymf1,Hmag0,Hmag1,Hmagb0,Hmagb1,rho10,simparms,slot-1);								
+					= dlsch_detection_mrc(ymf0,ymf1,Hmag0,Hmag1,Hmagb0,Hmagb1,rho10,simparms,symbol-1);								
 			end
 			
 			
 			%% LLR computation
-			llr = dlsch_mu_mimo_llr(ymf0(idxs:idxe,1),...
-				ymf1(idxs:idxe,1),...
-				Hmag0(idxs:idxe,1),...
-				Hmag1(idxs:idxe,1),...
-				rho10(idxs:idxe,1),...
+			llr = dlsch_mu_mimo_llr(ymf0(idxs:idxe+simparms.LLR_GUARD,1),...
+				ymf1(idxs:idxe+simparms.LLR_GUARD,1),...
+				Hmag0(idxs:idxe+simparms.LLR_GUARD,1),...
+				Hmag1(idxs:idxe+simparms.LLR_GUARD,1),...
+				rho10(idxs:idxe+simparms.LLR_GUARD,1),...
 				simparms,...
-				slot-1);
+				symbol-1);
 			
 			llr0(llrp:llrp+length(llr)-1,:) = llr;
-			llrp = llrp + length(llr);
+			llrp = llrp + length(llr);                        
 		end
 		
 		if (XFORMS)
@@ -224,7 +225,7 @@ for iSNR=1:length(simparms.snr)
 		ret0 = dlsch_decoding(llr0,simparms,simparms.codeword(1));						
 		
 		% Check if decoded correctly
-		if (ret0 > simparms.MAX_TURBO_ITERATIONS)
+		if (ret0 >= simparms.MAX_TURBO_ITERATIONS)
 			simparms.frame_errors(iSNR,1) = simparms.frame_errors(iSNR,1) + 1;
 		end
 		
