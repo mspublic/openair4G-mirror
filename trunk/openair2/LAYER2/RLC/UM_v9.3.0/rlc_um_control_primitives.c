@@ -264,12 +264,10 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;
         rlcP->rx_header_min_length_in_bytes = 2;
     } else if (rx_sn_field_lengthP == 5) {
-        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] SN LENGTH 5 BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id);
         rlcP->rx_sn_length                  = 5;
         rlcP->rx_sn_modulo                  = RLC_UM_SN_5_BITS_MODULO;
         rlcP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
         rlcP->rx_header_min_length_in_bytes = 1;
-        return;
     } else if (rx_sn_field_lengthP != 0) {
         LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, rx_sn_field_lengthP);
         return;
@@ -281,12 +279,10 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;
         rlcP->tx_header_min_length_in_bytes = 2;
     } else if (tx_sn_field_lengthP == 5) {
-        LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] SN LENGTH 5 BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id);
         rlcP->tx_sn_length                  = 5;
         rlcP->tx_sn_modulo                  = RLC_UM_SN_5_BITS_MODULO;
         rlcP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
         rlcP->tx_header_min_length_in_bytes = 1;
-        return;
     } else if (tx_sn_field_lengthP != 0) {
         LOG_E(RLC, "[FRAME %05d][RLC_UM][MOD %02d][RB %02d][CONFIGURE] INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n", frame, rlcP->module_id, rlcP->rb_id, tx_sn_field_lengthP);
         return;

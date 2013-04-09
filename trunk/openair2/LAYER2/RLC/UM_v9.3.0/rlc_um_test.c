@@ -48,11 +48,11 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "LAYER2/MAC/extern.h"
 
 
-//#define TEST1
+#define TEST1
 //#define TEST2
 //#define TEST3
 //#define TEST4
-#define TEST5
+//#define TEST5
 
 #define INCREMENT_FRAME_YES 1
 #define INCREMENT_FRAME_NO  0
@@ -129,48 +129,54 @@ static s8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier min
 ", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
 };
 
-
+#define RLC_2_PRINT_BUFFER_LEN 10000
+static char rlc_2_print_buffer[RLC_2_PRINT_BUFFER_LEN];
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP)
 //-----------------------------------------------------------------------------
 {
-    unsigned long octet_index = 0;
+	  unsigned long octet_index = 0;
+	  unsigned long buffer_marker = 0;
+	  unsigned char aindex;
 
-    if (dataP == NULL) {
-        return;
-    }
+	  if (dataP == NULL) {
+	    return;
+	  }
 
 
-    LOG_T(componentP, "------+-------------------------------------------------|\n");
-    LOG_T(componentP, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-    LOG_T(componentP, "------+-------------------------------------------------|\n");
-    for (octet_index = 0; octet_index < sizeP; octet_index++) {
-        if ((octet_index % 16) == 0){
-            if (octet_index != 0) {
-                LOG_T(componentP, " |\n");
-            }
-            LOG_T(componentP, " %04d |", octet_index);
-        }
-        /*
-         * Print every single octet in hexadecimal form
-         */
-        LOG_T(componentP, " %02x", dataP[octet_index]);
-        /*
-         * Align newline and pipes according to the octets in groups of 2
-         */
-    }
+	   LOG_D(RLC, "------+-------------------------------------------------|\n");
+	   LOG_D(RLC, "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+	   LOG_D(RLC, "------+-------------------------------------------------|\n");
+	  for (octet_index = 0; octet_index < sizeP; octet_index++) {
+	    if ((octet_index % 16) == 0){
+	      if (octet_index != 0) {
+	          buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker, " |\n");
+	           LOG_D(RLC, "%s", rlc_2_print_buffer);
+	          buffer_marker = 0;
+	      }
+	      buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker, " %04ld |", octet_index);
+	    }
+	    /*
+	     * Print every single octet in hexadecimal form
+	     */
+	    buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker, " %02x", dataP[octet_index]);
+	    /*
+	     * Align newline and pipes according to the octets in groups of 2
+	     */
+	  }
 
-    /*
-     * Append enough spaces and put final pipe
-     */
-    unsigned char index;
-    for (index = octet_index; index < 16; ++index)
-        LOG_T(componentP, "   ");
-    LOG_T(componentP, " |\n");
+	  /*
+	   * Append enough spaces and put final pipe
+	   */
+	  for (aindex = octet_index; aindex < 16; ++aindex)
+	    buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker, "   ");
+	    // LOG_D(RLC, "   ");
+	  buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker, " |\n");
+	   LOG_D(RLC, "%s",rlc_2_print_buffer);
 }
 
 //-----------------------------------------------------------------------------
-void rlc_um_v9_3_0_test_windows()
+void rlc_um_v9_3_0_test_windows_10()
 //-----------------------------------------------------------------------------
 {
    rlc_um_entity_t um1;
@@ -215,6 +221,58 @@ void rlc_um_v9_3_0_test_windows()
                // returns  2 if higher_bound == sn
                // returns  3 if higher_bound == sn == lower_bound
                assert(rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_10_BITS_MASK, sn, (um1.vr_uh -1) & RLC_UM_SN_10_BITS_MASK) < 0);
+               assert(rlc_um_in_reordering_window(&um1, g_frame, sn) < 0);
+           }
+
+       }
+   }
+}
+//-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_test_windows_5()
+//-----------------------------------------------------------------------------
+{
+   rlc_um_entity_t um1;
+   rlc_um_entity_t um2;
+   unsigned int    h,w, sn, result;
+
+   u32_t             timer_reordering = 2000;
+   u32_t             sn_field_length  = 5;
+   u32_t             is_mXch          = 0; // boolean, true if configured for MTCH or MCCH
+
+   rlc_um_init(&um1);
+   rlc_um_init(&um2);
+
+   rlc_um_set_debug_infos(&um1, g_frame, 0, 0, 0, 1);
+   rlc_um_set_debug_infos(&um2, g_frame, 1, 1, 1, 1);
+
+   rlc_um_configure(&um1, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
+   rlc_um_configure(&um2, g_frame, timer_reordering, sn_field_length, sn_field_length, is_mXch);
+
+   // RX window with vr_uh > vr_ur
+   for (h = 0; h < RLC_UM_SN_5_BITS_MODULO; h++) {
+       um1.vr_uh = h;
+       for (w = 1; w < RLC_UM_WINDOW_SIZE_SN_5_BITS; w++) {
+           um1.vr_ur = (um1.vr_uh - w) & RLC_UM_SN_5_BITS_MASK;
+           for (sn = ((um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_5_BITS_MASK) ; sn != um1.vr_uh; sn = ((sn+1) & RLC_UM_SN_5_BITS_MASK)) {
+               assert(rlc_um_in_reordering_window(&um1, g_frame, sn) >= 0);
+               // returns -2 if lower_bound  > sn
+               // returns -1 if higher_bound < sn
+               // returns  0 if lower_bound  < sn < higher_bound
+               // returns  1 if lower_bound  == sn
+               // returns  2 if higher_bound == sn
+               // returns  3 if higher_bound == sn == lower_bound
+               result = rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_5_BITS_MASK, sn, um1.vr_uh);
+               assert((result < 2) && (result >=0));
+           }
+
+           for (sn = um1.vr_uh ; sn != ((um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_5_BITS_MASK) ; sn = ((sn+1) & RLC_UM_SN_5_BITS_MASK)) {
+               // returns -2 if lower_bound  > sn
+               // returns -1 if higher_bound < sn
+               // returns  0 if lower_bound  < sn < higher_bound
+               // returns  1 if lower_bound  == sn
+               // returns  2 if higher_bound == sn
+               // returns  3 if higher_bound == sn == lower_bound
+               assert(rlc_um_in_window(&um1, g_frame, (um1.vr_uh - um1.rx_um_window_size) & RLC_UM_SN_5_BITS_MASK, sn, (um1.vr_uh -1) & RLC_UM_SN_5_BITS_MASK) < 0);
                assert(rlc_um_in_reordering_window(&um1, g_frame, sn) < 0);
            }
 
@@ -334,7 +392,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
             tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
             memset(tb_dst->data, 0, sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
             if (tb_dst != NULL) {
-                printf("[RLC-LOOP] Testing tb_dst (1)\n");
+                //printf("[RLC-LOOP] Testing tb_dst (1)\n");
                 check_free_mem_block(tb_dst);
                 tb_dst->next = NULL;
                 ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
@@ -348,7 +406,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
 
                 list_add_tail_eurecom(tb_dst, &data_indP->data);
                 data_indP->no_tb  += 1;
-                printf("[RLC-LOOP] Testing tb_dst (2)\n");
+                //printf("[RLC-LOOP] Testing tb_dst (2)\n");
                 check_free_mem_block(tb_dst);
             } else {
                printf("Out of memory error\n");
@@ -361,7 +419,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
         }
 
 
-        printf("[RLC-LOOP] Testing tb_src\n");
+        //printf("[RLC-LOOP] Testing tb_src\n");
         check_free_mem_block(tb_src);
 
         free_mem_block(tb_src);
@@ -522,14 +580,14 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
     }
 }
 //-----------------------------------------------------------------------------
-void rlc_um_v9_3_0_test_reordering(void)
+void rlc_um_v9_3_0_test_reordering(u32_t sn_field_lengthP)
 //-----------------------------------------------------------------------------
 {
     rlc_um_info_t     um_info;
     int                   i,j,r;
 
-    um_info.timer_reordering = 32;
-    um_info.sn_field_length  = 10;
+    um_info.timer_reordering = (32 * sn_field_lengthP * sn_field_lengthP)/100;
+    um_info.sn_field_length  = sn_field_lengthP;
     um_info.is_mXch          = 0;
 
     srand (0);
@@ -634,7 +692,7 @@ void rlc_um_v9_3_0_test_reordering(void)
     printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test_reordering 4: END OF TEST BIG SDU, SMALL PDUs\n\n\n\n");
 }
 //-----------------------------------------------------------------------------
-void rlc_um_v9_3_0_test_tx_rx(void)
+void rlc_um_v9_3_0_test_tx_rx_10(void)
 //-----------------------------------------------------------------------------
 {
   rlc_um_info_t     um_info;
@@ -930,6 +988,293 @@ void rlc_um_v9_3_0_test_tx_rx(void)
   #endif
 }
 //-----------------------------------------------------------------------------
+void rlc_um_v9_3_0_test_tx_rx_5(void)
+//-----------------------------------------------------------------------------
+{
+  rlc_um_info_t     um_info;
+  int                   i,j,r;
+
+
+  um_info.timer_reordering = 32;
+  um_info.sn_field_length  = 5;
+  um_info.is_mXch          = 0;
+
+  srand (0);
+  config_req_rlc_um (&um_tx, 0,0,0, &um_info, 0, SIGNALLING_RADIO_BEARER);
+  config_req_rlc_um (&um_rx, 0,1,1, &um_info, 1, SIGNALLING_RADIO_BEARER);
+
+  rlc_um_display_rx_window(&um_tx);
+
+  rlc_um_display_rx_window(&um_rx);
+
+
+  #ifdef TEST1
+  srand (0);
+  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test_5 1: START OF SIMPLE TEST SEVERAL SDUs IN PDU\n\n\n\n");
+  rlc_um_v9_3_0_test_reset_sdus();
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 2);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 2);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 2);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 3);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 4);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 5);
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 6);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
+
+  assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test_5 1: END OF SIMPLE TEST SEVERAL SDUs IN PDU\n\n\n\n");
+    sleep(2);
+    rlc_um_v9_3_0_test_reset_sdus();
+    // RANDOM TESTS
+    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-12; i++) {
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 2);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 2);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 2);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 3);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 4);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 5);
+        rlc_um_v9_3_0_test_send_sdu(&um_tx, 6);
+        for (i = 0; i < 50; i++) {
+            rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 400, 200);
+        }
+        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+    }
+
+    assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 1: END OF TEST SEVERAL SDUs IN PDU\n\n\n\n");
+    sleep(2);
+#endif
+#ifdef TEST2
+  srand (0);
+  rlc_um_v9_3_0_test_reset_sdus();
+  // BIG SDU SMALL PDUS NO ERRORS
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 3, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 3, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 3, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 4, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 5, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 6, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 7, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 9, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 10, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 11, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 12, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 13, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 14, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 15, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 16, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 17, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 18, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 19, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 20, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 21, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 22, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 23, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 24, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 25, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 2000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 2000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 2000, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 2000, 200);
+
+  rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 26, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 27, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 28, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 29, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 30, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 31, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 32, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 33, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 34, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 35, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 36, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 37, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 38, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 39, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 40, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 41, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 42, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 43, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 44, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 45, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 46, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 47, 200);
+  rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 48, 200);
+  //rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 60, 200); if uncomment: error because too many segments of SDU
+  for (i = 0; i < 24; i++) {
+      rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 2000, 200);
+  }
+
+  assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 2: END OF TEST BIG SDU SMALL PDUs\n\n\n\n");
+#endif
+  for (r = 0; r < 32; r++) {
+  //for (r = 0; r < 1024; r++) {
+        srand (r);
+    #ifdef TEST3
+    g_error_on_phy = 0;
+    g_tx_packets = 0;
+    g_rx_packets = 0;
+    rlc_um_v9_3_0_test_reset_sdus();
+    // RANDOM TESTS
+    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+        printf("UM.TX SDU %d\n", um_tx.nb_sdu);
+        if (um_tx.nb_sdu < (um_tx.size_input_sdus_buffer - 2)) {
+                    g_random_sdu = rand() % 37;
+                    rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
+        }
+        g_random_nb_frames   = (rand() % 10) + 1;
+        //g_random_nb_frames   = 1;
+        for (j = 0; j < g_random_nb_frames; j++) {
+                    g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+        }
+    }
+    for (j = 0; j < 400; j++) {
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 500, 500);
+    }
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 3: END OF TEST RANDOM (SEED=%d ) TX ONLY :\n\n\n\n",r);
+    assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+    #endif
+    #ifdef TEST4
+    g_error_on_phy = 0;
+    g_tx_packets = 0;
+    g_rx_packets = 0;
+    rlc_um_v9_3_0_test_reset_sdus();
+    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+        if (um_tx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
+            g_random_sdu = rand() % 37;
+            rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
+            if (um_rx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+            } else {
+                i = i-1;
+            }
+        } else {
+            if (um_rx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+            } else {
+                i = i-1;
+            }
+        }
+        g_random_nb_frames   = rand() % 4;
+        for (j = 0; j < g_random_nb_frames; j++) {
+            g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+        }
+    }
+    for (j = 0; j < 100; j++) {
+        g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+    }
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 4: END OF TEST RANDOM (SEED=%d) TX RX:\n\n\n\n",r);
+    assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+    assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
+    #endif
+  }
+  #ifdef TEST5
+  rlc_um_display_rx_window(&um_tx);
+  rlc_um_display_rx_window(&um_rx);
+  for (r = 0; r < 1024; r++) {
+    srand (r);
+    g_error_on_phy = 1;
+    for (g_target_tx_error_rate = 0; g_target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; g_target_tx_error_rate++) {
+        for (g_target_rx_error_rate = 0; g_target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; g_target_rx_error_rate++) {
+            g_tx_packets = 0;
+            g_dropped_tx_packets = 0;
+            g_rx_packets = 0;
+            g_dropped_rx_packets = 0;
+            rlc_um_v9_3_0_test_reset_sdus();
+            for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
+                g_random_sdu = rand() % 37;
+                //rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+
+
+                g_random_nb_frames   = rand() % 4;
+                for (j = 0; j < g_random_nb_frames; j++) {
+                    g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+                }
+                //rlc_um_display_rx_window(&um_tx);
+                rlc_um_display_rx_window(&um_rx);
+
+                int dropped = (rand() % 3);
+                if ((dropped == 0) && (g_tx_packets > 0)){
+                    if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
+                        g_drop_tx = 1;
+                    }
+                }
+                dropped = (rand() % 3);
+                if ((dropped == 0) && (g_rx_packets > 0)){
+                    if ((((g_dropped_rx_packets + 1)*100) / g_rx_packets) <= g_target_rx_error_rate) {
+                        g_drop_rx = 1;
+                    }
+                }
+            }
+            for (j = 0; j < 100; j++) {
+                g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+            }
+            printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 5: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d ) TX RX WITH ERRORS ON PHY LAYER:\n\n\n\n",r, g_target_tx_error_rate, g_target_rx_error_rate);
+            //assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+            //assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
+            printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",
+                   (g_tx_packets >0)?(g_dropped_tx_packets*100)/g_tx_packets:0,
+                   g_target_tx_error_rate,
+                   (g_rx_packets >0)?(g_dropped_rx_packets*100)/g_rx_packets:0,
+                   g_target_rx_error_rate);
+
+        }
+    }
+    g_drop_tx = 0;
+    g_drop_rx = 0;
+    g_tx_packets = 0;
+    g_dropped_tx_packets = 0;
+    g_rx_packets = 0;
+    g_dropped_rx_packets = 0;
+    rlc_um_v9_3_0_test_reset_sdus();
+    for (j = 0; j < 100; j++) {
+        rlc_um_v9_3_0_test_send_sdu(&um_rx, 1);
+        g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+    }
+  }
+  g_error_on_phy = 0;
+  #endif
+}
+
+//-----------------------------------------------------------------------------
 void rlc_um_v9_3_0_test_print_trace (void)
 //-----------------------------------------------------------------------------
 {
@@ -953,13 +1298,20 @@ void rlc_um_v9_3_0_test(void)
 {
     pool_buffer_init();
 
-    // tested OK
-    rlc_um_v9_3_0_test_reordering();
 
-    rlc_um_v9_3_0_test_tx_rx();
+
+    rlc_um_v9_3_0_test_tx_rx_5();
+    rlc_um_v9_3_0_test_windows_5();
+    rlc_um_v9_3_0_test_reordering(5);
+
 
     // tested OK
-    rlc_um_v9_3_0_test_windows();
+    rlc_um_v9_3_0_test_reordering(10);
+
+    rlc_um_v9_3_0_test_tx_rx_10();
+
+    // tested OK
+    rlc_um_v9_3_0_test_windows_10();
 
 
     printf("rlc_um_v9_3_0_test: END OF TESTS\n");
