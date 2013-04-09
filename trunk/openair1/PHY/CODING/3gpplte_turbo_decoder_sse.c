@@ -1853,6 +1853,16 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 //int pi2[n],pi3[n+8],pi5[n+8],pi4[n+8],pi6[n+8],
 int *pi2tab[188],*pi5tab[188],*pi4tab[188],*pi6tab[188];
 
+void free_td() {
+    int ind;
+    for (ind=0;ind<188;ind++) {
+        free(pi2tab[ind]);
+        free(pi5tab[ind]);
+        free(pi4tab[ind]);
+        free(pi6tab[ind]);
+    }
+}
+
 void init_td() {
 
   int ind,i,i2,i3,j,n,n2,pi,pi3;
