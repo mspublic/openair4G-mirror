@@ -1,10 +1,12 @@
-all: oaisim naslite_netlink_ether
+all: oaisim naslite_netlink_ether remserial
 
 oaisim:
-	(cd $(OPENAIR_TARGETS)/SIMU/USER && make oaisim OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1)
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && make NAS=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 -j4)
+
 naslite_netlink_ether:
 	(cd $(OPENAIR2_DIR) && make naslite_netlink_ether.ko)
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/LITE/RB_TOOL/ && make)
+
 
 remserial:
 	(cd $(OPENAIR3_DIR)/UTILS/REMSERIAL-1.4.UDP && make all)
