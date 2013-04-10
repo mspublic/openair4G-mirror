@@ -24,6 +24,8 @@
  */
 #define PDCP_CONTROL_PDU 0x00
 #define PDCP_DATA_PDU 0x01
+#define PDCP_TM 0x02 // transparent mode 
+
 /*
  * PDU-type (3-bit, see 6.3.8)
  */

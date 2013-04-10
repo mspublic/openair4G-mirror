@@ -52,6 +52,7 @@
 
 #define PDCP_DATA_REQ_DEBUG 0
 #define PDCP_DATA_IND_DEBUG 0
+#define NUMBER_OF_SERVICE_MAX 1 
 
 #ifndef OAI_EMU
 extern int otg_enabled;
@@ -76,7 +77,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
                    unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list)
 #else
 BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb_id, u32 muiP, u32 confirmP, \
-		   sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 is_data_pdu)
+		   sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 mode)
 #endif
 {
 //-----------------------------------------------------------------------------
@@ -89,7 +90,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 pdcp_pdu_size=0, current_sn;
   mem_block_t* pdcp_pdu = NULL;
-
+  rlc_op_status_t rlc_status;
 
   if (pdcp->instanciated_instance == 0) {
     LOG_W(PDCP, "Instance is not configured, Ignoring SDU...\n");
@@ -109,91 +110,98 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
     mac_xface->macphy_exit("");
   }
 
-  // calculate the pdcp header and trailer size
-  if ((rb_id % NB_RB_MAX) < DTCH) {
-    pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
-    pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
+  // PDCP transparent mode for MTCH traffic 
+  if (mode == PDCP_TM) {
+    rlc_status = rlc_data_req(module_id, frame, eNB_flag, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
   } else {
-    pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
-    pdcp_tailer_len = 0;
-  }
-  pdcp_pdu_size= sdu_buffer_size + pdcp_header_len + pdcp_tailer_len;
-
-  LOG_I(PDCP, "Data request notification for PDCP entity with module ID %d and radio bearer ID %d pdu size %d (header%d, trailer%d)\n", module_id, rb_id,pdcp_pdu_size, pdcp_header_len,pdcp_tailer_len);
-
-  /*
-   * Allocate a new block for the new PDU (i.e. PDU header and SDU payload)
-   */
-  LOG_D(PDCP, "Asking for a new mem_block of size %d\n", pdcp_pdu_size);
-  pdcp_pdu = get_free_mem_block(pdcp_pdu_size);
-
-  if (pdcp_pdu != NULL) {
-    /*
-     * Create a Data PDU with header and append data
-     *
-     * Place User Plane PDCP Data PDU header first
-     */
-
-    if ((rb_id % NB_RB_MAX) < DTCH) { // this Control plane PDCP Data PDU
-      pdcp_control_plane_data_pdu_header pdu_header;
-      pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
-      current_sn = pdu_header.sn;
-      memset(&pdu_header.mac_i[0],0,PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE);
-      if (pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
-	LOG_E(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
-	return FALSE;
-      }
+    // calculate the pdcp header and trailer size
+    if ((rb_id % NB_RB_MAX) < DTCH) {
+      pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
+      pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
     } else {
-      pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
-      pdu_header.dc = (is_data_pdu == 1) ? PDCP_DATA_PDU :  PDCP_CONTROL_PDU;
-      pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
-      current_sn = pdu_header.sn ;
-      if (pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
-	LOG_E(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
+      pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+      pdcp_tailer_len = 0;
+    }
+    pdcp_pdu_size= sdu_buffer_size + pdcp_header_len + pdcp_tailer_len;
+    
+    LOG_I(PDCP, "Data request notification for PDCP entity with module ID %d and radio bearer ID %d pdu size %d (header%d, trailer%d)\n", module_id, rb_id,pdcp_pdu_size, pdcp_header_len,pdcp_tailer_len);
+    
+    /*
+     * Allocate a new block for the new PDU (i.e. PDU header and SDU payload)
+     */
+    LOG_D(PDCP, "Asking for a new mem_block of size %d\n", pdcp_pdu_size);
+    pdcp_pdu = get_free_mem_block(pdcp_pdu_size);
+    
+    if (pdcp_pdu != NULL) {
+      /*
+       * Create a Data PDU with header and append data
+       *
+       * Place User Plane PDCP Data PDU header first
+       */
+      
+      if ((rb_id % NB_RB_MAX) < DTCH) { // this Control plane PDCP Data PDU
+	pdcp_control_plane_data_pdu_header pdu_header;
+	pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
+	current_sn = pdu_header.sn;
+	memset(&pdu_header.mac_i[0],0,PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE);
+	if (pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
+	  LOG_E(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
+	  return FALSE;
+	}
+      } else {
+	pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
+	pdu_header.dc = (mode == 1) ? PDCP_DATA_PDU :  PDCP_CONTROL_PDU;
+	pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp);
+	current_sn = pdu_header.sn ;
+	if (pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer((unsigned char*)pdcp_pdu->data, &pdu_header) == FALSE) {
+	  LOG_E(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
+	  return FALSE;
+	}
+      }
+      /*
+       * Validate incoming sequence number, there might be a problem with PDCP initialization
+       */
+      if (current_sn > pdcp_calculate_max_seq_num_for_given_size(pdcp->seq_num_size)) {
+	LOG_E(PDCP, "Generated sequence number (%lu) is greater than a sequence number could ever be!\n", current_sn);
+	LOG_E(PDCP, "There must be a problem with PDCP initialization, ignoring this PDU...\n");
+	
+	free_mem_block(pdcp_pdu);
 	return FALSE;
       }
-    }
-    /*
-     * Validate incoming sequence number, there might be a problem with PDCP initialization
-     */
-    if (current_sn > pdcp_calculate_max_seq_num_for_given_size(pdcp->seq_num_size)) {
-      LOG_E(PDCP, "Generated sequence number (%lu) is greater than a sequence number could ever be!\n", current_sn);
-      LOG_E(PDCP, "There must be a problem with PDCP initialization, ignoring this PDU...\n");
-
-      free_mem_block(pdcp_pdu);
+      
+      LOG_D(PDCP, "Sequence number %d is assigned to current PDU\n", current_sn);
+      
+      /* Then append data... */
+      memcpy(&pdcp_pdu->data[pdcp_header_len], sdu_buffer, sdu_buffer_size);
+      //For control plane data that are not integrity protected,
+      // the MAC-I field is still present and should be padded with padding bits set to 0.
+      for (i=0;i<pdcp_tailer_len;i++)
+	pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00;// pdu_header.mac_i[i];
+      
+      /* Print octets of outgoing data in hexadecimal form */
+      LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n",
+	    pdcp_pdu_size);
+      util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
+      //util_flush_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
+    } else {
+      LOG_E(PDCP, "Cannot create a mem_block for a PDU!\n");
       return FALSE;
-    }
-
-    LOG_D(PDCP, "Sequence number %d is assigned to current PDU\n", current_sn);
-
-     /* Then append data... */
-    memcpy(&pdcp_pdu->data[pdcp_header_len], sdu_buffer, sdu_buffer_size);
-    //For control plane data that are not integrity protected,
-    // the MAC-I field is still present and should be padded with padding bits set to 0.
-    for (i=0;i<pdcp_tailer_len;i++)
-      pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00;// pdu_header.mac_i[i];
-
-    /* Print octets of outgoing data in hexadecimal form */
-    LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n",
-	  pdcp_pdu_size);
-    util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
-    //util_flush_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
-
+    }      
 #ifdef PDCP_UNIT_TEST
-    /*
-     * Here we add PDU to the list and return to test code without
-     * handing it off to RLC
-     */
-    list_add_tail_eurecom(pdcp_pdu, test_list);
-
-    return TRUE;
+      /*
+       * Here we add PDU to the list and return to test code without
+       * handing it off to RLC
+       */
+      list_add_tail_eurecom(pdcp_pdu, test_list);
+      return TRUE;
 #else
-    /*
-     * Ask sublayer to transmit data and check return value
-     * to see if RLC succeeded
-     */
-    rlc_op_status_t rlc_status = rlc_data_req(module_id, frame, eNB_flag, rb_id, muiP, confirmP, pdcp_pdu_size, pdcp_pdu);
-    switch (rlc_status) {
+      /*
+       * Ask sublayer to transmit data and check return value
+       * to see if RLC succeeded
+       */
+      rlc_status = rlc_data_req(module_id, frame, eNB_flag, rb_id, muiP, confirmP, pdcp_pdu_size, pdcp_pdu);
+  }
+      switch (rlc_status) {
       case RLC_OP_STATUS_OK:
         LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
 	break;
@@ -229,11 +237,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 
     return TRUE;
 #endif // PDCP_UNIT_TEST
-  } else {
-    LOG_E(PDCP, "Cannot create a mem_block for a PDU!\n");
 
-    return FALSE;
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -452,24 +456,37 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ){
-    module_id = (eNB_flag == 1) ?  eNB_index : /*NB_eNB_INST +*/ UE_index ;
-    //rb_id    = (eNB_flag == 1) ? eNB_index * NB_RB_MAX + DTCH : (NB_eNB_INST + UE_index -1 ) * NB_RB_MAX + DTCH ;
+    module_id = (eNB_flag == 1) ? eNB_index : UE_index + NB_eNB_INST;
+    src_id = module_id;
     ctime = oai_emulation.info.time_ms; // current simulation time in ms
     if (eNB_flag == 1) { // search for DL traffic
-      for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST ; dst_id++) {
+      // unicast traffic 
+      for (dst_id = 0; dst_id < NUMBER_OF_UE_MAX; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
-	if (mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/) { 
-	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
+	if (mac_get_rrc_status(module_id, eNB_flag, dst_id ) > 2 /*RRC_CONNECTED*/) { 
+	  otg_pkt=(u8*) packet_gen(module_id, dst_id + NB_eNB_INST, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
-	    rb_id = (/*NB_eNB_INST +*/ dst_id -1 ) * NB_RB_MAX + DTCH;
+	    rb_id = dst_id * NB_RB_MAX + DTCH;
 	    LOG_D(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, dst_id, pkt_size);
 	    pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_DATA_PDU);
 	    free(otg_pkt);
 	  }
 	} //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
       }
+      // mutlticast , temp var: NUMBER_OF_SERVICE_MAX
+      for (dst_id = 0; dst_id < NUMBER_OF_SERVICE_MAX; dst_id++) {
+	rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + MTCH; 
+	if (pdcp_array[module_id][rb_id].MBMS_flag){
+	  otg_pkt=(u8*) packet_gen_multicast(module_id, dst_id, ctime, &pkt_size);
+	  if (otg_pkt != NULL) {
+	    LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, dst_id, pkt_size);
+	    pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
+	    free(otg_pkt);
+	  }
+	}
+      }
+	
     }else {
-      src_id = module_id+NB_eNB_INST;
       dst_id = eNB_index;	
       if (mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) { 
 	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
@@ -542,7 +559,8 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 #ifdef Rel10
   MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL;
 #endif
-  LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 \n",module_id);
+  LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 for %s %d\n",module_id, 
+	(eNB_flag == 1)? "eNB": "UE", index);
   // srb2add_list does not define pdcp config, we use rlc info to setup the pdcp dcch0 and dcch1 channels
   if (srb2add_list != NULL) {
     for (cnt=0;cnt<srb2add_list->list.count;cnt++) {
@@ -566,6 +584,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 	    pdcp_config_req_asn1 (module_id,
 				  frame, 
 				  eNB_flag, // not really required
+				  index, // ue/enb index : used for log
 				  rlc_type,
 				  action, 
 				  rb_id,
@@ -652,6 +671,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 	pdcp_config_req_asn1 (module_id,
 			      frame, 
 			      eNB_flag, // not really required
+			      index, 
 			      rlc_type,
 			      action, 
 			      rb_id,
@@ -671,6 +691,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
       pdcp_config_req_asn1 (module_id,
 			    frame, 
 			    eNB_flag, // not really required
+			    index, 
 			    rlc_type, 
 			    action, 
 			    rb_id,
@@ -696,6 +717,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
       pdcp_config_req_asn1 (module_id,
 			    frame, 
 			    eNB_flag, // not really required
+			    index, 
 			    rlc_type,
 			    action, 
 			    rb_id, 
@@ -712,10 +734,11 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 }
 
 
-BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, 
-			  u8 rb_sn, u8 rb_report, 
-			  u8 header_compression_profile, 
-			  u8 security_mode){
+BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index,  
+			   rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, 
+			   u8 rb_sn, u8 rb_report, 
+			   u8 header_compression_profile, 
+			   u8 security_mode){
   switch (action) {
   case ACTION_ADD:
     pdcp_array[module_id][rb_id].instanciated_instance = module_id + 1;
@@ -739,9 +762,12 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, rlc_
     pdcp_array[module_id][rb_id].last_submitted_pdcp_rx_sn = 4095;
     pdcp_array[module_id][rb_id].first_missing_pdu = -1;
     
-    LOG_I(PDCP,"[%s %d] Config request : Action ADD: Frame %d radio bearer id %d configured with SN size %d bits and RLC %s\n",
-	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rb_id, pdcp_array[module_id][rb_id].seq_num_size,
+    LOG_I(PDCP,"[%s %d] Config request : Action ADD for %s %d: Frame %d radio bearer id %d configured with SN size %d bits and RLC %s\n",
+	  (eNB_flag) ? "eNB" : "UE", module_id, 
+	  (eNB_flag) ? "UE" : "eNB", index, 
+	  frame, rb_id, pdcp_array[module_id][rb_id].seq_num_size,
 	  (rlc_mode == 1) ? "AM" : (rlc_mode == 2) ? "TM" : "UM");
+    
     LOG_D(PDCP,  "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_id);
     
     break;
@@ -759,8 +785,11 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, rlc_
     else
       pdcp_array[module_id][rb_id].seq_num_size=5;
   
-    LOG_I(PDCP,"[%s %d] Config request : Action MODIFY: Frame %d radio bearer id %d configured with SN size %d and RLC %s \n",
-	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rb_id, rb_sn, (rlc_mode == 1) ? "AM" : (rlc_mode == 2) ? "TM" : "UM");
+    LOG_I(PDCP,"[%s %d] Config request : Action MODIFY for %s %d: Frame %d radio bearer id %d configured with SN size %d and RLC %s \n",
+	  (eNB_flag) ? "eNB" : "UE", module_id, 
+	   (eNB_flag) ? "UE" : "eNB", index, 
+	  frame, rb_id, rb_sn, 
+	  (rlc_mode == 1) ? "AM" : (rlc_mode == 2) ? "TM" : "UM");
     
     break;
   case ACTION_REMOVE:

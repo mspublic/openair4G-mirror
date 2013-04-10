@@ -48,32 +48,44 @@
 
 void init_all_otg(int max_nb_frames)  {
 
-	//set otg params to 0
- 	g_otg = calloc(1, sizeof(otg_t));
-	if (g_otg == NULL)
-   	/* Memory could not be allocated */
-   		LOG_E(OTG,"Couldn't allocate memory for otg_t\n");
- 	memset(g_otg, 0, sizeof(otg_t));		
+  //set otg params to 0
+  g_otg = calloc(1, sizeof(otg_t));
+  if (g_otg == NULL)
+    /* Memory could not be allocated */
+    LOG_E(OTG,"Couldn't allocate memory for otg_t\n");
+  memset(g_otg, 0, sizeof(otg_t));		
+  
+  g_otg_multicast = calloc(1, sizeof(otg_multicast_t));
+  if (g_otg_multicast == NULL)
+    /* Memory could not be allocated */
+    LOG_E(OTG,"Couldn't allocate memory for otg_multicast_t\n");
+  memset(g_otg_multicast, 0, sizeof(otg_multicast_t));
+  
+  //set otg infos to 0
+  otg_info = calloc(1, sizeof(otg_info_t));
+  if (otg_info == NULL)
+    /* Memory could not be allocated */
+    LOG_E(OTG,"Couldn't allocate memory for otg_info_t\n");
+  memset(otg_info, 0, sizeof(otg_info_t));
+   
+  //set otg multicast infos to 0
+  otg_multicast_info = calloc(1, sizeof(otg_multicast_info_t));
+  if (otg_multicast_info == NULL)
+    /* Memory could not be allocated */
+    LOG_E(OTG,"Couldn't allocate memory for otg_multicast_info_t\n");
+  memset(otg_multicast_info, 0, sizeof(otg_multicast_info_t));
 
-
-	//set otg infos to 0
- 	otg_info = calloc(1, sizeof(otg_info_t));
-	if (otg_info == NULL)
-   	/* Memory could not be allocated */
-   		LOG_E(OTG,"Couldn't allocate memory for otg_info_t\n");
- 	memset(otg_info, 0, sizeof(otg_info_t));
-
-        //set otg forms infos to 0
-	otg_forms_info=calloc(1, sizeof(otg_forms_info_t));
-	if (otg_forms_info == NULL)
-   	/* Memory could not be allocated */
-   		LOG_E(OTG,"Couldn't allocate memory for otg_forms_info_t\n");
- 	memset(otg_forms_info, 0, sizeof(otg_forms_info_t));
-
-g_otg->max_nb_frames=max_nb_frames;
-
-	LOG_I(OTG,"init done: init_all_otg\n");
-
+  //set otg forms infos to 0
+  otg_forms_info=calloc(1, sizeof(otg_forms_info_t));
+  if (otg_forms_info == NULL)
+    /* Memory could not be allocated */
+    LOG_E(OTG,"Couldn't allocate memory for otg_forms_info_t\n");
+  memset(otg_forms_info, 0, sizeof(otg_forms_info_t));
+  
+  g_otg->max_nb_frames=max_nb_frames;
+  
+  LOG_I(OTG,"init done: init_all_otg\n");
+  
 }
 
 char *str_sub (const char *s, unsigned int start, unsigned int end) {

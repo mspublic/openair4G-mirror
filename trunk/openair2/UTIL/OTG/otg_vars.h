@@ -44,7 +44,9 @@
 
 /*!< \brief main log variables */
 otg_t *g_otg; /*!< \brief  global params */
+otg_multicast_t *g_otg_multicast; /*!< \brief  global params */
 otg_info_t *otg_info; /*!< \brief  info otg: measurements about the simulation  */
+otg_multicast_info_t *otg_multicast_info; /*!< \brief  info otg: measurements about the simulation  */
 otg_forms_info_t *otg_forms_info;
 
 
