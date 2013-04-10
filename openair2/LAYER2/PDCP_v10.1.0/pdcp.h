@@ -191,12 +191,12 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \param[in] confirmP
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer Buffer carrying SDU
-* \param[in] is_data_plane flag to indicate whether the userplane data belong to the control plane or data plane
+* \param[in] mode flag to indicate whether the userplane data belong to the control plane or data plane or transparent 
 * \return TRUE on success, FALSE otherwise
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, u32 muiP, u32 confirmP, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 is_data_pdu);)
+public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, u32 muiP, u32 confirmP, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 mode);)
 
 /*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
 * \brief This functions handles data transfer indications coming from RLC
@@ -260,7 +260,7 @@ public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u
 * \param[in]  security_mode      set the integrity and ciphering algs
 * \return     A status about the processing, OK or error code.
 */
-public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
+public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index, rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
 
 /*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused

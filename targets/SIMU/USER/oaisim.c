@@ -155,7 +155,7 @@ help (void) {
   printf ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
-  printf ("-T activate the traffic generator: 0 for NONE, 1 for CBR, 2 for M2M, 3 for FPS Gaming, 4 for mix\n");
+  printf ("-T activate the traffic generator: cbr, mcbr, bcbr, mscbr \n");
   printf ("-B Set the mobility model for eNB, options are: STATIC, RWP, RWALK, \n");
   printf ("-U Set the mobility model for UE, options are: STATIC, RWP, RWALK \n");
   printf ("-E Random number generator seed\n"); 
@@ -512,7 +512,7 @@ main (int argc, char **argv)
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
-      oai_emulation.info.otg_traffic = atoi (optarg);
+      oai_emulation.info.otg_traffic = optarg;
       break;
     case 'P':
       oai_emulation.info.opt_enabled = 1;

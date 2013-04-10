@@ -72,7 +72,7 @@ def execute(oai, logfile):
         diag = "check the compilation errors for oai"
         oai.send('make cleanall',20)
         oai.send('rm -f ./oaisim.rel8')
-        oai.send_expect_false('make -j2', makerr1,  80)
+        oai.send_expect_false('make -j2', makerr1,  100)
         oai.send('cp ./oaisim ./oaisim.rel8')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -88,7 +88,7 @@ def execute(oai, logfile):
         oai.send('rm -f ./oaisim.rel8.nas')
         oai.send('sudo rmmod nasmesh')
         oai.send_expect_false('make nasmesh_fix', makerr1,  20)
-        oai.send_expect_false('make NAS=1 -j2 ', makerr1,  80)
+        oai.send_expect_false('make NAS=1 -j2 ', makerr1,  100)
         oai.send('cp ./oaisim ./oaisim.rel8.nas')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -102,7 +102,7 @@ def execute(oai, logfile):
         diag = 'check the compilation errors'
         oai.send('make cleanall; make cleanasn1;')
         oai.send('rm -f ./oaisim.rel10')
-        oai.send_expect_false('make Rel10=1 -j2', makerr1,  90)
+        oai.send_expect_false('make Rel10=1 -j2', makerr1,  100)
         oai.send('cp ./oaisim ./oaisim.rel10')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)

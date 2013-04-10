@@ -52,7 +52,7 @@
 
 #include "otg.h"
 #include "UTIL/MATH/oml.h"
-
+//#include "COMMON/platform_constants.h"
 
 
 /*! \fn int time_dist(int src, int dst, int state)

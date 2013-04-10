@@ -52,6 +52,9 @@
 /*!\brief Define the max number of application runing in the  same time*/
 #define MAX_NUM_APPLICATION 5 
 
+/*!\brief Define the max number of service */
+#define NUMBER_OF_SERVICE_MAX 1 
+
 /*!\brief Define the max number of traffic runing in the  same time - using their ID in the customized traffic*/
 #define MAX_EMU_TRAFFIC 100
 

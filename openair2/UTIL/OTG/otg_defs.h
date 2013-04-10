@@ -59,6 +59,20 @@
 * Application describes the class of traffic supported and can be pre-configured bu otg_tx
 */
 typedef enum {
+  NO_PREDEFINED_MULTICAST_TRAFFIC =0,
+  MSCBR,
+  MMCBR,
+  MBCBR
+}Multicast_Application;
+
+/**
+* \enum Application
+* \brief OTG applications type 
+* 
+*
+* Application describes the class of traffic supported and can be pre-configured bu otg_tx
+*/
+typedef enum {
   NO_PREDEFINED_TRAFFIC =0,
   M2M,
   SCBR,
@@ -299,7 +313,22 @@ typedef struct { /*this structure constitutes a whole bg-stream with multiple bg
 
 
 
+typedef struct {
+  
+  int application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];  /*!\brief It identify the application of the simulated traffic, could be cbr, m2m, gaming,etc*/
+  int trans_proto[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
+  int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
 
+  int idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];	/*!\brief Inter Departure Time distribution */	
+  int idt_min[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief Min Inter Departure Time, for uniform distrib  */
+  int idt_max[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief idt, Max Inter Departure Time, for uniform distrib  */
+
+  int size_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];	/*!\brief Paylolad size distribution */	
+  int size_min[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];	/*!\brief Min Payload size, for uniform distrib  */
+  int size_max[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief payload, Max Inter Departure Time, for uniform distrib  */
+ 
+
+}otg_multicast_t;
 
 
 /**
@@ -309,7 +338,7 @@ typedef struct { /*this structure constitutes a whole bg-stream with multiple bg
 *
 */
 typedef struct {
-	int max_nb_frames; /*!< \brief  Max Number of frames*/
+  int max_nb_frames; /*!< \brief  Max Number of frames*/
   int application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];  /*!\brief It identify the application of the simulated traffic, could be cbr, m2m, gaming,etc*/ 
   /*!\header info */
   int trans_proto[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief Transport Protocol*/
@@ -419,7 +448,27 @@ typedef struct{
 	char* payload; 		/*!< \brief  Payload*/  
 }__attribute__((__packed__)) packet_t;
 
+typedef struct {
+  int ctime; 
+  int ptime[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 
+  
+  unsigned int header_size_otg[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 
+  unsigned int header_size_app[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 
 
+  int idt[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  
+  
+  int tx_sn[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  int rx_sn[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  
+  int tx_num_pkt[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  int tx_num_bytes[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  int rx_num_pkt[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  int rx_num_bytes[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  
+  int ran_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+  int loss_rate[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];
+}otg_multicast_info_t;
 
 
 
@@ -515,7 +564,8 @@ typedef struct{
   unsigned int m2m_aggregation[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   unsigned int flow_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   unsigned int traffic_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
-  unsigned int traffic_type_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+  unsigned int traffic_type_background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 
+  //  unsigned int traffic_type_multicast[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX];
   unsigned int hdr_size[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   unsigned int header_type_app[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; ;
   unsigned int gen_pkts;

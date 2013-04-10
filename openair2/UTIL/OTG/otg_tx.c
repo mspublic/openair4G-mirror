@@ -62,7 +62,6 @@ int ptime=0;
 int time_dist(int src, int dst,int application, int state) {
 
   int idt=0;
-
   switch (g_otg->idt_dist[src][dst][application][state]) {
 	case  UNIFORM:
 	  idt =  ceil((uniform_dist(g_otg->idt_min[src][dst][application][state], g_otg->idt_max[src][dst][application][state])));
@@ -211,7 +210,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   char *payload=NULL;
   char *header=NULL;
 
- LOG_I(OTG,"[src %d] [dst %d ]MY_CTIME %d, MAX_FRAME %d\n",src,  dst, ctime, g_otg->max_nb_frames);
+  LOG_T(OTG,"[src %d] [dst %d ]MY_CTIME %d, MAX_FRAME %d\n",src,  dst, ctime, g_otg->max_nb_frames);
 
 
 	*pkt_size=0;
@@ -245,12 +244,12 @@ Send Packets when:
   LOG_D(OTG, "[%d]MY_SEQ %d \n", otg_info->traffic_type[src][dst], otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]] );  
 	 } 	
 	else {
-		if ((g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
-			otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst];
-		else{
-			//otg_info->size_background[src][dst]=PAYLOAD_MAX;
-    	LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX %d\n");
-	}
+	  if ((g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
+	    otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst][application]*otg_info->size_background[src][dst];
+	  else{
+	    //otg_info->size_background[src][dst]=PAYLOAD_MAX;
+	    LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX %d\n");
+	  }
  	 header =random_string(header_size_gen_background(src,dst),  g_otg->packet_gen_type, HEADER_ALPHABET);
  	 payload = random_string(otg_info->size_background[src][dst],  RANDOM_STRING, PAYLOAD_ALPHABET);
 	  flag=0xbbbb;
@@ -280,13 +279,61 @@ Send Packets when:
 
 
 }
+unsigned char *packet_gen_multicast(int src, int dst, int ctime, int * pkt_size){ 
 
-
+  *pkt_size =0; 
+  unsigned int size=0;
+  unsigned int buffer_size =0;
+  char *payload=NULL;
+  char *header=NULL; 
+  unsigned int flag;
+  int app,seq_num=0;
+  int otg_hdr_size= + sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
+  
+  //for (app=0; app<MAX_NUM_APPLICATION; app++){  
+  for (app=0; app<1; app++){  
+   if ( (g_otg_multicast->idt_dist[src][dst][app]> 0) &&  
+	 ((ctime - otg_multicast_info->ptime[src][dst][app]) >= otg_multicast_info->idt[src][dst][app]) ){
+      otg_multicast_info->ptime[src][dst][application]=ctime;
+      //otg_info->idt[src][dst][app]= time_dist(src, dst, app, -1);
+      otg_multicast_info->idt[src][dst][app]=ceil(uniform_dist(g_otg_multicast->idt_min[src][dst][app], 
+							       g_otg_multicast->idt_max[src][dst][app]));
+      size = ceil(uniform_dist(g_otg_multicast->size_min[src][dst][app], 
+			       g_otg_multicast->size_max[src][dst][app]));
+      //LOG_D(OTG, "ptime %d idt %d size %d \n",  ctime, otg_multicast_info->idt[src][dst][app], size);
+      if (size == 0)
+	size = 1;
+      if (otg_multicast_info->header_size_app[src][dst][app]==0){
+	otg_multicast_info->header_size_app[src][dst][app]=1;
+	LOG_W(OTG,"header type not defined, set to 1\n");
+      }
+      header = random_string(otg_multicast_info->header_size_app[src][dst][app], 
+			     g_otg->packet_gen_type, 
+			     HEADER_ALPHABET);
+      payload = random_string(size, RANDOM_STRING, PAYLOAD_ALPHABET);
+      flag = 0x1000;
+      seq_num=otg_multicast_info->tx_sn[src][dst][app]++;
+      otg_multicast_info->tx_num_pkt[src][dst][app]+=1;
+      otg_multicast_info->tx_num_bytes[src][dst][app]+= strlen(header) + strlen(payload)+otg_hdr_size;
+      if (size!=strlen(payload))
+	LOG_E(OTG,"[src %d][dst %d] The expected packet size does not match the payload size : size %d, strlen %d \n", src, dst, size, strlen(payload));
+      else 
+	LOG_D(OTG,"[src %d][dst %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d: |%s|%s| \n", 
+	      src, dst, ctime, size, strlen(header)+strlen(payload)+otg_hdr_size, seq_num, header, payload);
+  
+      buffer_size = otg_hdr_size + strlen(header) + strlen(payload);
+      *pkt_size = buffer_size;
+      
+      return serialize_buffer(header, payload, buffer_size,g_otg_multicast->application_type[src][dst][app], flag, 0, ctime, seq_num, 0, HDR_IP_v4_MIN+HDR_UDP, 1);
+    }
+  }
+  return NULL;
+}
 
 int otg_hdr_size(int src, int dst){
-	if (otg_info->hdr_size[src][dst]==0)
-		otg_info->hdr_size[src][dst]=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
-	return otg_info->hdr_size[src][dst];
+  if (otg_info->hdr_size[src][dst]==0)
+    otg_info->hdr_size[src][dst]=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
+  return otg_info->hdr_size[src][dst];
 }
 
 void init_packet_gen(int src, int dst,int ctime){
@@ -395,53 +442,75 @@ int check_data_transmit(int src,int dst, int ctime){
 
 unsigned int get_application_state(int src, int dst, int application, int ctime){
 
-	switch (g_otg->application_type[src][dst][application]){
-	case VOIP_G711:
-	case VOIP_G729:
-		voip_traffic(src, dst, application, ctime);
-		return otg_info->voip_state[src][dst][application];
+  switch (g_otg->application_type[src][dst][application]){
+  case VOIP_G711:
+  case VOIP_G729:
+    voip_traffic(src, dst, application, ctime);
+    return otg_info->voip_state[src][dst][application];
     break;
   default:
-		state_management(src,dst,application, ctime);
-		return otg_info->state[src][dst][application];
-		break;	
-	}
+    state_management(src,dst,application, ctime);
+    return otg_info->state[src][dst][application];
+    break;	
+  }
 }
 
 void header_size_gen(int src, int dst, int application){
 
 unsigned int size_header=0;
 unsigned int type_header=0;
+ 
 
-	if (otg_info->header_size_app[src][dst][application]==0)
-	{
-		if (g_otg->ip_v[src][dst][application]==1) { 
-			size_header+=HDR_IP_v4_MIN;
-			otg_info->header_type_app[src][dst][application]+=0;
-		}
-		else if  (g_otg->ip_v[src][dst][application]==2){	
-			size_header+=HDR_IP_v6;
-			otg_info->header_type_app[src][dst][application]+=2;
-			
-		}
-		
-		if (g_otg->trans_proto[src][dst][application]==1){	
- 			size_header+= HDR_UDP ;
-			otg_info->header_type_app[src][dst][application]+=1;
-		}	
-		else if (g_otg->trans_proto[src][dst][application]==2){
-			size_header+= HDR_TCP;
-			otg_info->header_type_app[src][dst][application]+=2;
-		}
-	
-		if ((g_otg->application_type[src][dst][application]==VOIP_G711)||(g_otg->application_type[src][dst][application]==VOIP_G729))
- 			size_header+=RTP_HEADER;
-		LOG_D(OTG,"Header size is %d [IP V=%d][PROTO=%d]\n",  size_header, g_otg->ip_v[src][dst][application],g_otg->trans_proto[src][dst][application]);
-		otg_info->header_size_app[src][dst][application]=size_header;
-	}		
+ if (otg_info->header_size_app[src][dst][application]==0)
+   {
+     if (g_otg->ip_v[src][dst][application]==1) { 
+       size_header+=HDR_IP_v4_MIN;
+       otg_info->header_type_app[src][dst][application]+=0;
+     }
+     else if  (g_otg->ip_v[src][dst][application]==2){	
+       size_header+=HDR_IP_v6;
+       otg_info->header_type_app[src][dst][application]+=2;
+       
+     }
+     
+     if (g_otg->trans_proto[src][dst][application]==1){	
+       size_header+= HDR_UDP ;
+       otg_info->header_type_app[src][dst][application]+=1;
+     }	
+     else if (g_otg->trans_proto[src][dst][application]==2){
+       size_header+= HDR_TCP;
+       otg_info->header_type_app[src][dst][application]+=2;
+     }
+     
+     if ((g_otg->application_type[src][dst][application]==VOIP_G711)||(g_otg->application_type[src][dst][application]==VOIP_G729))
+       size_header+=RTP_HEADER;
+     LOG_D(OTG,"Header size is %d [IP V=%d][PROTO=%d]\n",  size_header, g_otg->ip_v[src][dst][application],g_otg->trans_proto[src][dst][application]);
+     otg_info->header_size_app[src][dst][application]=size_header;
+   }		
 }
 
+void header_size_gen_multicast(int src, int dst, int application){
 
+  unsigned int size_header=0;
+  if (otg_multicast_info->header_size_app[src][dst][application]==0) {
+    
+     if (g_otg_multicast->ip_v[src][dst][application]==1) { 
+       size_header+=HDR_IP_v4_MIN;
+     }
+     else if  (g_otg_multicast->ip_v[src][dst][application]==2){	
+       size_header+=HDR_IP_v6;
+     }
+     
+     if (g_otg_multicast->trans_proto[src][dst][application]==1){	
+       size_header+= HDR_UDP ;
+     }	
+     else if (g_otg_multicast->trans_proto[src][dst][application]==2){
+       size_header+= HDR_TCP;
+     } 
+     //   LOG_I(OTG,"multicast header is set to %d\n", size_header);
+     otg_multicast_info->header_size_app[src][dst][application]=size_header;
+   }
+}
 // Generate a random string[size]
 char *random_string(int size, ALPHABET_GEN mode, ALPHABET_TYPE data_type) {
   char *data=NULL;
@@ -533,7 +602,7 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
   otg_hdr_p->hdr_type=hdr_type;
   otg_hdr_p->state = state;
   otg_hdr_p->aggregation_level=aggregation_level;
-	otg_hdr_p->traffic_type=traffic_type;
+  otg_hdr_p->traffic_type=traffic_type;
   byte_tx_count += sizeof(otg_hdr_t);
   
   // copy the header first 
@@ -548,7 +617,35 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
   return tx_buffer;
 }
 
+void init_predef_multicast_traffic() {
+  int i, j, k;
 
+for (i=0; i<NUMBER_OF_eNB_MAX; i++){ // src 
+   for (j=0; j<NUMBER_OF_SERVICE_MAX; j++){ // dst
+     for (k=0; k<MAX_NUM_APPLICATION; k++){  
+       switch(g_otg_multicast->application_type[i][j][k]){
+	  case  MSCBR : 
+	    g_otg_multicast->trans_proto[i][j][k]= UDP;
+	    g_otg_multicast->ip_v[i][j][k]= IPV4;
+
+	    g_otg_multicast->idt_dist[i][j][k]= UNIFORM;
+	    g_otg_multicast->idt_min[i][j][k]= 50;
+	    g_otg_multicast->idt_max[i][j][k]= 100;
+
+	    g_otg_multicast->size_dist[i][j][k]= FIXED;
+	    g_otg_multicast->size_min[i][j][k]= 50;
+	    g_otg_multicast->size_max[i][j][k]= 100;
+	    header_size_gen_multicast(i,j,k);
+	    break;
+       default :
+	 LOG_W(OTG, "not supported model for multicast traffic\n");
+	 
+       }
+       
+     }
+   }
+ }
+}
 void init_predef_traffic(unsigned char nb_ue_local, unsigned char nb_enb_local) {
 int i;
 int j;

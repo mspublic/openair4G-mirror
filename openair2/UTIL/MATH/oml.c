@@ -59,7 +59,7 @@ void init_seeds(int seed){
 double uniform_rng() {		
   double random;
   random = (double)taus(OTG)/((double)0xffffffff);
-  LOG_D(OTG,"Uniform taus random number= %lf\n", random);
+  //LOG_D(OTG,"Uniform taus random number= %lf\n", random);
 return random;
 }
 
@@ -91,7 +91,7 @@ double gaussian_dist(double mean, double std_dev) {
 		w = sqrt((-2.0 * log(w)) / w);	
 		gaussian_rn_1 = (std_dev * (x_rand1 * w)) + mean;
 	} while (gaussian_rn_1 <= 0);
-	LOG_D(OTG,"Gaussian Random Nb= %lf (mean %lf, deviation %lf)\n", gaussian_rn_1, mean, std_dev);
+	LOG_T(OTG,"Gaussian Random Nb= %lf (mean %lf, deviation %lf)\n", gaussian_rn_1, mean, std_dev);
 		
 	return gaussian_rn_1;
 
@@ -107,7 +107,7 @@ double exponential_dist(double lambda) {
 		exponential_rn = log(uniform_rng()) / lambda;
 	else
 		exponential_rn = -log(uniform_rng()) / lambda;
-	LOG_D(OTG,"Exponential Random Nb = %lf (lambda %lf)\n", exponential_rn, lambda);
+	LOG_T(OTG,"Exponential Random Nb = %lf (lambda %lf)\n", exponential_rn, lambda);
 	return exponential_rn;
 }
 
@@ -124,7 +124,7 @@ double poisson_dist(double lambda){
 		k += 1;
 	} while (p > L);
 	poisson_rn = k - 1;
-	LOG_D(OTG,"Poisson Random Nb = %lf (lambda %lf)\n", poisson_rn, lambda);
+	LOG_T(OTG,"Poisson Random Nb = %lf (lambda %lf)\n", poisson_rn, lambda);
 	return poisson_rn;  
 
 }
@@ -141,7 +141,7 @@ double weibull_dist(double scale, double shape){
 		shape=4;
 	}
 	weibull_rn=scale * pow(-log(1-uniform_rng()), 1/shape);	
-	LOG_D(OTG,"Weibull Random Nb = %lf (scale=%.2f, shape=%.2f)\n", weibull_rn, scale,shape);
+	LOG_T(OTG,"Weibull Random Nb = %lf (scale=%.2f, shape=%.2f)\n", weibull_rn, scale,shape);
 	return weibull_rn; 
 
 }
@@ -154,7 +154,7 @@ double pareto_rn;
 		shape=4;
 	}
 	pareto_rn=scale * pow(1/(1-uniform_rng()), 1/shape);
-	LOG_D(OTG,"Pareto Random Nb = %lf (scale=%.2f, shape=%.2f)\n", pareto_rn,scale,shape);	
+	LOG_T(OTG,"Pareto Random Nb = %lf (scale=%.2f, shape=%.2f)\n", pareto_rn,scale,shape);	
 	return pareto_rn; 
 }
 
@@ -175,7 +175,7 @@ shape_int=ceil(shape);
 	}
 	
 	gamma_rn= (-1/scale)*log(mult_var);
-	LOG_D(OTG,"Gamma Random Nb = %lf (scale=%.2f, shape=%.2f)\n", gamma_rn, scale, shape);	
+	LOG_T(OTG,"Gamma Random Nb = %lf (scale=%.2f, shape=%.2f)\n", gamma_rn, scale, shape);	
 	return gamma_rn;
 
 }
@@ -193,10 +193,10 @@ double cauchy_rn;
 	
 	if (cauchy_rn<0){
 	  cauchy_rn=fabs(cauchy_rn);  
-	  LOG_D(OTG,"Cauchy Random Nb = %lf <0 (scale=%.2f, shape=%.2f), we use absolute value\n", cauchy_rn, scale, shape);
+	  LOG_T(OTG,"Cauchy Random Nb = %lf <0 (scale=%.2f, shape=%.2f), we use absolute value\n", cauchy_rn, scale, shape);
 	}
 	else
-	  LOG_D(OTG,"Cauchy Random Nb = %lf (scale=%.2f, shape=%.2f)\n", cauchy_rn, scale, shape);
+	  LOG_T(OTG,"Cauchy Random Nb = %lf (scale=%.2f, shape=%.2f)\n", cauchy_rn, scale, shape);
 	return cauchy_rn;
 
 }

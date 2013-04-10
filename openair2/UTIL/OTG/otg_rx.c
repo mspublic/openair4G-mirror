@@ -29,7 +29,7 @@
 
 /*! \file otg_rx.c
 * \brief function containing the OTG traffic generation functions 
-* \author A. Hafsaoui
+* \author A. Hafsaoui and Navid Nikaein
 * \date 2011
 * \version 0.1
 * \company Eurecom
@@ -64,44 +64,55 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
   unsigned int seq_num_rx;
   unsigned int nb_loss_pkts;
 
-char * hdr_payload=NULL;
-//int header_size;
+  char * hdr_payload=NULL;
+  //int header_size;
 
   if (buffer_tx!=NULL) { 
     otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
     bytes_read += sizeof (otg_hdr_info_t);
 
-
-
-    if (((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb)) && (otg_hdr_info_rx->size ==size )){ //data traffic
-
- LOG_I(OTG,"MAX_RX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
-
+    
+    if (((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb) || (otg_hdr_info_rx->flag == 0x1000)) && 
+	(otg_hdr_info_rx->size ==size )){ //data traffic
+      
+      LOG_I(OTG,"MAX_RX_INFO %d %d \n",NB_eNB_INST,  NB_UE_INST);
+      
       /*is_size_ok= 0;
-      if (( otg_hdr_info_rx->size ) == size ) {*/
+	if (( otg_hdr_info_rx->size ) == size ) {*/
       is_size_ok= 1;
-	otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
-	LOG_I(OTG,"[SRC %d][DST %d] [FLOW_idx %d][APP TYPE %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d) \n", src, dst,otg_hdr_rx->flow_id,  otg_hdr_rx->traffic_type, ctime, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, otg_hdr_rx->time, otg_hdr_info_rx->size, size);
-	 bytes_read += sizeof (otg_hdr_t);
+      otg_hdr_rx = (otg_hdr_t *) (&buffer_tx[bytes_read]);
+      LOG_I(OTG,"[SRC %d][DST %d] [FLOW_idx %d][APP TYPE %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d) \n", src, dst,otg_hdr_rx->flow_id,  otg_hdr_rx->traffic_type, ctime, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, otg_hdr_rx->time, otg_hdr_info_rx->size, size);
+      bytes_read += sizeof (otg_hdr_t);
+      
+      if (otg_hdr_info_rx->flag == 0xffff){
+	seq_num_rx=otg_info->seq_num_rx[src][dst][otg_hdr_rx->traffic_type];
+	if (src<NB_eNB_INST)
+	  nb_loss_pkts=otg_info->nb_loss_pkts_dl[src][dst][otg_hdr_rx->traffic_type];
+	else
+	  nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst][otg_hdr_rx->traffic_type];
+      }
+      else if (otg_hdr_info_rx->flag == 0x1000){
+	seq_num_rx=otg_multicast_info->rx_sn[src][dst][otg_hdr_rx->traffic_type];
+	otg_multicast_info->ran_owd[src][dst][otg_hdr_rx->traffic_type]=ctime- otg_hdr_rx->time;
+	nb_loss_pkts=otg_multicast_info->loss_rate[src][dst][otg_hdr_rx->traffic_type];
+	rx_check_loss(src, dst, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, &seq_num_rx, &nb_loss_pkts);
+	otg_multicast_info->loss_rate[src][dst][otg_hdr_rx->traffic_type]=nb_loss_pkts;
+	LOG_I(OTG,"received a multicast packet with size %d sn %d ran owd %d loss rate %d\n",
+	      otg_hdr_info_rx->size, seq_num_rx, ctime- otg_hdr_rx->time, nb_loss_pkts);
+	return 0;
+	
+      }
+      else{
+	seq_num_rx=otg_info->seq_num_rx_background[src][dst];
+	if (src<NB_eNB_INST)
+	  nb_loss_pkts=otg_info->nb_loss_pkts_background_dl[src][dst];
+	else
+	  nb_loss_pkts=otg_info->nb_loss_pkts_background_ul[src][dst];
+      }
 
-        if (otg_hdr_info_rx->flag == 0xffff){
-          seq_num_rx=otg_info->seq_num_rx[src][dst][otg_hdr_rx->traffic_type];
-					if (src<NB_eNB_INST)
-          	nb_loss_pkts=otg_info->nb_loss_pkts_dl[src][dst][otg_hdr_rx->traffic_type];
-					else
-          	nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst][otg_hdr_rx->traffic_type];
-        }
-	else{
-          seq_num_rx=otg_info->seq_num_rx_background[src][dst];
-					if (src<NB_eNB_INST)
-          	nb_loss_pkts=otg_info->nb_loss_pkts_background_dl[src][dst];
-					else
-          	nb_loss_pkts=otg_info->nb_loss_pkts_background_ul[src][dst];
-        }
-
-
+	
 	LOG_D(OTG,"[%d][%d] AGGREGATION LEVEL (RX) %d \n", src, dst, otg_hdr_rx->aggregation_level);
-  otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
+	otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
 
 	/* Loss and out of sequence data management */
 	rx_check_loss(src, dst, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, &seq_num_rx, &nb_loss_pkts);
@@ -113,7 +124,7 @@ char * hdr_payload=NULL;
 
 
 	if (otg_hdr_rx->time<=ctime){
-		otg_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
+	  otg_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
 /******/
 /*
 float owd_const_capillary_v=owd_const_capillary()/2;
