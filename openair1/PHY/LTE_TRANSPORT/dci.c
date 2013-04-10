@@ -317,8 +317,10 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t
 
     for (a=0;a<frame_parms->nb_antennas_tx_eNB;a++) {
       
-      wptr  = &wtemp[a][i<<2];
-      wptr2 = &wbar[a][((i+frame_parms->Nid_cell)%Mquad)<<2];
+      //wptr  = &wtemp[a][i<<2];
+      //wptr2 = &wbar[a][((i+frame_parms->Nid_cell)%Mquad)<<2];
+      wptr = &wtemp[a][((i+frame_parms->Nid_cell)%Mquad)<<2];
+      wptr2 = &wbar[a][i<<2];
       wptr2[0] = wptr[0];
       wptr2[1] = wptr[1];
       wptr2[2] = wptr[2];
@@ -443,8 +445,10 @@ void pdcch_deinterleaving(LTE_DL_FRAME_PARMS *frame_parms,u16 *z, u16 *wbar,u8 n
   }
   // undo permutation
   for (i=0;i<Mquad;i++) {
-    wptr = &wtemp_rx[i<<2];
-    wptr2 = &wbar[((i+frame_parms->Nid_cell)%Mquad)<<2];
+    //wptr = &wtemp_rx[i<<2];
+    //wptr2 = &wbar[((i+frame_parms->Nid_cell)%Mquad)<<2];
+    wptr = &wtemp_rx[((i+frame_parms->Nid_cell)%Mquad)<<2];
+    wptr2 = &wbar[i<<2];
 
     wptr[0] = wptr2[0];
     wptr[1] = wptr2[1];
@@ -1902,7 +1906,8 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
       reset = 0;
     }
     //    printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
-    e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
+    if (e[i] != 2) // <NIL> element is 2
+      e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
   }
 }
 
@@ -1999,7 +2004,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   u8 *e_ptr,num_pdcch_symbols;
   s8 L;
   u32 i, lprime;
-  u16 gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
+  u32 gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
   s16 re_offset;
   u8 mi = get_mi(frame_parms,subframe);
   static u8 e[DCI_BITS_MAX];	
@@ -2056,7 +2061,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   y[0] = &yseq0[0];
   y[1] = &yseq1[0];
 
-  memset(e,0,DCI_BITS_MAX);
+  //memset(e,0,DCI_BITS_MAX);
+  // reset all bits to <NIL>, here we set <NIL> elements as 2
+  memset(e, 2, DCI_BITS_MAX);
   e_ptr = e;
 
   // generate DCIs in order of decreasing aggregation level, then common/ue spec
@@ -2101,7 +2108,8 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   pdcch_scrambling(frame_parms,
 		   subframe,
 		   e,
-		   72*get_nCCE(num_pdcch_symbols,frame_parms,mi));
+                   8*get_nquad(num_pdcch_symbols, frame_parms, mi));
+		   //72*get_nCCE(num_pdcch_symbols,frame_parms,mi));
   
 
 #ifdef DEBUG_DCI_ENCODING
@@ -2118,11 +2126,17 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
 #ifndef IFFT_FPGA
     for (i=0;i<Msymb2;i++) {
-      ((s16*)(&(y[0][i])))[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
-      ((s16*)(&(y[1][i])))[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      //((s16*)(&(y[0][i])))[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      //((s16*)(&(y[1][i])))[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[0][i])))[0] = (*e_ptr == 2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[1][i])))[0] = (*e_ptr == 2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+
       e_ptr++;
-      ((s16*)(&(y[0][i])))[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
-      ((s16*)(&(y[1][i])))[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      //((s16*)(&(y[0][i])))[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      //((s16*)(&(y[1][i])))[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[0][i])))[1] = (*e_ptr == 2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[1][i])))[1] = (*e_ptr == 2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+
       e_ptr++;
     }
 #else

@@ -140,7 +140,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
   u8 pcfich_bt[32],nsymb,pcfich_quad;
   mod_sym_t pcfich_d[2][16];
   u8 i;
-  u16 symbol_offset,m,re_offset,reg_offset;
+  u32 symbol_offset,m,re_offset,reg_offset;
   s16 gain_lin_QPSK;
 #ifdef IFFT_FPGA
   u8 qpsk_table_offset = 0; 
@@ -148,6 +148,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
 #endif
   u16 *pcfich_reg = frame_parms->pcfich_reg;
 
+  int nushiftmod3 = frame_parms->nushift%3;
 #ifdef DEBUG_PCFICH
   msg("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
 #endif
@@ -265,8 +266,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
 #endif
     //    printf("mapping pcfich reg_offset %d\n",reg_offset);
     for (i=0;i<6;i++) {
-      if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
-
+      if ((i!=nushiftmod3)&&(i!=(nushiftmod3+3))) {
 	txdataF[0][symbol_offset+reg_offset+i] = pcfich_d[0][m];
 	/*
 #ifndef IFFT_FPGA
