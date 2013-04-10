@@ -30,9 +30,9 @@
 #include <string.h>
 #endif
 
-
-
-
+#ifdef MEX
+#include "mex.h"
+#endif
 
 
 //#define DEBUG_LOGMAP
@@ -1872,10 +1872,18 @@ void init_td() {
 
     n = f1f2mat[ind].nb_bits;
     base_interleaver=il_tb+f1f2mat[ind].beg_index;
+#ifdef MEX
+    // This is needed for the Mex implementation to make the memory persistent
+    pi2tab[ind] = mxMalloc((n+8)*sizeof(int));
+    pi5tab[ind] = mxMalloc((n+8)*sizeof(int));
+    pi4tab[ind] = mxMalloc((n+8)*sizeof(int));
+    pi6tab[ind] = mxMalloc((n+8)*sizeof(int));
+#else
     pi2tab[ind] = malloc((n+8)*sizeof(int));
     pi5tab[ind] = malloc((n+8)*sizeof(int));
     pi4tab[ind] = malloc((n+8)*sizeof(int));
     pi6tab[ind] = malloc((n+8)*sizeof(int));
+#endif
 
 #ifdef LLR8
     if ((n&15)>0) {
