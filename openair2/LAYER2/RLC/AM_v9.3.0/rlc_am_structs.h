@@ -228,6 +228,7 @@ typedef struct rlc_am_pdu_info {
 */
 typedef struct rlc_am_timer {
     u32_t  frame_time_out;/*!< \brief When set, indicate the frame number the timer will time-out. */
+    u32_t  frame_start;   /*!< \brief indicate the frame number the timer has been started. */
     u32_t  time_out;      /*!< \brief Configured timer duration in frames. */
     u32_t  running:1;     /*!< \brief The timer is running. */
     u32_t  timed_out:1;   /*!< \brief The timer has timed-out. */

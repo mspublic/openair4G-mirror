@@ -44,6 +44,16 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #        include "rlc_primitives.h"
 #        include "rlc_def.h"
 
+typedef struct rlc_um_timer {
+    u32_t  frame_time_out;/*!< \brief When set, indicate the frame number the timer will time-out. */
+    u32_t  frame_start;   /*!< \brief indicate the frame number the timer has been started. */
+    u32_t  time_out;      /*!< \brief Configured timer duration in frames. */
+    u32_t  running:1;     /*!< \brief The timer is running. */
+    u32_t  timed_out:1;   /*!< \brief The timer has timed-out. */
+    u32_t  dummy:30;      /*!< \brief Bits not used. */
+} rlc_um_timer_t ;
+
+
 /*! \struct  rlc_um_entity_t
 * \brief Structure containing a RLC UM instance protocol variables, statistic variables, allocation variables, buffers and other miscellaneous variables.
 */
@@ -65,9 +75,10 @@ typedef struct rlc_um_entity {
   //-----------------------------
   // TIMERS
   //-----------------------------
-  signed int        timer_reordering;           /*!< \brief Timer t-Reordering starting time frame, this timer is used by the receiving side of an AM RLC entity and receiving UM RLC entity in order to detect loss of RLC PDUs at lower layer. If t-Reordering is running, t-Reordering shall not be started additionally, i.e. only one t-Reordering per RLC entity is running at a given time. */
-  signed int        timer_reordering_init;     /*!< \brief Timer t-Reordering initial configuration value. */
-  signed int        timer_reordering_running;  /*!< \brief Boolean to know if timer t-Reordering is running. */
+  struct rlc_um_timer  t_reordering;
+  //signed int        timer_reordering;           /*!< \brief Timer t-Reordering starting time frame, this timer is used by the receiving side of an AM RLC entity and receiving UM RLC entity in order to detect loss of RLC PDUs at lower layer. If t-Reordering is running, t-Reordering shall not be started additionally, i.e. only one t-Reordering per RLC entity is running at a given time. */
+  //signed int        timer_reordering_init;     /*!< \brief Timer t-Reordering initial configuration value. */
+  //signed int        timer_reordering_running;  /*!< \brief Boolean to know if timer t-Reordering is running. */
   //*****************************************************************************
   // CONFIGURATION PARAMETERS
   //*****************************************************************************
@@ -109,20 +120,26 @@ typedef struct rlc_um_entity {
   //-----------------------------
   // STATISTICS
   //-----------------------------
-  u32_t             tx_sdus;                        /*!< \brief Not updated. */
-  u32_t             rx_sdus;                        /*!< \brief Number of SDUs reassemblied and sent to upper layers. */
-  u32_t             tx_pdus;                        /*!< \brief Number of PDUs sent to lower layers. */
-  u32_t             rx_pdus;                        /*!< \brief Number of PDUs received from lower layers. */
-  u32_t             rx_pdus_in_error;               /*!< \brief Number of PDUs received from lower layers marked as containing an error. */
-  u8_t              first_pdu;                      /*!< \brief Act as a boolean, tells if the next PDU is the first PDU to be received. */
+  u8_t              first_pdu;                        /*!< \brief Act as a boolean, tells if the next PDU is the first PDU to be received. */
 
-  unsigned int tx_pdcp_sdu;                         /*!< \brief For statistic report, number of transmitted SDUs coming from upper layers. */
-  unsigned int tx_pdcp_sdu_discarded;               /*!< \brief For statistic report, number of discarded SDUs coming from upper layers. */
-  unsigned int tx_data_pdu;                         /*!< \brief For statistic report, number of transmitted PDUs to lower layers. */
-  unsigned int rx_sdu;                              /*!< \brief For statistic report, number of reassemblied SDUs, sent to upper layers. */
-  unsigned int rx_error_pdu;                        /*!< \brief For statistic report, number of received PDUs from lower layers, marked as containing an error. */
-  unsigned int rx_data_pdu;                         /*!< \brief For statistic report, number of received PDUs from lower layers. */
-  unsigned int rx_data_pdu_out_of_window;           /*!< \brief Number of data PDUs received out of the receive window. */
+  unsigned int stat_tx_pdcp_sdu;                      /*!< \brief Number of SDUs received from upper layers. */
+  unsigned int stat_tx_pdcp_bytes;                    /*!< \brief Number of SDU bytes received from upper layers. */
+  unsigned int stat_tx_pdcp_sdu_discarded;            /*!< \brief Number of SDUs received from upper layers that have been discarded. */
+  unsigned int stat_tx_pdcp_bytes_discarded;          /*!< \brief Number of SDU bytes received from upper layers that have been discarded. */
+
+  unsigned int stat_tx_data_pdu;                         /*!< \brief For statistic report, number of transmitted PDUs to lower layers. */
+  unsigned int stat_tx_data_bytes;                       /*!< \brief For statistic report, number of transmitted bytes to lower layers. */
+  unsigned int stat_rx_pdcp_sdu;                         /*!< \brief For statistic report, number of reassemblied SDUs, sent to upper layers. */
+  unsigned int stat_rx_pdcp_bytes;                       /*!< \brief For statistic report, number of reassemblied bytes, sent to upper layers. */
+  unsigned int stat_rx_data_pdus_duplicate;              /*!< \brief For statistic report, number of received duplicated PDUs from lower layers. */
+  unsigned int stat_rx_data_bytes_duplicate;             /*!< \brief For statistic report, number of received duplicated bytes from lower layers. */
+  unsigned int stat_rx_data_pdu;                         /*!< \brief For statistic report, number of received PDUs from lower layers. */
+  unsigned int stat_rx_data_bytes;                       /*!< \brief For statistic report, number of received bytes from lower layers. */
+  unsigned int stat_rx_data_pdu_dropped;                 /*!< \brief For statistic report, number of dropped received PDUs from lower layers. Does not include out of window stat. */
+  unsigned int stat_rx_data_bytes_dropped;               /*!< \brief For statistic report, number of dropped received bytes from lower layers. Does not include out of window stat. */
+  unsigned int stat_rx_data_pdu_out_of_window;           /*!< \brief Number of data PDUs received out of the receive window. */
+  unsigned int stat_rx_data_bytes_out_of_window;         /*!< \brief Number of data bytes received out of the receive window. */
+  unsigned int stat_timer_reordering_timed_out;
 }rlc_um_entity_t;
 /** @} */
 #    endif

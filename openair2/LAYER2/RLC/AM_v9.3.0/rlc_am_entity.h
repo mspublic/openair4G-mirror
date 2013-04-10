@@ -135,20 +135,36 @@ typedef struct rlc_am_entity {
   //---------------------------------------------------------------------
   // STATISTICS
   //---------------------------------------------------------------------
-  unsigned int stat_tx_pdcp_sdu;                      /*!< \brief Number of SDUs received from upper layers. */
-  unsigned int stat_tx_pdcp_sdu_discarded;            /*!< \brief Number of SDUs received from upper layers that have been discarded. */
-  unsigned int stat_tx_retransmit_pdu_unblock;        /*!< \brief Not updated. */
-  unsigned int stat_tx_retransmit_pdu_by_status;      /*!< \brief Not updated. */
-  unsigned int stat_tx_retransmit_pdu;                /*!< \brief Not updated. */
-  unsigned int stat_tx_data_pdu;                      /*!< \brief Not updated. */
-  unsigned int stat_tx_control_pdu;                   /*!< \brief Not updated. */
+  unsigned int stat_tx_pdcp_sdu;                         /*!< \brief Number of SDUs received from upper layers. */
+  unsigned int stat_tx_pdcp_bytes;                       /*!< \brief Number of SDU bytes received from upper layers. */
+  unsigned int stat_tx_pdcp_sdu_discarded;               /*!< \brief Number of SDUs received from upper layers that have been discarded. */
+  unsigned int stat_tx_pdcp_bytes_discarded;             /*!< \brief Number of SDU bytes received from upper layers that have been discarded. */
 
-  unsigned int stat_rx_sdu;                           /*!< \brief Not updated. */
-  unsigned int stat_rx_error_pdu;                     /*!< \brief Not updated. */
-  unsigned int stat_rx_data_pdu;                      /*!< \brief Number of data PDUs received. */
-  unsigned int stat_rx_data_pdu_duplicate;            /*!< \brief Number of duplicate data PDUs received. */
-  unsigned int stat_rx_data_pdu_out_of_window;        /*!< \brief Number of data PDUs received out of the receive window. */
-  unsigned int stat_rx_control_pdu;                   /*!< \brief Number of control PDUs received. */
+  unsigned int stat_tx_data_pdu;                         /*!< \brief For statistic report, number of transmitted PDUs to lower layers. */
+  unsigned int stat_tx_data_bytes;                       /*!< \brief For statistic report, number of transmitted bytes to lower layers. */
+  unsigned int stat_tx_retransmit_pdu_by_status;         /*!< \brief Not updated. */
+  unsigned int stat_tx_retransmit_bytes_by_status;       /*!< \brief Not updated. */
+  unsigned int stat_tx_retransmit_pdu;                   /*!< \brief Not updated. */
+  unsigned int stat_tx_retransmit_bytes;                 /*!< \brief Not updated. */
+  unsigned int stat_tx_control_pdu;                      /*!< \brief Not updated. */
+  unsigned int stat_tx_control_bytes;                    /*!< \brief Not updated. */
+
+  unsigned int stat_rx_pdcp_sdu;                         /*!< \brief For statistic report, number of reassemblied SDUs, sent to upper layers. */
+  unsigned int stat_rx_pdcp_bytes;                       /*!< \brief For statistic report, number of reassemblied bytes, sent to upper layers. */
+  unsigned int stat_rx_data_pdus_duplicate;              /*!< \brief For statistic report, number of received duplicated PDUs from lower layers. */
+  unsigned int stat_rx_data_bytes_duplicate;             /*!< \brief For statistic report, number of received duplicated bytes from lower layers. */
+  unsigned int stat_rx_data_pdu;                         /*!< \brief For statistic report, number of received PDUs from lower layers. */
+  unsigned int stat_rx_data_bytes;                       /*!< \brief For statistic report, number of received bytes from lower layers. */
+  unsigned int stat_rx_data_pdu_dropped;                 /*!< \brief For statistic report, number of dropped received PDUs from lower layers. Does not include out of window stat. */
+  unsigned int stat_rx_data_bytes_dropped;               /*!< \brief For statistic report, number of dropped received bytes from lower layers. Does not include out of window stat. */
+  unsigned int stat_rx_data_pdu_out_of_window;           /*!< \brief Number of data PDUs received out of the receive window. */
+  unsigned int stat_rx_data_bytes_out_of_window;         /*!< \brief Number of data bytes received out of the receive window. */
+  unsigned int stat_rx_control_pdu;                      /*!< \brief Number of control PDUs received. */
+  unsigned int stat_rx_control_bytes;                    /*!< \brief Number of control bytes received. */
+
+  unsigned int stat_timer_reordering_timed_out;
+  unsigned int stat_timer_poll_retransmit_timed_out;
+  unsigned int stat_timer_status_prohibit_timed_out;
 
   //---------------------------------------------------------------------
   // OUTPUTS

@@ -183,32 +183,63 @@ void config_req_rlc_am_asn1 (rlc_am_entity_t *rlcP, u32_t frame, u8_t eNB_flagP,
 
   //-----------------------------------------------------------------------------
 void rlc_am_stat_req     (rlc_am_entity_t *rlcP,
-                              unsigned int* tx_pdcp_sdu,
-                              unsigned int* tx_pdcp_sdu_discarded,
-                              unsigned int* tx_retransmit_pdu_unblock,
-                              unsigned int* tx_retransmit_pdu_by_status,
-                              unsigned int* tx_retransmit_pdu,
-                              unsigned int* tx_data_pdu,
-                              unsigned int* tx_control_pdu,
-                              unsigned int* rx_sdu,
-                              unsigned int* rx_error_pdu,
-                              unsigned int* rx_data_pdu,
-                              unsigned int* rx_data_pdu_out_of_window,
-                              unsigned int* rx_control_pdu)
+                              unsigned int* stat_tx_pdcp_sdu,
+                              unsigned int* stat_tx_pdcp_bytes,
+                              unsigned int* stat_tx_pdcp_sdu_discarded,
+                              unsigned int* stat_tx_pdcp_bytes_discarded,
+                              unsigned int* stat_tx_data_pdu,
+                              unsigned int* stat_tx_data_bytes,
+                              unsigned int* stat_tx_retransmit_pdu_by_status,
+                              unsigned int* stat_tx_retransmit_bytes_by_status,
+                              unsigned int* stat_tx_retransmit_pdu,
+                              unsigned int* stat_tx_retransmit_bytes,
+                              unsigned int* stat_tx_control_pdu,
+                              unsigned int* stat_tx_control_bytes,
+                              unsigned int* stat_rx_pdcp_sdu,
+                              unsigned int* stat_rx_pdcp_bytes,
+                              unsigned int* stat_rx_data_pdus_duplicate,
+                              unsigned int* stat_rx_data_bytes_duplicate,
+                              unsigned int* stat_rx_data_pdu,
+                              unsigned int* stat_rx_data_bytes,
+                              unsigned int* stat_rx_data_pdu_dropped,
+                              unsigned int* stat_rx_data_bytes_dropped,
+                              unsigned int* stat_rx_data_pdu_out_of_window,
+                              unsigned int* stat_rx_data_bytes_out_of_window,
+                              unsigned int* stat_rx_control_pdu,
+                              unsigned int* stat_rx_control_bytes,
+                              unsigned int* stat_timer_reordering_timed_out,
+                              unsigned int* stat_timer_poll_retransmit_timed_out,
+                              unsigned int* stat_timer_status_prohibit_timed_out)
 //-----------------------------------------------------------------------------
 {
-    *tx_pdcp_sdu                 = rlcP->stat_tx_pdcp_sdu;
-    *tx_pdcp_sdu_discarded       = rlcP->stat_tx_pdcp_sdu_discarded;
-    *tx_retransmit_pdu_unblock   = rlcP->stat_tx_retransmit_pdu_unblock;
-    *tx_retransmit_pdu_by_status = rlcP->stat_tx_retransmit_pdu_by_status;
-    *tx_retransmit_pdu           = rlcP->stat_tx_retransmit_pdu;
-    *tx_data_pdu                 = rlcP->stat_tx_data_pdu;
-    *tx_control_pdu              = rlcP->stat_tx_control_pdu;
-    *rx_sdu                      = rlcP->stat_rx_sdu;
-    *rx_error_pdu                = rlcP->stat_rx_error_pdu;
-    *rx_data_pdu                 = rlcP->stat_rx_data_pdu;
-    *rx_data_pdu_out_of_window   = rlcP->stat_rx_data_pdu_out_of_window;
-    *rx_control_pdu              = rlcP->stat_rx_control_pdu;
+    *stat_tx_pdcp_sdu                     = rlcP->stat_tx_pdcp_sdu;
+    *stat_tx_pdcp_bytes                   = rlcP->stat_tx_pdcp_bytes;
+    *stat_tx_pdcp_sdu_discarded           = rlcP->stat_tx_pdcp_sdu_discarded;
+    *stat_tx_pdcp_bytes_discarded         = rlcP->stat_tx_pdcp_bytes_discarded;
+    *stat_tx_data_pdu                     = rlcP->stat_tx_data_pdu;
+    *stat_tx_data_bytes                   = rlcP->stat_tx_data_bytes;
+    *stat_tx_retransmit_pdu_by_status     = rlcP->stat_tx_retransmit_pdu_by_status;
+    *stat_tx_retransmit_bytes_by_status   = rlcP->stat_tx_retransmit_bytes_by_status;
+    *stat_tx_retransmit_pdu               = rlcP->stat_tx_retransmit_pdu;
+    *stat_tx_retransmit_bytes             = rlcP->stat_tx_retransmit_bytes;
+    *stat_tx_control_pdu                  = rlcP->stat_tx_control_pdu;
+    *stat_tx_control_bytes                = rlcP->stat_tx_control_bytes;
+    *stat_rx_pdcp_sdu                     = rlcP->stat_rx_pdcp_sdu;
+    *stat_rx_pdcp_bytes                   = rlcP->stat_rx_pdcp_bytes;
+    *stat_rx_data_pdus_duplicate          = rlcP->stat_rx_data_pdus_duplicate;
+    *stat_rx_data_bytes_duplicate         = rlcP->stat_rx_data_bytes_duplicate;
+    *stat_rx_data_pdu                     = rlcP->stat_rx_data_pdu;
+    *stat_rx_data_bytes                   = rlcP->stat_rx_data_bytes;
+    *stat_rx_data_pdu_dropped             = rlcP->stat_rx_data_pdu_dropped;
+    *stat_rx_data_bytes_dropped           = rlcP->stat_rx_data_bytes_dropped;
+    *stat_rx_data_pdu_out_of_window       = rlcP->stat_rx_data_pdu_out_of_window;
+    *stat_rx_data_bytes_out_of_window     = rlcP->stat_rx_data_bytes_out_of_window;
+    *stat_rx_control_pdu                  = rlcP->stat_rx_control_pdu;
+    *stat_rx_control_bytes                = rlcP->stat_rx_control_bytes;
+    *stat_timer_reordering_timed_out      = rlcP->stat_timer_reordering_timed_out;
+    *stat_timer_poll_retransmit_timed_out = rlcP->stat_timer_poll_retransmit_timed_out;
+    *stat_timer_status_prohibit_timed_out = rlcP->stat_timer_status_prohibit_timed_out;
+
 }
 //-----------------------------------------------------------------------------
 void
@@ -458,6 +489,7 @@ rlc_am_mac_data_request (void *rlcP,u32 frame)
       tb = data_req.data.head;
 
       while (tb != NULL) {
+
           if ((((struct mac_tb_req *) (tb->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
               rlc[l_rlc->module_id].m_mscgen_trace_length += sprintf(&rlc[l_rlc->module_id].m_mscgen_trace[rlc[l_rlc->module_id].m_mscgen_trace_length], " SN %d %d Bytes ",
                                                                  (((struct mac_tb_req *) (tb->data))->data_ptr[1]) +  (((u16_t)((((struct mac_tb_req *) (tb->data))->data_ptr[0]) & 0x03)) << 8),
@@ -583,7 +615,6 @@ rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t * sduP)
       (rlc->input_sdus[rlc->next_sdu_index].flags.segmented == 0) &&
       (((rlc->next_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE) != rlc->current_sdu_index)) {
 
-    rlc->stat_tx_pdcp_sdu += 1;
 
     memset(&rlc->input_sdus[rlc->next_sdu_index], 0, sizeof(rlc_am_tx_sdu_management_t));
     rlc->input_sdus[rlc->next_sdu_index].mem_block = sduP;
@@ -592,6 +623,10 @@ rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t * sduP)
     data_offset = ((struct rlc_am_data_req *) (sduP->data))->data_offset;
     data_size   = ((struct rlc_am_data_req *) (sduP->data))->data_size;
     conf        = ((struct rlc_am_data_req *) (sduP->data))->conf;
+
+
+    rlc->stat_tx_pdcp_sdu   += 1;
+    rlc->stat_tx_pdcp_bytes += data_size;
 
     rlc->input_sdus[rlc->next_sdu_index].mui      = mui;
     rlc->input_sdus[rlc->next_sdu_index].sdu_size = data_size;
@@ -619,8 +654,8 @@ rlc_am_data_req (void *rlcP, u32_t frame, mem_block_t * sduP)
   } else {
     LOG_W(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RLC_AM_DATA_REQ BUFFER FULL, NB SDU %d current_sdu_index=%d next_sdu_index=%d size_input_sdus_buffer=%d\n", frame, rlc->module_id, rlc->rb_id, rlc->nb_sdu, rlc->current_sdu_index, rlc->next_sdu_index, RLC_AM_SDU_CONTROL_BUFFER_SIZE);
     LOG_W(RLC, "                                        input_sdus[].mem_block=%p next input_sdus[].flags.segmented=%d\n", rlc->input_sdus[rlc->next_sdu_index].mem_block, rlc->input_sdus[rlc->next_sdu_index].flags.segmented);
-    rlc->stat_tx_pdcp_sdu_discarded += 1;
+    rlc->stat_tx_pdcp_sdu_discarded   += 1;
+    rlc->stat_tx_pdcp_bytes_discarded += ((struct rlc_am_data_req *) (sduP->data))->data_size;
     free_mem_block (sduP);
-    assert(2==3);
   }
 }

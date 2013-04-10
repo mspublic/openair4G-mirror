@@ -233,44 +233,43 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, u32_t frame, mem_
       rlcP->num_nack_sn = 0;
 
       if (g_rlc_am_control_pdu_info.num_nack == 0) {
-	while (sn_cursor != ack_sn) {
-	  if (sn_cursor == rlcP->poll_sn) {
-	    rlc_am_stop_and_reset_timer_poll_retransmit(rlcP,frame);
-	  }
-	  rlc_am_ack_pdu(rlcP, frame, sn_cursor);
-	  sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
-	}
+          while (sn_cursor != ack_sn) {
+              if (sn_cursor == rlcP->poll_sn) {
+                  rlc_am_stop_and_reset_timer_poll_retransmit(rlcP,frame);
+              }
+              rlc_am_ack_pdu(rlcP, frame, sn_cursor);
+              sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
+          }
       } else {
-	nack_index = 0;
-	nack_sn   = g_rlc_am_control_pdu_info.nack_list[nack_index].nack_sn;
-	while (sn_cursor != ack_sn) {
-	  if (sn_cursor == rlcP->poll_sn) {
-	    rlc_am_stop_and_reset_timer_poll_retransmit(rlcP,frame);
-	  }
-	  if (sn_cursor != nack_sn) {
-	    rlc_am_ack_pdu(rlcP, frame, sn_cursor);
-	  } else {
-	    rlc_am_nack_pdu (rlcP, frame,
-			     sn_cursor,
-			     g_rlc_am_control_pdu_info.nack_list[nack_index].so_start,
-			     g_rlc_am_control_pdu_info.nack_list[nack_index].so_end);
+          nack_index = 0;
+          nack_sn   = g_rlc_am_control_pdu_info.nack_list[nack_index].nack_sn;
+          while (sn_cursor != ack_sn) {
+              if (sn_cursor == rlcP->poll_sn) {
+                  rlc_am_stop_and_reset_timer_poll_retransmit(rlcP,frame);
+              }
+              if (sn_cursor != nack_sn) {
+                  rlc_am_ack_pdu(rlcP, frame, sn_cursor);
+              } else {
+                  rlc_am_nack_pdu (rlcP, frame,
+                     sn_cursor,
+                     g_rlc_am_control_pdu_info.nack_list[nack_index].so_start,
+                     g_rlc_am_control_pdu_info.nack_list[nack_index].so_end);
 
-	    nack_index = nack_index + 1;
-	    if (nack_index == g_rlc_am_control_pdu_info.num_nack) {
-	      nack_sn = 0xFFFF; // value never reached by sn
-	    } else {
-	      nack_sn = g_rlc_am_control_pdu_info.nack_list[nack_index].nack_sn;
-	    }
-	  }
-	  if ((nack_index <  g_rlc_am_control_pdu_info.num_nack) && (nack_index > 0)) {
-	    if (g_rlc_am_control_pdu_info.nack_list[nack_index].nack_sn != g_rlc_am_control_pdu_info.nack_list[nack_index-1].nack_sn) {
-	      sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
-	    }
-	  } else {
-	    sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
-	  }
-	}
-
+                  nack_index = nack_index + 1;
+                  if (nack_index == g_rlc_am_control_pdu_info.num_nack) {
+                      nack_sn = 0xFFFF; // value never reached by sn
+                  } else {
+                      nack_sn = g_rlc_am_control_pdu_info.nack_list[nack_index].nack_sn;
+                  }
+              }
+              if ((nack_index <  g_rlc_am_control_pdu_info.num_nack) && (nack_index > 0)) {
+                  if (g_rlc_am_control_pdu_info.nack_list[nack_index].nack_sn != g_rlc_am_control_pdu_info.nack_list[nack_index-1].nack_sn) {
+                      sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
+                  }
+              } else {
+                  sn_cursor = (sn_cursor + 1)  & RLC_AM_SN_MASK;
+              }
+          }
       }
     } else {
       LOG_N(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] WARNING CONTROL PDU ACK SN OUT OF WINDOW\n", frame, rlcP->module_id, rlcP->rb_id);
@@ -578,4 +577,7 @@ end_push_nack:
   rlcP->nb_bytes_requested_by_mac = rlcP->nb_bytes_requested_by_mac - pdu_size;
   // put pdu in trans
   list_add_head(tb, &rlcP->control_pdu_list);
+  rlcP->stat_tx_control_pdu   += 1;
+  rlcP->stat_tx_control_bytes += pdu_size;
+
 }

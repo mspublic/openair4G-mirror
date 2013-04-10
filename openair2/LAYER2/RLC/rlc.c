@@ -78,114 +78,196 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, uns
 
 //-----------------------------------------------------------------------------
 rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
-				  u32_t frame,
-				  rb_id_t        rb_idP,
-				  unsigned int* tx_pdcp_sdu,
-				  unsigned int* tx_pdcp_sdu_discarded,
-				  unsigned int* tx_retransmit_pdu_unblock,
-				  unsigned int* tx_retransmit_pdu_by_status,
-				  unsigned int* tx_retransmit_pdu,
-				  unsigned int* tx_data_pdu,
-				  unsigned int* tx_control_pdu,
-				  unsigned int* rx_sdu,
-				  unsigned int* rx_error_pdu,
-				  unsigned int* rx_data_pdu,
-				  unsigned int* rx_data_pdu_out_of_window,
-				  unsigned int* rx_control_pdu) {
+                  u32_t frame,
+                  rb_id_t        rb_idP,
+                  unsigned int* stat_tx_pdcp_sdu,
+                  unsigned int* stat_tx_pdcp_bytes,
+                  unsigned int* stat_tx_pdcp_sdu_discarded,
+                  unsigned int* stat_tx_pdcp_bytes_discarded,
+                  unsigned int* stat_tx_data_pdu,
+                  unsigned int* stat_tx_data_bytes,
+                  unsigned int* stat_tx_retransmit_pdu_by_status,
+                  unsigned int* stat_tx_retransmit_bytes_by_status,
+                  unsigned int* stat_tx_retransmit_pdu,
+                  unsigned int* stat_tx_retransmit_bytes,
+                  unsigned int* stat_tx_control_pdu,
+                  unsigned int* stat_tx_control_bytes,
+                  unsigned int* stat_rx_pdcp_sdu,
+                  unsigned int* stat_rx_pdcp_bytes,
+                  unsigned int* stat_rx_data_pdus_duplicate,
+                  unsigned int* stat_rx_data_bytes_duplicate,
+                  unsigned int* stat_rx_data_pdu,
+                  unsigned int* stat_rx_data_bytes,
+                  unsigned int* stat_rx_data_pdu_dropped,
+                  unsigned int* stat_rx_data_bytes_dropped,
+                  unsigned int* stat_rx_data_pdu_out_of_window,
+                  unsigned int* stat_rx_data_bytes_out_of_window,
+                  unsigned int* stat_rx_control_pdu,
+                  unsigned int* stat_rx_control_bytes,
+                  unsigned int* stat_timer_reordering_timed_out,
+                  unsigned int* stat_timer_poll_retransmit_timed_out,
+                  unsigned int* stat_timer_status_prohibit_timed_out) {
 //-----------------------------------------------------------------------------
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
             switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                     case RLC_NONE:
-                			*tx_pdcp_sdu = 0;
-                			*tx_pdcp_sdu_discarded = 0;
-                			*tx_retransmit_pdu_unblock = 0;
-                			*tx_retransmit_pdu_by_status = 0;
-                			*tx_retransmit_pdu = 0;
-                			*tx_data_pdu = 0;
-                			*tx_control_pdu = 0;
-                			*rx_sdu = 0;
-                			*rx_error_pdu = 0;
-                			*rx_data_pdu = 0;
-                			*rx_data_pdu_out_of_window = 0;
-                			*rx_control_pdu = 0;
+                        *stat_tx_pdcp_sdu                     = 0;
+                        *stat_tx_pdcp_bytes                   = 0;
+                        *stat_tx_pdcp_sdu_discarded           = 0;
+                        *stat_tx_pdcp_bytes_discarded         = 0;
+                        *stat_tx_data_pdu                     = 0;
+                        *stat_tx_data_bytes                   = 0;
+                        *stat_tx_retransmit_pdu_by_status     = 0;
+                        *stat_tx_retransmit_bytes_by_status   = 0;
+                        *stat_tx_retransmit_pdu               = 0;
+                        *stat_tx_retransmit_bytes             = 0;
+                        *stat_tx_control_pdu                  = 0;
+                        *stat_tx_control_bytes                = 0;
+                        *stat_rx_pdcp_sdu                     = 0;
+                        *stat_rx_pdcp_bytes                   = 0;
+                        *stat_rx_data_pdus_duplicate          = 0;
+                        *stat_rx_data_bytes_duplicate         = 0;
+                        *stat_rx_data_pdu                     = 0;
+                        *stat_rx_data_bytes                   = 0;
+                        *stat_rx_data_pdu_dropped             = 0;
+                        *stat_rx_data_bytes_dropped           = 0;
+                        *stat_rx_data_pdu_out_of_window       = 0;
+                        *stat_rx_data_bytes_out_of_window     = 0;
+                        *stat_rx_control_pdu                  = 0;
+                        *stat_rx_control_bytes                = 0;
+                        *stat_timer_reordering_timed_out      = 0;
+                        *stat_timer_poll_retransmit_timed_out = 0;
+                        *stat_timer_status_prohibit_timed_out = 0;
                         return RLC_OP_STATUS_BAD_PARAMETER;
                         break;
 
                     case RLC_AM:
-		      rlc_am_stat_req     (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-					   frame,
-					   tx_pdcp_sdu,
-					   tx_pdcp_sdu_discarded,
-					   tx_retransmit_pdu_unblock,
-					   tx_retransmit_pdu_by_status,
-					   tx_retransmit_pdu,
-					   tx_data_pdu,
-					   tx_control_pdu,
-					   rx_sdu,
-					   rx_error_pdu,
-					   rx_data_pdu,
-					   rx_data_pdu_out_of_window,
-					   rx_control_pdu);
+                        rlc_am_stat_req     (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
+		                  stat_tx_pdcp_sdu,
+		                  stat_tx_pdcp_bytes,
+		                  stat_tx_pdcp_sdu_discarded,
+		                  stat_tx_pdcp_bytes_discarded,
+		                  stat_tx_data_pdu,
+		                  stat_tx_data_bytes,
+		                  stat_tx_retransmit_pdu_by_status,
+		                  stat_tx_retransmit_bytes_by_status,
+		                  stat_tx_retransmit_pdu,
+		                  stat_tx_retransmit_bytes,
+		                  stat_tx_control_pdu,
+		                  stat_tx_control_bytes,
+		                  stat_rx_pdcp_sdu,
+		                  stat_rx_pdcp_bytes,
+		                  stat_rx_data_pdus_duplicate,
+		                  stat_rx_data_bytes_duplicate,
+		                  stat_rx_data_pdu,
+		                  stat_rx_data_bytes,
+		                  stat_rx_data_pdu_dropped,
+		                  stat_rx_data_bytes_dropped,
+		                  stat_rx_data_pdu_out_of_window,
+		                  stat_rx_data_bytes_out_of_window,
+		                  stat_rx_control_pdu,
+		                  stat_rx_control_bytes,
+		                  stat_timer_reordering_timed_out,
+		                  stat_timer_poll_retransmit_timed_out,
+		                  stat_timer_status_prohibit_timed_out);
                           return RLC_OP_STATUS_OK;
                         break;
 
                     case RLC_UM:
-            			*tx_pdcp_sdu = 0;
-            			*tx_pdcp_sdu_discarded = 0;
-            			*tx_retransmit_pdu_unblock = 0;
-            			*tx_retransmit_pdu_by_status = 0;
-            			*tx_retransmit_pdu = 0;
-            			*tx_data_pdu = 0;
-            			*tx_control_pdu = 0;
-            			*rx_sdu = 0;
-            			*rx_error_pdu = 0;
-            			*rx_data_pdu = 0;
-            			*rx_data_pdu_out_of_window = 0;
-            			*rx_control_pdu = 0;
-				rlc_um_stat_req     (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
-						     frame,
-						     tx_pdcp_sdu,
-						     tx_pdcp_sdu_discarded,
-						     tx_data_pdu,
-						     rx_sdu,
-						     rx_error_pdu,
-						     rx_data_pdu,
-						     rx_data_pdu_out_of_window);
-				return RLC_OP_STATUS_OK;
+                        *stat_tx_retransmit_pdu_by_status     = 0;
+                        *stat_tx_retransmit_bytes_by_status   = 0;
+                        *stat_tx_retransmit_pdu               = 0;
+                        *stat_tx_retransmit_bytes             = 0;
+                        *stat_tx_control_pdu                  = 0;
+                        *stat_tx_control_bytes                = 0;
+                        *stat_rx_data_pdu_dropped             = 0;
+                        *stat_rx_data_bytes_dropped           = 0;
+                        *stat_rx_data_pdu_out_of_window       = 0;
+                        *stat_rx_data_bytes_out_of_window     = 0;
+                        *stat_timer_poll_retransmit_timed_out = 0;
+                        *stat_timer_status_prohibit_timed_out = 0;
+                        rlc_um_stat_req (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
+                      		  stat_tx_pdcp_sdu,
+                      		  stat_tx_pdcp_bytes,
+                      		  stat_tx_pdcp_sdu_discarded,
+                      		  stat_tx_pdcp_bytes_discarded,
+                      		  stat_tx_data_pdu,
+                      		  stat_tx_data_bytes,
+                      		  stat_rx_pdcp_sdu,
+                      		  stat_rx_pdcp_bytes,
+                      		  stat_rx_data_pdus_duplicate,
+                      		  stat_rx_data_bytes_duplicate,
+                      		  stat_rx_data_pdu,
+                      		  stat_rx_data_bytes,
+                      		  stat_rx_data_pdu_dropped,
+                      		  stat_rx_data_bytes_dropped,
+                      		  stat_rx_data_pdu_out_of_window,
+                      		  stat_rx_data_bytes_out_of_window,
+                      		  stat_timer_reordering_timed_out);
+                        return RLC_OP_STATUS_OK;
                         break;
 
                     case RLC_TM:
-		      *tx_pdcp_sdu = 0;
-		      *tx_pdcp_sdu_discarded = 0;
-		      *tx_retransmit_pdu_unblock = 0;
-		      *tx_retransmit_pdu_by_status = 0;
-		      *tx_retransmit_pdu = 0;
-		      *tx_data_pdu = 0;
-		      *tx_control_pdu = 0;
-		      *rx_sdu = 0;
-		      *rx_error_pdu = 0;
-		      *rx_data_pdu = 0;
-		      *rx_data_pdu_out_of_window = 0;
-		      *rx_control_pdu = 0;
-		      return RLC_OP_STATUS_BAD_PARAMETER;
-		      break;
+                        *stat_tx_pdcp_sdu                     = 0;
+                        *stat_tx_pdcp_bytes                   = 0;
+                        *stat_tx_pdcp_sdu_discarded           = 0;
+                        *stat_tx_pdcp_bytes_discarded         = 0;
+                        *stat_tx_data_pdu                     = 0;
+                        *stat_tx_data_bytes                   = 0;
+                        *stat_tx_retransmit_pdu_by_status     = 0;
+                        *stat_tx_retransmit_bytes_by_status   = 0;
+                        *stat_tx_retransmit_pdu               = 0;
+                        *stat_tx_retransmit_bytes             = 0;
+                        *stat_tx_control_pdu                  = 0;
+                        *stat_tx_control_bytes                = 0;
+                        *stat_rx_pdcp_sdu                     = 0;
+                        *stat_rx_pdcp_bytes                   = 0;
+                        *stat_rx_data_pdus_duplicate          = 0;
+                        *stat_rx_data_bytes_duplicate         = 0;
+                        *stat_rx_data_pdu                     = 0;
+                        *stat_rx_data_bytes                   = 0;
+                        *stat_rx_data_pdu_dropped             = 0;
+                        *stat_rx_data_bytes_dropped           = 0;
+                        *stat_rx_data_pdu_out_of_window       = 0;
+                        *stat_rx_data_bytes_out_of_window     = 0;
+                        *stat_rx_control_pdu                  = 0;
+                        *stat_rx_control_bytes                = 0;
+                        *stat_timer_reordering_timed_out      = 0;
+                        *stat_timer_poll_retransmit_timed_out = 0;
+                        *stat_timer_status_prohibit_timed_out = 0;
+                        return RLC_OP_STATUS_BAD_PARAMETER;
+                        break;
 
                     default:
-		      *tx_pdcp_sdu = 0;
-		      *tx_pdcp_sdu_discarded = 0;
-		      *tx_retransmit_pdu_unblock = 0;
-		      *tx_retransmit_pdu_by_status = 0;
-		      *tx_retransmit_pdu = 0;
-		      *tx_data_pdu = 0;
-		      *tx_control_pdu = 0;
-		      *rx_sdu = 0;
-		      *rx_error_pdu = 0;
-		      *rx_data_pdu = 0;
-		      *rx_data_pdu_out_of_window = 0;
-		      *rx_control_pdu = 0;
-		      return RLC_OP_STATUS_BAD_PARAMETER;
-
+                        *stat_tx_pdcp_sdu                     = 0;
+                        *stat_tx_pdcp_bytes                   = 0;
+                        *stat_tx_pdcp_sdu_discarded           = 0;
+                        *stat_tx_pdcp_bytes_discarded         = 0;
+                        *stat_tx_data_pdu                     = 0;
+                        *stat_tx_data_bytes                   = 0;
+                        *stat_tx_retransmit_pdu_by_status     = 0;
+                        *stat_tx_retransmit_bytes_by_status   = 0;
+                        *stat_tx_retransmit_pdu               = 0;
+                        *stat_tx_retransmit_bytes             = 0;
+                        *stat_tx_control_pdu                  = 0;
+                        *stat_tx_control_bytes                = 0;
+                        *stat_rx_pdcp_sdu                     = 0;
+                        *stat_rx_pdcp_bytes                   = 0;
+                        *stat_rx_data_pdus_duplicate          = 0;
+                        *stat_rx_data_bytes_duplicate         = 0;
+                        *stat_rx_data_pdu                     = 0;
+                        *stat_rx_data_bytes                   = 0;
+                        *stat_rx_data_pdu_dropped             = 0;
+                        *stat_rx_data_bytes_dropped           = 0;
+                        *stat_rx_data_pdu_out_of_window       = 0;
+                        *stat_rx_data_bytes_out_of_window     = 0;
+                        *stat_rx_control_pdu                  = 0;
+                        *stat_rx_control_bytes                = 0;
+                        *stat_timer_reordering_timed_out      = 0;
+                        *stat_timer_poll_retransmit_timed_out = 0;
+                        *stat_timer_status_prohibit_timed_out = 0;
+                        return RLC_OP_STATUS_BAD_PARAMETER;
                   }
       } else {
           return RLC_OP_STATUS_BAD_PARAMETER;
@@ -208,7 +290,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
               if (sdu_sizeP > 0) {
                   LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_req:\n",
                                  frame, module_idP, rb_idP);
-                  rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
+                  rlc_util_print_hex_octets(RLC, (unsigned char*)sduP->data, sdu_sizeP);
 
 #ifdef DEBUG_RLC_DATA_REQ
                   LOG_D(RLC,"RLC_TYPE : %d ",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
@@ -357,7 +439,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
 void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
 //-----------------------------------------------------------------------------
     LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_ind:\n", frame, module_idP, rb_idP);
-    rlc_util_print_hex_octets(RLC, sduP->data, sdu_sizeP);
+    rlc_util_print_hex_octets(RLC, (unsigned char*)sduP->data, sdu_sizeP);
     //check_mem_area();
     // now demux is done at PDCP 
     //  if ((is_data_planeP)) { 
