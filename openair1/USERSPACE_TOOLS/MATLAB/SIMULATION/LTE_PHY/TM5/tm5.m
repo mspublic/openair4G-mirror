@@ -21,8 +21,8 @@ addpath('../../../SIMULATION/TOOLS/mexfiles');
 
 %% System parameters
 nt = 2;
-nr = 2;
-N = 100; % number of frames (codewords)
+nr = 1;
+N = 1000; % number of frames (codewords)
 nSNR = 1;
 SNRdB = 30;
 % nSNR = 13;
@@ -31,6 +31,8 @@ MCS = [9 9]; % MCS for the 2 users, currently it is assumed that mcs(2)=mcs(1)
 j = sqrt(-1);
 amp = 1/32;
 XFORMS = 0;
+% LLRs are computed for 8RE make sure enough valid memory is allocated
+LLR_GUARD_SAMPLES = 8*6; % max mod_order 6 for 8 REs
 
 %% Initialize simparms
 simparms = InitSimparms( nt, nr, MCS, N, SNRdB);
@@ -48,17 +50,17 @@ data_idx_int_i = data_idx_int(2:2:length(data_idx_int));
 llr0 = zeros(simparms.codeword(1).G, 1,'int16');
 y_fxp = zeros(simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,simparms.nb_re_per_frame,'int16');
 y_fxp_t = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-ymf0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+ymf0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
 
 % Effective channel will contain the channel estimate at pilot positions
-Heff0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmag0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmagb0 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-ymf1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Heff1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmag1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-Hmagb1 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
-rho10 = zeros(2*(simparms.nb_re_per_frame+simparms.LLR_GUARD),simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Heff0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmag0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmagb0 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+ymf1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Heff1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmag1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+Hmagb1 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
+rho10 = zeros(2*simparms.nb_re_per_frame,simparms.NB_ANTENNAS_RX*simparms.NB_ANTENNAS_TX,'int16');
 H = zeros(simparms.NB_ANTENNAS_RX,simparms.NB_ANTENNAS_TX);
 noise = zeros(simparms.NB_ANTENNAS_RX,simparms.nb_re);
 
@@ -200,13 +202,13 @@ for iSNR=1:length(simparms.snr)
 			
 			
 			%% LLR computation
-			llr = dlsch_mu_mimo_llr(ymf0(idxs:idxe+simparms.LLR_GUARD,1),...
-				ymf1(idxs:idxe+simparms.LLR_GUARD,1),...
-				Hmag0(idxs:idxe+simparms.LLR_GUARD,1),...
-				Hmag1(idxs:idxe+simparms.LLR_GUARD,1),...
-				rho10(idxs:idxe+simparms.LLR_GUARD,1),...
-				simparms,...
-				symbol-1);
+            llr = dlsch_mu_mimo_llr([ymf0(idxs:idxe,1); zeros(LLR_GUARD_SAMPLES,1,'int16')],...
+                [ymf1(idxs:idxe,1); zeros(LLR_GUARD_SAMPLES,1,'int16')],...
+                [Hmag0(idxs:idxe,1); zeros(LLR_GUARD_SAMPLES,1,'int16')],...
+                [Hmag1(idxs:idxe,1); zeros(LLR_GUARD_SAMPLES,1,'int16')],...
+                [rho10(idxs:idxe,1); zeros(LLR_GUARD_SAMPLES,1,'int16')],...
+                simparms,...
+                symbol-1);
 			
 			llr0(llrp:llrp+length(llr)-1,:) = llr;
 			llrp = llrp + length(llr);                        
