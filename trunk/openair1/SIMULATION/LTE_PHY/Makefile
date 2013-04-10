@@ -10,7 +10,14 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
 
-CFLAGS = -O -Wno-strict-aliasing -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+CFLAGS = -O3 -Wno-strict-aliasing -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -rdynamic $(CPUFLAGS) -DMALLOC_CHECK_=1 # -Wno-packed-bitfield-compat
+
+# DCI Debug
+# CFLAGS += -DDEBUG_DCI_ENCODING
+# TODO: only for framegen
+CFLAGS += -DOPENAIR2
+CFLAGS += -DDEBUG_PHY_PROC
+CFLAGS += -DDEBUG_GROUPHOP
 
 ifdef OMP
 CFLAGS += -DOMP -fopenmp
@@ -118,7 +125,7 @@ ifdef STATIC
 LFLAGS += -static -L/usr/lib/libblas
 endif
 
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim mbmssim
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim mbmssim dlsim2
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
@@ -131,6 +138,10 @@ $(OBJ) : %.o : %.c
 dlsim : $(OBJ) dlsim.c
 	@echo "Compiling dlsim.c ..."
 	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS)
+
+dlsim2 : $(OBJ) dlsim2.c
+	@echo "Compiling dlsim2.c ..."
+	@$(CC) dlsim2.c  -o dlsim2 $(CFLAGS) $(OBJ) $(LFLAGS)
 
 framegen: $(OBJ) framegen.c
 	@echo "Compiling framegen.c"

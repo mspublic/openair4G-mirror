@@ -207,7 +207,7 @@ struct DCI0_10MHz_TDD_1_6 {
 } __attribute__ ((__packed__));
 
 typedef struct DCI0_10MHz_TDD_1_6 DCI0_10MHz_TDD_1_6_t;
-#define sizeof_DCI0_10MHz_TDD_1_6_t 30
+#define sizeof_DCI0_10MHz_TDD_1_6_t 29
 
 /// DCI Format Type 1A (10 MHz, TDD, frame 1-6, 30 bits)
 struct DCI1A_10MHz_TDD_1_6 {
@@ -236,7 +236,7 @@ struct DCI1A_10MHz_TDD_1_6 {
 } __attribute__ ((__packed__));
 
 typedef struct DCI1A_10MHz_TDD_1_6 DCI1A_10MHz_TDD_1_6_t;
-#define sizeof_DCI1A_10MHz_TDD_1_6_t 30
+#define sizeof_DCI1A_10MHz_TDD_1_6_t 29
 
 
 ///  DCI Format Type 0 (20 MHz,TDD1-6, 27 bits)
@@ -264,7 +264,7 @@ struct DCI0_20MHz_TDD_1_6 {
 } __attribute__ ((__packed__));
 
 typedef struct DCI0_20MHz_TDD_1_6 DCI0_20MHz_TDD_1_6_t;
-#define sizeof_DCI0_20MHz_TDD_1_6_t 32
+#define sizeof_DCI0_20MHz_TDD_1_6_t 31
 
 /// DCI Format Type 1A (20 MHz, TDD, frame 1-6, 27 bits)
 struct DCI1A_20MHz_TDD_1_6 {
@@ -291,7 +291,7 @@ struct DCI1A_20MHz_TDD_1_6 {
 } __attribute__ ((__packed__));
 
 typedef struct DCI1A_20MHz_TDD_1_6 DCI1A_20MHz_TDD_1_6_t;
-#define sizeof_DCI1A_20MHz_TDD_1_6_t 32
+#define sizeof_DCI1A_20MHz_TDD_1_6_t 31
 
 ///  DCI Format Type 0 (1.5 MHz,FDD, 25 bits)
 struct DCI0_1_5MHz_FDD {
@@ -476,7 +476,7 @@ struct DCI0_20MHz_FDD {
 } __attribute__ ((__packed__));
 
 typedef struct DCI0_20MHz_FDD DCI0_20MHz_FDD_t;
-#define sizeof_DCI0_20MHz_FDD_t 29
+#define sizeof_DCI0_20MHz_FDD_t 28
 
 struct DCI1A_20MHz_FDD {
   /// padding
@@ -502,7 +502,7 @@ struct DCI1A_20MHz_FDD {
 } __attribute__ ((__packed__));
 
 typedef struct DCI1A_20MHz_FDD DCI1A_20MHz_FDD_t;
-#define sizeof_DCI1A_20MHz_FDD_t 29
+#define sizeof_DCI1A_20MHz_FDD_t 28
 
 /// DCI Format Type 1 (1.5 MHz, TDD, 23 bits)
 struct DCI1_1_5MHz_TDD {

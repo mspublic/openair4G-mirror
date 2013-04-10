@@ -54,6 +54,11 @@
 
 u8 get_mi(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
 
+  // for FDD
+  if (frame_parms->frame_type == 0)
+    return 1;
+
+  // for TDD
   switch (frame_parms->tdd_config) {
 
   case 0: 
@@ -76,6 +81,19 @@ u8 get_mi(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
       return(1);
     else return(0);
     break;
+  case 4:
+    if ((subframe==8) || (subframe==9))
+      return(1);
+    else return(0);
+    break;
+  case 5:
+    if (subframe==8)
+      return(1);
+    else return(0);
+    break;
+  case 6:
+      return(1);
+      break;
   default:
     return(0);
   }
