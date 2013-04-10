@@ -75,27 +75,62 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #endif
 
 
-/*! \fn void     rlc_um_stat_req     (struct rlc_um_entity *rlcP, u32_t frame, unsigned int* tx_pdcp_sdu, unsigned int* tx_pdcp_sdu_discarded, unsigned int* tx_data_pdu, unsigned int* rx_sdu, unsigned int* rx_error_pdu, unsigned int* rx_data_pdu, unsigned int* rx_data_pdu_out_of_window)
-* \brief    Request TX and RX statistics of a RLC UM protocol instance.
-* \param[in]  rlcP                      RLC UM protocol instance pointer.
-* \param[in]  frame                     Frame index.
-* \param[out] tx_pdcp_sdu               Number of transmitted SDUs coming from upper layers.
-* \param[out] tx_pdcp_sdu_discarded     Number of discarded SDUs coming from upper layers.
-* \param[out] tx_data_pdu               Number of transmitted PDUs to lower layers.
-* \param[out] rx_sdu                    Number of reassemblied SDUs, sent to upper layers.
-* \param[out] rx_error_pdu              Number of received PDUs from lower layers, marked as containing an error.
-* \param[out] rx_data_pdu               Number of received PDUs from lower layers.
-* \param[out] rx_data_pdu_out_of_window Number of data PDUs received out of the receive window.
+/*! \fn void     rlc_um_stat_req     (rlc_um_entity_t *rlcP,
+                        unsigned int* stat_tx_pdcp_sdu,
+                        unsigned int* stat_tx_pdcp_bytes,
+                        unsigned int* stat_tx_pdcp_sdu_discarded,
+                        unsigned int* stat_tx_pdcp_bytes_discarded,
+                        unsigned int* stat_tx_data_pdu,
+                        unsigned int* stat_tx_data_bytes,
+                        unsigned int* stat_rx_pdcp_sdu,
+                        unsigned int* stat_rx_pdcp_bytes,
+                        unsigned int* stat_rx_data_pdus_duplicate,
+                        unsigned int* stat_rx_data_bytes_duplicate,
+                        unsigned int* stat_rx_data_pdu,
+                        unsigned int* stat_rx_data_bytes,
+                        unsigned int* stat_rx_data_pdu_dropped,
+                        unsigned int* stat_rx_data_bytes_dropped,
+                        unsigned int* stat_rx_data_pdu_out_of_window,
+                        unsigned int* stat_rx_data_bytes_out_of_window,
+                        unsigned int* stat_timer_reordering_timed_out)
+* \brief    Request TX and RX statistics of a RLC AM protocol instance.
+* \param[in]  rlcP                                 RLC AM protocol instance pointer.
+* \param[out] stat_tx_pdcp_sdu                     Number of SDUs coming from upper layers.
+* \param[out] stat_tx_pdcp_bytes                   Number of bytes coming from upper layers.
+* \param[out] stat_tx_pdcp_sdu_discarded           Number of discarded SDUs coming from upper layers.
+* \param[out] stat_tx_pdcp_bytes_discarded         Number of discarded bytes coming from upper layers.
+* \param[out] stat_tx_data_pdu                     Number of transmitted data PDUs to lower layers.
+* \param[out] stat_tx_data_bytes                   Number of transmitted data bytes to lower layers.
+* \param[out] stat_rx_pdcp_sdu                     Number of SDUs delivered to upper layers.
+* \param[out] stat_rx_pdcp_bytes                   Number of bytes delivered to upper layers.
+* \param[out] stat_rx_data_pdus_duplicate          Number of duplicate PDUs received.
+* \param[out] stat_rx_data_bytes_duplicate         Number of duplicate bytes received.
+* \param[out] stat_rx_data_pdu                     Number of received PDUs from lower layers.
+* \param[out] stat_rx_data_bytes                   Number of received bytes from lower layers.
+* \param[out] stat_rx_data_pdu_dropped             Number of received PDUs from lower layers, then dropped.
+* \param[out] stat_rx_data_bytes_dropped           Number of received bytes from lower layers, then dropped.
+* \param[out] stat_rx_data_pdu_out_of_window       Number of data PDUs received out of the receive window.
+* \param[out] stat_rx_data_bytes_out_of_window     Number of data bytes received out of the receive window.
+* \param[out] stat_timer_reordering_timed_out      Number of times the timer "reordering" has timed-out.
 */
-public_rlc_um( void     rlc_um_stat_req     (struct rlc_um_entity *rlcP,
-					     u32_t                frame,
-					     unsigned int*        tx_pdcp_sdu,
-					     unsigned int*        tx_pdcp_sdu_discarded,
-					     unsigned int*        tx_data_pdu,
-					     unsigned int*        rx_sdu,
-					     unsigned int*        rx_error_pdu,
-					     unsigned int*        rx_data_pdu,
-					     unsigned int*        rx_data_pdu_out_of_window);)
+public_rlc_um(void     rlc_um_stat_req     (rlc_um_entity_t *rlcP,
+                        unsigned int* stat_tx_pdcp_sdu,
+                        unsigned int* stat_tx_pdcp_bytes,
+                        unsigned int* stat_tx_pdcp_sdu_discarded,
+                        unsigned int* stat_tx_pdcp_bytes_discarded,
+                        unsigned int* stat_tx_data_pdu,
+                        unsigned int* stat_tx_data_bytes,
+                        unsigned int* stat_rx_pdcp_sdu,
+                        unsigned int* stat_rx_pdcp_bytes,
+                        unsigned int* stat_rx_data_pdus_duplicate,
+                        unsigned int* stat_rx_data_bytes_duplicate,
+                        unsigned int* stat_rx_data_pdu,
+                        unsigned int* stat_rx_data_bytes,
+                        unsigned int* stat_rx_data_pdu_dropped,
+                        unsigned int* stat_rx_data_bytes_dropped,
+                        unsigned int* stat_rx_data_pdu_out_of_window,
+                        unsigned int* stat_rx_data_bytes_out_of_window,
+                        unsigned int* stat_timer_reordering_timed_out);)
 
 /*! \fn void     rlc_um_get_pdus (void *rlcP)
 * \brief    Request the segmentation of SDUs based on status previously sent by MAC.

@@ -52,25 +52,25 @@ void rlc_am_init(rlc_am_entity_t *rlcP,u32_t frame)
     
     rlcP->input_sdus_alloc         = get_free_mem_block(RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
     rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
-    rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t));
+    rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((u16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
     rlcP->pdu_retrans_buffer       = (rlc_am_tx_data_pdu_management_t*)((rlcP->pdu_retrans_buffer_alloc)->data);
     LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] input_sdus[] = %p  element size=%d\n", frame, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
     LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] pdu_retrans_buffer[] = %p element size=%d\n", frame, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
 
     // TX state variables
-    rlcP->vt_a    = 0;
+    //rlcP->vt_a    = 0;
     rlcP->vt_ms   = rlcP->vt_a + RLC_AM_WINDOW_SIZE;
-    rlcP->vt_s    = 0;
-    rlcP->poll_sn = 0;
+    //rlcP->vt_s    = 0;
+    //rlcP->poll_sn = 0;
     // TX counters
-    rlcP->c_pdu_without_poll  = 0;
-    rlcP->c_byte_without_poll = 0;
+    //rlcP->c_pdu_without_poll  = 0;
+    //rlcP->c_byte_without_poll = 0;
     // RX state variables
-    rlcP->vr_r    = 0;
+    //rlcP->vr_r    = 0;
     rlcP->vr_mr   = rlcP->vr_r + RLC_AM_WINDOW_SIZE;
-    rlcP->vr_x    = 0;
-    rlcP->vr_ms   = 0;
-    rlcP->vr_h    = 0;
+    //rlcP->vr_x    = 0;
+    //rlcP->vr_ms   = 0;
+    //rlcP->vr_h    = 0;
 
     rlcP->last_frame_status_indication = 123456; // any value > 1
     rlcP->first_retrans_pdu_sn         = -1;

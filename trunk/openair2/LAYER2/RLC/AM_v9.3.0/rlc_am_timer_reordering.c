@@ -44,7 +44,24 @@ void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
 
 
     if (rlcP->t_reordering.running) {
-        if (rlcP->t_reordering.frame_time_out == frame) {
+        if (
+        // CASE 1:          start              time out
+        //        +-----------+------------------+----------+
+        //        |           |******************|          |
+        //        +-----------+------------------+----------+
+        //FRAME # 0                                     FRAME MAX
+        ((rlcP->t_reordering.frame_start < rlcP->t_reordering.frame_time_out) &&
+            ((frame >= rlcP->t_reordering.frame_time_out) ||
+             (frame < rlcP->t_reordering.frame_start)))                                   ||
+        // CASE 2:        time out            start
+        //        +-----------+------------------+----------+
+        //        |***********|                  |**********|
+        //        +-----------+------------------+----------+
+        //FRAME # 0                                     FRAME MAX VALUE
+        ((rlcP->t_reordering.frame_start > rlcP->t_reordering.frame_time_out) &&
+           (frame < rlcP->t_reordering.frame_start) && (frame >= rlcP->t_reordering.frame_time_out))
+        ) {
+        //if (rlcP->t_reordering.frame_time_out == frame) {
             // 5.1.3.2.4 Actions when t-Reordering expires
             // When t-Reordering expires, the receiving side of an AM RLC entity shall:
             //     - update VR(MS) to the SN of the first AMD PDU with SN >= VR(X) for which not all byte segments have been
@@ -56,6 +73,7 @@ void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
 
             rlcP->t_reordering.running   = 0;
             rlcP->t_reordering.timed_out = 1;
+            rlcP->stat_timer_reordering_timed_out += 1;
 
             rlc_am_pdu_info_t* pdu_info;
             mem_block_t*       cursor;
@@ -97,6 +115,7 @@ void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
                         rlcP->module_id, rlcP->rb_id);
     rlcP->t_reordering.running         = 0;
     rlcP->t_reordering.frame_time_out  = 0;
+    rlcP->t_reordering.frame_start     = 0;
     rlcP->t_reordering.timed_out       = 0;
 }
 //-----------------------------------------------------------------------------
@@ -105,6 +124,7 @@ void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP,u32_t frame)
 {
     rlcP->t_reordering.running         = 1;
     rlcP->t_reordering.frame_time_out  = frame + rlcP->t_reordering.time_out;
+    rlcP->t_reordering.frame_start     = frame;
     rlcP->t_reordering.timed_out       = 0;
     LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STARTED (TIME-OUT = FRAME %05d)\n",
             frame, rlcP->module_id, rlcP->rb_id, rlcP->t_reordering.frame_time_out);
@@ -115,6 +135,7 @@ void rlc_am_init_timer_reordering(rlc_am_entity_t *rlcP, u32_t time_outP)
 {
     rlcP->t_reordering.running         = 0;
     rlcP->t_reordering.frame_time_out  = 0;
+    rlcP->t_reordering.frame_start     = 0;
     rlcP->t_reordering.time_out        = time_outP;
     rlcP->t_reordering.timed_out       = 0;
 }

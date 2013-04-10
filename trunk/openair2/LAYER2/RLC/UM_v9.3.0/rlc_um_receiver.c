@@ -81,13 +81,13 @@ void rlc_um_display_rx_window(struct rlc_um_entity *rlcP)
     LOG_T(RLC, "\n");
     LOG_T(RLC, "+-------------------------------------------------------------------------------------------------------+");
     LOG_T(RLC, "\n");
-    sprintf(time_out_str, "%010d", rlcP->timer_reordering  + rlcP->timer_reordering_init);
+    sprintf(time_out_str, "%010d", rlcP->t_reordering.frame_time_out);
     time_out_str[10] = 0;
     LOG_T(RLC, "| RLC UM RB %02d    VR(UR)=%03d    VR(UX)=%03d    VR(UH)=%03d    t-Reordering: %s %s %s             |",
           rlcP->rb_id, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh,
-      (rlcP->timer_reordering_running)?" ON":"OFF",
-      (rlcP->timer_reordering_running)?"Time-out frame:":"               ",
-      (rlcP->timer_reordering_running)?time_out_str:"          ");
+      (rlcP->t_reordering.running)?" ON":"OFF",
+      (rlcP->t_reordering.running)?"Time-out frame:":"               ",
+      (rlcP->t_reordering.running)?time_out_str:"          ");
     LOG_T(RLC, "\n");
     LOG_T(RLC, "+------+------------------------------------------------------------------------------------------------+");
     LOG_T(RLC, "\n");
@@ -154,34 +154,17 @@ rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct m
     u16_t               tb_size_in_bytes;
 
     while ((tb = list_remove_head (&data_indP.data))) {
-#ifdef DEBUG_RLC_STATS
-        rlcP->rx_pdus += 1;
-#endif
 
+		first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
+		tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
 
-#ifdef RLC_UM_GENERATE_ERRORS
-        if (random() % 10 == 4) {
-            ((struct mac_tb_ind *) (tb->data))->error_indication = 1;
-            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, frame);
-        }
-#endif
+    	rlcP->stat_rx_data_bytes += tb_size_in_bytes;
+    	rlcP->stat_rx_data_pdu   += 1;
 
-        if (!(((struct mac_tb_ind *) (tb->data))->error_indication)) {
-            first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
-            tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
-            if (tb_size_in_bytes > 0) {
-                rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
-                LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
-                rlc_um_display_rx_window(rlcP);
-            }
-        } else {
-            rlcP->rx_pdus_in_error += 1;
-            LOG_D(RLC, "[MSC_NBOX][FRAME %05d][RLC_UM][MOD %02d][RB %d][TB indicated in error by MAC, dropped][RLC_UM][MOD %02d][RB %d]\n",
-                 frame, rlcP->module_id, rlcP->rb_id, rlcP->module_id, rlcP->rb_id);
-#ifdef DEBUG_RLC_UM_RX
-            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, frame);
-#endif
-            free_mem_block (tb);
-        }
-    }                           // end while
+    	if (tb_size_in_bytes > 0) {
+			rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
+			LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
+			rlc_um_display_rx_window(rlcP);
+		}
+    }
 }

@@ -93,13 +93,41 @@ private_rlc_um_dar(  int rlc_um_read_length_indicators(unsigned char**dataP, rlc
 */
 private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, signed int start_snP, signed int end_snP));
 
+/*! \fn void rlc_um_check_timer_reordering(rlc_um_entity_t *rlcP,u32_t frame)
+* \brief      Check if timer reordering has timed-out, if so it is stopped and has the status "timed-out".
+* \param[in]  rlcP              RLC UM protocol instance pointer.
+* \param[in]  frame             Frame index
+*/
+protected_rlc_um_dar(void rlc_um_check_timer_reordering(rlc_um_entity_t  *rlcP,u32_t frame));
+
+/*! \fn void rlc_um_stop_and_reset_timer_reordering(rlc_um_entity_t *rlcP,u32_t frame)
+* \brief      Stop and reset the timer reordering.
+* \param[in]  rlcP              RLC UM protocol instance pointer.
+* \param[in]  frame             Frame index.
+*/
+protected_rlc_um_dar(void rlc_um_stop_and_reset_timer_reordering(rlc_um_entity_t *rlcP,u32_t frame);)
+
+/*! \fn void rlc_um_start_timer_reordering(rlc_um_entity_t *rlcP,u32_t frame)
+* \brief      Re-arm (based on RLC UM config parameter) and start timer reordering.
+* \param[in]  rlcP              RLC UM protocol instance pointer.
+* \param[in]  frame             Frame index.
+*/
+protected_rlc_um_dar(void rlc_um_start_timer_reordering(rlc_um_entity_t *rlcP,u32_t frame);)
+
+/*! \fn void rlc_um_init_timer_reordering(rlc_um_entity_t *rlcP, u32_t time_outP)
+* \brief      Initialize the timer reordering with RLC UM time-out config parameter.
+* \param[in]  rlcP              RLC UM protocol instance pointer.
+* \param[in]  time_outP         Time-out in frame units.
+*/
+protected_rlc_um_dar(void rlc_um_init_timer_reordering(rlc_um_entity_t *rlcP, u32_t time_outP);)
+
 /*! \fn void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag)
 * \brief    Check if t-Reordering expires and take the appropriate actions as described in 3GPP specifications.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame index.
 * \param[in]  eNB_flag    Flag to indicate eNB(1) or UE (1)
 */
-private_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag));
+protected_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_flag));
 
 /*! \fn mem_block_t *rlc_um_remove_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP)
 * \brief    Remove the PDU with sequence number snP from the DAR buffer and return it.
@@ -115,7 +143,7 @@ private_rlc_um_dar(  mem_block_t *rlc_um_remove_pdu_from_dar_buffer(rlc_um_entit
 * \param[in]  snP         Sequence number.
 * \return     The PDU stored in the DAR buffer having sequence number snP, else return NULL.
 */
-private_rlc_um_dar(  inline mem_block_t* rlc_um_get_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP));
+protected_rlc_um_dar(  inline mem_block_t* rlc_um_get_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP));
 
 /*! \fn signed int rlc_um_in_window(rlc_um_entity_t *rlcP, u32_t frame, signed int lower_boundP, signed int snP, signed int higher_boundP)
 * \brief    Compute if the sequence number of a PDU is in a window .

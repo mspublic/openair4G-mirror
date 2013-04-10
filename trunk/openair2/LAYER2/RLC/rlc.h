@@ -179,6 +179,30 @@ typedef struct rlc_t {
     unsigned char        m_mscgen_trace_length;
 }rlc_t;
 
+/******************************************************************************************************
+typedef struct rlc_entity_s {
+	union {
+	    rlc_am_entity_t am;
+	    rlc_um_entity_t um;
+	    rlc_tm_entity_t tm;
+	} u;
+	rlc_mode_t             choice_rlc_mode;
+} rlc_entity_t;
+
+typedef struct rlc_t {
+	rlc_um_entity_t                       m_rlc_mbms_session[NB_MBMS_MAX_SERVICES][...]... ;          !< \brief .
+    lcid_t                                m_rlc_pointer[NB_RB_MAX * MAX UE];          !< \brief Link between radio bearer ID and LCID.
+    rlc_entity_t                          m_rlc_array[NB_LCID_MAX * MAX UE ]; !< \brief RLC protocol instances. indexed by LCID
+
+    NB_RB_MAX                     1..32
+    NB_LCID_MAX                   11
+    NB_MBMS_SESSIONS_PER_PMCH_MAX 28
+    NB_MBMS_MAX_SERVICES          16
+    NB_MBMS_MAX_SESSION_PER_CELL
+}rlc_t;
+
+******************************************************************************************************/
+
 // RK-LG was protected, public for debug
 /*! \var rlc_t rlc[MAX_MODULES]
 \brief Global var for RLC layer, allocate memory for RLC protocol instances.
@@ -395,54 +419,99 @@ public_rlc(void            rlc_data_conf    (module_id_t, u32_t, u8_t , rb_id_t,
 
 
 /*! \fn rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
-                              u32_t frame,
-    		      rb_id_t        rb_idP,
-                              unsigned int* tx_pdcp_sdu,
-                              unsigned int* tx_pdcp_sdu_discarded,
-                              unsigned int* tx_retransmit_pdu_unblock,
-                              unsigned int* tx_retransmit_pdu_by_status,
-                              unsigned int* tx_retransmit_pdu,
-                              unsigned int* tx_data_pdu,
-                              unsigned int* tx_control_pdu,
-                              unsigned int* rx_sdu,
-                              unsigned int* rx_error_pdu,
-                              unsigned int* rx_data_pdu,
-                              unsigned int* rx_data_pdu_out_of_window,
-                              unsigned int* rx_control_pdu)
+                              u32_t         frame,
+                              rb_id_t       rb_idP,
+                        unsigned int* stat_tx_pdcp_sdu,
+                        unsigned int* stat_tx_pdcp_bytes,
+                        unsigned int* stat_tx_pdcp_sdu_discarded,
+                        unsigned int* stat_tx_pdcp_bytes_discarded,
+                        unsigned int* stat_tx_data_pdu,
+                        unsigned int* stat_tx_data_bytes,
+                        unsigned int* stat_tx_retransmit_pdu_by_status,
+                        unsigned int* stat_tx_retransmit_bytes_by_status,
+                        unsigned int* stat_tx_retransmit_pdu,
+                        unsigned int* stat_tx_retransmit_bytes,
+                        unsigned int* stat_tx_control_pdu,
+                        unsigned int* stat_tx_control_bytes,
+                        unsigned int* stat_rx_pdcp_sdu,
+                        unsigned int* stat_rx_pdcp_bytes,
+                        unsigned int* stat_rx_data_pdus_duplicate,
+                        unsigned int* stat_rx_data_bytes_duplicate,
+                        unsigned int* stat_rx_data_pdu,
+                        unsigned int* stat_rx_data_bytes,
+                        unsigned int* stat_rx_data_pdu_dropped,
+                        unsigned int* stat_rx_data_bytes_dropped,
+                        unsigned int* stat_rx_data_pdu_out_of_window,
+                        unsigned int* stat_rx_data_bytes_out_of_window,
+                        unsigned int* stat_rx_control_pdu,
+                        unsigned int* stat_rx_control_bytes,
+                        unsigned int* stat_timer_reordering_timed_out,
+                        unsigned int* stat_timer_poll_retransmit_timed_out,
+                        unsigned int* stat_timer_status_prohibit_timed_out)
 
 * \brief    Request RLC statistics of a particular radio bearer.
 * \param[in]  module_idP                   .
 * \param[in]  frame
 * \param[in]  rb_idP                       .
-* \param[out] tx_pdcp_sdu                  Number of transmitted SDUs coming from upper layers.
-* \param[out] tx_pdcp_sdu_discarded        Number of discarded SDUs coming from upper layers.
-* \param[out] tx_retransmit_pdu_unblock
-* \param[out] tx_retransmit_pdu_by_status  Number of re-transmitted data PDUs due to status reception.
-* \param[out] tx_retransmit_pdu            Number of re-transmitted data PDUs to lower layers.
-* \param[out] tx_data_pdu                  Number of transmitted data PDUs to lower layers.
-* \param[out] tx_control_pdu               Number of transmitted control PDUs to lower layers.
-* \param[out] rx_sdu                       Number of reassemblied SDUs, sent to upper layers.
-* \param[out] rx_error_pdu                 Number of received PDUs from lower layers, marked as containing an error.
-* \param[out] rx_data_pdu                  Number of received PDUs from lower layers.
-* \param[out] rx_data_pdu_out_of_window    Number of data PDUs received out of the receive window.
-* \param[out] rx_control_pdu               Number of control PDUs received.
+* \param[out] stat_tx_pdcp_sdu                     Number of SDUs coming from upper layers.
+* \param[out] stat_tx_pdcp_bytes                   Number of bytes coming from upper layers.
+* \param[out] stat_tx_pdcp_sdu_discarded           Number of discarded SDUs coming from upper layers.
+* \param[out] stat_tx_pdcp_bytes_discarded         Number of discarded bytes coming from upper layers.
+* \param[out] stat_tx_data_pdu                     Number of transmitted data PDUs to lower layers.
+* \param[out] stat_tx_data_bytes                   Number of transmitted data bytes to lower layers.
+* \param[out] stat_tx_retransmit_pdu_by_status     Number of re-transmitted data PDUs due to status reception.
+* \param[out] stat_tx_retransmit_bytes_by_status   Number of re-transmitted data bytes due to status reception.
+* \param[out] stat_tx_retransmit_pdu               Number of re-transmitted data PDUs to lower layers.
+* \param[out] stat_tx_retransmit_bytes             Number of re-transmitted data bytes to lower layers.
+* \param[out] stat_tx_control_pdu                  Number of transmitted control PDUs to lower layers.
+* \param[out] stat_tx_control_bytes                Number of transmitted control bytes to lower layers.
+* \param[out] stat_rx_pdcp_sdu                     Number of SDUs delivered to upper layers.
+* \param[out] stat_rx_pdcp_bytes                   Number of bytes delivered to upper layers.
+* \param[out] stat_rx_data_pdus_duplicate          Number of duplicate PDUs received.
+* \param[out] stat_rx_data_bytes_duplicate         Number of duplicate bytes received.
+* \param[out] stat_rx_data_pdu                     Number of received PDUs from lower layers.
+* \param[out] stat_rx_data_bytes                   Number of received bytes from lower layers.
+* \param[out] stat_rx_data_pdu_dropped             Number of received PDUs from lower layers, then dropped.
+* \param[out] stat_rx_data_bytes_dropped           Number of received bytes from lower layers, then dropped.
+* \param[out] stat_rx_data_pdu_out_of_window       Number of data PDUs received out of the receive window.
+* \param[out] stat_rx_data_bytes_out_of_window     Number of data bytes received out of the receive window.
+* \param[out] stat_rx_control_pdu                  Number of control PDUs received.
+* \param[out] stat_rx_control_bytes                Number of control bytes received.
+* \param[out] stat_timer_reordering_timed_out      Number of times the timer "reordering" has timed-out.
+* \param[out] stat_timer_poll_retransmit_timed_out Number of times the timer "poll_retransmit" has timed-out.
+* \param[out] stat_timer_status_prohibit_timed_out Number of times the timer "status_prohibit" has timed-out.
 */
 
 public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t   module_idP,
-    				     u32_t         frame,
-    				     rb_id_t       rb_idP,
-    				     unsigned int* tx_pdcp_sdu,
-    				     unsigned int* tx_pdcp_sdu_discarded,
-    				     unsigned int* tx_retransmit_pdu_unblock,
-    				     unsigned int* tx_retransmit_pdu_by_status,
-    				     unsigned int* tx_retransmit_pdu,
-    				     unsigned int* tx_data_pdu,
-    				     unsigned int* tx_control_pdu,
-    				     unsigned int* rx_sdu,
-    				     unsigned int* rx_error_pdu,
-    				     unsigned int* rx_data_pdu,
-    				     unsigned int* rx_data_pdu_out_of_window,
-    				     unsigned int* rx_control_pdu) ;)
+        u32_t frame,
+        rb_id_t        rb_idP,
+        unsigned int* stat_tx_pdcp_sdu,
+        unsigned int* stat_tx_pdcp_bytes,
+        unsigned int* stat_tx_pdcp_sdu_discarded,
+        unsigned int* stat_tx_pdcp_bytes_discarded,
+        unsigned int* stat_tx_data_pdu,
+        unsigned int* stat_tx_data_bytes,
+        unsigned int* stat_tx_retransmit_pdu_by_status,
+        unsigned int* stat_tx_retransmit_bytes_by_status,
+        unsigned int* stat_tx_retransmit_pdu,
+        unsigned int* stat_tx_retransmit_bytes,
+        unsigned int* stat_tx_control_pdu,
+        unsigned int* stat_tx_control_bytes,
+        unsigned int* stat_rx_pdcp_sdu,
+        unsigned int* stat_rx_pdcp_bytes,
+        unsigned int* stat_rx_data_pdus_duplicate,
+        unsigned int* stat_rx_data_bytes_duplicate,
+        unsigned int* stat_rx_data_pdu,
+        unsigned int* stat_rx_data_bytes,
+        unsigned int* stat_rx_data_pdu_dropped,
+        unsigned int* stat_rx_data_bytes_dropped,
+        unsigned int* stat_rx_data_pdu_out_of_window,
+        unsigned int* stat_rx_data_bytes_out_of_window,
+        unsigned int* stat_rx_control_pdu,
+        unsigned int* stat_rx_control_bytes,
+        unsigned int* stat_timer_reordering_timed_out,
+        unsigned int* stat_timer_poll_retransmit_timed_out,
+        unsigned int* stat_timer_status_prohibit_timed_out);)
 
 /*! \fn int rlc_module_init(void)
 * \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).

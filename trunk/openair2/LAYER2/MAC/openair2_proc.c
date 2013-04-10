@@ -57,18 +57,33 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
   unsigned int i,j,k,kk;
   unsigned int ue_id, eNB_id;
   unsigned int Mod_id = 0,CH_index;
-  unsigned int tx_pdcp_sdu;
-  unsigned int tx_pdcp_sdu_discarded;
-  unsigned int tx_retransmit_pdu_unblock;
-  unsigned int tx_retransmit_pdu_by_status;
-  unsigned int tx_retransmit_pdu;
-  unsigned int tx_data_pdu;
-  unsigned int tx_control_pdu;
-  unsigned int rx_sdu;
-  unsigned int rx_error_pdu;  
-  unsigned int rx_data_pdu;
-  unsigned int rx_data_pdu_out_of_window;
-  unsigned int rx_control_pdu;
+  unsigned int stat_tx_pdcp_sdu;
+  unsigned int stat_tx_pdcp_bytes;
+  unsigned int stat_tx_pdcp_sdu_discarded;
+  unsigned int stat_tx_pdcp_bytes_discarded;
+  unsigned int stat_tx_data_pdu;
+  unsigned int stat_tx_data_bytes;
+  unsigned int stat_tx_retransmit_pdu_by_status;
+  unsigned int stat_tx_retransmit_bytes_by_status;
+  unsigned int stat_tx_retransmit_pdu;
+  unsigned int stat_tx_retransmit_bytes;
+  unsigned int stat_tx_control_pdu;
+  unsigned int stat_tx_control_bytes;
+  unsigned int stat_rx_pdcp_sdu;
+  unsigned int stat_rx_pdcp_bytes;
+  unsigned int stat_rx_data_pdus_duplicate;
+  unsigned int stat_rx_data_bytes_duplicate;
+  unsigned int stat_rx_data_pdu;
+  unsigned int stat_rx_data_bytes;
+  unsigned int stat_rx_data_pdu_dropped;
+  unsigned int stat_rx_data_bytes_dropped;
+  unsigned int stat_rx_data_pdu_out_of_window;
+  unsigned int stat_rx_data_bytes_out_of_window;
+  unsigned int stat_rx_control_pdu;
+  unsigned int stat_rx_control_bytes;
+  unsigned int stat_timer_reordering_timed_out;
+  unsigned int stat_timer_poll_retransmit_timed_out;
+  unsigned int stat_timer_status_prohibit_timed_out;
 
   // UE part 
   for (ue_id=0;ue_id<NUM_UE_INST;ue_id++){
@@ -139,18 +154,33 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 
         int status =  rlc_stat_req     (k, 
                                               UE_mac_inst[Mod_id].Dtch_lchan[i][CH_index].Lchan_info.Lchan_id.Index,
-							  &tx_pdcp_sdu,
-							  &tx_pdcp_sdu_discarded,
-							  &tx_retransmit_pdu_unblock,
-							  &tx_retransmit_pdu_by_status,
-							  &tx_retransmit_pdu,
-							  &tx_data_pdu,
-							  &tx_control_pdu,
-							  &rx_sdu,
-							  &rx_error_pdu,  
-							  &rx_data_pdu,
-							  &rx_data_pdu_out_of_window,
-							  &rx_control_pdu) ;
+                                              &stat_tx_pdcp_sdu,
+                                              &stat_tx_pdcp_bytes,
+                                              &stat_tx_pdcp_sdu_discarded,
+                                              &stat_tx_pdcp_bytes_discarded,
+                                              &stat_tx_data_pdu,
+                                              &stat_tx_data_bytes,
+                                              &stat_tx_retransmit_pdu_by_status,
+                                              &stat_tx_retransmit_bytes_by_status,
+                                              &stat_tx_retransmit_pdu,
+                                              &stat_tx_retransmit_bytes,
+                                              &stat_tx_control_pdu,
+                                              &stat_tx_control_bytes,
+                                              &stat_rx_pdcp_sdu,
+                                              &stat_rx_pdcp_bytes,
+                                              &stat_rx_data_pdus_duplicate,
+                                              &stat_rx_data_bytes_duplicate,
+                                              &stat_rx_data_pdu,
+                                              &stat_rx_data_bytes,
+                                              &stat_rx_data_pdu_dropped,
+                                              &stat_rx_data_bytes_dropped,
+                                              &stat_rx_data_pdu_out_of_window,
+                                              &stat_rx_data_bytes_out_of_window,
+                                              &stat_rx_control_pdu,
+                                              &stat_rx_control_bytes,
+                                              &stat_timer_reordering_timed_out,
+                                              &stat_timer_poll_retransmit_timed_out,
+                                              &stat_timer_status_prohibit_timed_out) ;
 							  
 		if (status == RLC_OP_STATUS_OK) {
 	    len+=sprintf(&buffer[len],"RLC LCHAN %d, NB_SDU_TO_TX = %d\tNB_SDU_DISC %d\tNB_RX_SDU %d\n",

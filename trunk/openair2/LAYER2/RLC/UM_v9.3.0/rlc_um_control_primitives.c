@@ -153,34 +153,24 @@ rlc_um_init (rlc_um_entity_t *rlcP)
   list_init (&rlcP->pdus_to_mac_layer, NULL);
 
   rlcP->protocol_state = RLC_NULL_STATE;
-  rlcP->nb_sdu           = 0;
-  rlcP->next_sdu_index   = 0;
-  rlcP->current_sdu_index = 0;
+  //rlcP->nb_sdu           = 0;
+  //rlcP->next_sdu_index   = 0;
+  //rlcP->current_sdu_index = 0;
 
-  rlcP->vt_us = 0;
+  //rlcP->vt_us = 0;
 
   // RX SIDE
   list_init (&rlcP->pdus_from_mac_layer, NULL);
-  rlcP->vr_ur = 0;
-  rlcP->vr_ux = 0;
-  rlcP->vr_uh = 0;
-  rlcP->output_sdu_size_to_write = 0;
-  rlcP->output_sdu_in_construction = NULL;
+  //rlcP->vr_ur = 0;
+  //rlcP->vr_ux = 0;
+  //rlcP->vr_uh = 0;
+  //rlcP->output_sdu_size_to_write = 0;
+  //rlcP->output_sdu_in_construction = NULL;
 
   rlcP->rx_sn_length          = 10;
   rlcP->rx_header_min_length_in_bytes = 2;
   rlcP->tx_sn_length          = 10;
   rlcP->tx_header_min_length_in_bytes = 2;
-
-
-  rlcP->tx_pdcp_sdu                 = 0;
-  rlcP->tx_pdcp_sdu_discarded       = 0;
-  rlcP->tx_data_pdu                 = 0;
-  rlcP->rx_sdu                      = 0;
-  rlcP->rx_error_pdu                = 0;
-  rlcP->rx_data_pdu                 = 0;
-  rlcP->rx_data_pdu_out_of_window   = 0;
-
 
   // SPARE : not 3GPP
   rlcP->size_input_sdus_buffer =128;
@@ -297,9 +287,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
     rlcP->last_reassemblied_missing_sn  = rlcP->rx_sn_modulo - 1;
     rlcP->reassembly_missing_sn_detected = 0;
     // timers
-    rlcP->timer_reordering         = 0;
-    rlcP->timer_reordering_init    = timer_reorderingP;
-    rlcP->timer_reordering_running = 0;
+    rlc_um_init_timer_reordering(rlcP, timer_reorderingP);
 
     rlcP->first_pdu = 1;
 

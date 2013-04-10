@@ -40,9 +40,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-#define DEBUG_RLC_UM_REASSEMBLY 1
-#define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
-//#define DEBUG_RLC_UM_SEND_SDU
+//#define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
 
 //-----------------------------------------------------------------------------
 inline void
@@ -89,7 +87,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP,u32_t frame
 #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
       rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
       LOG_T(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] DATA :", rlcP->module_id, rlcP->rb_id, frame);
-      rlc_util_print_hex_octets(RLC, rlcP->output_sdu_in_construction->data, rlcP->output_sdu_size_to_write);
+      rlc_util_print_hex_octets(RLC, (unsigned char*)rlcP->output_sdu_in_construction->data, rlcP->output_sdu_size_to_write);
 #endif
     } else {
       LOG_E(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] [max_sdu size %d] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id, frame, sdu_max_size);
@@ -111,7 +109,8 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP,u32_t frame, u8_t eNB_flag)
     LOG_D(RLC, "\n\n\n[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] %d bytes sdu %p\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
 
     if (rlcP->output_sdu_size_to_write > 0) {
-        rlcP->rx_sdus += 1;
+        rlcP->stat_rx_pdcp_sdu += 1;
+        rlcP->stat_rx_pdcp_bytes += rlcP->output_sdu_size_to_write;
 #ifdef TEST_RLC_UM
         #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
         rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
