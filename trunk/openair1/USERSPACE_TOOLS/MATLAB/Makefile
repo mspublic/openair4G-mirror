@@ -1,6 +1,7 @@
 include $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/Makefile
 
 CFLAGS += -DMEX
+CFLAGS += -I/packages/matlab_r2012a/extern/include/
 
 # Set mex extension, can be determined with mexext function in Matlab
 MEXEXT = mexglx
@@ -12,6 +13,7 @@ OBJ = $(PHY_OBJS) $(TOP_DIR)/SIMULATION/TOOLS/taus.o
 MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/get_tbs.$(MEXEXT)
 MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/dlsch_encoding.$(MEXEXT)
 MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/dlsch_decoding.$(MEXEXT)
+MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/dlsch_decoding_init.$(MEXEXT)
 MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/dlsch_channel_level_prec.$(MEXEXT)
 MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/dlsch_channel_compensation_prec.$(MEXEXT)
 MEX_FILES += ./PHY/LTE_TRANSPORT/mexfiles/dlsch_dual_stream_correlation.$(MEXEXT)
@@ -41,7 +43,7 @@ libs : $(OBJ)
 $(MEX_FILES) : %.$(MEXEXT) : %.c
 	@echo 
 	@echo Compiling $< ...
-	@mex -g CFLAGS="$(CFLAGS)" -l$(LIBNAME) -L$(LIBDIR) -output $@ $<
+	@mex CFLAGS="$(CFLAGS)" -f /homes/wagner/.matlab/R2012a/mexopts.sh -l$(LIBNAME) -L$(LIBDIR) -output $@ $<
 
 mex : $(MEX_FILES)
 
@@ -50,3 +52,6 @@ cleanlibs :
 
 cleanmex :
 	rm -f $(MEX_FILES)
+
+show :
+	echo $(CFLAGS)

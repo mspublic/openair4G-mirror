@@ -33,7 +33,10 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	LTE_UE_DLSCH_t* dlsch;
 	LTE_DL_FRAME_PARMS *frame_parms;
 	PHY_VARS_UE *phy_vars_ue;   
-	
+	extern int *pi2tab[188],*pi5tab[188],*pi4tab[188],*pi6tab[188];
+    unsigned int *ptr_td;
+    int *tmp[1];
+    
 	/* Allocate input */
 	dlsch_llr = (short*) mxGetData(prhs[0]);
 	
@@ -54,9 +57,30 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	dlsch = new_ue_dlsch(Kmimo,Mdlharq,abstraction_flag);
     
     // Init CRC tables
-	crcTableInit();	
-	init_td();
+  	crcTableInit();	
+// 	init_td();    
  	    
+    // copy the pointers to memory allocated in dlsch_decoding_init
+    ptr_td = (unsigned int*) mxGetData(mxGetField(prhs[1],0,"ptr_td"));
+    #ifdef DEBUG_DLSCH_DECODING
+    mexPrintf("ptr_td0 %p\n",ptr_td[0]);
+    mexPrintf("ptr_td1 %p\n",ptr_td[1]);
+    mexPrintf("ptr_td2 %p\n",ptr_td[2]);
+    mexPrintf("ptr_td3 %p\n",ptr_td[3]);
+    #endif
+    
+    memcpy(&tmp[0], &ptr_td[0], sizeof(ptr_td[0]));    
+    memcpy(&pi2tab[0], tmp[0], 188*sizeof(pi2tab[0]));
+    
+    memcpy(&tmp[0], &ptr_td[1], sizeof(ptr_td[1]));    
+    memcpy(&pi4tab[0], tmp[0], 188*sizeof(pi4tab[0]));
+    
+    memcpy(&tmp[0], &ptr_td[2], sizeof(ptr_td[2]));
+    memcpy(&pi5tab[0], tmp[0], 188*sizeof(pi5tab[0]));
+    
+    memcpy(&tmp[0], &ptr_td[3], sizeof(ptr_td[3]));
+    memcpy(&pi6tab[0], tmp[0], 188*sizeof(pi6tab[0]));  
+    
 	harq_pid = (unsigned char) mxGetScalar(mxGetField(prhs[2],0,"harq_pid"));
 	dlsch->current_harq_pid = harq_pid;
 	dlsch->harq_processes[harq_pid]->rvidx = (unsigned char) mxGetScalar(mxGetField(prhs[2],0,"rvidx"));
@@ -103,5 +127,5 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	free_ue_dlsch(dlsch);
 	free(frame_parms);
 	free(phy_vars_ue);
-    free_td();    
+//     free_td();    
 }

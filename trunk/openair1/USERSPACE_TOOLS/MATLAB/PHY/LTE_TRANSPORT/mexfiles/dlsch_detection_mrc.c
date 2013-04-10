@@ -27,7 +27,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	int i;
     mxArray *tmp;
 
-	unsigned int nb_re_per_symbol, nb_re_per_frame, llr_guard;	
+	unsigned int nb_re_per_symbol, nb_re_per_frame;	
 	unsigned char symbol, dual_stream_UE;	
 	
 	LTE_DL_FRAME_PARMS *frame_parms;
@@ -78,12 +78,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	} else {
 		nb_re_per_frame = (unsigned int) mxGetScalar(tmp);
 	}
-    tmp = mxGetField(prhs[7],0,"LLR_GUARD");
-	if (tmp == NULL) {
-		mexErrMsgTxt("Non-existing field 'LLR_GUARD' in input argument 8.");
-	} else {
-		llr_guard = (unsigned int) mxGetScalar(tmp);
-	}
 			
 	// Create a LTE_DL_FRAME_PARMS structure and assign required params
 	frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));	
@@ -113,51 +107,51 @@ void mexFunction( int nlhs, mxArray *plhs[],
 		dual_stream_UE = 1;
 	
 	// Make copies of inputs to avoid override			
-	ymf0_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));	
-	ymf1_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));		
-	Hmag0_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
-	Hmag1_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
-	Hmag0b_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
-	Hmag1b_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
-	rho10_cpy = (int*) mxCalloc((nb_re_per_frame+llr_guard)*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
+	ymf0_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));	
+	ymf1_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));		
+	Hmag0_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
+	Hmag1_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
+	Hmag0b_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
+	Hmag1b_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
+	rho10_cpy = (int*) mxCalloc(nb_re_per_frame*NB_ANTENNAS_RX*NB_ANTENNAS_TX, sizeof(int));
 	
-	memcpy(ymf0_cpy,ymf0,NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame + llr_guard)<<2);
-	memcpy(ymf1_cpy,ymf1,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame +llr_guard)<<2));
-	memcpy(Hmag0_cpy,Hmag0,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame +llr_guard)<<2));
-	memcpy(Hmag1_cpy,Hmag1,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame +llr_guard)<<2));
-	memcpy(Hmag0b_cpy,Hmag0b,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame +llr_guard)<<2));
-	memcpy(Hmag1b_cpy,Hmag1b,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame +llr_guard)<<2));
-	memcpy(rho10_cpy,rho10,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*(nb_re_per_frame +llr_guard)<<2));
+	memcpy(ymf0_cpy,ymf0,NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2);
+	memcpy(ymf1_cpy,ymf1,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2));
+	memcpy(Hmag0_cpy,Hmag0,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2));
+	memcpy(Hmag1_cpy,Hmag1,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2));
+	memcpy(Hmag0b_cpy,Hmag0b,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2));
+	memcpy(Hmag1b_cpy,Hmag1b,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2));
+	memcpy(rho10_cpy,rho10,(NB_ANTENNAS_RX*NB_ANTENNAS_TX*nb_re_per_frame<<2));
 	
 	// Assign correct inputs to algo
 	rxdataF_comp[0] = ymf0_cpy;
-	rxdataF_comp[1] = &ymf0_cpy[nb_re_per_frame+llr_guard];
-	rxdataF_comp[2] = &ymf0_cpy[2*(nb_re_per_frame+llr_guard)];
-	rxdataF_comp[3] = &ymf0_cpy[3*(nb_re_per_frame+llr_guard)];
+	rxdataF_comp[1] = &ymf0_cpy[nb_re_per_frame];
+	rxdataF_comp[2] = &ymf0_cpy[2*nb_re_per_frame];
+	rxdataF_comp[3] = &ymf0_cpy[3*nb_re_per_frame];
 	rxdataF_comp_i[0] = ymf1_cpy;
-	rxdataF_comp_i[1] = &ymf1_cpy[nb_re_per_frame+llr_guard];	
-	rxdataF_comp_i[2] = &ymf1_cpy[2*(nb_re_per_frame+llr_guard)];	
-	rxdataF_comp_i[3] = &ymf1_cpy[3*(nb_re_per_frame+llr_guard)];	
+	rxdataF_comp_i[1] = &ymf1_cpy[nb_re_per_frame];	
+	rxdataF_comp_i[2] = &ymf1_cpy[2*nb_re_per_frame];	
+	rxdataF_comp_i[3] = &ymf1_cpy[3*nb_re_per_frame];	
 	rho_i[0] = rho10_cpy;
-	rho_i[1] = &rho10_cpy[nb_re_per_frame+llr_guard];
-	rho_i[2] = &rho10_cpy[2*(nb_re_per_frame+llr_guard)];
-	rho_i[3] = &rho10_cpy[3*(nb_re_per_frame+llr_guard)];
+	rho_i[1] = &rho10_cpy[nb_re_per_frame];
+	rho_i[2] = &rho10_cpy[2*nb_re_per_frame];
+	rho_i[3] = &rho10_cpy[3*nb_re_per_frame];
 	dl_ch_mag[0] = Hmag0_cpy;
-	dl_ch_mag[1] = &Hmag0_cpy[nb_re_per_frame+llr_guard];
-	dl_ch_mag[2] = &Hmag0_cpy[2*(nb_re_per_frame+llr_guard)];
-	dl_ch_mag[3] = &Hmag0_cpy[3*(nb_re_per_frame+llr_guard)];
+	dl_ch_mag[1] = &Hmag0_cpy[nb_re_per_frame];
+	dl_ch_mag[2] = &Hmag0_cpy[2*nb_re_per_frame];
+	dl_ch_mag[3] = &Hmag0_cpy[3*nb_re_per_frame];
 	dl_ch_magb[0] = Hmag0b_cpy;
-	dl_ch_magb[1] = &Hmag0b_cpy[nb_re_per_frame+llr_guard];
-	dl_ch_magb[2] = &Hmag0b_cpy[2*(nb_re_per_frame+llr_guard)];
-	dl_ch_magb[3] = &Hmag0b_cpy[3*(nb_re_per_frame+llr_guard)];
+	dl_ch_magb[1] = &Hmag0b_cpy[nb_re_per_frame];
+	dl_ch_magb[2] = &Hmag0b_cpy[2*nb_re_per_frame];
+	dl_ch_magb[3] = &Hmag0b_cpy[3*nb_re_per_frame];
 	dl_ch_mag_i[0] = Hmag1_cpy;
-	dl_ch_mag_i[1] = &Hmag1_cpy[nb_re_per_frame+llr_guard];
-	dl_ch_mag_i[2] = &Hmag1_cpy[2*(nb_re_per_frame+llr_guard)];
-	dl_ch_mag_i[3] = &Hmag1_cpy[3*(nb_re_per_frame+llr_guard)];
+	dl_ch_mag_i[1] = &Hmag1_cpy[nb_re_per_frame];
+	dl_ch_mag_i[2] = &Hmag1_cpy[2*nb_re_per_frame];
+	dl_ch_mag_i[3] = &Hmag1_cpy[3*nb_re_per_frame];
 	dl_ch_magb_i[0] = Hmag1b_cpy;
-	dl_ch_magb_i[1] = &Hmag1b_cpy[nb_re_per_frame+llr_guard];	
-	dl_ch_magb_i[2] = &Hmag1b_cpy[2*(nb_re_per_frame+llr_guard)];	
-	dl_ch_magb_i[3] = &Hmag1b_cpy[3*(nb_re_per_frame+llr_guard)];	
+	dl_ch_magb_i[1] = &Hmag1b_cpy[nb_re_per_frame];	
+	dl_ch_magb_i[2] = &Hmag1b_cpy[2*nb_re_per_frame];	
+	dl_ch_magb_i[3] = &Hmag1b_cpy[3*nb_re_per_frame];	
 				
 	/* Allocate Output */
 	plhs[0] = mxCreateNumericMatrix(2*nb_re_per_symbol,NB_ANTENNAS_RX*NB_ANTENNAS_TX, mxINT16_CLASS, mxREAL);	

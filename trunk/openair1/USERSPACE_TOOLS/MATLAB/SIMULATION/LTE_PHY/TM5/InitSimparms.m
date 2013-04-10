@@ -18,9 +18,6 @@ end
 
 j = sqrt(-1);
 
-% LLRs are computed for 8RE make sure enough valid memory is allocated
-LLR_GUARD = 8*6; % max mod_order 6 for 8 REs
-
 %% Custom parameters 
 simparms.nb_antennas_tx = nb_antennas_tx;
 simparms.nb_antennas_tx_eNB = simparms.nb_antennas_tx;
@@ -48,10 +45,12 @@ simparms.dl_power_offset= 0; % 0 = 3dB power offset
 simparms.nb_slots = 14;
 simparms.nb_re_per_symbol = simparms.nb_rb*12;
 simparms.nb_re_per_frame = simparms.nb_slots*simparms.nb_re_per_symbol;
-simparms.LLR_GUARD = LLR_GUARD;
 simparms.frame_errors = zeros(length(simparms.snr),1);
 simparms.CB = [[1;1],[1;-1],[1;j],[1;-j]]; % codebook
 simparms.tseeds = set_taus_seed(1); % taus seeds
+
+% Turbo decoder: set the pointer to the td tables allocated by init_td()
+simparms.ptr_td = dlsch_decoding_init();
 
 % Init codewords
 simparms.codeword(1) = InitCodeword(simparms,mcs(1));

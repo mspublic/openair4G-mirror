@@ -18,7 +18,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 {
 	/* Declare */
 	int *dl_ch_estimates_ext[NB_ANTENNAS_RX*NB_ANTENNAS_TX],*dl_ch_estimates_ext_i[NB_ANTENNAS_RX*NB_ANTENNAS_TX],*Heff0,*Heff1,*rho10,*rho10_out,*dl_ch_rho_ext[NB_ANTENNAS_RX*NB_ANTENNAS_TX];	
-	unsigned int nb_re_per_symbol, nb_re_per_frame, llr_guard;
+	unsigned int nb_re_per_symbol, nb_re_per_frame;
 	unsigned char output_shift, symbol;		
 	LTE_DL_FRAME_PARMS *frame_parms;	
 	mxArray *tmp;
@@ -53,13 +53,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 		mexErrMsgTxt("Non-existing field 'nb_re_per_frame' in input argument 3.");
 	} else {
 		nb_re_per_frame = (unsigned int) mxGetScalar(tmp);
-	}
-    tmp = mxGetField(prhs[2],0,"LLR_GUARD");
-	if (tmp == NULL) {
-		mexErrMsgTxt("Non-existing field 'LLR_GUARD' in input argument 3.");
-	} else {
-		llr_guard = (unsigned int) mxGetScalar(tmp);
-	}
+	}    
 			
 	// Create a LTE_DL_FRAME_PARMS structure and assign required params
 	frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
@@ -96,14 +90,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
     dl_ch_rho_ext[3] = &rho10[3*nb_re_per_frame];
         
     dl_ch_estimates_ext[0] = Heff0;
-    dl_ch_estimates_ext[1] = &Heff0[   nb_re_per_frame + llr_guard];
-    dl_ch_estimates_ext[2] = &Heff0[2*(nb_re_per_frame + llr_guard)];
-    dl_ch_estimates_ext[3] = &Heff0[3*(nb_re_per_frame + llr_guard)];
+    dl_ch_estimates_ext[1] = &Heff0[nb_re_per_frame];
+    dl_ch_estimates_ext[2] = &Heff0[2*nb_re_per_frame];
+    dl_ch_estimates_ext[3] = &Heff0[3*nb_re_per_frame];
     
     dl_ch_estimates_ext_i[0] = Heff1;
-    dl_ch_estimates_ext_i[1] = &Heff1[   nb_re_per_frame + llr_guard];
-    dl_ch_estimates_ext_i[2] = &Heff1[2*(nb_re_per_frame + llr_guard)];
-    dl_ch_estimates_ext_i[3] = &Heff1[3*(nb_re_per_frame + llr_guard)];
+    dl_ch_estimates_ext_i[1] = &Heff1[nb_re_per_frame];
+    dl_ch_estimates_ext_i[2] = &Heff1[2*nb_re_per_frame];
+    dl_ch_estimates_ext_i[3] = &Heff1[3*nb_re_per_frame];
 
         
     /* Algo */  	
