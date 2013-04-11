@@ -473,6 +473,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	  }
 	} //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
       }
+#ifdef Rel10
       // mutlticast , temp var: NUMBER_OF_SERVICE_MAX
       for (dst_id = 0; dst_id < NUMBER_OF_SERVICE_MAX; dst_id++) {
 	rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + MTCH; 
@@ -485,7 +486,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	  }
 	}
       }
-	
+#endif 	
     }else {
       dst_id = eNB_index;	
       if (mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) { 
