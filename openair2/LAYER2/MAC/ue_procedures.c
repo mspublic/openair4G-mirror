@@ -667,6 +667,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }
+// tx to the dst CH
 void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u16 cornti, s16 seq_num) {
  
   /*  u16 sdu_lengths[8];

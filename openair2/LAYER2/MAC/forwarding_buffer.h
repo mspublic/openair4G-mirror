@@ -54,6 +54,11 @@
 
 //-----------------------------------------------------------------------------
 
+enum operation_mode{
+ ONE_BUF_PER_CH = 0,
+ ONE_BUF_PER_CORNTI = 1,
+};
+
 typedef struct mem_element_t{
   struct mem_element_t *next;
   struct mem_element_t *previous;
@@ -83,34 +88,49 @@ typedef struct {
  struct avl_node_t *tree_pdu_seqn;
  struct avl_node_t *tree_pdu_size;
  
- u8 sorting_flag;
- u8 mode; //0:  1x buffer per CH, 1:  1x buffer per cornti
+// u8 sorting_flag;
+
+ u8 eNB_index;
+ u16 cornti;
  int maximum_capacity;
  char name[LIST_NAME_MAX_CHAR];
 }MAC_BUFFER;
 
-MAC_BUFFER **mac_buffer_g;
+
+typedef struct{
+ MAC_BUFFER **mac_buffer_g;
+ 
+ u8 mode; //0:  1x buffer per CH, 1:  1x buffer per cornti
+ int total_number_of_buffers_allocated;
+}MAC_BUFFER_UE;
+
+//MAC_BUFFER **mac_buffer_g;
+MAC_BUFFER_UE *mac_buffer_u;
 
 
 void mac_buffer_top_init();
-MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 Mod_id); 
+int mac_buffer_instantiate (u8 Mod_id, u8 eNB_index, u16 cornti);
+MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 eNB_index, u16 cornti); 
 void packet_list_init (packet_list_t*, char *nameP);
 void packet_list_free (packet_list_t* listP);
-void mac_buffer_free(u8 Mod_id);
+void mac_buffer_free(u8 Mod_id, u8 b_index);
 
 mem_element_t *packet_list_remove_head (packet_list_t *listP); // makes NULL internal pointers to nodes tress before returning the head
 mem_element_t *packet_list_remove_head_2(packet_list_t * listP); // it returns the head as a whole
-mem_element_t *mac_buffer_remove_head(u8 Mod_id, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size);
+mem_element_t *mac_buffer_remove_head(u8 Mod_id, u8 b_index, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size);
 
 mem_element_t *packet_list_remove_tail(packet_list_t *listP);
-mem_element_t *mac_buffer_remove_tail(u8 Mod_id, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size);
+mem_element_t *mac_buffer_remove_tail(u8 Mod_id, u8 b_index, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size);
 
 mem_element_t *packet_list_remove_middle(packet_list_t *listP, mem_element_t *ptr);
-mem_element_t *mac_buffer_remove_middle(u8 Mod_id, mem_element_t *ptr, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size);
+mem_element_t *mac_buffer_remove_middle(u8 Mod_id, u8 b_index, mem_element_t *ptr, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size);
 
 
 mem_element_t *packet_list_get_head (packet_list_t *listP); // returns the head of the list without removing it!
-mem_element_t *mac_buffer_get_head(u8 Mod_id); // returns the head of the list without removing it!
+mem_element_t *mac_buffer_get_head(u8 Mod_id, u8 b_index); // returns the head of the list without removing it!
+
+void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 number_of_packets_asked, u16 **seq_num, u16 **size);
+
 
 int packet_list_find_pdu_seq_num(packet_list_t *listP, int seq_num);
 int packet_list_find_pdu_seq_num2(packet_list_t *listP, int seq_num);
@@ -123,24 +143,27 @@ void packet_list_add_head(mem_element_t *elementP, packet_list_t *listP);
 
 void packet_list_add_after_ref(mem_element_t *new_elementP, mem_element_t *elementP_ref, packet_list_t *listP);
 
-int mac_buffer_add_tail(u8 Mod_id, mem_element_t *elementP);
-int mac_buffer_add_after(u8 Mod_id, mem_element_t *elementP); 
-int mac_buffer_add_sorted(u8 Mod_id, mem_element_t *elementP);
+int mac_buffer_add_tail(u8 Mod_id, u8 b_index, mem_element_t *elementP);
+int mac_buffer_add_after(u8 Mod_id, u8 b_index, mem_element_t *elementP); 
+int mac_buffer_return_b_index(u8 Mod_id, u8 eNB_index, u16 cornti);
 
-
-void mac_buffer_print(u8 Mod_id); 
-void mac_buffer_print_2(u8 Mod_id); // used also for debugging
-void mac_buffer_print_3(u8 Mod_id);  // used also for debugging
-void mac_buffer_print_4(u8 Mod_id); // used also for debugging
-void mac_buffer_print_reverse(u8 Mod_id);  // used also for debugging
-int  mac_buffer_sort(u8 Mod_id);
+void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti); 
+void mac_buffer_print_2(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for debugging
+void mac_buffer_print_3(u8 Mod_id, u8 eNB_index, u16 cornti);  // used also for debugging
+void mac_buffer_print_4(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for debugging
+void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti);  // used also for debugging
 
 mem_element_t *packet_list_find_pivot_seq_num(int seq_num, packet_list_t *listP, int *after);
 mem_element_t *packet_list_find_pivot_pdu_size(int pdu_size, packet_list_t *listP, int *after);
 
 // MAC API
-int  mac_buffer_total_size(u8 Mod_id);
-int  mac_buffer_nb_elements(u8 Mod_id);
-mem_element_t *mac_buffer_data_req(u8 Mod_id, int seq_num, int size, int HARQ_proccess_ID); 
-int mac_buffer_data_ind(u8 Mod_id, u16 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);// returns 1 for success otherwise 0 //
+int  mac_buffer_total_size(u8 Mod_id, u8 eNB_index, u16 cornti);
+int  mac_buffer_nb_elements(u8 Mod_id, u8 eNB_index, u16 cornti); 
+
+// just return the pointer to the element for consulting, do not remove from the buffer
+//mem_element_t *mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 eid);
+void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 **seq_num, u16 **size);
+
+mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_num, int requested_size, int HARQ_proccess_ID); 
+int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);// returns 1 for success otherwise 0 //
 #endif
