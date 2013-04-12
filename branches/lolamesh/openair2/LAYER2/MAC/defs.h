@@ -181,7 +181,7 @@ typedef struct {
 typedef struct {
   u16 CORNTI;
   u8 SN;
-  u8 Buffer_size;
+  u8 Buffer_size; // CONECT: get the total size, LOLA: get the first element SN an
 } __attribute__((__packed__))CO_BSR_SHORT;
 
 typedef struct {
