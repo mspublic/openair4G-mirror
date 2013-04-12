@@ -55,23 +55,36 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
   LOG_I(MAC, "[UE %d] instantiate the buffer for eNB %d and cornti %x \n", Mod_id, eNB_index, cornti);
 	
 	
-	if(mac_buffer_u[Mod_id].total_number_of_buffers_allocated < NUMBER_OF_CONNECTED_eNB_MAX){
+
 	 if(mode == ONE_BUF_PER_CH){
-		for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
-		 if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index==eNB_index){
-			flag = 0;
-			break;
+		if(mac_buffer_u[Mod_id].total_number_of_buffers_allocated < NUMBER_OF_CONNECTED_eNB_MAX){
+		 for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
+			if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index==eNB_index){
+			 flag = 0;
+			 break;
+			}
 		 }
+		}
+		else{
+		 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer_instantiate, CANNOT Allocate MORE than NUMBER_OF_CONNECTED_eNB_MAX=%d buffers per MR in mode ONE_BUF_PER_CH\n",NUMBER_OF_CONNECTED_eNB_MAX);
+		 mac_xface->macphy_exit("out of memory for MAC buffer init mac_buffer_instantiate");
+		 return 0;
 		}
 	 }else if(mode==ONE_BUF_PER_CORNTI){
-		for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
-		 if(mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti==cornti){
-			flag = 0;
-			break;
+		if(mac_buffer_u[Mod_id].total_number_of_buffers_allocated < 2*NUMBER_OF_CONNECTED_eNB_MAX){
+		 for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
+			if(mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti==cornti){
+			 flag = 0;
+			 break;
+			}
 		 }
 		}
+		else{
+		 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer_instantiate, CANNOT Allocate MORE than 2*NUMBER_OF_CONNECTED_eNB_MAX=%d buffers per MR in mode ONE_BUF_PER_CORNTI\n",2*NUMBER_OF_CONNECTED_eNB_MAX);
+		 mac_xface->macphy_exit("out of memory for MAC buffer init mac_buffer_instantiate");
+		 return 0; 
+		}
 	 }
-	 
 	 if(flag == 1){
 		sprintf(string,"MR %d, (eNB_index %d, cornti %d)",Mod_id,eNB_index,cornti);
 		strcpy(string1,"mac_buffer: ");
@@ -90,12 +103,8 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
 		//  function returns -1, in the case where buffer must not be instantiated because it already exists (either in case 1 buf per CH or per cornti)
 		return -1;
 	 }
-	}
-	else{
-	  LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer_instantiate, CANNOT Allocate MORE than NUMBER_OF_CONNECTED_eNB_MAX=%d buffers per MR\n",NUMBER_OF_CONNECTED_eNB_MAX);
-    mac_xface->macphy_exit("out of memory for MAC buffer init mac_buffer_instantiate");
-		return 0;
-	}
+
+
 }
 
 
@@ -111,13 +120,18 @@ void mac_buffer_top_init(){
     mac_xface->macphy_exit("out of memory for MAC buffer init (mac_buffer_u)");
   }
 	for(UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-	  mac_buffer_u[UE_id].mac_buffer_g = malloc(NUMBER_OF_CONNECTED_eNB_MAX*sizeof(MAC_BUFFER));
-	  if(mac_buffer_u[UE_id].mac_buffer_g==NULL){
+	  mac_buffer_u[UE_id].mode=mode;
+	  if(mac_buffer_u[UE_id].mode == ONE_BUF_PER_CH){
+			 mac_buffer_u[UE_id].mac_buffer_g = malloc(NUMBER_OF_CONNECTED_eNB_MAX*sizeof(MAC_BUFFER));
+		}else if(mac_buffer_u[UE_id].mode==ONE_BUF_PER_CORNTI){// This is the case of corntis so each link between CH has 2 conrntis so the MAX number of buffers is 2*NUMBER_OF_CONNECTED_eNB_MAX
+			 mac_buffer_u[UE_id].mac_buffer_g = malloc(2*NUMBER_OF_CONNECTED_eNB_MAX*sizeof(MAC_BUFFER));		 
+		}
+		if(mac_buffer_u[UE_id].mac_buffer_g==NULL){
     LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer/mac_buffer_top_init (mac_buffer_u[%d].mac_buffer_g)\n",UE_id);
     mac_xface->macphy_exit("out of memory for MAC buffer init (mac_buffer_u[-].mac_buffer_g)");
 	  }
 	  mac_buffer_u[UE_id].total_number_of_buffers_allocated=0;
-		mac_buffer_u[UE_id].mode=mode;
+		
 	}
 }
 
