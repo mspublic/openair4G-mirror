@@ -459,7 +459,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 CH_index,u8 si_window);
 int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index);
 
 void rrc_eNB_generate_UECapabilityEnquiry(u8 Mod_id, u32 frame, u16 UE_index);
-void rrc_eNB_generate_UESecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
+void rrc_eNB_generate_SecurityModeCommand(u8 Mod_id, u32 frame, u16 UE_index);
 
 //void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index);
 //void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityModeCommand_t *securityModeCommand,uint8_t eNB_index);
