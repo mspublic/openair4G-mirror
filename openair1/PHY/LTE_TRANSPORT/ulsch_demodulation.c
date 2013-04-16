@@ -420,7 +420,7 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     mmtmpU2 = _mm_abs_epi16(mmtmpU1);
     mmtmpU2 = _mm_subs_epi16(ch_magb[i],mmtmpU2);
 
-
+#ifdef __SSE4__
     (*llrp32)[0]  = _mm_extract_epi32(rxF[i],0);
     (*llrp32)[1]  = _mm_extract_epi32(mmtmpU1,0);
     (*llrp32)[2]  = _mm_extract_epi32(mmtmpU2,0);
@@ -433,7 +433,7 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     (*llrp32)[9]  = _mm_extract_epi32(rxF[i],3);
     (*llrp32)[10] = _mm_extract_epi32(mmtmpU1,3);
     (*llrp32)[11] = _mm_extract_epi32(mmtmpU2,3);
-    
+#endif    
     (*llrp32)+=12;
   }
 
