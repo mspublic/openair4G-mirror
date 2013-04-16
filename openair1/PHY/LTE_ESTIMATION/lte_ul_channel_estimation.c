@@ -4,6 +4,13 @@
 #include <xmmintrin.h>
 //#define DEBUG_CH
 
+#ifndef __SSE3__
+__m128i zeroE;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over_sqrt_10;
+//#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+#define _mm_abs_epi16(xmmx) _mm_add_epi16(_mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroE,(xmmx))),_mm_srli_epi16(_mm_cmpgt_epi16(zeroE,(xmmx)),15))
+#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroE,(xmmy)))
+#endif
+
 // For Channel Estimation in Distributed Alamouti Scheme
 //static s16 temp_out_ifft[2048*4] __attribute__((aligned(16)));
 static s16 temp_out_fft_0[2048*4] __attribute__((aligned(16)));
