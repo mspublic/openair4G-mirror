@@ -38,24 +38,24 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,s32*txdata,u8 slot) {
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
   switch (frame_parms->N_RB_UL) {
-    
+  
   case 6:
-    kHz7_5ptr = (u32*)s6_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s6n_kHz_7_5 : (u32*)s6e_kHz_7_5;
     break;
   case 15:
-    kHz7_5ptr = (u32*)s15_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s15n_kHz_7_5 : (u32*)s15e_kHz_7_5;
     break;
   case 25:
     kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   case 50:
-    kHz7_5ptr = (u32*)s50_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s50n_kHz_7_5 : (u32*)s50e_kHz_7_5;
     break;
   case 75:
-    kHz7_5ptr = (u32*)s75_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s75n_kHz_7_5 : (u32*)s75e_kHz_7_5;
     break;
   case 100:
-    kHz7_5ptr = (u32*)s100_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s100n_kHz_7_5 : (u32*)s100e_kHz_7_5;
     break;
   default:
     kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
@@ -138,22 +138,22 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,u8 slot) {
   switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
     
   case 6:
-    kHz7_5ptr = (u32*)s6_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s6n_kHz_7_5 : (u32*)s6e_kHz_7_5;
     break;
   case 15:
-    kHz7_5ptr = (u32*)s15_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s15n_kHz_7_5 : (u32*)s15e_kHz_7_5;
     break;
   case 25:
     kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
     break;
   case 50:
-    kHz7_5ptr = (u32*)s50_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s50n_kHz_7_5 : (u32*)s50e_kHz_7_5;
     break;
   case 75:
-    kHz7_5ptr = (u32*)s75_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s75n_kHz_7_5 : (u32*)s75e_kHz_7_5;
     break;
   case 100:
-    kHz7_5ptr = (u32*)s100_kHz_7_5;
+    kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s100n_kHz_7_5 : (u32*)s100e_kHz_7_5;
     break;
   default:
     kHz7_5ptr = (frame_parms->Ncp==0) ? (u32*)s25n_kHz_7_5 : (u32*)s25e_kHz_7_5;
