@@ -17,6 +17,12 @@
 #define MBSFN_FDD_SF7 0x08
 #define MBSFN_FDD_SF8 0x04
  
+#ifndef __SSE3__
+__m128i zeroM;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_over_sqrt_10;
+//#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+#define _mm_abs_epi16(xmmx) _mm_add_epi16(_mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroM,(xmmx))),_mm_srli_epi16(_mm_cmpgt_epi16(zeroM,(xmmx)),15))
+#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroM,(xmmy)))
+#endif
 
 void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword) {
 
