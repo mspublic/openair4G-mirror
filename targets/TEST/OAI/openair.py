@@ -97,12 +97,12 @@ class openair(core):
         self.oai.send('exit')
 #        self.cancel()
 
-    def kill(self):
+    def kill(self, pw):
         try:
-            os.system('sudo pkill oaisim')
-            os.system('sudo pkill cc1') 
+            os.system('echo '+pw+' | sudo -S pkill oaisim')
+            os.system('echo '+pw+' | sudo -S pkill cc1') 
             time.sleep(1)
-            os.system('sudo pkill oaisim')
+            os.system('echo '+pw+' | sudo -S pkill oaisim')
         except Error, val:
             print "Error:", val
             

@@ -71,9 +71,11 @@ for arg in sys.argv:
 # get the oai object
 oai = openair('localdomain','localhost')
 
-try:
-    print '*******Connecting to the localhost to perform the test (prompt is '+prompt+')*******\n'
+try: 
     user = getpass.getuser()
+    print '*******Note that the user '+user+' should be a sudoer *******\n\n'
+    print '*******Connecting to the localhost to perform the test (prompt is '+prompt+')*******\n'
+   
     if not pw :
         print "username: " + user 
         pw = getpass.getpass() 
@@ -97,12 +99,12 @@ print 'Results will be reported in log file : ' + logfile
 log.writefile(logfile,'====================start'+test+' at ' + ctime + '=======================')
 log.set_debug_level(debug)
 
-oai.kill()   
+oai.kill(pw)   
 # start te test cases 
-case01.execute(oai, logfile)
-case02.execute(oai, logfile)
+case01.execute(oai, user, pw, logfile)
+case02.execute(oai, user, pw, logfile)
 
-oai.kill() 
+oai.kill(pw) 
 
 # perform the stats
 log.statistics(logfile)
