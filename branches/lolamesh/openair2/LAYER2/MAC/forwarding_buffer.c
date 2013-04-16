@@ -651,9 +651,9 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
 	elementP->seq_num = seq_num;
 	elementP->pdu_size = pdu_size;
 	elementP->HARQ_proccess_ID = HARQ_proccess_ID;
-	// ask Navid about the pool_id and data, if this values should be assigned here or outside this function!
-	//elementP->pool_id = pool_id;
-	//elementP->data = data;
+
+	LOG_D(MAC," mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n)",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
+	
 	 if(mac_buffer_add_tail(Mod_id, b_index, elementP) == 1)
 		return 1;
 	 else

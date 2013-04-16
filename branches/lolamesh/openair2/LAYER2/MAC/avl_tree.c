@@ -248,7 +248,7 @@ avl_node_t *avl_tree_balance_2(avl_node_t *t, int key){
 }
 
 avl_node_t *avl_tree_insert_node(avl_node_t *t, struct mem_element_t *elementP, int pdu_seq_num_tree, int pdu_size_tree, int pdu_size_tree_in_next){
- 
+
   if(elementP==NULL){
 	 return NULL;
 	}
@@ -315,7 +315,7 @@ avl_node_t *avl_tree_insert_node_pdu_size(avl_node_t *t, mem_element_t *elementP
 	 return NULL;
 	}
 	else{
-	 //printf("new node key, second_key (%d, %d)",key,second_key);
+	 //LOG_D(MAC,"[APAPOSTO] new node key, second_key (%d, %d)\n",key,second_key);
 	 t->key = key;
 	 t->second_key = second_key;
 	 t->height = 1;
@@ -323,6 +323,7 @@ avl_node_t *avl_tree_insert_node_pdu_size(avl_node_t *t, mem_element_t *elementP
 	 t->pdu_seq_num_tree = 0;
 	 t->pdu_size_tree= 1;
 	 t->pdu_size_tree_in_next = 0;
+	 t->next = NULL;// DONT remove this since it is an initialization! because the function avl_tree_insert_node() following checks whether t->next is NULL to return a new node allocation
 	 t->next = avl_tree_insert_node(t->next, elementP, 0, 0, 1);
   // printf("-->%d %d\n",t->next->key,t->next->second_key);
 	 }
