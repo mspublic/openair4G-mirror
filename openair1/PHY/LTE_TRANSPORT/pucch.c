@@ -267,7 +267,7 @@ void generate_pucch(mod_sym_t **txdataF,
       }
 
       // multiply W by S(ns) (36.211 p.17). only for data, reference symbols do not have this factor  
-      if ((S==1)&&(refs==1)) {
+      if ((S==1)&&(refs==0)) {
 	tmp_re = W_re;
 	W_re = -W_im;
 	W_im = tmp_re;
@@ -365,7 +365,9 @@ void generate_pucch(mod_sym_t **txdataF,
 #endif
   nsymb = N_UL_symb<<1;
 
-  for (j=0,l=0;l<(nsymb-1);l++) {
+  //for (j=0,l=0;l<(nsymb-1);l++) {
+  for (j=0,l=0;l<(nsymb);l++) {
+
     if ((l<(nsymb>>1)) && ((m&1) == 0))
       re_offset = (m*6) + frame_parms->first_carrier_offset;
     else if ((l<(nsymb>>1)) && ((m&1) == 1))
@@ -592,7 +594,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
       }
 
       // multiply W by S(ns) (36.211 p.17). only for data, reference symbols do not have this factor  
-      if ((S==1)&&(refs==1)) {
+      if ((S==1)&&(refs==0)) {
 	tmp_re = W_re;
 	W_re = -W_im;
 	W_im = tmp_re;
@@ -615,7 +617,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	zptr[1+(n<<1)] = -(tmp_re*W_im + tmp_im*W_re)>>15;
 
 #ifdef DEBUG_PUCCH_RX
-	LOG_D(PHY,"[eNB] PUCCH subframe %d z(%d,%d) => %d,%d, alpha(%d) => %d,%d\n",subframe,l,n<<1,zptr[n<<1],zptr[(n<<1)+1],
+	LOG_D(PHY,"[eNB] PUCCH subframe %d z(%d,%d) => %d,%d, alpha(%d) => %d,%d\n",subframe,l,n,zptr[n<<1],zptr[(n<<1)+1],
 	    alpha_ind,alpha_re[alpha_ind],alpha_im[alpha_ind]);
 #endif
 	alpha_ind = (alpha_ind + n_cs)%12;
@@ -641,7 +643,8 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   // Do detection
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
     
-    for (j=0,l=0;l<(nsymb-1);l++) {
+    //for (j=0,l=0;l<(nsymb-1);l++) {
+    for (j=0,l=0;l<nsymb;l++) {
       if ((l<(nsymb>>1)) && ((m&1) == 0))
 	re_offset = (m*6) + frame_parms->first_carrier_offset;
       else if ((l<(nsymb>>1)) && ((m&1) == 1))
@@ -671,7 +674,7 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	if (re_offset==frame_parms->ofdm_symbol_size)
 	  re_offset = 0; 
 #ifdef DEBUG_PUCCH_RX
-	LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d,%d,%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,i,re_offset-1,m,j,
+	LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d,%d,%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,i,re_offset,m,j,
 	    rxptr[re_offset<<2],rxptr[1+(re_offset<<2)],
 	    zptr[j],zptr[1+j],
 	    rxcomp[aa][j],rxcomp[aa][1+j]);
