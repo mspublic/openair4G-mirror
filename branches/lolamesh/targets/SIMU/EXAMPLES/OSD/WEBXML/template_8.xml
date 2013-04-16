@@ -14,7 +14,7 @@
       <eNB_MOBILITY>
 	<eNB_INITIAL_DISTRIBUTION>random</eNB_INITIAL_DISTRIBUTION>
 	<RANDOM_eNB_DISTRIBUTION>
-	  <NUMBER_OF_CELLS>1</NUMBER_OF_CELLS>
+	  <NUMBER_OF_CELLS>2</NUMBER_OF_CELLS>
 	</RANDOM_eNB_DISTRIBUTION>
 	<eNB_MOBILITY_TYPE>STATIC</eNB_MOBILITY_TYPE>
       </eNB_MOBILITY>
@@ -23,14 +23,14 @@
 
   <APPLICATION_CONFIG>
     <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>1</SOURCE_ID> <!-- valid formats are: -->					
+      <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
       <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
-      <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
+      <DESTINATION_ID>2</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC>
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> <!--set to infinity--> 
+    <EMULATION_TIME_ms>2000</EMULATION_TIME_ms> <!--set to infinity--> 
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>

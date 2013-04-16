@@ -250,12 +250,15 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
   u16 dst_eNB=0;
   int ;
   lcid = ((SCH_SUBHEADER_FIXED *)payload_ptr)->LCID;
+  LOG_I (MAC,"[UE %d] received sdu form eNb index %d with the  cornti %x\n",
+	 Mod_id, eNB_index, cornti);
   if (lcid == CO_SEQ_NUM_LCID) {
-    payload_ptr ++; // 1 bytes for lcid
-    UE_mac_inst[Mod_id].corntis.sn[eNB_index]=(((payload_ptr[1]&0xff) <<8)  | (payload_ptr[0]&0xff));
+    /*  payload_ptr+=1; // 1 bytes for HDR
+	UE_mac_inst[Mod_id].corntis.sn[eNB_index]=(((payload_ptr[1]&0xff) <<8)  | (payload_ptr[0]&0xff));*/
+    UE_mac_inst[Mod_id].corntis.sn[eNB_index]= ((SCH_SUBHEADER_LONG *)payload_ptr)->L;
     LOG_I(MAC,"[UE %d][VLINK] Frame %d : received sequence number %d \n",
 	  Mod_id,frame,UE_mac_inst[Mod_id].corntis.sn[eNB_index]);
-    payload_ptr+=2;
+    payload_ptr+=3; // for CE
     size = sdu_len-3;
     vlid = mac_forwarding_get_vlid(cornti);
     dst_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,eNB_index,cornti);

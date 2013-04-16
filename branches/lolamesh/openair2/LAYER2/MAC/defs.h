@@ -585,6 +585,7 @@ in the DLSCH buffer.
 @param drx_cmd dicontinous reception command 
 @param timing_advancd_cmd timing advanced command
 @param ue_cont_res_id Pointer to contention resolution identifier (NULL means not present in payload)
+@param co_flag flag indicating a collaborative MAC PDU and HEADER generation
 @param co_seq_num Pointer to collaborative PDU sequence number (NULL means not present in payload)
 @param short_padding Number of bytes for short padding (0,1,2)
 @param post_padding number of bytes for padding at the end of MAC PDU 
@@ -598,6 +599,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned char drx_cmd,
 				    unsigned char timing_advance_cmd,
 				    unsigned char *ue_cont_res_id,
+				    unsigned char co_flag, 
 				    unsigned short co_seq_num, //TCS LOLAmesh
 				    unsigned char short_padding,
 				    unsigned short post_padding);
