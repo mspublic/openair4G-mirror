@@ -40,7 +40,9 @@
 
 #include <emmintrin.h>
 #include <xmmintrin.h>
+#ifdef __SSE4__
 #include <smmintrin.h>
+#endif
 #ifdef __SSE3__
 #include <pmmintrin.h>
 #include <tmmintrin.h>
