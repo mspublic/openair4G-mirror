@@ -44,7 +44,7 @@ NUM_UE=2
 NUM_eNB=1
 NUM_TRIALS=3
 
-def execute(oai, logfile):
+def execute(oai, user, pw, logfile):
     
     case = '02'
     oai.send('cd $OPENAIR_TARGETS/SIMU/USER')
@@ -95,12 +95,19 @@ def execute(oai, logfile):
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
                 conf = '-a -A AWGN -u' + str(i+1) +' -b'+ str(j+1)
-                oai.send_nowait('sudo -E ./oaisim.rel8.nas ' + conf + ' > /dev/null &')
+                if user == 'root' :
+                    oai.send_nowait('./oaisim.rel8.nas ' + conf + ' > /dev/null &')
+                else :    
+                    oai.send_nowait('echo '+pw+ ' | sudo -S -E ./oaisim.rel8.nas ' + conf + ' > /dev/null &')
                 time.sleep(2)
                 for k in range(NUM_TRIALS) :
                     oai.send_expect('ping 10.0.'+str(j+1)+'.'+str(NUM_eNB+i+1) + ' -c ' +  str(random.randint(2, 10))+ ' -s ' + str(random.randint(128, 1500)), ' 0% packet loss', 70)
-                oai.send('sudo pkill oaisim')
-                oai.send('sudo pkill oaisim.rel8.nas')
+                if user == 'root' :
+                    oai.send('pkill oaisim')
+                    oai.send('pkill oaisim.rel8.nas')
+                else :
+                    oai.send('echo '+pw+ ' | sudo -S pkill oaisim')
+                    oai.send('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas')
 
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)

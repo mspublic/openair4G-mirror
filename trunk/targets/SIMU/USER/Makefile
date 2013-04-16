@@ -262,6 +262,10 @@ ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
 
+test_nasmesh_fix:
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
+	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
+	(cp $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko . )
 nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
