@@ -7,8 +7,11 @@
 #include "defs.h"
 #include "extern_3GPPinterleaver.h"
 #include <stdlib.h>
+#ifdef __SSE4__
 #include "smmintrin.h"
-
+#else
+#define _mm_insert_epi8(x,y,z) 
+#endif
 //#define DEBUG_TURBO_ENCODER 1
 #define CALLGRIND 1
 unsigned short threegpplte_interleaver_output;
