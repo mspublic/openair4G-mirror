@@ -77,7 +77,7 @@ def execute(oai, user, pw, logfile):
         
     try:
         test = '02'
-        name = 'Run oai.rel8.abs'
+        name = 'Run oai.rel8.abs.rrc'
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
@@ -116,7 +116,7 @@ def execute(oai, user, pw, logfile):
         
     try:
         test = '04'
-        name = 'Run oai.rel8.phy'
+        name = 'Run oai.rel8.phy.rrc'
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
@@ -129,7 +129,7 @@ def execute(oai, user, pw, logfile):
 
     try:
         test = '05'
-        name = 'Run oai.rel10.abs'
+        name = 'Run oai.rel10.abs.rrc'
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
@@ -142,7 +142,7 @@ def execute(oai, user, pw, logfile):
 
     try:
         test = '06'
-        name = 'Run oai.rel10.phy'
+        name = 'Run oai.rel10.phy.rrc'
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
