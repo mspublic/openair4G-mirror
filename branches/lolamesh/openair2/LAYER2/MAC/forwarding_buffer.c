@@ -641,23 +641,26 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
  mem_element_t *elementP;
  
  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+ if (data == NULL)
+   return 0 ;
+
  elementP = malloc(sizeof(struct mem_element_t));
  
  if (elementP == NULL || mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
-	LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
-	return 0;
+   LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
+   return 0;
  }
  else{
-	elementP->seq_num = seq_num;
-	elementP->pdu_size = pdu_size;
-	elementP->HARQ_proccess_ID = HARQ_proccess_ID;
-
-	LOG_D(MAC," mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n)",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
-	
-	 if(mac_buffer_add_tail(Mod_id, b_index, elementP) == 1)
-		return 1;
-	 else
-		return 0;
+   elementP->seq_num = seq_num;
+   elementP->pdu_size = pdu_size;
+   elementP->HARQ_proccess_ID = HARQ_proccess_ID;
+   
+   LOG_D(MAC," mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n)",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
+   
+   if(mac_buffer_add_tail(Mod_id, b_index, elementP) == 1)
+     return 1;
+   else
+     return 0;
  }
 }
 

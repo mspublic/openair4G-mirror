@@ -227,7 +227,7 @@ int mac_forwarding_add_entry(u8 Mod_id,
   int ret = 0;
   int i = 0;
   int existing_entry = 0;
-  u8 current_vlid = 0;
+  u8 current_vlid = 255;
 
   forwarding_Table *ft= (eNB_flag==1) ? &eNB_forwardingTable[Mod_id] : &UE_forwardingTable[Mod_id];
 
@@ -334,6 +334,7 @@ int mac_forwarding_get_output_CORNTI(u8 Mod_id,
   return output_cornti;
   
 }
+
 
 //TCS LOLAmesh
 /* Get the output CORNTI associated to an input CORNTI

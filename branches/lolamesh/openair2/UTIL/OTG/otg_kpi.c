@@ -138,8 +138,8 @@ char traffic_type[12];
   FILE *file;
   file = fopen("log_OTG.txt", "w"); 
 #else   // Maybe to do modifo log function in order to clear file before a new write !!!! 
-FILE *fc;
-fc=fopen("/tmp/otg.log","w");;
+  FILE *fc;
+  fc=fopen("/tmp/otg.log","w");;
   if(fc!=0) 
     fclose(fc);
 #endif

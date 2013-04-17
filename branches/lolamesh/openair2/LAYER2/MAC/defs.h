@@ -179,22 +179,22 @@ typedef struct {
 
 
 typedef struct {
-  u16 CORNTI;
-  u8 SN;
-  u8 Buffer_size; // CONECT: get the total size, LOLA: get the first element SN an
-} __attribute__((__packed__))CO_BSR_SHORT;
+  u32 CORNTI:16;
+  u8 SN:8;
+  u8 Buffer_size:8; // CONECT: get the total size, LOLA: get the first element SN an
+} __attribute__((__packed__))COBSR_SHORT;
 
 typedef struct {
-  u16 CORNTI;
-  u8 SN3;
-  u8 Buffer_size3;
-  u8 SN2;
-  u8 Buffer_size2;
-  u8 SN1;
-  u8 Buffer_size1;
-  u8 SN0;
-  u8 Buffer_size0;
-} __attribute__((__packed__))CO_BSR_LONG;
+  u16 CORNTI:16;
+  u8 SN3:8;
+  u8 Buffer_size3:8;
+  u8 SN2:8;
+  u8 Buffer_size2:8;
+  u8 SN1:8;
+  u8 Buffer_size1:8;
+  u8 SN0:8;
+  u8 Buffer_size0:8;
+} __attribute__((__packed__))COBSR_LONG;
 
 typedef struct {
   u8 TA:6;
@@ -445,10 +445,12 @@ typedef struct {
   u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcid
   u16 BSR_bytes[MAX_NUM_LCID];
-  /// buffer status for each co/bsr
-  u8  COBSR;
+  /// co seq num[4]
+  u16  COSN[4];
+ /// buffer status for each co/bsr
+  u8  COBSR[4];
   /// bytes in 
-  u16 COBSR_bytes;
+  //  u16 COBSR_bytes[4];
   /// short bsr lcid
   u8  BSR_short_lcid;
   /// SR pending as defined in 36.321
@@ -944,7 +946,7 @@ in the ULSCH buffer.
 @param truncated_bsr Pointer to Truncated BSR command (NULL means not present in payload)
 @param short_bsr Pointer to Short BSR command (NULL means not present in payload)
 @param long_bsr Pointer to Long BSR command (NULL means not present in payload)
-@param co_seq_num, sequence number of the MAC PDU
+@param short cobsr, the bsr from the mac buffer 
 @param post_padding Number of bytes for padding at the end of MAC PDU
 @returns Number of bytes used for header
 */
@@ -958,7 +960,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 				    BSR_SHORT *truncated_bsr,
 				    BSR_SHORT *short_bsr,
 				    BSR_LONG *long_bsr,
-				    unsigned short co_seq_num,
+				    COBSR_SHORT *short_cobsr,
 				    unsigned short post_padding);
 
 /* \brief Parse header for UL-SCH.  This function parses the received UL-SCH header as described
@@ -1008,6 +1010,8 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 */
 u8 get_bsr_len (u8 Mod_id, u16 buflen, u8 eNB_index);
 
+u8 get_cobsr_len (u8 Mod_id, u16 buflen, u8 eNB_index);
+
 /*! \fn  BSR_SHORT *  get_bsr_short(u8 Mod_id, u8 bsr_len)
 \brief get short bsr level
 \param[in] Mod_id instance of the UE
@@ -1033,6 +1037,7 @@ BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 */
 void update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 eNB_index);
 
+void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti);
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
 \param[in] *table Pointer to BSR table
