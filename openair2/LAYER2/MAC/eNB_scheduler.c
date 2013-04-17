@@ -675,7 +675,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = CO_SEQ_NUM_LCID;
      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = co_seq_num;
      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 0;
-    
+     LOG_D(MAC,"[eNB] adding CO_SEQ_NUM CE with LCID %d and sn %d\n", CO_SEQ_NUM_LCID, co_seq_num);
     last_size=3;
 
     //Control Element
@@ -3880,9 +3880,11 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
   }// if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD)
   
   // This is an allocated UE_id
+  /* // RNTI is checked before entring this func
   rnti = find_UE_RNTI(Mod_id,next_ue);
   if (rnti==0)
     return;
+  */
   //continue;
   
   eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
@@ -4159,7 +4161,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 	if (sdu_lengths[num_sdus] < 128)
 	  header_len_codtch=2;
 	num_sdus++;
-	eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[vlid]+=1; // cornti_index 
+	eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[vlid]++; // cornti_index 
       }
       else {
 	header_len_codtch = 0;
@@ -4256,7 +4258,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 				     ta_len,      // timing advance
 				     NULL,                                  // contention res id
 				     co_flag,
-				     eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[co_lcid],
+				     eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[vlid],
 				     padding,
 				     post_padding);
 #ifdef DEBUG_eNB_SCHEDULER
@@ -4264,7 +4266,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    ta_len,next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch,
 	    header_len_codtch,
-	    (header_len_codtch > 0) ? eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[co_lcid]:0);
+	    (co_flag) ? eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[vlid]:0);
 #endif
       /*
 	msg("[MAC][eNB %d] First 16 bytes of DLSCH : \n");
@@ -4510,10 +4512,9 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	}
       }
       if (! cornti_served){
+	LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling UE %d, cornti %x, nb_available_rb %d ncc %d ncc_used %d\n",
+	      Mod_id,frame,subframe,UE_id,cornti, *nb_available_rb,*nCCE, *nCCE_used);
 	schedule_ue(Mod_id,cornti,1,UE_id,frame,subframe,pre_nb_available_rbs,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
-        LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling UE %d, cornti %u nb_available_rb %d ncc %d ncc_used %d\n",
-	    Mod_id,frame,subframe,UE_id,cornti, *nb_available_rb,*nCCE, *nCCE_used);
-    
       }
       served_cornti[i]=cornti;
     }

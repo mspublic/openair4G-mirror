@@ -717,7 +717,7 @@ int	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_inde
     	  // MAC/PHY Configuration
 	cornti = (u16)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->co_RNTI;
 	vlid = (u8)*radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->virtualLinkID;
-	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][--- MAC_CONFIG_CO_REQ (CODRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %u and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
+	LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][--- MAC_CONFIG_CO_REQ (CODRB %d eNB %d) --->][MAC_UE][MOD %02d][] Configuring DRB %d for collabortaive communications with CORNTI = %x and VLID = %u\n",frame,Mod_id, DRB_id, eNB_index, Mod_id, DRB_id, cornti, vlid);
 
     	  /* Configure the forwarding table with the given vlid and cornti */
 	ret=rrc_mac_config_co_req(Mod_id,0, eNB_index,cornti,vlid);

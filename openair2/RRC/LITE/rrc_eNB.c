@@ -676,7 +676,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
 					 NULL,
 					 0); 
 
-  LOG_D(RRC,"[eNB %d]Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %u, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, vlid);
+  LOG_D(RRC,"[eNB %d]Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for collaborative RB (bytes %d, UE id %d, cornti %x, vlid %u)\n",Mod_id,frame, size, UE_index, cornti, vlid);
   LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][--- RLC_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d) --->][RLC][MOD %02d][RB %02d]\n",frame, Mod_id, size, UE_index, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
   
   /* Send data to lower layer (PDCP) */

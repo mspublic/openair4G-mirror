@@ -263,7 +263,9 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     vlid = mac_forwarding_get_vlid(cornti);
     dst_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,eNB_index,cornti);
     dst_eNB = mac_forwarding_get_output_eNB(Mod_id,eNB_index,vlid);
-    LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d o_cornti %x (eNB %d, %d bytes)\n", Mod_id, frame,vlid, dst_cornti, eNB_index,size);
+    LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d, i_cornti %x -> o_cornti %x, src_eNB %d-> dst->eNB %d (%d bytes)\n", 
+	  Mod_id, frame,vlid, cornti, dst_cornti, 
+	  eNB_index,dst_eNB, size);
     if (mac_buffer_data_ind(Mod_id, dst_eNB, dst_cornti, (char *)payload_ptr,UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ) 
       LOG_D (MAC, "[UE %d] Frame %d : PDU is stored in the MAC buffer \n", Mod_id);
     else 
@@ -418,7 +420,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 				    BSR_SHORT *truncated_bsr,
 				    BSR_SHORT *short_bsr,
 				    BSR_LONG *long_bsr,
-				    unsigned short co_seq_num,
+				    COBSR_SHORT *short_cobsr,
 				    unsigned short post_padding) {
 
   SCH_SUBHEADER_FIXED *mac_header_ptr = (SCH_SUBHEADER_FIXED *)mac_header;
@@ -432,26 +434,6 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   LOG_T(MAC,"\n");
 #endif
   ce_ptr = &mac_header_control_elements[0];
-
-  if (co_seq_num != 0) {
-    if (first_element>0) {
-      mac_header_ptr->E = 1;
-      mac_header_ptr++;
-    }
-    else {
-      first_element=1;
-    }
-    mac_header_ptr->R = 0;
-    mac_header_ptr->E = 0;
-    mac_header_ptr->LCID = CO_SEQ_NUM_LCID;
-    last_size=1;
-    
-    //Control Element
-    ((CO_SEQ_NUM *)ce_ptr)->seq_num1=(co_seq_num>>8)&0xff; 
-    ((CO_SEQ_NUM *)ce_ptr)->seq_num0=co_seq_num&0xff; 
-    
-    ce_ptr+=sizeof(CO_SEQ_NUM);
-  }
 
   if ((short_padding == 1) || (short_padding == 2)) {
     mac_header_ptr->R    = 0;
@@ -585,6 +567,26 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
   }
   //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
+ else if (short_cobsr) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+#ifdef DEBUG_HEADER_PARSING
+    LOG_D(MAC,"[UE] Scheduler SHORT CO BSR Header\n");
+#endif
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = CO_BSR_SHORT;
+    last_size=1;
+    *((COBSR_SHORT *)ce_ptr)=(*short_cobsr);
+    ce_ptr+=sizeof(COBSR_SHORT);
+
+    //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
+  }
 
   for (i=0;i<num_sdus;i++) {
 #ifdef DEBUG_HEADER_PARSING
@@ -717,6 +719,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0;
   u8 dcch_header_len_tmp=0, dtch_header_len_tmp=0;
   u8 bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
+  u8 cobsr_header_len=0, cobsr_ce_len=0, cobsr_len=0; 
   u8 phr_header_len=0, phr_ce_len=0,phr_len=0;
   u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
@@ -728,11 +731,15 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   BSR_LONG  *bsr_l=&bsr_long;
   POWER_HEADROOM_CMD phr;
   POWER_HEADROOM_CMD *phr_p=&phr;
+  COBSR_SHORT co_bsr_short;
+  COBSR_LONG co_bsr_long;
+  COBSR_SHORT *cobsr_s=&co_bsr_short;
+  COBSR_LONG  *cobsr_l=&co_bsr_long;
   unsigned short short_padding=0, post_padding=0;
   int lcid;
   int j; // used for padding
   // Compute header length
-
+ 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
 
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
@@ -740,6 +747,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   // hypo length,in case of long header skip the padding byte
   dtch_header_len=(buflen > 128 ) ? 3 : 2 ; //sizeof(SCH_SUBHEADER_LONG)-1 : sizeof(SCH_SUBHEADER_SHORT);
   bsr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
+  cobsr_header_len = 1;
   phr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
   bsr_ce_len = get_bsr_len (Mod_id, buflen, eNB_index);
   if (bsr_ce_len > 0 ){
@@ -754,7 +762,14 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   }else
     phr_len=0;
   
-    // check for UL bandwidth requests and add SR control element
+  cobsr_ce_len = get_cobsr_len(Mod_id, buflen, eNB_index);
+   if (bsr_ce_len > 0 ){
+     cobsr_len = cobsr_ce_len + cobsr_header_len;
+     LOG_I(MAC,"[UE %d] header size info: cobsr %d (ce%d,hdr%d) buff_len %d\n",
+	   Mod_id, cobsr_len, cobsr_ce_len,cobsr_header_len, buflen);
+   } else 
+     cobsr_len =0;
+     // check for UL bandwidth requests and add SR control element
     
   // Check for DCCH first
   sdu_lengths[0]=0;
@@ -762,7 +777,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				    (eNB_index*MAX_NUM_RB) + DCCH,
-				    (buflen-dcch_header_len-bsr_len-phr_len));
+				    (buflen-dcch_header_len-bsr_len-phr_len-cobsr_len));
     LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to send to eNB %d (Transport Block size %d, mac header len %d)\n",
 	  Mod_id,frame, rlc_status.bytes_in_buffer,eNB_index,buflen,dcch_header_len);
     
@@ -787,7 +802,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				    (eNB_index*MAX_NUM_RB) + DCCH1,
-				    (buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
+				    (buflen-cobsr_len-bsr_len-phr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
     
     LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH1 -> ULSCH, RRC message has %d bytes to send to eNB %d (Transport Block size %d, mac header len %d)\n",
 	  Mod_id,frame, rlc_status.bytes_in_buffer,eNB_index,buflen,dcch1_header_len);
@@ -808,7 +823,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   
   // now check for other logical channels
   if ((UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR_bytes[DTCH] > 0) &&
-      ((bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len+sdu_length_total) <= buflen)){
+      ((cobsr_len+bsr_len+phr_len+dcch_header_len+dcch1_header_len+dtch_header_len+sdu_length_total) <= buflen)){
     
     // optimize the dtch header lenght
     //if ((UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH] > 128) &&   
@@ -821,7 +836,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     */
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,
 				    (eNB_index*MAX_NUM_RB) + DTCH,
-				    buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
+				    buflen-cobsr_len-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
     
     LOG_D(MAC,"[UE %d] Frame %d : UL-DTCH -> ULSCH, %d bytes to send (Transport Block size %d, mac header len %d, BSR byte[DTCH] %d)\n",
 	  Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dtch_header_len,UE_mac_inst[Mod_id].scheduling_info[eNB_index].BSR_bytes[DTCH]);
@@ -875,6 +890,20 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   }else
     phr_p=NULL;
   
+  if ( (cobsr_ce_len == sizeof(CO_BSR_SHORT)) || 
+       (cobsr_ce_len == sizeof(CO_BSR_LONG))) {
+    cobsr_l = NULL;
+    cobsr_s->CORNTI=UE_mac_inst[Mod_id].corntis.array[0];
+    cobsr_s->SN=UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[0];
+    cobsr_s->Buffer_size=UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[0];
+    //  } else if (cobsr_ce_len == sizeof(CO_BSR_LONG)){
+    //cobsr_s = NULL;
+    
+    }  else {
+    cobsr_s = NULL;
+    cobsr_l = NULL ;
+  }
+  
   // adjust the header length 
   dcch_header_len_tmp = dcch_header_len;
   dtch_header_len_tmp = dtch_header_len;
@@ -913,7 +942,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   NULL,  // truncated bsr
 					   bsr_s, // short bsr
 					   bsr_l,
-					   0,
+					   cobsr_s,
 					   post_padding); // long_bsr
     LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  dcch_header_len %d, dtch_header_len %d, padding %d,post_padding %d, bsr len %d, phr len %d, reminder %d \n",
 	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset, dcch_header_len,  dtch_header_len,
@@ -977,14 +1006,14 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index) {
 
   int lcid; // lcid index
-
+  int i;
   int TTI= 1;
   int bucketsizeduration;
   int bucketsizeduration_max;
   mac_rlc_status_resp_t rlc_status[11];
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
-  
-  //Mac_rlc_xface->frame=frame;
+  u16 nb_elements=0, cornti=0x0;
+//Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   //if (subframe%5 == 0)
   pdcp_run(frame, 0, Mod_id, eNB_index);  
@@ -1083,7 +1112,16 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     }
     update_bsr(Mod_id, frame, lcid, eNB_index);
   }
-
+  for (i=0;i<UE_mac_inst[Mod_id].corntis.count;i++) {
+    cornti = UE_mac_inst[Mod_id].corntis.array[i];
+    nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
+    if (nb_elements > 0 ) {
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=1;
+      LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for eNB %d and cornti %x PUSCH is pending for MAC buffer with the total elements of %d\n",
+	    Mod_id, frame,subframe,eNB_index, cornti,nb_elements);
+    }
+    update_cobsr (Mod_id, eNB_index, cornti);
+  }
   // UE has no valid phy config dedicated ||  no valid/released  SR
   if ((UE_mac_inst[Mod_id].scheduling_info[eNB_index].physicalConfigDedicated == NULL)) {
     // cancel all pending SRs
@@ -1158,6 +1196,52 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
     LOG_D(MAC,"[UE %d] Prepare a %s (Transport Block Size %d, MAC pdu Size %d) \n", 
 	  Mod_id, map_int_to_str(BSR_names, bsr_len), buflen, pdu);
   return bsr_len;
+}
+u8 get_cobsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
+
+  u8 i;
+  u16 nb_elements;
+  u16 cornti;
+  u8 cobsr_len=0;
+  for (i=0;i<UE_mac_inst[Mod_id].corntis.count;i++) {
+    cornti = UE_mac_inst[Mod_id].corntis.array[i];
+    nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
+    if (nb_elements > 0 ) 
+      cobsr_len+=nb_elements ;
+  }
+  if (cobsr_len > 0)
+    cobsr_len = ((cobsr_len > 1  ) ? sizeof(CO_BSR_LONG) :  sizeof(CO_BSR_SHORT)) ;
+ return cobsr_len;
+}
+#define MAX_NB_ELEMENTS_MAC_BUFFER 4
+void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti) {
+
+  u8 i,j;
+  u16 nb_elements;
+  u16 **co_seq_num=malloc(MAX_NB_ELEMENTS_MAC_BUFFER * sizeof(u16*));
+  u16 **co_size=malloc(MAX_NB_ELEMENTS_MAC_BUFFER * sizeof(u16*));
+  
+  for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){
+    co_seq_num[i]=malloc(sizeof(u16));
+    co_size[i]=malloc(sizeof(u16));
+  } 
+
+  nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
+  if (nb_elements > MAX_NB_ELEMENTS_MAC_BUFFER )
+    nb_elements=MAX_NB_ELEMENTS_MAC_BUFFER;
+  if (nb_elements > 0 ) 
+    mac_buffer_stat_ind(Mod_id, eNB_index, cornti, &nb_elements, co_seq_num, co_size);
+  
+  for (j=0; j < nb_elements; j ++) {
+    UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, co_size[j]);
+    UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j]=  (u8) co_seq_num[j];
+  }
+  
+  for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){
+     free(co_seq_num[i]);
+     free (co_size[i]);
+  } 
+       
 }
 
 
