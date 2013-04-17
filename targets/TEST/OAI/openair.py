@@ -75,6 +75,7 @@ class openair(core):
                     username = root 
                 if  not password:
                     password = username 
+                
                 self.oai = pexpect.spawn('ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=1" ' \
                                              + username + '@' + self.address)
                 index = self.oai.expect(['password:', pexpect.TIMEOUT], timeout=40)
