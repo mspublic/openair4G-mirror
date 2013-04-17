@@ -129,7 +129,7 @@ class core:
     # 2) wait for a return prompt. Don't capture the response.
     # 3) Check for error or timeout.
     # ************************************************************
-    def send(self, command, timeout = 20, rsp1=None, rsp2=None):
+    def send(self, command, timeout = 50, rsp1=None, rsp2=None):
         if not rsp1:
             rsp1 = self.prompt1
         if not rsp2:
@@ -165,7 +165,7 @@ class core:
     # 2) wait for either rsp1 or rsp2 is found (normally prompts)
     # 3) return everything seen before that
     # ************************************************************
-    def send_recv(self, command, timeout=15, rsp1=None, rsp2=None):
+    def send_recv(self, command, timeout=50, rsp1=None, rsp2=None):
         if not rsp1:
             rsp1 = self.prompt1
         if not rsp2:
@@ -188,7 +188,7 @@ class core:
     # 2) search for an expected pattern in the response
     # 3) return a error if not found
     # **************************************************************
-    def send_expect(self, command, expect, delay = 5, rsp1=None, rsp2=None):
+    def send_expect(self, command, expect, delay = 50, rsp1=None, rsp2=None):
         rsp = self.send_recv(command, delay, rsp1, rsp2)
     #   print rsp
         if  (rsp.find(expect) != -1):

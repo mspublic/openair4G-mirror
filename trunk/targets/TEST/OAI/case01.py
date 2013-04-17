@@ -44,14 +44,14 @@ makerr2 = 'Error 1'
 def execute(oai, user, pw, logfile):
     
     case = '01'
-    oai.send('cd $OPENAIR_TARGETS')   
+    oai.send('cd $OPENAIR_TARGETS;')   
   
     try:
         test = '00'
-        name = 'Compile oai.svn.add'
+        name = 'Check oai.svn.add'
         conf = 'svn st -q | grep makefile'
         diag = 'Makefile(s) changed. If you are adding a new file, make sure that it is added to the svn'
-        rsp = oai.send_recv('svn st -q | grep -i makefile') 
+        rsp = oai.send_recv('svn st -q | grep -i makefile;') 
         for item in rsp.split("\n"):
             if "Makefile" in item:
                 rsp2=item.strip() + '\n'
@@ -63,18 +63,18 @@ def execute(oai, user, pw, logfile):
     else:
         log.ok(case, test, name, conf, '', logfile)
     
-    oai.send('cd SIMU/USER')   
+    oai.send('cd SIMU/USER;')   
   
     try:
         test = '01'
-        name = 'Compile oai.rel8'
+        name = 'Compile oai.rel8.make'
         conf = 'make'
         diag = "check the compilation errors for oai"
-        oai.send('make cleanall')
-        oai.send('make cleanasn1')
-        oai.send('rm -f ./oaisim.rel8')
-        oai.send_expect_false('make -j4', makerr1,  300)
-        oai.send('cp ./oaisim ./oaisim.rel8')
+        oai.send('make cleanall;')
+        oai.send('make cleanasn1;')
+        oai.send('rm -f ./oaisim.rel8;')
+        oai.send_expect_false('make -j4;', makerr1,  500)
+        oai.send('cp ./oaisim ./oaisim.rel8;')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
@@ -82,21 +82,21 @@ def execute(oai, user, pw, logfile):
         
     try:
         test = '02'
-        name = 'Compile oai.rel8.nas'
-        conf = 'make nasmesh_fix;make NAS=1'
+        name = 'Compile oai.rel8.nas.make'
+        conf = 'make nasmesh_fix; make NAS=1'
         diag = 'check the compilation errors for oai and nas driver'
-        oai.send('make cleanall')
-        oai.send('rm -f ./oaisim.rel8.nas')
-        oai.send('rm -f ./nasmesh')
-        oai.send_expect_false('make NAS=1 -j4', makerr1,  300)
-        oai.send('cp ./oaisim ./oaisim.rel8.nas')
+        oai.send('make cleanall;')
+        oai.send('rm -f ./oaisim.rel8.nas;')
+        oai.send('rm -f ./nasmesh;')
+        oai.send_expect_false('make NAS=1 -j4;', makerr1,  500)
+        oai.send('cp ./oaisim ./oaisim.rel8.nas;')
         if user == 'root' : 
-            oai.send_nowait('rmmod nasmesh')
-            oai.send_expect_false('make nasmesh_fix', makerr1,  30)
+            oai.send_nowait('rmmod nasmesh;')
+            oai.send_expect_false('make nasmesh_fix;', makerr1,  60)
         else :
-            oai.send_nowait('echo '+pw+ ' | sudo -S rmmod nasmesh')
-            oai.send_expect_false('make test_nasmesh_fix', makerr1,  30)
-            oai.send_nowait('echo '+pw+ ' | sudo -S insmod ./nasmesh.ko')
+            oai.send_nowait('echo '+pw+ ' | sudo -S rmmod nasmesh;')
+            oai.send_expect_false('make test_nasmesh_fix;', makerr1,  60)
+            oai.send_nowait('echo '+pw+ ' | sudo -S insmod ./nasmesh.ko;')
         
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -105,14 +105,14 @@ def execute(oai, user, pw, logfile):
     
     try:
         test = '03'
-        name = 'Compile oai.rel10' 
+        name = 'Compile oai.rel10.make' 
         conf = 'make Rel10=1'
         diag = 'check the compilation errors for Rel10'
-        oai.send('make cleanall')
-        oai.send('make cleanasn1')
-        oai.send('rm -f ./oaisim.rel10')
-        oai.send_expect_false('make Rel10=1 -j4', makerr1,  300)
-        oai.send('cp ./oaisim ./oaisim.rel10')
+        oai.send('make cleanall;')
+        oai.send('make cleanasn1;')
+        oai.send('rm -f ./oaisim.rel10;')
+        oai.send_expect_false('make Rel10=1 -j4;', makerr1,  500)
+        oai.send('cp ./oaisim ./oaisim.rel10;')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:

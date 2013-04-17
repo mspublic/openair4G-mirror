@@ -47,7 +47,8 @@ NUM_TRIALS=3
 def execute(oai, user, pw, logfile):
     
     case = '02'
-    oai.send('cd $OPENAIR_TARGETS/SIMU/USER')
+    oai.send('cd $OPENAIR_TARGETS;')
+    oai.send('cd SIMU/USER;')
     
     try:
         test = '00'
@@ -82,7 +83,7 @@ def execute(oai, user, pw, logfile):
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
                 conf = '-a -A AWGN -n' + str((i+1+j) * 40) + ' -u' + str(i+1) +' -b'+ str(j+1)
-                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 40)
+                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
@@ -101,13 +102,13 @@ def execute(oai, user, pw, logfile):
                     oai.send_nowait('echo '+pw+ ' | sudo -S -E ./oaisim.rel8.nas ' + conf + ' > /dev/null &')
                 time.sleep(2)
                 for k in range(NUM_TRIALS) :
-                    oai.send_expect('ping 10.0.'+str(j+1)+'.'+str(NUM_eNB+i+1) + ' -c ' +  str(random.randint(2, 10))+ ' -s ' + str(random.randint(128, 1500)), ' 0% packet loss', 70)
+                    oai.send_expect('ping 10.0.'+str(j+1)+'.'+str(NUM_eNB+i+1) + ' -c ' +  str(random.randint(2, 10))+ ' -s ' + str(random.randint(128, 1500)), ' 0% packet loss', 300)
                 if user == 'root' :
-                    oai.send('pkill oaisim')
-                    oai.send('pkill oaisim.rel8.nas')
+                    oai.send('pkill oaisim;')
+                    oai.send('pkill oaisim.rel8.nas;')
                 else :
-                    oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim ')
-                    oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas')
+                    oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim ;')
+                    oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas;')
 
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -120,8 +121,8 @@ def execute(oai, user, pw, logfile):
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
-                conf = '-A AWGN -n' + str((i+1+j) * 30) + ' -u' + str(i+1) +' -b'+ str(j+1) + ' -s15'
-                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
+                conf = '-A AWGN -n' + str((i+1+j) * 50) + ' -u' + str(i+1) +' -b'+ str(j+1) + ' -s15'
+                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
@@ -133,8 +134,8 @@ def execute(oai, user, pw, logfile):
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
-                conf = '-a -A AWGN -n' + str((i+1+j) * 30) + ' -u' + str(i+1) +' -b'+ str(j+1)
-                oai.send_expect('./oaisim.rel10 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
+                conf = '-a -A AWGN -n' + str((i+1+j) * 50) + ' -u' + str(i+1) +' -b'+ str(j+1)
+                oai.send_expect('./oaisim.rel10 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
@@ -146,8 +147,8 @@ def execute(oai, user, pw, logfile):
         diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
-                conf = '-A AWGN -s 15 -x 1 -n' + str((i+1+j) * 30) + ' -u' + str(i+1) +' -b'+ str(j+1)
-                oai.send_expect('./oaisim.rel10 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
+                conf = '-A AWGN -s 15 -x 1 -n' + str((i+1+j) * 50) + ' -u' + str(i+1) +' -b'+ str(j+1)
+                oai.send_expect('./oaisim.rel10 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
