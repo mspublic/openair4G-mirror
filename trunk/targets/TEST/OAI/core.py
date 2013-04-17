@@ -129,7 +129,7 @@ class core:
     # 2) wait for a return prompt. Don't capture the response.
     # 3) Check for error or timeout.
     # ************************************************************
-    def send(self, command, timeout = 10, rsp1=None, rsp2=None):
+    def send(self, command, timeout = 20, rsp1=None, rsp2=None):
         if not rsp1:
             rsp1 = self.prompt1
         if not rsp2:

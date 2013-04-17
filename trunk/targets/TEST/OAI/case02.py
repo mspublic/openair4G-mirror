@@ -106,8 +106,8 @@ def execute(oai, user, pw, logfile):
                     oai.send('pkill oaisim')
                     oai.send('pkill oaisim.rel8.nas')
                 else :
-                    oai.send('echo '+pw+ ' | sudo -S pkill oaisim')
-                    oai.send('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas')
+                    oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim ')
+                    oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas')
 
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)

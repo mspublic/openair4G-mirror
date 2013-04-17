@@ -73,8 +73,8 @@ oai = openair('localdomain','localhost')
 
 try: 
     user = getpass.getuser()
-    print '*******Note that the user '+user+' should be a sudoer *******\n\n'
-    print '*******Connecting to the localhost to perform the test (prompt is '+prompt+')*******\n'
+    print '\n*******Note that the user <'+user+'> should be a sudoer *******\n'
+    print '*******Connecting to the localhost to perform the test *******\n'
    
     if not pw :
         print "username: " + user 
@@ -96,7 +96,7 @@ ctime=datetime.datetime.utcnow().strftime("%Y-%m-%d.%Hh%M")
 logfile = user+'.'+test+'.'+ctime+'.txt'  
 #print '=================start the ' + test + ' at ' + ctime + '=================\n'
 print 'Results will be reported in log file : ' + logfile
-log.writefile(logfile,'====================start'+test+' at ' + ctime + '=======================')
+log.writefile(logfile,'====================start'+test+' at ' + ctime + '=======================\n')
 log.set_debug_level(debug)
 
 oai.kill(pw)   
