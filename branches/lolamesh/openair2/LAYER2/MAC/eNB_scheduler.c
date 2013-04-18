@@ -451,7 +451,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
       not_done = 0;
 
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
-    if (lcid < EXTENDED_POWER_HEADROOM) { 
+    if (lcid < CO_BSR_SHORT){ // EXTENDED_POWER_HEADROOM) { 
       if (not_done==0) { // last MAC SDU, length is implicit
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;	
@@ -485,7 +485,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	rx_ces[num_ces] = lcid;
 	num_ces++;
 	mac_header_ptr++;	
-	if (lcid==LONG_BSR)
+	if ((lcid==LONG_BSR) || (lcid==CO_BSR_SHORT))
 	  ce_len+=4;
 	else if (lcid==CRNTI)
 	  ce_len+=2;

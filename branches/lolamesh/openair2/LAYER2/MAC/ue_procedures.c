@@ -763,7 +763,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     phr_len=0;
   
   cobsr_ce_len = get_cobsr_len(Mod_id, buflen, eNB_index);
-   if (bsr_ce_len > 0 ){
+   if (cobsr_ce_len > 0 ){
      cobsr_len = cobsr_ce_len + cobsr_header_len;
      LOG_I(MAC,"[UE %d] header size info: cobsr %d (ce%d,hdr%d) buff_len %d\n",
 	   Mod_id, cobsr_len, cobsr_ce_len,cobsr_header_len, buflen);
@@ -896,6 +896,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     cobsr_s->CORNTI=UE_mac_inst[Mod_id].corntis.array[0];
     cobsr_s->SN=UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[0];
     cobsr_s->Buffer_size=UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[0];
+    LOG_D(MAC,"[UE %d] COBSR cornti %x SN %d BSR level %d \n",
+	  Mod_id, cobsr_s->CORNTI,cobsr_s->SN,cobsr_s->Buffer_size );
     //  } else if (cobsr_ce_len == sizeof(CO_BSR_LONG)){
     //cobsr_s = NULL;
     
@@ -915,8 +917,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   // build the ulsch header 
   
-  if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
-    short_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
+  if ((buflen-cobsr_len-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
+    short_padding = buflen-cobsr_len-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
     post_padding = 0;
   }
   else {
@@ -926,7 +928,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     else 
       dtch_header_len= dtch_header_len_tmp;
     
-    post_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
+    post_padding = buflen-cobsr_len-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
   }
  
   // Generate header
@@ -944,9 +946,9 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   bsr_l,
 					   cobsr_s,
 					   post_padding); // long_bsr
-    LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  dcch_header_len %d, dtch_header_len %d, padding %d,post_padding %d, bsr len %d, phr len %d, reminder %d \n",
+    LOG_D(MAC,"[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  dcch_header_len %d, dtch_header_len %d, padding %d,post_padding %d, bsr len %d, phr len %d, cobsr_len %d reminder %d \n",
 	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset, dcch_header_len,  dtch_header_len,
-	  short_padding,post_padding, bsr_len, phr_len,buflen-sdu_length_total-payload_offset);
+	  short_padding,post_padding, bsr_len, phr_len,cobsr_len, buflen-sdu_length_total-payload_offset);
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
     // fill remainder of DLSCH with random data
@@ -1117,7 +1119,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
     if (nb_elements > 0 ) {
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=1;
-      LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for eNB %d and cornti %x PUSCH is pending for MAC buffer with the total elements of %d\n",
+      LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for MAC buffer is pending eNB %d and cornti %x PUSCH, total elements of %d\n",
 	    Mod_id, frame,subframe,eNB_index, cornti,nb_elements);
     }
     update_cobsr (Mod_id, eNB_index, cornti);
@@ -1210,7 +1212,8 @@ u8 get_cobsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
       cobsr_len+=nb_elements ;
   }
   if (cobsr_len > 0)
-    cobsr_len = ((cobsr_len > 1  ) ? sizeof(CO_BSR_LONG) :  sizeof(CO_BSR_SHORT)) ;
+    cobsr_len = sizeof(COBSR_SHORT);//
+  //     cobsr_len = ((cobsr_len > 1  ) ? sizeof(COBSR_LONG) :  sizeof(COBSR_SHORT)) ;
  return cobsr_len;
 }
 #define MAX_NB_ELEMENTS_MAC_BUFFER 4
@@ -1222,8 +1225,10 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti) {
   u16 **co_size=malloc(MAX_NB_ELEMENTS_MAC_BUFFER * sizeof(u16*));
   
   for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){
-    co_seq_num[i]=malloc(sizeof(u16));
+    co_seq_num[i]=malloc(sizeof(u16)); 
     co_size[i]=malloc(sizeof(u16));
+    *co_seq_num[i]=0; 
+    *co_size[i]=0;
   } 
 
   nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
@@ -1232,9 +1237,19 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti) {
   if (nb_elements > 0 ) 
     mac_buffer_stat_ind(Mod_id, eNB_index, cornti, &nb_elements, co_seq_num, co_size);
   
-  for (j=0; j < nb_elements; j ++) {
-    UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, co_size[j]);
-    UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j]=  (u8) co_seq_num[j];
+  for (j=0; j <  MAX_NB_ELEMENTS_MAC_BUFFER; j ++) {
+    if (j < nb_elements ) {
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, *co_size[j]);
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j]=  (u8) *co_seq_num[j];
+      LOG_D(MAC,"[UE %d] updaing COBSR%d to (level %d, bytes %d) and COSN (%d,%d) to %d for eNB %d (nb element %d)\n", 
+	    Mod_id, 
+	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j],*co_size[j],
+	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j],*co_seq_num[j],
+	    eNB_index, nb_elements);
+    } else {
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j]=0;
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j]=0;
+    }
   }
   
   for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){

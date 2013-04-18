@@ -179,7 +179,7 @@ typedef struct {
 
 
 typedef struct {
-  u32 CORNTI:16;
+  u16 CORNTI:16;
   u8 SN:8;
   u8 Buffer_size:8; // CONECT: get the total size, LOLA: get the first element SN an
 } __attribute__((__packed__))COBSR_SHORT;
