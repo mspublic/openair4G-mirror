@@ -1014,7 +1014,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   int bucketsizeduration_max;
   mac_rlc_status_resp_t rlc_status[11];
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
-  u16 nb_elements=0, cornti=0x0;
+  int nb_elements=0, cornti=0x0;
 //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   //if (subframe%5 == 0)
@@ -1203,11 +1203,10 @@ u8 get_cobsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
 
   u8 i;
   u16 nb_elements;
-  u16 cornti;
   u8 cobsr_len=0;
   for (i=0;i<UE_mac_inst[Mod_id].corntis.count;i++) {
-    cornti = UE_mac_inst[Mod_id].corntis.array[i];
-    nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
+    nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, UE_mac_inst[Mod_id].corntis.array[i]);
+    
     if (nb_elements > 0 ) 
       cobsr_len+=nb_elements ;
   }
