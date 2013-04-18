@@ -152,6 +152,7 @@ void mac_buffer_print_2(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for d
 void mac_buffer_print_3(u8 Mod_id, u8 eNB_index, u16 cornti);  // used also for debugging
 void mac_buffer_print_4(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for debugging
 void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti);  // used also for debugging
+void mac_buffer_print_all_per_MR(u8 Mod_id); // used also for debugging
 
 mem_element_t *packet_list_find_pivot_seq_num(int seq_num, packet_list_t *listP, int *after);
 mem_element_t *packet_list_find_pivot_pdu_size(int pdu_size, packet_list_t *listP, int *after);

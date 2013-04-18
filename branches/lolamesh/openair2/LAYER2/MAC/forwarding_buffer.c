@@ -86,7 +86,8 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
 		}
 	 }
 	 if(flag == 1){
-		sprintf(string,"MR %d, (eNB_index %d, cornti %d)",Mod_id,eNB_index,cornti);
+		//sprintf(string,"MR %d, (eNB_index %d, cornti %d)",Mod_id,eNB_index,cornti);
+		sprintf(string," ");
 		strcpy(string1,"mac_buffer: ");
 		strcpy(string2,"packet_list: ");
 		strcat(string1,string);
@@ -381,8 +382,10 @@ void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 num
 
 void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 **seq_num, u16 **size){
  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
- if (b_index == -1 )
-   return ;
+ if(b_index == -1){
+	LOG_W(MAC,"[UE %d] Buffer for eNB_index %d and cornti %x does not exist\n",Mod_id,eNB_index,cornti);
+	return;
+ }
  if(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements!=0 && mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements >= *number_of_packets_asked ){
 	packet_list_get_info_from_the_first_elements(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p, *number_of_packets_asked, seq_num, size );
  }
@@ -426,9 +429,10 @@ mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_
  mem_element_t *help_tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
  avl_node_t *ptr_t,*ptr_k;
 
- if (b_index == -1)
-   return NULL;
-  
+ if(b_index == -1){
+	LOG_W(MAC,"[UE %d] Buffer for eNB_index %d and cornti %x does not exist\n",Mod_id,eNB_index,cornti); 
+	return NULL;
+ } 
  if(help_head==NULL){
    return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
  }
@@ -646,9 +650,11 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
  mem_element_t *elementP;
  
  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
- if ( (data == NULL) || (b_index == -1) )
-   return 0 ;
-
+ if ( (data == NULL) || (b_index == -1) ){
+	LOG_D(MAC,"[UE %d] mac_buffer_data_ind data==NULL\n");
+	//LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+	return 0 ;
+ }
  elementP = malloc(sizeof(struct mem_element_t));
  
  if (elementP == NULL || mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
@@ -725,8 +731,10 @@ void packet_list_print(packet_list_t *listP){
 void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti){
   s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
   mem_element_t *ptr_p;
-  if (b_index == -1 )
+  if (b_index == -1 ){
+	 //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
     return;
+	}
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
 	printf("\n\n%s | %s \n",mac_buffer_u[Mod_id].mac_buffer_g[b_index]->name,mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->name);
 	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id, eNB_index, cornti), mac_buffer_nb_elements(Mod_id, eNB_index, cornti));
@@ -744,6 +752,10 @@ void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti){
 
 void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti){
   s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti); 
+	if (b_index == -1 ){
+	 //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+	 return;
+	}
   mem_element_t *ptr_p, *head, *tail;
   tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
@@ -768,7 +780,11 @@ void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti){
 }
 
 void mac_buffer_print_2(u8 Mod_id, u8 eNB_index, u16 cornti){
-  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti); 
+  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+	if (b_index == -1 ){
+	 //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+	 return;
+	}
   mem_element_t *ptr_p;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
 	printf("\n\n%s | %s \n",mac_buffer_u[Mod_id].mac_buffer_g[b_index]->name, mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->name);
@@ -805,6 +821,10 @@ void mac_buffer_print_2(u8 Mod_id, u8 eNB_index, u16 cornti){
 
 void mac_buffer_print_3(u8 Mod_id, u8 eNB_index, u16 cornti){
   u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+	if (b_index == -1 ){
+	 //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+	 return;
+	}
   mem_element_t *ptr_p;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
 	int flag=0;
@@ -933,7 +953,11 @@ void mac_buffer_print_3(u8 Mod_id, u8 eNB_index, u16 cornti){
 
 
 void mac_buffer_print_4(u8 Mod_id, u8 eNB_index, u16 cornti){
-  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti); 
+  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+	if (b_index == -1 ){
+	 //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+	 return;
+	}
   mem_element_t *ptr_p, *ptr_h1,* ptr_h2;
 	avl_node_t *ptr_r1,* ptr_r2;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
