@@ -139,8 +139,8 @@ void generate_pucch(mod_sym_t **txdataF,
   u8 NRB2                      = frame_parms->pucch_config_common.nRB_CQI;
   u8 Ncs1_div_deltaPUCCH_Shift = frame_parms->pucch_config_common.nCS_AN;
 
-  u32 u0 = (frame_parms->Nid_cell % 30) + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-  u32 u1 = (frame_parms->Nid_cell % 30) + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  u32 u0 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1]) % 30;
+  u32 u1 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)]) % 30;
   u32 v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
   u32 v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   
@@ -465,8 +465,8 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   u8 NRB2                      = frame_parms->pucch_config_common.nRB_CQI;
   u8 Ncs1_div_deltaPUCCH_Shift = frame_parms->pucch_config_common.nCS_AN;
 
-  u32 u0 = (frame_parms->Nid_cell % 30) + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-  u32 u1 = (frame_parms->Nid_cell % 30) + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  u32 u0 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1]) % 30;
+  u32 u1 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)]) % 30;
   u32 v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
   u32 v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
 
