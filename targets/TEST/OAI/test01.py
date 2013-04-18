@@ -99,12 +99,12 @@ print 'Results will be reported in log file : ' + logfile
 log.writefile(logfile,'====================start'+test+' at ' + ctime + '=======================\n')
 log.set_debug_level(debug)
 
-oai.kill(pw)   
+oai.kill(user, pw)   
 # start te test cases 
 case01.execute(oai, user, pw, logfile)
 case02.execute(oai, user, pw, logfile)
 
-oai.kill(pw) 
+oai.kill(user, pw) 
 
 # perform the stats
 log.statistics(logfile)

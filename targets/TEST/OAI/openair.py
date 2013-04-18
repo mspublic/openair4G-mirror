@@ -68,7 +68,10 @@ class openair(core):
               
     def connect(self, username, password, prompt):
         self.prompt1 = self.shell_prompt
-        self.prompt2 = prompt
+        if not prompt :
+            self.prompt2 = self.prompt1
+        else :
+            self.prompt2 = prompt 
         while 1:
             try:
                 if  not username:
@@ -78,14 +81,19 @@ class openair(core):
                 
                 self.oai = pexpect.spawn('ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=1" ' \
                                              + username + '@' + self.address)
-                index = self.oai.expect(['password:', pexpect.TIMEOUT], timeout=40)
-                if index == 0 : 
-                    self.oai.sendline(password)
-                    index = self.oai.expect([re.escape(self.prompt1), pexpect.TIMEOUT], timeout=5)
-                    if index != 0:
-                        print 'ERROR! could not login with SSH.'
-                        print 'Expected ' + self.prompt1 + ', received >>>>' + self.oai.before + '<<<<'
-                        sys.exit(1) 
+                
+		index = self.oai.expect([re.escape(self.prompt1), re.escape(self.prompt2), pexpect.TIMEOUT], timeout=40)
+		if index == 0 :
+                    return 'Ok'
+                else :
+                    index = self.oai.expect(['password:', pexpect.TIMEOUT], timeout=40)
+                    if index == 0 : 
+                        self.oai.sendline(password)
+                        index = self.oai.expect([re.escape(self.prompt1), re.escape(self.prompt2), pexpect.TIMEOUT], timeout=10)
+                        if index != 0:
+                            print 'ERROR! could not login with SSH.'
+                            print 'Expected ' + self.prompt1 + ', received >>>>' + self.oai.before + '<<<<'
+                            sys.exit(1) 
                     return 'Ok'
 
             except Exception, val:
@@ -98,12 +106,18 @@ class openair(core):
         self.oai.send('exit')
 #        self.cancel()
 
-    def kill(self, pw):
+    def kill(self, user, pw):
         try:
-            os.system('echo '+pw+' | sudo -S pkill oaisim')
-            os.system('echo '+pw+' | sudo -S pkill cc1') 
-            time.sleep(1)
-            os.system('echo '+pw+' | sudo -S pkill oaisim')
+            if user == 'root' :
+                os.system('pkill oaisim')
+                os.system('pkill cc1') 
+                time.sleep(1)
+                os.system('pkill oaisim')
+            else :
+                os.system('echo '+pw+' | sudo -S pkill oaisim')
+                os.system('echo '+pw+' | sudo -S pkill cc1') 
+                time.sleep(1)
+                os.system('echo '+pw+' | sudo -S pkill oaisim')
         except Error, val:
             print "Error:", val
             
