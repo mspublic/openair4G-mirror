@@ -73,7 +73,7 @@ def execute(oai, user, pw, logfile):
         oai.send('make cleanall;')
         oai.send('make cleanasn1;')
         oai.send('rm -f ./oaisim.rel8;')
-        oai.send_expect_false('make -j4;', makerr1,  500)
+        oai.send_expect_false('make -j4;', makerr1,  700)
         oai.send('cp ./oaisim ./oaisim.rel8;')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -88,7 +88,7 @@ def execute(oai, user, pw, logfile):
         oai.send('make cleanall;')
         oai.send('rm -f ./oaisim.rel8.nas;')
         oai.send('rm -f ./nasmesh;')
-        oai.send_expect_false('make NAS=1 -j4;', makerr1,  500)
+        oai.send_expect_false('make NAS=1 -j4;', makerr1,  700)
         oai.send('cp ./oaisim ./oaisim.rel8.nas;')
         if user == 'root' : 
             oai.send_nowait('rmmod nasmesh;')
@@ -111,7 +111,7 @@ def execute(oai, user, pw, logfile):
         oai.send('make cleanall;')
         oai.send('make cleanasn1;')
         oai.send('rm -f ./oaisim.rel10;')
-        oai.send_expect_false('make Rel10=1 -j4;', makerr1,  500)
+        oai.send_expect_false('make Rel10=1 -j4;', makerr1,  700)
         oai.send('cp ./oaisim ./oaisim.rel10;')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)

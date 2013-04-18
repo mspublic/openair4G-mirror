@@ -48,7 +48,7 @@ import log
 class core:
     def __init__(self):
         self.send_cr = 1
-        self.expect_echo = 1
+        self.expect_echo = 0
         self.expect_response = 1
         self.flag_errors = 1
         self.log = None
