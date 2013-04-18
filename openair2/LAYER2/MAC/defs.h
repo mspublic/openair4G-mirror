@@ -298,6 +298,12 @@ typedef struct {
   UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
 
+typedef struct  {
+  u16 sn;
+  u16 cornti;
+  u16 bsr[4];
+}COBSR_INFO;
+
 typedef struct{
   /// C-RNTI of UE
   u16 rnti;
@@ -345,8 +351,8 @@ typedef struct{
   /// UE BSR info for each logical channel
   u8 bsr_info[MAX_NUM_LCID]; 
   
-  /// UE coBSR info for each logical channel
-  //  u8 cobsr_info[MAX_NUM_CO_RB]; 
+  /// UE coBSR info for each logical channel keep the info for each cornti
+  COBSR_INFO cobsr_info[MAX_VLINK_PER_CH]; 
 
   /// phr information 
    u8 phr_info; 

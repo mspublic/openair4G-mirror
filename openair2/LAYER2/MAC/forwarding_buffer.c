@@ -52,7 +52,7 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
   char *string2=malloc(sizeof(char)*40);
 	u8 mode = mac_buffer_u[Mod_id].mode;
 
-  LOG_I(MAC, "[UE %d] instantiate the buffer for eNB %d and cornti %x \n", Mod_id, eNB_index, cornti);
+  
 	
 	
 
@@ -91,6 +91,7 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
 		strcpy(string2,"packet_list: ");
 		strcat(string1,string);
 		strcat(string2,string);
+		LOG_I(MAC, "[UE %d] instantiate the buffer for eNB %d and cornti %x \n", Mod_id, eNB_index, cornti);
 		b_index = mac_buffer_u[Mod_id].total_number_of_buffers_allocated;
 		mac_buffer_u[Mod_id].mac_buffer_g[b_index] =  mac_buffer_init(string1, string2, eNB_index, cornti);
 		mac_buffer_u[Mod_id].total_number_of_buffers_allocated +=1;
@@ -379,7 +380,9 @@ void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 num
 
 
 void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 **seq_num, u16 **size){
- u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+ s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+ if (b_index == -1 )
+   return ;
  if(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements!=0 && mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements >= *number_of_packets_asked ){
 	packet_list_get_info_from_the_first_elements(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p, *number_of_packets_asked, seq_num, size );
  }
@@ -418,15 +421,17 @@ mem_element_t *mac_buffer_get_head(u8 Mod_id, u8 b_index){
 
 mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_num, int requested_size, int HARQ_proccess_ID){
  
- u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
-
+ s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
  mem_element_t *help_head = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
  mem_element_t *help_tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
  avl_node_t *ptr_t,*ptr_k;
+
+ if (b_index == -1)
+   return NULL;
   
  if(help_head==NULL){
-	 return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
-	}
+   return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
+ }
 	else{
 	 if(!(seq_num<0) && !(HARQ_proccess_ID<0)){
 		ptr_t = avl_tree_find(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, seq_num);
@@ -620,18 +625,18 @@ int mac_buffer_return_b_index(u8 Mod_id, u8 eNB_index, u16 cornti){
  u8 mode = mac_buffer_u[Mod_id].mode;
  
  if(mode == ONE_BUF_PER_CH){
-	for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
-	 if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index == eNB_index){
-		return i;
-	 }
-	}
+   for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
+     if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index == eNB_index && mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti ){
+       return i;
+     }
+   }
  }
  else if (mode == ONE_BUF_PER_CORNTI){
-	for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
-	 if(mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti){
-		return i;
-	 }
-	}	
+   for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
+     if(mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti){
+       return i;
+     }
+   }	
  }
  return -1; // did not find something
 }
@@ -640,8 +645,8 @@ int mac_buffer_return_b_index(u8 Mod_id, u8 eNB_index, u16 cornti){
 int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID){
  mem_element_t *elementP;
  
- u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
- if (data == NULL)
+ s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+ if ( (data == NULL) || (b_index == -1) )
    return 0 ;
 
  elementP = malloc(sizeof(struct mem_element_t));
@@ -680,13 +685,23 @@ int mac_buffer_add_tail(u8 Mod_id, u8 b_index, mem_element_t *elementP){
 
 
 int  mac_buffer_total_size(u8 Mod_id, u8 eNB_index, u16 cornti){
- u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
- return mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->total_size;
+ s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+ if (b_index != -1 )
+   return mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->total_size;
+ else {
+   //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+   return 0;
+ }
 }
 
 int  mac_buffer_nb_elements(u8 Mod_id, u8 eNB_index, u16 cornti){
-  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
-  return mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements;
+  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+   if (b_index != -1 )
+     return mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements;
+   else {
+     //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+     return 0;
+   }
 }
 
 
@@ -708,8 +723,10 @@ void packet_list_print(packet_list_t *listP){
 }
 
 void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti){
-  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
   mem_element_t *ptr_p;
+  if (b_index == -1 )
+    return;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
 	printf("\n\n%s | %s \n",mac_buffer_u[Mod_id].mac_buffer_g[b_index]->name,mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->name);
 	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id, eNB_index, cornti), mac_buffer_nb_elements(Mod_id, eNB_index, cornti));
@@ -726,11 +743,11 @@ void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti){
 }
 
 void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti){
-  u8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti); 
+  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti); 
   mem_element_t *ptr_p, *head, *tail;
-	tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
+  tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
-	head = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
+  head = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
 
 	printf("\n\nREVERSE| %s | %s \n",mac_buffer_u[Mod_id].mac_buffer_g[b_index]->name, mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->name);
 	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id, eNB_index, cornti), mac_buffer_nb_elements(Mod_id, eNB_index, cornti));

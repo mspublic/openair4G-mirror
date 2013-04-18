@@ -542,7 +542,8 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   unsigned char rx_lcids[MAX_NUM_RB];
   unsigned short rx_lengths[MAX_NUM_RB];
   unsigned char UE_id = find_UE_id(Mod_id,rnti);
-  BSR_LONG *tmp;
+  BSR_LONG *tmp; 
+  COBSR_SHORT *tmp2;
   int ii;
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
@@ -578,8 +579,13 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
       payload_ptr+=(sizeof(LONG_BSR)-1);
       break;
     case CO_BSR_SHORT:
-      LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received CO BSR short\n", rx_ces[i]);
-   
+      tmp2 = (COBSR_SHORT*) payload_ptr;
+      eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[0].sn    = tmp2->SN;
+      eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[0].cornti= tmp2->CORNTI;
+      eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[0].bsr[0]=tmp2->Buffer_size;
+      LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received CO BSR short (sn %d, cornti %x, bsr %d)\n", 
+	    rx_ces[i],tmp2->SN,tmp2->CORNTI, tmp2->Buffer_size);
+      payload_ptr+=sizeof(COBSR_SHORT);
       break;
     case CO_BSR_LONG:
       LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received co BSR long \n", rx_ces[i]);
@@ -1291,7 +1297,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 
 	if((cooperation_flag > 0) && (next_ue == 1)) { // Allocation on same set of RBs
-	    rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c // apaposto add Mod_id
+	    rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c 
 						       ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
 						       4);//openair_daq_vars.ue_ul_nb_rb);
 	}
@@ -4430,8 +4436,8 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 
 void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16 nb_rb_used0,unsigned int *nCCE_used) {
 
-	unsigned char UE_id, UE_id2;
-	u16 rnti,cornti;
+  unsigned char UE_id, UE_id2;
+  u16 rnti,cornti;
   u8 dl_pow_off[256];
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
