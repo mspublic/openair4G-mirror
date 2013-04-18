@@ -360,21 +360,21 @@ void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 num
 //-----------------------------------------------------------------------------
   // access optimisation
   mem_element_t  *head,*ptr;
-	int i;
+  int i;
   head = listP->head;
-	ptr = listP->head;
+  ptr = listP->head;
   if (head == NULL) {
     //msg("[MEM_MGT][WARNING] packet_list_get_head() return NULL head from empty list %s \n",listP->name);
     LOG_E(MAC,"[MEM_MGT][WARNING] packet_list_get_head() return NULL head from empty list %s \n",listP->name);
     //return NULL;
   }
   else{
-	 for(i=0;i<number_of_packets_asked;i++){
-		*seq_num[i]= ptr->seq_num;
-    *size[i] = ptr->pdu_size;
-		ptr=ptr->next;
-	 }
-	}
+    for(i=0;i<number_of_packets_asked;i++){
+      *seq_num[i]= ptr->seq_num;
+      *size[i] = ptr->pdu_size;
+      ptr=ptr->next;
+    }
+  }
 }
 
 
