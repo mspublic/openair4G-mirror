@@ -703,8 +703,8 @@ main (int argc, char **argv)
     eNB_avg_thr = fopen (eNB_stats_th_filename, "w"); 
   } 
 #ifdef OPENAIR2
-  eNB_l2_stats = fopen ("eNB_l2_stats.txt", "w");
-  LOG_I(EMU,"eNB_l2_stats=%p\n", eNB_l2_stats);
+  /*  eNB_l2_stats = fopen ("eNB_l2_stats.txt", "w");
+      LOG_I(EMU,"eNB_l2_stats=%p\n", eNB_l2_stats);*/
 #endif 
 
 #endif
@@ -1098,12 +1098,12 @@ main (int argc, char **argv)
 	  fflush(eNB_stats);
 	}
 #ifdef OPENAIR2
-	if (eNB_l2_stats) {
+	/*	if (eNB_l2_stats) {
 	  len = dump_eNB_l2_stats (stats_buffer, 0);
 	  rewind (eNB_l2_stats);
 	  fwrite (stats_buffer, 1, len, eNB_l2_stats);
 	  fflush(eNB_l2_stats);
-	}
+	  }*/
 #endif 	
 #endif
       }
@@ -1357,9 +1357,9 @@ main (int argc, char **argv)
     fclose (eNB_stats);
   if (eNB_avg_thr)
     fclose (eNB_avg_thr);
-  if (eNB_l2_stats)
+  /* if (eNB_l2_stats)
     fclose (eNB_l2_stats);
-  
+  */
 #endif
 
   // stop OMG
