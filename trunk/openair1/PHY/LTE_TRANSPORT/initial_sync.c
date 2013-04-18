@@ -158,6 +158,9 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
       frame_parms->N_RB_DL = 50;
       break;
     case 4 : 
+      frame_parms->N_RB_DL = 75;
+      break;
+    case 5:
       frame_parms->N_RB_DL = 100;
       break;
     default:
