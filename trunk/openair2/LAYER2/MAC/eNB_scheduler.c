@@ -1653,14 +1653,14 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 
   // check if RA (Msg3) is active in this subframe, if so skip the PRBs used for Msg3
+  // Msg3 is using 1 PRB so we need to increase first_rb accordingly
+  // not sure about the break (can there be more than 1 active RA procedure?)
 
   for (i=0;i<NB_RA_PROC_MAX;i++) {
     if ((eNB_mac_inst[Mod_id].RA_template[i].RA_active == 1) && 
 	(eNB_mac_inst[Mod_id].RA_template[i].generate_rar == 0) &&
 	(eNB_mac_inst[Mod_id].RA_template[i].Msg3_subframe == sched_subframe)) {  
-
-      first_rb = 1+(i<<2);
-      
+      first_rb++; 
       break;
     }
   }
