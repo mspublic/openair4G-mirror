@@ -1,13 +1,38 @@
 /***************************************************************************
                           nasrg_iocontrol.c  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : yan.moret@eurecom.fr
-                           michelle.wetterwald@eurecom.fr
  ***************************************************************************
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2013 Eurecom
 
- ***************************************************************************/
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 450 route des Chappes, 06410 Biot Sophia Antipolis, France
+*******************************************************************************/
+/*! \file nasrg_iocontrol.c
+* \brief I/O control functions for upper layers of driver for OpenAirInterface CELLULAR version - RG
+* \author  michelle.wetterwald, navid.nikaein, raymond.knopp, Lionel Gauthier
+* \company Eurecom
+* \email: michelle.wetterwald@eurecom.fr, raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr,  lionel.gauthier@eurecom.fr
+*/
+/*******************************************************************************/
 #include "nasrg_variables.h"
 #include "nasrg_iocontrol.h"
 #include "nasrg_proto.h"
@@ -17,12 +42,11 @@
 #include <asm/checksum.h>
 #include <asm/uaccess.h>
 
-
 // Statistic
 ///////////////////////////////////////////////////////////////////////////////
 
 //---------------------------------------------------------------------------
-void nasrg_set_msg_statistic_reply(struct graal_msg_statistic_reply *msgrep){
+void nasrg_set_msg_statistic_reply(struct nas_msg_statistic_reply *msgrep){
 //---------------------------------------------------------------------------
 	msgrep->rx_packets=gpriv->stats.rx_packets;
 	msgrep->tx_packets=gpriv->stats.tx_packets;
@@ -35,9 +59,9 @@ void nasrg_set_msg_statistic_reply(struct graal_msg_statistic_reply *msgrep){
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_statistic_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_statistic_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_statistic_reply msgrep;
+	struct nas_msg_statistic_reply msgrep;
 	printk("nasrg_ioCTL_statistic: stat requested\n");
 	nasrg_set_msg_statistic_reply(&msgrep);
 	if (copy_to_user(gifr->msg, &msgrep, sizeof(msgrep)))
@@ -56,10 +80,10 @@ void nasrg_set_msg_cx_list_reply(u8 *msgrep){
 //---------------------------------------------------------------------------
 	struct cx_entity *cx;
 	nasLocalConnectionRef_t lcr;
-	struct graal_msg_cx_list_reply *list;
-	msgrep[0]=GRAAL_CX_MAX;
-	list=(struct graal_msg_cx_list_reply *)(msgrep+1);
-	for(lcr=0;lcr<GRAAL_CX_MAX;++lcr)
+	struct nas_msg_cx_list_reply *list;
+	msgrep[0]=NAS_CX_MAX;
+	list=(struct nas_msg_cx_list_reply *)(msgrep+1);
+	for(lcr=0;lcr<NAS_CX_MAX;++lcr)
 	{
 		cx=nasrg_COMMON_search_cx(lcr);
 		list[lcr].lcr=lcr;
@@ -75,12 +99,12 @@ void nasrg_set_msg_cx_list_reply(u8 *msgrep){
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_cx_list_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_cx_list_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	u8 msgrep[GRAAL_CX_MAX*sizeof(struct graal_msg_cx_list_reply)+1];
+	u8 msgrep[NAS_CX_MAX*sizeof(struct nas_msg_cx_list_reply)+1];
 	printk("nasrg_ioCTL_cx_list: connection list requested\n");
 	nasrg_set_msg_cx_list_reply(msgrep);
-	if (copy_to_user(gifr->msg, msgrep, GRAAL_CX_MAX*sizeof(struct graal_msg_cx_list_reply)+1))
+	if (copy_to_user(gifr->msg, msgrep, NAS_CX_MAX*sizeof(struct nas_msg_cx_list_reply)+1))
 	{
 		printk("nasrg_ioCTL_cx_list: copy_to_user failure\n");
 		return -EFAULT;
@@ -92,15 +116,15 @@ int nasrg_ioCTL_cx_list_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Connection Establishment
 //---------------------------------------------------------------------------
-void nasrg_set_msg_cx_establishment_reply(struct graal_msg_cx_establishment_reply *msgrep, struct graal_msg_cx_establishment_request *msgreq){
+void nasrg_set_msg_cx_establishment_reply(struct nas_msg_cx_establishment_reply *msgrep, struct nas_msg_cx_establishment_request *msgreq){
 //---------------------------------------------------------------------------
-	msgrep->status=-GRAAL_ERROR_NOTMT;
+	msgrep->status=-NAS_ERROR_NOTMT;
 }
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_cx_establishment_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_cx_establishment_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_cx_establishment_request msgreq;
-	struct graal_msg_cx_establishment_reply msgrep;
+	struct nas_msg_cx_establishment_request msgreq;
+	struct nas_msg_cx_establishment_reply msgrep;
 	printk("nasrg_ioCTL_cx_establishment: connection establishment requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
 	{
@@ -119,17 +143,17 @@ int nasrg_ioCTL_cx_establishment_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Connection Release
 //---------------------------------------------------------------------------
-void nasrg_set_msg_cx_release_reply(struct graal_msg_cx_release_reply *msgrep, struct graal_msg_cx_release_request *msgreq){
+void nasrg_set_msg_cx_release_reply(struct nas_msg_cx_release_reply *msgrep, struct nas_msg_cx_release_request *msgreq){
 //---------------------------------------------------------------------------
-	msgrep->status=-GRAAL_ERROR_NOTMT;
+	msgrep->status=-NAS_ERROR_NOTMT;
 }
 
 //---------------------------------------------------------------------------
 // Request the release of a connection
-int nasrg_ioCTL_cx_release_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_cx_release_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_cx_release_request msgreq;
-	struct graal_msg_cx_release_reply msgrep;
+	struct nas_msg_cx_release_request msgreq;
+	struct nas_msg_cx_release_reply msgrep;
 
 	printk("nasrg_set_msg_cx_release: connection release requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
@@ -150,7 +174,7 @@ int nasrg_ioCTL_cx_release_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Radio Bearer List
 //---------------------------------------------------------------------------
-void nasrg_set_msg_rb_list_reply(u8 *msgrep, struct graal_msg_rb_list_request *msgreq){
+void nasrg_set_msg_rb_list_reply(u8 *msgrep, struct nas_msg_rb_list_request *msgreq){
 //---------------------------------------------------------------------------
 	struct cx_entity *cx;
 	cx=nasrg_COMMON_search_cx(msgreq->lcr);
@@ -158,12 +182,12 @@ void nasrg_set_msg_rb_list_reply(u8 *msgrep, struct graal_msg_rb_list_request *m
 	{
 		u8 rbi;
 		struct rb_entity *rb;
-		struct graal_msg_rb_list_reply *list;
-		if (cx->num_rb > GRAAL_LIST_RB_MAX)
-			msgrep[0] = GRAAL_LIST_RB_MAX;
+		struct nas_msg_rb_list_reply *list;
+		if (cx->num_rb > NAS_LIST_RB_MAX)
+			msgrep[0] = NAS_LIST_RB_MAX;
 		else
 			msgrep[0] = cx->num_rb;
-		list=(struct graal_msg_rb_list_reply *)(msgrep+1);
+		list=(struct nas_msg_rb_list_reply *)(msgrep+1);
     // list all radio bearers
 		for (rb=cx->rb, rbi=0; (rb!=NULL)&&(rbi<msgrep[0]); rb=rb->next, ++rbi){
 			list[rbi].state=rb->state;
@@ -193,10 +217,10 @@ void nasrg_set_msg_rb_list_reply(u8 *msgrep, struct graal_msg_rb_list_request *m
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_rb_list_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_rb_list_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	u8 msgrep[GRAAL_LIST_RB_MAX*sizeof(struct graal_msg_rb_list_reply)+1];
-	struct graal_msg_rb_list_request msgreq;
+	u8 msgrep[NAS_LIST_RB_MAX*sizeof(struct nas_msg_rb_list_reply)+1];
+	struct nas_msg_rb_list_request msgreq;
 	printk("nasrg_ioCTL_rb_list: Radio Bearer list requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
 	{
@@ -204,7 +228,7 @@ int nasrg_ioCTL_rb_list_request(struct graal_ioctl *gifr){
 		return -EFAULT;
 	}
 	nasrg_set_msg_rb_list_reply(msgrep, &msgreq);
-	if (copy_to_user(gifr->msg, msgrep, GRAAL_LIST_RB_MAX*sizeof(struct graal_msg_rb_list_reply)+1))
+	if (copy_to_user(gifr->msg, msgrep, NAS_LIST_RB_MAX*sizeof(struct nas_msg_rb_list_reply)+1))
 	{
 		printk("nasrg_ioCTL_rb_list: copy_to_user failure\n");
 		return -EFAULT;
@@ -216,10 +240,10 @@ int nasrg_ioCTL_rb_list_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Radio Bearer Establishment
 //---------------------------------------------------------------------------
-void nasrg_set_msg_rb_establishment_reply(struct graal_msg_rb_establishment_reply *msgrep, struct graal_msg_rb_establishment_request *msgreq){
+void nasrg_set_msg_rb_establishment_reply(struct nas_msg_rb_establishment_reply *msgrep, struct nas_msg_rb_establishment_request *msgreq){
 //---------------------------------------------------------------------------
-  if ((msgreq->rab_id<5)||(msgreq->rab_id>(GRAAL_RB_MAX_NUM-1)))
-    msgrep->status=-GRAAL_ERROR_NOTCORRECTRABI;
+  if ((msgreq->rab_id<5)||(msgreq->rab_id>(NAS_RB_MAX_NUM-1)))
+    msgrep->status=-NAS_ERROR_NOTCORRECTRABI;
   else{
     struct cx_entity *cx;
     cx=nasrg_COMMON_search_cx(msgreq->lcr);
@@ -232,7 +256,7 @@ void nasrg_set_msg_rb_establishment_reply(struct graal_msg_rb_establishment_repl
         rb->dscp_ul = msgreq->dscp_ul;
         msgrep->status=nasrg_ASCTL_DC_send_rb_establish_request(cx, rb);
       }else{
-        msgrep->status=-GRAAL_ERROR_NOMEMORY;
+        msgrep->status=-NAS_ERROR_NOMEMORY;
       }
     }else{  //no MT found
       if (msgreq->mcast_flag){ //multicast
@@ -242,9 +266,9 @@ void nasrg_set_msg_rb_establishment_reply(struct graal_msg_rb_establishment_repl
         gpriv->mbms_rb[mbms_ix].serviceId = msgreq->cnxid;
         gpriv->mbms_rb[mbms_ix].sessionId = NASRG_TEMP_MBMS_SESSION_ID; //Temp hard coded
         gpriv->mbms_rb[mbms_ix].mbms_rbId = msgreq->rab_id;
-        gpriv->mbms_rb[mbms_ix].sapi = GRAAL_IN_INPUT_SAPI;
-        #ifdef GRAAL_DEBUG_MBMS_PROT
-        gpriv->mbms_rb[mbms_ix].sapi = GRAAL_CO_INPUT_SAPI; //Only one RT-FIFO is used
+        gpriv->mbms_rb[mbms_ix].sapi = NAS_DC_INPUT_SAPI;
+        #ifdef NAS_DEBUG_MBMS_PROT
+        gpriv->mbms_rb[mbms_ix].sapi = NAS_DRB_INPUT_SAPI; //Only one RT-FIFO is used
         #endif
         gpriv->mbms_rb[mbms_ix].qos = msgreq->qos;
         gpriv->mbms_rb[mbms_ix].dscp = msgreq->dscp_dl;
@@ -252,7 +276,7 @@ void nasrg_set_msg_rb_establishment_reply(struct graal_msg_rb_establishment_repl
         memcpy ((char *)&(gpriv->mbms_rb[mbms_ix].mcast_address),(char *)&(msgreq->mcast_group), 16);
         msgrep->status=nasrg_ASCTL_GC_send_mbms_bearer_establish_req(mbms_ix);
       }else{
-        msgrep->status=-GRAAL_ERROR_NOTCORRECTLCR;
+        msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
       }
       msgrep->cnxid  = msgreq->cnxid;
     }
@@ -260,10 +284,10 @@ void nasrg_set_msg_rb_establishment_reply(struct graal_msg_rb_establishment_repl
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_rb_establishment_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_rb_establishment_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_rb_establishment_request msgreq;
-	struct graal_msg_rb_establishment_reply msgrep;
+	struct nas_msg_rb_establishment_request msgreq;
+	struct nas_msg_rb_establishment_reply msgrep;
 	printk("nasrg_ioCTL_rb_establishment: Radio bearer establishment requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
 	{
@@ -282,9 +306,9 @@ int nasrg_ioCTL_rb_establishment_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Radio Bearer Release
 //---------------------------------------------------------------------------
-void nasrg_set_msg_rb_release_reply(struct graal_msg_rb_release_reply *msgrep, struct graal_msg_rb_release_request *msgreq){
+void nasrg_set_msg_rb_release_reply(struct nas_msg_rb_release_reply *msgrep, struct nas_msg_rb_release_request *msgreq){
 //---------------------------------------------------------------------------
-  if (msgreq->lcr<GRAAL_CX_MAX){
+  if (msgreq->lcr<NAS_CX_MAX){
     if (msgreq->rab_id!=NASRG_DEFAULTRAB_RBID){
        struct rb_entity *rb;
        struct cx_entity *cx;
@@ -296,10 +320,10 @@ void nasrg_set_msg_rb_release_reply(struct graal_msg_rb_release_reply *msgrep, s
          dscp=rb->dscp;
          nasrg_COMMON_del_rb(cx, msgreq->rab_id, dscp);
        }else
-         msgrep->status=-GRAAL_ERROR_NOTCONNECTED;
+         msgrep->status=-NAS_ERROR_NOTCONNECTED;
        msgrep->cnxid  = msgreq->cnxid;
     }else{
-       msgrep->status=-GRAAL_ERROR_NOTCORRECTRABI;
+       msgrep->status=-NAS_ERROR_NOTCORRECTRABI;
     }
   }else{
     if (msgreq->mcast_flag){ // multicast
@@ -307,16 +331,16 @@ void nasrg_set_msg_rb_release_reply(struct graal_msg_rb_release_reply *msgrep, s
       msgrep->status=nasrg_ASCTL_GC_send_mbms_bearer_release_req(mbms_ix);
       msgrep->cnxid  = msgreq->cnxid;
     }else{
-      msgrep->status=-GRAAL_ERROR_NOTCORRECTLCR;
+      msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
     }
   }
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_rb_release_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_rb_release_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_rb_release_request msgreq;
-	struct graal_msg_rb_release_reply msgrep;
+	struct nas_msg_rb_release_request msgreq;
+	struct nas_msg_rb_release_reply msgrep;
 	printk("nasrg_ioCTL_rb_release: Radio bearer release requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
 	{
@@ -335,16 +359,16 @@ int nasrg_ioCTL_rb_release_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Classifier List
 //---------------------------------------------------------------------------
-void nasrg_set_msg_class_list_reply(u8 *msgrep, struct graal_msg_class_list_request *msgreq){
+void nasrg_set_msg_class_list_reply(u8 *msgrep, struct nas_msg_class_list_request *msgreq){
 //---------------------------------------------------------------------------
 	struct cx_entity *cx;
 	struct classifier_entity *gc;
-	struct graal_msg_class_list_reply *list;
+	struct nas_msg_class_list_reply *list;
 	u8 cli;
-	list=(struct graal_msg_class_list_reply *)(msgrep+1);
+	list=(struct nas_msg_class_list_reply *)(msgrep+1);
 	switch(msgreq->dir)
 	{
-	case GRAAL_DIRECTION_SEND:
+	case NAS_DIRECTION_SEND:
 		cx=nasrg_COMMON_search_cx(msgreq->lcr);
 		if (cx==NULL)
 		{
@@ -353,7 +377,7 @@ void nasrg_set_msg_class_list_reply(u8 *msgrep, struct graal_msg_class_list_requ
 		}
 		gc=cx->sclassifier[msgreq->dscp];
 		break;
-	case GRAAL_DIRECTION_RECEIVE:
+	case NAS_DIRECTION_RECEIVE:
 		cx=NULL;
 		gc=gpriv->rclassifier[msgreq->dscp];
 		break;
@@ -362,7 +386,7 @@ void nasrg_set_msg_class_list_reply(u8 *msgrep, struct graal_msg_class_list_requ
 		msgrep[0]=0;
 		return;
 	}
-	for (cli=0; (gc!=NULL)&&(cli<GRAAL_LIST_CLASS_MAX); gc=gc->next, ++cli)
+	for (cli=0; (gc!=NULL)&&(cli<NAS_LIST_CLASS_MAX); gc=gc->next, ++cli)
 	{
 		list[cli].classref=gc->classref;
 		list[cli].lcr=msgreq->lcr;
@@ -391,10 +415,10 @@ void nasrg_set_msg_class_list_reply(u8 *msgrep, struct graal_msg_class_list_requ
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_class_list_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_class_list_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	u8 msgrep[GRAAL_LIST_CLASS_MAX*sizeof(struct graal_msg_class_list_reply)+1];
-	struct graal_msg_class_list_request msgreq;
+	u8 msgrep[NAS_LIST_CLASS_MAX*sizeof(struct nas_msg_class_list_reply)+1];
+	struct nas_msg_class_list_request msgreq;
 	printk("nasrg_ioCTL_class_list: classifier list requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
 	{
@@ -402,7 +426,7 @@ int nasrg_ioCTL_class_list_request(struct graal_ioctl *gifr){
 		return -EFAULT;
 	}
 	nasrg_set_msg_class_list_reply(msgrep, &msgreq);
-	if (copy_to_user(gifr->msg, msgrep, GRAAL_LIST_CLASS_MAX*sizeof(struct graal_msg_class_list_reply)+1))
+	if (copy_to_user(gifr->msg, msgrep, NAS_LIST_CLASS_MAX*sizeof(struct nas_msg_class_list_reply)+1))
 	{
 		printk("nasrg_ioCTL_class_list: copy_to_user failure\n");
 		return -EFAULT;
@@ -413,15 +437,15 @@ int nasrg_ioCTL_class_list_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Request the addition of a classifier rule
 //---------------------------------------------------------------------------
-void nasrg_set_msg_class_add_reply(struct graal_msg_class_add_reply *msgrep, struct graal_msg_class_add_request *msgreq){
+void nasrg_set_msg_class_add_reply(struct nas_msg_class_add_reply *msgrep, struct nas_msg_class_add_request *msgreq){
 //---------------------------------------------------------------------------
 	struct classifier_entity *gc;
-	if (msgreq->dscp>GRAAL_DSCP_DEFAULT){
+	if (msgreq->dscp>NAS_DSCP_DEFAULT){
 		printk("nasrg_set_msg_class_add: Incoherent parameter value\n");
-		msgrep->status=-GRAAL_ERROR_NOTCORRECTDSCP;
+		msgrep->status=-NAS_ERROR_NOTCORRECTDSCP;
 		return;
 	}
-	if (msgreq->dir==GRAAL_DIRECTION_SEND){
+	if (msgreq->dir==NAS_DIRECTION_SEND){
 		struct cx_entity *cx;
 		cx=nasrg_COMMON_search_cx(msgreq->lcr);
 		if (cx!=NULL){
@@ -429,24 +453,24 @@ void nasrg_set_msg_class_add_reply(struct graal_msg_class_add_reply *msgrep, str
 			gc=nasrg_CLASS_add_sclassifier(cx, msgreq->dscp, msgreq->classref);
       printk("nasrg_set_msg_class_add: %p %p\n" , msgreq, gc);
 			if (gc==NULL){
-				msgrep->status=-GRAAL_ERROR_NOMEMORY;
+				msgrep->status=-NAS_ERROR_NOMEMORY;
 				return;
 			}
 		}else{
-			msgrep->status=-GRAAL_ERROR_NOTCORRECTLCR;
+			msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
 			return;
 		}
 		gc->rab_id=msgreq->rab_id;
 		gc->rb=nasrg_COMMON_search_rb(cx, gc->rab_id);
 	}else{
-		if (msgreq->dir==GRAAL_DIRECTION_RECEIVE){
+		if (msgreq->dir==NAS_DIRECTION_RECEIVE){
 			gc=nasrg_CLASS_add_rclassifier(msgreq->dscp, msgreq->classref);
 			if (gc==NULL){
-				msgrep->status=-GRAAL_ERROR_NOMEMORY;
+				msgrep->status=-NAS_ERROR_NOMEMORY;
 				return;
 			}
 		}else{
-			msgrep->status=-GRAAL_ERROR_NOTCORRECTDIR;
+			msgrep->status=-NAS_ERROR_NOTCORRECTDIR;
 			return;
 		}
 	}
@@ -474,7 +498,7 @@ void nasrg_set_msg_class_add_reply(struct graal_msg_class_add_reply *msgrep, str
   		gc->dplen=0;
   		break;
   	default:
-  		msgrep->status=-GRAAL_ERROR_NOTCORRECTVERSION;
+  		msgrep->status=-NAS_ERROR_NOTCORRECTVERSION;
   		kfree(gc);
   		return;
 	}
@@ -485,10 +509,10 @@ void nasrg_set_msg_class_add_reply(struct graal_msg_class_add_reply *msgrep, str
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_class_add_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_class_add_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_class_add_request msgreq;
-	struct graal_msg_class_add_reply msgrep;
+	struct nas_msg_class_add_request msgreq;
+	struct nas_msg_class_add_reply msgrep;
 	printk("nasrg_ioCTL_class_add: Add classifier components requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq))){
 		printk("nasrg_ioCTL_class_add: copy_from_user failure\n");
@@ -505,29 +529,29 @@ int nasrg_ioCTL_class_add_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // Request the deletion of a classifier rule
 //---------------------------------------------------------------------------
-void nasrg_set_msg_class_del_reply(struct graal_msg_class_del_reply *msgrep, struct graal_msg_class_del_request *msgreq){
+void nasrg_set_msg_class_del_reply(struct nas_msg_class_del_reply *msgrep, struct nas_msg_class_del_request *msgreq){
 //---------------------------------------------------------------------------
-	if (msgreq->dscp>GRAAL_DSCP_DEFAULT)
+	if (msgreq->dscp>NAS_DSCP_DEFAULT)
 	{
 		printk("nasrg_set_msg_class_del: Incoherent parameter value\n");
-		msgrep->status=-GRAAL_ERROR_NOTCORRECTDSCP;
+		msgrep->status=-NAS_ERROR_NOTCORRECTDSCP;
 		return;
 	}
-	if (msgreq->dir==GRAAL_DIRECTION_SEND)
+	if (msgreq->dir==NAS_DIRECTION_SEND)
 	{
 		struct cx_entity *cx;
 		cx=nasrg_COMMON_search_cx(msgreq->lcr);
 		if (cx!=NULL)
 			nasrg_CLASS_del_sclassifier(cx, msgreq->dscp, msgreq->classref);
 		else{
-			msgrep->status=-GRAAL_ERROR_NOTCORRECTLCR;
+			msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
 			return;
 		}
 	}else{
-		if (msgreq->dir==GRAAL_DIRECTION_RECEIVE)
+		if (msgreq->dir==NAS_DIRECTION_RECEIVE)
 			nasrg_CLASS_del_rclassifier(msgreq->dscp, msgreq->classref);
 		else{
-			msgrep->status=-GRAAL_ERROR_NOTCORRECTDIR;
+			msgrep->status=-NAS_ERROR_NOTCORRECTDIR;
 			return;
 		}
 	}
@@ -535,10 +559,10 @@ void nasrg_set_msg_class_del_reply(struct graal_msg_class_del_reply *msgrep, str
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_class_del_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_class_del_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_class_del_request msgreq;
-	struct graal_msg_class_del_reply msgrep;
+	struct nas_msg_class_del_request msgreq;
+	struct nas_msg_class_del_reply msgrep;
 	printk("nasrg_ioCTL_class_del: Del classifier components requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq)))
 	{
@@ -557,9 +581,9 @@ int nasrg_ioCTL_class_del_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // UE Multicast Join
 //---------------------------------------------------------------------------
-void nasrg_set_ue_multicast_join_reply(struct graal_msg_mt_mcast_reply *msgrep, struct graal_msg_mt_mcast_join *msgreq){
+void nasrg_set_ue_multicast_join_reply(struct nas_msg_mt_mcast_reply *msgrep, struct nas_msg_mt_mcast_join *msgreq){
 //---------------------------------------------------------------------------
-	if (msgreq->ue_id<GRAAL_CX_MAX){
+	if (msgreq->ue_id<NAS_CX_MAX){
 		struct cx_entity *cx;
 		cx=nasrg_COMMON_search_cx(msgreq->ue_id);
     cx->requested_joined_services[0] = msgreq->cnxid;
@@ -567,15 +591,15 @@ void nasrg_set_ue_multicast_join_reply(struct graal_msg_mt_mcast_reply *msgrep, 
 		msgrep->result = nasrg_ASCTL_DC_send_mbms_ue_notify_req(cx);
     msgrep->cnxid  = msgreq->cnxid;
   }else{
-	  msgrep->result=-GRAAL_ERROR_NOTCORRECTLCR;
+	  msgrep->result=-NAS_ERROR_NOTCORRECTLCR;
   }
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_ue_multicast_join_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_ue_multicast_join_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_mt_mcast_join msgreq;
-	struct graal_msg_mt_mcast_reply msgrep;
+	struct nas_msg_mt_mcast_join msgreq;
+	struct nas_msg_mt_mcast_reply msgrep;
 	printk("nasrg_ioCTL_ue_multicast_join: UE multicast join requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq))){
 		printk("nasrg_ioCTL_ue_multicast_join: copy_from_user failure\n");
@@ -592,9 +616,9 @@ int nasrg_ioCTL_ue_multicast_join_request(struct graal_ioctl *gifr){
 ///////////////////////////////////////////////////////////////////////////////
 // UE Multicast Leave
 //---------------------------------------------------------------------------
-void nasrg_set_ue_multicast_leave_reply(struct graal_msg_mt_mcast_reply *msgrep, struct graal_msg_mt_mcast_leave *msgreq){
+void nasrg_set_ue_multicast_leave_reply(struct nas_msg_mt_mcast_reply *msgrep, struct nas_msg_mt_mcast_leave *msgreq){
 //---------------------------------------------------------------------------
-	if (msgreq->ue_id<GRAAL_CX_MAX){
+	if (msgreq->ue_id<NAS_CX_MAX){
 		struct cx_entity *cx;
 		cx=nasrg_COMMON_search_cx(msgreq->ue_id);
     cx->requested_left_services[0] = msgreq->cnxid;
@@ -602,15 +626,15 @@ void nasrg_set_ue_multicast_leave_reply(struct graal_msg_mt_mcast_reply *msgrep,
 		msgrep->result = nasrg_ASCTL_DC_send_mbms_ue_notify_req(cx);
     msgrep->cnxid  = msgreq->cnxid;
   }else{
-	  msgrep->result=-GRAAL_ERROR_NOTCORRECTLCR;
+	  msgrep->result=-NAS_ERROR_NOTCORRECTLCR;
   }
 }
 
 //---------------------------------------------------------------------------
-int nasrg_ioCTL_ue_multicast_leave_request(struct graal_ioctl *gifr){
+int nasrg_ioCTL_ue_multicast_leave_request(struct nas_ioctl *gifr){
 //---------------------------------------------------------------------------
-	struct graal_msg_mt_mcast_leave msgreq;
-	struct graal_msg_mt_mcast_reply msgrep;
+	struct nas_msg_mt_mcast_leave msgreq;
+	struct nas_msg_mt_mcast_reply msgrep;
 	printk("nasrg_ioCTL_ue_multicast_leave: UE multicast leave requested\n");
 	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq))){
 		printk("nasrg_ioCTL_ue_multicast_leave: copy_from_user failure\n");
@@ -630,44 +654,44 @@ int nasrg_ioCTL_ue_multicast_leave_request(struct graal_ioctl *gifr){
 //---------------------------------------------------------------------------
 int nasrg_CTL_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd){
 //---------------------------------------------------------------------------
-	struct graal_ioctl *gifr;
+	struct nas_ioctl *gifr;
 	int r;
 	printk("nasrg_CTL_ioctl: begin\n");
 	spin_lock(&gpriv->lock);
 	switch(cmd)
 	{
 	case NASRG_IOCTL_RAL:
-		gifr=(struct graal_ioctl *)ifr;
+		gifr=(struct nas_ioctl *)ifr;
 		switch(gifr->type)
 		{
-		case GRAAL_MSG_STATISTIC_REQUEST:
+		case NAS_MSG_STATISTIC_REQUEST:
 			r=nasrg_ioCTL_statistic_request(gifr);
 			break;
-		case GRAAL_MSG_CX_ESTABLISHMENT_REQUEST:
+		case NAS_MSG_CX_ESTABLISHMENT_REQUEST:
 			r=nasrg_ioCTL_cx_establishment_request(gifr);
 			break;
-		case GRAAL_MSG_CX_RELEASE_REQUEST:
+		case NAS_MSG_CX_RELEASE_REQUEST:
 			r=nasrg_ioCTL_cx_release_request(gifr);
 			break;
-		case GRAAL_MSG_CX_LIST_REQUEST:
+		case NAS_MSG_CX_LIST_REQUEST:
 			r=nasrg_ioCTL_cx_list_request(gifr);
 			break;
-		case GRAAL_MSG_RB_ESTABLISHMENT_REQUEST:
+		case NAS_MSG_RB_ESTABLISHMENT_REQUEST:
 			r=nasrg_ioCTL_rb_establishment_request(gifr);
 			break;
-		case GRAAL_MSG_RB_RELEASE_REQUEST:
+		case NAS_MSG_RB_RELEASE_REQUEST:
 			r=nasrg_ioCTL_rb_release_request(gifr);
 			break;
-		case GRAAL_MSG_RB_LIST_REQUEST:
+		case NAS_MSG_RB_LIST_REQUEST:
 			r=nasrg_ioCTL_rb_list_request(gifr);
 			break;
-		case GRAAL_MSG_CLASS_ADD_REQUEST:
+		case NAS_MSG_CLASS_ADD_REQUEST:
 			r=nasrg_ioCTL_class_add_request(gifr);
 			break;
-		case GRAAL_MSG_CLASS_LIST_REQUEST:
+		case NAS_MSG_CLASS_LIST_REQUEST:
 			r=nasrg_ioCTL_class_list_request(gifr);
 			break;
-		case GRAAL_MSG_CLASS_DEL_REQUEST:
+		case NAS_MSG_CLASS_DEL_REQUEST:
 			r=nasrg_ioCTL_class_del_request(gifr);
 			break;
 		case NAS_RG_MSG_MT_MCAST_JOIN:

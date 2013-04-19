@@ -1,13 +1,38 @@
 /***************************************************************************
                           nasrg_proto.h  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : michelle.wetterwald@eurecom.fr
-                           yan.moret@eurecom.fr
  ***************************************************************************
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2013 Eurecom
 
- ***************************************************************************/
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 450 route des Chappes, 06410 Biot Sophia Antipolis, France
+*******************************************************************************/
+/*! \file nasrg_proto.h
+* \brief Function prototypes for OpenAirInterface CELLULAR version - RG
+* \author  michelle.wetterwald, navid.nikaein, raymond.knopp, Lionel Gauthier
+* \company Eurecom
+* \email: michelle.wetterwald@eurecom.fr, raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr,  lionel.gauthier@eurecom.fr
+*/
+/*******************************************************************************/
 #ifndef _NASRGD_PROTO_H
 #define _NASRGD_PROTO_H
 
@@ -29,17 +54,29 @@
 #include <linux/in.h>
 #include <net/ndisc.h>
 
-#include "rrc_nas_primitives.h"
-#include "protocol_vars_extern.h"
-#include "as_sap.h"
-#include "rrc_qos.h"
-#include "rrc_sap.h"
+// #include "rrc_nas_primitives.h"
+// #include "protocol_vars_extern.h"
+// #include "as_sap.h"
+// #include "rrc_qos.h"
+// #include "rrc_sap.h"
+
+// nasrg_netlink.c
+void nasrg_netlink_release(void);
+int nasrg_netlink_init(void);
+int nasrg_netlink_send(unsigned char *data_buffer, unsigned int data_length, int destination);
 
 // nasrg_common.c
-void nasrg_COMMON_receive(u16 hlen, u16 dlength, int sap);
+//void nasrg_COMMON_receive(u16 hlen, u16 dlength, int sap);
+void nasrg_COMMON_receive(u16 bytes_read, u16 payload_length, void *data_buffer, int rb_id, int sap);
+
 void nasrg_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
+void nasrg_COMMON_QOS_send_test_netlink(struct sk_buff *skb);
 void nasrg_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
+#ifndef NAS_NETLINK
 void nasrg_COMMON_QOS_receive(struct cx_entity *cx);
+#else
+void nasrg_COMMON_QOS_receive(struct nlmsghdr *nlh);
+#endif
 struct rb_entity *nasrg_COMMON_add_rb(struct cx_entity *cx, nasRadioBearerId_t rabi, nasQoSTrafficClass_t qos);
 struct rb_entity *nasrg_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t rabi);
 struct cx_entity *nasrg_COMMON_search_cx(nasLocalConnectionRef_t lcr);
@@ -50,7 +87,9 @@ void nasrg_COMMON_flush_rb(struct cx_entity *cx);
 void nasrg_ASCTL_init(void);
 void nasrg_ASCTL_timer(unsigned long data);
 void nasrg_ASCTL_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
-int nasrg_ASCTL_DC_receive(struct cx_entity *cx);
+//int nasrg_ASCTL_DC_receive(struct cx_entity *cx);
+int nasrg_ASCTL_DC_receive(struct cx_entity *cx, char *buffer);
+//
 int nasrg_ASCTL_DC_send_cx_establish_confirm(struct cx_entity *cx, u8 response);
 int nasrg_ASCTL_DC_send_rb_establish_request(struct cx_entity *cx, struct rb_entity *rb);
 int nasrg_ASCTL_DC_send_rb_release_request(struct cx_entity *cx, struct rb_entity *rb);
@@ -87,6 +126,8 @@ char *nasrg_TOOL_get_udpmsg(struct udphdr *udph);
 u16 nasrg_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, u8 proto, u32 udplen, void *data);
 int nasrg_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, u8 plen);
 int nasrg_TOOL_network4(u32 *addr, u32 *prefix, u8 plen);
+
+void nasrg_TOOL_pk_icmp6(struct icmp6hdr *icmph);
 
 void nasrg_TOOL_pk_all(struct sk_buff *skb);
 void nasrg_TOOL_pk_ipv6(struct ipv6hdr *iph);

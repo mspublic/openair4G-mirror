@@ -1,247 +1,202 @@
 /***************************************************************************
                           nasmt_tool.c  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : yan.moret@eurecom.fr
-                           michelle.wetterwald@eurecom.fr
  ***************************************************************************
 
  ***************************************************************************/
+/*******************************************************************************
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2013 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 450 route des Chappes, 06410 Biot Sophia Antipolis, France
+*******************************************************************************/
+/*! \file nasmt_tool.c
+* \brief Tool functions for OpenAirInterface CELLULAR version - MT
+* \author  michelle.wetterwald, navid.nikaein, raymond.knopp, Lionel Gauthier
+* \company Eurecom
+* \email: michelle.wetterwald@eurecom.fr, raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr,  lionel.gauthier@eurecom.fr
+*/
+/*******************************************************************************/
+
 #include "nasmt_variables.h"
 #include "nasmt_proto.h"
-
-//#include <linux/in.h>
-//#include <net/ndisc.h>
-//#include <linux/icmpv6.h>
-//#include <linux/icmp.h>
-//#include <linux/udp.h>
-//#include <linux/tcp.h>
-
 
 //---------------------------------------------------------------------------
 //
 void nasmt_TOOL_fct(struct classifier_entity *gc, u8 fct){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_fct - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_fct - begin \n");
 #endif
   if (gc==NULL){
- 	  printk("nasmt_TOOL_fct - input parameter gc is NULL \n");
+    printk("nasmt_TOOL_fct - input parameter gc is NULL \n");
     return;
   }
 // End debug information
-	switch(fct){
-    	case GRAAL_FCT_QOS_SEND:
-    		gc->fct=nasmt_COMMON_QOS_send;
-    		break;
-    	case GRAAL_FCT_CTL_SEND:
-    		gc->fct=nasmt_CTL_send;
-    		break;
-    	case GRAAL_FCT_DC_SEND:
-    		gc->fct=nasmt_ASCTL_DC_send_sig_data_request;
-    		break;
-    	case GRAAL_FCT_DEL_SEND:
-    		gc->fct=nasmt_COMMON_del_send;
-    		break;
-    	default:
-    		gc->fct=nasmt_COMMON_del_send;
-	}
+  switch(fct){
+      case NAS_FCT_QOS_SEND:
+        gc->fct=nasmt_COMMON_QOS_send;
+        break;
+      case NAS_FCT_CTL_SEND:
+        gc->fct=nasmt_CTL_send;
+        break;
+      case NAS_FCT_DC_SEND:
+        gc->fct=nasmt_ASCTL_DC_send_sig_data_request;
+        break;
+      case NAS_FCT_DEL_SEND:
+        gc->fct=nasmt_COMMON_del_send;
+        break;
+      default:
+        gc->fct=nasmt_COMMON_del_send;
+  }
 }
 
 //---------------------------------------------------------------------------
 u8 nasmt_TOOL_invfct(struct classifier_entity *gc){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_invfct - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_invfct - begin \n");
 #endif
   if (gc==NULL){
- 	  printk("nasmt_TOOL_invfct - input parameter gc is NULL \n");
+     printk("nasmt_TOOL_invfct - input parameter gc is NULL \n");
     return 0;
   }
 // End debug information
-	if (gc->fct==nasmt_COMMON_QOS_send)
-		return GRAAL_FCT_QOS_SEND;
-	if (gc->fct==nasmt_CTL_send)
-		return GRAAL_FCT_CTL_SEND;
-	if (gc->fct==nasmt_COMMON_del_send)
-		return GRAAL_FCT_DEL_SEND;
-	if (gc->fct==nasmt_ASCTL_DC_send_sig_data_request)
-		return GRAAL_FCT_DC_SEND;
-	return 0;
+  if (gc->fct==nasmt_COMMON_QOS_send)
+    return NAS_FCT_QOS_SEND;
+  if (gc->fct==nasmt_CTL_send)
+    return NAS_FCT_CTL_SEND;
+  if (gc->fct==nasmt_COMMON_del_send)
+    return NAS_FCT_DEL_SEND;
+  if (gc->fct==nasmt_ASCTL_DC_send_sig_data_request)
+    return NAS_FCT_DC_SEND;
+  return 0;
 }
 
 //---------------------------------------------------------------------------
 u8 nasmt_TOOL_get_dscp6(struct ipv6hdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_get_dscp6 - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_get_dscp6 - begin \n");
 #endif
   if (iph==NULL){
- 	  printk("nasmt_TOOL_get_dscp6 - input parameter ipv6hdr is NULL \n");
+     printk("nasmt_TOOL_get_dscp6 - input parameter ipv6hdr is NULL \n");
     return 0;
   }
 // End debug information
-//	return (ntohl(((*(__u32 *)iph)&GRAAL_TRAFFICCLASS_MASK)))>>22; //Yan
-	return (ntohl(((*(__u32 *)iph)&GRAAL_TRAFFICCLASS_MASK)))>>20;
+//  return (ntohl(((*(__u32 *)iph)&NAS_TRAFFICCLASS_MASK)))>>22; //Yan
+  return (ntohl(((*(__u32 *)iph)&NAS_TRAFFICCLASS_MASK)))>>20;
 }
 
 //---------------------------------------------------------------------------
 u8 nasmt_TOOL_get_dscp4(struct iphdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_get_dscp4 - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_get_dscp4 - begin \n");
 #endif
   if (iph==NULL){
- 	  printk("nasmt_TOOL_get_dscp4 - input parameter ipv4hdr is NULL \n");
+     printk("nasmt_TOOL_get_dscp4 - input parameter ipv4hdr is NULL \n");
     return 0;
   }
 // End debug information
-	return ((iph->tos)>>5)<<3;
+  return ((iph->tos)>>5)<<3;
 }
 
-//---------------------------------------------------------------------------
-int nasmt_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, u8 plen){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_network6 - begin \n");
-#endif
-  if (addr==NULL){
- 	  printk("nasmt_TOOL_network6 - input parameter addr is NULL \n");
-    return 0;
-  }
-  if (prefix==NULL){
- 	  printk("nasmt_TOOL_network6 - input parameter prefix is NULL \n");
-    return 0;
-  }
-// End debug information
-	switch(plen/32)
-	{
-	case 0:
-		return (((addr->s6_addr32[0]>>(32-plen))<<(32-plen))==prefix->s6_addr[0]);
-	case 1:
-		return ((addr->s6_addr32[0]==prefix->s6_addr[0])&&
-			(((addr->s6_addr32[1]>>(64-plen))<<(64-plen))==prefix->s6_addr[1]));
-	case 2:
-		return ((addr->s6_addr32[0]==prefix->s6_addr[0])&&
-			(addr->s6_addr32[1]==prefix->s6_addr[1])&&
-			(((addr->s6_addr32[2]>>(96-plen))<<(96-plen))==prefix->s6_addr[2]));
-	case 3:
-		return ((addr->s6_addr32[0]==prefix->s6_addr[0])&&
-			(addr->s6_addr32[1]==prefix->s6_addr[1])&&
-			(addr->s6_addr32[2]==prefix->s6_addr[2])&&
-			(((addr->s6_addr32[3]>>(128-plen))<<(128-plen))==prefix->s6_addr[3]));
-	default:
-		return ((addr->s6_addr32[0]==prefix->s6_addr[0])&&
-			(addr->s6_addr32[1]==prefix->s6_addr[1])&&
-			(addr->s6_addr32[2]==prefix->s6_addr[2])&&
-			(addr->s6_addr32[3]==prefix->s6_addr[3]));
-	}
-}
-
-//---------------------------------------------------------------------------
-int nasmt_TOOL_network4(u32 *addr, u32 *prefix, u8 plen){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_network4 - begin \n");
-#endif
-  if (addr==NULL){
- 	  printk("nasmt_TOOL_network4 - input parameter addr is NULL \n");
-    return 0;
-  }
-  if (prefix==NULL){
- 	  printk("nasmt_TOOL_network4 - input parameter prefix is NULL \n");
-    return 0;
-  }
-// End debug information
-	if (plen>=32)
-		return (*addr==*prefix);
-	else
-		return (((*addr>>(32-plen))<<(32-plen))==*prefix);
-}
-
-//---------------------------------------------------------------------------
-//struct udphdr *graal_TOOL_get_udp6(struct ipv6hdr *iph){
-//---------------------------------------------------------------------------
-//	return (struct udphdr *)((char *)iph+GRAAL_IPV6_SIZE); // to modify
-//}
 
 //---------------------------------------------------------------------------
 u8 *nasmt_TOOL_get_protocol6(struct ipv6hdr *iph, u8 *protocol){
 //---------------------------------------------------------------------------
-	u16 size;
+  u16 size;
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_get_protocol6 - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_get_protocol6 - begin \n");
 #endif
   if (iph==NULL){
- 	  printk("nasmt_TOOL_get_protocol6 - input parameter ipv6hdr is NULL \n");
+     printk("nasmt_TOOL_get_protocol6 - input parameter ipv6hdr is NULL \n");
     return NULL;
   }
   if (protocol==NULL){
- 	  printk("nasmt_TOOL_get_protocol6 - input parameter protocol is NULL \n");
+     printk("nasmt_TOOL_get_protocol6 - input parameter protocol is NULL \n");
     return NULL;
   }
 // End debug information
-	*protocol=iph->nexthdr;
-	size=GRAAL_IPV6_SIZE;
-	while (1)
-	{
-		switch(*protocol)
-		{
-		case IPPROTO_UDP:
-		case IPPROTO_TCP:
-		case IPPROTO_ICMPV6:
-			return (u8 *)((u8 *)iph+size);
-		case IPPROTO_HOPOPTS:
-		case IPPROTO_ROUTING:
-		case IPPROTO_DSTOPTS:
-			*protocol=((u8 *)iph+size)[0];
-			size+=((u8 *)iph+size)[1]*8+8;
-			break;
-		case IPPROTO_FRAGMENT:
-			*protocol=((u8 *)iph+size)[0];
-			size+=((u8 *)iph+size)[1]+8;
-			break;
-		case IPPROTO_NONE:
-		case IPPROTO_AH:
-		case IPPROTO_ESP:
-		default:
-			return NULL;
-		}
-	}
+  *protocol=iph->nexthdr;
+  size=NAS_IPV6_SIZE;
+  while (1)
+  {
+    switch(*protocol)
+    {
+    case IPPROTO_UDP:
+    case IPPROTO_TCP:
+    case IPPROTO_ICMPV6:
+      return (u8 *)((u8 *)iph+size);
+    case IPPROTO_HOPOPTS:
+    case IPPROTO_ROUTING:
+    case IPPROTO_DSTOPTS:
+      *protocol=((u8 *)iph+size)[0];
+      size+=((u8 *)iph+size)[1]*8+8;
+      break;
+    case IPPROTO_FRAGMENT:
+      *protocol=((u8 *)iph+size)[0];
+      size+=((u8 *)iph+size)[1]+8;
+      break;
+    case IPPROTO_NONE:
+    case IPPROTO_AH:
+    case IPPROTO_ESP:
+    default:
+      return NULL;
+    }
+  }
 }
 
 //---------------------------------------------------------------------------
 u8 *nasmt_TOOL_get_protocol4(struct iphdr *iph, u8 *protocol){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_get_protocol4 - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_get_protocol4 - begin \n");
 #endif
   if (iph==NULL){
- 	  printk("nasmt_TOOL_get_protocol4 - input parameter iph is NULL \n");
+     printk("nasmt_TOOL_get_protocol4 - input parameter iph is NULL \n");
     return NULL;
   }
   if (protocol==NULL){
- 	  printk("nasmt_TOOL_get_protocol4 - input parameter protocol is NULL \n");
+     printk("nasmt_TOOL_get_protocol4 - input parameter protocol is NULL \n");
     return NULL;
   }
 // End debug information
-	*protocol=iph->protocol;
-	switch(*protocol){
-	case IPPROTO_UDP:
-	case IPPROTO_TCP:
-	case IPPROTO_ICMP:
-		return (u8 *)((u8 *)iph+iph->tot_len);
-	default:
-		return NULL;
-	}
+  *protocol=iph->protocol;
+  switch(*protocol){
+  case IPPROTO_UDP:
+  case IPPROTO_TCP:
+  case IPPROTO_ICMP:
+    return (u8 *)((u8 *)iph+iph->tot_len);
+  default:
+    return NULL;
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -249,142 +204,61 @@ u8 *nasmt_TOOL_get_protocol4(struct iphdr *iph, u8 *protocol){
 void nasmt_TOOL_imei2iid(u8 *imei, u8 *iid){
 //---------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_imei2iid - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_imei2iid - begin \n");
 #endif
   if (imei==NULL){
- 	  printk("nasmt_TOOL_imei2iid - input parameter imei is NULL \n");
+     printk("nasmt_TOOL_imei2iid - input parameter imei is NULL \n");
     return;
   }
   if (iid==NULL){
- 	  printk("nasmt_TOOL_imei2iid - input parameter iid is NULL \n");
+     printk("nasmt_TOOL_imei2iid - input parameter iid is NULL \n");
     return;
   }
 // End debug information
-	memset(iid, 0, GRAAL_ADDR_LEN);
-	iid[0] = 0x03;
-	iid[1] = 16*imei[0]+imei[1];
-	iid[2] = 16*imei[2]+imei[3];
-	iid[3] = 16*imei[4]+imei[5];
-	iid[4] = 16*imei[6]+imei[7];
-	iid[5] = 16*imei[8]+imei[9];
-	iid[6] = 16*imei[10]+imei[11];
-	iid[7] = 16*imei[12]+imei[13];
-}
-
-//struct udphdr *graal_TOOL_get_udp4(struct iphdr *iph)
-//{
-//	return (struct udphdr *)((char *)iph+GRAAL_IPV4_SIZE); // to modify
-//}
-
-
-//---------------------------------------------------------------------------
-char *nasmt_TOOL_get_udpmsg(struct udphdr *udph){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_get_udpmsg - begin \n");
-#endif
-  if (udph==NULL){
- 	  printk("nasmt_TOOL_get_udpmsg - input parameter udphdr is NULL \n");
-    return NULL;
-  }
-// End debug information
-	return ((char *)udph+sizeof(struct udphdr));
+  memset(iid, 0, NAS_ADDR_LEN);
+  iid[0] = 0x03;
+  iid[1] = 16*imei[0]+imei[1];
+  iid[2] = 16*imei[2]+imei[3];
+  iid[3] = 16*imei[4]+imei[5];
+  iid[4] = 16*imei[6]+imei[7];
+  iid[5] = 16*imei[8]+imei[9];
+  iid[6] = 16*imei[10]+imei[11];
+  iid[7] = 16*imei[12]+imei[13];
 }
 
 //---------------------------------------------------------------------------
-// Compute the UDP checksum (the data size must be odd)
-u16 nasmt_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, u8 proto, u32 udplen, void *data){
+// Convert the IMEI to iid
+void nasmt_TOOL_eth_imei2iid(unsigned char *imei, unsigned char *addr ,unsigned char *iid, unsigned char len){
 //---------------------------------------------------------------------------
-	u32 i;
-  u16 *data16;
-	u32 csum=0;
+  unsigned int index;
+  // Start debug information
+  #ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_eth_imei2iid - begin \n");
+  #endif
+  if (!imei || !addr || !iid){
+      printk("OAI_NW_DRV_TOOL_eNB_IMEI2IID - input parameter imei, addr or iid is NULL \n");
+      return;
+  }
+  // End debug information
+  // set addr (should be device HW address)
+  memset(addr, 0, len);
+  addr[0] = 0x00;  // to be compatible between link local and global
+  // len -1 because of insertion of 0 above
+  for (index = 0; index < (len-1); index++) {
+      addr[index+1] = 16*imei[index*2]+imei[index*2+1];
+  }
+  // set iid6
+  memset(iid, 0, NAS_ADDR_LEN);
+  iid[0] = 0x02;
+  iid[1] = 16*imei[0]+imei[1];
+  iid[2] = 16*imei[2]+imei[3];
+  iid[3] = 0xff;
+  iid[4] = 0xfe;
+  iid[5] = 16*imei[4]+imei[5];
+  iid[6] = 16*imei[6]+imei[7];
+  iid[7] = 16*imei[8]+imei[9];
 
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_udpcksum - begin \n");
-#endif
-  if (saddr==NULL){
- 	  printk("nasmt_TOOL_udpcksum - input parameter saddr is NULL \n");
-    return 0;
-  }
-  if (daddr==NULL){
- 	  printk("nasmt_TOOL_udpcksum - input parameter daddr is NULL \n");
-    return 0;
-  }
-  if (data==NULL){
- 	  printk("nasmt_TOOL_udpcksum - input parameter data is NULL \n");
-    return 0;
-  }
-// End debug information
-	data16=data;
-	for (i=0; i<8; ++i)
-	{
-		csum+=ntohs(saddr->s6_addr16[i]);
-		if (csum>0xffff)
-			csum-=0xffff;
-	}
-	for (i=0; i<8; ++i)
-	{
-		csum+=ntohs(daddr->s6_addr16[i]);
-		if (csum>0xffff)
-			csum-=0xffff;
-	}
-	csum+=(udplen>>16); // udplen checksum
-	if (csum>0xffff)
-		csum -= 0xffff;
-	csum+=udplen & 0xffff;
-	if (csum>0xffff)
-		csum -= 0xffff;
-	csum+=proto; // protocol checksum
-	if (csum>0xffff)
-		csum-=0xffff;
-	for (i = 0; 2*i < udplen; i++)
-	{
-		csum+=ntohs(data16[i]);
-		if (csum>0xffff)
-			csum-=0xffff;
-	}
-	return htons((u16)(~csum)&0xffff);
-}
-
-//---------------------------------------------------------------------------
-void nasmt_TOOL_pk_udp(struct udphdr *udph){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_pk_udp - begin \n");
-#endif
-  if (udph==NULL){
- 	  printk("nasmt_TOOL_pk_udp - input parameter udphdr is NULL \n");
-    return;
-  }
-// End debug information
-	if (udph!=NULL)
-	{
-		printk("UDP:\t source = %u, dest = %u, len = %u, check = %x\n", ntohs(udph->source), ntohs(udph->dest), ntohs(udph->len), udph->check);
-	}
-}
-
-//---------------------------------------------------------------------------
-void nasmt_TOOL_pk_tcp(struct tcphdr *tcph){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_pk_tcp - begin \n");
-#endif
-  if (tcph==NULL){
-#ifdef GRAAL_DEBUG_TOOL
- 	  printk("nasmt_TOOL_pk_tcp - input parameter tcph is NULL \n");
-#endif
-    return;
-  }
-// End debug information
-	if (tcph!=NULL)
-	{
-		printk("TCP:\t source = %u, dest = %u\n", tcph->source, tcph->dest);
-	}
 }
 
 //---------------------------------------------------------------------------
@@ -392,143 +266,49 @@ void nasmt_TOOL_pk_icmp6(struct icmp6hdr *icmph){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_pk_icmp6 - begin \n");
+  printk("nasmt_TOOL_pk_icmp6 - begin \n");
 #endif
-  if (icmph==NULL){
- 	  printk("nasmt_TOOL_pk_icmp6 - input parameter icmph is NULL \n");
+  if (!icmph){
+     printk("nasmt_TOOL_pk_icmp6 - input parameter icmph is NULL \n");
     return;
   }
 // End debug information
-	if (icmph!=NULL)
-	{
-		printk("ICMPv6:\t type= %d, code = %d\n", icmph->icmp6_type, icmph->icmp6_code);
-		switch(icmph->icmp6_type)
-		{
-		case ICMPV6_DEST_UNREACH:printk("Destination unreachable\n");break;
-		case ICMPV6_PKT_TOOBIG:printk("Packet too big\n");break;
-		case ICMPV6_TIME_EXCEED:printk("Time exceeded\n");break;
-		case ICMPV6_PARAMPROB:printk("Parameter problem\n");break;
-		case ICMPV6_ECHO_REQUEST:printk("Echo request\n");break;
-		case ICMPV6_ECHO_REPLY:printk("Echo reply\n");break;
-		case ICMPV6_MGM_QUERY:printk("Multicast listener query\n");break;
-		case ICMPV6_MGM_REPORT:printk("Multicast listener report\n");break;
-		case ICMPV6_MGM_REDUCTION:printk("Multicast listener done\n");break;
-		case NDISC_ROUTER_SOLICITATION:printk("Router solicitation\n");break;
-		case NDISC_ROUTER_ADVERTISEMENT:printk("Router advertisment\n");break;
-		case NDISC_NEIGHBOUR_SOLICITATION:printk("Neighbour solicitation\n");break;
-		case NDISC_NEIGHBOUR_ADVERTISEMENT:printk("Neighbour advertisment\n");break;
-		case NDISC_REDIRECT:printk("redirect message\n");break;
-		}
-	}
-}
-
-//---------------------------------------------------------------------------
-void nasmt_TOOL_pk_ipv6(struct ipv6hdr *iph){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_pk_ipv6 - begin \n");
-#endif
-  if (iph==NULL){
- 	  printk("nasmt_TOOL_pk_ipv6 - input parameter iph is NULL \n");
-    return;
+  printk("ICMPv6:\t type= %d, code = %d\n", icmph->icmp6_type, icmph->icmp6_code);
+  switch(icmph->icmp6_type){
+    case ICMPV6_DEST_UNREACH:printk("Destination unreachable\n");break;
+    case ICMPV6_PKT_TOOBIG:printk("Packet too big\n");break;
+    case ICMPV6_TIME_EXCEED:printk("Time exceeded\n");break;
+    case ICMPV6_PARAMPROB:printk("Parameter problem\n");break;
+    case ICMPV6_ECHO_REQUEST:printk("Echo request\n");break;
+    case ICMPV6_ECHO_REPLY:printk("Echo reply\n");break;
+    case ICMPV6_MGM_QUERY:printk("Multicast listener query\n");break;
+    case ICMPV6_MGM_REPORT:printk("Multicast listener report\n");break;
+    case ICMPV6_MGM_REDUCTION:printk("Multicast listener done\n");break;
+    case NDISC_ROUTER_SOLICITATION:printk("Router solicitation\n");break;
+    case NDISC_ROUTER_ADVERTISEMENT:printk("Router advertisment\n");break;
+    case NDISC_NEIGHBOUR_SOLICITATION:printk("Neighbour solicitation\n");break;
+    case NDISC_NEIGHBOUR_ADVERTISEMENT:printk("Neighbour advertisment\n");break;
+    case NDISC_REDIRECT:printk("redirect message\n");break;
   }
-// End debug information
-
-	if (iph!=NULL)
-	{
-//		char addr[GRAAL_INET6_ADDRSTRLEN];
-		printk("IP:\t version = %u, priority = %u, payload_len = %u\n", iph->version, iph->priority, ntohs(iph->payload_len));
-		printk("\t fl0 = %u, fl1 = %u, fl2 = %u\n",iph->flow_lbl[0],iph->flow_lbl[1],iph->flow_lbl[2]);
-		printk("\t next header = %u, hop_limit = %u\n", iph->nexthdr, iph->hop_limit);
-//		inet_ntop(AF_INET6, (void *)(&iph->saddr), addr, GRAAL_INET6_ADDRSTRLEN);
-//		printk("\t saddr = %s",addr);
-//		inet_ntop(AF_INET6, (void *)(&iph->daddr), addr, GRAAL_INET6_ADDRSTRLEN);
-//		printk(", daddr = %s\n",addr);
-		switch(iph->nexthdr)
-		{
-		case IPPROTO_UDP:
-			nasmt_TOOL_pk_udp((struct udphdr *)((char *)iph+sizeof(struct ipv6hdr)));
-			break;
-		case IPPROTO_TCP:
-			nasmt_TOOL_pk_tcp((struct tcphdr *)((char *)iph+sizeof(struct ipv6hdr)));
-			break;
-		case IPPROTO_ICMPV6:
-			nasmt_TOOL_pk_icmp6((struct icmp6hdr *)((char *)iph+sizeof(struct ipv6hdr)));
-			break;
-		case IPPROTO_IPV6:
-			nasmt_TOOL_pk_ipv6((struct ipv6hdr *)((char *)iph+sizeof(struct ipv6hdr)));
-			break;
-		default:
-			printk("nasmt_TOOL_pk_ipv6 - Unknown upper layer\n");
-		}
-	}
-}
-
-//---------------------------------------------------------------------------
-void nasmt_TOOL_pk_ipv4(struct iphdr *iph){
-//---------------------------------------------------------------------------
-// Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_pk_ipv4 - begin \n");
-#endif
-  if (iph==NULL){
- 	  printk("nasmt_TOOL_pk_ipv4 - input parameter iph is NULL \n");
-    return;
-  }
-// End debug information
-
-	if (iph!=NULL)
-	{
-//		char addr[GRAAL_INET_ADDRSTRLEN];
-		printk("IP:\t version = %u, IP length = %u\n", iph->version, iph->ihl);
-//		inet_ntop(AF_INET, (void *)(&iph->saddr), addr, GRAAL_INET_ADDRSTRLEN);
-//		printk("\t saddr = %s", addr);
-//		inet_ntop(AF_INET, (void *)(&iph->saddr), addr, GRAAL_INET_ADDRSTRLEN);
-//		printk("\t saddr = %s", addr);
-	}
-}
-
-//---------------------------------------------------------------------------
-void nasmt_TOOL_pk_all(struct sk_buff *skb){
-//---------------------------------------------------------------------------
-	printk("Skb:\t %u, len = %u\n", (unsigned int)skb, skb->len);
-	printk("Skb:\t available buf space = %u, cur used space = %u \n", skb->end-skb->head, skb->tail-skb->data);
-	switch (ntohs(skb->protocol))
-	{
-	case ETH_P_IPV6:
-		nasmt_TOOL_pk_ipv6((skb->nh).ipv6h);
-		break;
-	case ETH_P_IP:
-		nasmt_TOOL_pk_ipv4((skb->nh).iph);
-		break;
-	}
 }
 
 //---------------------------------------------------------------------------
 void nasmt_TOOL_print_state(u8 state){
 //---------------------------------------------------------------------------
-//	case GRAAL_STATE_IDLE:printk(" State GRAAL_STATE_IDLE\n");return;
-//	case GRAAL_STATE_CONNECTED:printk(" State GRAAL_STATE_CONNECTED\n");return;
-//	case GRAAL_STATE_ESTABLISHMENT_REQUEST:printk(" State GRAAL_STATE_ESTABLISHMENT_REQUEST\n");return;
-//	case GRAAL_STATE_ESTABLISHMENT_FAILURE:printk(" State GRAAL_STATE_ESTABLISHMENT_FAILURE\n");return;
-//	case GRAAL_STATE_RELEASE_FAILURE:printk(" State GRAAL_STATE_RELEASE_FAILURE\n");return;
-
-	switch(state){
-  	case  GRAAL_IDLE:printk("GRAAL_IDLE\n");return;
-    case  GRAAL_CX_FACH:printk("GRAAL_CX_FACH\n");return;
-    case  GRAAL_CX_DCH:printk("GRAAL_CX_DCH\n");return;
-    case  GRAAL_CX_RECEIVED:printk("GRAAL_CX_RECEIVED\n");return;
-    case  GRAAL_CX_CONNECTING:printk("GRAAL_CX_CONNECTING\n");return;
-    case  GRAAL_CX_RELEASING:printk("GRAAL_CX_RELEASING\n");return;
-    case  GRAAL_CX_CONNECTING_FAILURE:printk("GRAAL_CX_CONNECTING_FAILURE\n");return;
-    case  GRAAL_CX_RELEASING_FAILURE:printk("GRAAL_CX_RELEASING_FAILURE\n");return;
-    case  GRAAL_RB_ESTABLISHING:printk("GRAAL_RB_ESTABLISHING\n");return;
-    case  GRAAL_RB_RELEASING:printk("GRAAL_RB_RELEASING\n");return;
-    case  GRAAL_RB_DCH:printk("GRAAL_RB_DCH\n");return;
-
-  	default: printk("nasmt_TOOL_print_state - Unknown state\n");
-	}
+  switch(state){
+    case  NAS_IDLE:printk("NAS_IDLE\n");return;
+    case  NAS_CX_FACH:printk("NAS_CX_FACH\n");return;
+    case  NAS_CX_DCH:printk("NAS_CX_DCH\n");return;
+    case  NAS_CX_RECEIVED:printk("NAS_CX_RECEIVED\n");return;
+    case  NAS_CX_CONNECTING:printk("NAS_CX_CONNECTING\n");return;
+    case  NAS_CX_RELEASING:printk("NAS_CX_RELEASING\n");return;
+    case  NAS_CX_CONNECTING_FAILURE:printk("NAS_CX_CONNECTING_FAILURE\n");return;
+    case  NAS_CX_RELEASING_FAILURE:printk("NAS_CX_RELEASING_FAILURE\n");return;
+    case  NAS_RB_ESTABLISHING:printk("NAS_RB_ESTABLISHING\n");return;
+    case  NAS_RB_RELEASING:printk("NAS_RB_RELEASING\n");return;
+    case  NAS_RB_DCH:printk("NAS_RB_DCH\n");return;
+    default: printk("nasmt_TOOL_print_state - Unknown state\n");
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -538,28 +318,28 @@ void nasmt_TOOL_print_buffer(unsigned char * buffer,int length) {
    int i;
 
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_print_buffer - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_print_buffer - begin \n");
 #endif
   if (buffer==NULL){
- 	  printk("nasmt_TOOL_print_buffer - input parameter buffer is NULL \n");
+     printk("nasmt_TOOL_print_buffer - input parameter buffer is NULL \n");
     return;
   }
 // End debug information
    printk("\nBuffer content: ");
-	 for (i=0;i<length;i++)
-		 printk("-%hx-",buffer[i]);
- 	 printk(",\t length %d\n", length);
+   for (i=0;i<length;i++)
+     printk("-%hx-",buffer[i]);
+    printk(",\t length %d\n", length);
 }
 //-----------------------------------------------------------------------------
 void nasmt_TOOL_print_rb_entity(struct rb_entity *rb){
 //-----------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_print_rb_entity - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_print_rb_entity - begin \n");
 #endif
   if (rb==NULL){
- 	  printk("nasmt_TOOL_print_rb_entity - input parameter rb is NULL \n");
+     printk("nasmt_TOOL_print_rb_entity - input parameter rb is NULL \n");
     return;
   }
 // End debug information
@@ -571,11 +351,11 @@ void nasmt_TOOL_print_rb_entity(struct rb_entity *rb){
 void nasmt_TOOL_print_classifier(struct classifier_entity *gc){
 //-----------------------------------------------------------------------------
 // Start debug information
-#ifdef GRAAL_DEBUG_TOOL
-	printk("nasmt_TOOL_print_classifier - begin \n");
+#ifdef NAS_DEBUG_TOOL
+  printk("nasmt_TOOL_print_classifier - begin \n");
 #endif
   if (gc==NULL){
- 	  printk("nasmt_TOOL_print_classifier - input parameter gc is NULL \n");
+     printk("nasmt_TOOL_print_classifier - input parameter gc is NULL \n");
     return;
   }
 // End debug information
