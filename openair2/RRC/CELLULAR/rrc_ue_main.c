@@ -48,17 +48,20 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
  // protocol_ms->rrc.current_SFN = frame;
   /*************/
   // TODO TO BE REMOVED TEMP -- stop the loop 
-  if (protocol_ms->rrc.current_SFN > 50000)
-   exit(1);
+  /*  if (protocol_ms->rrc.current_SFN > 50000)
+   exit(1);*/
   //if (Mac_rlc_xface->frame < 100)
   //s return;
   //if (protocol_ms->rrc.current_SFN == 100)
    //msg("\n\n[RRC] [TEMP-OPENAIR-DEBUG] RRC-UE resuming its operation at frame %d\n\n ", protocol_ms->rrc.current_SFN);
 
   /*************/
+  // TODO TO BE REMOVED TEMP -- stop RRC process action (for early traces) 
+  //if (protocol_ms->rrc.current_SFN > 300)
+  // return 0;
 
   #ifdef DEBUG_RRC_DETAILS
-  if (protocol_ms->rrc.current_SFN % 5 == 0) {
+  if (protocol_ms->rrc.current_SFN % 20 == 0) {
      msg ("\n\n[RRC][MSG_TEST] System Time : %d\n", protocol_ms->rrc.current_SFN);
      #ifdef  DEBUG_RRC_BROADCAST
      msg ("[RRC_BCH-UE] DEBUG ue_wait_establish_req = %d.\n", protocol_ms->rrc.ue_wait_establish_req );
@@ -105,8 +108,8 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
     protocol_ms->rrc.ue_bch_blocks.SIB14_timeout = TRUE;
   }
   // Wait for message in DC FIFO
-  rrc_ue_read_DCin_FIFO ();
-
+  //rrc_ue_read_DCin_FIFO ();  // old version before Netlink sockets
+  rrc_ue_read_FIFO();
   // check for a time-out event
   // umts_timer_check_time_out (&protocol_ms->rrc.rrc_timers, protocol_ms->frame_tick_milliseconds);
   //umts_timer_check_time_out (&protocol_ms->rrc.rrc_timers, Mac_rlc_xface->frame/RRC_FRAME_DURATION);

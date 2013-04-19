@@ -190,35 +190,36 @@ void rrc_ue_srb3_decode (char * sduP, int length){
 }
 
 //-----------------------------------------------------------------------------
-int rrc_ue_read_DCin_FIFO (void){
+void rrc_ue_read_DCin_FIFO (struct nas_ue_dc_element *p, int count){
 //-----------------------------------------------------------------------------
-  int count = 0;
+  //int count = 0;
   int maxlen = NAS_MAX_LENGTH;
   u8  rcve_buffer[maxlen];
   u16 data_length;
   int Message_Id;
-  struct nas_ue_dc_element *p;
-  int prim_length;
-  int prim_type;
+  //struct nas_ue_dc_element *p;
+  //int prim_length;
+  //int prim_type;
   //int status;
 
-  memset (rcve_buffer, 0, maxlen);
-  if ((count = rtf_get (protocol_ms->rrc.rrc_ue_DCIn_fifo, rcve_buffer, NAS_TL_SIZE)) > 0) {
-
-    #ifdef DEBUG_RRC_STATE
-     msg ("[RRC_UE] Message Received from NAS: -%hx- \n", rcve_buffer[0]);
-    #endif
-    p = (struct nas_ue_dc_element *) rcve_buffer;
-    prim_length = (int) (p->length);
-    prim_type = (int) (p->type);
-    #ifdef DEBUG_RRC_STATE
-     msg ("[RRC_UE] Primitive Type %d,\t Primitive length %d \n", prim_type, prim_length);
-    #endif
-    //get the rest of the primitive
-    count += rtf_get (protocol_ms->rrc.rrc_ue_DCIn_fifo, &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
+//   memset (rcve_buffer, 0, maxlen);
+//   if ((count = rtf_get (protocol_ms->rrc.rrc_ue_DCIn_fifo, rcve_buffer, NAS_TL_SIZE)) > 0) {
+// 
+//     #ifdef DEBUG_RRC_STATE
+//      msg ("[RRC_UE] Message Received from NAS: -%hx- \n", rcve_buffer[0]);
+//     #endif
+//     p = (struct nas_ue_dc_element *) rcve_buffer;
+//     prim_length = (int) (p->length);
+//     prim_type = (int) (p->type);
+//     #ifdef DEBUG_RRC_STATE
+//      msg ("[RRC_UE] Primitive Type %d,\t Primitive length %d \n", prim_type, prim_length);
+//     #endif
+//     //get the rest of the primitive
+//     count += rtf_get (protocol_ms->rrc.rrc_ue_DCIn_fifo, &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
 
     // Decode the primitive
-    switch (rcve_buffer[0]) {
+//    switch (rcve_buffer[0]) {
+    switch (p->type) {
       case CONN_ESTABLISH_REQ:
         protocol_ms->rrc.local_connection_ref = (int) (p->nasUEDCPrimitive.conn_establish_req.localConnectionRef);
         //Temp
@@ -246,8 +247,12 @@ int rrc_ue_read_DCin_FIFO (void){
           protocol_ms->rrc.ul_nas_message_ptr = get_free_mem_block (data_length);
           protocol_ms->rrc.ul_nas_message_lgth = data_length;
           //get the associated data
+          #ifndef RRC_NETLINK
           count += rtf_get (protocol_ms->rrc.rrc_ue_DCIn_fifo, (protocol_ms->rrc.ul_nas_message_ptr)->data, data_length);
           //memcpy((protocol_ms->rrc.ul_nas_message_ptr)->data,&(rcve_buffer[p->length]),data_length);
+          #else
+          count += rrc_ue_read_data_from_nlh ((char *)(protocol_ms->rrc.ul_nas_message_ptr)->data, data_length, (int) (p->length));
+          #endif
           #ifdef DEBUG_RRC_STATE
           rrc_print_buffer (rcve_buffer, 100);
           msg ("[RRC_UE] DATA_TRANSFER_REQ primitive length: %d\n", (int) (p->length));
@@ -277,7 +282,6 @@ int rrc_ue_read_DCin_FIFO (void){
         count = -1;
         break;
     }
-  }
   return count;
 
 }

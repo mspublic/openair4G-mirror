@@ -148,6 +148,7 @@ void rrc_rg_srb2_decode (int UE_Id, char * sduP, int length){
       case UL_DCCH_radioBearerSetupComplete:
         status = rrc_rg_msg_rbsetupcompl (UE_Id, ul_dcch_msg);
         if (status == SUCCESS)
+          rrc_rg_config_LTE_default_drb(0);
           rrc_rg_fsm_control (UE_Id, UE_RB_SU_CMP);
         break;
       case UL_DCCH_radioBearerSetupFailure:
@@ -158,6 +159,7 @@ void rrc_rg_srb2_decode (int UE_Id, char * sduP, int length){
       case UL_DCCH_radioBearerReleaseComplete:
         status = rrc_rg_msg_rbreleasecompl (UE_Id, ul_dcch_msg);
         if (status == SUCCESS)
+          rrc_rg_config_LTE_default_drb(0);
           rrc_rg_fsm_control (UE_Id, UE_RB_REL_CMP);
         break;
       case UL_DCCH_radioBearerReleaseFailure:
@@ -220,13 +222,12 @@ void rrc_rg_srb3_decode (int UE_Id, char * sduP, int length){
 
 //-----------------------------------------------------------------------------
 // Read data in DC FIFO
-int rrc_rg_read_DCin_FIFO (int UE_Id){
+int rrc_rg_read_DCin_FIFO (int UE_Id, u8 *buffer, int count){
 //-----------------------------------------------------------------------------
-  int count = 0;
-  int maxlen = NAS_MAX_LENGTH;
+  //int maxlen = NAS_MAX_LENGTH;
   int Message_Id;
   int data_length;
-  u8  rcve_buffer[maxlen];
+  //u8  rcve_buffer[maxlen];
   struct nas_rg_dc_element *p;
   int prim_length;
   int prim_type;
@@ -234,21 +235,21 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
    int i;
   #endif
 
-  memset (rcve_buffer, 0, maxlen);
-  if ((count = rtf_get (protocol_bs->rrc.rrc_rg_DCIn_fifo[UE_Id], rcve_buffer, NAS_TL_SIZE)) > 0) {
+  if (count > 0) {
     #ifdef DEBUG_RRC_STATE
-     msg ("[RRC_RG] Message Received from NAS: -%hx- \n", rcve_buffer[0]);
+     msg ("[RRC_RG] Message Received from NAS: -%hx- \n", buffer[0]);
     #endif
-    p = (struct nas_rg_dc_element *) rcve_buffer;
+    p = (struct nas_rg_dc_element *) buffer;
     prim_length = (int) (p->length);
     prim_type = (int) (p->type);
     #ifdef DEBUG_RRC_STATE
      msg ("[RRC_RG] Primitive Type %d,\t Primitive length %d \n", prim_type, prim_length);
     #endif
     //get the rest of the primitive
-    count += rtf_get (protocol_bs->rrc.rrc_rg_DCIn_fifo[UE_Id], &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
+    //count += rtf_get (protocol_bs->rrc.rrc_rg_DCIn_fifo[UE_Id], &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
 
-    switch (rcve_buffer[0]) {
+    //switch (rcve_buffer[0]) {
+    switch (prim_type) {
       case CONN_ESTABLISH_CNF:
         if (protocol_bs->rrc.Mobile_List[UE_Id].local_connection_ref == (int) (p->nasRGDCPrimitive.conn_establish_conf.localConnectionRef)) {
           protocol_bs->rrc.establishment_cause = p->nasRGDCPrimitive.conn_establish_conf.status;
@@ -268,11 +269,14 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
           protocol_bs->rrc.Mobile_List[UE_Id].dl_nas_message_ptr = get_free_mem_block (data_length);
           protocol_bs->rrc.Mobile_List[UE_Id].dl_nas_message_lgth = data_length;
           //get the associated data
+          #ifndef RRC_NETLINK
           count += rtf_get (protocol_bs->rrc.rrc_rg_DCIn_fifo[UE_Id], (protocol_bs->rrc.Mobile_List[UE_Id].dl_nas_message_ptr)->data, data_length);
-          // memcpy((protocol_bs->rrc.Mobile_List[UE_Id].dl_nas_message_ptr)->data,
-          // &(rcve_buffer[p->length]),data_length);
+          // memcpy((protocol_bs->rrc.Mobile_List[UE_Id].dl_nas_message_ptr)->data,&(rcve_buffer[p->length]),data_length);
+          #else
+          count += rrc_rg_read_data_from_nlh ((char *)(protocol_bs->rrc.Mobile_List[UE_Id].dl_nas_message_ptr)->data, data_length, (int) (p->length));
+          #endif
           #ifdef DEBUG_RRC_STATE
-            rrc_print_buffer ((char *)rcve_buffer, 100);
+            rrc_print_buffer ((char *)buffer, count);
             msg ("[RRC_RG] DATA_TRANSFER_REQ primitive length: %d\n", (int) (p->length));
             msg ("[RRC_RG] Local Connection reference: %d\n", p->nasRGDCPrimitive.data_transfer_req.localConnectionRef);
             msg ("[RRC_RG] Priority (not used yet): %d\n", p->nasRGDCPrimitive.data_transfer_req.priority);
@@ -287,7 +291,7 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
       case RB_ESTABLISH_REQ:
         if (protocol_bs->rrc.Mobile_List[UE_Id].local_connection_ref == (int) (p->nasRGDCPrimitive.rb_establish_req.localConnectionRef)) {
           #ifdef DEBUG_RRC_STATE
-            rrc_print_buffer ((char *)rcve_buffer, 100);
+            rrc_print_buffer ((char *)buffer, count);
             msg ("[RRC_RG] RB_ESTABLISH_REQ primitive length: %d\n", (int) (p->length));
             msg ("[RRC_RG] Local Connection reference: %d\n", p->nasRGDCPrimitive.rb_establish_req.localConnectionRef);
             msg ("[RRC_RG] RB Id: %d ", p->nasRGDCPrimitive.rb_establish_req.rbId);
@@ -308,7 +312,7 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
       case RB_RELEASE_REQ:
         if (protocol_bs->rrc.Mobile_List[UE_Id].local_connection_ref == (int) (p->nasRGDCPrimitive.rb_release_req.localConnectionRef)) {
           #ifdef DEBUG_RRC_STATE
-            rrc_print_buffer ((char *)rcve_buffer, 100);
+            rrc_print_buffer ((char *)buffer, count);
             msg ("[RRC_RG] RB_RELEASE_REQ primitive length: %d\n", (int) (p->length));
             msg ("[RRC_RG] Local Connection reference: %d\n", p->nasRGDCPrimitive.rb_release_req.localConnectionRef);
             msg ("[RRC_RG] RB Id: %d \n", p->nasRGDCPrimitive.rb_release_req.rbId);
@@ -318,7 +322,7 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
           rrc_rg_fsm_control (UE_Id, NAS_RB_RELEASE);
         }
         break;
-        #ifdef ALLOW_MBMS_PROTOCOL
+      #ifdef ALLOW_MBMS_PROTOCOL
       case MBMS_UE_NOTIFY_REQ:
         if (protocol_bs->rrc.Mobile_List[UE_Id].local_connection_ref  == (int)(p->nasRGDCPrimitive.mbms_ue_notify_req.localConnectionRef)){
           //Copy primitive information into the control block
@@ -328,7 +332,7 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
             p_rg_mbms->nas_leftServices[i] = p->nasRGDCPrimitive.mbms_ue_notify_req.left_services[i].mbms_serviceId;
           }
           #ifdef DEBUG_RRC_STATE
-            rrc_print_buffer((char *)rcve_buffer,100);
+            rrc_print_buffer((char *)buffer,count);
             msg("[RRC_RG][MBMS] MBMS_UE_NOTIFY_REQ primitive length: %d\n",(int)(p->length));
             msg("[RRC_RG][MBMS] Local Connection reference: %d\n",p->nasRGDCPrimitive.mbms_ue_notify_req.localConnectionRef);
             // msg("[RRC_RG][MBMS] Lists of joined services and left services are not shown \n");
@@ -341,7 +345,7 @@ int rrc_rg_read_DCin_FIFO (int UE_Id){
       // end MBMS
       default:
         msg ("[RRC_RG] Invalid message received in DC SAP\n");
-        rrc_print_buffer ((char *)rcve_buffer, count);
+        rrc_print_buffer ((char *)buffer, count);
         count = -1;
         break;
     }
@@ -351,32 +355,30 @@ return 0;
 }
 
 //-----------------------------------------------------------------------------
-int rrc_rg_read_GC_FIFO (void){
+int rrc_rg_read_GC_FIFO (u8 *buffer, int count){
 //-----------------------------------------------------------------------------
-  int count = 0;
-  int maxlen = NAS_MAX_LENGTH;
   int data_length, category, new_period;
   int remaining_data = 0;
-  u8  rcve_buffer[maxlen];
+  //u8  rcve_buffer[maxlen];
   struct nas_rg_gc_element *p;
   int prim_length;
   int prim_type;
 
-  if ((count = rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, rcve_buffer, NAS_TL_SIZE)) > 0) {
+  if (count > 0) {
     #ifdef DEBUG_RRC_BROADCAST
-     msg ("[RRC_RG] Message Received from NAS - GC SAP: -%hx- \n", rcve_buffer[0]);
+     msg ("[RRC_RG] Message Received from NAS - GC SAP: -%hx- \n", buffer[0]);
     #endif
     #ifdef DEBUG_RRC_BROADCAST_DETAILS
-     rrc_print_buffer ((char *)rcve_buffer, count);
+     rrc_print_buffer ((char *)buffer, count);
     #endif
-    p = (struct nas_rg_gc_element *) rcve_buffer;
+    p = (struct nas_rg_gc_element *) buffer;
     prim_length = (int) (p->length);
     prim_type = (int) (p->type);
     #ifdef DEBUG_RRC_BROADCAST
      msg ("[RRC_RG] Primitive Type %d,\t Primitive length %d \n", prim_type, prim_length);
     #endif
     //get the rest of the primitive
-    count += rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
+    //count += rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
 
     switch (prim_type) {
       case INFO_BROADCAST_REQ:
@@ -392,7 +394,11 @@ int rrc_rg_read_GC_FIFO (void){
             }
             protocol_bs->rrc.rg_bch_blocks.currSIB1.subnet_NAS_SysInfo.numocts = data_length;
             //get the associated data
+            #ifndef RRC_NETLINK
             count += rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, protocol_bs->rrc.rg_bch_blocks.currSIB1.subnet_NAS_SysInfo.data, data_length);
+            #else
+            count += rrc_rg_read_data_from_nlh ((char *)(protocol_bs->rrc.rg_bch_blocks.currSIB1.subnet_NAS_SysInfo.data), data_length, (int) (p->length));
+            #endif
             if (new_period == 0)
               new_period = 100;     //Temp, block one-time shot
             #ifndef USER_MODE
@@ -408,7 +414,11 @@ int rrc_rg_read_GC_FIFO (void){
             }
             protocol_bs->rrc.rg_bch_blocks.currSIB18.cellIdentities.numocts = data_length;
             //get the associated data
+            #ifndef RRC_NETLINK
             count += rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, protocol_bs->rrc.rg_bch_blocks.currSIB18.cellIdentities.data, data_length);
+            #else
+            count += rrc_rg_read_data_from_nlh ((char *)(protocol_bs->rrc.rg_bch_blocks.currSIB18.cellIdentities.data), data_length, (int) (p->length));
+            #endif
             if (new_period == 0)
               new_period = 500;     //Temp, block one-time shot
             rrc_process_sib18 ();
@@ -420,7 +430,7 @@ int rrc_rg_read_GC_FIFO (void){
           default:
             msg ("[RRC_RG] Invalid categogy received from NAS in Broadcast_req: %d \n", category);
         }
-        #ifdef DEBUG_RRC_BROADCAST      // LG
+        #ifdef DEBUG_RRC_BROADCAST_DETAILS
           msg ("[RRC_RG] INFO_BROADCAST_REQ primitive length: %d\n", (int) (p->length));
           // rrc_print_buffer(rcve_buffer,100);
           msg ("[RRC_RG] Period: %d\t", new_period);
@@ -441,9 +451,11 @@ int rrc_rg_read_GC_FIFO (void){
           }
         #endif
         //read remaining data if any
+        #ifndef RRC_NETLINK
         if (remaining_data > 0 && remaining_data < NAS_MAX_LENGTH) {
-          rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, &(rcve_buffer[0]), remaining_data);
+          rtf_get (protocol_bs->rrc.rrc_rg_GC_fifo, &(buffer[0]), remaining_data);
         }
+        #endif
         break;
         //
       #ifdef ALLOW_MBMS_PROTOCOL
@@ -505,30 +517,25 @@ int rrc_rg_read_GC_FIFO (void){
 }
 
 //-----------------------------------------------------------------------------
-int rrc_rg_read_NT_FIFO (void){
+int rrc_rg_read_NT_FIFO (u8 *buffer, int count){
 //-----------------------------------------------------------------------------
-  int count = 0;
-//int maxlen = NAS_MAX_LENGTH;
   int data_length;
   int Message_Id;
   int UE_Id;
-  u8              rcve_buffer[NAS_MAX_LENGTH];
   struct nas_rg_nt_element *p;
   int prim_length;
   int prim_type;
 
-  if ((count = rtf_get (protocol_bs->rrc.rrc_rg_NT_fifo, rcve_buffer, NAS_TL_SIZE)) > 0) {
+  if (count > 0) {
     #ifdef DEBUG_RRC_STATE
-     msg ("[RRC_RG] Message Received from NAS - NT SAP: -%hx- \n", rcve_buffer[0]);
+     msg ("[RRC_RG] Message Received from NAS - NT SAP: -%hx- \n", buffer[0]);
     #endif
-    p = (struct nas_rg_nt_element *) rcve_buffer;
+    p = (struct nas_rg_nt_element *) buffer;
     prim_length = (int) (p->length);
     prim_type = (int) (p->type);
     #ifdef DEBUG_RRC_STATE
      msg ("[RRC_RG] Primitive Type %d,\t Primitive length %d \n", prim_type, prim_length);
     #endif
-    //get the rest of the primitive
-    count += rtf_get (protocol_bs->rrc.rrc_rg_NT_fifo, &(rcve_buffer[NAS_TL_SIZE]), prim_length - NAS_TL_SIZE);
     //rrc_print_buffer ((char *)rcve_buffer, 100);
     switch (prim_type) {
       case PAGING_REQ:
@@ -537,9 +544,12 @@ int rrc_rg_read_NT_FIFO (void){
         protocol_bs->rrc.Mobile_List[UE_Id].paging_message_ptr = get_free_mem_block (data_length);
         protocol_bs->rrc.Mobile_List[UE_Id].paging_message_lgth = data_length;
         //get the associated data
-        count += rtf_get (protocol_bs->rrc.rrc_rg_NT_fifo, (protocol_bs->rrc.Mobile_List[UE_Id].paging_message_ptr)->data, data_length);
-        // memcpy((protocol_bs->rrc.Mobile_List[UE_Id].paging_message_ptr)->data,
-        // &(rcve_buffer[p->length]),data_length);
+        #ifndef RRC_NETLINK
+         count += rtf_get (protocol_bs->rrc.rrc_rg_NT_fifo, (protocol_bs->rrc.Mobile_List[UE_Id].paging_message_ptr)->data, data_length);
+        #else
+         count += rrc_rg_read_data_from_nlh ((char *)(protocol_bs->rrc.Mobile_List[UE_Id].paging_message_ptr)->data, data_length, (int) (p->length));
+        #endif
+        // memcpy((protocol_bs->rrc.Mobile_List[UE_Id].paging_message_ptr)->data, &(rcve_buffer[p->length]),data_length);
         #ifdef DEBUG_RRC_STATE
           //rrc_print_buffer ((char *)rcve_buffer, 100);
           msg ("[RRC_RG] PAGING_REQ primitive length: %d\n", (int) (p->length));
@@ -555,7 +565,7 @@ int rrc_rg_read_NT_FIFO (void){
         break;
       default:
         msg ("[RRC_RG] Invalid message received on NT SAP\n");
-        rrc_print_buffer ((char *)rcve_buffer, count);
+        rrc_print_buffer ((char *)buffer, count);
         count = -1;
         break;
     }

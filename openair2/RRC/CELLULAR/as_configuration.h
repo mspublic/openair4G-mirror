@@ -11,8 +11,8 @@
 
 #    define IMEI_D0 3
 #    define IMEI_D1 5
-#    define IMEI_D2 0
-#    define IMEI_D3 6
+#    define IMEI_D2 6
+#    define IMEI_D3 0
 #    define IMEI_D4 0
 #    define IMEI_D5 0
 #    define IMEI_D6 8

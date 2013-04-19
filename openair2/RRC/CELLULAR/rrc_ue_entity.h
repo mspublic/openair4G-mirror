@@ -87,7 +87,7 @@ struct rrc_ue_entity {
 
   /* ** OAI compatible part - begin **/
   // Control block for srb-drb asn1-compliant
-  struct rrc_ue_srb_drb_asn1 ue_rb_asn1;
+  struct rrc_srb_drb_asn1 ue_rb_asn1;
 
   // Control block for Broadcast asn1-compliant
   struct rrc_ue_bch_asn1 ue_bch_asn1;

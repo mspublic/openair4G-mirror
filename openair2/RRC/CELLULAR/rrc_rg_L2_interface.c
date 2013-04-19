@@ -156,7 +156,7 @@ void rrc_L2_out_sync_ind_rx (void){
 //-----------------------------------------------------------------------------
 int rrc_L2_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RRC_DETAILS
+#ifdef DEBUG_RRC_DETAILS_2
     msg ("\n[RRC][L2_INTF] rrc_L2_get_rrc_status - begin\n");
 #endif
 /*

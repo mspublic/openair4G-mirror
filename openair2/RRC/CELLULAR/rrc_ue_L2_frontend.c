@@ -12,6 +12,9 @@
  ********************/
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/MEM/mem_block.h"
+// TEMP DRB
+//#include "DL-DCCH-Message.h"
+
 
 /********************
 // RRC definitions
@@ -22,6 +25,8 @@
 extern rlc_info_t Rlc_info_um;
 extern rlc_info_t Rlc_info_am_config;
 
+
+//-----------------------------------------------------------------------------
 /*  global variables copied from RRC LITE for logical channels */
 long logicalChannelGroup0 = 0;
 long  logicalChannelSR_Mask_r9=0;
@@ -50,7 +55,9 @@ LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {&LCSRB2
 #endif
                                                                  };
 /*  END - global variables copied from RRC LITE for logical channels */
+//-----------------------------------------------------------------------------
 
+// Configuration Functions for L1-L2 layers
 //-----------------------------------------------------------------------------
 void crb_config_req (int activation_timeP){
 //-----------------------------------------------------------------------------
@@ -106,6 +113,12 @@ int rrc_ue_force_uplink (void){
       rrc_ue_test_rlc_intf_xmit_dcch ();
   }
   return 0;
+}
+
+//-----------------------------------------------------------------------------
+void rrc_remove_UE(u8 Mod_id,u8 UE_id) {
+//-----------------------------------------------------------------------------
+  msg ("\n[RRC-UE]call to rrc_remove_UE [empty - to be implemented in CELLULAR mode]\n");
 }
 
 // Unified function to send data 
@@ -170,8 +183,8 @@ int rrc_ue_receive_from_srb_rlc (char* sduP, u8 ch_idP, unsigned int Sdu_size){
   #endif
   // get UE_Id
   rb_id = ch_idP;
-  srb_id = rb_id % MAX_NUM_RB;
-  UE_Id = (rb_id - srb_id) / MAX_NUM_RB;
+  srb_id = rb_id % NB_RB_MAX;
+  UE_Id = (rb_id - srb_id) / NB_RB_MAX;
   // get RRC_CELL srb_id
   srb_id = sduP[0];
 
@@ -226,8 +239,6 @@ void rrc_ue_config_common_channels (void){
   u8 SIwindowsize=1;
   u16 SIperiod=8;
 
-  int rrc_sizeof_SIB2=0;
-
 // Simulate decoding SIB1
   #ifdef DEBUG_RRC_DETAILS
   msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_common_channels \n");
@@ -240,7 +251,7 @@ void rrc_ue_config_common_channels (void){
   result = do_SIB1_TDD_config_cell (mac_xface->lte_frame_parms, &protocol_ms->rrc.ue_bch_asn1.tdd_Config);
 
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC-UE-FRONTEND] Frame TDD config %d, protocol_ms value %d\n", mac_xface->lte_frame_parms->tdd_config, protocol_ms->rrc.ue_bch_asn1.tdd_Config.subframeAssignment);
+  msg ("[RRC-UE-FRONTEND] Frame TDD config %d, protocol_ms value %d\n", (int)mac_xface->lte_frame_parms->tdd_config, (int)protocol_ms->rrc.ue_bch_asn1.tdd_Config.subframeAssignment);
   msg ("[RRC-UE-FRONTEND] MAC_CONFIG_REQ  (SIB1)--->][MAC_UE]\n");
   #endif
 
@@ -257,24 +268,36 @@ void rrc_ue_config_common_channels (void){
 	     &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod); */
 
   rrc_mac_config_req(Mod_id,eNB_flag,UE_index,eNB_index,
-		     NULL, //(RadioResourceConfigCommonSIB_t *)
-		     NULL, //(struct PhysicalConfigDedicated *)
+       NULL, //(RadioResourceConfigCommonSIB_t *)
+       NULL, //(struct PhysicalConfigDedicated *)
                      (MeasObjectToAddMod_t **)NULL,
-		     NULL, // (MAC_MainConfig_t *)
-		     0,
-		     NULL, // (struct LogicalChannelConfig *)
-		     NULL, //(MeasGapConfig_t *)
-		     (TDD_Config_t *)&protocol_ms->rrc.ue_bch_asn1.tdd_Config,
-		     &SIwindowsize,
-		     &SIperiod);
+       NULL, // (MAC_MainConfig_t *)
+       0,
+       NULL, // (struct LogicalChannelConfig *)
+       NULL, //(MeasGapConfig_t *)
+       (TDD_Config_t *)&protocol_ms->rrc.ue_bch_asn1.tdd_Config,
+       &SIwindowsize,
+       &SIperiod,
+       NULL,
+       NULL,
+       NULL,
+       (MBSFN_SubframeConfigList_t *)NULL
+       #ifdef Rel10
+        , 0,
+       (MBSFN_AreaInfoList_r9_t *)NULL,
+       (PMCH_InfoList_r9_t *)NULL
+      #endif
+  );
 
 // Simulate decoding SIB2
   #ifdef DEBUG_RRC_STATE
   msg ("[RRC-UE-FRONTEND] do_SIB2_cell\n");
   #endif
 
-//uint8_t do_SIB2_cell(uint8_t Mod_id, uint8_t *buffer, SystemInformation_t *systemInformation, SystemInformationBlockType2_t **sib2) {
-  protocol_ms->rrc.ue_bch_asn1.sizeof_SIB2 = do_SIB2_cell(0, &protocol_ms->rrc.ue_bch_asn1.SIB23, &protocol_ms->rrc.ue_bch_asn1.systemInformation, &protocol_ms->rrc.ue_bch_asn1.sib2);
+//uint8_t do_SIB2_cell(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
+//                  BCCH_DL_SCH_Message_t *bcch_message, SystemInformationBlockType2_t **sib2) {
+  protocol_ms->rrc.ue_bch_asn1.sizeof_SIB2 = do_SIB2_cell(0, mac_xface->lte_frame_parms, &protocol_ms->rrc.ue_bch_asn1.SIB23,
+                    &protocol_ms->rrc.ue_bch_asn1.systemInformation, &protocol_ms->rrc.ue_bch_asn1.sib2);
 
   #ifdef DEBUG_RRC_DETAILS
   msg ("\n[RRC-UE] SystemInformation SIB2 %d bytes\n", protocol_ms->rrc.ue_bch_asn1.sizeof_SIB2);
@@ -289,56 +312,58 @@ void rrc_ue_config_common_channels (void){
     #ifdef DEBUG_RRC_STATE
     msg ("[RRC-UE-FRONTEND] MAC_CONFIG_REQ  (SIB2)--->][MAC_UE]\n");
     #endif
-   // After Decoding SIB2 (l. 926)
-   /* rrc_mac_config_req(Mod_id,0,0,eNB_index,
-		 &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
-		 (struct PhysicalConfigDedicated *)NULL,
-		 (MAC_MainConfig_t *)NULL,
-		 0,
-		 (struct LogicalChannelConfig *)NULL,
-		 (MeasGapConfig_t *)NULL,
-		 (TDD_Config_t *)NULL,
-		 NULL,
-		 NULL); */
+   // After Decoding SIB2 (l. 1363)
+   /*       rrc_mac_config_req(Mod_id,0,0,eNB_index,
+			 &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
+			 (struct PhysicalConfigDedicated *)NULL,
+			 (MeasObjectToAddMod_t **)NULL,
+			 (MAC_MainConfig_t *)NULL,
+			 0,
+			 (struct LogicalChannelConfig *)NULL,
+			 (MeasGapConfig_t *)NULL,
+			 (TDD_Config_t *)NULL,
+			 NULL,
+			 NULL,
+			 UE_rrc_inst[Mod_id].sib2[eNB_index]->freqInfo.ul_CarrierFreq,
+			 UE_rrc_inst[Mod_id].sib2[eNB_index]->freqInfo.ul_Bandwidth,
+			 &UE_rrc_inst[Mod_id].sib2[eNB_index]->freqInfo.additionalSpectrumEmission,
+			 UE_rrc_inst[Mod_id].sib2[eNB_index]->mbsfn_SubframeConfigList
+#ifdef Rel10	       
+			 ,
+			 0,
+			 (MBSFN_AreaInfoList_r9_t *)NULL,
+			 (PMCH_InfoList_r9_t *)NULL
+#endif
+			 ); */
 
     rrc_mac_config_req(Mod_id,eNB_flag,UE_index,eNB_index,
-//                         &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
-                         (RadioResourceConfigCommonSIB_t *)&protocol_ms->rrc.ue_bch_asn1.sib2->radioResourceConfigCommon,
-                         NULL, // (struct PhysicalConfigDedicated *)
-                         (MeasObjectToAddMod_t **)NULL,
-                         NULL, //(MAC_MainConfig_t *)
-                         0,
-                         NULL, //(struct LogicalChannelConfig *)
-                         NULL, // (MeasGapConfig_t *)
-                         NULL, //(TDD_Config_t *)
-                         NULL,
-                         NULL);
+//       &UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
+         (RadioResourceConfigCommonSIB_t *)&protocol_ms->rrc.ue_bch_asn1.sib2->radioResourceConfigCommon,
+         NULL, // (struct PhysicalConfigDedicated *)
+         (MeasObjectToAddMod_t **)NULL,
+         NULL, //(MAC_MainConfig_t *)
+         0,
+         NULL, //(struct LogicalChannelConfig *)
+         NULL, // (MeasGapConfig_t *)
+         NULL, //(TDD_Config_t *)
+         NULL,
+         NULL,
+         protocol_ms->rrc.ue_bch_asn1.sib2->freqInfo.ul_CarrierFreq,
+         protocol_ms->rrc.ue_bch_asn1.sib2->freqInfo.ul_Bandwidth,
+         &protocol_ms->rrc.ue_bch_asn1.sib2->freqInfo.additionalSpectrumEmission,
+         protocol_ms->rrc.ue_bch_asn1.sib2->mbsfn_SubframeConfigList
+         #ifdef Rel10
+         , 0,
+         (MBSFN_AreaInfoList_r9_t *)NULL,
+         (PMCH_InfoList_r9_t *)NULL
+         #endif
+    );
+
 
   #ifdef DEBUG_RRC_STATE
   msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_common_channels - END\n\n");
   #endif
   }
-
- // RHODOS26 version
-/*  if ((rrm_config->prach.rach_trch.tf[0].bs == 0) || (rrm_config->sccpch.fach_trch.tf[0].bs == 0)) {
-    msg ("[RRC][FSM-OUT] Configure FACH-RACH channels BAD CONFIG\n");
-    wcdma_handle_error (WCDMA_ERROR_RRC_NASTY_BCH_CONFIG);
-  }
-  // if (!(started))  {
-  //rrm_ue_simulate_bcch_sib5_6_acquisition();
-  #ifndef BYPASS_L1
-  msg ("[RRC][FSM-OUT] NOT BYPASS_L1 - Configure CPHY FACH-RACH channels.\n");
-  CPHY_config_fach_rach ();
-  #endif
-  msg ("[RRC][FSM-OUT] CMAC - Configure FACH-RACH channels.\n");
-  cmac_fach_rach_setup ();
-  //   rrc_NAS_Conn_Est_Req_Rx();
-  //  }
-  #ifdef ALLOW_MBMS_PROTOCOL
-  msg ("[RRC][FSM-OUT] ALLOW_MBMS_PROTOCOL ON - Configure FACH-RACH for MCCH channels.\n");
-  rrc_mt_set_mcch_rb();
-  #endif*/
-
 }
 
 //-----------------------------------------------------------------------------
@@ -361,18 +386,18 @@ void rrc_ue_xmit_ccch (void){
 }
 
 //-----------------------------------------------------------------------------
-void rrc_ue_config_LTE_srb1_srb2 (void){
+void rrc_ue_config_LTE_srb1 (void){
 //-----------------------------------------------------------------------------
   char Mod_id = 0;
   int UE_index =0;
   int eNB_index = 0;
   int eNB_flag = 0; //1=eNB, 0=UE
-  int srb1 = 1, srb2 = 2;
+  int srb1 = 1;
   char buffer[1024];
   //LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
 
   #ifdef DEBUG_RRC_STATE
-  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_srb1_srb2\n");
+  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_srb1\n");
   #endif
 
   // get the parameters values SRB1_config, SRB2_config, physicalConfigDedicated
@@ -380,23 +405,23 @@ void rrc_ue_config_LTE_srb1_srb2 (void){
   msg ("[RRC-UE-FRONTEND] do_RRCConnectionSetup\n");
   #endif
   do_RRCConnectionSetup(buffer,
-			  mac_xface->get_transmission_mode(Mod_id,find_UE_RNTI(Mod_id,UE_index)),
-			  UE_index,0,
-			  mac_xface->lte_frame_parms,
-			  //&eNB_rrc_inst[Mod_id].SRB1_config[UE_index],
-			  &protocol_ms->rrc.ue_rb_asn1.SRB1_config,
-			  //&eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
-			  &protocol_ms->rrc.ue_rb_asn1.SRB2_config,
-			  //&eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
-			  &protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated);
+      mac_xface->get_transmission_mode(Mod_id,find_UE_RNTI(Mod_id,UE_index)),
+      UE_index,0,
+      mac_xface->lte_frame_parms,
+      //&eNB_rrc_inst[Mod_id].SRB1_config[UE_index],
+      //&protocol_ms->rrc.ue_rb_asn1.SRB1_config,
+      //&eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
+      //&protocol_ms->rrc.ue_rb_asn1.SRB2_config,
+      &protocol_ms->rrc.ue_rb_asn1.SRB_configList[UE_index],
+      //&eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
+      &protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated);
 
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC-UE-FRONTEND] SRBx_logicalChannelConfig\n");
+  msg ("[RRC-UE-FRONTEND] SRB1_logicalChannelConfig\n");
   #endif
-  // get the parameters values SRB1_logicalChannelConfig SRB2_logicalChannelConfig
+  // get the parameters values SRB1_logicalChannelConfig
   // Default value set as global variable
   protocol_ms->rrc.ue_rb_asn1.SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-  protocol_ms->rrc.ue_rb_asn1.SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
 
   #ifdef DEBUG_RRC_STATE
   msg ("[RRC-UE-FRONTEND] MAC_CONFIG_REQ  (SRB1 UE 0)--->][MAC_eNB]\n");
@@ -417,115 +442,268 @@ void rrc_ue_config_LTE_srb1_srb2 (void){
   */
 
   rrc_mac_config_req(Mod_id,eNB_flag,UE_index,eNB_index,  //OK
-		     (RadioResourceConfigCommonSIB_t *)NULL,  //OK
-		     //(PhysicalConfigDedicated_t *)&protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,  //OK
-		     protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,  //OK
+       (RadioResourceConfigCommonSIB_t *)NULL,  //OK
+       //(PhysicalConfigDedicated_t *)&protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,  //OK
+       protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,  //OK
                      (MeasObjectToAddMod_t **)NULL,
-		     //(MAC_MainConfig_t*)&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig,  //OK = NULL
-		     (MAC_MainConfig_t*)NULL,
-		     srb1, //logicalChannelIdentity  //OK
-		     protocol_ms->rrc.ue_rb_asn1.SRB1_logicalChannelConfig,  //OK
-		     protocol_ms->rrc.ue_rb_asn1.measGapConfig, //OK = NULL
-		     //(MeasGapConfig_t *)NULL, //OK = NULL
-		     (TDD_Config_t *)NULL, //OK
-		     (u8 *)NULL,  //OK
-		     (u16 *)NULL);  //OK
+       //(MAC_MainConfig_t*)&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig,  //OK = NULL
+       (MAC_MainConfig_t*)NULL,
+       srb1, //logicalChannelIdentity  //OK
+       protocol_ms->rrc.ue_rb_asn1.SRB1_logicalChannelConfig,  //OK
+       protocol_ms->rrc.ue_rb_asn1.measGapConfig, //OK = NULL
+       //(MeasGapConfig_t *)NULL, //OK = NULL
+       (TDD_Config_t *)NULL, //OK
+       (u8 *)NULL,  //OK
+       (u16 *)NULL, //OK
+       NULL,
+       NULL,
+       NULL,
+       (MBSFN_SubframeConfigList_t *)NULL
+       #ifdef Rel10
+       , 0,
+       (MBSFN_AreaInfoList_r9_t *)NULL,
+       (PMCH_InfoList_r9_t *)NULL
+       #endif
+  );
 
   msg("[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", Mod_id,srb1,eNB_index);
-  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD, srb1);
-  rrc_rlc_config_req(Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD, srb1, SIGNALLING_RADIO_BEARER, Rlc_info_am_config);
+//   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD, srb1);
+//   rrc_rlc_config_req(Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD, srb1, SIGNALLING_RADIO_BEARER, Rlc_info_am_config);
+  rrc_pdcp_config_asn1_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,UE_index,
+      protocol_ms->rrc.ue_rb_asn1.SRB_configList[UE_index],
+      (DRB_ToAddModList_t*)NULL,
+      (DRB_ToReleaseList_t*)NULL
+      #ifdef Rel10
+      ,(MBMS_SessionInfoList_r9_t *)NULL
+      #endif
+  );
 
- /*
+ rrc_rlc_config_asn1_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,UE_index,
+      protocol_ms->rrc.ue_rb_asn1.SRB_configList[UE_index],
+      (DRB_ToAddModList_t*)NULL, 
+      (DRB_ToReleaseList_t*)NULL
+      #ifdef Rel10
+      ,(MBMS_SessionInfoList_r9_t *)NULL
+      #endif
+      );
+
+  #ifdef DEBUG_RRC_STATE
+  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_srb1 - END\n\n");
+  #endif
+}
+
+//-----------------------------------------------------------------------------
+void rrc_ue_config_LTE_srb2 (void){
+//-----------------------------------------------------------------------------
+  char Mod_id = 0;
+  int UE_index =0;
+  int eNB_index = 0;
+  int eNB_flag = 0; //1=eNB, 0=UE
+  int srb2 = 2;
+  //char buffer[1024];
+  //LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
+
+  #ifdef DEBUG_RRC_STATE
+  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_srb2\n");
+  #endif
+
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC-UE-FRONTEND] SRB2_logicalChannelConfig\n");
+  #endif
+  // get the parameters values SRB1_logicalChannelConfig SRB2_logicalChannelConfig
+  // Default value set as global variable
+  protocol_ms->rrc.ue_rb_asn1.SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
+
   #ifdef DEBUG_RRC_STATE
   msg ("[RRC-UE-FRONTEND] MAC_CONFIG_REQ  (SRB2 UE 0)--->][MAC_eNB]\n");
   #endif
   rrc_mac_config_req(Mod_id,eNB_flag,UE_index,eNB_index,  //OK
-		     (RadioResourceConfigCommonSIB_t *)NULL,  //OK
-		     (PhysicalConfigDedicated_t *)&protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,  //OK
+       (RadioResourceConfigCommonSIB_t *)NULL,  //OK
+       protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,
                      (MeasObjectToAddMod_t **)NULL,
-		     //(MAC_MainConfig_t*)&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig,  //OK = NULL
-		     (MAC_MainConfig_t*)NULL,
-		     srb2, //logicalChannelIdentity  //OK
-		     &protocol_ms->rrc.ue_rb_asn1.SRB2_logicalChannelConfig,  //OK
-		     //(MeasGapConfig_t *)&protocol_ms->rrc.ue_rb_asn1.measGapConfig, //OK = NULL
-		     (MeasGapConfig_t *)NULL, //OK = NULL
-		     (TDD_Config_t *)NULL, //OK
-		     (u8 *)NULL,  //OK
-		     (u16 *)NULL);  //OK
+       //(MAC_MainConfig_t*)&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig,  //OK = NULL
+       (MAC_MainConfig_t*)NULL,
+       srb2, //logicalChannelIdentity  //OK
+       protocol_ms->rrc.ue_rb_asn1.SRB2_logicalChannelConfig,  //OK
+       //(MeasGapConfig_t *)&protocol_ms->rrc.ue_rb_asn1.measGapConfig, //OK = NULL
+       (MeasGapConfig_t *)NULL, //OK = NULL
+       (TDD_Config_t *)NULL, //OK
+       (u8 *)NULL,  //OK
+       (u16 *)NULL, //OK
+       NULL,
+       NULL,
+       NULL,
+       (MBSFN_SubframeConfigList_t *)NULL
+       #ifdef Rel10
+       , 0,
+       (MBSFN_AreaInfoList_r9_t *)NULL,
+       (PMCH_InfoList_r9_t *)NULL
+       #endif
+  );
 
   msg("[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n", Mod_id,srb2,eNB_index);
-  rrc_pdcp_config_req (Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD, srb2);
-  rrc_rlc_config_req(Mod_idMod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,ACTION_ADD,srb2,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
-*/
+//   rrc_pdcp_config_req (Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD, srb2);
+//   rrc_rlc_config_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,ACTION_ADD,srb2,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  rrc_pdcp_config_asn1_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,UE_index,
+      protocol_ms->rrc.ue_rb_asn1.SRB_configList[UE_index],
+      (DRB_ToAddModList_t*)NULL,
+      (DRB_ToReleaseList_t*)NULL
+      #ifdef Rel10
+      ,(MBMS_SessionInfoList_r9_t *)NULL
+      #endif
+  );
+
+ rrc_rlc_config_asn1_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,UE_index,
+      protocol_ms->rrc.ue_rb_asn1.SRB_configList[UE_index],
+      (DRB_ToAddModList_t*)NULL, 
+      (DRB_ToReleaseList_t*)NULL
+      #ifdef Rel10
+      ,(MBMS_SessionInfoList_r9_t *)NULL
+      #endif
+      );
+
   #ifdef DEBUG_RRC_STATE
-  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_srb1_srb2 - END\n\n");
+  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_srb2 - END\n\n");
   #endif
 }
 
 //-----------------------------------------------------------------------------
-// This function needs to be finalized. It is delayed to a later version of OAI.
-void rrc_ue_config_common_channels_SIB2 (void){
+void rrc_ue_config_LTE_default_drb (unsigned char Mod_id){
 //-----------------------------------------------------------------------------
-  asn_dec_rval_t dec_rval;
-  BCCH_DL_SCH_Message_t bcch_message;
-  BCCH_DL_SCH_Message_t *bcch_message_ptr;
-  u8 SIwindowsize;
-  u16 SIperiod;
-  long si_WindowLength;
-  const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
-  u32 si_window;
+  int UE_index =0;
+  int eNB_index = 0;
+  int eNB_flag = 0; //1=eNB, 0=UE
+  int drb_ix=0;  // default DRB
+  u8 buffer[100];
+  u8 size;
+  u8 DRB2LCHAN[8];
+  //DL_DCCH_Message_t *dl_dcch_msg=NULL;//&dldcchmsg;
+  struct PhysicalConfigDedicated  physicalConfigDedicated_drb;
+
+
 
   #ifdef DEBUG_RRC_STATE
-  msg ("\n\n[RRC-UE] rrc_ue_config_common_channels\n");
-  msg (" >>>> TEMP OPENAIR : COMMENTED\n");
+  msg ("\n[RRC-UE-FRONTEND] rrc_ue_config_LTE_default_drb: begin\n");
+  #endif
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC-UE-FRONTEND] do_RRCConnReconf_defaultCELL\n");
   #endif
 
-  bcch_message_ptr=&bcch_message;
-  memset(&bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
+  size = do_RRCConnReconf_defaultCELL(Mod_id, buffer, UE_index, 0,
+                                         //&eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
+                                         &protocol_ms->rrc.ue_rb_asn1.SRB_configList[UE_index],
+                                         //&eNB_rrc_inst[Mod_id].DRB_config[UE_id][0],
+                                         &protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index],
+                                         //&eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
+                                         //&protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated);
+                                         &physicalConfigDedicated_drb);
 
-  // Decode the content of SIB2 (cf log_OpenRV2/120523_SIB2EncodeDecode.txt)
-  dec_rval = uper_decode_complete(NULL, &asn_DEF_BCCH_DL_SCH_Message, (void **)&bcch_message_ptr,
-              (const void *)&protocol_ms->rrc.ue_bch_blocks.currSIB5.prach_sCCPCH_SIList.data, protocol_ms->rrc.ue_bch_blocks.currSIB5.prach_sCCPCH_SIList.numocts);//,0,0);
-
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-     msg ("[RRC-UE] Failed to decode BCCH_DLSCH_MESSAGE (%d bits)\n",dec_rval.consumed);
-     mac_xface->macphy_exit("");
-  }
-  //  xer_fprint(stdout,  &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
-  si_WindowLength = SystemInformationBlockType1__si_WindowLength_ms20;
-  SIperiod        = 8<<((int)si_WindowLength);
-  SIwindowsize    = siWindowLength_int[si_WindowLength];
-  #ifdef DEBUG_RRC_DETAILS
-  msg ("[RRC-UE] rrc_ue_config_common_channels - SI Window period %d size %d\n", SIperiod, SIwindowsize);
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC-UE-FRONTEND] do_DRB_UE_MAC_config_cell\n");
   #endif
+  do_DRB_UE_MAC_config_cell (&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig);
 
-  if (bcch_message.message.present == BCCH_DL_SCH_MessageType_PR_c1) {
-    switch (bcch_message.message.choice.c1.present) {
-     /*
-    case BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-      if ((frame %2) == 0) {
-        if (UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 0) {
-	  memcpy((void*)*sib1, (void*)&bcch_message.message.choice.c1.choice.systemInformationBlockType1, sizeof(SystemInformationBlockType1_t));
-	  LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
-	  decode_SIB1(Mod_id,eNB_index);
-	}
-	break;
-      */
-      case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
-      //if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) && (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 0)) {
+  if (protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index]->list.array[0]){
 
-//	si_window = (frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod)/frame%UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize;
-	si_window = (protocol_ms->rrc.current_SFN % SIperiod) / protocol_ms->rrc.current_SFN %SIwindowsize;
-	//TODO memcpy((void*)si[si_window], (void*)&bcch_message.message.choice.c1.choice.systemInformation, sizeof(SystemInformation_t));
-	msg("[RRC-UE] Decoding SI for frame %d, si_window %d\n",protocol_ms->rrc.current_SFN,si_window);
-	//TODO decode_SI(0,protocol_ms->rrc.current_SFN,0,si_window);
-      //}
-        break;
-      default:
-	break;
+    DRB2LCHAN[drb_ix] = (u8)*protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index]->list.array[0]->logicalChannelIdentity;
+
+      //if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
+    msg("[RRC-UE-FRONTEND] rrc_ue_config_LTE_default_drb: reconfiguring DRB %d/LCID %d, DRB2LCHAN %d\n",
+        (int)protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index]->list.array[0]->drb_Identity,
+        (int)*protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index]->list.array[0]->logicalChannelIdentity, (int) DRB2LCHAN[drb_ix]);
+
+    if (protocol_ms->rrc.ue_rb_asn1.DRB1_active == 0) {
+      msg("[RRC-UE-FRONTEND] rrc_ue_config_LTE_default_drb: Frame %d: Establish PDCP + RLC UM Bidirectional, DRB %d Active\n",
+            protocol_ms->rrc.current_SFN, (int)protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index]->list.array[0]->drb_Identity);
+
+/*      rrc_pdcp_config_req (Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_ADD,
+                            (UE_index * NB_RB_MAX) + (int)*protocol_ms->rrc.ue_rb_asn1.DRB1_config->logicalChannelIdentity);
+      rrc_rlc_config_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,ACTION_ADD,
+                          (UE_index * NB_RB_MAX) + (int)*protocol_ms->rrc.ue_rb_asn1.DRB1_config->logicalChannelIdentity,
+                          RADIO_ACCESS_BEARER,Rlc_info_um);*/
+      rrc_pdcp_config_asn1_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,UE_index,
+          (SRB_ToAddModList_t*)NULL,
+          protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index],
+          (DRB_ToReleaseList_t*)NULL
+          #ifdef Rel10
+          ,(MBMS_SessionInfoList_r9_t *)NULL
+          #endif
+      );
+      rrc_rlc_config_asn1_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,UE_index,
+          (SRB_ToAddModList_t*)NULL,
+          protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index],
+          (DRB_ToReleaseList_t*)NULL
+          #ifdef Rel10
+          ,(MBMS_SessionInfoList_r9_t *)NULL
+          #endif
+      );
+      protocol_ms->rrc.ue_rb_asn1.DRB1_active = 1;
+
+      msg("[RRC-UE-FRONTEND] rrc_ue_config_LTE_default_drb:[--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB]\n", UE_index);
+  
+      //DRB2LCHAN[drb_ix] = (u8)*protocol_ms->rrc.ue_rb_asn1.DRB1_config->logicalChannelIdentity;
+  
+      rrc_mac_config_req(Mod_id,eNB_flag,UE_index,eNB_index,
+        (RadioResourceConfigCommonSIB_t *)NULL,
+        protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,
+        (MeasObjectToAddMod_t **)NULL,
+        (MAC_MainConfig_t*)&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig,
+        DRB2LCHAN[drb_ix],
+        protocol_ms->rrc.ue_rb_asn1.DRB_configList[UE_index]->list.array[0]->logicalChannelConfig,
+        (MeasGapConfig_t *)&protocol_ms->rrc.ue_rb_asn1.measGapConfig,
+        (TDD_Config_t *)NULL,
+        (u8 *)NULL,
+        (u16 *)NULL, //OK
+        NULL,
+        NULL,
+        NULL,
+        (MBSFN_SubframeConfigList_t *)NULL
+        #ifdef Rel10
+        , 0,
+        (MBSFN_AreaInfoList_r9_t *)NULL,
+        (PMCH_InfoList_r9_t *)NULL
+        #endif
+    );
+  
+    }else{ // remove LCHAN from MAC/PHY
+      // Initialized here because it is a local variable (global in RRC Lite)
+      //DRB2LCHAN[drb_ix] = (u8)*protocol_ms->rrc.ue_rb_asn1.DRB1_config->logicalChannelIdentity;
+      if (protocol_ms->rrc.ue_rb_asn1.DRB1_active ==1) {
+        // DRB has just been removed so remove RLC + PDCP for DRB
+        msg("[RRC-UE-FRONTEND] rrc_ue_config_LTE_default_drb: Frame %d: Remove PDCP + RLC UM Bidirectional, DRB 0 \n",
+            //protocol_ms->rrc.current_SFN, (int)protocol_ms->rrc.ue_rb_asn1.DRB1_config->drb_Identity);
+            protocol_ms->rrc.current_SFN);
+
+/*        rrc_pdcp_config_req (Mod_id+NB_eNB_INST, protocol_ms->rrc.current_SFN, eNB_flag, ACTION_REMOVE,
+                              (UE_index * NB_RB_MAX) + DRB2LCHAN[drb_ix]);*/
+        rrc_rlc_config_req(Mod_id+NB_eNB_INST,protocol_ms->rrc.current_SFN,eNB_flag,ACTION_REMOVE,
+                            (UE_index * NB_RB_MAX) + DRB2LCHAN[drb_ix],
+                            RADIO_ACCESS_BEARER,Rlc_info_um);
       }
+      protocol_ms->rrc.ue_rb_asn1.DRB1_active = 0;
+      msg("[RRC-UE-FRONTEND] rrc_ue_config_LTE_default_drb:[--- MAC_CONFIG_REQ  (DRB UE %d) --->][MAC_eNB]\n", UE_index);
+      rrc_mac_config_req(Mod_id,eNB_flag,UE_index,eNB_index,
+        (RadioResourceConfigCommonSIB_t *)NULL,
+        protocol_ms->rrc.ue_rb_asn1.physicalConfigDedicated,
+        (MeasObjectToAddMod_t **)NULL,
+        (MAC_MainConfig_t*)&protocol_ms->rrc.ue_rb_asn1.mac_MainConfig,
+        DRB2LCHAN[drb_ix],
+        (LogicalChannelConfig_t *)NULL,
+        (MeasGapConfig_t *)NULL,
+        (TDD_Config_t *)NULL,
+        (u8 *)NULL,
+        (u16 *)NULL, //OK
+        NULL,
+        NULL,
+        NULL,
+        (MBSFN_SubframeConfigList_t *)NULL
+        #ifdef Rel10
+        , 0,
+        (MBSFN_AreaInfoList_r9_t *)NULL,
+        (PMCH_InfoList_r9_t *)NULL
+        #endif
+      );
     }
-
+  }
 }
-
 

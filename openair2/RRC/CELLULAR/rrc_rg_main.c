@@ -40,7 +40,7 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   //protocol_bs->rrc.current_SFN = frame;
   //  if (protocol_bs->rrc.current_SFN % 50 == 0) {
   #ifdef DEBUG_RRC_DETAILS
-  if (protocol_bs->rrc.current_SFN % 5 == 0) {
+  if (protocol_bs->rrc.current_SFN % 20 == 0) {
      msg ("\n\n[RRC][MSG_TEST] System Time : %d\n", protocol_bs->rrc.current_SFN);
   }
   #endif
@@ -75,18 +75,20 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       }
       protocol_bs->rrc.rg_broadcast_counter++;
 
+      // Read any message in FIFOs from NAS
+      rrc_rg_read_FIFO();
       // Read any message in DC FIFO -- To be improved: read only used FIFOs
       for (i = 0; i < maxUsers; i++) {
-        rrc_rg_read_DCin_FIFO (i);
+        //rrc_rg_read_DCin_FIFO (i);
+        // Check Timeout on Conn_Setup_Complete
         if (protocol_bs->rrc.Mobile_List[i].conn_complete_timer)
           rrc_rg_temp_checkConnection(i);
       }
 
       // Read any message in GC FIFO
-      rrc_rg_read_GC_FIFO ();
-
+      //rrc_rg_read_GC_FIFO ();
       // Read any message in NT FIFO
-      rrc_rg_read_NT_FIFO ();
+      //rrc_rg_read_NT_FIFO ();
 
       // Measurements
       //i = rrc_rg_meas_loop();  // for test only
@@ -109,8 +111,10 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       //rrc_rg_test_lchannels();
 
       // TODO TO BE REMOVED TEMP -- stop the loop 
-      if (protocol_bs->rrc.current_SFN > 10000)
-      exit(1);
+      //if (protocol_bs->rrc.current_SFN > 10000){
+      // msg ("\n\n[RRC][MSG_TEST] Stop at System Time : %d\n", protocol_bs->rrc.current_SFN);
+      //exit(1);
+      // }
 
       return 0;
   }

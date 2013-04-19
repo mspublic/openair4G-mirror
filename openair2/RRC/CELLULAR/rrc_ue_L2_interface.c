@@ -83,7 +83,7 @@ s8 rrc_L2_mac_data_ind_rx (u8 Mod_id, u16 Srb_id, char *Sdu, u16 Sdu_len, u8 eNB
     msg ("Received parameters Mod_id %d, eNB_index %d, SDU length %d\n", Mod_id, eNB_index, Sdu_len);
     #endif
     // temp - establish srb1-srb2
-    rrc_ue_config_LTE_srb1_srb2();
+    rrc_ue_config_LTE_srb1();
 
     }
     else msg ("\n[RRC CELL][L2_INTF] rrc_L2_mac_data_ind_rx, Srb_id %d unexpected \n" , Srb_id);
@@ -221,76 +221,6 @@ void rrc_init_mac_config(void){
 
   // The content of this function has been commented on 23/03/2012
   printk("\n rrc_init_mac_config -- WORK IN PROGRESS\n");
-
-  /*
-  //#ifdef DEBUG_RRC_STATE
-   msg ("\n[RRC CELL] Called rrc_init_mac_config - Begin \n\n");
-  //#endif
-
-  UE_index=0;
-  // Configure BCCH
-  Mac_config_req.Lchan_type = BCCH;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.UE_CH_index=0;
-  Mac_config_req.Lchan_id.Index=(0 << RAB_SHIFT2) + BCCH;
-  printk("Calling mac_config_req for BCCH\n");
-  Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-
-  // Configure CCCH
-  Mac_config_req.Lchan_type = CCCH;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.UE_CH_index=0;
-  Mac_config_req.Lchan_id.Index=(0 << RAB_SHIFT2) + CCCH;
-  printk("Calling mac_config_req for CCCH\n");
-  Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-
- // Configure DCCH (LTE)
-  Mac_config_req.Lchan_type = DCCH;
-  Mac_config_req.UE_CH_index = UE_index;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx 
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DCCH;
-  Idx = Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_um);
-
- // Configure DTCH (SRB0)
-  Mac_config_req.Lchan_type = DTCH;
-  Mac_config_req.UE_CH_index = UE_index;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx 
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH_BD + 1;
-  Idx = Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_um);
-
- // Configure DTCH (SRB1)
-  Mac_config_req.Lchan_type = DTCH;
-  Mac_config_req.UE_CH_index = UE_index;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx 
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH_BD + 2;
-  Idx = Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_um);
-
- // Configure DTCH (SRB2)
-  Mac_config_req.Lchan_type = DTCH;
-  Mac_config_req.UE_CH_index = UE_index;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx 
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH_BD + 3;
-  Idx = Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am);
-
- // Configure DTCH (SRB3)
-  Mac_config_req.Lchan_type = DTCH;
-  Mac_config_req.UE_CH_index = UE_index;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx 
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DTCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH_BD + 4;
-  Idx = Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
-  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am);
-  */
 
   // Test config on 02/04/2012
   BCCH_LCHAN_DESC.transport_block_size=BCCH_PAYLOAD_SIZE_MAX;

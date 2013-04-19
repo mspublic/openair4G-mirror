@@ -17,9 +17,9 @@
 //#define DEBUG_RRC_DETAILS_2
 #define RRC_DEBUG_DUMMIES
 
-#define DEBUG_RRC_BROADCAST_NAS
+//#define DEBUG_RRC_BROADCAST_NAS
 //#ifndef DEBUG_RRC_BROADCAST
-#define DEBUG_RRC_BROADCAST
+//#define DEBUG_RRC_BROADCAST
 //#define DEBUG_RRC_BROADCAST_DETAILS
 //#endif
 #define DEBUG_RRC_RRM_INTF
@@ -38,7 +38,18 @@
 // #define DEBUG_RRC_FORWARD_MT_MEASURE_REPORT
 // #endif
 
-//FLAGS DEFINED FOR MBMS DEFINITION
+/* **** */
+/* ** FLAGS DEFINED FOR HANDLING of NAS_INTERFACE ** */
+/* **** */
+// Case 1 : simulation = USER_MODE defined + RRC_NETLINK commented
+// Case 2 : netlink sockets = USER_MODE defined +
+#define RRC_NETLINK NAS_NETLINK
+// (TEMP: should be placed in Makefile, but currently, NAS_NETLINK is default in USER_MODE)
+// Case 3 : RT_FIFOS = USER_MODE undefined
+
+/* **** */
+/* ** FLAGS DEFINED FOR MBMS DEFINITION ** */
+/* **** */
 //#define ALLOW_MBMS_ACCESS_INFO
 
 // !!Activate or deactivate the MBMS Protocol!!
@@ -62,6 +73,9 @@
 #endif
 /* ***End Debug flags*** */
 
+/* **** */
+/* ** RRC INTERNAL VALUES ** */
+/* **** */
 // will be a variable when virtualisation
 #define RRC_MODULE_INST_ID 0
 
@@ -71,6 +85,8 @@
 // max number of cells or RGs
 // to be coordinated with NAS list of RGs
 #define maxCells 2
+
+#define RRC_NAS_MAX_SIZE 4096
 
 //Values to be used in UE for quality measurement - to be adjusted
 //Formula : NAS_measure = (RSSI0 / RATIO_RSSI0) + SHIFT_RSSI0

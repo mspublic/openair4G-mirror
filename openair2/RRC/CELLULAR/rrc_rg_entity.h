@@ -65,7 +65,7 @@ struct rrc_rg_entity {
   struct rrc_rg_bch_asn1 rg_bch_asn1;
 
   // Control block for srb-drb asn1-compliant
-  struct rrc_rg_srb_drb_asn1 rg_rb_asn1;
+  struct rrc_srb_drb_asn1 rg_rb_asn1;
   int mod_id;
   /* ** OAI compatible part - end **/
 
