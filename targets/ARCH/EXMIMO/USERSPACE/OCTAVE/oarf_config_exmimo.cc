@@ -21,12 +21,11 @@ static bool any_bad_argument(const octave_value_list &args)
     octave_value v,w;
     int i;
 
-    if (args.length()!=12)
+    if (args.length()!=15)
     {
         error(FCNNAME);
-        if (args.length()==11)
-            error("Wrong number of parameters! Did you add the card number as first parameter?");
-        error("syntax: oarf_config_exmimo(card,freqrx,freq_tx,tdd_config,dual_tx,rxgain,txgain,eNB_flag,rf_mode,rx_dc,rf_local,rf_vcolocal)");
+	error("Wrong number of parameters! Did you add the card number as first parameter?");
+        error("syntax: oarf_config_exmimo(card,freqrx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rx_dc,rf_local,rf_vcolocal,rffe_rxg_low,rffe_rxg_final)");
         return true;
     }
 
@@ -178,6 +177,59 @@ static bool any_bad_argument(const octave_value_list &args)
         error(FCNNAME);
         error("number of columns for rf_vcocal must be 4\n");
     }
+
+    v = args(12);
+    if (v.columns() == 4)
+    {
+        for (i=0;i<v.columns();i++)
+        {
+	  if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>63.0)) {
+                error(FCNNAME);
+                error("rffe_rxg_low %d must be between 0 and 63 (got %f).",i,v.row_vector_value()(i));
+                return true;
+            }
+        }
+    }
+    else {
+        error(FCNNAME);
+        error("number of columns for rffe_rxg_low must be 4\n");
+    }
+
+    v = args(13);
+    if (v.columns() == 4)
+    {
+        for (i=0;i<v.columns();i++)
+        {
+	  if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>63.0)) {
+                error(FCNNAME);
+                error("rffe_rxg_final %d must be between 0 and 63 (got %f).",i,v.row_vector_value()(i));
+                return true;
+            }
+        }
+    }
+    else {
+        error(FCNNAME);
+        error("number of columns for rffe_rxg_final must be 4\n");
+    }
+
+    v = args(14);
+    if (v.columns() == 4)
+    {
+        for (i=0;i<v.columns();i++)
+        {
+	  if ((v.row_vector_value()(i)<0.0) || (v.row_vector_value()(i)>8.0)) {
+                error(FCNNAME);
+                error("rffe_band %d must be between 0 and 8 (got %f).",i,v.row_vector_value()(i));
+                return true;
+            }
+        }
+    }
+    else {
+        error(FCNNAME);
+        error("number of columns for rffe_band must be 4\n");
+    }
+
+
     
     if ( !args(0).is_real_scalar() )
     {
@@ -212,6 +264,10 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
     RowVector rf_dc      = args(9).row_vector_value();
     RowVector rf_local   = args(10).row_vector_value();
     RowVector rf_vcocal  = args(11).row_vector_value();
+    RowVector rffe_rxg_low   = args(12).row_vector_value();
+    RowVector rffe_rxg_final = args(13).row_vector_value();
+    RowVector rffe_band      = args(14).row_vector_value();
+    int rffe_band_int;
     
     exmimo_config_t *p_exmimo_config;
     exmimo_id_t *p_exmimo_id;
@@ -271,7 +327,46 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
             p_exmimo_config->rf.rf_local[ant] = rf_local(ant);
             p_exmimo_config->rf.rf_rxdc[ant] = rf_dc(ant);
             p_exmimo_config->rf.rf_vcocal[ant] = rf_vcocal(ant);
-        }
+
+	    p_exmimo_config->rf.rffe_gain_txlow[ant] = 31;
+	    p_exmimo_config->rf.rffe_gain_txhigh[ant] = 31;
+	    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = rffe_rxg_final(ant);
+	    p_exmimo_config->rf.rffe_gain_rxlow[ant] = rffe_rxg_low(ant);
+
+	    rffe_band_int = (int) rffe_band(ant);
+	    switch (rffe_band_int) {
+	    case 0:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = TVWS_TDD;
+	      break;	    
+	    case 1:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = DD_FDD;
+	      break;	    
+	    case 2:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = DD_TDD;
+	      break;	    
+	    case 3:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;
+	      break;	    
+	    case 4:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = B24G_TDD;
+	      break;	    
+	    case 5:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = B26G_TDD;
+	      break;	    
+	    case 6:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = B26G_FDD;
+	      break;	    
+	    case 7:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = B35G_TDD;
+	      break;	    
+	    case 8:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = B50G_TDD;
+	      break;	    
+	    default:
+	      p_exmimo_config->rf.rffe_band_mode[ant] = TVWS_TDD;
+	      break;	    
+	    }
+	  }
 
         if (no_dump_config == 0)
             returnvalue = openair0_dump_config( card );

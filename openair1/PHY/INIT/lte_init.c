@@ -1265,7 +1265,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   phy_vars_eNB->total_system_throughput = 0;
   phy_vars_eNB->check_for_MUMIMO_transmissions=0;
 
-  msg("[PHY][eNB %d] Initializing DL_FRAME_PARMS : N_RB_DL %d, PHICH Resource %d, PHICH Duration %d\n",
+  LOG_I(PHY,"[eNB %d] Initializing DL_FRAME_PARMS : N_RB_DL %d, PHICH Resource %d, PHICH Duration %d\n",
       phy_vars_eNB->Mod_id,
       frame_parms->N_RB_DL,frame_parms->phich_config_common.phich_resource,
       frame_parms->phich_config_common.phich_duration);
@@ -1369,12 +1369,12 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       eNB_common_vars->rxdata_7_5kHz[eNB_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
       if (eNB_common_vars->rxdata_7_5kHz[eNB_id]) {
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] allocated at %p\n",eNB_id,
+	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata_7_5kHz[%d] allocated at %p\n",eNB_id,
 	    eNB_common_vars->rxdata_7_5kHz[eNB_id]);
 #endif
       }
       else {
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] not allocated\n",eNB_id);
+	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata_7_5kHz[%d] not allocated\n",eNB_id);
 	return(-1);
       }
       
@@ -1385,6 +1385,9 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	eNB_common_vars->rxdata[eNB_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 	bzero(eNB_common_vars->rxdata[eNB_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 #endif //USER_MODE
+#ifdef DEBUG_PHY
+	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,eNB_common_vars->rxdata[eNB_id][i]);
+#endif
 	eNB_common_vars->rxdata_7_5kHz[eNB_id][i] = (int *)malloc16(frame_parms->samples_per_tti*sizeof(int));
 	bzero(eNB_common_vars->rxdata_7_5kHz[eNB_id][i],frame_parms->samples_per_tti*sizeof(int));
 #ifdef DEBUG_PHY
@@ -1528,7 +1531,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     eNB_prach_vars->rxsigF[i] = (s16*)malloc16(frame_parms->ofdm_symbol_size*12*2*2);
 #ifdef DEBUG_PHY
-    msg("prach_vars->rxsigF[%d] = %p\n",i,eNB_prach_vars->rxsigF[i]);
+    msg("[openair][LTE_PHY][INIT] prach_vars->rxsigF[%d] = %p\n",i,eNB_prach_vars->rxsigF[i]);
 #endif
     //    memset(eNB_prach_vars->rxsigF[i],0,frame_parms->ofdm_symbol_size*12*2*2);
   }
@@ -1536,6 +1539,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 
+    //FIXME
     eNB_pusch_vars[UE_id] = (LTE_eNB_PUSCH *)malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNB_PUSCH));
     if (eNB_pusch_vars[UE_id]) {
 #ifdef DEBUG_PHY
@@ -1670,6 +1674,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	
 	// In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
 	if(cooperation_flag == 2)
+	  //if (1)
 	  {
 	    //UE 0 DRS estimates
 	    eNB_pusch_vars[UE_id]->drs_ch_estimates_0[eNB_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));

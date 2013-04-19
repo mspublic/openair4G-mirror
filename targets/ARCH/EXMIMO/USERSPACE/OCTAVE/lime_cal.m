@@ -4,32 +4,31 @@ card=0;
 limeparms;
 TX_LO_LEAKAGE_MIN0 = 99999;
 TX_LO_LEAKAGE_MIN1 = 99999;
-freq_rx = 1907588000*[1 1 1 1];
-%freq_rx = 700600000*[1 1 1 1];
-freq_tx = freq_rx+1920000;
+%freq_rx = 1907588000*[1 1 1 1];
+freq_rx = 859500000*[1 1 1 1];
+freq_tx = freq_rx; %+1920000;
+rf_vcocal = rf_vcocal_859*[1 1 1 1];
+rf_rxdc   = rf_rxdc*[1 1 1 1];
 rxgain = 30*[1 1 1 1];
 txgain = 25*[1 1 1 1];
 tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
 syncmode = SYNCMODE_FREE;
+rffe_rxg_low = 31*[1 1 1 1];
+rffe_rxg_final = 31*[1 1 1 1];
+rffe_band = TVWS_TDD*[1 1 1 1];
 
 sleepafterconfig=0.2
 
 % coarse calibration loop for both rx chains
 for txdc_I=0:4:63
   for txdc_Q=0:4:63
-	rxdc_I = 0;
-        rxdc_Q = 0;
         rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1)*[1 1 0 0];
         rf_mode = rf_mode + (DMAMODE_RX+DMAMODE_TX)*[1 1 0 0];
         rf_local  = (txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18))*[1 1 1 1];
 
-        rf_rxdc   = ((128+rxdc_I) + (128+rxdc_Q)*(2^8))*[1 1 1 1];
-        rf_vcocal = (((0xE)*(2^6)) + (0xE))*[1 1 1 1];
-        %rf_vcocal=((0x16)*(2^6)) + (0xF)*[1 1 1 1]; 
-
-	oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+	oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 	sleep(sleepafterconfig)
-
+	
         s=oarf_get_frame(card);
         sF0 = 20*log10(abs(fftshift(fft(s(:,1)))));
         sF1 = 20*log10(abs(fftshift(fft(s(:,2)))));
@@ -93,7 +92,7 @@ for deltaI = -3:3,
      rf_local(1)  = txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18); 
      rf_local(2)  = txdc_I_min1 + (txdc_Q_min1)*(2^6) + 31*(2^12) + 31*(2^18);
 
-     oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+     oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
      sleep(sleepafterconfig)
 
      s=oarf_get_frame(card);
@@ -140,7 +139,7 @@ for deltaI = -3:3,
       rf_local(1)  = txdc_I_min02 + (txdc_Q_min02)*(2^6) + 31*(2^12) + 31*(2^18);
       rf_local(2)  = txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18);
 
-      oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+      oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
       sleep(sleepafterconfig)
 
       s=oarf_get_frame(card);
@@ -182,7 +181,7 @@ rf_local(1)  = txdc_I_min02 + (txdc_Q_min02)*(2^6) + 31*(2^12) + 31*(2^18);
 rf_local(2)  = txdc_I_min12 + (txdc_Q_min12)*(2^6) + 31*(2^12) + 31*(2^18);
 
 
-oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 sleep(sleepafterconfig)
 
 s=oarf_get_frame(card);

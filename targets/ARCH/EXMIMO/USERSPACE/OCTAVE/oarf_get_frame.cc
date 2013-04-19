@@ -133,6 +133,11 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
     
     ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES, numant);
 
+    // set the tx buffer to 0x00010001 to put switch in rx mode
+    for (aa=0; aa<numant; aa++) 
+      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) 
+	((int*)(openair0_exmimo_pci[card].adc_head[aa]))[i] = 0x00010001;
+
     // assign userspace pointers
     for (i=0; i<numant; i++)
     {

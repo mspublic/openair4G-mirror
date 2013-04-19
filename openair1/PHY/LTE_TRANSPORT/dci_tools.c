@@ -1634,7 +1634,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
                 ndi      = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
                 TPC      = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC; 
                 harq_pid = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
-                printf("TDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
+                //printf("TDD 1A: mcs %d, rballoc %x,rv %d, TPC %d\n",mcs,rballoc,rv,TPC);
             }
             else {
                 vrb_type = ((DCI1A_5MHz_FDD_t *)dci_pdu)->vrb_type;
@@ -2990,7 +2990,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     ulsch->harq_processes[harq_pid]->n_DMRS                                = cshift;     
 
-    printf("nb_rb %d, first_rb %d (RIV %d)\n",ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb,rballoc);
+    //printf("nb_rb %d, first_rb %d (RIV %d)\n",ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb,rballoc);
     ulsch->rnti = rnti;
 
     //    msg("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
@@ -3184,7 +3184,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
-    //#ifdef DEBUG_DCI
+#ifdef DEBUG_DCI
     msg("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
@@ -3199,7 +3199,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     msg("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     msg("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
-    //#endif
+#endif
     return(0);
   }
   else {
@@ -3772,7 +3772,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue, u8 eNB_id){
   sinr_eff_qam64 = (p_qam64[0]*pow(I_qam64_avg,7) + p_qam64[1]*pow(I_qam64_avg,6) + p_qam64[2]*pow(I_qam64_avg,5) + p_qam64[3]*pow(I_qam64_avg,4) + p_qam64[4]*pow(I_qam64_avg,3) + p_qam64[5]*pow(I_qam64_avg,2) + p_qam64[6]*I_qam64_avg + p_qam64[7]);
   sinr_eff = cmax3(sinr_eff_qpsk,sinr_eff_qam16,sinr_eff_qam64);
   
-  printf("SINR_Eff = %e\n",sinr_eff);
+  //printf("SINR_Eff = %e\n",sinr_eff);
   
   return(sinr_eff);
 }

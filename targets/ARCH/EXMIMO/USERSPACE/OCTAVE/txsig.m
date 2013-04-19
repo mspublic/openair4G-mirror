@@ -1,30 +1,34 @@
 fc = 1907600000;
-fidx=1;
-tdd=1;
-dual_tx=1;
+%fc = 859.5e6;
 rxgain=30;
-txgain=25;
+txgain=20;
 eNB_flag = 0;
 card = 0;
 
-off = 0; % -994;
 limeparms;
-rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM * [ 1 0 0 0 ];
-rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[1 0 0 0];
+rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM) * [1 1 0 0 ];
+rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[1 1 0 0];
 %rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
-rf_local = [8254744   8255063   8257340   8257340]; %eNB2tx
+%rf_local= [8253704   8253704   8257340   8257340]; %eNB2tx %850MHz
+%rf_local= [8255004   8253440   8257340   8257340]; % ex2 700 MHz
+rf_local = [8254744   8255063   8257340   8257340]; %eNB2tx 1.9GHz
+%rf_local = [8257292   8257300   8257340   8257340]; %ex2 850 MHz
 %rf_local  = rf_local * ones(1,4);
 rf_rxdc = rf_rxdc * ones(1,4);
-rf_vcocal = rf_vcocal * ones(1,4);
+%rf_vcocal = rf_vcocal_859 * ones(1,4);
+rf_vcocal = rf_vcocal_19G * ones(1,4);
 rxgain = rxgain*ones(1,4);
 txgain = txgain*ones(1,4);
-freq_rx = fc*[1 1 1 1];
-freq_tx = freq_rx;
-%freq_tx = freq_rx+1920000/3;
-tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
+freq_tx = fc*[1 1 1 1];
+freq_rx = freq_tx;
+%freq_tx = freq_rx+1920000;
+tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
 syncmode = SYNCMODE_FREE;
+rffe_rxg_low = 61*[1 1 1 1];
+rffe_rxg_final = 61*[1 1 1 1];
+rffe_band = 19G*[1 1 1 1];
 
-oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 amp = pow2(14)-1;
 n_bit = 16;
 
@@ -68,6 +72,8 @@ otherwise
 endswitch
 
 s = s*2;
+%s(38400:end,1) = (1+1j);
+%s(38400:end,2) = (1+1j);
 
 sleep (1)
 oarf_send_frame(card,s,n_bit);

@@ -48,7 +48,8 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 		       short amp,
 		       unsigned int subframe,
 		       unsigned int first_rb,
-		       unsigned int nb_rb) {
+		       unsigned int nb_rb,
+		       u8 ant) {
 
   u16 k,l,Msc_RS,Msc_RS_idx,rb,drs_offset;
   u16 * Msc_idx_ptr;
@@ -62,7 +63,7 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
   u8 cyclic_shift,cyclic_shift0,cyclic_shift1; 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[ant];
   u32 u,v,alpha_ind;
   u32 u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
   u32 u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
@@ -74,12 +75,14 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
   cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
 		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+
-		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
+		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)+
+		   ant*6) % 12;
   //  printf("PUSCH.cyclicShift %d, n_DMRS2 %d, nPRS %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,phy_vars_ue->ulsch_ue[eNB_id]->n_DMRS2,phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]);
   cyclic_shift1 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
 		   phy_vars_ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
-		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)) % 12;
+		   ((phy_vars_ue->ulsch_ue[0]->cooperation_flag==2)?10:0)+
+		   ant*6) % 12;
 
   //       cyclic_shift0 = 0;
   //        cyclic_shift1 = 0;

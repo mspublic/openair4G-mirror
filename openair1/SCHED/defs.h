@@ -75,8 +75,8 @@ typedef struct {
   u8 node_running;
   u8 tx_test;
   u8 mac_registered;
-  u8 freq;
-  u32  freq_info;
+  //u8 freq;
+  u32  freq;
   u32  rx_gain_val;
   u32  rx_gain_mode;
   u32  tcxo_dac;

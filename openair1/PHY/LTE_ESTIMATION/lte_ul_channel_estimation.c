@@ -198,31 +198,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	rxdataF128+=3;
       }
 #endif
-      memset(temp_in_ifft_0,0,frame_parms->ofdm_symbol_size*sizeof(s32)*2);   
-      // Convert to time domain for visualization
-      for(i=0;i<Msc_RS;i++)
-	((s32*)temp_in_ifft_0)[i] = ul_ch_estimates[aa][symbol_offset+i];
-	    
-	  
-      fft( (s16*) temp_in_ifft_0,                          
-	   (s16*) ul_ch_estimates_time[aa],
-	   frame_parms->twiddle_ifft,
-	   frame_parms->rev,
-	   (frame_parms->log2_symbol_size),
-	   (frame_parms->log2_symbol_size)/2,
-	   0);
 
-#ifdef DEBUG_CH      
-      if (aa==0) {
-	if (Ns == 0) {
-	  write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset<<1],512*2,2,1);
-	  write_output("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
-	  write_output("drs_est0.m","drs0",ul_ch_estimates_time[aa],512*2,2,1);
-	}
-	else
-	  write_output("drs_est1.m","drs1",ul_ch_estimates_time[aa],512*2,2,1);
-      }
-#endif
       alpha_ind = 0;
       if((cyclic_shift != 0)){
 	// Compensating for the phase shift introduced at the transmitte
@@ -246,6 +222,50 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	}
 	//	write_output("drs_est_post.m","drsest_post",ul_ch_estimates[0],300*12,1,1);
       }
+
+      //copy MIMO channel estimates to temporary buffer for EMOS
+      //memcpy(&ul_ch_estimates_0[aa][symbol_offset],&ul_ch_estimates[aa][symbol_offset],frame_parms->ofdm_symbol_size*sizeof(s32)*2);
+
+      memset(temp_in_ifft_0,0,frame_parms->ofdm_symbol_size*sizeof(s32)*2);   
+      // Convert to time domain for visualization
+      for(i=0;i<Msc_RS;i++)
+	((s32*)temp_in_ifft_0)[i] = ul_ch_estimates[aa][symbol_offset+i];
+	    
+      fft( (s16*) temp_in_ifft_0,                          
+	   (s16*) ul_ch_estimates_time[aa],
+	   frame_parms->twiddle_ifft,
+	   frame_parms->rev,
+	   (frame_parms->log2_symbol_size),
+	   (frame_parms->log2_symbol_size)/2,
+	   0);
+
+      /*
+      // zero out second half of time domain channel estimate and transform back (-16 because of the cyclic pre-causal part of the channel estimate)
+      for(j=frame_parms->ofdm_symbol_size-16;j<frame_parms->ofdm_symbol_size*2-16;j++){
+	ul_ch_estimates_time[aa][j] = 0;
+      }
+
+      fft( (s16*) ul_ch_estimates_time[aa],
+	   (s16*) &ul_ch_estimates[aa][symbol_offset],
+	   frame_parms->twiddle_fft,
+	   frame_parms->rev,
+	   (frame_parms->log2_symbol_size),
+	   (frame_parms->log2_symbol_size)/2,
+	   1);
+      */
+
+#ifdef DEBUG_CH      
+      if (aa==0) {
+	if (Ns == 0) {
+	  write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset<<1],512*2,2,1);
+	  write_output("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
+	  write_output("drs_est0.m","drs0",ul_ch_estimates_time[aa],512*2,2,1);
+	}
+	else
+	  write_output("drs_est1.m","drs1",ul_ch_estimates_time[aa],512*2,2,1);
+      }
+#endif
+
 
       if(cooperation_flag == 2) {
           memset(temp_in_ifft_0,0,frame_parms->ofdm_symbol_size*sizeof(s32*)*2);
@@ -519,6 +539,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 
       } //if (Ns&1)
 
+      /*
       memset(temp_in_ifft_0,0,frame_parms->ofdm_symbol_size*sizeof(s32)*2);   
       // Convert to time domain for visualization
       for(i=0;i<Msc_RS;i++)
@@ -532,6 +553,7 @@ s32 lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	   (frame_parms->log2_symbol_size),
 	   (frame_parms->log2_symbol_size)/2,
 	   0);
+      */
 
     } //for(aa=...
     

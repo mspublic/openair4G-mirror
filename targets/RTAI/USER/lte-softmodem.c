@@ -152,7 +152,7 @@ extern s16 prach_ifft[4][1024*2];
 
 runmode_t mode;
 int rx_input_level_dBm;
-int otg_enabled = 0;
+extern int otg_enabled = 0;
 int number_of_cards = 1;
 
 int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
@@ -318,7 +318,6 @@ static void *sync_hw(void *arg)
 
 #ifdef EMOS
 #define NO_ESTIMATES_DISK 100 //No. of estimates that are aquired before dumped to disk
-#define CHANSOUNDER_FIFO_DEV "/dev/rtf3"
 
 void *emos_thread (void *arg)
 {
@@ -894,6 +893,7 @@ int main(int argc, char **argv) {
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
 
   u32 rf_vcocal[4]   = {910,910,910,910};
+  u32 rf_vcocal_850[4] = {2015, 2015, 2015, 2015};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   u32 rxgain[4]      = {20,20,20,20};
   u32 txgain[4]      = {25,25,25,25};
@@ -1072,9 +1072,9 @@ int main(int argc, char **argv) {
   frame_parms->Ncp_UL             = 0;
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx_eNB = 2; //initial value overwritten by initial sync later
-  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 2 : 1;
-  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 2 : 1;
+  frame_parms->nb_antennas_tx_eNB = 1; //initial value overwritten by initial sync later
+  frame_parms->nb_antennas_tx     = (UE_flag==0) ? 1 : 1;
+  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 1 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
   frame_parms->tdd_config         = 3;
@@ -1224,15 +1224,15 @@ int main(int argc, char **argv) {
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
     openair_daq_vars.target_ue_dl_mcs=0;
     openair_daq_vars.ue_ul_nb_rb=6;
-    openair_daq_vars.target_ue_ul_mcs=9;
+    openair_daq_vars.target_ue_ul_mcs=6;
 
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //      rxgain[i]=30;
-    rxgain[0] = 30;
-    rxgain[1] = 30;
-    rxgain[2] = 30;
-    rxgain[3] = 30;
+    rxgain[0] = 10;
+    rxgain[1] = 10;
+    rxgain[2] = 10;
+    rxgain[3] = 10;
 
 
     // set eNB to max gain
@@ -1274,13 +1274,20 @@ int main(int argc, char **argv) {
     
     p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
     p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];
-    p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
+
+    if ((carrier_freq[ant] >= 850000000) && (carrier_freq[ant] <= 865000000)) {
+      p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal_850[ant];
+      p_exmimo_config->rf.rffe_band_mode[ant] = DD_TDD;	    
+    }
+    else {
+      p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
+      p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
+    }
 
     p_exmimo_config->rf.rffe_gain_txlow[ant] = 63;
     p_exmimo_config->rf.rffe_gain_txhigh[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
-    p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
   }
   if (UE_flag) {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
@@ -1382,7 +1389,14 @@ int main(int argc, char **argv) {
 
 #ifdef EMOS
   error_code = rtf_create(CHANSOUNDER_FIFO_MINOR,CHANSOUNDER_FIFO_SIZE);
-  printf("[OPENAIR][SCHED][INIT] Created EMOS FIFO %d, error code %d\n",CHANSOUNDER_FIFO_MINOR,error_code);
+  if (error_code==0)
+    printf("[OPENAIR][SCHED][INIT] Created EMOS FIFO %d\n",CHANSOUNDER_FIFO_MINOR);
+  else if (error_code==ENODEV)
+    printf("[OPENAIR][SCHED][INIT] Problem: EMOS FIFO %d is greater than or equal to RTF_NO\n",CHANSOUNDER_FIFO_MINOR);
+  else if (error_code==ENOMEM)
+    printf("[OPENAIR][SCHED][INIT] Problem: cannot allocate memory for EMOS FIFO %d\n",CHANSOUNDER_FIFO_MINOR);
+  else 
+    printf("[OPENAIR][SCHED][INIT] Problem creating EMOS FIFO %d, error_code %d\n",CHANSOUNDER_FIFO_MINOR,error_code);
 #endif
 
   // make main thread LXRT soft realtime
@@ -1467,7 +1481,7 @@ int main(int argc, char **argv) {
   if (UE_flag == 1) {
     thread1 = rt_thread_create(UE_thread, NULL, 100000000);
 #ifdef DLSCH_THREAD
-    //init_rx_pdsch_threads();
+    init_rx_pdsch_thread();
     rt_sleep(nano2count(FRAME_PERIOD/10));
     init_dlsch_threads();
 #endif
@@ -1516,7 +1530,7 @@ int main(int argc, char **argv) {
     rt_thread_join(thread1); 
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
-    //cleanup_rx_pdsch_threads();
+    cleanup_rx_pdsch_thread();
 #endif
   }
   else {
@@ -1536,7 +1550,6 @@ int main(int argc, char **argv) {
   error_code = rtf_destroy(CHANSOUNDER_FIFO_MINOR);
   printf("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
-
 
   return 0;
 }

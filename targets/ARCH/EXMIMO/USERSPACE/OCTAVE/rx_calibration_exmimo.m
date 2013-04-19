@@ -10,7 +10,7 @@ fc = 1907600e3;
 fs = 7680e3;
 fref = fc+fs/4;
 
-power_dBm      = -70;
+power_dBm      = -100;
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 
 dual_tx = 0;
@@ -30,20 +30,24 @@ rf_local = [8254813 8255016 8254813 8254813]; %exmimo2_2
 %rf_rxdc = rf_rxdc*[1 1 1 1];
 %rf_rxdc   = ((128+rxdc_I) + (128+rxdc_Q)*(2^8))*[1 1 1 1];
 rf_rxdc = [37059   35459   36300   36999]; %exmimo2_2
-rf_vcocal=rf_vcocal*[1 1 1 1];
+rf_vcocal=rf_vcocal_19G*[1 1 1 1];
 eNBflag = 0;
 tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
 syncmode = SYNCMODE_FREE;
+rffe_rxg_low = 63*[1 1 1 1];
+rffe_rxg_final = 63*[1 1 1 1];
+rffe_band = B19G_TDD*[1 1 1 1];
 
 
 gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
-gpib_send(gpib_card,gpib_device,sprintf("POW %ddBm",power_dBm+cables_loss_dB));
+%gpib_send(gpib_card,gpib_device,sprintf("POW %ddBm",power_dBm+cables_loss_dB));
+gpib_send(gpib_card,gpib_device,'POW -14dBm');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.91860GHz');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.919225GHz');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.909225GHz');
 gpib_send(gpib_card,gpib_device,sprintf("FREQ %dHz",fref));
 
-oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 
 ALL_rxrfmode = [LNAByp LNAMed LNAMax];
 ALL_gain     = 0:10:30;           
@@ -75,7 +79,7 @@ for LNA=ALL_rxrfmode
        rf_mode = (RXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNA+RFBBNORM+DMAMODE_RX)*[1 1 0 0];
        rx_gain = rx_gain * [1 1 1 1];
 
-       oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal);
+       oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
        sleep(1);
 
        % signal measurement

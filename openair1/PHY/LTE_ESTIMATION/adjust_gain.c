@@ -7,7 +7,7 @@
 #ifdef EXMIMO
 #ifdef DRIVER2013
 #include "openair0_lib.h"
-extern int card, number_of_cards;
+extern int card;
 #else
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"

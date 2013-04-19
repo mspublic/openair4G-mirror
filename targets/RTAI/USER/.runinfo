@@ -7,6 +7,8 @@ eNB_test:lxrt+sem+mbx+msg+smi:!sudo ./lte-softmodem -S -F enb2tx;sleep 1;popall:
 UE:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -T 108;sleep 1;popall:control_c
 #UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907598464 -F ue2;sleep 1;popall:control_c
 UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907593460 -F ex2_2;sleep 1;popall:control_c
+UE850:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 859498000 -F ex2_850;sleep 1;popall:control_c
+eNB850:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -d -C 859500000 -F ex2_850;sleep 1;popall:control_c
 UE0noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912606900 -F ue2 --no-L2-connect;sleep 1;popall:control_c
 UE0calib:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912600000 --calib-ue-rx -70 ;sleep 1;popall:control_c
 UE0calibmed:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1912600000 --calib-ue-rx-med -70 ;sleep 1;popall:control_c

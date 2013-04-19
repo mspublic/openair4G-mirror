@@ -36,8 +36,8 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_vars_eNB->lte_frame_parms.nushift = PHY_vars_eNB->lte_frame_parms.Nid_cell%6;
   phy_init_lte_eNB(PHY_vars_eNB,0,cooperation_flag,abstraction_flag);
 
-  printf ("init eNB: Nid_cell %d\n", frame_parms->Nid_cell);
-  printf ("init eNB: frame_type %d,tdd_config %d\n", frame_parms->frame_type,frame_parms->tdd_config);
+  LOG_I(PHY,"init eNB: Nid_cell %d\n", frame_parms->Nid_cell);
+  LOG_I(PHY,"init eNB: frame_type %d,tdd_config %d\n", frame_parms->frame_type,frame_parms->tdd_config);
 
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     for (j=0;j<2;j++) {
@@ -73,9 +73,9 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   }
   
   PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
-  printf("eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
+  LOG_D(PHY,"eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
   PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
-  printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
+  LOG_D(PHY,"eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
   
   PHY_vars_eNB->rx_total_gain_eNB_dB=140;
   

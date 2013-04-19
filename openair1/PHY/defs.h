@@ -313,7 +313,7 @@ typedef struct
   u8 Mod_id;
   u8 local_flag;
   unsigned int tx_total_gain_dB;
-  unsigned int rx_total_gain_dB;
+  unsigned int rx_total_gain_dB; ///this is a function of rx_gain_mode (and the corresponding gain) and the rx_gain of the card
   rx_gain_t rx_gain_mode[4];
   unsigned int rx_gain_max[4];
   unsigned int rx_gain_med[4];
