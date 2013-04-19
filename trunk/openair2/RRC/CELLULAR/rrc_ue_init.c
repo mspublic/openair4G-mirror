@@ -146,8 +146,12 @@ void rrc_ue_init (u8 Mod_id){
   protocol_ms->rrc.rrc_currently_updating = FALSE;
 
   #ifdef USER_MODE
-  rrc_ue_sap_init ();           // init FIFOs towards NAS
-  //qos_fifo_open ();
+   #ifdef RRC_NETLINK
+   rrc_ue_netlink_init ();
+   #else
+   rrc_ue_sap_init (); // init FIFOs towards NAS
+   //qos_fifo_open ();
+   #endif
   #endif
   //Initialise MBMS
   rrc_ue_mbms_init();

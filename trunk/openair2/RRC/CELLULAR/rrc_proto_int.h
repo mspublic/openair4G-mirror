@@ -15,9 +15,9 @@
 // extern void *rrc_init_bs (void *arg);
 extern void rrc_rg_rxtx (void);
 extern void rrc_rg_nas_xmit_enqueue (mem_block_t * p);
-extern int  rrc_rg_read_DCin_FIFO (int UE_Id);
-extern int  rrc_rg_read_GC_FIFO (void);
-extern int  rrc_rg_read_NT_FIFO (void);
+extern int  rrc_rg_read_DCin_FIFO (int UE_Id, u8 *buffer, int count);
+extern int  rrc_rg_read_GC_FIFO (u8 *buffer, int count);
+extern int  rrc_rg_read_NT_FIFO (u8 *buffer, int count);
 //extern void rrc_rg_srb0_decode (mem_block_t * sduP, int length);
 extern void rrc_rg_srb0_decode (char * sduP, int length);
 extern void rrc_rg_srb1_decode (int UE_Id, char * sduP, int length);
@@ -54,7 +54,8 @@ extern void rrc_ue_nas_xmit_enqueue (mem_block_t * p);
 extern void rrc_ue_broadcast_encode_nas_sib1 (void);
 extern void rrc_ue_broadcast_encode_nas_sib18 (void);
 extern void rrc_ue_read_neighboring_cells_info (void);
-extern int  rrc_ue_read_DCin_FIFO (void);
+//extern int  rrc_ue_read_DCin_FIFO (void);
+extern void rrc_ue_read_DCin_FIFO (struct nas_ue_dc_element *p, int count);
 extern void rrc_ue_t300_timeout (void);
 //extern void rrc_ue_srb0_decode (u8 * dataP, u16 length);
 //       void rrc_ue_srb0_decode (mem_block_t * sduP, int length);
@@ -78,7 +79,11 @@ void rrc_ue_trigger_measure (void);
 
 // rrc_ue_nas_intf.c
 void rrc_ue_write_FIFO (mem_block_t *p);
+#ifdef RRC_NETLINK
+#else
 void rrc_ue_sap_init (void);
+#endif
+
 #endif
 /**************************************************************/
 

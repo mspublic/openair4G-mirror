@@ -467,7 +467,7 @@ void rrc_ue_broadcast_encode_nas_sib1 (void){
 
   if ((data_length > 0) && (protocol_ms->rrc.NASMessageToXmit == NULL)) {
 
-    p = get_free_mem_block (sizeof (struct nas_ue_if_element) + 4096);
+    p = get_free_mem_block (sizeof (struct nas_ue_if_element) + RRC_NAS_MAX_SIZE);
     protocol_ms->rrc.NASMessageToXmit = p;
 
     //Set pointer to newly allocated structure and fills it
@@ -511,7 +511,7 @@ void rrc_ue_broadcast_encode_nas_sib18 (void){
   data_length = protocol_ms->rrc.ue_bch_blocks.currSIB18.cellIdentities.numocts;
 
   if ((data_length > 0) && (protocol_ms->rrc.NASMessageToXmit == NULL)) {
-    p = get_free_mem_block (sizeof (struct nas_ue_if_element) + 4096);
+    p = get_free_mem_block (sizeof (struct nas_ue_if_element) + RRC_NAS_MAX_SIZE);
     protocol_ms->rrc.NASMessageToXmit = p;
 
     //Set pointer to newly allocated structure and fills it
@@ -542,7 +542,7 @@ void RRC_UE_O_NAS_DATA_IND (void){
   struct nas_ue_if_element *msgToBuild;
   char *pdata;
 
-  mem_block_t *p = get_free_mem_block (sizeof (struct nas_ue_if_element) + 4096);
+  mem_block_t *p = get_free_mem_block (sizeof (struct nas_ue_if_element) + RRC_NAS_MAX_SIZE);
   protocol_ms->rrc.NASMessageToXmit = p;        // Temp - will later enqueue at bottom of list
   //Set pointer to newly allocated structure and fills it
   msgToBuild = (struct nas_ue_if_element *) p->data;
@@ -570,7 +570,7 @@ void RRC_UE_O_NAS_NOTIFICATION_IND (void){
   struct nas_ue_if_element *msgToBuild;
   char *pdata;
 
-  mem_block_t *p = get_free_mem_block (sizeof (struct nas_ue_if_element) + 4096);
+  mem_block_t *p = get_free_mem_block (sizeof (struct nas_ue_if_element) + RRC_NAS_MAX_SIZE);
   protocol_ms->rrc.NASMessageToXmit = p;        // Temp - will later enqueue at bottom of list
   //Set pointer to newly allocated structure and fills it
   msgToBuild = (struct nas_ue_if_element *) p->data;

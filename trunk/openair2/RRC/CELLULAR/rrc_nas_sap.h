@@ -37,7 +37,6 @@
 #define RRC_DEVICE_RG_DCSAP2_IN  "/dev/rtf50"
 #define RRC_DEVICE_RG_DCSAP2_OUT "/dev/rtf51"
 
-
 #ifndef USER_MODE
 
 #define RRC_SAPI_UE_GCSAP           40
@@ -72,5 +71,25 @@
 #define RRC_SAPI_RG_DCSAP2_OUT  "./RRG_DCOUT2"
 #endif  //NODE_RG
 #endif  //USER_MODE
+
+//#ifdef NAS_NETLINK
+// For netlink, all SAPs are on the same socket
+// GC-NT - OUT=UE, IN=RG
+// DCx   - OUT/IN = UE + RG
+#define RRC_NAS_GC_IN   0
+#define RRC_NAS_GC_OUT  1
+#define RRC_NAS_NT_IN   2
+#define RRC_NAS_NT_OUT  3
+#define RRC_NAS_DC0_IN  4
+#define RRC_NAS_DC0_OUT 5
+#define RRC_NAS_DC1_IN  6
+#define RRC_NAS_DC1_OUT 7
+#define RRC_NAS_DC2_IN  8
+#define RRC_NAS_DC2_OUT 9
+// ToDo : continue with parameterization of the value (up to 250 MTs for 1 short int)
+//#endif //NAS_NETLINK
+
+#define NAS_RRCNL_ID 30
+#define NL_DEST_RRC_PID 1
 
 #endif

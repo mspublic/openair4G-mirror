@@ -340,7 +340,7 @@ void RRC_RG_O_NAS_DATA_IND (int UE_Id){
   struct nas_rg_if_element *msgToBuild;
   char *pdata;
 
-  mem_block_t *p = get_free_mem_block (sizeof (struct nas_rg_if_element) + 4096);
+  mem_block_t *p = get_free_mem_block (sizeof (struct nas_rg_if_element) + RRC_NAS_MAX_SIZE);
   protocol_bs->rrc.NASMessageToXmit = p;        // Temp - will later enqueue at bottom of list
   //Set pointer to newly allocated structure and fills it
   msgToBuild = (struct nas_rg_if_element *) p->data;

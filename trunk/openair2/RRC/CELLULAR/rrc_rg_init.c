@@ -82,7 +82,11 @@ void rrc_rg_init (u8 Mod_id){
   rrc_init_mac_config();
 
 #ifdef USER_MODE
+ #ifdef RRC_NETLINK
+  rrc_rg_netlink_init ();  // init RRC netlink socket
+ #else
   rrc_rg_sap_init ();      // init FIFOs towards NAS
+ #endif
   rrc_rg_rrm_sap_init ();  // init FIFOs towards RRM
 #endif
   // init function pointers for RRM interface

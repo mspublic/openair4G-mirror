@@ -76,15 +76,29 @@ void rrc_rg_connection_rb_release (int userP);
 #ifdef NODE_MT
 void CPHY_release_UE_resources (void);
 void CPHY_config_fach_rach (void);
+#endif
 
 //OAI - rrc__L2_frontend.c
+//-----------------------------------------------------------------------------
+#ifdef NODE_MT
 void rrc_ue_L2_setupFachRach(void);
 void rrc_ue_config_common_channels (void);
 void rrc_ue_xmit_ccch (void);
-void rrc_ue_config_LTE_srb1_srb2 (void);
+void rrc_ue_config_LTE_srb1 (void);
+void rrc_ue_config_LTE_srb2 (void);
 void rrc_ue_config_common_channels_SIB2 (void);
+void rrc_ue_config_LTE_default_drb (unsigned char Mod_id);
 #endif
-
+//-----------------------------------------------------------------------------
+#ifdef NODE_RG
+void rrc_rg_get_common_config_SIB (int *config_length, char* *config_ptr);
+void rrc_rg_init_mac (unsigned char Mod_id);
+void rrc_rg_config_LTE_srb1 (unsigned char Mod_id);
+void rrc_rg_rcve_ccch(u8 Mod_id, char *Sdu, u16 Sdu_len);
+void rrc_rg_config_LTE_srb2 (unsigned char Mod_id);
+void rrc_rg_config_LTE_default_drb (unsigned char Mod_id);
+#endif
+//-----------------------------------------------------------------------------
 void wcdma_handle_error (int errorP);
 
 //CONFIG
@@ -142,18 +156,24 @@ void RRC_RG_O_O_NAS_RB_Failure (int UE_Id);
 #endif
 
 //ASN1 messages
-uint8_t do_RRCConnectionSetup(uint8_t *buffer,
+/*uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t transmission_mode,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      LTE_DL_FRAME_PARMS *frame_parms,
 			      struct SRB_ToAddMod **SRB1_config,
 			      struct SRB_ToAddMod **SRB2_config,
-			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
-uint8_t do_SIB2_cell(uint8_t Mod_id, uint8_t *buffer, SystemInformation_t *systemInformation, SystemInformationBlockType2_t **sib2);
-uint8_t do_SIB1_TDD_config_cell (LTE_DL_FRAME_PARMS *frame_parms,TDD_Config_t *tdd_Config);
+			      struct PhysicalConfigDedicated  **physicalConfigDedicated);*/
+//uint8_t do_SIB2_cell(uint8_t Mod_id, uint8_t *buffer, SystemInformation_t *systemInformation, SystemInformationBlockType2_t **sib2);
+uint8_t do_SIB2_cell(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
+                  BCCH_DL_SCH_Message_t *bcch_message, SystemInformationBlockType2_t **sib2);
 
-// 
+uint8_t do_SIB1_TDD_config_cell (LTE_DL_FRAME_PARMS *frame_parms,TDD_Config_t *tdd_Config);
+uint8_t do_RRCConnReconf_defaultCELL(uint8_t Mod_id, uint8_t *buffer, uint8_t UE_id, uint8_t Transaction_id,
+                                      struct SRB_ToAddMod **SRB2_config,
+                                      struct DRB_ToAddMod **DRB_config,
+                                      struct PhysicalConfigDedicated  **physicalConfigDedicated) ;
+//
 
 #endif
 
