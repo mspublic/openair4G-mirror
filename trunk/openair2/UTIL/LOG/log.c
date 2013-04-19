@@ -348,8 +348,8 @@ void logRecord( const char *file, const char *func,
   va_start(args, format);
   len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
   va_end(args);
-  if (level == LOG_TRACE)
-    exit(-1);
+  //if (level == LOG_TRACE)
+  //exit(-1);
   //printf (g_buff_info);
   //return; 
  // make sure that for log trace the extra info is only printed once, reset when the level changes

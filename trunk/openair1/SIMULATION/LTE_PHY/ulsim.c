@@ -872,7 +872,7 @@ FILE *csv_fdUL;
 #ifdef OFDMA_ULSCH
 	  if (srs_flag)
 	    generate_srs_tx(PHY_vars_UE,0,AMP,subframe);
-	  generate_drs_pusch(PHY_vars_UE,0,AMP,subframe,first_rb,nb_rb);
+	  generate_drs_pusch(PHY_vars_UE,0,AMP,subframe,first_rb,nb_rb,0);
 	  
 #else
 	  if (srs_flag)
@@ -880,7 +880,8 @@ FILE *csv_fdUL;
 	  generate_drs_pusch(PHY_vars_UE,0,
 			     AMP,subframe,
 			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb,
-			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
+			     PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb,
+0);
 #endif	
 
 	  if ((cqi_flag == 1) && (n_frames == 1) ) {

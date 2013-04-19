@@ -98,6 +98,10 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 //extern int frbPost;
 //extern void kpi_gen();
 
+#ifdef XFORMS
+int otg_enabled;
+#endif
+
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
     {"custom", custom},

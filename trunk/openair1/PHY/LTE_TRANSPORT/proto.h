@@ -1271,7 +1271,8 @@ s32 generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 		       s16 amp,
 		       u32 subframe,
 		       u32 first_rb,
-		       u32 nb_rb);
+		       u32 nb_rb,
+		       u8 ant);
 
 /*!
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).

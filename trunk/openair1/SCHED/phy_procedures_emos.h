@@ -10,8 +10,10 @@ typedef long long unsigned int RTIME;
 //#include "PHY/TOOLS/defs.h"
 #include "PHY/defs.h"
 
-#define CHANSOUNDER_FIFO_SIZE 20971520  // 20 Mbytes FIFO
-#define CHANSOUNDER_FIFO_MINOR 3               // minor of the FIFO device - this is /dev/rtf3
+#define CHANSOUNDER_FIFO_SIZE 10485760 // 10 Mbytes FIFO
+//#define CHANSOUNDER_FIFO_SIZE 20971520  // 20 Mbytes FIFO
+#define CHANSOUNDER_FIFO_MINOR 4               // minor of the FIFO device - this is /dev/rtf3
+#define CHANSOUNDER_FIFO_DEV "/dev/rtf4"
 
 #define NUMBER_OF_OFDM_CARRIERS_EMOS 512 // the number of OFDM carriers used for channel sounding
 #define NUMBER_OF_USEFUL_CARRIERS_EMOS 300    // the number of OFDM carriers that contain data
@@ -20,7 +22,7 @@ typedef long long unsigned int RTIME;
 #define N_PILOTS_DL_EMOS 2  // ofdm symbols with pilots per slot
 #define N_PILOTS_UL_EMOS 2  // ofdm symbols with pilots per subframe
 #define N_SLOTS_DL_EMOS 2     // we take slots 14,15
-#define N_SUBFRAMES_UL_EMOS 3     // we take subframes 2,3,4
+#define N_SUBFRAMES_UL_EMOS 1     // we take subframes 4
 #define NB_ANTENNAS_TX_EMOS 2
 #define NB_ANTENNAS_RX_EMOS 2
 
@@ -51,10 +53,13 @@ struct fifo_dump_emos_struct_UE {
   int              freq_offset;                        /// Frequency offset
   int              use_ia_receiver;
   unsigned short   pmi_saved;
+  unsigned short   mcs;
   unsigned int     rx_total_gain_dB;                   /// Total gain
   unsigned char    eNb_id;                             /// eNb_id UE is synched to
   unsigned char    mimo_mode;                          /// Transmission mode
-  //int              channel[NB_ANTENNAS_TX_EMOS][NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS];
+#ifdef EMOS_CHANNEL
+  int              channel[NB_ANTENNAS_RX_EMOS][NB_ANTENNAS_TX_EMOS][NUMBER_OF_OFDM_CARRIERS_EMOS*N_PILOTS_DL_EMOS*N_SLOTS_DL_EMOS];
+#endif
 };
 
 typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;
@@ -69,7 +74,9 @@ struct fifo_dump_emos_struct_eNB {
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB;            /// UL measurements
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX]; /// Contains received feedback
   unsigned int     rx_total_gain_dB;       /// Total gain
+#ifdef EMOS_CHANNEL
   int              channel[NB_ANTENNAS_RX_EMOS][N_RB_UL_EMOS*12*N_PILOTS_UL_EMOS*N_SUBFRAMES_UL_EMOS]; ///UL channel estimate
+#endif
 };
 
 typedef struct  fifo_dump_emos_struct_eNB fifo_dump_emos_eNB;

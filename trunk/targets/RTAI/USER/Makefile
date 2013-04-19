@@ -34,8 +34,23 @@ RTAI_OBJ += $(SCHED_OBJS)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
-include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
+
+export IS_REL10=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ] ; then  echo "1" ; else  echo "0" ; fi)
+export IS_REL8=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ] ; then  echo "1" ; else  echo "0" ; fi)
+
+ifdef  Rel10
+CFLAGS += -DRel10
+ifeq ($(IS_REL10), 0)
+ $(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ; ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ;)
+endif
+else # default is rel 8
+ifeq ($(IS_REL8), 0)
+ $(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ; ln -s EUTRA-RRC-Definitions-86.asn EUTRA-RRC-Definitions.asn ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; )
+endif
+endif
+
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 OBJ += $(LOG_OBJS) 
 
@@ -83,7 +98,7 @@ CFLAGS += -DHARD_RT
 endif
 
 ifeq ($(EMOS),1)
-CFLAGS += -DEMOS
+CFLAGS += -DEMOS #-DEMOS_CHANNEL
 LDFLAGS += -lgps
 endif
 
@@ -121,7 +136,7 @@ synctest_UE: synctest
 	cp synctest synctest_UE
 
 drivers:
-	cd $(OPENAIR1_DIR) && make clean && make oai_user_exmimo.ko
+	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
 	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
 
 run: condtest
@@ -138,6 +153,12 @@ run_UE:
 
 run_UE0:
 	rtai-load UE0 --verbose
+
+run_UE850:
+	rtai-load UE850 --verbose
+
+run_eNB850:
+	rtai-load eNB850 --verbose
 
 run_UE0prach:
 	rtai-load UE0prach --verbose
@@ -184,10 +205,13 @@ run_eNB2:
 clean:
 	rm -rf $(OBJ) $(RTAI_OBJ)
 
-cleanall: clean
+cleanasn1:
+	rm -f $(ASN1_MSG_OBJS1)
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
+
+cleanall: clean cleanasn1
 	rm -rf condtest synctest lte-softmodem
 	rm -rf synctest_eNB synctest_UE
-	rm -rf $(ASN1_MSG_OBJS1)
 
 show:
 	@echo $(CFLAGS)

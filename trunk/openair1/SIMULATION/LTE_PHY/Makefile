@@ -126,7 +126,7 @@ ifdef STATIC
 LFLAGS += -static -L/usr/lib/libblas
 endif
 
-all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim syncsim mbmssim dlsim2
+all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim mbmssim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 

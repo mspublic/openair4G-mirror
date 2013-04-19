@@ -81,8 +81,12 @@ DMAMODE_TX      =2*(2^23);
 
 rf_local  = 31 + 31*(2^6) + 31*(2^12) + 31*(2^18);
 rf_rxdc   = 0 + 0*(2^8); % DC offset ( DCOFF_I_RXFE [6:0], DCOFF_Q_RXFE[14:8] )
-rf_vcocal = ((0xE)*(2^6)) + (0xE); % VCO calibration values for 1.9 GHz
-
+rf_vcocal_19G = ((0xE)*(2^6)) + (0xE); % VCO calibration values for 1.9 GHz
+rf_vcocal_700 = ((0x24)*(2^6)) + (0x24); % 700 MHz
+rf_vcocal_850 = ((0x1d)*(2^6)) + (0x1d); %850 MHz
+rf_vcocal_859 = ((31)*(2^6)) + (31); %859.5 MHz
+rf_vcocal_26G_eNB = ((0x1f)*(2^6)) + (0x13); 
+rf_vcocal_26G_UE  = ((0x13)*(2^6)) + (0x1f);
 
 % register values and masks for tdd_config
 DUPLEXMODE_MASK   = 1*(2^0);
@@ -103,3 +107,14 @@ TEST_ADACLOOP_EN  = 1*(2^4);
 SYNCMODE_FREE    = 0;
 SYNCMODE_MASTER  = 1;
 SYNCMODE_SLAVE   = 2;
+
+% external RF frontend 
+TVWS_TDD = 0;
+DD_FDD   = 1;    
+DD_TDD   = 2;  
+B19G_TDD = 3;  
+B24G_TDD = 4;
+B26G_TDD = 5;
+B26G_FDD = 6;
+B35G_TDD = 7;
+B50G_TDD = 8;
