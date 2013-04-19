@@ -4,7 +4,7 @@
 #include "lte_phy_scope.h"
 
 #define TPUT_WINDOW_LENGTH 100
-extern int otg_enabled;
+int otg_enabled;
 
 FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 
@@ -178,12 +178,12 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     if (chest_t != NULL) {
         ymax = 0;
         if (chest_t[0] !=NULL) {
-            for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
+            for (i=0; i<(frame_parms->ofdm_symbol_size); i++) {
                 chest_t_abs[0][i] = (float) (chest_t[0][4*i]*chest_t[0][4*i]+chest_t[0][4*i+1]*chest_t[0][4*i+1]);
                 if (chest_t_abs[0][i] > ymax) 
                     ymax = chest_t_abs[0][i];
             }
-            fl_set_xyplot_data(form->chest_t,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size>>3),"","","");
+            fl_set_xyplot_data(form->chest_t,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size),"","","");
         }
         for (arx=1;arx<nb_antennas_rx;arx++) {
             if (chest_t[arx] !=NULL) {
