@@ -535,13 +535,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 				  PHY_vars_UE_g[UE_id]->tx_power_dBm);
 	                          //ue_data[UE_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
-	  printf("[SIM][UL] UE %d tx_pwr %f dBm for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",UE_id,10*log10(tx_pwr),next_slot,next_slot>>1,slot_offset,slot_offset_meas);
-#endif
-	  
-	  
-	  rx_pwr = signal_energy_fp(s_re,s_im,nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
-#ifdef DEBUG_SIM    
-	  printf("[SIM][UL] UE %d rx_pwr %f dBm for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
+	  printf("[SIM][UL] UE %d tx_pwr %f dBm (target %d dBm) for slot %d (subframe %d, slot_offset %d, slot_offset_meas %d)\n",UE_id,10*log10(tx_pwr),PHY_vars_UE_g[UE_id]->tx_power_dBm,next_slot,next_slot>>1,slot_offset,slot_offset_meas);
 #endif
 	  
 	  multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
@@ -555,7 +549,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  
 #ifdef DEBUG_SIM    
 	  rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
-	  printf("[SIM][UL] eNB %d : eNB out %f dB (%f) for slot %d (subframe %d), sptti %d\n",
+	  printf("[SIM][UL] eNB %d : rx_pwr %f dB (%f) for slot %d (subframe %d), sptti %d\n",
 		 eNB_id,10*log10(rx_pwr),rx_pwr,next_slot,next_slot>>1,frame_parms->samples_per_tti);  
 #endif
 	  

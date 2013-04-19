@@ -73,7 +73,7 @@ double dac_fixed_gain(double **s_re,
     amp1/=2;
   }
 
-  printf("UL: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
+  //printf("UL: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
 
   /*
     if (nb_tx_antennas==2)
