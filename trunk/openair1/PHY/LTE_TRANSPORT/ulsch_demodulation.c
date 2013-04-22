@@ -40,7 +40,7 @@
 
 #include <emmintrin.h>
 #include <xmmintrin.h>
-#ifdef __SSE4__
+#ifdef __SSE4_1__
 #include <smmintrin.h>
 #endif
 #ifdef __SSE3__
@@ -422,7 +422,7 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     mmtmpU2 = _mm_abs_epi16(mmtmpU1);
     mmtmpU2 = _mm_subs_epi16(ch_magb[i],mmtmpU2);
 
-#ifdef __SSE4__
+#ifdef __SSE4_1__
     (*llrp32)[0]  = _mm_extract_epi32(rxF[i],0);
     (*llrp32)[1]  = _mm_extract_epi32(mmtmpU1,0);
     (*llrp32)[2]  = _mm_extract_epi32(mmtmpU2,0);
