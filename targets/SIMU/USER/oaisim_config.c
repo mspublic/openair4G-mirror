@@ -423,6 +423,17 @@ int olg_config() {
   set_log(RRC,  LOG_DEBUG, 1);  
   set_log(OCM,  LOG_INFO, 20);  
   set_log(OTG,  LOG_INFO, 1);  
+  set_comp_log(OCG,  LOG_ERR, 0x15,1);  
+  set_comp_log(EMU,  LOG_ERR,  0x15,20);
+  set_comp_log(MAC,  LOG_ERR, 0x15,1);  
+  set_comp_log(RLC,  LOG_INFO, 0x15,1);  
+  set_comp_log(PHY,  LOG_ERR, 0x15, 1);  
+  set_comp_log(PDCP, LOG_DEBUG, 0x15,1);  
+  set_comp_log(RRC,  LOG_DEBUG, 0x15,1);  
+  set_comp_log(OCM,  LOG_ERR, 0x15,20);  
+  set_comp_log(OTG,  LOG_ERR, 0x15,1);  
+  set_comp_log(OMG,  LOG_ERR, 0x15,1);  
+  set_comp_log(OPT,  LOG_ERR, 0x15,1);  
   */
   // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   return 1; 
