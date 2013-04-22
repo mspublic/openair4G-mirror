@@ -251,16 +251,16 @@ endif
 	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
 	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
-oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
-	@echo "Compiling oaisimCROWN.c ..."
-	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
-
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
 endif
 ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
+
+oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
+	@echo "Compiling oaisimCROWN.c ..."
+	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 test_nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
@@ -287,6 +287,8 @@ nas_sim_mt_cellular:
 nas_sim_rg_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasrg_sim MASTER=1 CELLULAR=1 NO_RRM=1)
 
+rrm_std_cellular:
+	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make cell_rrm CELL_RRM=1 CELLULAR=1 NO_RRM=1)
 
 
 cleanall: clean cleanasn1 cleanmmeasn1
