@@ -141,6 +141,19 @@ nasmesh_netlink_address_fix.ko:
 nasmesh_netlink_loopback.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
 
+# drivers cellular version
+nascellmt_netlink.ko:
+	(cd NAS/DRIVER/CELLULAR/NASMT && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+
+nascellmt_clean.ko:
+	(cd NAS/DRIVER/CELLULAR/NASMT && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` clean)
+
+nascellrg_netlink.ko:
+	(cd NAS/DRIVER/CELLULAR/NASRG && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` modules)
+
+nascellrg_clean.ko:
+	(cd NAS/DRIVER/CELLULAR/NASRG && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C /usr/src/$(LINUX_KERNEL) M=`pwd` clean)
+
 rt_emul:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
 
