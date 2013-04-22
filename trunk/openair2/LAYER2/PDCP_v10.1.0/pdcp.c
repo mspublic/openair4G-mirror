@@ -60,6 +60,8 @@ extern int otg_enabled;
 
 extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
+//Added MW - RRC L2 interface
+extern void pdcp_rrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer);
 extern u8 mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
 extern char *packet_gen(int src, int dst, int ctime, int *pkt_size);
 extern int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size);
@@ -333,7 +335,8 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 			sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
 			new_sdu->data);
 			}*/
-    rrc_lite_data_ind(module_id,
+    //rrc_lite_data_ind(module_id, //Modified MW - L2 Interface
+    pdcp_rrc_data_ind(module_id,
 			frame,
 			eNB_flag,
 			rb_id,
