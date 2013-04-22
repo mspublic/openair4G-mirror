@@ -681,6 +681,11 @@ void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
 */
 void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, u8 sched_subframe, unsigned int *nCCE);
 
+void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_flag,unsigned char subframe,unsigned char sched_subframe,unsigned int *nCCE);
+void schedule_ue_uplink_cornti(u8 Mod_id, unsigned char cooperation_flag, unsigned char UE_id, u32 frame, unsigned char subframe, unsigned char sched_subframe, unsigned char *harq_pid, unsigned char *round, DCI_PDU *DCI_pdu, unsigned char aggregation, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb); 
+void schedule_ue_uplink_rnti(u8 Mod_id,   unsigned char cooperation_flag, unsigned char UE_id, u32 frame, unsigned char subframe, unsigned char sched_subframe, unsigned char *harq_pid, unsigned char *round, DCI_PDU *DCI_pdu, unsigned char aggregation, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
+ 
+
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB
 @param frame Frame index
