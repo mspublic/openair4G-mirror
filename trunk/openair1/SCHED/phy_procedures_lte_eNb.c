@@ -218,7 +218,6 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 	  Mod_id,frame,subframe,DLSCH_ptr->harq_ids[subframe]);
 #endif
     // switch on TDD or FDD configuration here later
-    // navid: the harq_pid seems inccorect with distributed emulation
     *harq_pid = DLSCH_ptr->harq_ids[subframe];
     if ((*harq_pid<DLSCH_ptr->Mdlharq) && 
 	((DLSCH_ptr->harq_processes[*harq_pid]->round > 0))) {

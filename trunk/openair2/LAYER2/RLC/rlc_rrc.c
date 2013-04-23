@@ -453,7 +453,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, u8_t 
     return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
+rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, u8_t MBMS_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 
@@ -461,7 +461,7 @@ rlc_op_status_t rrc_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t 
   if (sdu != NULL) {
     //    msg("[RRC_RLC] MEM_ALLOC %p\n",sdu);
     memcpy (sdu->data, sduP, sdu_sizeP);
-    return rlc_data_req(module_idP, frame, eNB_flagP, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
+    return rlc_data_req(module_idP, frame, eNB_flagP, MBMS_flagP, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
   } else {
     return RLC_OP_STATUS_INTERNAL_ERROR;
   }

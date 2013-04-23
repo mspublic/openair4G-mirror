@@ -48,17 +48,16 @@
 #include "OCG_extern.h"
 #include "UTIL/LOG/log.h"
 #include <inttypes.h>
-
+#include "platform_constants.h"
 
 #define PDCP_DATA_REQ_DEBUG 0
 #define PDCP_DATA_IND_DEBUG 0
-#define NUMBER_OF_SERVICE_MAX 1 
 
 #ifndef OAI_EMU
 extern int otg_enabled;
 #endif
 
-extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
+extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, u8_t,rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 //Added MW - RRC L2 interface
 extern void pdcp_rrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer);
@@ -112,9 +111,9 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
     mac_xface->macphy_exit("");
   }
 
-  // PDCP transparent mode for MTCH traffic 
-  if (mode == PDCP_TM) {
-    rlc_status = rlc_data_req(module_id, frame, eNB_flag, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
+  // PDCP transparent mode for MBMS traffic 
+  if (mode == PDCP_TM) { 
+    rlc_status = rlc_data_req(module_id, frame, eNB_flag, 1, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
   } else {
     // calculate the pdcp header and trailer size
     if ((rb_id % NB_RB_MAX) < DTCH) {
@@ -201,7 +200,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
        * Ask sublayer to transmit data and check return value
        * to see if RLC succeeded
        */
-      rlc_status = rlc_data_req(module_id, frame, eNB_flag, rb_id, muiP, confirmP, pdcp_pdu_size, pdcp_pdu);
+      rlc_status = rlc_data_req(module_id, frame, eNB_flag, 0, rb_id, muiP, confirmP, pdcp_pdu_size, pdcp_pdu);
   }
       switch (rlc_status) {
       case RLC_OP_STATUS_OK:
@@ -437,6 +436,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
   unsigned char *otg_pkt=NULL;
   int src_id, module_id; // src for otg
   int dst_id, rb_id; // dst for otg
+  int service_id, session_id;
   int pkt_size=0;
   unsigned int ctime=0;
   /*
@@ -477,20 +477,23 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	} //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
       }
 #ifdef Rel10
-      // mutlticast , temp var: NUMBER_OF_SERVICE_MAX
-      for (dst_id = 0; dst_id < NUMBER_OF_SERVICE_MAX; dst_id++) {
-	rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + MTCH; 
-	if (pdcp_array[module_id][rb_id].MBMS_flag){
-	  otg_pkt=(u8*) packet_gen_multicast(module_id, dst_id, ctime, &pkt_size);
-	  if (otg_pkt != NULL) {
-	    LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, dst_id, pkt_size);
-	    pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
-	    free(otg_pkt);
+      // MBSM multicast traffic 
+      for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
+	for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
+	  if (pdcp_mbms_array[service_id][session_id].instanciated_instance== module_id + 1 ){ // this service/session is configured
+	    // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
+	   rb_id = pdcp_mbms_array[service_id][session_id].rb_id;
+	    otg_pkt=(u8*) packet_gen_multicast(module_id, session_id, ctime, &pkt_size);
+	    if (otg_pkt != NULL) {
+	      LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, session_id, pkt_size);
+	      pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
+	      free(otg_pkt);
+	    }
 	  }
 	}
       }
 #endif 	
-    }else {
+    } else {
       dst_id = eNB_index;	
       if (mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) { 
 	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
@@ -549,6 +552,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   long int        rb_id        = 0;
   long int        lc_id        = 0;
   long int        srb_id        = 0;
+  long int        mch_id         = 0;
   rlc_mode_t      rlc_type    = RLC_NONE;
   DRB_Identity_t  drb_id       = 0;
   DRB_Identity_t* pdrb_id      = NULL;
@@ -561,7 +565,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   SRB_ToAddMod_t* srb_toaddmod = NULL;
   DRB_ToAddMod_t* drb_toaddmod = NULL;
 #ifdef Rel10
-  MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL;
+  MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL; 
 #endif
   LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 for %s %d\n",module_id, 
 	(eNB_flag == 1)? "eNB": "UE", index);
@@ -591,6 +595,8 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 				  index, // ue/enb index : used for log
 				  rlc_type,
 				  action, 
+				  lc_id,
+				  mch_id,
 				  rb_id,
 				  srb_sn,
 				  0, // drb_report
@@ -678,6 +684,8 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 			      index, 
 			      rlc_type,
 			      action, 
+			      lc_id,
+			      mch_id,
 			      rb_id,
 			      drb_sn,
 			      drb_report,
@@ -698,6 +706,8 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 			    index, 
 			    rlc_type, 
 			    action, 
+			    lc_id,
+			    mch_id,
 			    rb_id,
 			    0,
 			    0,
@@ -710,22 +720,26 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   if (mbms_SessionInfoList_r9 != NULL){
     for (cnt=0;cnt<mbms_SessionInfoList_r9->list.count;cnt++) {
       MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[cnt];
-      lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
+      //lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
       // drb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
-      rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + lc_id;
-      pdcp_array[module_id][rb_id].MBMS_flag=1;
-      if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
-	action = ACTION_MODIFY;
+      //rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + lc_id;
+      lc_id = MBMS_SessionInfo->sessionId_r9->buf[0];  
+      mch_id = MBMS_SessionInfo->tmgi_r9.serviceId_r9.buf[0]; 
+      rb_id =  (mch_id *  maxSessionPerPMCH ) +  lc_id ; 
+      if (pdcp_mbms_array[mch_id][lc_id].instanciated_instance == module_id + 1)
+	action = ACTION_MBMS_MODIFY;
       else 
-	action = ACTION_ADD;
+	action = ACTION_MBMS_ADD;
       pdcp_config_req_asn1 (module_id,
 			    frame, 
 			    eNB_flag, // not really required
 			    index, 
 			    rlc_type,
 			    action, 
-			    rb_id, 
-			    srb_sn, // set to deafult
+			    lc_id,
+			    mch_id, 
+			    rb_id,
+			    0, // set to deafult
 			    0,
 			    0,
 			    0xff);
@@ -739,14 +753,14 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 
 
 BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index,  
-			   rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, 
+			   rlc_mode_t rlc_mode, u32  action, u16 lc_id,u16 mch_id, rb_id_t rb_id, 
 			   u8 rb_sn, u8 rb_report, 
 			   u8 header_compression_profile, 
 			   u8 security_mode){
   switch (action) {
   case ACTION_ADD:
     pdcp_array[module_id][rb_id].instanciated_instance = module_id + 1;
-    
+    pdcp_array[module_id][rb_id].lcid = lc_id; 
     pdcp_array[module_id][rb_id].header_compression_profile=header_compression_profile;
     pdcp_array[module_id][rb_id].cipheringAlgorithm=security_mode & 0x0f;
     pdcp_array[module_id][rb_id].integrityProtAlgorithm=(security_mode>>4) & 0xf;
@@ -798,6 +812,7 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 
     break;
   case ACTION_REMOVE:
     pdcp_array[module_id][rb_id].instanciated_instance = 0;
+    pdcp_array[module_id][rb_id].lcid= 0;
     pdcp_array[module_id][rb_id].header_compression_profile=0x0;
     pdcp_array[module_id][rb_id].cipheringAlgorithm=0xff;
     pdcp_array[module_id][rb_id].integrityProtAlgorithm=0xff;
@@ -814,6 +829,15 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 
 	  (eNB_flag) ? "eNB" : "UE", module_id, frame, rb_id);
 
     break;
+  case ACTION_MBMS_ADD:
+  case ACTION_MBMS_MODIFY:
+    pdcp_mbms_array[mch_id][lc_id].instanciated_instance = module_id + 1 ;
+    pdcp_mbms_array[mch_id][lc_id].service_id = mch_id; 
+    pdcp_mbms_array[mch_id][lc_id].session_id = lc_id;
+    pdcp_mbms_array[mch_id][lc_id].rb_id = rb_id;
+    LOG_I(PDCP,"[eNB %d] Config request : ACTION_MBMS_ADD: Frame %d service_id/mch index %d, session_id/lcid %d, rbid %d configured\n",
+	  module_id, frame, mch_id, lc_id, rb_id);
+    break;
   case ACTION_SET_SECURITY_MODE:
     if ((security_mode >= 0 ) && (security_mode <=0x77)) {
       pdcp_array[module_id][rb_id].cipheringAlgorithm= security_mode & 0x0f;
@@ -826,6 +850,7 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 
       LOG_D(PDCP,"[%s %d] bad security mode %d", security_mode);
       break;
   default:
+    LOG_W(PDCP,"unknown action %d for the config request\n",action);
     break;
   }
 
@@ -955,6 +980,11 @@ pdcp_layer_init ()
           memset((void*)&pdcp_array[i][j], 0, sizeof(pdcp_t));
       }
       
+  }
+  for (i=0; i < 16; i++) { // MAX service 
+    for (j=0; j < 29; j++) { // max session 
+      memset((void*)&pdcp_mbms_array[i][j], 0, sizeof(pdcp_mbms_t));
+      }
   }
 
   LOG_I(PDCP, "PDCP layer has been initialized\n");

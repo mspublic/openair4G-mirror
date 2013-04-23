@@ -277,14 +277,14 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
   }
 }
 //-----------------------------------------------------------------------------
-rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
+rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, u8_t MBMS_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t* new_sdu;
 
 #ifdef DEBUG_RLC_DATA_REQ
   LOG_D(RLC,"rlc_data_req: module_idP %d (%d), rb_idP %d (%d), muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,MAX_MODULES,rb_idP,MAX_RAB,muiP,confirmP,sdu_sizeP,sduP);
 #endif
-  if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
+  if ((module_idP >= 0) && (module_idP < MAX_MODULES) && (MBMS_flagP == 0)) {
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
           if (sduP != NULL) {
               if (sdu_sizeP > 0) {
@@ -428,10 +428,18 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
           //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, rb_idP);
           return RLC_OP_STATUS_BAD_PARAMETER;
       }
-  } else {
-                free_mem_block(sduP);
+  } else if ((module_idP >= 0) && (module_idP < MAX_MODULES) && (MBMS_flagP == 1)) {
+    if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
+      if (sduP != NULL) {
+	if (sdu_sizeP > 0) {
+	  LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
+	}
+      }
+    }
+  }  else {
+    free_mem_block(sduP);
       //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
-      return RLC_OP_STATUS_BAD_PARAMETER;
+    return RLC_OP_STATUS_BAD_PARAMETER;
   }
 }
 

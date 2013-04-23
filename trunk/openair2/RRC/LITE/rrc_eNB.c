@@ -307,9 +307,14 @@ void init_MBMS(u8 Mod_id, u32 frame) {// init the configuration for MTCH
     // loop for all MCHs, only MCH[0] is impelmented here
     LOG_I(RRC,"Number of MCH is %d\n",num_mch);
     for (i=0; i<num_mch;i++) {
-      LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
+      //  LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
       //     rrc_pdcp_config_req();
-      rrc_rlc_config_asn1_req(Mod_id, frame, 1, 0,
+      rrc_pdcp_config_asn1_req(Mod_id, frame, 1, i,
+			      NULL,// SRB_ToAddModList
+			      NULL,// DRB_ToAddModList
+			      NULL,// DRB_ToReleaseList
+			      &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[i]->mbms_SessionInfoList_r9));
+      rrc_rlc_config_asn1_req(Mod_id, frame, 1, i,
 			      NULL,// SRB_ToAddModList
 			      NULL,// DRB_ToAddModList
 			      NULL,// DRB_ToReleaseList

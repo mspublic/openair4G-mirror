@@ -47,7 +47,7 @@ mapping omg_model_names[] =
     {"MAX_NUM_MOB_TYPES", MAX_NUM_MOB_TYPES},
     {NULL, -1}
 };
-mapping otg_mapp_type_names[] = {
+mapping otg_multicast_app_type_names[] = {
   {"no_predefined_multicast_traffic", 0},
   {"mscbr", 1.},
   {NULL, -1}
@@ -939,10 +939,10 @@ g_otg->application_idx[source_id_index][destination_id_index]+=1;
     }
     init_predef_traffic(oai_emulation.info.nb_ue_local, oai_emulation.info.nb_enb_local);
     
-    for (i=0; i<NUMBER_OF_eNB_MAX; i++){
-      for (j=0; j<NUMBER_OF_SERVICE_MAX; j++){ 
+    for (i=0; i<16; i++){//maxServiceCount
+      for (j=0; j<28; j++){ // maxSessionPerPMCH
 	for (k=0; k<MAX_NUM_APPLICATION; k++){ 
-	  g_otg_multicast->application_type[i][j][k] = map_str_to_int(otg_mapp_type_names, oai_emulation.info.otg_traffic);
+	  g_otg_multicast->application_type[i][j][k] = map_str_to_int( otg_multicast_app_type_names, oai_emulation.info.otg_traffic);
 	}
       }
     }

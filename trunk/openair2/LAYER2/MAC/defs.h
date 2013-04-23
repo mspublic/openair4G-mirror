@@ -84,10 +84,11 @@
 #define DCCH1 2 // srb2
 #define DTCH  3 // DTCH + lcid < 11
 
-#ifdef Rel10
-#define MCCH 4 // MCCH
-#define MTCH 5 // MTCH
 
+#define MCCH 4 // MCCH
+
+#define MTCH 5 // MTCH
+#ifdef Rel10
 
 // Mask for identifying subframe for MBMS 
 #define MBSFN_TDD_SF3 0x80// for TDD
@@ -337,7 +338,121 @@ typedef struct {
   u16 serving_num;  
   UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
+typedef struct{
+  /// BW
+  uint16_t num_dlactive_UEs;
+  /// total available number of PRBs
+  uint16_t available_prbs;
+  /// aggregation 
+  /// total avilable nccc : num control channel element 
+  uint16_t available_ncces;
+  // only for a new transmission, should be extended for retransmission  
+  // current dlsch  bit rate for all transport channels 
+  uint32_t dlsch_bitrate;
+  //
+  uint32_t dlsch_bytes_tx;
+  //
+  uint32_t dlsch_pdus_tx;
+ //
+  uint32_t total_dlsch_bitrate;
+  //
+  uint32_t total_dlsch_bytes_tx;
+  //
+  uint32_t total_dlsch_pdus_tx;
 
+  //
+  uint32_t ulsch_bitrate;
+  //
+  uint32_t ulsch_bytes_rx;
+  //
+  uint64_t ulsch_pdus_rx;
+  // here for RX
+}eNB_STATS;
+
+typedef struct{
+
+  /// CRNTI of UE
+  uint16_t crnti; ///user id (rnti) of connected UEs
+  // rrc status 
+  uint8_t rrc_status;
+  /// harq pid
+  uint8_t harq_pid;
+  /// harq rounf 
+  uint8_t harq_round;
+  /// DL Wideband CQI index (2 TBs) 
+  uint8_t dl_cqi;
+  /// total available number of PRBs for a new transmission
+  uint16_t rbs_used;
+  /// total available number of PRBs for a retransmission
+  uint16_t rbs_used_retx;
+  /// total nccc used for a new transmission: num control channel element 
+  uint16_t ncce_used;
+  /// total avilable nccc for a retransmission: num control channel element 
+  uint16_t ncce_used_retx;
+ 
+  // mcs1 before the rate adaptaion 
+  uint8_t dlsch_mcs1;
+  /// Target mcs2 after rate-adaptation 
+  uint8_t dlsch_mcs2;
+  //  current TBS with mcs2 
+  uint32_t TBS;
+  //  total TBS with mcs2 
+  //  uint32_t total_TBS;
+ //  total rb used for a new transmission 
+  uint32_t total_rbs_used;
+ //  total rb used for retransmission 
+  uint32_t total_rbs_used_retx;
+ 
+
+  /// TX 
+  /// Num pkt
+  uint32_t num_pdu_tx[NB_RB_MAX];
+  /// num bytes
+  uint32_t num_bytes_tx[NB_RB_MAX];
+  /// num retransmission / harq
+  uint32_t num_retransmission;
+  /// instantaneous tx throughput for each TTI
+  //  uint32_t tti_throughput[NB_RB_MAX];
+ 
+  /// overall 
+  //
+  uint32_t  dlsch_bitrate; 
+  //total 
+  uint32_t  total_dlsch_bitrate; 
+  /// headers+ CE +  padding bytes for a MAC PDU 
+  uint64_t overhead_bytes;
+ /// headers+ CE +  padding bytes for a MAC PDU 
+  uint64_t total_overhead_bytes;
+ /// headers+ CE +  padding bytes for a MAC PDU 
+  uint64_t avg_overhead_bytes;
+  // MAC multiplexed payload 
+  uint64_t total_sdu_bytes;
+  // total MAC pdu bytes
+  uint64_t total_pdu_bytes;
+  
+  // total num pdu
+  uint32_t total_num_pdus;
+  //
+  //  uint32_t avg_pdu_size;
+ 
+  /// RX 
+  /// num rx pdu 
+  uint32_t num_pdu_rx[NB_RB_MAX];
+  /// num bytes rx 
+  uint32_t num_bytes_rx[NB_RB_MAX];
+ /// instantaneous rx throughput for each TTI
+  //  uint32_t tti_goodput[NB_RB_MAX];
+  /// errors 
+  uint32_t num_errors_rx; 
+  /// overall 
+
+  // total MAC pdu bytes
+  uint64_t total_pdu_bytes_rx;
+  // total num pdu
+  uint32_t total_num_pdus_rx;
+
+}eNB_UE_STATS;
+ 
 typedef struct{
   /// C-RNTI of UE
   u16 rnti;
@@ -493,6 +608,13 @@ typedef struct{
 
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
+  
+  ///  active flag for Other lcid 
+  u8 lcid_active[NB_RB_MAX];
+  // eNB stats 
+  eNB_STATS eNB_stats;
+  /// eNB to UE statistics 
+  eNB_UE_STATS eNB_UE_stats[NUMBER_OF_UE_MAX];
 }eNB_MAC_INST;
 
 typedef struct {
@@ -1183,6 +1305,8 @@ void dl_phy_sync_success(unsigned char Mod_id,
 			 u32 frame,
 			 unsigned char eNB_index,
 			 u8 first_sync);
+
+int dump_eNB_l2_stats(char *buffer, int length);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
