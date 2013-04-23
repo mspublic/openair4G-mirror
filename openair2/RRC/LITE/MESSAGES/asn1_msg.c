@@ -29,7 +29,7 @@
 #include "DRB-ToAddModList.h"
 #ifdef Rel10
 #include "MCCH-Message.h"
-#define MRB1 16
+#define MRB1 1
 #endif
 
 #include "RRC/LITE/defs.h"
@@ -1462,7 +1462,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 
 }
 
-uint8_t TMGI[6] = {0,1,2,3,4,5};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
+uint8_t TMGI[5] = {5,4,0,0,1};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
 
 #ifdef Rel10
 uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
@@ -1473,7 +1473,7 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
   asn_enc_rval_t enc_rval;
   MBSFN_SubframeConfig_t *mbsfn_SubframeConfig1;
   PMCH_Info_r9_t *pmch_Info_1;
-  MBMS_SessionInfo_r9_t mbms_Session_1, mbms_Session_2;
+  MBMS_SessionInfo_r9_t *mbms_Session_1, *mbms_Session_2;
 
   memset(mcch_message,0,sizeof(MCCH_Message_t));
   mcch_message->message.present	= MCCH_MessageType_PR_c1;
@@ -1504,8 +1504,8 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
 
   // PMCHs Information List (PMCH-InfoList-r9)
   // PMCH_1  Config
-  pmch_Info_1 = CALLOC(1,sizeof(*pmch_Info_1));
-  memset((void*)pmch_Info_1,0,sizeof(*pmch_Info_1));
+  pmch_Info_1 = CALLOC(1,sizeof(PMCH_Info_r9_t));
+  memset((void*)pmch_Info_1,0,sizeof(PMCH_Info_r9_t));
   
   pmch_Info_1->pmch_Config_r9.sf_AllocEnd_r9= 11;//take the value of last mbsfn subframe in this CSA period because there is only one PMCH in this mbsfn area
   pmch_Info_1->pmch_Config_r9.dataMCS_r9= 7;
@@ -1514,39 +1514,39 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
   // MBMSs-SessionInfoList-r9
   //  pmch_Info_1->mbms_SessionInfoList_r9 = CALLOC(1,sizeof(struct MBMS_SessionInfoList_r9));
   //  Session 1
-  //  mbms_Session_1 = CALLOC(1,sizeof(mbms_Session_1));
-  memset(&mbms_Session_1,0,sizeof(mbms_Session_1));
+  mbms_Session_1 = CALLOC(1,sizeof(MBMS_SessionInfo_r9_t));
+  memset(mbms_Session_1,0,sizeof(MBMS_SessionInfo_r9_t));
   // TMGI value 
-  mbms_Session_1.tmgi_r9.plmn_Id_r9.present= TMGI_r9__plmn_Id_r9_PR_plmn_Index_r9;
-  mbms_Session_1.tmgi_r9.plmn_Id_r9.choice.plmn_Index_r9= 1;
+  mbms_Session_1->tmgi_r9.plmn_Id_r9.present= TMGI_r9__plmn_Id_r9_PR_plmn_Index_r9;
+  mbms_Session_1->tmgi_r9.plmn_Id_r9.choice.plmn_Index_r9= 1;
   // Service ID 
-  memset(&mbms_Session_1.tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));// need to check
-  OCTET_STRING_fromBuf(&mbms_Session_1.tmgi_r9.serviceId_r9,(const char*)&TMGI[3],3);
+  memset(&mbms_Session_1->tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));// need to check
+  OCTET_STRING_fromBuf(&mbms_Session_1->tmgi_r9.serviceId_r9,(const char*)&TMGI[2],3);
   // Session ID is still missing here, it can be used as an rab id or mrb id
-  mbms_Session_1.sessionId_r9 = CALLOC(1,sizeof(OCTET_STRING_t));
-  mbms_Session_1.sessionId_r9->buf= MALLOC(1);
-  mbms_Session_1.sessionId_r9->size= 1;
-  mbms_Session_1.sessionId_r9->buf[0]= MRB1; 
+  mbms_Session_1->sessionId_r9 = CALLOC(1,sizeof(OCTET_STRING_t));
+  mbms_Session_1->sessionId_r9->buf= MALLOC(1);
+  mbms_Session_1->sessionId_r9->size= 1;
+  mbms_Session_1->sessionId_r9->buf[0]= MRB1; 
   // Logical Channel ID
-  mbms_Session_1.logicalChannelIdentity_r9= MTCH;
-  ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,&mbms_Session_1);
+  mbms_Session_1->logicalChannelIdentity_r9= MTCH;
+  ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,mbms_Session_1);
   
   /*    //  Session 2
-  //mbms_Session_2 = CALLOC(1,sizeof(mbms_Session_2));
-  memset(&mbms_Session_2,0,sizeof(mbms_Session_2));
+  //mbms_Session_2 = CALLOC(1,sizeof(MBMS_SessionInfo_r9_t));
+  memset(mbms_Session_2,0,sizeof(MBMS_SessionInfo_r9_t));
   // TMGI value  
-  mbms_Session_2.tmgi_r9.plmn_Id_r9.present= TMGI_r9__plmn_Id_r9_PR_plmn_Index_r9;
-  mbms_Session_2.tmgi_r9.plmn_Id_r9.choice.plmn_Index_r9= 1;
+  mbms_Session_2->tmgi_r9.plmn_Id_r9.present= TMGI_r9__plmn_Id_r9_PR_plmn_Index_r9;
+  mbms_Session_2->tmgi_r9.plmn_Id_r9.choice.plmn_Index_r9= 1;
   // Service ID
-  memset(&mbms_Session_2.tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));// need to check
-  OCTET_STRING_fromBuf(&mbms_Session_2.tmgi_r9.serviceId_r9,(const char*)&TMGI[3],3);
+  memset(&mbms_Session_2->tmgi_r9.serviceId_r9,0,sizeof(OCTET_STRING_t));// need to check
+  OCTET_STRING_fromBuf(&mbms_Session_2->tmgi_r9.serviceId_r9,(const char*)&TMGI[3],3);
   // Session ID is still missing here
-  mbms_Session_2.sessionID_r9->buf= MALLOC(1);
-  mbms_Session_2.sessionID_r9->size= 1;
-  mbms_Session_2.sessionID_r9->buf[0]= 0x11; 
+  mbms_Session_2->sessionID_r9->buf= MALLOC(1);
+  mbms_Session_2->sessionID_r9->size= 1;
+  mbms_Session_2->sessionID_r9->buf[0]= 0x11; 
   // Logical Channel ID
-  mbms_Session_2.logicalChannelIdentity_r9= 2;
-  ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,&mbms_Session_2);
+  mbms_Session_2->logicalChannelIdentity_r9= 2;
+  ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,mbms_Session_2);
  */ 
   ASN_SEQUENCE_ADD(&(*mbsfnAreaConfiguration)->pmch_InfoList_r9.list,pmch_Info_1);
 
