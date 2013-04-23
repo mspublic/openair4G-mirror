@@ -297,6 +297,7 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t ,
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
 * \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
+* \param[in]  MBMS_flag        Flag to indicate whether this is an MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -304,7 +305,7 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t ,
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
+public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
 /*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
@@ -383,6 +384,7 @@ public_rlc(void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char*
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index.
 * \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
+* \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -390,7 +392,7 @@ public_rlc(void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char*
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
+public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, u8_t, u8_t,rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
 
 /*! \fn void rlc_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.

@@ -213,11 +213,13 @@ int mac_top_init(int eMBMS_active){
       RA_template[j].RA_dci_fmt1        = format1A;
       RA_template[j].RA_dci_fmt2        = format1A;
     }
-
-
+    
+    memset (&eNB_mac_inst[i].eNB_stats,0,sizeof(eNB_STATS));
     UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
     for (j=0;j<NUMBER_OF_UE_MAX;j++) {
       UE_template[j].rnti=0;
+      // initiallize the eNB to UE statistics
+      memset (&eNB_mac_inst[i].eNB_UE_stats[j],0,sizeof(eNB_UE_STATS));
     }
   }
 

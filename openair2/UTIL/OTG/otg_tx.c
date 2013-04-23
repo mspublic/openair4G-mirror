@@ -292,15 +292,17 @@ unsigned char *packet_gen_multicast(int src, int dst, int ctime, int * pkt_size)
   
   //for (app=0; app<MAX_NUM_APPLICATION; app++){  
   for (app=0; app<1; app++){  
-   if ( (g_otg_multicast->idt_dist[src][dst][app]> 0) &&  
+    if ( (g_otg_multicast->idt_dist[src][dst][app]> 0) &&  
 	 ((ctime - otg_multicast_info->ptime[src][dst][app]) >= otg_multicast_info->idt[src][dst][app]) ){
-      otg_multicast_info->ptime[src][dst][application]=ctime;
       //otg_info->idt[src][dst][app]= time_dist(src, dst, app, -1);
       otg_multicast_info->idt[src][dst][app]=ceil(uniform_dist(g_otg_multicast->idt_min[src][dst][app], 
 							       g_otg_multicast->idt_max[src][dst][app]));
       size = ceil(uniform_dist(g_otg_multicast->size_min[src][dst][app], 
 			       g_otg_multicast->size_max[src][dst][app]));
-      //LOG_D(OTG, "ptime %d idt %d size %d \n",  ctime, otg_multicast_info->idt[src][dst][app], size);
+      LOG_D(OTG, "ptime %d, ctime %d idt %d (min %d, max %d) size %d (min %d, max %d)\n",  otg_multicast_info->ptime[src][dst][application], ctime, 
+	    otg_multicast_info->idt[src][dst][app], g_otg_multicast->idt_min[src][dst][app], g_otg_multicast->idt_max[src][dst][app], 
+	    size,g_otg_multicast->size_min[src][dst][app],g_otg_multicast->size_max[src][dst][app]);
+      otg_multicast_info->ptime[src][dst][application]=ctime;
       if (size == 0)
 	size = 1;
       if (otg_multicast_info->header_size_app[src][dst][app]==0){
@@ -323,11 +325,17 @@ unsigned char *packet_gen_multicast(int src, int dst, int ctime, int * pkt_size)
   
       buffer_size = otg_hdr_size + strlen(header) + strlen(payload);
       *pkt_size = buffer_size;
-      
-      return serialize_buffer(header, payload, buffer_size,g_otg_multicast->application_type[src][dst][app], flag, 0, ctime, seq_num, 0, HDR_IP_v4_MIN+HDR_UDP, 1);
-    }
+      break;
+   }
+   else {
+     //LOG_D(OTG,"no packet is generated \n");
+   }
   }
-  return NULL;
+  
+  if (buffer_size)
+    return serialize_buffer(header, payload, buffer_size,g_otg_multicast->application_type[src][dst][app], flag, 0, ctime, seq_num, 0, HDR_IP_v4_MIN+HDR_UDP, 1);
+  else 
+    return NULL;
 }
 
 int otg_hdr_size(int src, int dst){
@@ -620,20 +628,21 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
 void init_predef_multicast_traffic() {
   int i, j, k;
 
-for (i=0; i<NUMBER_OF_eNB_MAX; i++){ // src 
-   for (j=0; j<NUMBER_OF_SERVICE_MAX; j++){ // dst
+for (i=0; i<2; i++){ // src //maxServiceCount
+   for (j=0; j<2; j++){ // dst // maxSessionPerPMCH
      for (k=0; k<MAX_NUM_APPLICATION; k++){  
        switch(g_otg_multicast->application_type[i][j][k]){
 	  case  MSCBR : 
+	    //LOG_D(OTG, "configure MSCBR for MBMS (service %d, session %d, app %d)\n", i, j, k);
 	    g_otg_multicast->trans_proto[i][j][k]= UDP;
 	    g_otg_multicast->ip_v[i][j][k]= IPV4;
 
 	    g_otg_multicast->idt_dist[i][j][k]= UNIFORM;
-	    g_otg_multicast->idt_min[i][j][k]= 50;
+	    g_otg_multicast->idt_min[i][j][k]= 20;
 	    g_otg_multicast->idt_max[i][j][k]= 100;
 
 	    g_otg_multicast->size_dist[i][j][k]= FIXED;
-	    g_otg_multicast->size_min[i][j][k]= 50;
+	    g_otg_multicast->size_min[i][j][k]= 20;
 	    g_otg_multicast->size_max[i][j][k]= 100;
 	    header_size_gen_multicast(i,j,k);
 	    break;

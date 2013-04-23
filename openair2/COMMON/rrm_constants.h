@@ -26,6 +26,8 @@
 #        define ACTION_REMOVE  2
 #        define ACTION_MODIFY  3
 #        define ACTION_SET_SECURITY_MODE 4
+#        define ACTION_MBMS_ADD 10
+#        define ACTION_MBMS_MODIFY 11
 
 #        define UPLINK         1
 #        define DOWNLINK       2

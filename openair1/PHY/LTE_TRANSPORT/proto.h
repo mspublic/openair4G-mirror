@@ -1368,8 +1368,8 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int rx_input_level_dBm);
-int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb, char* buffer, int len);
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t mode, int input_level_dBm);
+int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length);
 
 
 

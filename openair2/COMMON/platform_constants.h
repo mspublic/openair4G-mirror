@@ -6,6 +6,9 @@
   EMAIL   : Lionel.Gauthier@eurecom.fr
 
  ***************************************************************************/
+
+#include "RRC/LITE/MESSAGES/asn1_constants.h"
+
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
 #ifdef USER_MODE
@@ -103,6 +106,5 @@
 #ifdef USER_MODE
 #define printk printf
 #endif
-
 
 #endif
