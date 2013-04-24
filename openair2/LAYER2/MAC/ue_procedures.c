@@ -1268,7 +1268,9 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
   for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){
      free(co_seq_num[i]);
      free (co_size[i]);
-  } 
+  }
+  free(co_seq_num);
+  free (co_size);
        
 }
 
