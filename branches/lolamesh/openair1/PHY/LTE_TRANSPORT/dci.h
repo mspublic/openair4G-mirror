@@ -66,6 +66,7 @@ struct DCI0_5MHz_TDD0 {
 typedef struct DCI0_5MHz_TDD0 DCI0_5MHz_TDD0_t;
 #define sizeof_DCI0_5MHz_TDD_0_t 27
 
+
 ///  DCI Format Type 0 (5 MHz,TDD1-6, 27 bits)
 struct DCI0_5MHz_TDD_1_6 {
   /// Padding
@@ -93,6 +94,35 @@ struct DCI0_5MHz_TDD_1_6 {
 typedef struct DCI0_5MHz_TDD_1_6 DCI0_5MHz_TDD_1_6_t;
 #define sizeof_DCI0_5MHz_TDD_1_6_t 27
 
+///  DCI Format Type 0A (1.5 MHz,TDD1-6, 32 bits)
+/// used for collaborative transmission 
+struct DCI0A_5MHz_TDD_1_6 {
+  /// MAC PDU sn 
+  u32 sn:9;
+  /// CQI Request
+  //  uint32_t cqi_req:1;
+  /// DAI
+  u32 dai:2;
+  /// Cyclic shift
+  u32 cshift:3;
+  /// Power Control
+  u32 TPC:2;
+  /// New Data Indicator
+  u32 ndi:1;
+  /// Modulation and Coding Scheme and Redundancy Version
+  u32 mcs:5;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  u32 rballoc:9;
+  /// Hopping flag
+  u32 hopping:1;
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  // uint32_t type:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI0A_5MHz_TDD_1_6 DCI0A_5MHz_TDD_1_6_t;
+#define sizeof_DCI0A_5MHz_TDD_1_6_t 32
+
+
 ///  DCI Format Type 0 (5 MHz,FDD, 25 bits)
 struct DCI0_5MHz_FDD {
   /// Padding
@@ -119,6 +149,31 @@ struct DCI0_5MHz_FDD {
 typedef struct DCI0_5MHz_FDD DCI0_5MHz_FDD_t;
 #define sizeof_DCI0_5MHz_FDD_t 25
 
+///  DCI Format Type 0 (1.5 MHz,FDD, 32 bits)
+struct DCI0A_5MHz_FDD {
+  /// MAC PDU sn 
+  u32 sn:9;
+  /// CQI Request
+  //  uint32_t cqi_req:1;
+  /// DRS Cyclic Shift
+  u32 cshift:3;
+  /// Power Control
+  u32 TPC:2;
+  /// New Data Indicator
+  u32 ndi:1;
+  /// Modulation and Coding Scheme and Redundancy Version
+  u32 mcs:5;
+  /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
+  u32 rballoc:9;
+  /// Hopping flag
+  u32 hopping:1;
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  // uint32_t type:1;
+
+} __attribute__ ((__packed__));
+
+typedef struct DCI0A_5MHz_FDD DCI0A_5MHz_FDD_t;
+#define sizeof_DCI0A_5MHz_FDD_t 30
 
 /// DCI Format Type 1 (5 MHz, TDD, 30 bits)
 struct DCI1_5MHz_TDD {

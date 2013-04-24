@@ -615,6 +615,7 @@ typedef struct {
 } LTE_UE_DLSCH_t;
 
 typedef enum {format0,
+	      format0A, // format for the collaborative transmission  
 	      format1,
 	      format1A,
 	      format1A_RA,
