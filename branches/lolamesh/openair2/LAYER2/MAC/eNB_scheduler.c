@@ -1162,19 +1162,22 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 **UE_id_ar, u8 **cornti_i
   u16 granted_UEs;
   granted_UEs = find_ulgranted_UEs(Mod_id);
   *num_of_UE_id_ar=0;
+  int found = 0;
   
   for (UE_id=0;UE_id<granted_UEs;UE_id++){
     for (j=0;j<MAX_VLINK_PER_CH;j++){
       if (eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].cornti==cornti && eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0]!=0 ){
-        *UE_id_ar[(int)num_of_UE_id_ar]=UE_id;
-        *cornti_index_of_UE_id_ar[(int)num_of_UE_id_ar]=j;
-        *seq_num_of_UE_id_ar[(int)num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
-        *bsr_of_UE_id_ar[(int)num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0];
-        *num_of_UE_id_ar++;
+        *UE_id_ar[(int)*num_of_UE_id_ar]=UE_id;
+        *cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar]=j;
+        *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
+        *bsr_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0];
+        *num_of_UE_id_ar+=1;
+        found = 1;
       }
     }
   }
-  if (*num_of_UE_id_ar!=0)  // uplink scheduling request
+  LOG_D(MAC,"CORNTI_is_to_be_scheduled *num_of_UE_id_ar %d\n",*num_of_UE_id_ar);
+  if (found)  // uplink scheduling request
     return(1);
   else 
     return(0);
@@ -1183,10 +1186,13 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 **UE_id_ar, u8 **cornti_i
 u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar){
   u16 i;
   u8 next_ue;
-  uint64_t min_sn=(2^64)-1;
+  //uint64_t min_sn=2000000000;
+  u16 min_sn = 20000000000;
   int min_found=0;
 
+  LOG_D(MAC,"find min *num_of_UE_id_ar %d\n",*num_of_UE_id_ar);
   for(i=0;i<*num_of_UE_id_ar;i++){
+    LOG_D(MAC,"find min  *seq_num_of_UE_id_ar[i] %d\n", *seq_num_of_UE_id_ar[i]);
     if( *seq_num_of_UE_id_ar[i] < min_sn){
       min_sn = *seq_num_of_UE_id_ar[i];
       next_ue = *UE_id_ar[i];
@@ -1878,17 +1884,17 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
   
   u8 num_of_UE_id_ar=0;
   u8 cornti_index=-1;
-  // u8 instead of int ???? 
-  u8 **UE_id_ar = malloc(sizeof(int*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
-  u8 **cornti_index_of_UE_id_ar = malloc(sizeof(int*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
-  u8 **seq_num_of_UE_id_ar = malloc(sizeof(int*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id 
-  u8 **bsr_of_UE_id_ar = malloc(sizeof(int*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
+
+  u8 **UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
+  u8 **cornti_index_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
+  u8 **seq_num_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id 
+  u8 **bsr_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
   
   for(i=0;i<MAX_VLINK_PER_CH*MAX_VLINK_PER_CH;i++){
-    UE_id_ar[i] = malloc(sizeof(int)); // u8 ???
-    cornti_index_of_UE_id_ar[i] = malloc(sizeof(int));
-    seq_num_of_UE_id_ar = malloc(sizeof(int));
-    bsr_of_UE_id_ar[i] = malloc(sizeof(int));
+    UE_id_ar[i] = malloc(sizeof(u8));     
+    cornti_index_of_UE_id_ar[i] = malloc(sizeof(u8));
+    seq_num_of_UE_id_ar[i] = malloc(sizeof(u8));
+    bsr_of_UE_id_ar[i] = malloc(sizeof(u8));
   }
     
   granted_UEs=find_ulgranted_UEs(Mod_id);
@@ -1904,6 +1910,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
     // could be done outside of the loop, and potentially combined with min_sn func
     if ( CORNTI_is_to_be_scheduled(Mod_id, cornti, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0){
       
+      LOG_D(MAC,"AFTER CORNTI_is_to_be_scheduled num_of_UE_id_ar is %d\n",num_of_UE_id_ar);
       // Packets are to be scheduled with same cornti, however since there are different UEs belonging on the same cornti the cornti_index can be differerent(the cornti remains the same)
       next_ue = find_UE_min_seq_num_that_belong_on_the_same_cornti(Mod_id, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar, &num_of_UE_id_ar);
 
@@ -2044,6 +2051,17 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
    } // UE is in PUSCH  
   } // UE_is_to_be_scheduled
  }
+ 
+ for(i=0;i<MAX_VLINK_PER_CH*MAX_VLINK_PER_CH;i++){
+   free(UE_id_ar[i]);    
+   free(cornti_index_of_UE_id_ar[i]); 
+   free(seq_num_of_UE_id_ar[i]);
+   free(bsr_of_UE_id_ar[i]);
+ }
+ free(UE_id_ar);    
+ free(cornti_index_of_UE_id_ar); 
+ free(seq_num_of_UE_id_ar);
+ free(bsr_of_UE_id_ar);
 }
 
 //APAPOSTO
