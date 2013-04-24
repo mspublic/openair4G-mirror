@@ -1208,6 +1208,8 @@ void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *
   int i, cornti_found=0;
   
   for (i=0;i<eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;i++) {
+    // LOG_D(MAC,"[eNB %d] searching the index of cornti for UE %d (%x, %x) \n", Mod_id,UE_id,
+    //	  eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i], ptr->CORNTI);
     if (eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i] == ptr->CORNTI) {
       cornti_found =1;
       break;
@@ -1218,10 +1220,12 @@ void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *
   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].sn[0]    = ptr->SN;
   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].cornti= ptr->CORNTI;
   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[0]= ptr->Buffer_size;
-  LOG_I(MAC,"[eNB] MAC CE_LCID %d :Received CO BSR short (sn %d, cornti %x, bsr %d)\n", 
-        rx_ces,ptr->SN,ptr->CORNTI, ptr->Buffer_size);
+  LOG_I(MAC,"[eNB %d] MAC CE_LCID %d :Received COBSR short (sn %d, cornti %x, bsr %d)\n", 
+        Mod_id, rx_ces,ptr->SN,ptr->CORNTI, ptr->Buffer_size);
+  } else {
+    LOG_E(MAC,"[eNB %d] COBSR cornti %x for UE %d not found \n", Mod_id,ptr->CORNTI,UE_id);
   }
-  LOG_E(MAC,"[eNB %d] cornti %x for UE %d not found \n", Mod_id,ptr->CORNTI,UE_id );
+  
 }
 
 
@@ -1618,7 +1622,6 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   }
  }
 
-
  schedule_ulsch_rnti(Mod_id, cooperation_flag,  frame, subframe, sched_subframe,  DCI_pdu, nCCE, &nCCE_available, &first_rb);
  
 }
@@ -1887,9 +1890,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
     seq_num_of_UE_id_ar = malloc(sizeof(int));
     bsr_of_UE_id_ar[i] = malloc(sizeof(int));
   }
-  
-  
-  
+    
   granted_UEs=find_ulgranted_UEs(Mod_id);
   aggregation = 3; // set to maximum aggregation level
   
@@ -1897,7 +1898,9 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
     // if tested on the mother func, remove this check 
     if (cornti==0) // if so, go to next UE
        continue;
-
+ 
+    LOG_D(MAC,"[eNB %d] ULSCH Scheduling for cornti %x, Frame %d, subframe %d\n",Mod_id,cornti, frame,subframe);
+   
     // could be done outside of the loop, and potentially combined with min_sn func
     if ( CORNTI_is_to_be_scheduled(Mod_id, cornti, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0){
       
@@ -1911,7 +1914,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
        if (eNB_UE_stats==NULL)
          mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats for UE\n");
         
-       LOG_D(MAC,"[eNB %d] Scheduler, Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (cornti %x,mode %s), format 0\n",Mod_id,frame,subframe,*nCCE,next_ue,Mod_id,cornti,mode_string[eNB_UE_stats->mode]);   
+       LOG_D(MAC,"[eNB %d] Scheduler, Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (cornti %x,mode %s), format 0A\n",Mod_id,frame,subframe,*nCCE,next_ue,Mod_id,cornti,mode_string[eNB_UE_stats->mode]);   
        if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 	
 	 // Get candidate harq_pid from PHY
@@ -1964,15 +1967,13 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	     buffer_occupancy[0]=0;
 	   // buffer_occupancy -= TBS;
 	     // reset the bsr for all UE belonging to the same cornti : apaposto 
-	     
 	   }
 	   
 	   LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled CORNTI (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
 		 Mod_id,UE_id,cornti,frame,subframe,mcs,
 		 *first_rb,rb_table[rb_table_index],
 		 rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
-       
-       
+	   
 	   rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL,
 					   *first_rb,
 					   rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
@@ -2040,9 +2041,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
      break; 
     } // ndi==1 (else we let the PHY/phich handle it)
          
-   } // UE is in PUSCH   
-   
-  
+   } // UE is in PUSCH  
   } // UE_is_to_be_scheduled
  }
 }

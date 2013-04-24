@@ -451,10 +451,12 @@ typedef struct {
   u8  BSR[MAX_NUM_LCID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcid
   u16 BSR_bytes[MAX_NUM_LCID];
+  // cobsr info 
+  COBSR_INFO cobsr_info[MAX_VLINK_PER_MR];
   /// co seq num[4]
-  u16  COSN[4];
+  // u16  COSN[4];
  /// buffer status for each co/bsr
-  u8  COBSR[4];
+  //u8  COBSR[4];
   /// bytes in 
   //  u16 COBSR_bytes[4];
   /// short bsr lcid
@@ -1027,7 +1029,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 */
 u8 get_bsr_len (u8 Mod_id, u16 buflen, u8 eNB_index);
 
-u8 get_cobsr_len (u8 Mod_id, u16 buflen, u8 eNB_index);
+void get_cobsr_info (u8 Mod_id, u16 buflen,  u8 eNB_index, u8 * cobsr_len, u8 *cornti_index);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(u8 Mod_id, u8 bsr_len)
 \brief get short bsr level
@@ -1054,7 +1056,7 @@ BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 */
 void update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 eNB_index);
 
-void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti);
+void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index);
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
 \param[in] *table Pointer to BSR table

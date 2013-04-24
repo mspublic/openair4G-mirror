@@ -719,7 +719,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0;
   u8 dcch_header_len_tmp=0, dtch_header_len_tmp=0;
   u8 bsr_header_len=0, bsr_ce_len=0, bsr_len=0; 
-  u8 cobsr_header_len=0, cobsr_ce_len=0, cobsr_len=0; 
+  u8 cobsr_header_len=0, cobsr_ce_len=0, cobsr_len=0, cornti_index=0; 
   u8 phr_header_len=0, phr_ce_len=0,phr_len=0;
   u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
@@ -762,7 +762,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   }else
     phr_len=0;
   
-  cobsr_ce_len = get_cobsr_len(Mod_id, buflen, eNB_index);
+  get_cobsr_info(Mod_id, buflen, eNB_index, &cobsr_ce_len, &cornti_index);
    if (cobsr_ce_len > 0 ){
      cobsr_len = cobsr_ce_len + cobsr_header_len;
      LOG_I(MAC,"[UE %d] header size info: cobsr %d (ce%d,hdr%d) buff_len %d\n",
@@ -893,11 +893,11 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   if ( (cobsr_ce_len == sizeof(CO_BSR_SHORT)) || 
        (cobsr_ce_len == sizeof(CO_BSR_LONG))) {
     cobsr_l = NULL;
-    cobsr_s->CORNTI=UE_mac_inst[Mod_id].corntis.array[0];
-    cobsr_s->SN=UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[0];
-    cobsr_s->Buffer_size=UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[0];
-    LOG_D(MAC,"[UE %d] COBSR cornti %x SN %d BSR level %d \n",
-	  Mod_id, cobsr_s->CORNTI,cobsr_s->SN,cobsr_s->Buffer_size );
+    cobsr_s->CORNTI=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].cornti;
+    cobsr_s->SN=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[0];
+    cobsr_s->Buffer_size=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[0];
+    LOG_D(MAC,"[UE %d] COBSR cornti %x SN %d BSR level %d for cornti index %d\n",
+	  Mod_id, cobsr_s->CORNTI,cobsr_s->SN,cobsr_s->Buffer_size,cornti_index );
     //  } else if (cobsr_ce_len == sizeof(CO_BSR_LONG)){
     //cobsr_s = NULL;
     
@@ -1122,7 +1122,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for MAC buffer is pending eNB %d and cornti %x PUSCH, total elements of %d\n",
 	    Mod_id, frame,subframe,eNB_index, cornti,nb_elements);
     }
-    update_cobsr (Mod_id, eNB_index, cornti);
+    update_cobsr (Mod_id, eNB_index, cornti,i);
   }
   // UE has no valid phy config dedicated ||  no valid/released  SR
   if ((UE_mac_inst[Mod_id].scheduling_info[eNB_index].physicalConfigDedicated == NULL)) {
@@ -1199,24 +1199,32 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
 	  Mod_id, map_int_to_str(BSR_names, bsr_len), buflen, pdu);
   return bsr_len;
 }
-u8 get_cobsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
-
+void get_cobsr_info (u8 Mod_id, u16 buflen, u8 eNB_index, u8 * cobsr_len, u8 *cornti_index) {
+  // APAPOSTO : could you improve this func to return an array of cobsr_len and cornti_index for 1MR with multiple CORNTI to the same eNB index
   u8 i;
   u16 nb_elements;
-  u8 cobsr_len=0;
+  u8 len=0;
   for (i=0;i<UE_mac_inst[Mod_id].corntis.count;i++) {
     nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, UE_mac_inst[Mod_id].corntis.array[i]);
     
-    if (nb_elements > 0 ) 
-      cobsr_len+=nb_elements ;
+    if (nb_elements > 0 ) {
+      len+=nb_elements ;
+      // this needs to be extended to support BSR for multiple CORNTIS
+      break; // the break is used to send bsr for the first CORNTI found 
+    }
   }
-  if (cobsr_len > 0)
-    cobsr_len = sizeof(COBSR_SHORT);//
+  if (len > 0){
+    *cobsr_len = sizeof(COBSR_SHORT);//
   //     cobsr_len = ((cobsr_len > 1  ) ? sizeof(COBSR_LONG) :  sizeof(COBSR_SHORT)) ;
- return cobsr_len;
+    *cornti_index = i; 
+  } else {
+    *cobsr_len=0;
+    *cornti_index = MAX_VLINK_PER_MR+1; // out of range 
+  }
+    
 }
 #define MAX_NB_ELEMENTS_MAC_BUFFER 4
-void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti) {
+void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
 
   u8 i,j;
   u16 nb_elements;
@@ -1229,25 +1237,31 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti) {
     *co_seq_num[i]=0; 
     *co_size[i]=0;
   } 
-
+ if ((cornti_index >= 0) && (cornti_index <= MAX_VLINK_PER_MR))
+    UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].cornti= cornti;
+ else {
+   LOG_W(MAC,"cornti index %d out of range \n ", cornti_index);
+   return;
+ }
   nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
   if (nb_elements > MAX_NB_ELEMENTS_MAC_BUFFER )
     nb_elements=MAX_NB_ELEMENTS_MAC_BUFFER;
   if (nb_elements > 0 ) 
     mac_buffer_stat_ind(Mod_id, eNB_index, cornti, &nb_elements, co_seq_num, co_size);
-  
+
   for (j=0; j <  MAX_NB_ELEMENTS_MAC_BUFFER; j ++) {
     if (j < nb_elements ) {
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, *co_size[j]);
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j]=  (u8) *co_seq_num[j];
-      LOG_D(MAC,"[UE %d] updaing COBSR%d to (level %d, bytes %d) and COSN (%d,%d) to %d for eNB %d (nb element %d)\n", 
-	    Mod_id, 
-	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j],*co_size[j],
-	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j],*co_seq_num[j],
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, *co_size[j]);
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=  (u8) *co_seq_num[j];
+     
+      LOG_D(MAC,"[UE %d/%x/%d] updating COBSR%d to (level %d, bytes %d) and COSN%d (%d,%d) for eNB %d (nb element %d)\n", 
+	    Mod_id,cornti, cornti_index, 
+	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j],*co_size[j],
+	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j],*co_seq_num[j],
 	    eNB_index, nb_elements);
     } else {
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COBSR[j]=0;
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].COSN[j]=0;
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]=0;
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=0;
     }
   }
   
