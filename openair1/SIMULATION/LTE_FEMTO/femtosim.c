@@ -410,7 +410,7 @@ void _allocDLSChannel(options_t opts) {
 	}
                 
       //UE
-      PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,0);
+      PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
       if (!PHY_vars_UE->dlsch_ue[0][i]) {
 	printf("Can't get ue dlsch structures\n");
 	exit(-1);
@@ -713,7 +713,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
   //Other defaults values
     
   u8 i_mod = 2;
-  u8 num_pdcch_symbols=3,num_pdcch_symbols_2=0;
+  u8 num_pdcch_symbols=1,num_pdcch_symbols_2=0;
     
   int eNB_id_i = 1;//Id Interferer;
   int idUser=0;   //index of  number of user, this program use just one user allowed in position 0 of  PHY_vars_eNB->dlsch_eNB
@@ -887,14 +887,14 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      //scrambling
 	      dlsch_scrambling(&PHY_vars_eNB->lte_frame_parms,
-			       num_pdcch_symbols,
+			       0,
 			       PHY_vars_eNB->dlsch_eNB[idUser][0],
 			       coded_bits_per_codeword, 0, opts.subframe<<1);
                                  
 	      for(i=0;i<opts.nInterf;i++)
                 {
 		  dlsch_scrambling(&(interf_PHY_vars_eNB[i]->lte_frame_parms),
-				   num_pdcch_symbols,
+				   0,
 				   interf_PHY_vars_eNB[i]->dlsch_eNB[0][0],
 				   coded_bits_per_codeword, 0, opts.subframe<<1);
 		}
@@ -1292,8 +1292,9 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 																	
 
 	      PHY_vars_UE->dlsch_ue[0][0]->rnti = opts.n_rnti;
+	      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->G = coded_bits_per_codeword;
 	      dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
-				 PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
+				 0,
 				 PHY_vars_UE->dlsch_ue[0][0],
 				 coded_bits_per_codeword,
 				 PHY_vars_UE->lte_ue_pdsch_vars[opts.Nid_cell]->llr[0],
@@ -1306,7 +1307,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 				   PHY_vars_UE->dlsch_ue[0][0],
 				   PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0],
 				   opts.subframe,0,
-				   PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
+				   1);
 			
 			 
 #ifdef XFORMS
@@ -1339,7 +1340,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
   
 		  if (opts.nframes==1)
                     {
-		      printf("DLSCH in error in round %d\n",round);
+		      printf("DLSCH in error in round %d (ret %d)\n",round,ret);
 		      printf("DLSCH errors found, uncoded ber %f\n",uncoded_ber);
 		      _dumpTransportBlockSegments(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->C,
 						  PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Cminus,
@@ -1529,10 +1530,10 @@ void _dumpTransportBlockSegments(u32 C,u32 Cminus,u32 Kminus,u32 Kplus,  u8 ** c
       //  printf("Decoded_output (Segment %d):\n",s);
       for (i=0; i<Kr_bytes; i++)
         {
-	  /*  if ( c_UE !=NULL)
-	      printf("%d : %x (%x)\n",i,c_UE[s][i],c_UE[s][i]^c_eNB[s][i]);
-	      else
-	      printf("%d : (%x)\n",i,c_eNB[s][i]);*/
+	  if ( c_UE !=NULL)
+	    printf("%d : %x (%x)\n",i,c_UE[s][i],c_UE[s][i]^c_eNB[s][i]);
+	  else
+	    printf("%d : (%x)\n",i,c_eNB[s][i]);
         }
     }
 }
