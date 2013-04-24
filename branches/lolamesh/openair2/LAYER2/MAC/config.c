@@ -178,13 +178,13 @@ int rrc_mac_config_co_req(u8 Mod_id,
     UE_mac_inst[Mod_id].corntis.count++;
     mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI,virtualLinkID); 
     ret = mac_buffer_instantiate (Mod_id, index, co_RNTI);
-   
+    LOG_D(MAC,"[UE %d] setting co_RNTI %x with index %d for eNB %d\n", Mod_id,co_RNTI,nb_corntis, index);
   } else { // this is an eNB
     nb_corntis = eNB_mac_inst[Mod_id].UE_template[index].corntis.count;
     eNB_mac_inst[Mod_id].UE_template[index].corntis.array[nb_corntis] = co_RNTI;
     eNB_mac_inst[Mod_id].UE_template[index].corntis.count++;
     mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI, virtualLinkID);  
-  
+    LOG_D(MAC,"[eNB %d] setting co_RNTI %x with index %d for UE %d\n", Mod_id,co_RNTI,nb_corntis, index);
   }
       
   return ret;
