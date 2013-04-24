@@ -164,7 +164,7 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
     if( (UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size;
-      UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
+      //   UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
       UE_rrc_inst[Mod_id].Info[eNB_index].T300_active = 1;
       UE_rrc_inst[Mod_id].Info[eNB_index].T300_cnt = 0;
       //      msg("[RRC][UE %d] Sending rach\n",Mod_id);
