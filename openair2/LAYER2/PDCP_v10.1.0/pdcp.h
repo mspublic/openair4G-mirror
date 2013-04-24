@@ -78,6 +78,7 @@
 #include "SRB-ToAddModList.h"
 #ifdef Rel10
 #include "MBMS-SessionInfoList-r9.h"
+#include "PMCH-InfoList-r9.h"
 #endif
 
 #define TRUE 0x01
@@ -138,8 +139,8 @@ typedef struct pdcp_t {
 typedef struct pdcp_mbms_t {
   BOOL instanciated_instance;
  
-  uint16_t service_id; // lcid
-  uint32_t session_id; 
+  uint16_t service_id; 
+  uint32_t session_id; // lcid
 
   uint16_t rb_id; 
   
@@ -249,7 +250,7 @@ public_pdcp(void rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB
 * \return     A status about the processing, OK or error code.
 */
 #ifdef Rel10
-public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list, MBMS_SessionInfoList_r9_t  *mbms_SessionInfoList_r9);)
+public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list,PMCH_InfoList_r9_t*  pmch_InfoList_r9);)
 #else
 public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list);)
 #endif
