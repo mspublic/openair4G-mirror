@@ -482,7 +482,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
 	  if (pdcp_mbms_array[service_id][session_id].instanciated_instance== module_id + 1 ){ // this service/session is configured
 	    // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
-	   rb_id = pdcp_mbms_array[service_id][session_id].rb_id;
+	    rb_id = pdcp_mbms_array[service_id][session_id].rb_id;
 	    otg_pkt=(u8*) packet_gen_multicast(module_id, session_id, ctime, &pkt_size);
 	    if (otg_pkt != NULL) {
 	      LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, session_id, pkt_size);
@@ -545,7 +545,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 			       DRB_ToAddModList_t* drb2add_list, 
 			       DRB_ToReleaseList_t*  drb2release_list
 #ifdef Rel10
-			       , MBMS_SessionInfoList_r9_t	 *mbms_SessionInfoList_r9
+			       ,PMCH_InfoList_r9_t*  pmch_InfoList_r9
 #endif
 			       ){
 
@@ -560,16 +560,22 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   u8              srb_sn       = 5; // fixed sn for SRBs
   u8              drb_report   = 0;
   long int        cnt          = 0;
+  int i,j;
   u8 header_compression_profile = 0;
   u32 action                   = ACTION_ADD;
   SRB_ToAddMod_t* srb_toaddmod = NULL;
   DRB_ToAddMod_t* drb_toaddmod = NULL;
+
 #ifdef Rel10
-  MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL; 
+  MBMS_SessionInfoList_r9_t	 *mbms_SessionInfoList_r9;
+  MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL;
 #endif
+
   LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 for %s %d\n",module_id, 
 	(eNB_flag == 1)? "eNB": "UE", index);
   // srb2add_list does not define pdcp config, we use rlc info to setup the pdcp dcch0 and dcch1 channels
+ 
+
   if (srb2add_list != NULL) {
     for (cnt=0;cnt<srb2add_list->list.count;cnt++) {
       srb_id = srb2add_list->list.array[cnt]->srb_Identity;
@@ -717,32 +723,36 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   }
 
 #ifdef Rel10 
-  if (mbms_SessionInfoList_r9 != NULL){
-    for (cnt=0;cnt<mbms_SessionInfoList_r9->list.count;cnt++) {
-      MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[cnt];
-      //lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
-      // drb_id = MBMS_SessionInfo->sessionId_r9->buf[0]; // drb_id
-      //rb_id = (NUMBER_OF_UE_MAX * NB_RB_MAX) + lc_id;
-      lc_id = MBMS_SessionInfo->sessionId_r9->buf[0];  
-      mch_id = MBMS_SessionInfo->tmgi_r9.serviceId_r9.buf[0]; 
-      rb_id =  (mch_id *  maxSessionPerPMCH ) +  lc_id ; 
-      if (pdcp_mbms_array[mch_id][lc_id].instanciated_instance == module_id + 1)
-	action = ACTION_MBMS_MODIFY;
-      else 
-	action = ACTION_MBMS_ADD;
-      pdcp_config_req_asn1 (module_id,
-			    frame, 
-			    eNB_flag, // not really required
-			    index, 
-			    rlc_type,
-			    action, 
-			    lc_id,
-			    mch_id, 
-			    rb_id,
-			    0, // set to deafult
-			    0,
-			    0,
-			    0xff);
+  if (pmch_InfoList_r9 != NULL){
+    for (i=0;i<pmch_InfoList_r9->list.count;i++){
+
+      mbms_SessionInfoList_r9 = &(pmch_InfoList_r9->list.array[i]->mbms_SessionInfoList_r9);
+      for (j=0;j<mbms_SessionInfoList_r9->list.count;j++) {
+	MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[j];
+	//lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
+	lc_id = MBMS_SessionInfo->sessionId_r9->buf[0];  
+	mch_id = MBMS_SessionInfo->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
+	rb_id =  (mch_id * maxSessionPerPMCH ) + lc_id ; 
+	if (pdcp_mbms_array[mch_id][lc_id].instanciated_instance == module_id + 1)
+	  action = ACTION_MBMS_MODIFY;
+	else 
+	  action = ACTION_MBMS_ADD;
+	
+	rlc_type = RLC_MODE_UM;
+	pdcp_config_req_asn1 (module_id,
+			      frame, 
+			      eNB_flag, // not really required
+			      index, 
+			      rlc_type,
+			      action, 
+			      lc_id,
+			      mch_id, 
+			      rb_id,
+			      0, // set to deafult
+			      0,
+			      0,
+			      0xff);
+      }
     }
   }
 #endif
@@ -786,7 +796,7 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 
 	  frame, rb_id, pdcp_array[module_id][rb_id].seq_num_size,
 	  (rlc_mode == 1) ? "AM" : (rlc_mode == 2) ? "TM" : "UM");
     
-    LOG_D(PDCP,  "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_id);
+    LOG_D(PDCP,  "[MSC_NEW][FRAME %05d][PDCP][MOD %02d][RB %02d]\n", frame, module_id,rb_id);
     
     break;
   case ACTION_MODIFY:
