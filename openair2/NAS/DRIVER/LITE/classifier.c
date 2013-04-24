@@ -217,7 +217,7 @@ void oai_nw_drv_create_mask_ipv4_addr(struct in_addr *masked_addrP, int prefix_l
   if (prefix_len > 32) {
       prefix_len = 32;
   }
-  masked_addrP->s_addr = 0xFFFFFFFF << (32 - prefix_len);
+  masked_addrP->s_addr = htonl(0xFFFFFFFF << (32 - prefix_len));
   return;
 }
 //---------------------------------------------------------------------------
