@@ -11,7 +11,11 @@ endif
 
 CFLAGS += -O1
 
-SRC = synctest.c condtest.c
+SRC = synctest.c condtest.c lte-softmodem.c
+
+ifndef DRIVER2013
+DRIVER2013=1
+endif
 
 RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
 OBJ = $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o 
@@ -110,7 +114,7 @@ endif
 RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
 LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm -lforms
 
-all: condtest synctest
+all: lte-softmodem
 
 $(RTAI_OBJ): %.o : %.c
 	@echo Compiling $< ...
@@ -137,6 +141,7 @@ synctest_UE: synctest
 
 drivers:
 	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
+	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make 
 	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
 
 run: condtest
