@@ -73,6 +73,7 @@
 
 extern inline unsigned int taus(void);
 
+u8 ulsch_buffer_test[2700] __attribute__ ((aligned(16)));
 
 void init_ue_sched_info(void){
   int i,j;
@@ -1158,7 +1159,7 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
   u16 granted_UEs;
   granted_UEs = find_ulgranted_UEs(Mod_id);
   *num_of_UE_id_ar=0;
-  u16 min_sn = 20000000000;
+  u16 min_sn = 20000000000; 
   int found = 0;
   
   for (UE_id=0;UE_id<granted_UEs;UE_id++){
@@ -1170,9 +1171,9 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
         *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
         if( *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] < min_sn){
           min_sn = *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar];
-          next_ue = *UE_id_ar[(int)*num_of_UE_id_ar];
+          *next_ue = *UE_id_ar[(int)*num_of_UE_id_ar];
           *cornti_index = *cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar];
-        }
+	}
         *num_of_UE_id_ar+=1;
         found = 1;
       }
@@ -1180,8 +1181,9 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
   }
   
   
-  LOG_D(MAC,"CORNTI_is_to_be_scheduled *num_of_UE_id_ar %d\n",*num_of_UE_id_ar);
-  if (found)  // uplink scheduling request
+  LOG_D(MAC,"CORNTI_is_to_be_scheduled *num_of_UE_id_ar %d min sn %d next ue %d and cornti index %d\n",
+	*num_of_UE_id_ar, min_sn, *next_ue , *cornti_index );
+  if (found)   // uplink scheduling request
     return(1);
   else 
     return(0);
@@ -1235,6 +1237,10 @@ void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *
   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].sn[0]    = ptr->SN;
   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].cornti= ptr->CORNTI;
   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[0]= ptr->Buffer_size;
+  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[1]=0; // not sure 
+  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[2]=0;
+  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[3]=0;
+
   LOG_I(MAC,"[eNB %d] MAC CE_LCID %d :Received COBSR short (sn %d, cornti %x, bsr %d)\n", 
         Mod_id, rx_ces,ptr->SN,ptr->CORNTI, ptr->Buffer_size);
   } else {
@@ -1911,11 +1917,10 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
   
   for (UE_id=0;UE_id<granted_UEs && (*nCCE_available > (1<<aggregation));UE_id++) {
     // if tested on the mother func, remove this check 
-    if (cornti==0) // if so, go to next UE
-       continue;
- 
-    LOG_D(MAC,"[eNB %d] ULSCH Scheduling for cornti %x, Frame %d, subframe %d\n",Mod_id,cornti, frame,subframe);
-   
+    if (cornti==0) { // if so, go to next UE
+      LOG_W(MAC,"[eNB %d] Frame %d subframe %d cornti is 0 \n",Mod_id,frame,subframe);
+      continue;
+    }
     // could be done outside of the loop, and potentially combined with min_sn func
     if ( CORNTI_is_to_be_scheduled(Mod_id, cornti, &next_ue, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0){
       
@@ -1929,7 +1934,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
        if (eNB_UE_stats==NULL)
          mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats for UE\n");
         
-       LOG_D(MAC,"[eNB %d] Scheduler, Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (cornti %x,mode %s), format 0A\n",Mod_id,frame,subframe,*nCCE,next_ue,Mod_id,cornti,mode_string[eNB_UE_stats->mode]);   
+       LOG_D(MAC,"[eNB %d] ULSCH Scheduling for cornti %x, Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode %s, format 0A\n",Mod_id,cornti,frame,subframe,*nCCE,next_ue,mode_string[eNB_UE_stats->mode]);   
        if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 	
 	 // Get candidate harq_pid from PHY
@@ -1958,11 +1963,14 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	   TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	    // only considering the cobsr short for the moment 
 	   buffer_occupancy[0] =BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].bsr[0]];
+	   buffer_occupancy[1]= BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].bsr[1]];
+	   buffer_occupancy[2]= BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].bsr[2]];
+	   buffer_occupancy[3]= BSR_TABLE[eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].bsr[3]];
 	   LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled, BO (%d, %d, %d, %d) \n",
 		 Mod_id,UE_id,cornti,frame,subframe, 
 		 buffer_occupancy[0],buffer_occupancy[1],buffer_occupancy[2],buffer_occupancy[3]);
      
-	   while ((TBS < buffer_occupancy[0]/*+ buffer_occupancy[1]+ buffer_occupancy[2] + buffer_occupancy[3]*/) &&
+	   while ((TBS <= buffer_occupancy[0]+ buffer_occupancy[1]+ buffer_occupancy[2] + buffer_occupancy[3]) &&
 		  rb_table[rb_table_index]<(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL-1-*first_rb)){ 
        // continue until we've exhauster the UEs request or the total number of available PRBs
 	     
@@ -1995,6 +2003,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
        
 	   *first_rb+=rb_table[rb_table_index];  // increment for next UE allocation
 	   
+	   
 	   // Cyclic shift for DM RS
 	   if(cooperation_flag == 2) {
 	     if(next_ue == 1)// For Distributed Alamouti, cyclic shift applied to 2nd UE
@@ -2004,7 +2013,15 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	   }
 	   else
 	     cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
-     
+	   LOG_N(MAC,"Bypass the physical layer for ULSCH \n");
+	   /**************************************************************************************/
+	   /* BYPASS PHY THIS function normally should be called by the PHY at MR, however we call it from CH */
+	   ue_get_sdu_co(next_ue,frame, Mod_id,ulsch_buffer_test,TBS,cornti, 
+			 eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[cornti_index].sn[0]);
+	   /***********************************************************************************/
+	   /* BYPASS PHY THIS function normally should be called by the PHY at CH, however we call it here */
+	   rx_sdu_co (Mod_id, frame, cornti,ulsch_buffer_test,TBS);
+	   
 	   if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { 
 	     ULSCH_dci_tdd16 = (DCI0A_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[(int)next_ue].ULSCH_DCI[(int)harq_pid];
 	     
@@ -4586,6 +4603,9 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
   eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
 #endif
   
+  LOG_N(MAC,"limit the MCS for the collaborative links\n");
+  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,2);
+  
   // Get candidate harq_pid from PHY
   mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
   //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
@@ -4912,9 +4932,10 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 	eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0][offset+sdu_length_total+j] = (char)(taus()&0xff);
       //eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
       
-      if (co_flag)
+      if (co_flag){
+	LOG_N(MAC,"Bypass the physical layer for the DLSCH\n");
 	ue_send_sdu_co(next_ue,frame,eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],TBS,Mod_id, rnti);
-
+      }
 
 
 #if defined(USER_MODE) && defined(OAI_EMU)
@@ -5141,9 +5162,9 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 			 }
       }
       if (! cornti_served){
-			 LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling UE %d, cornti %x, nb_available_rb %d ncc %d ncc_used %d\n",
-	      Mod_id,frame,subframe,UE_id,cornti, *nb_available_rb,*nCCE, *nCCE_used);
-			 schedule_ue(Mod_id,cornti,1,UE_id,frame,subframe,pre_nb_available_rbs,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
+	LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling UE %d, cornti %x, nb_available_rb %d ncc %d ncc_used %d\n",
+			       Mod_id,frame,subframe,UE_id,cornti, *nb_available_rb,*nCCE, *nCCE_used);
+	schedule_ue(Mod_id,cornti,1,UE_id,frame,subframe,pre_nb_available_rbs,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
       }
       served_cornti[i]=cornti;
     }

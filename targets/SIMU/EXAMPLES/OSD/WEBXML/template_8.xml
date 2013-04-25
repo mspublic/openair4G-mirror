@@ -24,7 +24,7 @@
   <APPLICATION_CONFIG>
     <PREDEFINED_TRAFFIC>
       <SOURCE_ID>0</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
+      <APPLICATION_TYPE>scbr</APPLICATION_TYPE> <!-- OPTIONS: scbr,mcbr,bcbr, gaming_OA, gaming_TF,  m2m_AP, m2m_BR, , random, ,full_buffer --> 
       <DESTINATION_ID>2</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC>
   </APPLICATION_CONFIG>
