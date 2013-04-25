@@ -274,7 +274,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
                 // When a STATUS PDU has been delivered to lower layer, the receiving side of an AM RLC entity shall:
                 //     - start t-StatusProhibit.
                 if (rlcP->t_status_prohibit.running == 0) {
-		  rlc_am_send_status_pdu(rlcP,frame);
+                    rlc_am_send_status_pdu(rlcP,frame);
                     mem_block_t* pdu = list_remove_head(&rlcP->control_pdu_list);
                     if (pdu) {
                         list_add_tail_eurecom (pdu, &rlcP->pdus_to_mac_layer);
@@ -315,8 +315,15 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
                     tx_data_pdu_management = &rlcP->pdu_retrans_buffer[rlcP->first_retrans_pdu_sn];
 
                     if ((tx_data_pdu_management->header_and_payload_size <= rlcP->nb_bytes_requested_by_mac) && (tx_data_pdu_management->retx_count >= 0) && (tx_data_pdu_management->nack_so_start == 0) && (tx_data_pdu_management->nack_so_stop == 0x7FFF)) {
-		      mem_block_t* copy = rlc_am_retransmit_get_copy(rlcP, frame,rlcP->first_retrans_pdu_sn);
+                        mem_block_t* copy = rlc_am_retransmit_get_copy(rlcP, frame,rlcP->first_retrans_pdu_sn);
                         LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RE-SEND DATA PDU SN %04d   %d BYTES\n",frame,  rlcP->module_id,rlcP->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->header_and_payload_size);
+                        rlcP->stat_tx_data_pdu                   += 1;
+                        rlcP->stat_tx_retransmit_pdu             += 1;
+                        rlcP->stat_tx_retransmit_pdu_by_status   += 1;
+                        rlcP->stat_tx_data_bytes                 += tx_data_pdu_management->header_and_payload_size;
+                        rlcP->stat_tx_retransmit_bytes           += tx_data_pdu_management->header_and_payload_size;
+                        rlcP->stat_tx_retransmit_bytes_by_status += tx_data_pdu_management->header_and_payload_size;
+
                         list_add_tail_eurecom (copy, &rlcP->pdus_to_mac_layer);
                         rlcP->nb_bytes_requested_by_mac = rlcP->nb_bytes_requested_by_mac - tx_data_pdu_management->header_and_payload_size;
 
@@ -333,6 +340,12 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
 
                         mem_block_t* copy = rlc_am_retransmit_get_subsegment(rlcP, frame, rlcP->first_retrans_pdu_sn, &rlcP->nb_bytes_requested_by_mac);
                         LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] SEND SEGMENT OF DATA PDU SN %04d (NEW SO %05d)\n", frame, rlcP->module_id,rlcP->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->nack_so_start);
+                        rlcP->stat_tx_data_pdu                   += 1;
+                        rlcP->stat_tx_retransmit_pdu             += 1;
+                        rlcP->stat_tx_retransmit_pdu_by_status   += 1;
+                        rlcP->stat_tx_data_bytes                 += (((struct mac_tb_req*)(copy->data))->tb_size_in_bits >> 3);
+                        rlcP->stat_tx_retransmit_bytes           += (((struct mac_tb_req*)(copy->data))->tb_size_in_bits >> 3);
+                        rlcP->stat_tx_retransmit_bytes_by_status += (((struct mac_tb_req*)(copy->data))->tb_size_in_bits >> 3);
                         list_add_tail_eurecom (copy, &rlcP->pdus_to_mac_layer);
                     } else {
                         break;
@@ -366,17 +379,18 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
                 }
             }
             if ((rlcP->nb_bytes_requested_by_mac > 2) && (rlcP->vt_s != rlcP->vt_ms)) {
-	      rlc_am_segment_10(rlcP,frame);
-	      list_add_list (&rlcP->segmentation_pdu_list, &rlcP->pdus_to_mac_layer);
-	      if (rlcP->pdus_to_mac_layer.head != NULL) {
-		return;
-	      }
+                rlc_am_segment_10(rlcP,frame);
+                list_add_list (&rlcP->segmentation_pdu_list, &rlcP->pdus_to_mac_layer);
+                if (rlcP->pdus_to_mac_layer.head != NULL) {
+                    rlcP->stat_tx_data_pdu                   += 1;
+                    rlcP->stat_tx_data_bytes                 += (((struct mac_tb_req*)(rlcP->pdus_to_mac_layer.head->data))->tb_size_in_bits >> 3);
+                    return;
+                }
             }
             if ((rlcP->pdus_to_mac_layer.head == NULL) && (rlc_am_is_timer_poll_retransmit_timed_out(rlcP)) && (rlcP->nb_bytes_requested_by_mac > 2)) {
-	      rlc_am_retransmit_any_pdu(rlcP,frame);
-	      return;
-            }
-            else {
+                rlc_am_retransmit_any_pdu(rlcP,frame);
+                return;
+            } else {
                 LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d] COULD NOT RETRANSMIT ANY PDU BECAUSE ",frame,  rlcP->module_id, rlcP->rb_id);
                 if (rlcP->pdus_to_mac_layer.head != NULL) {
                     LOG_D(RLC, "THERE ARE SOME PDUS READY TO TRANSMIT ");
@@ -389,7 +403,6 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP,u32_t frame)
                 }
                 LOG_D(RLC, "\n");
             }
-
             break;
 
         default:
