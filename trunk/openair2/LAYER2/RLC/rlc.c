@@ -524,11 +524,14 @@ int
 rlc_module_init ()
 {
 //-----------------------------------------------------------------------------
+   int i;
    LOG_D(RLC, "MODULE INIT\n");
    rlc_rrc_data_ind  = NULL;
    rlc_rrc_data_conf = NULL;
    memset(rlc, 0, sizeof(rlc_t) * MAX_MODULES);
-
+   for (i=0; i < MAX_MODULES; i++) {
+       memset(rlc[i].m_lcid2rbid, -1, RLC_MAX_LC);
+   }
    pool_buffer_init();
 
    return(0);

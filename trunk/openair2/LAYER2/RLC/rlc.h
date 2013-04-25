@@ -50,6 +50,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
+#    include "asn1_constants.h"
 #    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
 #    include "PHY/defs.h"
@@ -59,7 +60,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "SRB-ToAddMod.h"
 #    include "SRB-ToAddModList.h"
 #ifdef Rel10
-#include "MBMS-SessionInfoList-r9.h"
+#include "PMCH-InfoList-r9.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -150,10 +151,25 @@ typedef struct {
 //-----------------------------------------------------------------------------
 //   PRIVATE INTERNALS OF RLC
 //-----------------------------------------------------------------------------
-#define  RLC_MAX_NUM_INSTANCES_RLC_AM  MAX_RB/2
-#define  RLC_MAX_NUM_INSTANCES_RLC_UM  (2*MAX_RB)/3
-#define  RLC_MAX_NUM_INSTANCES_RLC_TM  MAX_RB/3
+#define  RLC_MAX_NUM_INSTANCES_RLC_AM  ((maxDRB * MAX_MOBILES_PER_RG)/2)
+#ifdef Rel10
+#define  RLC_MAX_NUM_INSTANCES_RLC_UM  ((maxDRB * MAX_MOBILES_PER_RG)/2 + maxSessionPerPMCH * maxServiceCount)
+#else
+#define  RLC_MAX_NUM_INSTANCES_RLC_UM  ((maxDRB * MAX_MOBILES_PER_RG)/2)
+#endif
+#define  RLC_MAX_NUM_INSTANCES_RLC_TM  (MAX_MOBILES_PER_RG)
 
+#ifdef Rel10
+#define  RLC_MAX_RB  ((maxDRB + 3) * MAX_MOBILES_PER_RG + maxSessionPerPMCH * maxServiceCount)
+#else
+#define  RLC_MAX_RB  ((maxDRB + 3)* MAX_MOBILES_PER_RG)
+#endif
+
+#ifdef Rel10
+#define  RLC_MAX_LC  ((max_val_DRB_Identity+1) * MAX_MOBILES_PER_RG + maxSessionPerPMCH * maxServiceCount)
+#else
+#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* MAX_MOBILES_PER_RG)
+#endif
 
 
 protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, u8_t, rb_id_t , sdu_size_t , char* );)
@@ -171,7 +187,9 @@ typedef struct rlc_pointer_t {
 * \brief Structure to be instanciated to allocate memory for RLC protocol instances.
 */
 typedef struct rlc_t {
-    rlc_pointer_t        m_rlc_pointer[MAX_RB];                            /*!< \brief Link between radio bearer ID and RLC protocol instance. */
+    //int                  m_mbms_rlc_pointer[maxSessionPerPMCH][maxServiceCount];                              /*!< \brief Link between (service id, session id) and (implicit) RLC UM protocol instance. */
+    signed long int      m_lcid2rbid[RLC_MAX_LC];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+    rlc_pointer_t        m_rlc_pointer[RLC_MAX_RB];                        /*!< \brief Link between radio bearer ID and RLC protocol instance. */
     rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
     rlc_tm_entity_t      m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
@@ -241,10 +259,10 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 * \param[in]  srb2add_listP      SRB configuration list to be created.
 * \param[in]  drb2add_listP      DRB configuration list to be created.
 * \param[in]  drb2release_listP  DRB configuration list to be released.
-* \param[in]  SessionInfo_listP  eMBMS Session info list to be created.
+* \param[in]  pmch_info_listP    eMBMS pmch info list to be created.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, u8_t UE_index, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*, MBMS_SessionInfoList_r9_t *SessionInfo_listP);)
+public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, u8_t UE_index, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*, PMCH_InfoList_r9_t *pmch_info_listP);)
 #else
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP,  u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP)
 * \brief  Function for RRC to configure a Radio Bearer.

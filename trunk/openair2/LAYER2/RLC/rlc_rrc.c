@@ -20,14 +20,13 @@
 #include "SRB-ToAddModList.h"
 #include "DL-UM-RLC.h"
 #ifdef Rel10
-#include "MBMS-SessionInfoList-r9.h"
-#include "MBMS-SessionInfo-r9.h"
+#include "PMCH-InfoList-r9.h"
 #endif
 
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
 #ifdef Rel10
-rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP) {
+rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, PMCH_InfoList_r9_t *pmch_info_listP) {
 #else
 rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP) {
 #endif//-----------------------------------------------------------------------------
@@ -40,9 +39,15 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
   DRB_ToAddMod_t* drb_toaddmod = NULL;
   rlc_mode_t      rlc_type;
 #ifdef Rel10
-  long int        mrb_id       = 0;
-  MBMS_SessionInfo_r9_t* mbms_session = NULL;
-  DL_UM_RLC_t* mbms_dl_UM_RLC;
+  long int               cnt2            = 0;
+  long int               mrb_id          = 0;
+  long int               mbms_service_id = 0;
+  long int               mbms_session_id = 0;
+  PMCH_Info_r9_t*        pmch_info_r9    = NULL;
+  MBMS_SessionInfo_r9_t* mbms_session    = NULL;
+  DL_UM_RLC_t*           mbms_dl_UM_RLC  = NULL;
+  rlc_op_status_t        rlc_status      = RLC_OP_STATUS_OK;
+  DL_UM_RLC_t            dl_um_rlc;
 #endif
   
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 \n",module_idP);
@@ -64,63 +69,97 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                               break;
                           case RLC_Config_PR_am:
                               if (rlc_type == RLC_NONE) {
-                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_AM);
-                                  config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                  if (rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_AM) == RLC_OP_STATUS_OK) {
+                                      config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
                                                  frameP, 
                                                  eNB_flagP, 
                                                  module_idP, 
                                                  &srb_toaddmod->rlc_Config->choice.explicitValue.choice.am, 
                                                  rb_id, 
                                                  SIGNALLING_RADIO_BEARER);
+                                      if (rlc[module_idP].m_lcid2rbid[rb_id] <= 0) {
+                                          rlc[module_idP].m_lcid2rbid[rb_id] = rb_id;
+                                      } else {
+                                          LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+                                      }
+                                  } else {
+                                      LOG_E(RLC, "[RLC_RRC][MOD_id %d] ERROR IN ALLOCATING SRB %d \n",module_idP, rb_id);
+                                  }
                               } else {
                             	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d AM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                           case RLC_Config_PR_um_Bi_Directional:
                               if (rlc_type == RLC_NONE) {
-                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
-                                  config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                      frameP,
-                                      eNB_flagP,
-                                      module_idP,
-                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
-                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
-                                      rb_id, SIGNALLING_RADIO_BEARER);
+                                  if (rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM) == RLC_OP_STATUS_OK) {
+                                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                          frameP,
+                                          eNB_flagP,
+                                          module_idP,
+                                          &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
+                                          &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
+                                          rb_id,
+                                          SIGNALLING_RADIO_BEARER);
+                                      if (rlc[module_idP].m_lcid2rbid[rb_id] <= 0) {
+                                          rlc[module_idP].m_lcid2rbid[rb_id] = rb_id;
+                                      } else {
+                                          LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+                                      }
+                                  } else {
+                                      LOG_E(RLC, "[RLC_RRC][MOD_id %d] ERROR IN ALLOCATING SRB %d \n",module_idP, rb_id);
+                                  }
                               } else {
                             	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                           case RLC_Config_PR_um_Uni_Directional_UL:
                               if (rlc_type == RLC_NONE) {
-                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
-                                  config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                      frameP,
-                                      eNB_flagP,
-                                      module_idP,
-                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
-                                      NULL,
-                                     rb_id, SIGNALLING_RADIO_BEARER);
+                                  if (rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM) == RLC_OP_STATUS_OK) {
+                                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                          frameP,
+                                          eNB_flagP,
+                                          module_idP,
+                                          &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
+                                          NULL,
+                                          rb_id, SIGNALLING_RADIO_BEARER);
+                                      if (rlc[module_idP].m_lcid2rbid[rb_id] <= 0) {
+                                          rlc[module_idP].m_lcid2rbid[rb_id] = rb_id;
+                                      } else {
+                                          LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+                                      }
+                                  } else {
+                                      LOG_E(RLC, "[RLC_RRC][MOD_id %d] ERROR IN ALLOCATING SRB %d \n",module_idP, rb_id);
+                                  }
                               } else {
                             	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                           case RLC_Config_PR_um_Uni_Directional_DL:
                               if (rlc_type == RLC_NONE) {
-                                  rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
-                                  config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
-                                      frameP,
-                                      eNB_flagP,
-                                      module_idP,
-                                      NULL,
-                                      &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
-                                      rb_id, SIGNALLING_RADIO_BEARER);
+                                  if (rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM) == RLC_OP_STATUS_OK) {
+                                      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                                          frameP,
+                                          eNB_flagP,
+                                          module_idP,
+                                          NULL,
+                                          &srb_toaddmod->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
+                                          rb_id, SIGNALLING_RADIO_BEARER);
+                                      if (rlc[module_idP].m_lcid2rbid[rb_id] <= 0) {
+                                          rlc[module_idP].m_lcid2rbid[rb_id] = rb_id;
+                                      } else {
+                                          LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+                                      }
+                                  } else {
+                                      LOG_E(RLC, "[RLC_RRC][MOD_id %d] ERROR IN ALLOCATING SRB %d \n",module_idP, rb_id);
+                                  }
                               } else {
-                            	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
+                                  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                               }
                               break;
                       }
                       break;
                   case SRB_ToAddMod__rlc_Config_PR_defaultValue:
+#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
                       if (rlc_type == RLC_NONE) {
                           rrc_rlc_add_rlc   (module_idP, frameP, rb_id, RLC_UM);
                           config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
@@ -130,6 +169,11 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                                       NULL, // TO DO DEFAULT CONFIG
                                       NULL, // TO DO DEFAULT CONFIG
                                       rb_id, SIGNALLING_RADIO_BEARER);
+                          if (rlc[module_idP].m_lcid2rbid[rb_id] <= 0) {
+                              rlc[module_idP].m_lcid2rbid[rb_id] = rb_id;
+                          } else {
+                              LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+                          }
                       } else {
                     	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] SRB %d DEFAULT UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, rb_id);
                       }
@@ -149,8 +193,15 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
           
           if (drb_toaddmod->logicalChannelIdentity != null) {
               lc_id = (UE_index * NB_RB_MAX) + *drb_toaddmod->logicalChannelIdentity;
+              if (rlc[module_idP].m_lcid2rbid[lc_id] <= 0) {
+                  rlc[module_idP].m_lcid2rbid[lc_id] = drb_id;
+              } else {
+                  LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+              }
           } else {
               lc_id = -1;
+#warning TO DO set a default drb id if not provided by upper layers for a DRB
+              LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d] not set\n",module_idP, lc_id);
           }
           if (drb_toaddmod->rlc_Config) {
 
@@ -159,56 +210,60 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
                       break;
                   case RLC_Config_PR_am:
                       if (rlc_type == RLC_NONE) {
-                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_AM);
-                          config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                          if (rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_AM) == RLC_OP_STATUS_OK) {
+                              config_req_rlc_am_asn1 (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
                                             frameP,
                                             eNB_flagP,
                                             module_idP,
                                             &drb_toaddmod->rlc_Config->choice.am,
                                             drb_id,
                                             RADIO_ACCESS_BEARER);
+                          }
                       } else {
                     	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d AM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   case RLC_Config_PR_um_Bi_Directional:
                       if (rlc_type == RLC_NONE) {
-                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
-                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
-                              frameP,
-                              eNB_flagP,
-                              module_idP,
-                              &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
-                              &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
-                              drb_id, RADIO_ACCESS_BEARER);
+                          if (rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM) == RLC_OP_STATUS_OK) {
+                              config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                                  frameP,
+                                  eNB_flagP,
+                                  module_idP,
+                                  &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
+                                  &drb_toaddmod->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
+                                  drb_id, RADIO_ACCESS_BEARER);
+                          }
                       } else {
                     	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   case RLC_Config_PR_um_Uni_Directional_UL:
                       if (rlc_type == RLC_NONE) {
-                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
-                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
-                              frameP,
-                              eNB_flagP,
-                              module_idP,
-                              &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
-                              NULL,
-                              drb_id, RADIO_ACCESS_BEARER);
+                          if (rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM) == RLC_OP_STATUS_OK) {
+                              config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                                  frameP,
+                                  eNB_flagP,
+                                  module_idP,
+                                  &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
+                                  NULL,
+                                  drb_id, RADIO_ACCESS_BEARER);
+                          }
                       } else {
                     	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
                       break;
                   case RLC_Config_PR_um_Uni_Directional_DL:
                       if (rlc_type == RLC_NONE) {
-                          rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM);
-                          config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
-                              frameP,
-                              eNB_flagP,
-                              module_idP,
-                              NULL,
-                              &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
-                              drb_id, RADIO_ACCESS_BEARER);
+                          if (rrc_rlc_add_rlc (module_idP, frameP, drb_id, RLC_UM) == RLC_OP_STATUS_OK) {
+                              config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[drb_id].rlc_index],
+                                  frameP,
+                                  eNB_flagP,
+                                  module_idP,
+                                  NULL,
+                                  &drb_toaddmod->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
+                                  drb_id, RADIO_ACCESS_BEARER);
+                          }
                       } else {
                     	  LOG_D(RLC, "[RLC_RRC][MOD_id %d] DRB %d UM ALREADY CONFIGURED, TO DO MODIFY \n",module_idP, drb_id);
                       }
@@ -228,35 +283,59 @@ rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frameP, u
 
 
 #ifdef Rel10
-  if (SessionInfo_listP != NULL) {
-      // set here the param for RLC config, need to check the value
-      mbms_dl_UM_RLC = CALLOC(1,sizeof(DL_UM_RLC_t));
-      mbms_dl_UM_RLC->sn_FieldLength = SN_FieldLength_size10;
-      mbms_dl_UM_RLC->t_Reordering = T_Reordering_ms5;
-      //printf("t_reordering value is %d\n",mbms_dl_UM_RLC->t_Reordering);
-    for (cnt=0;cnt<SessionInfo_listP->list.count;cnt++) {
-      mbms_session = SessionInfo_listP->list.array[cnt];
-      
-      //mrb_id = (NUMBER_OF_UE_MAX)*NB_RB_MAX + mbms_session->logicalChannelIdentity_r9;
+    if (pmch_info_listP != NULL) {
+        for (cnt=0;cnt<pmch_info_listP->list.count;cnt++) {
+            pmch_info_r9 = pmch_info_listP->list.array[cnt];
 
-      if (mbms_session->logicalChannelIdentity_r9 > 0) {
-	lc_id = (NUMBER_OF_UE_MAX*NB_RB_MAX) + mbms_session->logicalChannelIdentity_r9;
-      } 
-      else {
-	LOG_D(RLC, "[RLC_RRC] Invalid LogicalChannelIdentity for MTCH --- Value 0 is reserved for MCCH\n");
-	lc_id = -1;
-      }
-      
-      rrc_rlc_add_rlc (module_idP, frameP, mrb_id, RLC_UM);
-      config_req_rlc_um_asn1(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[mrb_id].rlc_index],
-			     frameP,
-			     eNB_flagP,
-			     module_idP,
-			     NULL,
-			     mbms_dl_UM_RLC,
-			     mrb_id, RADIO_ACCESS_BEARER);
+            for (cnt2=0;cnt2<pmch_info_r9->mbms_SessionInfoList_r9.list.count;cnt2++) {
+                mbms_session = pmch_info_r9->mbms_SessionInfoList_r9.list.array[cnt2];
+
+                if (mbms_session->logicalChannelIdentity_r9 > 0) {
+                    lc_id = (NUMBER_OF_UE_MAX*NB_RB_MAX) + mbms_session->logicalChannelIdentity_r9;
+
+                    if (mbms_session->sessionId_r9 != NULL) {
+                    	mbms_session_id = mbms_session->sessionId_r9->buf[0];
+                    } else {
+                    	mbms_session_id = mbms_session->logicalChannelIdentity_r9;
+                    }
+                    mbms_service_id = mbms_session->tmgi_r9.serviceId_r9.buf[0];
+                    rb_id = (mbms_service_id * maxSessionPerPMCH) + lc_id;
+
+                    if (rlc[module_idP].m_rlc_pointer[rb_id].rlc_type == RLC_NONE) {
+                        rlc_status = rrc_rlc_add_rlc (module_idP, frameP, rb_id, RLC_UM);
+                        if (rlc_status != RLC_OP_STATUS_OK ) {
+                            LOG_D(RLC, "[RLC_RRC] COULD NOT ALLOCATE RLC UM INSTANCE\n");
+                            continue;//? return rlc_status;
+                        } else {
+                            // THINK ABOUT HOW TO REMOVE THIS VALUE
+                            if (rlc[module_idP].m_lcid2rbid[lc_id] <= 0) {
+                            	rlc[module_idP].m_lcid2rbid[lc_id] = rb_id;
+                            } else {
+                                LOG_W(RLC, "[RLC_RRC][MOD_id %d] rlc[module_id].m_lcid2rbid[lc_id=%d]=%d already set\n",module_idP, lc_id, rlc[module_idP].m_lcid2rbid[lc_id]);
+                            }
+                        }
+                    } else if (rlc[module_idP].m_rlc_pointer[rb_id].rlc_type != RLC_UM) {
+                        LOG_E(RLC, "[RLC_RRC] MBMS ERROR IN CONFIG, RLC FOUND ALREADY CONFIGURED FOR MBMS BEARER IS NOT UM\n");
+                        continue;
+                    }
+                    dl_um_rlc.sn_FieldLength = SN_FieldLength_size10;
+                    dl_um_rlc.t_Reordering = T_Reordering_ms5;
+
+                    config_req_rlc_um_asn1 (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index],
+                    		frameP,
+                    		eNB_flagP,
+                    		module_idP,
+                    		NULL,
+                    		&dl_um_rlc,
+                    		rb_id,
+                    		RADIO_ACCESS_BEARER);
+                } else {
+                    LOG_D(RLC, "[RLC_RRC] Invalid LogicalChannelIdentity for MTCH --- Value 0 is reserved for MCCH\n");
+                    lc_id = -1;
+                }
+            }
+        }
     }
-  }
 #endif
 
   LOG_D(RLC, "[RLC_RRC][MOD_id %d]CONFIG REQ ASN1 END \n",module_idP);
@@ -289,34 +368,51 @@ rb_release_rlc_am (struct rlc_am_entity *rlcP, u32_t frame, module_id_t module_i
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP, u32_t frame) {
 //-----------------------------------------------------------------------------
-  int rlc_mode = rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type;
+    int lcid = 0;
+    int rlc_mode = rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type;
   //
-  rlc_op_status_t status;
+    rlc_op_status_t status;
+
+  if (rb_idP >= RLC_MAX_RB ) {
+      LOG_E(RLC,"Got wrong radio bearer id %d\n",rb_idP);
+      return RLC_OP_STATUS_BAD_PARAMETER;
+  }
+
   switch (rlc_mode) {
   case RLC_AM:
       LOG_D(RLC, "[RLC_RRC][MOD_id %d] RELEASE RAB AM %d \n",module_idP,rb_idP);
       status = rb_release_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, module_idP);
-    rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
-        break;
+      rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
+      break;
   case RLC_TM:
-     LOG_D(RLC, "[RLC_RRC][MOD_id %d] RELEASE RAB TM %d \n",module_idP,rb_idP);
-    status = rb_release_rlc_tm(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
-    rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
-    break;
+      LOG_D(RLC, "[RLC_RRC][MOD_id %d] RELEASE RAB TM %d \n",module_idP,rb_idP);
+      status = rb_release_rlc_tm(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
+      rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
+      break;
   case RLC_UM:
       LOG_D(RLC, "[RLC_RRC][MOD_id %d] RELEASE RAB UM %d \n",module_idP,rb_idP);
-    status = rb_release_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
-    rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
-    break;
+      status = rb_release_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
+      rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
+      break;
   default:
       LOG_E(RLC, "[RLC_RRC][MOD_id %d] RELEASE RAB %d RLC_MODE %d INDEX %d\n",module_idP,rb_idP,rlc_mode, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index);
-    mac_xface->macphy_exit("[RLC]REMOVE RB ERROR: UNKNOWN RLC MODE");
-    return RLC_OP_STATUS_BAD_PARAMETER;
-    break;
+      mac_xface->macphy_exit("[RLC]REMOVE RB ERROR: UNKNOWN RLC MODE");
+      return RLC_OP_STATUS_BAD_PARAMETER;
+      break;
   }
+
   rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type  = RLC_NONE;
-    rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index = -1;
-    return status;
+  rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index = -1;
+
+  // remove pairing between lcid and rbid
+  while (( lcid < RLC_MAX_LC) && (rlc[module_idP].m_lcid2rbid[lcid] != rb_idP)) {
+	  lcid++;
+  }
+  if (lcid < RLC_MAX_LC) {
+      rlc[module_idP].m_lcid2rbid[lcid] = -1;
+  }
+
+  return status;
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t rb_idP, rlc_mode_t rlc_modeP) {
@@ -338,6 +434,11 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
         default:
 	  LOG_E(RLC,"Got bad RLC type %d\n",rlc_modeP);
 	  return RLC_OP_STATUS_BAD_PARAMETER;
+    }
+
+    if (rb_idP >= RLC_MAX_RB ) {
+  	  LOG_E(RLC,"Got wrong radio bearer id %d\n",rb_idP);
+  	  return RLC_OP_STATUS_BAD_PARAMETER;
     }
 
     for (index = 0; index < index_max; index++) {
