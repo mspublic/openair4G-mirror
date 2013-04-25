@@ -651,6 +651,10 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP,u32_t frame)
                 rlcP->c_byte_without_poll    = 0;
                 //rlcP->poll_sn = (rlcP->vt_s -1) & RLC_AM_SN_MASK;
                 rlc_am_start_timer_poll_retransmit(rlcP,frame);
+                rlcP->stat_tx_data_pdu                   += 1;
+                rlcP->stat_tx_retransmit_pdu             += 1;
+                rlcP->stat_tx_data_bytes                 += (((struct mac_tb_req*)(pdu->data))->tb_size_in_bits >> 3);
+                rlcP->stat_tx_retransmit_bytes           += (((struct mac_tb_req*)(pdu->data))->tb_size_in_bits >> 3);
                 list_add_tail_eurecom (pdu, &rlcP->pdus_to_mac_layer);
                 return;
             }
@@ -671,6 +675,10 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP,u32_t frame)
             rlcP->c_byte_without_poll    = 0;
             //rlcP->poll_sn = (rlcP->vt_s -1) & RLC_AM_SN_MASK;
             rlc_am_start_timer_poll_retransmit(rlcP,frame);
+            rlcP->stat_tx_data_pdu                   += 1;
+            rlcP->stat_tx_retransmit_pdu             += 1;
+            rlcP->stat_tx_data_bytes                 += (((struct mac_tb_req*)(pdu->data))->tb_size_in_bits >> 3);
+            rlcP->stat_tx_retransmit_bytes           += (((struct mac_tb_req*)(pdu->data))->tb_size_in_bits >> 3);
             list_add_tail_eurecom (pdu, &rlcP->pdus_to_mac_layer);
             return;
         } else {
