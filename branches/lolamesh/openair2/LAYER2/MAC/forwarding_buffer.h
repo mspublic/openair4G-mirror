@@ -54,10 +54,14 @@
 
 //-----------------------------------------------------------------------------
 
+/*
 enum operation_mode{
- ONE_BUF_PER_CH = 0,
- ONE_BUF_PER_CORNTI = 1,
+ ONE_BUF_PER_CH = 0,  // CONECT
+ ONE_BUF_PER_CORNTI = 1, //LOLA
 };
+*/
+
+//extern OPERATION_MODE op_mode;// = ONE_BUF_PER_CORNTI; // DEFAULT;
 
 typedef struct mem_element_t{
   struct mem_element_t *next;

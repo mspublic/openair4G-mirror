@@ -1152,16 +1152,13 @@ u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
 }
 
 
-u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar){
-  
-  
-  //  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d\n",Mod_id,rnti,frame,subframe,
-  //  UE_id);
+u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar){
   
   u8 UE_id,j;
   u16 granted_UEs;
   granted_UEs = find_ulgranted_UEs(Mod_id);
   *num_of_UE_id_ar=0;
+  u16 min_sn = 20000000000;
   int found = 0;
   
   for (UE_id=0;UE_id<granted_UEs;UE_id++){
@@ -1169,20 +1166,29 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 **UE_id_ar, u8 **cornti_i
       if (eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].cornti==cornti && eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0]!=0 ){
         *UE_id_ar[(int)*num_of_UE_id_ar]=UE_id;
         *cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar]=j;
-        *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
         *bsr_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0];
+        *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
+        if( *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] < min_sn){
+          min_sn = *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar];
+          next_ue = *UE_id_ar[(int)*num_of_UE_id_ar];
+          *cornti_index = *cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar];
+        }
         *num_of_UE_id_ar+=1;
         found = 1;
       }
     }
   }
+  
+  
   LOG_D(MAC,"CORNTI_is_to_be_scheduled *num_of_UE_id_ar %d\n",*num_of_UE_id_ar);
   if (found)  // uplink scheduling request
     return(1);
   else 
     return(0);
+  
 }
 
+/*
 u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar){
   u16 i;
   u8 next_ue;
@@ -1208,6 +1214,9 @@ u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_inde
     return 0;
   }
 }
+
+*/
+
 
 void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *ptr){
   
@@ -1908,11 +1917,10 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
     LOG_D(MAC,"[eNB %d] ULSCH Scheduling for cornti %x, Frame %d, subframe %d\n",Mod_id,cornti, frame,subframe);
    
     // could be done outside of the loop, and potentially combined with min_sn func
-    if ( CORNTI_is_to_be_scheduled(Mod_id, cornti, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0){
+    if ( CORNTI_is_to_be_scheduled(Mod_id, cornti, &next_ue, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0){
       
-      LOG_D(MAC,"AFTER CORNTI_is_to_be_scheduled num_of_UE_id_ar is %d\n",num_of_UE_id_ar);
       // Packets are to be scheduled with same cornti, however since there are different UEs belonging on the same cornti the cornti_index can be differerent(the cornti remains the same)
-      next_ue = find_UE_min_seq_num_that_belong_on_the_same_cornti(Mod_id, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar, &num_of_UE_id_ar);
+     // next_ue = find_UE_min_seq_num_that_belong_on_the_same_cornti(Mod_id, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar, &num_of_UE_id_ar);
 
       aggregation = process_ue_cqi(Mod_id,next_ue);
       

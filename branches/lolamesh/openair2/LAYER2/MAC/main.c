@@ -132,7 +132,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 
 
 /***********************************************************************/
-int mac_top_init(){
+int mac_top_init(u8 mode){
 /***********************************************************************/
   unsigned char  Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -240,7 +240,7 @@ int mac_top_init(){
 #endif
 //end ALU's algo
   
-  mac_buffer_top_init(0);
+  mac_buffer_top_init();
 
   LOG_I(MAC,"[MAIN][INIT] Init function finished\n");
 

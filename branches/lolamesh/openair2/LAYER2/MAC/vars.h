@@ -48,6 +48,7 @@ u8 Is_rrc_registered;
 unsigned char NB_eNB_INST=0;
 unsigned char NB_UE_INST=0;
 unsigned char NB_INST=0;
+OPERATION_MODE op_mode = ONE_BUF_PER_CORNTI; // DEFAULT;
 #endif
 
 

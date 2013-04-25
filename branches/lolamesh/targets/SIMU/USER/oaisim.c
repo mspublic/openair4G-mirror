@@ -24,6 +24,8 @@
 
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
+extern OPERATION_MODE op_mode;// = ONE_BUF_PER_CORNTI; // DEFAULT;
+
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -168,6 +170,7 @@ help (void) {
   printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
   printf ("-G Enable background traffic \n");
   printf ("-O [mme ipv4 address] Enable MME mode\n");
+  printf ("-L 1:Lola Mode-->enables one BUFFER per CORNTI on each MR, 0:CONECT Mode-->enables one BUFFER per dest CH on each MR \n");
   printf ("-Z Reserved\n");
 }
 
@@ -650,7 +653,11 @@ main (int argc, char **argv)
 
   lte_subframe_t direction;
 
-  u8 nb_connected_eNB=1, nb_vlink_eNB=0, nb_ue_per_vlink=0; 
+  u8 nb_connected_eNB=1, nb_vlink_eNB=0, nb_ue_per_vlink=0;
+  u8 operation_mode_read; 
+  
+  
+  
   // omv related info
   //pid_t omv_pid;
   char full_name[200];
@@ -731,7 +738,7 @@ main (int argc, char **argv)
   }
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:")) != -1) {
 
     switch (c) {
 
@@ -914,6 +921,14 @@ main (int argc, char **argv)
     case 'H': 
       nb_connected_eNB = atoi(optarg);
       break;
+    case 'L': 
+      operation_mode_read = atoi(optarg);
+      if(operation_mode_read==0){
+        op_mode = ONE_BUF_PER_CH;
+      }else{
+        op_mode = ONE_BUF_PER_CORNTI;
+      }
+      break;
     case 'w': 
       nb_vlink_eNB = atoi(optarg);
       break;
@@ -992,6 +1007,7 @@ main (int argc, char **argv)
     nb_ue_per_vlink= MAX_MR_PER_VLINK;
     LOG_W(EMU,"Adjust the number of UE per vlink to the max (%d)\n", MAX_MR_PER_VLINK);
   }
+
     
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
@@ -1099,7 +1115,6 @@ main (int argc, char **argv)
 	PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
 	PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
 
-	//mac_buffer_top_init();
 
   /* Added for PHY abstraction */
   if (abstraction_flag) 

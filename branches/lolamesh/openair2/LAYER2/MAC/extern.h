@@ -48,6 +48,7 @@ extern unsigned char NB_INST;
 #endif
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
+extern OPERATION_MODE op_mode;// = ONE_BUF_PER_CORNTI; // DEFAULT;
 //extern unsigned char NB_vUE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 
