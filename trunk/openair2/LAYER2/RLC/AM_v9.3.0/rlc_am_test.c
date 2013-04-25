@@ -1146,6 +1146,8 @@ void rlc_am_v9_3_0_test(void)
 
     // under test
     pool_buffer_init();
+    set_comp_log(RLC, LOG_ERR, LOG_MED, 1);
+
     rlc_am_v9_3_0_test_tx_rx();
 
     // already tested
