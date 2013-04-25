@@ -1199,7 +1199,43 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen, u8 eNB_index) {
 	  Mod_id, map_int_to_str(BSR_names, bsr_len), buflen, pdu);
   return bsr_len;
 }
-void get_cobsr_info (u8 Mod_id, u16 buflen, u8 eNB_index, u8 * cobsr_len, u8 *cornti_index) {
+
+/*
+void get_cobsr_info_(u8 Mod_id, u16 buflen, u8 eNB_index, u8 **cobsr_len, u8 **cornti_index){
+  u8 i;
+  int j=0;
+  u16 nb_elements;
+  u8 len=0;
+  if(op_mode == ONE_BUF_PER_CORNTI){
+    for (i=0;i<UE_mac_inst[Mod_id].corntis.count;i++) {
+      nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, UE_mac_inst[Mod_id].corntis.array[i]);
+      
+      if (nb_elements > 0 ){
+        *cobsr_len[j] = nb_elements;
+        *cornti_index[j] = i;
+        j++;
+        len+=nb_elements;
+        // this needs to be extended to support BSR for multiple CORNTIS
+    //   break; // the break is used to send bsr for the first CORNTI found 
+      }
+    }
+    if (len > 0){
+      *cobsr_len = sizeof(COBSR_SHORT);//
+      //     cobsr_len = ((cobsr_len > 1  ) ? sizeof(COBSR_LONG) :  sizeof(COBSR_SHORT)) ;
+      *cornti_index = i; 
+    } else {
+      *cobsr_len=0;
+      *cornti_index = MAX_VLINK_PER_MR+1; // out of range 
+    }
+  }else if(op_mode=ONE_BUF_PER_CH){
+    
+    
+  }
+}
+
+*/
+void get_cobsr_info(u8 Mod_id, u16 buflen, u8 eNB_index, u8 *cobsr_len, u8 *cornti_index){
+    
   // APAPOSTO : could you improve this func to return an array of cobsr_len and cornti_index for 1MR with multiple CORNTI to the same eNB index
   u8 i;
   u16 nb_elements;
@@ -1223,6 +1259,8 @@ void get_cobsr_info (u8 Mod_id, u16 buflen, u8 eNB_index, u8 * cobsr_len, u8 *co
   }
     
 }
+
+
 #define MAX_NB_ELEMENTS_MAC_BUFFER 4
 void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
 

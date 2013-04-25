@@ -112,17 +112,15 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
 
 void mac_buffer_top_init(){
   u8 UE_id;
-	u8 mode = ONE_BUF_PER_CH;
 	
-	LOG_E(MAC,"[MAC] initializing the MAC buffer for vlink support mode %d",(mode == 0 ) ? "1xbuffer:1xeNB" : "1xbuffer:1xCORNTI");
-  
   mac_buffer_u = malloc(NB_UE_INST*sizeof(MAC_BUFFER_UE));
   if(mac_buffer_u==NULL){
-    LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure for mac_buffer/mac_buffer_top_init (mac_buffer_u)\n");
+    LOG_E(MAC,"[MEM_MGT] Memory allocation failure for mac_buffer/mac_buffer_top_init (mac_buffer_u)\n");
     mac_xface->macphy_exit("out of memory for MAC buffer init (mac_buffer_u)");
   }
 	for(UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-	  mac_buffer_u[UE_id].mode=mode;
+	  mac_buffer_u[UE_id].mode=op_mode;
+    LOG_I(MAC,"[UE %d] initializing MAC buffers for vlink support - operation_mode %d, %s \n",UE_id, op_mode, (op_mode==ONE_BUF_PER_CORNTI)?"ONE_BUF_PER_CORNTI LOLA":"ONE_BUF_PER_CH CONECT");
 	  if(mac_buffer_u[UE_id].mode == ONE_BUF_PER_CH){
 			 mac_buffer_u[UE_id].mac_buffer_g = malloc(NUMBER_OF_CONNECTED_eNB_MAX*sizeof(MAC_BUFFER));
 		}else if(mac_buffer_u[UE_id].mode==ONE_BUF_PER_CORNTI){// This is the case of corntis so each link between CH has 2 conrntis so the MAX number of buffers is 2*NUMBER_OF_CONNECTED_eNB_MAX

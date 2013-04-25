@@ -26,7 +26,7 @@
   Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
-/*! \file def.h
+/*! \file defs.h
 * \brief MAC data structures, constant, and function prototype
 * \author Raymond Knopp, Navid Nikaein
 * \date 2011
@@ -105,6 +105,12 @@
 #define BSR_TABLE_SIZE 64
 // The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1
 #define PHR_MAPPING_OFFSET 23  // if ( x>= -23 ) val = floor (x + 23) 
+
+typedef enum {
+  ONE_BUF_PER_CH = 0,  // CONECT
+  ONE_BUF_PER_CORNTI = 1, //LOLA
+} OPERATION_MODE;
+
 
 typedef enum {
   CONNECTION_OK=0,
@@ -687,8 +693,8 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
 void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
-u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar);
-u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar);
+u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar);
+//u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar);
 
 void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *ptr);
 
@@ -751,7 +757,7 @@ void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
 
 void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
 
-int mac_top_init(void);
+int mac_top_init(u8 mode);
 
 char layer2_init_UE(u8 Mod_id);
 
