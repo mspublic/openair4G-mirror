@@ -654,15 +654,18 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
 	return 0 ;
  }
  elementP = malloc(sizeof(struct mem_element_t));
+ elementP->data = (char *)malloc(sizeof(pdu_size));
+
  
- if (elementP == NULL || mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
+ if (elementP == NULL || elementP->data == NULL|| mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
    LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
    return 0;
- }
+ } 
  else{
    elementP->seq_num = seq_num;
    elementP->pdu_size = pdu_size;
    elementP->HARQ_proccess_ID = HARQ_proccess_ID;
+   memcpy(elementP->data,data,pdu_size);
    
    LOG_D(MAC," mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n)",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
    
