@@ -258,6 +258,7 @@ void init_MCCH(u8 Mod_id) {
     LOG_D(RRC, "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.count);
     LOG_D(RRC, "[eNB %d] First MBSFN Subframe Pattern: %02x (in hex)\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.array[0]->subframeAllocation.choice.oneFrame.buf[0]);
 
+
    }
   else {
     LOG_E(RRC, "[eNB] init_MCCH: FATAL, no memory for MCCH MESSAGE allocated\n");
@@ -273,7 +274,9 @@ void init_MCCH(u8 Mod_id) {
   // ??Configure MCCH logical channel
   // call mac_config_req with appropriate structure from ASN.1 description
 
-
+  //LOG_I(RRC, "DUY: lcid before entering rrc_mac_config_req is %02d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
+  //  LOG_I(RRC, "DUY: serviceID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
+  //LOG_I(RRC, "DUY: session ID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
   rrc_mac_config_req(Mod_id,1,0,0,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     (struct PhysicalConfigDedicated *)NULL,
@@ -294,37 +297,43 @@ void init_MCCH(u8 Mod_id) {
 		     ,
 		     0,
 		     (MBSFN_AreaInfoList_r9_t *)NULL,
-		     (PMCH_InfoList_r9_t *)&eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9
+		     (PMCH_InfoList_r9_t *) &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
 #endif 
 		     );
+
+  //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
   
 }
 
 void init_MBMS(u8 Mod_id, u32 frame) {// init the configuration for MTCH 
-  int j,i, num_mch;
+  //  int j,i, num_mch;
   if (eNB_rrc_inst[Mod_id].MBMS_flag ==1) {
-    num_mch = eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.count;
-    // loop for all MCHs, only MCH[0] is impelmented here
-    LOG_I(RRC,"Number of MCH is %d\n",num_mch);
-    for (i=0; i<num_mch;i++) {
-      //  LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
-      //     rrc_pdcp_config_req();
-      rrc_pdcp_config_asn1_req(Mod_id, frame, 1, i,
-			      NULL,// SRB_ToAddModList
-			      NULL,// DRB_ToAddModList
-			      NULL,// DRB_ToReleaseList
-			      &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[i]->mbms_SessionInfoList_r9));
-      rrc_rlc_config_asn1_req(Mod_id, frame, 1, i,
-			      NULL,// SRB_ToAddModList
-			      NULL,// DRB_ToAddModList
-			      NULL,// DRB_ToReleaseList
-			      &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[i]->mbms_SessionInfoList_r9));
-      
-     
-      //rrc_mac_config_req();
-      // use the same as of DTCH for the moment,need to check the flag for mXch 
-    }  
-  }
+
+    //  LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
+    // Configuring PDCP and RLC for MBMS Radio Bearer
+    
+    rrc_pdcp_config_asn1_req(Mod_id,frame,1,0,
+			     NULL, // SRB_ToAddModList
+			     NULL, // DRB_ToAddModList
+			     (DRB_ToReleaseList_t*)NULL
+#ifdef Rel10
+			     ,
+			     &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
+#endif
+			     );
+    
+    rrc_rlc_config_asn1_req(Mod_id, frame, 1, 0,
+			    NULL,// SRB_ToAddModList
+			    NULL,// DRB_ToAddModList
+			    NULL,// DRB_ToReleaseList
+			    &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9));
+    
+    
+    //rrc_mac_config_req();
+    // use the same as of DTCH for the moment,need to check the flag for mXch 
+    
+  }  
+  
 }
 
 #endif
@@ -597,7 +606,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       return -1;
     }
     return 0;
-  }
+ }
   else {
     LOG_E(RRC,"[UE %d] Frame %d : Unknown error\n",Mod_id,frame);
     return -1;
@@ -714,7 +723,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 				 (DRB_ToAddModList_t*)NULL, 
 				 (DRB_ToReleaseList_t*)NULL
 #ifdef Rel10
-				 ,(MBMS_SessionInfoList_r9_t *)NULL
+				 ,(PMCH_InfoList_r9_t *)NULL
 #endif
 				 );
 	
@@ -1283,7 +1292,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			  DRB_configList,
 			  (DRB_ToReleaseList_t*)NULL
 #ifdef Rel10
-			  ,(MBMS_SessionInfoList_r9_t *)NULL
+			  ,(PMCH_InfoList_r9_t *)NULL
 #endif
 			  );
   // Refresh SRBs/DRBs
