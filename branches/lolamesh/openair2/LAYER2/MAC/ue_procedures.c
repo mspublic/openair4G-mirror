@@ -691,7 +691,8 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
     element = mac_buffer_data_req(Mod_id, eNB_index, cornti, -1, buflen, -1); 
     
   }
-  
+  LOG_D(MAC,"[UE %d] Requesting MAC PDU with sn %d for eNB index %d and cornti %x (element %p)\n", 
+	Mod_id, seq_num, eNB_index, cornti, element);
   if ((element->data != NULL) && (element->pdu_size <= buflen)) {
       // no need to generate the header  or send the seq num 
       memcpy (ulsch_buffer, element->data, element->pdu_size);
