@@ -56,6 +56,9 @@ cygwin=1
 OCG_FLAG = 0
 endif
 
+ifdef SMBV
+CFLAGS += -DSMBV
+endif
 
 ifdef XFORMS
 CFLAGS += -DXFORMS

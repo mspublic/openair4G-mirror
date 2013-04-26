@@ -75,5 +75,8 @@ PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/sqrt.o
+ifdef SMBV
+PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/smbv.o
+endif
 #PHY_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o
 

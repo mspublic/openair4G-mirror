@@ -154,8 +154,13 @@ void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 eNB_index){
 
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
-    for (i=0;i<6;i++) {
-      rv[i]=taus()&0xff;
+      for (i=0;i<6;i++) {
+#ifdef SMBV   
+          // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
+          rv[i]=i;
+#else
+          rv[i]=taus()&0xff;
+#endif
       LOG_T(RRC,"%x.",rv[i]);
     }
     LOG_T(RRC,"\n");
