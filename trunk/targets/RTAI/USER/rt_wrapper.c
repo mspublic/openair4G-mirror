@@ -42,8 +42,8 @@
 
 #ifndef RTAI
 
-struct timespec interval, next, now;
-clockid_t clock_id = CLOCK_MONOTONIC; //other options are CLOCK_REALTIME, CLOCK_PROCESS_CPUTIME_ID, CLOCK_THREAD_CPUTIME_ID 
+struct timespec interval, next, now, res;
+clockid_t clock_id = CLOCK_MONOTONIC; //other options are CLOCK_MONOTONIC, CLOCK_REALTIME, CLOCK_PROCESS_CPUTIME_ID, CLOCK_THREAD_CPUTIME_ID 
 RTIME rt_get_time_ns (void) {
   clock_gettime(clock_id, &now);
   return(now.tv_sec*1e9+now.tv_nsec); 
@@ -53,10 +53,19 @@ int rt_sleep_ns (RTIME x) {
   clock_gettime(clock_id, &now);
   interval.tv_sec = x/((RTIME)1e9); 
   interval.tv_nsec = x%((RTIME) 1e9); 
+  //rt_printk("sleeping for %d sec and %d ns\n",interval.tv_sec,interval.tv_nsec);
   next = now;
   next.tv_sec += interval.tv_sec;
   next.tv_nsec += interval.tv_nsec;
-  return(clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, NULL));
+  return(clock_nanosleep(clock_id, TIMER_ABSTIME, &next, NULL));
+}
+
+void check_clock(void) {
+  if (clock_getres(clock_id, &res)) {
+    printf("clock_getres failed");
+  } else {
+    printf("reported resolution = %llu\n", (long long int) ((int) 1e9 * res.tv_sec) + (long long int) res.tv_nsec);
+  }
 }
 
 #else
