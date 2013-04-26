@@ -557,7 +557,7 @@ typedef struct DCI1_5MHz_TDD DCI1_5MHz_TDD_t;
 /// DCI Format Type 1 (10 MHz, TDD, 34 bits)
 struct DCI1_10MHz_TDD {
   /// Dummy bits to align to 64-bits
-  uint64_t dummy:31;
+  uint64_t dummy:30;
   /// DAI (TDD)
   uint64_t dai:2;
   /// Power Control
@@ -653,7 +653,7 @@ typedef struct DCI1_5MHz_FDD DCI1_5MHz_FDD_t;
 /// DCI Format Type 1 (10 MHz, FDD, 31 bits)
 struct DCI1_10MHz_FDD {
   /// dummy bits (not transmitted)
-  uint32_t dummy:2;
+  uint32_t dummy:1;
   /// Power Control
   uint32_t TPC:2;
   /// Redundancy version
@@ -676,7 +676,7 @@ typedef struct DCI1_10MHz_FDD DCI1_10MHz_FDD_t;
 /// DCI Format Type 1 (20 MHz, FDD, 39 bits)
 struct DCI1_20MHz_FDD {
   /// dummy bits (not transmitted)
-  uint64_t dummy:21;
+  uint64_t dummy:25;
   /// Power Control
   uint64_t TPC:2;
   /// Redundancy version

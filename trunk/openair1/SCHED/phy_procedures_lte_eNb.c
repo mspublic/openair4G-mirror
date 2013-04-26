@@ -308,7 +308,7 @@ int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rn
     // compute Yk
     Yk = (unsigned int)rnti;
 
-    for (i=0;i<subframe;i++)
+    for (i=0;i<=subframe;i++)
       Yk = (Yk*39827)%65537;
 
     Yk = Yk % (nCCE/L);

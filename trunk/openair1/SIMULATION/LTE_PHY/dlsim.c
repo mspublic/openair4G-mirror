@@ -715,6 +715,7 @@ int main(int argc, char **argv) {
   PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = n_rnti;
 
   // Fill in UL_alloc
+  /*
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
   UL_alloc_pdu.rballoc = UL_RB_ALLOC;
@@ -729,7 +730,7 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.ndi      = 1;
   CCCH_alloc_pdu.mcs      = 1;
   CCCH_alloc_pdu.harq_pid = 0;
-
+  */
   DLSCH_alloc_pdu2_1E[0].rah              = 0;
   DLSCH_alloc_pdu2_1E[0].rballoc          = DLSCH_RB_ALLOC;
   DLSCH_alloc_pdu2_1E[0].TPC              = 0;
@@ -1907,6 +1908,7 @@ int main(int argc, char **argv) {
 		  // overwrite number of pdcch symbols
 		  PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
 
+                  PHY_vars_UE->UE_mode[eNB_id] = PUSCH;
 		  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 						   dci_alloc_rx,1,
 						   eNB_id,

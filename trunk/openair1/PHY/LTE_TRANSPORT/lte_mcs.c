@@ -112,10 +112,10 @@ u16 get_TBS(u8 mcs,u16 nb_rb) {
 
   if ((nb_rb > 0) && (mcs < 29)) {
 #ifdef TBS_FIX
-    TBS = 3*dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/4;
+    TBS = 3*TBStable[get_I_TBS(mcs)][nb_rb-1]/4;
     TBS = TBS>>3;
 #else
-    TBS = dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1];
+    TBS = TBStable[get_I_TBS(mcs)][nb_rb-1];
     TBS = TBS>>3;
 #endif
     return(TBS);

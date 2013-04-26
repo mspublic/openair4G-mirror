@@ -406,12 +406,12 @@ void generate_RIV_tables() {
       if ((RBstart+Lcrbs-1)<32)
 	alloc0 |= (1<<(RBstart+Lcrbs-1));
       else
-	alloc1 |= (1<<(RBstart+Lcrbs-32));
+	alloc1 |= (1<<(RBstart+Lcrbs-33));
 
       if (dist50[RBstart+Lcrbs-1]<32)
 	alloc_dist0 |= (1<<dist50[RBstart+Lcrbs-1]);
       else
-	alloc_dist1 |= (1<<dist50[RBstart+Lcrbs-32]);
+	alloc_dist1 |= (1<<dist50[RBstart+Lcrbs-33]);
 
       RIV=computeRIV(50,RBstart,Lcrbs);
       if (RIV>RIV_max50)
@@ -443,20 +443,20 @@ void generate_RIV_tables() {
       if ((RBstart+Lcrbs-1)<32)
 	alloc0 |= (1<<(RBstart+Lcrbs-1));
       else if ((RBstart+Lcrbs-1)<64)
-	alloc1 |= (1<<(RBstart+Lcrbs-32));
+	alloc1 |= (1<<(RBstart+Lcrbs-33));
       else if ((RBstart+Lcrbs-1)<96)
-	alloc2 |= (1<<(RBstart+Lcrbs-64));
+	alloc2 |= (1<<(RBstart+Lcrbs-65));
       else
-	alloc3 |= (1<<(RBstart+Lcrbs-96));
+	alloc3 |= (1<<(RBstart+Lcrbs-97));
 
       if (dist100[RBstart+Lcrbs-1]<32)
 	alloc_dist0 |= (1<<dist100[RBstart+Lcrbs-1]);
       else if (dist100[RBstart+Lcrbs-1]<64)
-	alloc_dist1 |= (1<<dist100[RBstart+Lcrbs-32]);
+	alloc_dist1 |= (1<<dist100[RBstart+Lcrbs-33]);
       else if (dist100[RBstart+Lcrbs-1]<64)
-	alloc_dist2 |= (1<<dist100[RBstart+Lcrbs-64]);
+	alloc_dist2 |= (1<<dist100[RBstart+Lcrbs-65]);
       else
-	alloc_dist3 |= (1<<dist100[RBstart+Lcrbs-96]);
+	alloc_dist3 |= (1<<dist100[RBstart+Lcrbs-97]);
 
       RIV=computeRIV(100,RBstart,Lcrbs);
       if (RIV>RIV_max100)
@@ -525,6 +525,7 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
   uint8_t frame_type=frame_parms->frame_type;
   uint8_t vrb_type=0;
   uint8_t mcs=0;
+  uint8_t I_mcs = 0;
   uint8_t rv=0;
   uint8_t ndi=0;
   uint8_t rah=0;
@@ -688,6 +689,8 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
       // see 36-212 V8.6.0 p. 45
       NPRB      = (TPC&1)+2;
       ndi       = 1;
+      // 36-213 sec.7.1.7.2 p.26
+      I_mcs     = mcs;
     }
     else {
       if (harq_pid>1) {
@@ -699,6 +702,7 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 	return(-1);
       }
       NPRB      = dlsch[0]->nb_rb;
+      I_mcs     = get_I_TBS(mcs);
     }
 
     if (NPRB==0)
@@ -721,8 +725,7 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 
 
     dlsch[0]->harq_processes[harq_pid]->mcs         = mcs;
-
-    dlsch[0]->harq_processes[harq_pid]->TBS         = TBStable[get_I_TBS(mcs)][NPRB-1];
+    dlsch[0]->harq_processes[harq_pid]->TBS         = TBStable[I_mcs][NPRB-1];
 
     dlsch[0]->current_harq_pid = harq_pid;
     dlsch[0]->harq_ids[subframe] = harq_pid;
