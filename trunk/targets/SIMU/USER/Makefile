@@ -354,6 +354,22 @@ showcflags:
 	@echo $(CFLAGS)
 
 
+otg_all : otg_latency otg_gp
+
+# need to check if the file exists before calling otgplot
+otg_latency:
+	@env TITLE="Application OWD(ms)" 
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency.dat" "[1:$(NUM)]"
+otg_latency_bg:
+	@env TITLE="Background OWD(ms)" 
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency_bg.dat [1:$(NUM)]"
+otg_gp:
+	@env TITLE="Application Goodput(Kb/s)" 
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP.dat" "[1:$(NUM)]"
+otg_gp_bg:
+	@env TITLE="Background Goodput(Kb/s)" 
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP_bg.dat [1:$(NUM)]"
+
 pexpect = $(shell if [ `dpkg -l | grep pexpect -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
 
 pre-ci: 
