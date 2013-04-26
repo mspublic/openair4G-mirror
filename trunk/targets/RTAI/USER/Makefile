@@ -10,30 +10,32 @@ ifeq "$(GCCVERSION)" "4.6.1"
 endif
 
 CFLAGS += -O1
+CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS
 
 SRC = synctest.c condtest.c lte-softmodem.c
 
-ifndef DRIVER2013
-DRIVER2013=1
+ifndef RTAI
+RTAI=1
 endif
 
-RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o
-OBJ = $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o 
-ifdef DRIVER2013
-RTAI_OBJ += lte-softmodem.o
-OBJ += $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
-CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS
+ifeq ($(RTAI),1)
+RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o
 else
-RTAI_OBJ += synctest.o 
-OBJ += $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/openair_hw.o $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_rf_cntl.o 
+OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o
 endif
+
+OBJ += $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 
-OBJ += $(PHY_OBJS) 
+OBJ += $(PHY_OBJS)
+ifeq ($(RTAI),1)
 RTAI_OBJ += $(SCHED_OBJS)
+else
+OBJ += $(SCHED_OBJS)
+endif
 
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
@@ -115,8 +117,13 @@ CFLAGS += -DNAS_NETLINK -DLINUX
 OBJ += $(NAS_OBJS)
 endif
 
-RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
-LDFLAGS += $(shell rtai-config --lxrt-ldflags) -lpthread -llxrt -lm -lforms
+RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags) -DRTAI
+LDFLAGS = -lpthread -lm -lforms
+ifeq ($(RTAI),1)
+LDFLAGS += $(shell rtai-config --lxrt-ldflags) 
+else
+LDFLAGS += -lrt
+endif
 
 all: lte-softmodem
 
