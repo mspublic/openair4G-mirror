@@ -457,11 +457,11 @@ int j;
        g_otg->trans_proto[i][j] = 1;
        g_otg->ip_v[i][j] = 1;
        g_otg->idt_dist[i][j][PE_STATE] = FIXED;
-       g_otg->idt_min[i][j][PE_STATE] =  100; 
+       g_otg->idt_min[i][j][PE_STATE] =  50; 
        g_otg->idt_max[i][j][PE_STATE] =  10;
        g_otg->size_dist[i][j][PE_STATE] = FIXED;
-       g_otg->size_min[i][j][PE_STATE] =  50;
-       g_otg->size_max[i][j][PE_STATE] =  50;
+       g_otg->size_min[i][j][PE_STATE] =  2;
+       g_otg->size_max[i][j][PE_STATE] =  1;
 
        LOG_I(OTG,"OTG_CONFIG SCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 				

@@ -249,7 +249,7 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *l3msg, u16 l3
     if ((eNB_mac_inst[Mod_id].RA_template[i].rnti==rnti) &&
 	(eNB_mac_inst[Mod_id].RA_template[i].RA_active==1)) {
 
-      payload_ptr = parse_ulsch_header(l3msg,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,l3msg_len);
+      payload_ptr = parse_ulsch_header(l3msg,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,l3msg_len,0);
 	LOG_D(MAC,"[eNB %d][RAPROC] Frame %d Received CCCH: length %d, offset %d\n",
 	      Mod_id,frame,rx_lengths[0],payload_ptr-l3msg);
       if ((num_ce == 0) && (num_sdu==1) && (rx_lcids[0] == CCCH)) { // This is an RRCConnectionRequest
@@ -440,7 +440,8 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 				  unsigned char *rx_ces,
 				  unsigned char *rx_lcids,
 				  unsigned short *rx_lengths,
-				  unsigned short tb_length) {
+				  unsigned short tb_length,
+				  unsigned char co_flag) {
 
   unsigned char not_done=1,num_ces=0,num_sdus=0,lcid,num_sdu_cnt;
   unsigned char *mac_header_ptr = mac_header;
@@ -453,7 +454,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 
     lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
     if (lcid < CO_BSR_SHORT){ // EXTENDED_POWER_HEADROOM) { 
-      if (not_done==0) { // last MAC SDU, length is implicit
+      if ((not_done==0) && (co_flag == 0)) { // last MAC SDU, length is implicit
 	mac_header_ptr++;
 	length = tb_length-(mac_header_ptr-mac_header)-ce_len;	
 	for (num_sdu_cnt=0; num_sdu_cnt < num_sdus ; num_sdu_cnt++)
@@ -519,20 +520,20 @@ void rx_sdu_co(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   int offset =  MAX_NUM_RB * NUMBER_OF_UE_MAX ;
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
-  payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
+  payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len,1);
   if (num_ce > 0 )
     LOG_E(MAC,"[eNB %d] not expecting the control element for vlink \n", Mod_id);
  
   for (i=0;i<num_sdu;i++) {
-  
+   LOG_D(MAC,"[eNB %d] sdu num %d, pass the sdu to rlc lcid %d with length %d\n",Mod_id,i, rx_lcids[i]+offset, rx_lengths[i]);
+   
     mac_rlc_data_ind(Mod_id,frame,1,
 		     rx_lcids[i]+offset,
 		     (char *)payload_ptr,
 		     rx_lengths[i],
 		     1,
 		     NULL);//(unsigned int*)crc_status);
-    
-    payload_ptr+=rx_lengths[i];
+      payload_ptr+=rx_lengths[i];
   }
 
 }
@@ -549,7 +550,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
   LOG_D(MAC,"[eNB %d] Received ULSCH sdu with len %d from PHY (rnti %x, UE_id %d), parsing header\n",Mod_id,sdu_len, rnti,UE_id);
-  payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
+  payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len,0);
 
   // control element
   for (i=0;i<num_ce;i++) {
@@ -642,7 +643,6 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
 }
 
-//TCS LOLAmesh
 unsigned char generate_dlsch_header(unsigned char *mac_header,
 				    unsigned char num_sdus,
 				    unsigned short *sdu_lengths,
@@ -666,33 +666,35 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   //CO_SEQ_NUM new MAC Control Element: add it at the begining
   //MAC sub-header
   if (co_flag != 0) {
-    if (first_element>0) {
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E = 1;
-      mac_header_ptr++;
-    }
-    else {
-      first_element=1;
-    }
-     ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R = 0;
-     ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E = 0;
-     ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = CO_SEQ_NUM_LCID;
-     ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = co_seq_num;
-     ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 0;
-     LOG_D(MAC,"[eNB] adding CO_SEQ_NUM CE with LCID %d and sn %d\n", CO_SEQ_NUM_LCID, co_seq_num);
-    last_size=3;
-
+    
+    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E = 0;
+    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R = 0;
+    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = CO_SEQ_NUM_LCID;
+    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = co_seq_num;
+    ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 0;
+    LOG_D(MAC,"[eNB] adding CO_SEQ_NUM CE with LCID %d and sn %d\n", CO_SEQ_NUM_LCID, co_seq_num);
+    //mac_header_ptr+=sizeof(SCH_SUBHEADER_LONG);
+    last_size = 3;
+    first_element=1;
     //Control Element
     /*  ((CO_SEQ_NUM *)ce_ptr)->seq_num1=(co_seq_num>>8)&0xff; 
     ((CO_SEQ_NUM *)ce_ptr)->seq_num0=co_seq_num&0xff; 
     LOG_D(MAC,"[eNB] adding CO_SEQ_NUM CE with LCID %d and sn %d\n", CO_SEQ_NUM_LCID, co_seq_num);
     ce_ptr+=sizeof(CO_SEQ_NUM);*/ 
   }
+  msg("After sn %d\n",(u8*)mac_header_ptr - mac_header);
 
   if ((short_padding == 1) || (short_padding == 2)) {
+    if (first_element>0) {
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E=1;
+      mac_header_ptr+=last_size;
+    }
+    else {
+      first_element=1;
+    }
     mac_header_ptr->R    = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = SHORT_PADDING;
-    first_element=1;
     last_size=1;
   }
   if (short_padding == 2) {
@@ -703,6 +705,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
     mac_header_ptr->LCID = SHORT_PADDING;
     last_size=1;
   }
+  msg("After padding %d\n",(u8*)mac_header_ptr - mac_header);
 
   if (drx_cmd != 255) {
     if (first_element>0) {
@@ -773,7 +776,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   //msg("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
 
   for (i=0;i<num_sdus;i++) {
-    //msg("MAC num sdu %d len sdu %d\n",num_sdus, sdu_lengths[i]);
+    msg("MAC num sdu %d len sdu %d lcid %d\n",num_sdus, sdu_lengths[i], sdu_lcids[i]);
     if (first_element>0) {
       mac_header_ptr->E = 1;
       /*msg("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
@@ -804,6 +807,8 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       last_size=3;
     }
   }
+  msg("After sdu  %d\n",(u8*)mac_header_ptr - mac_header);
+  
   /*
 
   printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
@@ -832,17 +837,20 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   }
   else { // no end of packet padding
     // last SDU subhead is of fixed type (sdu length implicitly to be computed at UE)
-    mac_header_ptr++;
+    if (co_flag != 0) // in case of collaborative tx, keep the L field
+      mac_header_ptr+=last_size;
+    else 
+      mac_header_ptr++;
   }
 
-//msg("After subheaders %d\n",(u8*)mac_header_ptr - mac_header);
+  //msg("After subheaders %d\n",(u8*)mac_header_ptr - mac_header);
   
   if ((ce_ptr-mac_header_control_elements) > 0) {
-    // printf("Copying %d bytes for control elements\n",ce_ptr-mac_header_control_elements);
+    // msg("Copying %d bytes for control elements\n",ce_ptr-mac_header_control_elements);
     memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
     mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
   }
-//msg("After CEs %d\n",(u8*)mac_header_ptr - mac_header);
+  //msg("After CEs %d\n",(u8*)mac_header_ptr - mac_header);
 
   return((unsigned char*)mac_header_ptr - mac_header);
 
@@ -1574,7 +1582,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
  //  u8 k=0;
  //u8 rb_table_index;
  //u16 TBS;
- u16 first_rb=1,i;
+ u16 first_rb=0,i;
 // u32 buffer_occupancy;
 // u32 tmp_bsr;
  //u32 cqi_req,cshift,ndi,mcs,rballoc;
@@ -1600,15 +1608,6 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
  // Collaborative Channel scheduling first, similar to below, but based on collaborative channel preprocessing
  
  // check if RA (Msg3) is active in this subframe, if so skip the PRBs used for Msg3
- 
- for (i=0;i<NB_RA_PROC_MAX;i++) {
-   if ((eNB_mac_inst[Mod_id].RA_template[i].RA_active == 1) && 
-       (eNB_mac_inst[Mod_id].RA_template[i].generate_rar == 0) &&
-       (eNB_mac_inst[Mod_id].RA_template[i].Msg3_subframe == sched_subframe)) {  
-     first_rb = 1+(i<<2);
-     break;
-   }
- }
  
  // allocated UE_ids until nCCE
  
@@ -1642,7 +1641,18 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
     served_cornti[i]=cornti;
   }
  }
-
+ 
+ first_rb++;
+ 
+ for (i=0;i<NB_RA_PROC_MAX;i++) {
+   if ((eNB_mac_inst[Mod_id].RA_template[i].RA_active == 1) && 
+       (eNB_mac_inst[Mod_id].RA_template[i].generate_rar == 0) &&
+       (eNB_mac_inst[Mod_id].RA_template[i].Msg3_subframe == sched_subframe)) {  
+     first_rb = 1+(i<<2);
+     break;
+   }
+ }
+ 
  schedule_ulsch_rnti(Mod_id, cooperation_flag,  frame, subframe, sched_subframe,  DCI_pdu, nCCE, &nCCE_available, &first_rb);
  
 }
@@ -1971,20 +1981,35 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 		 buffer_occupancy[0],buffer_occupancy[1],buffer_occupancy[2],buffer_occupancy[3]);
      
 	   while ((TBS <= buffer_occupancy[0]+ buffer_occupancy[1]+ buffer_occupancy[2] + buffer_occupancy[3]) &&
-		  rb_table[rb_table_index]<(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL-1-*first_rb)){ 
+		  rb_table[rb_table_index]<(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL-*first_rb)){ 
        // continue until we've exhauster the UEs request or the total number of available PRBs
 	     
 	     rb_table_index++;
 	     TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	   }
-	   
-	   if (rb_table[rb_table_index]>(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL-1-*first_rb)) {
+	   LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled CORNTI (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+		 Mod_id,UE_id,cornti,frame,subframe,mcs,
+		 *first_rb,rb_table[rb_table_index],
+		 rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
+
+	   /*	   while ((TBS > buffer_occupancy[0]+ buffer_occupancy[1]+ buffer_occupancy[2] + buffer_occupancy[3]) &&
+		  (rb_table_index > 0)){ 
+       	     rb_table_index--;
+	     TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
+	   }
+	   LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled CORNTI (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+		 Mod_id,UE_id,cornti,frame,subframe,mcs,
+		 *first_rb,rb_table[rb_table_index],
+		 rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
+	   */
+	  	   
+	   if (rb_table[rb_table_index]>(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL-*first_rb)) {
 	     rb_table_index--;
 	     TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
 	   }
-	   if (TBS < buffer_occupancy[0]/*+ buffer_occupancy[1]+ buffer_occupancy[2] + buffer_occupancy[3]*/){
+	   if (TBS < buffer_occupancy[0]+ buffer_occupancy[1]+ buffer_occupancy[2] + buffer_occupancy[3]){
 	     LOG_W(MAC,"Can't allocate resources for the entire MAC PDU \n");
-	     continue;
+	     //   continue;
 	   } else  {
 	     // need to be updated if we schdeule more long bsr 
 	     buffer_occupancy[0]=0;
@@ -2013,7 +2038,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	   }
 	   else
 	     cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
-	   LOG_N(MAC,"Bypass the physical layer for ULSCH \n");
+	   LOG_N(MAC,"[eNB %d] Bypass the physical layer for ULSCH \n", Mod_id);
 	   /**************************************************************************************/
 	   /* BYPASS PHY THIS function normally should be called by the PHY at MR, however we call it from CH */
 	   ue_get_sdu_co(next_ue,frame, Mod_id,ulsch_buffer_test,TBS,cornti, 
@@ -4784,10 +4809,10 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       header_len_dtch = 0;
       num_sdus=0;
       sdu_length_total=0;
-      len_co_sn = 3; // use long mac subheader to send the sn 
+      len_co_sn = 3; // use long mac subheader to send the sn = use long mac subheader 
       header_len_codtch = 3; // 3 bytes CODTCH SDU subheader
       vlid = mac_forwarding_get_vlid(Mod_id, rnti); // a cornti might be associated with multiple vlink 
-      co_lcid = (DTCH+vlid) + MAX_NUM_RB * NUMBER_OF_UE_MAX;
+      co_lcid = (VLID_OFFSET+vlid) + MAX_NUM_RB * NUMBER_OF_UE_MAX;
       LOG_D(MAC,"[eNB %d], Frame %d, vlid%d->DLSCH, CORNTI %x Checking RLC status (rab %d, tbs %d)\n",
 	    Mod_id,frame, vlid,rnti, co_lcid,
 	    TBS-header_len_codtch- len_co_sn); // 3 is for sn size + ce
@@ -4805,7 +4830,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 						 (char*)&dlsch_buffer[sdu_length_total]);
 	
 	LOG_I(MAC,"[eNB %d] Got %d bytes for CODTCH %d \n",Mod_id,sdu_lengths[num_sdus],co_lcid);
-	sdu_lcids[num_sdus] = vlid;
+	sdu_lcids[num_sdus] = vlid+VLID_OFFSET;
 	sdu_length_total += sdu_lengths[num_sdus];
 	if (sdu_lengths[num_sdus] < 128)
 	  header_len_codtch=2;
@@ -4825,7 +4850,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
    
     
     // there is a payload
-    if (((sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch)> 0)) {
+    if (((sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch )> 0)) {
       
       // Now compute number of required RBs for total sdu length
       // Assume RAH format 2
@@ -4834,9 +4859,12 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       header_len_dtch_tmp = header_len_dtch;
       header_len_codtch_tmp = header_len_codtch;
       if (num_sdus == 1) {
-	if (header_len_codtch > 0)
-	  header_len_codtch = 1;
-	else if (header_len_dtch > 0)
+	// not apply this for the cornti as the allocated size on the 2nd hop might differe
+	// this keeps the size field for the second hop 
+	/* if (header_len_codtch > 0)
+	header_len_codtch = 1;
+       else */ 
+	if (header_len_dtch > 0)
 	  header_len_dtch = 1;
 	else if (header_len_dcch > 0)
 	  header_len_dcch = 1;
@@ -4846,7 +4874,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       mcs = eNB_UE_stats->dlsch_mcs1;
       TBS = mac_xface->get_TBS(mcs,nb_rb);
       
-      while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch + ta_len))  {
+      while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch + ta_len + len_co_sn))  {
 	nb_rb += 2;  //
 	if (nb_rb>*nb_available_rb) { // if we've gone beyond the maximum number of RBs
 	  // (can happen if N_RB_DL is odd)
@@ -4857,14 +4885,13 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 	TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
       }
       
-      // decrease mcs until TBS falls below required length
-      while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch + ta_len)) && (mcs>0)) {
+      while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch + ta_len + len_co_sn )) && (mcs>0)) {
 	mcs--;
 	TBS = mac_xface->get_TBS(mcs,nb_rb);
       }
       
       // if we have decreased too much or we don't have enough RBs, increase MCS
-      while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch + ta_len)) && (mcs<28)) {
+      while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + header_len_codtch + ta_len+ len_co_sn)) && (mcs<28)) {
 	mcs++;
 	TBS = mac_xface->get_TBS(mcs,nb_rb);
       }
@@ -4879,8 +4906,8 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       //	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif
       
-      if ((TBS - header_len_dcch - header_len_dtch - header_len_codtch - sdu_length_total - ta_len) <= 2) {
-	padding = (TBS - header_len_dcch - header_len_dtch - header_len_codtch - sdu_length_total - ta_len);
+      if ((TBS - header_len_dcch - header_len_dtch - header_len_codtch - sdu_length_total - ta_len- len_co_sn) <= 2) {
+	padding = (TBS - header_len_dcch - header_len_dtch - header_len_codtch - sdu_length_total - ta_len- len_co_sn);
 	post_padding = 0;
       }
       else {
@@ -4894,7 +4921,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 	  else if  (header_len_dcch > 0 )
 	    header_len_dcch = header_len_dcch_tmp;
 	}
-	post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - header_len_codtch - ta_len ; // 1 is for the postpadding header
+	post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - header_len_codtch - ta_len - len_co_sn; // 1 is for the postpadding header
       }
       
       
@@ -4911,10 +4938,10 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 				     padding,
 				     post_padding);
 #ifdef DEBUG_eNB_SCHEDULER
-      LOG_D(MAC,"[eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d header_codtch %d seq_num %d \n",
+      LOG_D(MAC,"[eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, next_ue %d,padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d header_codtch %d header_sn %d seq_num %d \n",
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    ta_len,next_ue,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch,
-	    header_len_codtch,
+	    header_len_codtch,len_co_sn,
 	    (co_flag) ? eNB_mac_inst[Mod_id].UE_template[next_ue].corntis.sn[vlid]:0);
 #endif
       /*
@@ -4933,7 +4960,7 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       //eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
       
       if (co_flag){
-	LOG_N(MAC,"Bypass the physical layer for the DLSCH\n");
+	LOG_N(MAC,"[eNB %d] Bypass the physical layer for the DLSCH\n", Mod_id);
 	ue_send_sdu_co(next_ue,frame,eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],TBS,Mod_id, rnti);
       }
 

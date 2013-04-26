@@ -239,21 +239,21 @@ mem_element_t *packet_list_remove_head_2(packet_list_t * listP){
 
 mem_element_t *mac_buffer_remove_head(u8 Mod_id, u8 b_index, struct avl_node_t *avl_node_pdu_seqn, struct avl_node_t *avl_node_pdu_size){
  if(avl_node_pdu_seqn==NULL || avl_node_pdu_size == NULL ){
-	LOG_E(MAC,"[MEM_MGT][WARNING]  mac_buffer_remove_head() avl_node_pdu_seqn or avl_node_pdu_size is NULL \n");
-	return NULL;
+   LOG_E(MAC,"[MEM_MGT][WARNING]  mac_buffer_remove_head() avl_node_pdu_seqn or avl_node_pdu_size is NULL \n");
+   return NULL;
  }
  if(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements!=0){
- int d1 = avl_node_pdu_seqn->pdu_seq_num_tree;
- int d2 = avl_node_pdu_seqn->pdu_size_tree;
- int d3 = avl_node_pdu_seqn->pdu_size_tree_in_next;
- int seq_num = avl_node_pdu_seqn->key;
- int pdu_size = avl_node_pdu_seqn->second_key;
-
- mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn = avl_tree_delete_node(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, seq_num, d1,d2,d3);
- mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size = avl_tree_delete_node_pdu_size_tree(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size, pdu_size, seq_num);
- return (mem_element_t*)(packet_list_remove_head(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p));
+   int d1 = avl_node_pdu_seqn->pdu_seq_num_tree;
+   int d2 = avl_node_pdu_seqn->pdu_size_tree;
+   int d3 = avl_node_pdu_seqn->pdu_size_tree_in_next;
+   int seq_num = avl_node_pdu_seqn->key;
+   int pdu_size = avl_node_pdu_seqn->second_key;
+   
+   mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn = avl_tree_delete_node(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, seq_num, d1,d2,d3);
+   mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size = avl_tree_delete_node_pdu_size_tree(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size, pdu_size, seq_num);
+   return (mem_element_t*)(packet_list_remove_head(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p));
  }else{
-	return NULL;
+   return NULL;
  }
 }
 
