@@ -1005,7 +1005,8 @@ u8 *parse_ulsch_header(u8 *mac_header,
 		       u8 *rx_ces,
 		       u8 *rx_lcids,
 		       u16 *rx_lengths,
-		       u16 tx_lenght);
+		       u16 tx_lenght,
+		       u8 co_flag);
 
 void init_mac_xface(void);
 int l2_init(u8 Mod_id, LTE_DL_FRAME_PARMS *frame_parms);

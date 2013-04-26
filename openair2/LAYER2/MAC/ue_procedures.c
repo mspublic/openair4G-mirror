@@ -248,7 +248,7 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
   unsigned char *payload_ptr= sdu;
   u16 dst_cornti=0x0;
   u16 dst_eNB=0;
-  int ;
+  int i;
   lcid = ((SCH_SUBHEADER_FIXED *)payload_ptr)->LCID;
   LOG_I (MAC,"[UE %d] received sdu form eNb index %d with the  cornti %x\n",
 	 Mod_id, eNB_index, cornti);
@@ -256,10 +256,18 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     /*  payload_ptr+=1; // 1 bytes for HDR
 	UE_mac_inst[Mod_id].corntis.sn[eNB_index]=(((payload_ptr[1]&0xff) <<8)  | (payload_ptr[0]&0xff));*/
     UE_mac_inst[Mod_id].corntis.sn[eNB_index]= ((SCH_SUBHEADER_LONG *)payload_ptr)->L;
+    LOG_D(MAC,"[UE %d]dumping the mac buffer pdu size %d\n", Mod_id, size);
+    
     LOG_I(MAC,"[UE %d][VLINK] Frame %d : received sequence number %d \n",
 	  Mod_id,frame,UE_mac_inst[Mod_id].corntis.sn[eNB_index]);
     payload_ptr+=3; // for CE
     size = sdu_len-3;
+ 
+    LOG_D(MAC,"[UE %d]dumping the mac buffer pdu size %d\n", Mod_id, size);
+    for (i=0; i < size; i++)
+      msg("%x.", payload_ptr[i]);
+    msg("\n");
+ 
     vlid = mac_forwarding_get_vlid(cornti);
     dst_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,eNB_index,cornti);
     dst_eNB = mac_forwarding_get_output_eNB(Mod_id,eNB_index,vlid);
@@ -704,6 +712,11 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
     else 
       LOG_I(MAC,"MAC buffer is emety\n");
   }
+  LOG_D(MAC,"[UE %d]dumping the outgoing mac buffer pdu size %d\n", Mod_id, element->pdu_size);
+  for (i=0; i < element->pdu_size; i++)
+      msg("%x.", ulsch_buffer[i]);
+    msg("\n");
+ 
     // no perform the padding 
   for (i=0;i<(buflen-element->pdu_size);i++)
       ulsch_buffer[element->pdu_size+i] = (char)(taus()&0xff);

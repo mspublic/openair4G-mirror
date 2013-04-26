@@ -62,7 +62,8 @@
 #define MAX_BUFF_TX 10000
  
 /*!\brief Define the min size of the payload*/ 
-#define PAYLOAD_MIN 46    //http://tools.ietf.org/html/rfc894
+//#define PAYLOAD_MIN 46    //http://tools.ietf.org/html/rfc894
+#define PAYLOAD_MIN 1
 
 /*!\brief Define the min size of the payload, according to the Jumbo frame*/ 
 #ifdef JUMBO_FRAME
