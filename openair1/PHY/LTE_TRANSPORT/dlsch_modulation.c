@@ -955,7 +955,8 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  qam_table_s = NULL;
 
 	if (rb_alloc_ind > 0)
-	  //	  	  printf("Allocated rb %d, subframe_offset %d\n",rb,subframe_offset);
+        {
+	  //printf("Allocated rb %d, subframe_offset %d, symbol_offset %d, re_offset %d\n",rb,subframe_offset,symbol_offset,re_offset);
 	  allocate_REs_in_RB(txdataF,
 			     &jj,
 			     re_offset,
@@ -973,7 +974,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     skip_half,
 			     (frame_parms->mode1_flag==1)?1:0,
 			     frame_parms);
-
+      }
 	re_offset+=12; // go to next RB
 	
 

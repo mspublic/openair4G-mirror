@@ -1966,11 +1966,14 @@ u8 get_num_pdcch_symbols(u8 num_dci,
     numCCE += (1<<(dci_alloc[i].L));
   }
 
-  if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
+  //if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
+  if (numCCE <= get_nCCE(1, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(1,nCCEmin));
-  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 4 : 5)))
+  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 4 : 5)))
+  else if (numCCE < get_nCCE(2, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(2,nCCEmin));
-  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 7 : 8)))
+  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 7 : 8)))
+  else if (numCCE < get_nCCE(3, frame_parms, get_mi(frame_parms, subframe)))
     return(cmax(3,nCCEmin));
   else if (frame_parms->N_RB_DL<=10) { 
     if (frame_parms->Ncp == 0) { // normal CP
@@ -2576,7 +2579,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
     // compute Yk
     Yk = (unsigned int)lte_ue_pdcch_vars[eNB_id]->crnti;
 
-    for (i=0;i<subframe;i++)
+    for (i=0;i<=subframe;i++)
       Yk = (Yk*39827)%65537;
 
     Yk = Yk % (nCCE/L2);
@@ -2758,7 +2761,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   u32 CCEmap0=0,CCEmap1=0,CCEmap2=0;
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
   LTE_DL_FRAME_PARMS *frame_parms  = &phy_vars_ue->lte_frame_parms;
-  u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,0);
+  u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,subframe);
   u16 ra_rnti=99;
   u8 format0_found=0,format_c_found=0;
   u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
