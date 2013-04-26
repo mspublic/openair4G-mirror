@@ -513,6 +513,7 @@ int main(int argc, char **argv) {
   //  int ret;
 
   u8 harq_pid;
+  u8 phich_ACK;
 
   u8 num_phich_interf = 0;
   lte_frame_type_t frame_type=TDD;
@@ -921,10 +922,11 @@ int main(int argc, char **argv) {
       if (is_phich_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)) {
         harq_pid = subframe2_ul_harq(&PHY_vars_eNB->lte_frame_parms,subframe);
             
+        phich_ACK = taus()&1;
         PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_active = 1;
         PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb     = 0;
         PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->n_DMRS       = 0;
-        PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_ACK    = taus()&1;
+        PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_ACK    = phich_ACK;
         PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->dci_alloc    = 1;
 
         PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->first_rb       = 0;
@@ -1120,7 +1122,7 @@ int main(int argc, char **argv) {
       	        0,
       	        (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
       	        PHY_vars_UE->is_secondary_ue); 
-        /*
+        
         PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe)]->status = ACTIVE;
         PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe)]->Ndi = 1;
         if (is_phich_subframe(&PHY_vars_UE->lte_frame_parms,subframe)) {
@@ -1128,7 +1130,7 @@ int main(int argc, char **argv) {
       	     subframe,
       	     0);
         }
-        */
+        
         //	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
         //	    break;
         dci_cnt = dci_decoding_procedure(PHY_vars_UE,
@@ -1174,8 +1176,10 @@ int main(int argc, char **argv) {
         if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
           n_errors_cfi++;
 
-        if (PHY_vars_UE->ulsch_ue[0]->harq_processes[subframe2_ul_harq(&PHY_vars_UE->lte_frame_parms,subframe)]->Ndi == 0)
-          n_errors_hi++;
+        
+        if (is_phich_subframe(&PHY_vars_UE->lte_frame_parms,subframe)) 
+          if (PHY_vars_UE->ulsch_ue[0]->harq_processes[subframe2_ul_harq(&PHY_vars_UE->lte_frame_parms,subframe)]->Ndi != phich_ACK)
+            n_errors_hi++;
 
         if (n_errors_cfi > 0)
           break;

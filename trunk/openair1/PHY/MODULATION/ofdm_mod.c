@@ -55,7 +55,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
 #endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
-		 nsymb-1,//6,                 // number of symbols
+		 (frame_parms->symbols_per_tti>>1)-1,//6,                 // number of symbols
 		 frame_parms->nb_prefix_samples,               // number of prefix samples
 		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 frame_parms->rev,           // bit-reversal permutation
