@@ -429,17 +429,56 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
           return RLC_OP_STATUS_BAD_PARAMETER;
       }
   } else if ((module_idP >= 0) && (module_idP < MAX_MODULES) && (MBMS_flagP == 1)) {
-    if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
-      if (sduP != NULL) {
-	if (sdu_sizeP > 0) {
-	  LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
-	}
+      if (((eNB_flagP) && (rb_idP >= ((maxDRB + 3) * MAX_MOBILES_PER_RG)) && (rb_idP < MAX_RAB)) ||
+          ((eNB_flagP == 0) && (rb_idP < MAX_RAB))) { // TO DO check right bounds for UE
+          if (sduP != NULL) {
+              if (sdu_sizeP > 0) {
+                  LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
+                  new_sdu = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
+
+                  if (new_sdu != NULL) {
+                      // PROCESS OF COMPRESSION HERE:
+                      memset (new_sdu->data, 0, sizeof (struct rlc_um_data_req_alloc));
+                      memcpy (&new_sdu->data[sizeof (struct rlc_um_data_req_alloc)], &sduP->data[0], sdu_sizeP);
+
+                      ((struct rlc_um_data_req *) (new_sdu->data))->data_size = sdu_sizeP;
+                      ((struct rlc_um_data_req *) (new_sdu->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
+                      free_mem_block(sduP);
+
+                      LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
+                      if (rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
+                          LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_UM_DATA_REQ/%d Bytes (MBMS) --->][RLC_UM][MOD %02d][RB %02d]\n",
+                            frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                      } else {
+                          if (eNB_flagP) {
+                              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_UM_DATA_REQ/%d Bytes (MBMS) --->][RLC_UM][MOD %02d][RB %02d]\n",
+                                 frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                          } else {
+                              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_UM_DATA_REQ/%d Bytes (MBMS) --->][RLC_UM][MOD %02d][RB %02d]\n",
+                                 frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                          }
+                      }
+                      LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
+                      rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
+
+                      //free_mem_block(new_sdu);
+                      return RLC_OP_STATUS_OK;
+                  } else {
+                      return RLC_OP_STATUS_BAD_PARAMETER;
+                  }
+              } else {
+                  return RLC_OP_STATUS_BAD_PARAMETER;
+              }
+          } else {
+              return RLC_OP_STATUS_BAD_PARAMETER;
+          }
+      } else {
+          return RLC_OP_STATUS_BAD_PARAMETER;
       }
-    }
-  }  else {
-    free_mem_block(sduP);
+  } else {
+      free_mem_block(sduP);
       //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
-    return RLC_OP_STATUS_BAD_PARAMETER;
+      return RLC_OP_STATUS_BAD_PARAMETER;
   }
 }
 
