@@ -151,7 +151,7 @@ int mac_buffer_add_tail(u8 Mod_id, u8 b_index, mem_element_t *elementP);
 int mac_buffer_add_after(u8 Mod_id, u8 b_index, mem_element_t *elementP); 
 int mac_buffer_return_b_index(u8 Mod_id, u8 eNB_index, u16 cornti);
 
-void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti); 
+void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti, int flag); 
 void mac_buffer_print_2(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for debugging
 void mac_buffer_print_3(u8 Mod_id, u8 eNB_index, u16 cornti);  // used also for debugging
 void mac_buffer_print_4(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for debugging

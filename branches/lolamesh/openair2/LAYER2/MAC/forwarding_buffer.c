@@ -625,7 +625,18 @@ void packet_list_add_after_ref(mem_element_t * new_elementP, mem_element_t *elem
 int mac_buffer_return_b_index(u8 Mod_id, u8 eNB_index, u16 cornti){
  int i;
  u8 mode = mac_buffer_u[Mod_id].mode;
+ // I think the b_index function is the same whether we use LOLA or CONECT mode because the combination of (eNB_index, cornti) is unique!
+ // Verify that along the code validation!
  
+ if(mode == ONE_BUF_PER_CH || mode == ONE_BUF_PER_CORNTI){
+   for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
+     if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index == eNB_index && mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti ){
+       return i;
+     }
+   }
+ }
+ return -1;// did not find something
+ /*
  if(mode == ONE_BUF_PER_CH){
    for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
      if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index == eNB_index && mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti ){
@@ -635,12 +646,12 @@ int mac_buffer_return_b_index(u8 Mod_id, u8 eNB_index, u16 cornti){
  }
  else if (mode == ONE_BUF_PER_CORNTI){
    for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
-     if(mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti){
+     if(mac_buffer_u[Mod_id].mac_buffer_g[i]->eNB_index == eNB_index && mac_buffer_u[Mod_id].mac_buffer_g[i]->cornti == cornti){
        return i;
      }
    }	
  }
- return -1; // did not find something
+ return -1; // did not find something*/
 }
 
 
@@ -667,7 +678,7 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
    elementP->HARQ_proccess_ID = HARQ_proccess_ID;
    memcpy(elementP->data,data,pdu_size);
    
-   LOG_D(MAC," mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n)",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
+   LOG_D(MAC,"mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
    
    if(mac_buffer_add_tail(Mod_id, b_index, elementP) == 1)
      return 1;
@@ -717,7 +728,7 @@ void packet_list_print(packet_list_t *listP){
  mem_element_t *ptr_p;
  ptr_p = listP->head;
  if(ptr_p==NULL){
-    printf("Empty help list!!!");
+    printf("Empty packet list!!!");
 	 return; 
   }else{
     while(ptr_p!=NULL){
@@ -729,26 +740,49 @@ void packet_list_print(packet_list_t *listP){
   }
 }
 
-void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti){
-  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+void mac_buffer_print_all_per_MR(u8 Mod_id){
+  
+  u8 i;
+  //LOG_D(MAC,"mac_buffer_print_all_per_MR \n");
+  for(i=0;i<mac_buffer_u[Mod_id].total_number_of_buffers_allocated;i++){
+    mac_buffer_print(Mod_id, i, 0, 0);
+  }
+}
+
+void mac_buffer_print(u8 Mod_id, u8 eNB_index, u16 cornti, int flag){
+  s8 b_index;
   mem_element_t *ptr_p;
-  if (b_index == -1 ){
-	 //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
-    return;
-	}
-  ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
-	printf("\n\n%s | %s \n",mac_buffer_u[Mod_id].mac_buffer_g[b_index]->name,mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->name);
-	printf("Total_size %d, nb elements %d \n",mac_buffer_total_size(Mod_id, eNB_index, cornti), mac_buffer_nb_elements(Mod_id, eNB_index, cornti));
+  MAC_BUFFER *buf;
+  
+  if(flag==0){
+    b_index=eNB_index;
+  }
+  else{
+    b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+    if (b_index == -1 ){
+    //LOG_D(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+      return;
+    }
+  }
+
+  
+  buf = mac_buffer_u[Mod_id].mac_buffer_g[b_index];
+  ptr_p = buf->my_p->head;
+  LOG_D(MAC,"| %s | %s |  eNB_index %d, cornti %x\n",buf->name, buf->my_p->name, buf->eNB_index, buf->cornti );
+  LOG_D(MAC,"Total_size %d, nb elements %d \n",buf->my_p->total_size, buf->my_p->nb_elements);
   if(ptr_p==NULL){
-    printf("Empty help list!!!");
+    LOG_D(MAC,"Empty packet list!!!\n");
 	 return; 
   }else{
     while(ptr_p!=NULL){
      // int seq_num, int pdu_size, int total_size, int HARQ_proccess_ID
-      printf("Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
+      LOG_D(MAC,"Seg num: %d, Pdu size %d,  HARQ Process %d ||| Pool_id %d \n",ptr_p->seq_num,ptr_p->pdu_size,ptr_p->HARQ_proccess_ID,ptr_p->pool_id); 
       ptr_p = ptr_p->next;
     }
   }
+  LOG_D(MAC,"\n");
+  
+  
 }
 
 void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti){
