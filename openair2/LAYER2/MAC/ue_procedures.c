@@ -274,8 +274,10 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d, i_cornti %x -> o_cornti %x, src_eNB %d-> dst->eNB %d (%d bytes)\n", 
 	  Mod_id, frame,vlid, cornti, dst_cornti, 
 	  eNB_index,dst_eNB, size);
-    if (mac_buffer_data_ind(Mod_id, dst_eNB, dst_cornti, (char *)payload_ptr,UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ) 
+    if (mac_buffer_data_ind(Mod_id, dst_eNB, dst_cornti, (char *)payload_ptr, UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ){ 
       LOG_D (MAC, "[UE %d] Frame %d : PDU is stored in the MAC buffer \n", Mod_id);
+      mac_buffer_print_all_per_MR(Mod_id);
+    }
     else 
       LOG_E(MAC, "[UE %d] Frame %d : failed to store the MAC PDU in the buffer\n", Mod_id);
  
@@ -691,16 +693,24 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
   mem_element_t* element=NULL;
   int i;
   
-  if (seq_num >= 0) { // only one sdu with the given sn is allowed
-    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, seq_num, -1, -1); 
+  LOG_D(MAC,"[UE %d] Requesting... MAC PDU with sn %d for eNB index %d and cornti %x \n", 
+        Mod_id, seq_num, eNB_index, cornti);
+  
+  if (seq_num >= 0) { // only one sdu with the given sn is allowed and HARQ_PID == 0
+    LOG_D(MAC,"ue_get_sdu_co() -> mac_buffer_print_all_per_MR() (seq_num>0)\n");
+    mac_buffer_print_all_per_MR(Mod_id);
+    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, seq_num, -1, 0); 
     
   }else { // if seq num not defined, multiplex multiple MAC PDUs into ULSCH buffer until the buflen is reached
     // for the moment, we consider only one MAC PDU avoiding additional header generation
+    LOG_D(MAC,"ue_get_sdu_co() -> mac_buffer_print_all_per_MR()\n");
+    mac_buffer_print_all_per_MR(Mod_id);
     element = mac_buffer_data_req(Mod_id, eNB_index, cornti, -1, buflen, -1); 
-    
   }
-  LOG_D(MAC,"[UE %d] Requesting MAC PDU with sn %d for eNB index %d and cornti %x (element %p)\n", 
-	Mod_id, seq_num, eNB_index, cornti, element);
+
+  if(element!=NULL){
+    LOG_D(MAC,"[UE %d] Requested...!!! MAC PDU with sn %d for eNB index %d and cornti %x (element %p)\n", 
+          Mod_id, seq_num, eNB_index, cornti, element);
   if ((element->data != NULL) && (element->pdu_size <= buflen)) {
       // no need to generate the header  or send the seq num 
       memcpy (ulsch_buffer, element->data, element->pdu_size);
@@ -724,7 +734,10 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
   LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",Mod_id);
   UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
   UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
-  
+  }
+  else{
+    LOG_D(MAC, "ue_get_sdu_co DATA ELEMENT is NULL\n" );
+  }
 }
 
 void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
