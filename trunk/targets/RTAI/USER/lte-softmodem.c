@@ -63,9 +63,6 @@
 #include "PHY/defs.h"
 #include "openair0_lib.h"
 
-//#include "ARCH/COMMON/defs.h"
-//#include "SIMULATION/LTE_PHY/openair_hw.h"
-
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 #include "SCHED/vars.h"
@@ -89,7 +86,6 @@
 #include "UTIL/OTG/otg_vars.h"
 #include "UTIL/MATH/oml.h"
 
-
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "stats.h"
@@ -99,6 +95,7 @@ FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[NUMBER_OF_UE_MAX];
 FD_stats_form *form_stats=NULL;
 char title[255];
+unsigned char scope_enb_num_ue = 1;
 #endif //XFORMS
 
 #define FRAME_PERIOD 100000000ULL
@@ -211,38 +208,6 @@ void exit_fun(const char* s)
 }
 
 #ifdef XFORMS
-/*
-void ia_receiver_on_off( FL_OBJECT *button, long arg) {
-
-  if (fl_get_button(button)) {
-    if (UE_flag==1) {
-      fl_set_object_label(button, "IA Receiver ON");
-      openair_daq_vars.use_ia_receiver = 1;
-      fl_set_object_color(button, FL_GREEN, FL_GREEN);
-      //    LOG_I(PHY,"Pressed the button: IA receiver ON\n");
-    }
-    else {
-      fl_set_object_label(button, "DL traffic ON");
-      fl_set_object_color(button, FL_GREEN, FL_GREEN);
-      otg_enabled = 1;
-    }
-  }
-  else {
-    if (UE_flag==1) {
-      fl_set_object_label(button, "IA Receiver OFF");
-      openair_daq_vars.use_ia_receiver = 0;
-      fl_set_object_color(button, FL_RED, FL_RED);
-      //    LOG_I(PHY,"Pressed the button: IA receiver OFF\n");
-    }
-    else {
-      fl_set_object_label(button, "DL traffic OFF");
-      fl_set_object_color(button, FL_RED, FL_RED);
-      otg_enabled = 0;
-    }
-  }
-}
-*/
-
 void *scope_thread(void *arg) {
     s16 prach_corr[1024], i;
     char stats_buffer[16384];
@@ -273,10 +238,11 @@ void *scope_thread(void *arg) {
             fl_set_object_label(form_stats->stats_text, stats_buffer);
             //rewind (eNB_stats);
             //fwrite (stats_buffer, 1, len, eNB_stats);
-            
-              phy_scope_eNB(form_enb[UE_id], 
-                            PHY_vars_eNB_g[eNB_id],
-                            UE_id);
+            for(UE_id=0;UE_id<scope_enb_num_ue;UE_id++) {
+                phy_scope_eNB(form_enb[UE_id], 
+                              PHY_vars_eNB_g[eNB_id],
+                              UE_id);
+            }
               
         }
         //printf("doing forms\n");
@@ -291,30 +257,6 @@ void *scope_thread(void *arg) {
 #endif
 
 int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
-
-/*
-static void *sync_hw(void *arg)
-{
-  RT_TASK *task;
-  task = rt_task_init_schmod(nam2num("TASK2"), 0, 0, 0, SCHED_FIFO, 0xF);
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  rt_printk("fun0: task %p\n",task);
-
-#ifdef HARD_RT
-  rt_make_hard_real_time();
-#endif
-
-  while (!oai_exit)
-    {
-
-      rt_printk("exmimo_pci_interface->mbox = %d\n",((unsigned int *)DAQ_MBOX)[0]);
-
-      rt_sleep(nano2count(FRAME_PERIOD*10));
-    }
-
-}
-*/
 
 #ifdef EMOS
 #define NO_ESTIMATES_DISK 100 //No. of estimates that are aquired before dumped to disk
@@ -470,7 +412,8 @@ void *emos_thread (void *arg)
 static void *eNB_thread(void *arg)
 {
   RT_TASK *task;
-  int slot=0,hw_slot,last_slot, next_slot,frame=0;
+  unsigned char slot=0,last_slot, next_slot;
+  int hw_slot,frame=0;
   unsigned int msg1;
   unsigned int aa,slot_offset, slot_offset_F;
   int diff;
@@ -706,7 +649,7 @@ static void *UE_thread(void *arg)
         diff2 = mbox_target - mbox_current;
 
       if (diff2 <(-5)) {
-	rt_printk("UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
+	rt_printk("UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d) %llu\n",frame, slot, hw_slot, diff2);
 	slot++;
 	if (slot==20) {
           slot=0;
@@ -1118,6 +1061,8 @@ int main(int argc, char **argv) {
     g_log->log_component[PDCP].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
+    g_log->log_component[RRC].level = LOG_DEBUG;
+    g_log->log_component[RRC].flag  = LOG_HIGH;
 
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
     PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
@@ -1331,7 +1276,7 @@ int main(int argc, char **argv) {
       }
     }
     init_predef_traffic();
-    //}
+    //  }
 #endif
 
     number_of_cards = openair0_num_detected_cards;
@@ -1438,19 +1383,23 @@ int main(int argc, char **argv) {
           sprintf (title, "LTE DL SCOPE UE");
           fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       } else {
-          form_enb[UE_id] = create_lte_phy_scope_enb();
-          sprintf (title, "LTE UL SCOPE eNB");
-          fl_show_form (form_enb[UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+            for(UE_id=0;UE_id<scope_enb_num_ue;UE_id++) {
+                form_enb[UE_id] = create_lte_phy_scope_enb();
+                sprintf (title, "UE%d LTE UL SCOPE eNB",UE_id+1);
+                fl_show_form (form_enb[UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+            }
       }
       fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
       if (UE_flag==0) {
-          if (otg_enabled) {
-              fl_set_button(form_enb[UE_id]->button_0,1);
-              fl_set_object_label(form_enb[UE_id]->button_0,"DL Traffic ON");
-          }
-          else {
-              fl_set_button(form_enb[UE_id]->button_0,0);
-              fl_set_object_label(form_enb[UE_id]->button_0,"DL Traffic OFF");
+          for (UE_id=0;UE_id<scope_enb_num_ue;UE_id++) {
+              if (otg_enabled) {
+                  fl_set_button(form_enb[UE_id]->button_0,1);
+                  fl_set_object_label(form_enb[UE_id]->button_0,"DL Traffic ON");
+              }
+              else {
+                  fl_set_button(form_enb[UE_id]->button_0,0);
+                  fl_set_object_label(form_enb[UE_id]->button_0,"DL Traffic OFF");
+              }
           }
       }
       else {
@@ -1515,8 +1464,10 @@ int main(int argc, char **argv) {
             fl_hide_form(form_ue[UE_id]->lte_phy_scope_ue);
             fl_free_form(form_ue[UE_id]->lte_phy_scope_ue);
         } else {
-            fl_hide_form(form_enb[UE_id]->lte_phy_scope_enb);
-            fl_free_form(form_enb[UE_id]->lte_phy_scope_enb);
+            for(UE_id=0;UE_id<scope_enb_num_ue;UE_id++) {
+                fl_hide_form(form_enb[UE_id]->lte_phy_scope_enb);
+                fl_free_form(form_enb[UE_id]->lte_phy_scope_enb);
+            }
         }
     }
 #endif
