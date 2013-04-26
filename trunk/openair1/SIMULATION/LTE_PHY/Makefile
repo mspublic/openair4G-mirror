@@ -79,6 +79,10 @@ CFLAGS += -DXFORMS
 LFLAGS += -lforms
 endif
 
+ifdef SMBV
+CFLAGS += -DSMBV
+endif
+
 ifdef PERFECT_CE
 CFLAGS += -DPERFECT_CE
 endif

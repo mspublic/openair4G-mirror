@@ -38,6 +38,15 @@
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
+#ifdef SMBV
+#include "PHY/TOOLS/smbv.h"
+const char smbv_fname[] = "smbv_config_file.smbv";
+unsigned short smbv_nframes = 4; // how many frames to configure 1,..,4
+const unsigned short config_frames[4] = {2,9,10,11};
+//const unsigned short config_frames[4] = {1};
+unsigned char  smbv_frame_cnt = 0;
+#endif
+
 #include "oaisim.h"
 #include "oaisim_config.h"
 #include "UTIL/OCG/OCG_extern.h"
@@ -171,6 +180,7 @@ help (void) {
   printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
   printf ("-G Enable background traffic \n");
   printf ("-O [mme ipv4 address] Enable MME mode\n");
+  printf ("-W IP address to connect to SMBV and configure SMBV from config file. Requires compilation with SMBV=1, -W0 uses default IP 192.168.12.201\n");
   printf ("-Z Reserved\n");
 }
 
@@ -269,7 +279,11 @@ main (int argc, char **argv)
   u8 target_dl_mcs = 4;
   u8 target_ul_mcs = 2;
   u8 rate_adaptation_flag;
-
+#ifdef SMBV
+  u8 config_smbv = 0;
+  char smbv_ip[16];
+  strcpy(smbv_ip,DEFAULT_SMBV_IP);
+#endif
   u8 abstraction_flag = 0, ethernet_flag = 0;
   u16 Nid_cell = 0;
   s32 UE_id, eNB_id,ret;
@@ -345,7 +359,7 @@ main (int argc, char **argv)
   init_oai_emulation(); // to initialize everything !!!
   
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:W:")) != -1) {
 
     switch (c) {
     case 'L':                   // set FDD
@@ -555,6 +569,13 @@ main (int argc, char **argv)
       ouput_vcd = 1;
       oai_emulation.info.vcd_enabled = 1;
       break;
+    case 'W':
+#ifdef SMBV
+        config_smbv = 1;
+        if(atoi(optarg)!=0)
+            strcpy(smbv_ip,optarg);
+#endif
+      break;
     case 'G' :
       oai_emulation.info.otg_bg_traffic_enabled = 1;
       break;
@@ -743,6 +764,11 @@ main (int argc, char **argv)
 
         }
     }
+
+#ifdef SMBV
+    smbv_init_config(smbv_fname, smbv_nframes);
+    smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
+#endif
 
 
 
@@ -1294,9 +1320,20 @@ main (int argc, char **argv)
       usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
+#ifdef SMBV
+    if ((frame == config_frames[0]) || (frame == config_frames[1]) || (frame == config_frames[2]) || (frame == config_frames[3])) {
+        smbv_frame_cnt++;        
+    }
+#endif
   }     //end of frame
   //  fclose(SINRpost);
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+
+#ifdef SMBV
+  if (config_smbv) {
+      smbv_send_config (smbv_fname,smbv_ip);
+  }
+#endif
 
   //Perform KPI measurements
    if (oai_emulation.info.otg_enabled==1)

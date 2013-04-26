@@ -24,6 +24,14 @@ extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
+#ifdef SMBV
+#include "PHY/TOOLS/smbv.h"
+const char smbv_fname[] = "smbv_config_file.smbv";
+unsigned short smbv_nframes = 1;
+const unsigned short config_frames[4] = {1};
+unsigned char  smbv_frame_cnt = 0;
+#endif
+
 
 
 //#define AWGN
@@ -85,7 +93,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->nb_antennas_tx_eNB = N_tx;
-  lte_frame_parms->phich_config_common.phich_resource         = oneSixth;
+  lte_frame_parms->phich_config_common.phich_resource = oneSixth;
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
   //  lte_frame_parms->Csrs = 2;
@@ -227,6 +235,11 @@ int main(int argc, char **argv) {
   double channelx,channely;
 
   //  unsigned char pbch_pdu[6];
+#ifdef SMBV
+  u8 config_smbv = 0;
+  char smbv_ip[16];
+  strcpy(smbv_ip,DEFAULT_SMBV_IP);
+#endif
 
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
   int num_common_dci=0,num_ue_spec_dci=0,num_dci=0;
@@ -292,7 +305,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:W:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -467,6 +480,13 @@ int main(int argc, char **argv) {
 	  exit(-1);
 	}
 	break;
+    case 'W':
+#ifdef SMBV
+        config_smbv = 1;
+        if(atoi(optarg)!=0)
+            strcpy(smbv_ip,optarg);
+#endif
+      break;
       case 'v':
           i_mod = atoi(optarg);
           if (i_mod!=2 && i_mod!=4 && i_mod!=6) {
@@ -499,6 +519,7 @@ int main(int argc, char **argv) {
       printf("-N Determines the number of Channel Realizations in Absraction mode. Default value is 1. \n");
       printf("-I Input filename for TrCH data (binary)\n");
       printf("-u Determines if the 2 streams at the UE are decoded or not. 0-->U2 is interference only and 1-->U2 is detected\n");
+      printf ("-W IP address to connect to SMBV and configure SMBV from config file. Requires compilation with SMBV=1, -W0 uses default IP 192.168.12.201\n");
       exit(1);
       break;
       }
@@ -551,6 +572,12 @@ int main(int argc, char **argv) {
   }
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
+
+#ifdef SMBV
+    smbv_init_config(smbv_fname, smbv_nframes);
+    smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB->lte_frame_parms);
+    smbv_configure_user(smbv_fname,1,transmission_mode,n_rnti);
+#endif
 
   eNB_id_i = PHY_vars_UE->n_connected_eNB;
   
@@ -1159,19 +1186,27 @@ int main(int argc, char **argv) {
 	       dci_alloc[i].nCCE,numCCE);
     }
     
+#ifdef SMBV
+    smbv_configure_pdcch(smbv_fname,subframe,num_pdcch_symbols,num_dci);
+#endif
     for (k=0;k<n_users;k++) {
+#ifdef SMBV
+        smbv_configure_ue_spec_dci(smbv_fname, subframe, k+1, &dci_alloc[0],k);
+#endif
 
       input_buffer_length = PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->TBS/8;
       input_buffer[k] = (unsigned char *)malloc(input_buffer_length+4);
       memset(input_buffer[k],0,input_buffer_length+4);
     
       if (input_trch_file==0) {
-	for (i=0;i<input_buffer_length;i++) {
-	  input_buffer[k][i]= (unsigned char)(taus()&0xff);
-	}
-      }
-      
-      else {
+          for (i=0;i<input_buffer_length;i++) {
+              input_buffer[k][i]= (unsigned char)(taus()&0xff);
+          }
+#ifdef SMBV
+          smbv_configure_datalist_for_user(smbv_fname, k+1, &input_buffer[k][0], input_buffer_length);
+#endif      
+
+      }  else {
 	i=0;
 	while ((!feof(input_trch_fd)) && (i<input_buffer_length<<3)) {
 	  ret=fscanf(input_trch_fd,"%s",input_trch_val);
@@ -2449,6 +2484,11 @@ int main(int argc, char **argv) {
   
   } //ch_realization
   
+#ifdef SMBV
+  if (config_smbv) {
+      smbv_send_config (smbv_fname,smbv_ip);
+  }
+#endif
   
   fclose(bler_fd);
   fprintf(tikz_fd,"};\n");

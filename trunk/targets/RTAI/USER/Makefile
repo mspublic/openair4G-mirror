@@ -81,6 +81,10 @@ OBJ += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 OBJ += stats.o
 endif
 
+ifdef SMBV
+CFLAGS += -DSMBV
+endif
+
 #CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
 CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  

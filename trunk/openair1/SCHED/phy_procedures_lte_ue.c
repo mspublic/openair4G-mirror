@@ -247,7 +247,7 @@ void ra_failed(u8 Mod_id,u8 eNB_index) {
 
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index] = PRACH;
-  LOG_E(PHY,"[UE %d] Frame %d Random-access procedure fails, going back to PRACH\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame);
+  LOG_E(PHY,"[UE %d] Frame %d Random-access procedure fails, going back to PRACH, setting SIStatus = 0 and State RRC_IDLE\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame);
   //mac_xface->macphy_exit("");
   //  exit(-1);
 }
@@ -1187,7 +1187,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     if (1) {
 #endif
       // check if we have PRACH opportunity
-
       if (is_prach_subframe(&phy_vars_ue->lte_frame_parms,phy_vars_ue->frame,next_slot>>1)) {
 	LOG_D(PHY,"UE %d: Frame %d, SF %d Clearing generate_prach\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
 	phy_vars_ue->generate_prach=0;
@@ -1198,16 +1197,19 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 									phy_vars_ue->frame,
 									eNB_id,
 									next_slot>>1);
-	  LOG_D(PHY,"Got prach_resources for eNB %d\n",eNB_id);
+	  LOG_D(PHY,"Got prach_resources for eNB %d address %d, RRCCommon %d\n",eNB_id,phy_vars_ue->prach_resources[eNB_id],UE_mac_inst[phy_vars_ue->Mod_id].radioResourceConfigCommon);
 	}
 #endif
-
 	if (phy_vars_ue->prach_resources[eNB_id]!=NULL) {
 	  
 	  phy_vars_ue->generate_prach=1;
 	  phy_vars_ue->prach_cnt=0;
+#ifdef SMBV
+      phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
+#endif
+#ifdef OAI_EMU
 	  phy_vars_ue->prach_PreambleIndex=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex; 
-
+#endif
 	  if (abstraction_flag == 0) {
 	    LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
 		  phy_vars_ue->Mod_id,
@@ -1696,7 +1698,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       }
         
 #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[UE  %d] frame %d, slot %d, PBCH: mode1_flag %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
+    LOG_D(PHY,"[UE  %d] frame %d, slot %d, PBCH: mode1_flag %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
 	      phy_vars_ue->Mod_id, 
 	      phy_vars_ue->frame,
 	      last_slot,
@@ -2541,11 +2543,11 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 
 #ifdef OPENAIR2
-		/*
+        /*
 		for (i=0;i<phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS>>3;i++)
 		  printf("%x.",phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->b[i]);
 		printf("\n");
-		*/
+        */
 		mac_xface->ue_decode_si(phy_vars_ue->Mod_id,
 					phy_vars_ue->frame,
 					eNB_id,
