@@ -175,7 +175,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				  symbol);
       }
     }
-#endif
+
 
       // do frequency offset estimation here!
       // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1}) 
@@ -192,6 +192,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
       }
   }
+#endif
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");
 #endif
