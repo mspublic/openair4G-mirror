@@ -24,14 +24,6 @@ extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-const char smbv_fname[] = "smbv_config_file.smbv";
-unsigned short smbv_nframes = 1;
-const unsigned short config_frames[4] = {1};
-unsigned char  smbv_frame_cnt = 0;
-#endif
-
 
 
 //#define AWGN
@@ -93,7 +85,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->nb_antennas_tx_eNB = N_tx;
-  lte_frame_parms->phich_config_common.phich_resource = oneSixth;
+  lte_frame_parms->phich_config_common.phich_resource         = oneSixth;
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
   //  lte_frame_parms->Csrs = 2;
@@ -235,11 +227,6 @@ int main(int argc, char **argv) {
   double channelx,channely;
 
   //  unsigned char pbch_pdu[6];
-#ifdef SMBV
-  u8 config_smbv = 0;
-  char smbv_ip[16];
-  strcpy(smbv_ip,DEFAULT_SMBV_IP);
-#endif
 
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
   int num_common_dci=0,num_ue_spec_dci=0,num_dci=0;
@@ -265,7 +252,7 @@ int main(int argc, char **argv) {
   int ch_realization;
   int pmi_feedback=0;
   int hold_channel=0;
-  int hold_channel1=0; 
+ 
   // void *data;
   // int ii;
   int bler;
@@ -305,7 +292,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:W:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -480,13 +467,6 @@ int main(int argc, char **argv) {
 	  exit(-1);
 	}
 	break;
-    case 'W':
-#ifdef SMBV
-        config_smbv = 1;
-        if(atoi(optarg)!=0)
-            strcpy(smbv_ip,optarg);
-#endif
-      break;
       case 'v':
           i_mod = atoi(optarg);
           if (i_mod!=2 && i_mod!=4 && i_mod!=6) {
@@ -519,7 +499,6 @@ int main(int argc, char **argv) {
       printf("-N Determines the number of Channel Realizations in Absraction mode. Default value is 1. \n");
       printf("-I Input filename for TrCH data (binary)\n");
       printf("-u Determines if the 2 streams at the UE are decoded or not. 0-->U2 is interference only and 1-->U2 is detected\n");
-      printf ("-W IP address to connect to SMBV and configure SMBV from config file. Requires compilation with SMBV=1, -W0 uses default IP 192.168.12.201\n");
       exit(1);
       break;
       }
@@ -572,12 +551,6 @@ int main(int argc, char **argv) {
   }
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf);  
-
-#ifdef SMBV
-    smbv_init_config(smbv_fname, smbv_nframes);
-    smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB->lte_frame_parms);
-    smbv_configure_user(smbv_fname,1,transmission_mode,n_rnti);
-#endif
 
   eNB_id_i = PHY_vars_UE->n_connected_eNB;
   
@@ -742,7 +715,6 @@ int main(int argc, char **argv) {
   PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = n_rnti;
 
   // Fill in UL_alloc
-  /*
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
   UL_alloc_pdu.rballoc = UL_RB_ALLOC;
@@ -757,7 +729,7 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.ndi      = 1;
   CCCH_alloc_pdu.mcs      = 1;
   CCCH_alloc_pdu.harq_pid = 0;
-  */
+
   DLSCH_alloc_pdu2_1E[0].rah              = 0;
   DLSCH_alloc_pdu2_1E[0].rballoc          = DLSCH_RB_ALLOC;
   DLSCH_alloc_pdu2_1E[0].TPC              = 0;
@@ -792,7 +764,7 @@ int main(int argc, char **argv) {
 				rx_sample_offset,
 				0);
  if(abstx==1){
-    for(n=1;n<num_rounds;n++)
+    for(n=1;n<4;n++)
   eNB2UE[n] = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
 				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
 				channel_model,
@@ -1186,27 +1158,19 @@ int main(int argc, char **argv) {
 	       dci_alloc[i].nCCE,numCCE);
     }
     
-#ifdef SMBV
-    smbv_configure_pdcch(smbv_fname,subframe,num_pdcch_symbols,num_dci);
-#endif
     for (k=0;k<n_users;k++) {
-#ifdef SMBV
-        smbv_configure_ue_spec_dci(smbv_fname, subframe, k+1, &dci_alloc[0],k);
-#endif
 
       input_buffer_length = PHY_vars_eNB->dlsch_eNB[k][0]->harq_processes[0]->TBS/8;
       input_buffer[k] = (unsigned char *)malloc(input_buffer_length+4);
       memset(input_buffer[k],0,input_buffer_length+4);
     
       if (input_trch_file==0) {
-          for (i=0;i<input_buffer_length;i++) {
-              input_buffer[k][i]= (unsigned char)(taus()&0xff);
-          }
-#ifdef SMBV
-          smbv_configure_datalist_for_user(smbv_fname, k+1, &input_buffer[k][0], input_buffer_length);
-#endif      
-
-      }  else {
+	for (i=0;i<input_buffer_length;i++) {
+	  input_buffer[k][i]= (unsigned char)(taus()&0xff);
+	}
+      }
+      
+      else {
 	i=0;
 	while ((!feof(input_trch_fd)) && (i<input_buffer_length<<3)) {
 	  ret=fscanf(input_trch_fd,"%s",input_trch_val);
@@ -1227,7 +1191,7 @@ int main(int argc, char **argv) {
     if(abstx){
       printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
        saving_bler=1;
-       hold_channel1=0;
+      
     }
 
     for (SNR=snr0;SNR<snr1;SNR+=snr_step) {
@@ -1560,6 +1524,7 @@ int main(int argc, char **argv) {
 	      // printf("Did not Crash here 2\n");
 	  
 	      //	      if (k==1)
+	      // printf("AMP: %d\n",AMP);
 	      start_meas(&PHY_vars_eNB->dlsch_modulation_stats);	      
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 					      AMP,
@@ -1675,39 +1640,20 @@ int main(int argc, char **argv) {
 	    }
 	  }
 
-	  //Multipath channel
+	  // Multipath channel
 	  if (awgn_flag == 0) {	
-	    multipath_channel(eNB2UE[0],s_re,s_im,r_re,r_im,
+	    multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
 			      2*frame_parms->samples_per_tti,hold_channel);
-	    if(abstx==1){
-	      if(num_rounds>2){
-		if(hold_channel1==0){
-		  
-		  hold_channel1 = multipath_channel_nosigconv(eNB2UE[1]);
-		  hold_channel1 = multipath_channel_nosigconv(eNB2UE[2]);
-		  hold_channel1 = multipath_channel_nosigconv(eNB2UE[3]);
-		  
-		}
-		switch (round)
-		  {
-		  case 1: 
-		    multipath_channel(eNB2UE[1],s_re,s_im,r_re,r_im,
-				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
-		    break;
-		  case 2:
-		    multipath_channel(eNB2UE[2],s_re,s_im,r_re,r_im,
-				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
-		    break;
-		  case 3:
-		    multipath_channel(eNB2UE[3],s_re,s_im,r_re,r_im,
-				      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel1);
-		    break;
-		  }
+	    if(abstx==1)
+	      if(round==0 && hold_channel==0){
+		random_channel(eNB2UE[1]);
+		random_channel(eNB2UE[2]);
+		random_channel(eNB2UE[3]);		
 	      }
-	    }
 	  }
-	  
-	  if(abstx){
+	
+	
+	if(abstx){
 	    if(saving_bler==0)
 	      if (trials==0 && round==0) {
 		// calculate freq domain representation to compute SINR
@@ -1848,10 +1794,7 @@ int main(int argc, char **argv) {
 #ifdef PERFECT_CE
 	      if (awgn_flag==0) {
 		// fill in perfect channel estimates
-		if (abstx==1)
-		  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
-		else
-		    freq_channel(eNB2UE[0],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+		freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		//write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
 		//write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
 		for(k=0;k<NUMBER_OF_eNB_MAX;k++) {
@@ -1861,14 +1804,8 @@ int main(int argc, char **argv) {
 			{
 			  for (i=0;i<frame_parms->N_RB_DL*12;i++)
 			    { 
-			      if (abstx==1){
-                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
-                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
-			      }
-			      else {
-                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2);
-                      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2) ;
-			      }
+			      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+			      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
 			    }
 			}
 		    }
@@ -1881,7 +1818,7 @@ int main(int argc, char **argv) {
 		      {
 			for (i=0;i<frame_parms->N_RB_DL*12;i++)
 			  { 
-			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP/2);
+			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
 			    ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
 			  }
 		      }
@@ -1943,7 +1880,6 @@ int main(int argc, char **argv) {
 		  // overwrite number of pdcch symbols
 		  PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
 
-                  PHY_vars_UE->UE_mode[eNB_id] = PUSCH;
 		  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 						   dci_alloc_rx,1,
 						   eNB_id,
@@ -2456,7 +2392,7 @@ int main(int argc, char **argv) {
 
       if(abstx){ //ABSTRACTION         
 	blerr[0] = (double)errs[0]/(round_trials[0]);
-        if(num_rounds>2){
+        if(num_rounds>1){
 	blerr[1] = (double)errs[1]/(round_trials[1]);
 	blerr[2] = (double)errs[2]/(round_trials[2]);
 	blerr[3] = (double)errs[3]/(round_trials[3]);
@@ -2471,11 +2407,12 @@ int main(int argc, char **argv) {
 	  }
 	
       } //ABStraction
-      if(num_rounds==2){
-      bler= (double)errs[1]/(round_trials[1]);
-	if (bler>.1)
-	  {snr_step = 1.5; saving_bler = 1;} 
-	else {snr_step = input_snr_step;     saving_bler = 0;}
+      if(num_rounds==1){
+      bler= (double)errs[0]/(round_trials[0]);
+	if (bler<1)
+	 {snr_step = input_snr_step;     saving_bler = 0;}
+	else
+	 {snr_step = 1; saving_bler = 1;} 
 	}
       if (((double)errs[0]/(round_trials[0]))<1e-2) 
 	break;
@@ -2484,11 +2421,6 @@ int main(int argc, char **argv) {
   
   } //ch_realization
   
-#ifdef SMBV
-  if (config_smbv) {
-      smbv_send_config (smbv_fname,smbv_ip);
-  }
-#endif
   
   fclose(bler_fd);
   fprintf(tikz_fd,"};\n");
