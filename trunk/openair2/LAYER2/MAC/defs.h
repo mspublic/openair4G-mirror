@@ -605,7 +605,9 @@ typedef struct{
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
 #endif
-
+#ifdef CBA
+  uint16_t CBA_RNTI[NUM_MAX_CBA_GROUP];
+#endif 
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
   
@@ -752,7 +754,9 @@ typedef struct{
   /// MSI status
   u8 msi_status;// could be an array if there are >1 MCH in one MBSFN area
 #endif
-
+#ifdef CBA
+  uint16_t CBA_RNTI[NUM_MAX_CBA_GROUP];
+#endif 
 }UE_MAC_INST;
 
 typedef struct {
@@ -826,6 +830,11 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
 		       PMCH_InfoList_r9_t *pmch_InfoList
 
+#endif
+#ifdef CBA
+		       ,
+		       u8 num_active_cba_groups,
+		       u16 CBA_RNTI
 #endif
 		       );
 
@@ -911,7 +920,7 @@ void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
 
 void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
 
-int mac_top_init(int eMBMS_active);
+int mac_top_init(int eMBMS_active, u8 cba_group_active);
 
 char layer2_init_UE(u8 Mod_id);
 
@@ -1166,7 +1175,7 @@ u8 *parse_ulsch_header(u8 *mac_header,
 		       u16 tx_lenght);
 
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active);
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_active);
 int mac_init(void);
 void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);

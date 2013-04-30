@@ -651,6 +651,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char otg_enabled; 
     unsigned char omv_enabled;
     unsigned char vcd_enabled;
+    unsigned char cba_group_active;
     char * otg_traffic;
     unsigned char otg_bg_traffic_enabled;
     unsigned char omg_model_enb;

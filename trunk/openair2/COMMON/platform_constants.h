@@ -90,7 +90,8 @@
 #        define DELIVERY_OF_ERRONEOUS_SDU_NO_DETECT    2
 
 
-
+// CBA constant 
+#define NUM_MAX_CBA_GROUP 4
 
 #    ifndef __cplusplus
 #        ifndef NULL

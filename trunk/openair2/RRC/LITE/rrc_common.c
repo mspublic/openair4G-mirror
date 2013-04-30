@@ -205,7 +205,7 @@ void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role){
 
 
 /*------------------------------------------------------------------------------*/
-void openair_rrc_top_init(int eMBMS_active){
+void openair_rrc_top_init(int eMBMS_active, u8 cba_group_active){
   /*-----------------------------------------------------------------------------*/
 
   int i;
@@ -241,6 +241,9 @@ void openair_rrc_top_init(int eMBMS_active){
     memset(eNB_rrc_inst,0,NB_eNB_INST*sizeof(eNB_RRC_INST));
 #ifdef Rel10
     eNB_rrc_inst->MBMS_flag = (uint8_t)eMBMS_active;
+#endif 
+#ifdef CBA
+    eNB_rrc_inst->num_active_cba_groups  = cba_group_active;
 #endif
     LOG_D(RRC,"ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n",(unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)),eNB_rrc_inst);
   }else

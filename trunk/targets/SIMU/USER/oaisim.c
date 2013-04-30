@@ -355,11 +355,11 @@ main (int argc, char **argv)
   snr_dB = 30;
   cooperation_flag = 0;         // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
   int eMBMS_active = 0;
-
+ 
   init_oai_emulation(); // to initialize everything !!!
   
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:W:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:w:W:")) != -1) {
 
     switch (c) {
     case 'L':                   // set FDD
@@ -505,26 +505,6 @@ main (int argc, char **argv)
       break;
     case 'U':
       oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = optarg;
-      /*oai_emulation.info.omg_model_ue = atoi (optarg);
-      switch (oai_emulation.info.omg_model_ue){
-      case STATIC:
-        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
-        break;
-      case RWP:
-        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
-        break;
-      case RWALK:
-        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWALK";
-        break;
-      case TRACE:
-        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "TRACE";
-        break;
-      case SUMO:
-        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "SUMO";
-        break;
-      default:
-        LOG_N(OMG, "Unsupported generator %d \n", oai_emulation.info.omg_model_ue);
-        }*/
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
@@ -568,6 +548,9 @@ main (int argc, char **argv)
     case 'V':
       ouput_vcd = 1;
       oai_emulation.info.vcd_enabled = 1;
+      break;
+    case 'w':
+      oai_emulation.info.cba_group_active = atoi (optarg);
       break;
     case 'W':
 #ifdef SMBV
@@ -931,7 +914,7 @@ main (int argc, char **argv)
 
 
 #ifdef OPENAIR2
-  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,eMBMS_active);
+  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,eMBMS_active, oai_emulation.info.cba_group_active);
   printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after L2 init: frame_type %d,tdd_config %d\n", 
           PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,

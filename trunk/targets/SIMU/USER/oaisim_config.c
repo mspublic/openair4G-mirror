@@ -308,6 +308,7 @@ void init_oai_emulation() {
   oai_emulation.info.cli_enabled=0;// I flag
   oai_emulation.info.omv_enabled =0; // v flag 
   oai_emulation.info.vcd_enabled=0;
+  oai_emulation.info.cba_group_active=0;
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model

@@ -1032,10 +1032,10 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;
   struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;
 
-#ifdef Rel10
-  struct PUSCH_CAConfigDedicated_vlola	*pusch_CAConfigDedicated_vlola;
-  long * betaOffset_CA_Index;
-  long * cShift;
+#ifdef CBA
+  struct PUSCH_CBAConfigDedicated_vlola	*pusch_CBAConfigDedicated_vlola;
+  long * betaOffset_CBA_Index;
+  long * cShift_CBA;
 #endif 
   PhysicalConfigDedicated_t *physicalConfigDedicated2;
 
@@ -1108,8 +1108,8 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
-#ifdef Rel10
-  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CAConfigDedicated_vlola));
+#ifdef CBA
+  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola));
 #endif
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
@@ -1257,14 +1257,14 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
-#ifdef Rel10
-  betaOffset_CA_Index = CALLOC(1,sizeof(long));
-  cShift = CALLOC(1,sizeof(long));
-  *betaOffset_CA_Index=10; // need to be changed by Kaijie
-  *cShift=4;
-  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola->betaOffset_CA_Index=betaOffset_CA_Index;
-  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola->cShift=cShift;
-  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_RA_ConfigList_rlola = NULL;
+#ifdef CBA
+  betaOffset_CBA_Index = CALLOC(1,sizeof(long));
+  cShift_CBA = CALLOC(1,sizeof(long));
+  *betaOffset_CBA_Index=10; // need to be changed by Kaijie
+  *cShift_CBA=4;
+  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola->betaOffset_CBA_Index=betaOffset_CBA_Index;
+  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola->cShift_CBA=cShift_CBA;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_CBA_ConfigList_vlola = NULL;
 #endif
 
 
@@ -1385,7 +1385,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
                                         MeasIdToAddModList_t              *MeasId_list,
                                         MAC_MainConfig_t                  *mac_MainConfig,
                                         MeasGapConfig_t                   *measGapConfig,
-                                        uint8_t                           *nas_pdu,
+                                        C_RNTI_t                          *cba_rnti, 
+					uint8_t                           *nas_pdu,
                                         uint32_t                           nas_length
                                        ) {
 
@@ -1413,7 +1414,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = NULL;
-
+#ifdef CBA
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->cba_RNTI_vlola= cba_rnti;
+#endif 
   if (mac_MainConfig) {
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig));
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->present =RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
@@ -2014,9 +2017,11 @@ uint8_t do_RRCConnReconf_defaultCELL(uint8_t Mod_id,
   ReportConfigToAddMod_t *ReportConfig_per,*ReportConfig_A1,*ReportConfig_A2,*ReportConfig_A3,*ReportConfig_A4,*ReportConfig_A5;
   MeasIdToAddModList_t *MeasId_list;
   MeasIdToAddMod_t *MeasId0,*MeasId1,*MeasId2,*MeasId3,*MeasId4,*MeasId5;
-#if Rel10
+#ifdef Rel10
   long * sr_ProhibitTimer_r9;
-  struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
+#endif
+#if CBA
+  struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
 #endif
 
   long *logicalchannelgroup,*logicalchannelgroup_drb;
@@ -2181,7 +2186,9 @@ uint8_t do_RRCConnReconf_defaultCELL(uint8_t Mod_id,
   sr_ProhibitTimer_r9 = CALLOC(1,sizeof(long));
   *sr_ProhibitTimer_r9=0; // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue.sr_ProhibitTimer_r9=sr_ProhibitTimer_r9;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_RA_ConfigList_rlola = NULL;
+#endif
+#ifdef CBA  
+ rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_CBA_ConfigList_vlola = NULL;
 #endif
   //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));

@@ -333,23 +333,23 @@ u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
       phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,subframe,
       phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex);
   
-  if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 5) {        // 5 ms SR period
+  if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 5) {        // 5 ms SR period
     if ((subframe%5) == phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)
       return(1);
   }
-  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 14) {  // 10 ms SR period
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 14) {  // 10 ms SR period
     if (subframe==(phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex-5))
       return(1);
   }
-  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 34) { // 20 ms SR period
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 34) { // 20 ms SR period
     if ((10*(phy_vars_ue->frame&1)+subframe) == (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex-15))
       return(1);
   }
-  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 74) { // 40 ms SR period
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 74) { // 40 ms SR period
     if ((10*(phy_vars_ue->frame&3)+subframe) == (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex-35))
       return(1);
   }
-  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 154) { // 80 ms SR period
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 154) { // 80 ms SR period
     if ((10*(phy_vars_ue->frame&7)+subframe) == (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex-75))
       return(1);
   }
@@ -2280,8 +2280,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		     m,                    // symbol
 		     0,                    // first_symbol_flag
 		     dual_stream_UE,
-             i_mod,
-             phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
+		     i_mod,
+		     phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
 	  }
 	}
 	

@@ -725,7 +725,6 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 #ifdef Rel10 
   if (pmch_InfoList_r9 != NULL){
     for (i=0;i<pmch_InfoList_r9->list.count;i++){
-
       mbms_SessionInfoList_r9 = &(pmch_InfoList_r9->list.array[i]->mbms_SessionInfoList_r9);
       for (j=0;j<mbms_SessionInfoList_r9->list.count;j++) {
 	MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[j];
