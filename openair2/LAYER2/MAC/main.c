@@ -134,7 +134,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 
 
 /***********************************************************************/
-int mac_top_init(int eMBMS_active){
+int mac_top_init(int eMBMS_active, u8 cba_group_active){
 /***********************************************************************/
   unsigned char  Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -172,7 +172,7 @@ int mac_top_init(int eMBMS_active){
   if (Is_rrc_registered == 1){
     LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
-    openair_rrc_top_init(eMBMS_active);
+    openair_rrc_top_init(eMBMS_active, cba_group_active);
 #endif
   }
     else {
@@ -327,7 +327,7 @@ void mac_top_cleanup(void){
   free( Mac_rlc_xface);
 }
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active) {
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_active) {
 
 
 
@@ -417,7 +417,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active) {
   mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
-  mac_xface->macphy_init(eMBMS_active);
+  mac_xface->macphy_init(eMBMS_active,cba_group_active);
 
   //Mac_rlc_xface->Is_cluster_head[0] = 1;
   //Mac_rlc_xface->Is_cluster_head[1] = 0;

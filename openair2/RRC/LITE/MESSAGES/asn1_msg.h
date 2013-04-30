@@ -105,6 +105,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 @param MeasId_list Pointer to MeasID List (NULL if no additions/modifications)
 @param mac_MainConfig Pointer to Mac_MainConfig(NULL if no modifications)
 @param measGapConfig Pointer to MeasGapConfig (NULL if no modifications)
+@param cba_rnti RNTI for the cba transmission 
 @returns Size of encoded bit stream in bytes*/
 
 uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id,
@@ -122,7 +123,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
                                         MeasIdToAddModList_t              *MeasId_list,
                                         MAC_MainConfig_t                  *mac_MainConfig,
                                         MeasGapConfig_t                   *measGapConfig,
-                                        uint8_t                           *nas_pdu,
+                                        C_RNTI_t                          *cba_rnti, 
+					uint8_t                           *nas_pdu,
                                         uint32_t                           nas_length);
 
 /**

@@ -2163,9 +2163,16 @@ PhysicalConfigDedicated ::=		SEQUENCE {
 								SoundingRS-UL-ConfigDedicated-v1020	OPTIONAL,		-- Need ON
 		soundingRS-UL-ConfigDedicatedAperiodic-r10
 								SoundingRS-UL-ConfigDedicatedAperiodic-r10	OPTIONAL,	-- Need ON
-		uplinkPowerControlDedicated-v1020	UplinkPowerControlDedicated-v1020	OPTIONAL	-- Need ON
+		uplinkPowerControlDedicated-v1020	UplinkPowerControlDedicated-v1020	OPTIONAL,	-- Need ON
+		pusch-CBAConfigDedicated-vlola   		PUSCH-CBAConfigDedicated-vlola		OPTIONAL        -- Need ON
 }
+PUSCH-CBAConfigDedicated-vlola	::= SEQUENCE {
+      betaOffset-CBA-Index  		BetaOffset-CBA-Index	OPTIONAL,	-- Need ON	
+      cShift-CBA                      	CShift-CBA		OPTIONAL	-- Need ON	
+}
+BetaOffset-CBA-Index ::= INTEGER
 
+CShift-CBA  ::= INTEGER
 
 PhysicalConfigDedicatedSCell-r10 ::=		SEQUENCE {
 	-- DL configuration as well as configuration applicable for DL and UL
@@ -2444,6 +2451,8 @@ RadioResourceConfigDedicated ::=		SEQUENCE {
 	physicalConfigDedicated				PhysicalConfigDedicated		OPTIONAL,		-- Need ON
 	rlf-TimersAndConstants-r9			RLF-TimersAndConstants-r9		OPTIONAL,	-- Need ON
 	measSubframePatternPCell-r10			MeasSubframePatternPCell-r10		OPTIONAL,	-- Need ON
+	sps-CBA-ConfigList-vlola			SPS-CBA-ConfigList-vlola		OPTIONAL, 	-- NEED ON
+	cba-RNTI-vlola					C-RNTI					OPTIONAL,	-- NEED ON
 	...
 }
 
@@ -2481,6 +2490,18 @@ DRB-ToAddMod ::=	SEQUENCE {
 }
 
 DRB-ToReleaseList ::=				SEQUENCE (SIZE (1..maxDRB)) OF DRB-Identity
+SPS-CBA-ConfigList-vlola	::=		SEQUENCE {
+     semiPersistSchedCBA-RNTI 		CBA-RNTI		OPTIONAL, -- Need OR
+     cba-semiPersistSchedIntervalUL     CBA-semiPersistSchedIntervalUL OPTIONAL -- Need ON
+}
+
+CBA-RNTI ::=  BIT STRING (SIZE (16))
+
+CBA-semiPersistSchedIntervalUL ::= ENUMERATED {
+						sf10, sf20, sf32, sf40, sf64, sf80,
+						sf128, sf160, sf320, sf640, spare6,
+						spare5, spare4, spare3, spare2,
+						spare1}
 
 MeasSubframePatternPCell-r10 ::=		CHOICE {
 	release								NULL,

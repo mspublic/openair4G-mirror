@@ -36,6 +36,11 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
 		       PMCH_InfoList_r9_t *pmch_InfoList
 #endif 
+#ifdef CBA
+		       ,
+		       u8 num_active_cba_groups,
+		       u16 CBA_RNTI
+#endif
 		       ) {
 
   int i;
@@ -265,6 +270,23 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     }
   }
  
+#endif
+#ifdef CBA
+  if (eNB_flag == 0){
+    if (CBA_RNTI) {
+      UE_mac_inst[Mod_id].CBA_RNTI[num_active_cba_groups] = CBA_RNTI;
+      LOG_D(MAC,"[UE %d] configure the CBA group %d RNTI %x for\n", 
+	    Mod_id, num_active_cba_groups, UE_mac_inst[Mod_id].CBA_RNTI[num_active_cba_groups]);
+    }
+  }else {
+    if (CBA_RNTI) {
+      for (i=0; i < num_active_cba_groups; i ++){
+	eNB_mac_inst[Mod_id].CBA_RNTI[i] = CBA_RNTI + i;
+	LOG_D(MAC,"[eNB %d] configure CBA groups %d with RNTI %x \n", Mod_id, i, eNB_mac_inst[Mod_id].CBA_RNTI[i]);
+      }
+    }
+  }
+
 #endif
 
   return(0);

@@ -93,7 +93,12 @@ endif
 #export IS_REL10=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ] ; then  echo "1" ; else  echo "0" ; fi)
 #export IS_REL8=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ] ; then  echo "1" ; else  echo "0" ; fi)
 
-ifdef  Rel10
+ifdef CBA
+CFLAGS += -DRel10
+CFLAGS += -DCBA
+@echo Rel10=1 CBA=1
+
+else ifdef Rel10
 CFLAGS += -DRel10
 @echo Rel10=1
 #ifeq ($(IS_REL10), 0)
@@ -320,7 +325,7 @@ cleanl1:
 cleanl2:
 	rm -f $(L2_OBJS)
 	rm $(ASN1_MSG_INC)/asn1_msg.o
-	
+
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; rm -f $(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS) *.o *.d )
@@ -328,7 +333,7 @@ cleanasn1:
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
-	
+
 cleanmmeasn1:
 	rm -f $(S1AP_BUILT_OBJS)
 	rm -f $(S1AP_BUILT_OBJS:.o:.c)

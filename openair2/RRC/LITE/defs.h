@@ -115,6 +115,9 @@ typedef enum  {
 #define NO_SECURITY_MODE 0x33
 
 
+#define CBA_OFFSET        0xfff4
+// #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
+
 typedef struct{
   UE_STATE_t State;
   u8 SIB1Status;
@@ -216,6 +219,10 @@ typedef struct{
   MCCH_Message_t            mcch;
   MBSFNAreaConfiguration_r9_t       *mcch_message;  
   SRB_INFO                       MCCH_MESS;
+#endif 
+#ifdef CBA
+  uint8_t                        num_active_cba_groups;
+  uint16_t                       CBA_RNTI[NUM_MAX_CBA_GROUP];
 #endif
   SRB_ToAddModList_t                *SRB_configList[NUMBER_OF_UE_MAX];
   DRB_ToAddModList_t                *DRB_configList[NUMBER_OF_UE_MAX];
@@ -274,6 +281,10 @@ typedef struct{
   MBSFNAreaConfiguration_r9_t       *mcch_message[NB_CNX_UE];  
   SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
   SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
+#endif 
+#ifdef CBA
+  uint8_t                         num_active_cba_groups;
+  uint16_t                        CBA_RNTI[NUM_MAX_CBA_GROUP];
 #endif
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
@@ -292,7 +303,7 @@ typedef struct{
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);
-void openair_rrc_top_init(int eMBMS_active);
+void openair_rrc_top_init(int eMBMS_active, u8 cba_group_active);
 char openair_rrc_lite_eNB_init(u8 Mod_id);
 char openair_rrc_lite_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
