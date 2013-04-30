@@ -65,7 +65,7 @@ static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __at
 
 static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 
-  __m128i mmtmpb;
+  register __m128i mmtmpb;
 
   mmtmpb    = _mm_sign_epi16(b,*(__m128i*)reflip);
   *re32     = _mm_madd_epi16(a,mmtmpb);
@@ -79,7 +79,7 @@ static inline void cmultc(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __a
 
 static inline void cmultc(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 
-  __m128i mmtmpb;
+  register __m128i mmtmpb;
 
   *re32     = _mm_madd_epi16(a,b);
   mmtmpb    = _mm_sign_epi16(b,*(__m128i*)reflip);
@@ -94,7 +94,7 @@ static inline __m128i cpack(__m128i xre,__m128i xim) __attribute__((always_inlin
 
 static inline __m128i cpack(__m128i xre,__m128i xim) {
 
-  __m128i cpack_tmp1,cpack_tmp2;
+  register __m128i cpack_tmp1,cpack_tmp2;
 
   cpack_tmp1 = _mm_unpacklo_epi32(xre,xim);
   cpack_tmp1 = _mm_srai_epi32(cpack_tmp1,15);
@@ -276,24 +276,36 @@ static inline void bfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			 __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
 			 __m128i *tw1,__m128i *tw2,__m128i *tw3) {   
 
-  __m128i x0r_2,x0i_2,x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
+  __m128i x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
 
-  cmult(*(x0),*(W0),&x0r_2,&x0i_2);		
+  //  cmult(*(x0),*(W0),&x0r_2,&x0i_2);		
   cmult(*(x1),*(tw1),&x1r_2,&x1i_2);
   cmult(*(x2),*(tw2),&x2r_2,&x2i_2);
   cmult(*(x3),*(tw3),&x3r_2,&x3i_2);
-  dy0r = _mm_add_epi32(x0r_2,_mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2)));
-  dy0i = _mm_add_epi32(x0i_2,_mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2)));
-  *(y0)  = cpack(dy0r,dy0i);
-  dy1r = _mm_add_epi32(x0r_2,_mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2)));
-  dy1i = _mm_sub_epi32(x0i_2,_mm_add_epi32(x1r_2,_mm_sub_epi32(x2i_2,x3r_2)));
-  *(y1)  = cpack(dy1r,dy1i);
-  dy2r = _mm_sub_epi32(x0r_2,_mm_sub_epi32(x1r_2,_mm_sub_epi32(x2r_2,x3r_2)));
-  dy2i = _mm_sub_epi32(x0i_2,_mm_sub_epi32(x1i_2,_mm_sub_epi32(x2i_2,x3i_2)));
-  *(y2)  = cpack(dy2r,dy2i);
-  dy3r = _mm_sub_epi32(x0r_2,_mm_add_epi32(x1i_2,_mm_sub_epi32(x2r_2,x3i_2)));
-  dy3i = _mm_add_epi32(x0i_2,_mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2)));
-  *(y3) = cpack(dy3r,dy3i);
+  //  dy0r = _mm_add_epi32(x0r_2,_mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2)));
+  //  dy0i = _mm_add_epi32(x0i_2,_mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2)));
+  //  *(y0)  = cpack(dy0r,dy0i);
+  dy0r = _mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2));
+  dy0i = _mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2));
+  *(y0)  = _mm_add_epi16(*(x0),cpack(dy0r,dy0i));
+  //  dy1r = _mm_add_epi32(x0r_2,_mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2)));
+  //  dy1i = _mm_sub_epi32(x0i_2,_mm_add_epi32(x1r_2,_mm_sub_epi32(x2i_2,x3r_2)));
+  //  *(y1)  = cpack(dy1r,dy1i);
+  dy1r = _mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2));
+  dy1i = _mm_sub_epi32(_mm_sub_epi32(x3r_2,x2i_2),x1r_2);
+  *(y1)  = _mm_add_epi16(*(x0),cpack(dy1r,dy1i));
+  //  dy2r = _mm_sub_epi32(x0r_2,_mm_sub_epi32(x1r_2,_mm_sub_epi32(x2r_2,x3r_2)));
+  //  dy2i = _mm_sub_epi32(x0i_2,_mm_sub_epi32(x1i_2,_mm_sub_epi32(x2i_2,x3i_2)));
+  //  *(y2)  = cpack(dy2r,dy2i);
+  dy2r = _mm_sub_epi32(_mm_sub_epi32(x2r_2,x3r_2),x1r_2);
+  dy2i = _mm_sub_epi32(_mm_sub_epi32(x2i_2,x3i_2),x1i_2);
+  *(y2)  = _mm_add_epi16(*(x0),cpack(dy2r,dy2i));
+  //  dy3r = _mm_sub_epi32(x0r_2,_mm_add_epi32(x1i_2,_mm_sub_epi32(x2r_2,x3i_2)));
+  //  dy3i = _mm_add_epi32(x0i_2,_mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2)));
+  //  *(y3) = cpack(dy3r,dy3i);
+  dy3r = _mm_sub_epi32(_mm_sub_epi32(x3i_2,x2r_2),x1i_2);
+  dy3i = _mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2));
+  *(y3) = _mm_add_epi16(*(x0),cpack(dy3r,dy3i));
 }
 
 static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
@@ -304,12 +316,13 @@ static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			  __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
 			  __m128i *tw1,__m128i *tw2,__m128i *tw3) {   
 
-  __m128i x0r_2,x0i_2,x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
+  __m128i x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
 
-  cmultc(*(x0),*(W0),&x0r_2,&x0i_2);		
+  //  cmultc(*(x0),*(W0),&x0r_2,&x0i_2);		
   cmultc(*(x1),*(tw1),&x1r_2,&x1i_2);
   cmultc(*(x2),*(tw2),&x2r_2,&x2i_2);
   cmultc(*(x3),*(tw3),&x3r_2,&x3i_2);
+  /*
   dy0r = _mm_add_epi32(x0r_2,_mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2)));
   dy0i = _mm_add_epi32(x0i_2,_mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2)));
   *(y0)  = cpack(dy0r,dy0i);
@@ -322,6 +335,19 @@ static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   dy1r = _mm_sub_epi32(x0r_2,_mm_add_epi32(x1i_2,_mm_sub_epi32(x2r_2,x3i_2)));
   dy1i = _mm_add_epi32(x0i_2,_mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2)));
   *(y1) = cpack(dy1r,dy1i);
+  */
+  dy0r = _mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2));
+  dy0i = _mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2));
+  *(y0)  = _mm_add_epi16(*(x0),cpack(dy0r,dy0i));
+  dy3r = _mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2));
+  dy3i = _mm_sub_epi32(_mm_sub_epi32(x3r_2,x2i_2),x1r_2);
+  *(y3)  = _mm_add_epi16(*(x0),cpack(dy3r,dy3i));
+  dy2r = _mm_sub_epi32(_mm_sub_epi32(x2r_2,x3r_2),x1r_2);
+  dy2i = _mm_sub_epi32(_mm_sub_epi32(x2i_2,x3i_2),x1i_2);
+  *(y2)  = _mm_add_epi16(*(x0),cpack(dy2r,dy2i));
+  dy1r = _mm_sub_epi32(_mm_sub_epi32(x3i_2,x2r_2),x1i_2);
+  dy1i = _mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2));
+  *(y1) = _mm_add_epi16(*(x0),cpack(dy1r,dy1i));
 }
 
 
@@ -331,7 +357,7 @@ static inline void bfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 static inline void bfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			     __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3) { 
 
-__m128i x1_flip,x3_flip;
+  register __m128i x1_flip,x3_flip;
 
   *(y0) = _mm_adds_epi16(*(x0),_mm_adds_epi16(*(x1),_mm_adds_epi16(*(x2),*(x3)))); 
 
@@ -352,7 +378,7 @@ static inline void ibfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 static inline void ibfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			      __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3) { 
   
-__m128i x1_flip,x3_flip;
+  register __m128i x1_flip,x3_flip;
 
   *(y0) = _mm_adds_epi16(*(x0),_mm_adds_epi16(*(x1),_mm_adds_epi16(*(x2),*(x3)))); 
 
@@ -459,32 +485,33 @@ static inline void bfly5_tw1(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,
 
 static inline void transpose16(__m128i *x,__m128i *y) __attribute__((always_inline));
 static inline void transpose16(__m128i *x,__m128i *y) {
-  __m128i ytmp[4];
+  register __m128i ytmp0,ytmp1,ytmp2,ytmp3;
 
-  ytmp[0] = _mm_unpacklo_epi32(x[0],x[1]);
-  ytmp[1] = _mm_unpackhi_epi32(x[0],x[1]);
-  ytmp[2] = _mm_unpacklo_epi32(x[2],x[3]);
-  ytmp[3] = _mm_unpackhi_epi32(x[2],x[3]);
-  y[0]    = _mm_unpacklo_epi64(ytmp[0],ytmp[2]);
-  y[1]    = _mm_unpackhi_epi64(ytmp[0],ytmp[2]);
-  y[2]    = _mm_unpacklo_epi64(ytmp[1],ytmp[3]);
-  y[3]    = _mm_unpackhi_epi64(ytmp[1],ytmp[3]);
+  ytmp0 = _mm_unpacklo_epi32(x[0],x[1]);
+  ytmp1 = _mm_unpackhi_epi32(x[0],x[1]);
+  ytmp2 = _mm_unpacklo_epi32(x[2],x[3]);
+  ytmp3 = _mm_unpackhi_epi32(x[2],x[3]);
+  y[0]    = _mm_unpacklo_epi64(ytmp0,ytmp2);
+  y[1]    = _mm_unpackhi_epi64(ytmp0,ytmp2);
+  y[2]    = _mm_unpacklo_epi64(ytmp1,ytmp3);
+  y[3]    = _mm_unpackhi_epi64(ytmp1,ytmp3);
 }
 
 // same as above but output is offset by off
 static inline void transpose16_ooff(__m128i *x,__m128i *y,int off) __attribute__((always_inline));
 
 static inline void transpose16_ooff(__m128i *x,__m128i *y,int off) {
-  __m128i ytmp[4],*y2=y;
+  register __m128i ytmp0,ytmp1,ytmp2,ytmp3;
+  __m128i *y2=y;
 
-  ytmp[0] = _mm_unpacklo_epi32(x[0],x[1]);
-  ytmp[1] = _mm_unpackhi_epi32(x[0],x[1]);
-  ytmp[2] = _mm_unpacklo_epi32(x[2],x[3]);
-  ytmp[3] = _mm_unpackhi_epi32(x[2],x[3]);
-  *y2     = _mm_unpacklo_epi64(ytmp[0],ytmp[2]);y2+=off;
-  *y2     = _mm_unpackhi_epi64(ytmp[0],ytmp[2]);y2+=off;
-  *y2     = _mm_unpacklo_epi64(ytmp[1],ytmp[3]);y2+=off;
-  *y2     = _mm_unpackhi_epi64(ytmp[1],ytmp[3]);
+  ytmp0 = _mm_unpacklo_epi32(x[0],x[1]);
+  ytmp1 = _mm_unpackhi_epi32(x[0],x[1]);
+  ytmp2 = _mm_unpacklo_epi32(x[2],x[3]);
+  ytmp3 = _mm_unpackhi_epi32(x[2],x[3]);
+  *y2     = _mm_unpacklo_epi64(ytmp0,ytmp2);y2+=off;
+  *y2     = _mm_unpackhi_epi64(ytmp0,ytmp2);y2+=off;
+  *y2     = _mm_unpacklo_epi64(ytmp1,ytmp3);y2+=off;
+  *y2     = _mm_unpackhi_epi64(ytmp1,ytmp3);
 }
 
 static inline void transpose4_ooff(__m64 *x,__m64 *y,int off)__attribute__((always_inline));
@@ -5483,10 +5510,13 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag){
 
 
 #ifdef MR_MAIN
+#include "time_meas.h"
+
 int main(int argc, char**argv) {
 
 
-  __m128i x[300],y[300],tw0,tw1,tw2,tw3;
+  __m128i x[2048],y[2048],tw0,tw1,tw2,tw3;
+  time_stats_t ts;
 
   int i;
 
@@ -5815,7 +5845,15 @@ int main(int argc, char**argv) {
   }
   memset((void*)&y[0],0,64*4);
   idft64((int16_t *)x,(int16_t *)y,1);
-  printf("\n\n64-point\n");
+  idft64((int16_t *)x,(int16_t *)y,1);
+  idft64((int16_t *)x,(int16_t *)y,1);
+  reset_meas(&ts);
+  for (i=0;i<10000;i++) {
+    start_meas(&ts);
+    idft64((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+  printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials);
   printf("X: ");
   for (i=0;i<16;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
@@ -5829,8 +5867,13 @@ int main(int argc, char**argv) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
   memset((void*)&y[0],0,128*4);
-  dft128((int16_t *)x,(int16_t *)y,0);
-  printf("\n\n128-point\n");
+  reset_meas(&ts);
+  for (i=0;i<10000;i++) {
+    start_meas(&ts);
+    dft128((int16_t *)x,(int16_t *)y,0);
+    stop_meas(&ts);
+  }
+  printf("\n\n128-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   printf("X: ");
   for (i=0;i<32;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
@@ -5844,8 +5887,13 @@ int main(int argc, char**argv) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
   memset((void*)&y[0],0,256*4);
-  dft256((int16_t *)x,(int16_t *)y,1);
-  printf("\n\n256-point\n");
+  reset_meas(&ts);
+  for (i=0;i<10000;i++) {
+    start_meas(&ts);
+    dft256((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+  printf("\n\n256-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   printf("X: ");
   for (i=0;i<64;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
