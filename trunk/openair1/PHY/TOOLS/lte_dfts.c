@@ -5918,6 +5918,14 @@ int main(int argc, char**argv) {
     stop_meas(&ts);
   }
   printf("\n\n1024-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+
+  reset_meas(&ts);
+  for (i=0;i<10000;i++) {
+    start_meas(&ts);
+    dft2048((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+  printf("\n\n2048-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   return(0);
 }
 
