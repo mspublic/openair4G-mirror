@@ -28,6 +28,9 @@ static void openair_cleanup(void);
 
 extern irqreturn_t openair_irq_handler(int irq, void *cookie);
 
+static int irq = 0;
+module_param(irq,int,S_IRUSR|S_IWUSR);
+
 
 static struct file_operations openair_fops = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
@@ -132,6 +135,7 @@ static int __init openair_init_module( void )
             return -ENODEV;
         }
         else {
+            printk("[openair][INIT_MODULE][INFO]: *** CARD DEVICE %d (pdev=%p) ENABLED, irq %d\n",card,pdev[card],irq);
             printk("[openair][INIT_MODULE][INFO]: *** CARD DEVICE %d (pdev=%p) ENABLED, irq %d\n",card,pdev[card],pdev[card]->irq);
             openair_pci_device_enabled[card] = 1;
         }
@@ -201,23 +205,39 @@ static int __init openair_init_module( void )
         exmimo_pci_kvirt[card].exmimo_id_ptr->board_exmimoversion = exmimo_id_tmp[card].board_exmimoversion;
         exmimo_pci_kvirt[card].exmimo_id_ptr->board_hwrev = exmimo_id_tmp[card].board_hwrev;
         exmimo_pci_kvirt[card].exmimo_id_ptr->board_swrev = exmimo_id_tmp[card].board_swrev;
-        
+       
+      if (irq!=0)
+        printk("[OPENAIR][SCHED][INIT] card %d: Trying to get IRQ %d\n", card,irq);
+      else
         printk("[OPENAIR][SCHED][INIT] card %d: Trying to get IRQ %d\n", card, pdev[card]->irq);
 
         openair_irq_enabled[card] = 0;
 
 // #ifdef CONFIG_PREEMPT_RT doesn't work -> fix misconfigured header files?
 #if 1
-        if ( (res = request_irq(pdev[card]->irq, openair_irq_handler, 
-                        IRQF_SHARED , "openair_rf", pdev[card] )) == 0)
+        if (irq!=0){
+        if ( (res = request_irq(irq, openair_irq_handler,
+                        IRQF_SHARED , "openair_rf", pdev[card] )) == 0)        {
+            openair_irq_enabled[card] = 1;
+        }
+        else {
+            printk("[EXMIMO][SCHED][INIT] Cannot get IRQ %d for HW, error: %d\n", irq, res);
+            openair_cleanup();
+            return -EBUSY;
+        }}
+        else
         {
+        if ( (res = request_irq(pdev[card]->irq, openair_irq_handler,
+                        IRQF_SHARED , "openair_rf", pdev[card] )) == 0)        {
             openair_irq_enabled[card] = 1;
         }
         else {
             printk("[EXMIMO][SCHED][INIT] Cannot get IRQ %d for HW, error: %d\n", pdev[card]->irq, res);
             openair_cleanup();
             return -EBUSY;
-        }
+        }}
+
+
 #else
         printk("Warning: didn't request IRQ for PREEMPT_REALTIME\n");
 #endif
@@ -277,7 +297,11 @@ static void  openair_cleanup(void)
         // unregister interrupt
         if ( openair_irq_enabled[card] ) {
             printk("[openair][CLEANUP] disabling interrupt card %d\n", card);
-            free_irq( pdev[card]->irq, pdev[card] );
+           if (irq!=0)
+             free_irq(irq, pdev[card] );
+           else
+             free_irq( pdev[card]->irq, pdev[card] );
+
             openair_irq_enabled[card] = 0;
         }
 
