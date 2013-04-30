@@ -5903,6 +5903,20 @@ int main(int argc, char**argv) {
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
   printf("\n");
 
+
+  for (i=0;i<10000;i++) {
+    start_meas(&ts);
+    dft512((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+  printf("\n\n512-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+
+  for (i=0;i<10000;i++) {
+    start_meas(&ts);
+    dft1024((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+  printf("\n\n1024-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   return(0);
 }
 
