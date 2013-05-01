@@ -97,10 +97,8 @@ static inline __m128i cpack(__m128i xre,__m128i xim) {
   register __m128i cpack_tmp1,cpack_tmp2;
 
   cpack_tmp1 = _mm_unpacklo_epi32(xre,xim);
-  cpack_tmp1 = _mm_srai_epi32(cpack_tmp1,15);
   cpack_tmp2 = _mm_unpackhi_epi32(xre,xim);
-  cpack_tmp2 = _mm_srai_epi32(cpack_tmp2,15);
-  return(_mm_packs_epi32(cpack_tmp1,cpack_tmp2));
+  return(_mm_packs_epi32(_mm_srai_epi32(cpack_tmp1,15),_mm_srai_epi32(cpack_tmp2,15)));
 
 }
 
@@ -130,9 +128,20 @@ static inline void packed_cmultc(__m128i a,__m128i b, __m128i *c) {
 static inline __m128i packed_cmult2(__m128i a,__m128i b) __attribute__((always_inline));
 
 static inline __m128i packed_cmult2(__m128i a,__m128i b) {
-
+  
+  register __m128i cre,cim,mmtmpb;
+  
+  mmtmpb    = _mm_sign_epi16(b,*(__m128i*)reflip);
+  cre       = _mm_madd_epi16(a,mmtmpb);
+  mmtmpb    = _mm_shufflelo_epi16(b,_MM_SHUFFLE(2,3,0,1));
+  mmtmpb    = _mm_shufflehi_epi16(mmtmpb,_MM_SHUFFLE(2,3,0,1));
+  cim       = _mm_madd_epi16(a,mmtmpb);
+  
+  /*
   __m128i cre,cim;
   cmult(a,b,&cre,&cim);
+  */
+
   return(cpack(cre,cim));
 
 }
@@ -422,13 +431,28 @@ static inline void bfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			    __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
 			    __m128i *tw1,__m128i *tw2,__m128i *tw3) {   
 
-  __m128i x1t,x2t,x3t;
-
+  register __m128i x1t,x2t,x3t;
+  register __m128i x1_flip,x3_flip;
 
   x1t = packed_cmult2(*(x1),*(tw1));
   x2t = packed_cmult2(*(x2),*(tw2));
   x3t = packed_cmult2(*(x3),*(tw3));
-  bfly4_tw1(x0,&x1t,&x2t,&x3t,y0,y1,y2,y3);
+
+
+  //  bfly4_tw1(x0,&x1t,&x2t,&x3t,y0,y1,y2,y3);
+  *(y0) = _mm_adds_epi16(*(x0),_mm_adds_epi16(x1t,_mm_adds_epi16(x2t,x3t))); 
+
+  x1_flip = _mm_sign_epi16(x1t,*(__m128i*)conjugatedft);
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_sign_epi16(x3t,*(__m128i*)conjugatedft);
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  *(y1)   = _mm_adds_epi16(*(x0),_mm_subs_epi16(x1_flip,_mm_adds_epi16(x2t,x3_flip)));
+  *(y2)   = _mm_subs_epi16(*(x0),_mm_subs_epi16(*(x1),_mm_subs_epi16(x2t,*(x3))));
+  *(y3)   = _mm_subs_epi16(*(x0),_mm_adds_epi16(x1_flip,_mm_subs_epi16(x2t,x3_flip)));
+
+
 
 }
 
@@ -948,9 +972,9 @@ void dft256(int16_t *x,int16_t *y,int scale) {
   dft64((int16_t*)(xtmp+48),(int16_t*)(ytmp+48),1);
 
   for (i=0;i<16;i++) {
-    bfly4(ytmpp,ytmpp+16,ytmpp+32,ytmpp+48,
-	  y128p,y128p+16,y128p+32,y128p+48,
-	  tw256_128p,tw256_128p+16,tw256_128p+32);
+    bfly4_16(ytmpp,ytmpp+16,ytmpp+32,ytmpp+48,
+	     y128p,y128p+16,y128p+32,y128p+48,
+	     tw256_128p,tw256_128p+16,tw256_128p+32);
     tw256_128p++;
     y128p++;
     ytmpp++;
