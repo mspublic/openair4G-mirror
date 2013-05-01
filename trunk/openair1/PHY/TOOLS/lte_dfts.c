@@ -308,6 +308,24 @@ static inline void bfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y3) = _mm_add_epi16(*(x0),cpack(dy3r,dy3i));
 }
 
+#define bfly4_v2(x0,x1,x2,x3,y0,y1,y2,y3,tw1,tw2,tw3) \
+  cmult(x1,tw1,&x1r_2,&x1i_2);\
+  cmult(x2,tw2,&x2r_2,&x2i_2);\
+  cmult(x3,tw3,&x3r_2,&x3i_2);\
+  dy0r = _mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2));\
+  dy0i = _mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2));\
+  y0  = _mm_add_epi16(x0,cpack(dy0r,dy0i));\
+  dy1r = _mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2));\
+  dy1i = _mm_sub_epi32(_mm_sub_epi32(x3r_2,x2i_2),x1r_2);\
+  y1  = _mm_add_epi16(x0,cpack(dy1r,dy1i));\
+  dy2r = _mm_sub_epi32(_mm_sub_epi32(x2r_2,x3r_2),x1r_2);\
+  dy2i = _mm_sub_epi32(_mm_sub_epi32(x2i_2,x3i_2),x1i_2);\
+  y2  = _mm_add_epi16(x0,cpack(dy2r,dy2i));\
+  dy3r = _mm_sub_epi32(_mm_sub_epi32(x3i_2,x2r_2),x1i_2);\
+  dy3i = _mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2));\
+  y3 = _mm_add_epi16(x0,cpack(dy3r,dy3i));
+
+
 static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			  __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
 			  __m128i *tw1,__m128i *tw2,__m128i *tw3)__attribute__((always_inline));
@@ -371,6 +389,19 @@ static inline void bfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y2)   = _mm_subs_epi16(*(x0),_mm_subs_epi16(*(x1),_mm_subs_epi16(*(x2),*(x3))));
   *(y3)   = _mm_subs_epi16(*(x0),_mm_adds_epi16(x1_flip,_mm_subs_epi16(*(x2),x3_flip)));
 }
+
+#define bfly4_tw1_v2(x0,x1,x2,x3,y0,y1,y2,y3,x1_flip,x2_flip) \
+  y0 = _mm_adds_epi16(x0,_mm_adds_epi16(x1,_mm_adds_epi16(x2,x3))); \
+  x1_flip = _mm_sign_epi16(x1,*(__m128i*)conjugatedft); \
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1)); \
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1)); \
+  x3_flip = _mm_sign_epi16(x3,*(__m128i*)conjugatedft); \
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1)); \
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1)); \
+  y1      = _mm_adds_epi16(x0,_mm_subs_epi16(x1_flip,_mm_adds_epi16(x2,x3_flip))); \
+  y2      = _mm_subs_epi16(x0,_mm_subs_epi16(x1,_mm_subs_epi16(x2,x3))); \
+  y3      = _mm_subs_epi16(x0,_mm_adds_epi16(x1_flip,_mm_subs_epi16(x2,x3_flip)));
+
 
 static inline void ibfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 			      __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3)__attribute__((always_inline)); 
@@ -497,6 +528,17 @@ static inline void transpose16(__m128i *x,__m128i *y) {
   y[3]    = _mm_unpackhi_epi64(ytmp1,ytmp3);
 }
 
+#define transpose16_v2(x0,x1,x2,x3,y0,y1,y2,y3,yt0,yt1,yt2,yt3)	\
+  yt0 = _mm_unpacklo_epi32(x0,x1);\
+  yt1 = _mm_unpackhi_epi32(x0,x1);\
+  yt2 = _mm_unpacklo_epi32(x2,x3);\
+  yt3 = _mm_unpackhi_epi32(x2,x3);\
+  y0  = _mm_unpacklo_epi64(yt0,yt2);\
+  y1  = _mm_unpackhi_epi64(yt0,yt2);\
+  y2  = _mm_unpacklo_epi64(yt1,yt3);\
+  y3  = _mm_unpackhi_epi64(yt1,yt3);
+
+
 // same as above but output is offset by off
 static inline void transpose16_ooff(__m128i *x,__m128i *y,int off) __attribute__((always_inline));
 
@@ -531,7 +573,7 @@ static inline void dft16(int16_t *x,int16_t *y) __attribute__((always_inline));
 static inline void dft16(int16_t *x,int16_t *y) {
 
   __m128i ytmp[4],*tw16_128=(__m128i *)tw16,*x128=(__m128i *)x,*y128=(__m128i *)y;
-
+  
   bfly4_tw1(x128,x128+1,x128+2,x128+3,
 	    y128,y128+1,y128+2,y128+3);
 
@@ -540,6 +582,24 @@ static inline void dft16(int16_t *x,int16_t *y) {
   bfly4(ytmp,ytmp+1,ytmp+2,ytmp+3,
 	y128,y128+1,y128+2,y128+3,
 	tw16_128,tw16_128+1,tw16_128+2);
+
+}
+
+static inline void dft16_v2(int16_t *x,int16_t *y) __attribute__((always_inline));
+
+static inline void dft16_v2(int16_t *x,int16_t *y) {
+
+  __m128i *tw16_128=(__m128i *)tw16,*x128=(__m128i *)x,*y128=(__m128i *)y;
+  __m128i x1_flip,x3_flip,y0,y1,y2,y3,yt0,yt1,yt2,yt3,ytt0,ytt1,ytt2,ytt3;
+  __m128i x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
+
+  bfly4_tw1_v2(x128[0],x128[1],x128[2],x128[3],y0,y1,y2,y3,x1_flip,x3_flip);
+
+  transpose16_v2(y0,y1,y2,y3,yt0,yt1,yt2,yt3,ytt0,ytt1,ytt2,ytt3);
+
+  bfly4_v2(yt0,yt1,yt2,yt3,
+	   y128[0],y128[1],y128[2],y128[3],
+	   tw16_128[0],tw16_128[1],tw16_128[2]);
 
 }
 
@@ -575,10 +635,10 @@ void dft64(int16_t *x,int16_t *y,int scale) {
   transpose16_ooff(x128+8,xtmp+2,4);
   transpose16_ooff(x128+12,xtmp+3,4);
   
-  dft16((int16_t*)(xtmp),(int16_t*)ytmp);
-  dft16((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
-  dft16((int16_t*)(xtmp+8),(int16_t*)(ytmp+8));
-  dft16((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
+  dft16_v2((int16_t*)(xtmp),(int16_t*)ytmp);
+  dft16_v2((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
+  dft16_v2((int16_t*)(xtmp+8),(int16_t*)(ytmp+8));
+  dft16_v2((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
   
 
   bfly4(ytmp,ytmp+4,ytmp+8,ytmp+12,
