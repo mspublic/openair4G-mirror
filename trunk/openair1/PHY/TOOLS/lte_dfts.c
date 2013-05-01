@@ -594,6 +594,7 @@ static inline void dft16(int16_t *x,int16_t *y) {
 
   __m128i ytmp[4],*tw16_128=(__m128i *)tw16,*x128=(__m128i *)x,*y128=(__m128i *)y;
   
+  /*
   bfly4_tw1(x128,x128+1,x128+2,x128+3,
 	    y128,y128+1,y128+2,y128+3);
 
@@ -602,7 +603,46 @@ static inline void dft16(int16_t *x,int16_t *y) {
   bfly4_16(ytmp,ytmp+1,ytmp+2,ytmp+3,
 	   y128,y128+1,y128+2,y128+3,
 	   tw16_128,tw16_128+1,tw16_128+2);
+  */
 
+  register __m128i x1_flip,x3_flip;
+  register __m128i ytmp0,ytmp1,ytmp2,ytmp3,xtmp0,xtmp1,xtmp2,xtmp3;
+
+  // First stage 4 butterflies without input twiddles
+  xtmp0   = _mm_adds_epi16(x128[0],_mm_adds_epi16(x128[1],_mm_adds_epi16(x128[2],x128[3]))); 
+  x1_flip = _mm_sign_epi16(x128[1],*(__m128i*)conjugatedft);
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_sign_epi16(x128[3],*(__m128i*)conjugatedft);
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  xtmp1   = _mm_adds_epi16(x128[0],_mm_subs_epi16(x1_flip,_mm_adds_epi16(x128[2],x3_flip)));
+  xtmp2   = _mm_subs_epi16(x128[0],_mm_subs_epi16(x128[1],_mm_subs_epi16(x128[2],x128[3])));
+  xtmp3   = _mm_subs_epi16(x128[0],_mm_adds_epi16(x1_flip,_mm_subs_epi16(x128[2],x3_flip)));
+  ytmp0   = _mm_unpacklo_epi32(xtmp0,xtmp1);
+  ytmp1   = _mm_unpackhi_epi32(xtmp0,xtmp1);
+  ytmp2   = _mm_unpacklo_epi32(xtmp2,xtmp3);
+  ytmp3   = _mm_unpackhi_epi32(xtmp2,xtmp3);
+  xtmp0   = _mm_unpacklo_epi64(ytmp0,ytmp2);
+  xtmp1   = _mm_unpackhi_epi64(ytmp0,ytmp2);
+  xtmp2   = _mm_unpacklo_epi64(ytmp1,ytmp3);
+  xtmp3   = _mm_unpackhi_epi64(ytmp1,ytmp3);
+
+  // Second stage 4 butterflies with input twiddles
+  xtmp1 = packed_cmult2(xtmp1,tw16_128[0]);
+  xtmp2 = packed_cmult2(xtmp2,tw16_128[1]);
+  xtmp3 = packed_cmult2(xtmp3,tw16_128[2]);
+
+  y128[0] = _mm_adds_epi16(xtmp0,_mm_adds_epi16(xtmp1,_mm_adds_epi16(xtmp2,xtmp3))); 
+  x1_flip = _mm_sign_epi16(xtmp1,*(__m128i*)conjugatedft);
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_sign_epi16(xtmp3,*(__m128i*)conjugatedft);
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  y128[1] = _mm_adds_epi16(xtmp0,_mm_subs_epi16(x1_flip,_mm_adds_epi16(xtmp2,x3_flip)));
+  y128[2] = _mm_subs_epi16(xtmp0,_mm_subs_epi16(xtmp1,_mm_subs_epi16(xtmp2,xtmp3)));
+  y128[3] = _mm_subs_epi16(xtmp0,_mm_adds_epi16(x1_flip,_mm_subs_epi16(xtmp2,x3_flip)));
 }
 
 static inline void idft16(int16_t *x,int16_t *y)__attribute__((always_inline)); 
