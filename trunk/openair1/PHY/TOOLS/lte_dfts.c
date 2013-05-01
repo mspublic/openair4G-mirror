@@ -619,21 +619,21 @@ void dft64(int16_t *x,int16_t *y,int scale) {
   dft16((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
   
 
-  bfly4(ytmp,ytmp+4,ytmp+8,ytmp+12,
-	y128,y128+4,y128+8,y128+12,
-	tw64_128,tw64_128+4,tw64_128+8);
+  bfly4_16(ytmp,ytmp+4,ytmp+8,ytmp+12,
+	   y128,y128+4,y128+8,y128+12,
+	   tw64_128,tw64_128+4,tw64_128+8);
 
-  bfly4(ytmp+1,ytmp+5,ytmp+9,ytmp+13,
-	y128+1,y128+5,y128+9,y128+13,
-	tw64_128+1,tw64_128+5,tw64_128+9);
+  bfly4_16(ytmp+1,ytmp+5,ytmp+9,ytmp+13,
+	   y128+1,y128+5,y128+9,y128+13,
+	   tw64_128+1,tw64_128+5,tw64_128+9);
 
-  bfly4(ytmp+2,ytmp+6,ytmp+10,ytmp+14,
-	y128+2,y128+6,y128+10,y128+14,
-	tw64_128+2,tw64_128+6,tw64_128+10);
+  bfly4_16(ytmp+2,ytmp+6,ytmp+10,ytmp+14,
+	   y128+2,y128+6,y128+10,y128+14,
+	   tw64_128+2,tw64_128+6,tw64_128+10);
 
-  bfly4(ytmp+3,ytmp+7,ytmp+11,ytmp+15,
-	y128+3,y128+7,y128+11,y128+15,
-	tw64_128+3,tw64_128+7,tw64_128+11);
+  bfly4_16(ytmp+3,ytmp+7,ytmp+11,ytmp+15,
+	   y128+3,y128+7,y128+11,y128+15,
+	   tw64_128+3,tw64_128+7,tw64_128+11);
 
   if (scale>0) {
 
