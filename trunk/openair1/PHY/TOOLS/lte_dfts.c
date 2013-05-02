@@ -741,8 +741,8 @@ void dft64(int16_t *x,int16_t *y,int scale) {
 
   __m128i xtmp[16],ytmp[16],*tw64a_128=(__m128i *)tw64a,*tw64b_128=(__m128i *)tw64b,*x128=(__m128i *)x,*y128=(__m128i *)y;
 
-  /*
-#ifdef MR_MAIN
+  
+#ifdef D64STATS
   time_stats_t ts_t,ts_d,ts_b;
 
   reset_meas(&ts_t);
@@ -750,31 +750,31 @@ void dft64(int16_t *x,int16_t *y,int scale) {
   reset_meas(&ts_b);
   start_meas(&ts_t);
 #endif
-  */
+  
 
   transpose16_ooff(x128,xtmp,4);
   transpose16_ooff(x128+4,xtmp+1,4);
   transpose16_ooff(x128+8,xtmp+2,4);
   transpose16_ooff(x128+12,xtmp+3,4);
 
-  /*
-#ifdef MR_MAIN
+  
+#ifdef D64STATS
   stop_meas(&ts_t);
   start_meas(&ts_d);
 #endif
-  */
+  
 
   dft16((int16_t*)(xtmp),(int16_t*)ytmp);
   dft16((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
   dft16((int16_t*)(xtmp+8),(int16_t*)(ytmp+8));
   dft16((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
 
-  /*  
-#ifdef MR_MAIN
+    
+#ifdef D64STATS
   stop_meas(&ts_d);
   start_meas(&ts_b);
 #endif
-  */
+  
 
   bfly4_16(ytmp,ytmp+4,ytmp+8,ytmp+12,
 	   y128,y128+4,y128+8,y128+12,
@@ -795,12 +795,12 @@ void dft64(int16_t *x,int16_t *y,int scale) {
 	   y128+3,y128+7,y128+11,y128+15,
 	   tw64a_128+3,tw64a_128+7,tw64a_128+11,
 	   tw64b_128+3,tw64b_128+7,tw64b_128+11);
-  /* 
-#ifdef MR_MAIN
+   
+#ifdef D64STATS
   stop_meas(&ts_b);
   printf("t: %llu cycles, d: %llu cycles, b: %llu cycles\n",ts_t.diff,ts_d.diff,ts_b.diff);
 #endif
-  */
+  
 
   if (scale>0) {
 
@@ -6058,13 +6058,13 @@ int main(int argc, char**argv) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
   memset((void*)&y[0],0,64*4);
-  idft64((int16_t *)x,(int16_t *)y,1);
-  idft64((int16_t *)x,(int16_t *)y,1);
-  idft64((int16_t *)x,(int16_t *)y,1);
+  dft64((int16_t *)x,(int16_t *)y,1);
+  dft64((int16_t *)x,(int16_t *)y,1);
+  dft64((int16_t *)x,(int16_t *)y,1); 
   reset_meas(&ts);
   for (i=0;i<10000;i++) {
     start_meas(&ts);
-    idft64((int16_t *)x,(int16_t *)y,1);
+    dft64((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
   printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials);
