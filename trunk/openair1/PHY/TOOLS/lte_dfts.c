@@ -477,6 +477,52 @@ static inline void bfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 
 }
 
+static inline void ibfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
+			     __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
+			     __m128i *tw1,__m128i *tw2,__m128i *tw3,
+			     __m128i *tw1b,__m128i *tw2b,__m128i *tw3b)__attribute__((always_inline));
+
+static inline void ibfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
+			     __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
+			     __m128i *tw1,__m128i *tw2,__m128i *tw3,
+			     __m128i *tw1b,__m128i *tw2b,__m128i *tw3b) {   
+  
+  register __m128i x1t,x2t,x3t,x02t,x13t;
+  register __m128i x1_flip,x3_flip;
+
+  x1t = packed_cmult2(*(x1),*(tw1),*(tw1b));
+  x2t = packed_cmult2(*(x2),*(tw2),*(tw2b));
+  x3t = packed_cmult2(*(x3),*(tw3),*(tw3b));
+
+
+  //  bfly4_tw1(x0,&x1t,&x2t,&x3t,y0,y1,y2,y3);
+  x02t  = _mm_adds_epi16(*(x0),x2t);
+  x13t  = _mm_adds_epi16(x1t,x3t);
+  /*
+  *(y0) = _mm_adds_epi16(*(x0),_mm_adds_epi16(x1t,_mm_adds_epi16(x2t,x3t))); 
+  *(y2)   = _mm_subs_epi16(*(x0),_mm_subs_epi16(x1t,_mm_subs_epi16(x2t,x3t)));
+  */
+  *(y0)   = _mm_adds_epi16(x02t,x13t);
+  *(y2)   = _mm_subs_epi16(x02t,x13t);
+
+  x1_flip = _mm_sign_epi16(x1t,*(__m128i*)conjugatedft);
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_sign_epi16(x3t,*(__m128i*)conjugatedft);
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+
+  x02t  = _mm_subs_epi16(*(x0),x2t);
+  x13t  = _mm_subs_epi16(x1_flip,x3_flip);
+  /*
+  *(y1)   = _mm_adds_epi16(*(x0),_mm_subs_epi16(x1_flip,_mm_adds_epi16(x2t,x3_flip)));  // x0 + x1f - x2 - x3f
+  *(y3)   = _mm_subs_epi16(*(x0),_mm_adds_epi16(x1_flip,_mm_subs_epi16(x2t,x3_flip)));  // x0 - x1f - x2 + x3f
+  */
+  *(y3)   = _mm_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  *(y1)   = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+
+}
+
 static inline void bfly5(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,__m128i *x4,
 			 __m128i *y0, __m128i *y1, __m128i *y2, __m128i *y3,__m128i *y4,
 			 __m128i *tw1,__m128i *tw2,__m128i *tw3,__m128i *tw4)__attribute__((always_inline));
@@ -605,16 +651,21 @@ static inline void transpose4_ooff(__m64 *x,__m64 *y,int off) {
 
 // 16-point optimized DFT kernel
 
-int16_t tw16[24] __attribute__((aligned(16))) = { 32767,0,30272,-12540,23169,-23170,12539,-30273,
-						  32767,0,23169,-23170,0,-32767,-23170,-23170,
+int16_t tw16[24] __attribute__((aligned(16))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
+						  32767,0,23169,-23170,0     ,-32767,-23170,-23170,
 						  32767,0,12539,-30273,-23170,-23170,-30273,12539};
 
-int16_t tw16a[24] __attribute__((aligned(16))) = {32767,0,30272,12540,23169,23170,12539,30273,
-						  32767,0,23169,23170,0,32767,-23170,23170,
+int16_t tw16a[24] __attribute__((aligned(16))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
+						  32767,0,23169,23170,0     ,32767,-23170,23170,
 						  32767,0,12539,30273,-23170,23170,-30273,-12539};
-int16_t tw16b[24] __attribute__((aligned(16))) = { 0,32767,-12540,30272,-23170,23169,-30273,12539,
-						   0,32767,-23170,23169,0,-23170,-23170,-32767,
-						   0,32767,-30273,12539,-23170,-23170,12539,-30273};
+
+int16_t tw16b[24] __attribute__((aligned(16))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
+						   0,32767,-23170,23169,-32767,0     ,-23170,-23170,
+						   0,32767,-30273,12539,-23170,-23170,12539 ,-30273};
+
+int16_t tw16c[24] __attribute__((aligned(16))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,
+						   0,32767,23170,23169,32767,0     ,23170 ,-23170,
+						   0,32767,30273,12539,23170,-23170,-12539,-30273};
 
 static inline void dft16(int16_t *x,int16_t *y) __attribute__((always_inline));
 
@@ -704,6 +755,95 @@ static inline void dft16(int16_t *x,int16_t *y) {
   */
 }
 
+static inline void idft16(int16_t *x,int16_t *y) __attribute__((always_inline));
+
+static inline void idft16(int16_t *x,int16_t *y) {
+
+  __m128i ytmp[4],*tw16a_128=(__m128i *)tw16,*tw16b_128=(__m128i *)tw16c,*x128=(__m128i *)x,*y128=(__m128i *)y;
+  
+  /*
+  bfly4_tw1(x128,x128+1,x128+2,x128+3,
+	    y128,y128+1,y128+2,y128+3);
+
+  transpose16(y128,ytmp);
+
+  bfly4_16(ytmp,ytmp+1,ytmp+2,ytmp+3,
+	   y128,y128+1,y128+2,y128+3,
+	   tw16_128,tw16_128+1,tw16_128+2);
+  */
+
+  register __m128i x1_flip,x3_flip,x02t,x13t;
+  register __m128i ytmp0,ytmp1,ytmp2,ytmp3,xtmp0,xtmp1,xtmp2,xtmp3;
+
+  // First stage : 4 Radix-4 butterflies without input twiddles
+
+  x02t    = _mm_adds_epi16(x128[0],x128[2]);
+  x13t    = _mm_adds_epi16(x128[1],x128[3]);
+  xtmp0   = _mm_adds_epi16(x02t,x13t);
+  xtmp2   = _mm_subs_epi16(x02t,x13t);
+
+  /*
+  xtmp0   = _mm_adds_epi16(x128[0],_mm_adds_epi16(x128[1],_mm_adds_epi16(x128[2],x128[3]))); 
+  xtmp2   = _mm_subs_epi16(x128[0],_mm_subs_epi16(x128[1],_mm_subs_epi16(x128[2],x128[3])));
+  */
+  x1_flip = _mm_sign_epi16(x128[1],*(__m128i*)conjugatedft);
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_sign_epi16(x128[3],*(__m128i*)conjugatedft);
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+
+  x02t    = _mm_subs_epi16(x128[0],x128[2]);
+  x13t    = _mm_subs_epi16(x1_flip,x3_flip);
+  xtmp3   = _mm_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  xtmp1   = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+  /*
+  xtmp1   = _mm_adds_epi16(x128[0],_mm_subs_epi16(x1_flip,_mm_adds_epi16(x128[2],x3_flip)));
+  xtmp3   = _mm_subs_epi16(x128[0],_mm_adds_epi16(x1_flip,_mm_subs_epi16(x128[2],x3_flip)));
+  */
+
+  ytmp0   = _mm_unpacklo_epi32(xtmp0,xtmp1);
+  ytmp1   = _mm_unpackhi_epi32(xtmp0,xtmp1);
+  ytmp2   = _mm_unpacklo_epi32(xtmp2,xtmp3);
+  ytmp3   = _mm_unpackhi_epi32(xtmp2,xtmp3);
+  xtmp0   = _mm_unpacklo_epi64(ytmp0,ytmp2);
+  xtmp1   = _mm_unpackhi_epi64(ytmp0,ytmp2);
+  xtmp2   = _mm_unpacklo_epi64(ytmp1,ytmp3);
+  xtmp3   = _mm_unpackhi_epi64(ytmp1,ytmp3);
+
+  // Second stage : 4 Radix-4 butterflies with input twiddles
+  xtmp1 = packed_cmult2(xtmp1,tw16a_128[0],tw16b_128[0]);
+  xtmp2 = packed_cmult2(xtmp2,tw16a_128[1],tw16b_128[1]);
+  xtmp3 = packed_cmult2(xtmp3,tw16a_128[2],tw16b_128[2]);
+
+  x02t    = _mm_adds_epi16(xtmp0,xtmp2);
+  x13t    = _mm_adds_epi16(xtmp1,xtmp3);
+  y128[0] = _mm_adds_epi16(x02t,x13t);
+  y128[2] = _mm_subs_epi16(x02t,x13t);
+
+  /*
+  y128[0] = _mm_adds_epi16(xtmp0,_mm_adds_epi16(xtmp1,_mm_adds_epi16(xtmp2,xtmp3))); 
+  y128[2] = _mm_subs_epi16(xtmp0,_mm_subs_epi16(xtmp1,_mm_subs_epi16(xtmp2,xtmp3)));
+  */
+
+  x1_flip = _mm_sign_epi16(xtmp1,*(__m128i*)conjugatedft);
+  x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x1_flip = _mm_shufflehi_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_sign_epi16(xtmp3,*(__m128i*)conjugatedft);
+  x3_flip = _mm_shufflelo_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+  x3_flip = _mm_shufflehi_epi16(x3_flip,_MM_SHUFFLE(2,3,0,1));
+
+  x02t    = _mm_subs_epi16(xtmp0,xtmp2);
+  x13t    = _mm_subs_epi16(x1_flip,x3_flip);
+  y128[3] = _mm_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  y128[1] = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+  /*
+  y128[1] = _mm_adds_epi16(xtmp0,_mm_subs_epi16(x1_flip,_mm_adds_epi16(xtmp2,x3_flip)));
+  y128[3] = _mm_subs_epi16(xtmp0,_mm_adds_epi16(x1_flip,_mm_subs_epi16(xtmp2,x3_flip)));
+  */
+}
+
+/*
 static inline void idft16(int16_t *x,int16_t *y)__attribute__((always_inline)); 
 
 static inline void idft16(int16_t *x,int16_t *y) {
@@ -721,6 +861,10 @@ static inline void idft16(int16_t *x,int16_t *y) {
 	 tw16_128,tw16_128+1,tw16_128+2);
 
 }
+*/
+
+
+
 // 64-point optimized DFT kernel
 
 int16_t tw64[96] __attribute__((aligned(16))) = { 32767,0,32609,-3212,32137,-6393,31356,-9512,30272,-12540,28897,-15447,27244,-18205,25329,-20788,23169,-23170,20787,-25330,18204,-27245,15446,-28898,12539,-30273,9511,-31357,6392,-32138,3211,-32610,
@@ -734,6 +878,10 @@ int16_t tw64a[96] __attribute__((aligned(16))) = { 32767,0,32609,3212,32137,6393
 int16_t tw64b[96] __attribute__((aligned(16))) = { 0,32767,-3212,32609,-6393,32137,-9512,31356,-12540,30272,-15447,28897,-18205,27244,-20788,25329,-23170,23169,-25330,20787,-27245,18204,-28898,15446,-30273,12539,-31357,9511,-32138,6392,-32610,3211,
 						   0,32767,-6393,32137,-12540,30272,-18205,27244,-23170,23169,-27245,18204,-30273,12539,-32138,6392,-32767,0,-32138,-6393,-30273,-12540,-27245,-18205,-23170,-23170,-18205,-27245,-12540,-30273,-6393,-32138,
 						   0,32767,-9512,31356,-18205,27244,-25330,20787,-30273,12539,-32610,3211,-32138,-6393,-28898,-15447,-23170,-23170,-15447,-28898,-6393,-32138,3211,-32610,12539,-30273,20787,-25330,27244,-18205,31356,-9512};
+
+int16_t tw64c[96] __attribute__((aligned(16))) = { 0,32767,3212,32609,6393,32137,9512,31356,12540,30272,15447,28897,18205,27244,20788,25329,23170,23169,25330,20787,27245,18204,28898,15446,30273,12539,31357,9511,32138,6392,32610,3211,
+						   0,32767,6393,32137,12540,30272,18205,27244,23170,23169,27245,18204,30273,12539,32138,6392,32767,0,32138,-6393,30273,-12540,27245,-18205,23170,-23170,18205,-27245,12540,-30273,6393,-32138,
+						   0,32767,9512,31356,18205,27244,25330,20787,30273,12539,32610,3211,32138,-6393,28898,-15447,23170,-23170,15447,-28898,6393,-32138,-3211,-32610,-12539,-30273,-20787,-25330,-27244,-18205,-31356,-9512};
 
 
 
@@ -827,8 +975,98 @@ void dft64(int16_t *x,int16_t *y,int scale) {
 
 }
 
+void idft64(int16_t *x,int16_t *y,int scale) {
+
+  __m128i xtmp[16],ytmp[16],*tw64a_128=(__m128i *)tw64,*tw64b_128=(__m128i *)tw64c,*x128=(__m128i *)x,*y128=(__m128i *)y;
+
+  
+#ifdef D64STATS
+  time_stats_t ts_t,ts_d,ts_b;
+
+  reset_meas(&ts_t);
+  reset_meas(&ts_d);
+  reset_meas(&ts_b);
+  start_meas(&ts_t);
+#endif
+  
+
+  transpose16_ooff(x128,xtmp,4);
+  transpose16_ooff(x128+4,xtmp+1,4);
+  transpose16_ooff(x128+8,xtmp+2,4);
+  transpose16_ooff(x128+12,xtmp+3,4);
+
+  
+#ifdef D64STATS
+  stop_meas(&ts_t);
+  start_meas(&ts_d);
+#endif
+  
+
+  idft16((int16_t*)(xtmp),(int16_t*)ytmp);
+  idft16((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
+  idft16((int16_t*)(xtmp+8),(int16_t*)(ytmp+8));
+  idft16((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
+
+    
+#ifdef D64STATS
+  stop_meas(&ts_d);
+  start_meas(&ts_b);
+#endif
+  
+
+  ibfly4_16(ytmp,ytmp+4,ytmp+8,ytmp+12,
+	    y128,y128+4,y128+8,y128+12,
+	    tw64a_128,tw64a_128+4,tw64a_128+8,
+	    tw64b_128,tw64b_128+4,tw64b_128+8);
+
+  ibfly4_16(ytmp+1,ytmp+5,ytmp+9,ytmp+13,
+	    y128+1,y128+5,y128+9,y128+13,
+	    tw64a_128+1,tw64a_128+5,tw64a_128+9,
+	    tw64b_128+1,tw64b_128+5,tw64b_128+9);
+  
+  ibfly4_16(ytmp+2,ytmp+6,ytmp+10,ytmp+14,
+	    y128+2,y128+6,y128+10,y128+14,
+	    tw64a_128+2,tw64a_128+6,tw64a_128+10,
+	    tw64b_128+2,tw64b_128+6,tw64b_128+10);
+  
+  ibfly4_16(ytmp+3,ytmp+7,ytmp+11,ytmp+15,
+	    y128+3,y128+7,y128+11,y128+15,
+	    tw64a_128+3,tw64a_128+7,tw64a_128+11,
+	    tw64b_128+3,tw64b_128+7,tw64b_128+11);
+   
+#ifdef D64STATS
+  stop_meas(&ts_b);
+  printf("t: %llu cycles, d: %llu cycles, b: %llu cycles\n",ts_t.diff,ts_d.diff,ts_b.diff);
+#endif
+  
+
+  if (scale>0) {
+
+    y128[0]  = _mm_srai_epi16(y128[0],3);
+    y128[1]  = _mm_srai_epi16(y128[1],3);
+    y128[2]  = _mm_srai_epi16(y128[2],3);
+    y128[3]  = _mm_srai_epi16(y128[3],3);
+    y128[4]  = _mm_srai_epi16(y128[4],3);
+    y128[5]  = _mm_srai_epi16(y128[5],3);
+    y128[6]  = _mm_srai_epi16(y128[6],3);
+    y128[7]  = _mm_srai_epi16(y128[7],3);
+    y128[8]  = _mm_srai_epi16(y128[8],3);
+    y128[9]  = _mm_srai_epi16(y128[9],3);
+    y128[10] = _mm_srai_epi16(y128[10],3);
+    y128[11] = _mm_srai_epi16(y128[11],3);
+    y128[12] = _mm_srai_epi16(y128[12],3);
+    y128[13] = _mm_srai_epi16(y128[13],3);
+    y128[14] = _mm_srai_epi16(y128[14],3);
+    y128[15] = _mm_srai_epi16(y128[15],3);
+
+  }
+  _mm_empty();
+  _m_empty();
+
+}
 
 
+/*
 void idft64(int16_t *x,int16_t *y,int scale) {
 
   __m128i xtmp[16],ytmp[16],*tw64_128=(__m128i *)tw64,*x128=(__m128i *)x,*y128=(__m128i *)y;
@@ -884,6 +1122,7 @@ void idft64(int16_t *x,int16_t *y,int scale) {
   _m_empty();
 
 }
+*/
 
 int16_t tw128[128] __attribute__((aligned(16))) = {  32767,0,32727,-1608,32609,-3212,32412,-4808,32137,-6393,31785,-7962,31356,-9512,30851,-11039,30272,-12540,29621,-14010,28897,-15447,28105,-16846,27244,-18205,26318,-19520,25329,-20788,24278,-22005,23169,-23170,22004,-24279,20787,-25330,19519,-26319,18204,-27245,16845,-28106,15446,-28898,14009,-29622,12539,-30273,11038,-30852,9511,-31357,7961,-31786,6392,-32138,4807,-32413,3211,-32610,1607,-32728,0,-32767,-1608,-32728,-3212,-32610,-4808,-32413,-6393,-32138,-7962,-31786,-9512,-31357,-11039,-30852,-12540,-30273,-14010,-29622,-15447,-28898,-16846,-28106,-18205,-27245,-19520,-26319,-20788,-25330,-22005,-24279,-23170,-23170,-24279,-22005,-25330,-20788,-26319,-19520,-27245,-18205,-28106,-16846,-28898,-15447,-29622,-14010,-30273,-12540,-30852,-11039,-31357,-9512,-31786,-7962,-32138,-6393,-32413,-4808,-32610,-3212,-32728,-1608};
 
@@ -5729,8 +5968,9 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag){
 int main(int argc, char**argv) {
 
 
-  __m128i x[2048],y[2048],tw0,tw1,tw2,tw3;
   time_stats_t ts;
+  __m128i x[2048],y[2048],tw0,tw1,tw2,tw3;
+
 
   int i;
 
@@ -6062,12 +6302,14 @@ int main(int argc, char**argv) {
   dft64((int16_t *)x,(int16_t *)y,1);
   dft64((int16_t *)x,(int16_t *)y,1); 
   reset_meas(&ts);
-  for (i=0;i<10000;i++) {
-    start_meas(&ts);
+  start_meas(&ts);
+  for (i=0;i<1000;i++) {
+
     dft64((int16_t *)x,(int16_t *)y,1);
-    stop_meas(&ts);
+
   }
-  printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  stop_meas(&ts);
+  printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials/1000);
   printf("X: ");
   for (i=0;i<16;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
