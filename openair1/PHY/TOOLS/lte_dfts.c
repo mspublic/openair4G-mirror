@@ -15,6 +15,8 @@
 #include "PHY/TOOLS/twiddle2048.h"
 #include "PHY/TOOLS/twiddle4096.h"
 #include "PHY/TOOLS/twiddle8192.h"
+#include "time_meas.h"
+
 int rev2048[2048],rev512[512],rev4096[4096],rev8192[8192];
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
@@ -697,17 +699,31 @@ void dft64(int16_t *x,int16_t *y,int scale) {
 
   __m128i xtmp[16],ytmp[16],*tw64a_128=(__m128i *)tw64a,*tw64b_128=(__m128i *)tw64b,*x128=(__m128i *)x,*y128=(__m128i *)y;
 
+#ifdef MR_MAIN
+  time_stats_t ts_t,ts_d,ts_b;
+
+  reset_meas(&ts_t);
+  reset_meas(&ts_d);
+  reset_meas(&ts_b);
+  start_meas(&ts_t);
+#endif
   transpose16_ooff(x128,xtmp,4);
   transpose16_ooff(x128+4,xtmp+1,4);
   transpose16_ooff(x128+8,xtmp+2,4);
   transpose16_ooff(x128+12,xtmp+3,4);
-  
+#ifdef MR_MAIN
+  stop_meas(&ts_t);
+  start_meas(&ts_d);
+#endif
   dft16((int16_t*)(xtmp),(int16_t*)ytmp);
   dft16((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
   dft16((int16_t*)(xtmp+8),(int16_t*)(ytmp+8));
   dft16((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
   
-
+#ifdef MR_MAIN
+  stop_meas(&ts_d);
+  start_meas(&ts_b);
+#endif
   bfly4_16(ytmp,ytmp+4,ytmp+8,ytmp+12,
 	   y128,y128+4,y128+8,y128+12,
 	   tw64a_128,tw64a_128+4,tw64a_128+8,
@@ -728,6 +744,10 @@ void dft64(int16_t *x,int16_t *y,int scale) {
 	   tw64a_128+3,tw64a_128+7,tw64a_128+11,
 	   tw64b_128+3,tw64b_128+7,tw64b_128+11);
 
+#ifdef MR_MAIN
+  stop_meas(&ts_b);
+  printf("t: %llu cycles, d: %llu cycles, b: %llu cycles\n",ts_t.diff,ts_d.diff,ts_b.diff);
+#endif
   if (scale>0) {
 
     y128[0]  = _mm_srai_epi16(y128[0],3);
@@ -5651,7 +5671,6 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag){
 
 
 #ifdef MR_MAIN
-#include "time_meas.h"
 
 int main(int argc, char**argv) {
 
