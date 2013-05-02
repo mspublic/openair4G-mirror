@@ -41,15 +41,9 @@
 #include <stdlib.h>
 #include <sched.h>
 
-#include <rtai_lxrt.h>
-#include <rtai_sem.h>
-#include <rtai_msg.h>
+#include "rt_wrapper.h"
 
-/*#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif */
+#include <sys/mman.h>
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -102,18 +96,20 @@ static void * ulsch_thread(void *param) {
   unsigned int ulsch_thread_index = (unsigned int)param;
 
   RTIME time_in,time_out;
+#ifdef RTAI
   RT_TASK *task;
+  char ulsch_thread_name[64];
+#endif
 
   int eNB_id = 0, UE_id = 0;
   PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[eNB_id];
-
-  char ulsch_thread_name[64];
 
   if ((ulsch_thread_index <0) || (ulsch_thread_index>NUMBER_OF_UE_MAX)) {
     LOG_E(PHY,"[SCHED][ULSCH] Illegal ulsch_thread_index %d!!!!\n",ulsch_thread_index);
     return 0;
   }
 
+#ifdef RTAI
   sprintf(ulsch_thread_name,"ULSCH_THREAD%d",ulsch_thread_index);
 
   LOG_I(PHY,"[SCHED][ULSCH] starting ulsch_thread %s for process %d\n",
@@ -131,6 +127,7 @@ static void * ulsch_thread(void *param) {
 	  ulsch_thread_index,
 	  task);
   }
+#endif
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -163,11 +160,11 @@ static void * ulsch_thread(void *param) {
 
     LOG_D(PHY,"[SCHED][ULSCH] Frame %d: Calling ulsch_decoding with ulsch_thread_index = %d\n",phy_vars_eNB->frame,ulsch_thread_index);
 
-    time_in = rt_get_time();
+    time_in = rt_get_time_ns();
 
     ulsch_decoding_procedures(ulsch_subframe[ulsch_thread_index]<<1,ulsch_thread_index,phy_vars_eNB,0);
     
-    time_out = rt_get_time();
+    time_out = rt_get_time_ns();
 
     if (pthread_mutex_lock(&ulsch_mutex[ulsch_thread_index]) != 0) {
       msg("[openair][SCHED][ULSCH] error locking mutex.\n");

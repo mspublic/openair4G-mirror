@@ -113,6 +113,7 @@ DCI_ALLOC_t dci_alloc_rx[8];
 extern int rx_sig_fifo;
 #endif
 
+/*
 #if defined(CBMIMO) || defined(EXMIMO)
 #include <rtai_lxrt.h>
 extern struct timing_info_t {
@@ -121,6 +122,7 @@ extern struct timing_info_t {
   unsigned int mbox0, mbox1, mbox2, mbox_target;
 } timing_info[2];
 #endif
+*/
 
 #ifdef EXMIMO
 extern u32 carrier_freq[4];

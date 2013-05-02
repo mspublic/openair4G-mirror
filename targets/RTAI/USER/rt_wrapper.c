@@ -43,39 +43,54 @@
 #ifndef RTAI
 
 struct timespec interval, next, now, res;
-clockid_t clock_id = CLOCK_MONOTONIC; //other options are CLOCK_MONOTONIC, CLOCK_REALTIME, CLOCK_PROCESS_CPUTIME_ID, CLOCK_THREAD_CPUTIME_ID 
+clockid_t clock_id = CLOCK_REALTIME; //other options are CLOCK_MONOTONIC, CLOCK_REALTIME, CLOCK_PROCESS_CPUTIME_ID, CLOCK_THREAD_CPUTIME_ID 
 RTIME rt_get_time_ns (void) {
   clock_gettime(clock_id, &now);
   return(now.tv_sec*1e9+now.tv_nsec); 
 }
 
 int rt_sleep_ns (RTIME x) {
+  int ret;
   clock_gettime(clock_id, &now);
-  interval.tv_sec = x/((RTIME)1e9); 
-  interval.tv_nsec = x%((RTIME) 1e9); 
+  interval.tv_sec = x/((RTIME)1000000000); 
+  interval.tv_nsec = x%((RTIME)1000000000); 
   //rt_printk("sleeping for %d sec and %d ns\n",interval.tv_sec,interval.tv_nsec);
   next = now;
   next.tv_sec += interval.tv_sec;
   next.tv_nsec += interval.tv_nsec;
-  return(clock_nanosleep(clock_id, TIMER_ABSTIME, &next, NULL));
+
+  if (next.tv_nsec>=1000000000) {
+    next.tv_nsec -= 1000000000;
+    next.tv_sec++;
+  }
+
+  ret = clock_nanosleep(clock_id, TIMER_ABSTIME, &next, NULL);
+
+  /*
+  if (ret==EFAULT)
+    rt_printk("rt_sleep_ns returned EFAULT (%d), reqested %d sec and %d ns\n",ret,next.tv_sec,next.tv_nsec);
+  if (ret==EINVAL)
+    rt_printk("rt_sleep_ns returned EINVAL (%d), reqested %d sec and %d ns\n",ret,next.tv_sec,next.tv_nsec);
+  if (ret==EINTR)
+    rt_printk("rt_sleep_ns returned EINTR (%d), reqested %d sec and %d ns\n",ret,next.tv_sec,next.tv_nsec);
+  */
+
+  return(ret);
 }
 
 void check_clock(void) {
   if (clock_getres(clock_id, &res)) {
     printf("clock_getres failed");
   } else {
-    printf("reported resolution = %llu\n", (long long int) ((int) 1e9 * res.tv_sec) + (long long int) res.tv_nsec);
+    printf("reported resolution = %llu ns\n", (long long int) ((int) 1e9 * res.tv_sec) + (long long int) res.tv_nsec);
   }
 }
 
 #else
 
-RTIME rt_get_time_ns(void) {
-  return(count2nano(rt_get_time()));
-}
-
-void rt_sleep_ns(RTIME x) {
+int rt_sleep_ns(RTIME x) {
   rt_sleep(nano2count(x));
+  return(0);
 }
 
 #endif

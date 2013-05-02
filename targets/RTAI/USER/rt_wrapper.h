@@ -39,8 +39,9 @@
 */
 
 #ifndef RTAI
-#include <signal.h>
 #include <time.h>
+#include <errno.h>
+#include <stdio.h>
 
 #define RTIME long long int
 
@@ -50,13 +51,13 @@ RTIME rt_get_time_ns (void);
 
 int rt_sleep_ns (RTIME x);
 
+void check_clock(void);
+
 #else
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
 #include <rtai_msg.h>
 
-RTIME rt_get_time_ns(void);
-
-void rt_sleep_ns(RTIME x);
+int rt_sleep_ns(RTIME x);
 
 #endif

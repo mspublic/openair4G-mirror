@@ -264,6 +264,14 @@ int logInit (void) {
     g_log->log_component[SCTP].filelog = 0;
     g_log->log_component[SCTP].filelog_name = "";
 
+    g_log->log_component[HW].name = "HW";
+    g_log->log_component[HW].level = LOG_DEBUG;
+    g_log->log_component[HW].flag = LOG_MED;
+    g_log->log_component[HW].interval = 1;
+    g_log->log_component[HW].fd = 0;
+    g_log->log_component[HW].filelog = 0;
+    g_log->log_component[HW].filelog_name = "";
+
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
