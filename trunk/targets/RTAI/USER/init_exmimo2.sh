@@ -1,5 +1,5 @@
 sudo rmmod openair_rf
-sudo insmod $OPENAIR_TARGETS/ARCH/EXMIMO/DRIVER/openair_rf_solstice.ko
+sudo insmod $OPENAIR_TARGETS/ARCH/EXMIMO/DRIVER/eurecom/openair_rf.ko
 sudo mknod /dev/openair0 c 127 0
 sudo chmod a+rw /dev/openair0
 sleep 1

@@ -51,9 +51,7 @@
 #include <execinfo.h>
 #include <getopt.h>
 
-#include <rtai_lxrt.h>
-#include <rtai_sem.h>
-#include <rtai_msg.h>
+#include "rt_wrapper.h"
 
 #ifdef EMOS
 #include <gps.h>
@@ -103,12 +101,19 @@ unsigned char scope_enb_num_ue = 1;
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
+#ifdef RTAI
 static SEM *mutex;
 //static CND *cond;
 
 static int thread0;
 static int thread1;
 //static int sync_thread;
+#else
+pthread_t thread0;
+pthread_t thread1;
+pthread_attr_t attr_dlsch_threads;
+struct sched_param p;
+#endif
 
 pthread_t  thread2;
 pthread_t  thread3;
@@ -149,13 +154,21 @@ extern s16 prach_ifft[4][1024*2];
 
 runmode_t mode;
 int rx_input_level_dBm;
-extern int otg_enabled = 0;
+#ifdef XFORMS
+extern int otg_enabled;
+#else
+int otg_enabled;
+#endif
 int number_of_cards = 1;
 
 int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
 
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
+s32 init_rx_pdsch_thread(void);
+void cleanup_rx_pdsch_thread(void);
+int init_ulsch_threads(void);
+void cleanup_ulsch_threads(void);
 
 LTE_DL_FRAME_PARMS *frame_parms;
 
@@ -196,10 +209,12 @@ void exit_fun(const char* s)
   printf("Exiting: %s\n",s);
 
   oai_exit=1;
-  rt_sleep(nano2count(FRAME_PERIOD));
+  rt_sleep_ns(FRAME_PERIOD);
 
   // cleanup
+#ifdef RTAI
   stop_rt_timer();
+#endif
 
   openair0_stop(card);
   openair0_close();
@@ -411,7 +426,9 @@ void *emos_thread (void *arg)
 /* This is the main eNB thread. It gets woken up by the kernel driver using the RTAI message mechanism (rt_send and rt_receive). */
 static void *eNB_thread(void *arg)
 {
+#ifdef RTAI
   RT_TASK *task;
+#endif
   unsigned char slot=0,last_slot, next_slot;
   int hw_slot,frame=0;
   unsigned int msg1;
@@ -420,23 +437,24 @@ static void *eNB_thread(void *arg)
   int delay_cnt;
   RTIME time_in;
   int mbox_target=0,mbox_current=0;
-  int i;
+  int i,ret;
   int tx_offset;
 
+#ifdef RTAI
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  rt_printk("Started eNB thread (id %p)\n",task);
+  LOG_D(HW,"Started eNB thread (id %p)\n",task);
+#endif
 
 #ifdef HARD_RT
   rt_make_hard_real_time();
 #endif
 
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
   while (!oai_exit)
     {
-      //rt_printk("eNB: frame %d, slot %d, mbox %d, time %llu\n",frame,slot,((unsigned int *)DAQ_MBOX)[0],rt_get_time_ns());
-
       hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+      //LOG_D(HW,"eNB frame %d, time %llu: slot %d, hw_slot %d (mbox %d)\n",frame,rt_get_time_ns(),slot,hw_slot,((unsigned int *)DAQ_MBOX)[0]);
       //this is the mbox counter where we should be 
       //mbox_target = ((((slot+1)%20)*15+1)>>1)%150;
       mbox_target = mbox_bounds[slot];
@@ -451,7 +469,7 @@ static void *eNB_thread(void *arg)
           diff = mbox_target - mbox_current;
       
       if (diff < (-5)) {
-          rt_printk("eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
+          LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
           slot++;
           if (slot==20){
               slot=0;
@@ -460,22 +478,24 @@ static void *eNB_thread(void *arg)
           continue;
       }
       if (diff>8) 
-          rt_printk("eNB Frame %d, time %llu: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, mbox_current, mbox_target, diff);
+          LOG_D(HW,"eNB Frame %d, time %llu: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, mbox_current, mbox_target, diff);
 
       delay_cnt = 0;
       while ((diff>0) && (!oai_exit))
         {
 	  time_in = rt_get_time_ns();
-	  //rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15=%d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
-	  //rt_printk("Frame %d: slot %d, sleeping for %llu (diff %d)\n", frame, slot, diff*DAQ_PERIOD,diff);
-          rt_sleep(nano2count(diff*DAQ_PERIOD));
-          hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
-          //rt_printk("eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
+	  //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15=%d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
+	  //LOG_D(HW,"eNB Frame %d, time %llu: sleeping for %llu (slot %d, hw_slot %d, diff %d, mbox %d, delay_cnt %d)\n", frame, time_in, diff*DAQ_PERIOD,slot,hw_slot,diff,((volatile unsigned int *)DAQ_MBOX)[0],delay_cnt);
+          ret = rt_sleep_ns(diff*DAQ_PERIOD);
+	  if (ret)
+	    LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
+	  hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+          //LOG_D(HW,"eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
           delay_cnt++;
           if (delay_cnt == 10)
             {
               oai_exit = 1;
-              rt_printk("eNB Frame %d: HW stopped ... \n",frame);
+              LOG_D(HW,"eNB Frame %d: HW stopped ... \n",frame);
             }
 	  mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
 	  if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
@@ -496,7 +516,7 @@ static void *eNB_thread(void *arg)
         {
 	  /*
           if (frame%100==0)
-            rt_printk("frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
+            LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
 	  */
           if (fs4_test==0)
             {
@@ -510,7 +530,7 @@ static void *eNB_thread(void *arg)
               if ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_DL)||
                   ((subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms,next_slot>>1)==SF_S)&&((next_slot&1)==0)))
                 {
-                  //	  rt_printk("Frame %d: Generating slot %d\n",frame,next_slot);
+                  //	  LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
                   for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
                     {
@@ -561,13 +581,13 @@ static void *eNB_thread(void *arg)
 #endif //IFFT_FPGA
 	  /*
           if (frame%100==0)
-            rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
+            LOG_D(HW,"hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
 	  */
         }
 
       /*
       if ((slot%2000)<10)
-      rt_printk("fun0: doing very hard work\n");
+      LOG_D(HW,"fun0: doing very hard work\n");
       */
 
       slot++;
@@ -577,22 +597,26 @@ static void *eNB_thread(void *arg)
       }
     }
 
-  rt_printk("eNB_thread: finished, ran %d times.\n",frame);
+  LOG_D(HW,"eNB_thread: finished, ran %d times.\n",frame);
 
 #ifdef HARD_RT
   rt_make_soft_real_time();
 #endif
 
   // clean task
+#ifdef RTAI
   rt_task_delete(task);
-  rt_printk("Task deleted. returning\n");
+#endif
+  LOG_D(HW,"Task deleted. returning\n");
   return 0;
 }
 
 /* This is the main UE thread. Initially it is doing a periodic get_frame. One synchronized it gets woken up by the kernel driver using the RTAI message mechanism (rt_send and rt_receive). */
 static void *UE_thread(void *arg)
 {
+#ifdef RTAI
   RT_TASK *task;
+#endif
   RTIME in, out, diff;
   int slot=0,frame=0,hw_slot,last_slot, next_slot;
   unsigned int msg1;
@@ -605,16 +629,18 @@ static void *UE_thread(void *arg)
   int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
   static int first_run=1;
-  int i;
+  int i, ret;
 
+#ifdef RTAI
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  rt_printk("Started UE thread (id %p)\n",task);
+  LOG_D(HW,"Started UE thread (id %p)\n",task);
+#endif
 
 #ifdef HARD_RT
   rt_make_hard_real_time();
 #endif
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
 
   openair_daq_vars.freq_offset = 0; //-7500;
   /*
@@ -649,7 +675,7 @@ static void *UE_thread(void *arg)
         diff2 = mbox_target - mbox_current;
 
       if (diff2 <(-5)) {
-	rt_printk("UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d) %llu\n",frame, slot, hw_slot, diff2);
+	LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
 	slot++;
 	if (slot==20) {
           slot=0;
@@ -658,11 +684,11 @@ static void *UE_thread(void *arg)
 	continue;
       }
       if (diff2>8) 
-	rt_printk("UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
+	LOG_D(HW,"UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
 
       /*
       if (frame%100==0)
-	rt_printk("frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
+	LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
       */
       timing_info[slot].time0 = rt_get_time_ns();
       timing_info[slot].mbox0 = ((volatile unsigned int *)DAQ_MBOX)[0];
@@ -670,14 +696,19 @@ static void *UE_thread(void *arg)
       delay_cnt = 0;
       while ((diff2>0) && (!oai_exit) && (is_synchronized) )
         {
-	  //rt_printk("eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d (%d), diff %d, time %llu\n",frame,delay_cnt,hw_slot,((volatile unsigned int *)DAQ_MBOX)[0],slot,mbox_target,diff2,rt_get_time_ns());
-          rt_sleep(nano2count(diff2*DAQ_PERIOD)); 
+	  time_in = rt_get_time_ns();
+	  //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d (%d), diff %d, time %llu\n",frame,delay_cnt,hw_slot,((volatile unsigned int *)DAQ_MBOX)[0],slot,mbox_target,diff2,time_in);
+          ret = rt_sleep_ns(diff2*DAQ_PERIOD); 
+	  if (ret)
+	    LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
+
           hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+          //LOG_D(HW,"eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
           delay_cnt++;
           if (delay_cnt == 30)
             {
               oai_exit = 1;
-              rt_printk("UE frame %d: HW stopped ... \n",frame);
+              LOG_D(HW,"UE frame %d: HW stopped ... \n",frame);
             }
 	  mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
 	  if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
@@ -706,13 +737,11 @@ static void *UE_thread(void *arg)
       if (is_synchronized)
         {
 
-            //            rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
-
 	  /*
           if (frame%100==0)
-            rt_printk("frame %d (%d), slot %d, hw_slot %d, last_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,last_slot,DAQ_MBOX[0]);
+            LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, last_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,last_slot,DAQ_MBOX[0]);
 	  */
-            //          rt_printk("before phy procedures\n");
+
           in = rt_get_time_ns();
           phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode);
           out = rt_get_time_ns();
@@ -720,9 +749,9 @@ static void *UE_thread(void *arg)
 
 	  /*
           if (frame % 100 == 0)
-            rt_printk("hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
+            LOG_D(HW,"hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
 	  
-            rt_printk("Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n",
+            LOG_D(HW,"Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n",
                       frame, last_slot,in,out,diff);
 	  */
 
@@ -736,9 +765,9 @@ static void *UE_thread(void *arg)
 
           slot = 0;
           openair0_get_frame(card);
-          //          rt_printk("after get_frame\n");
-          //          rt_sleep(nano2count(FRAME_PERIOD));
-          //          rt_printk("after sleep\n");
+          //          LOG_D(HW,"after get_frame\n");
+          //          rt_sleep_ns(FRAME_PERIOD);
+          //          LOG_D(HW,"after sleep\n");
 
           if (initial_sync(PHY_vars_UE_g[0],mode)==0) {
               /*
@@ -760,11 +789,11 @@ static void *UE_thread(void *arg)
 	      else {
 		is_synchronized = 1;
 		//start the DMA transfers
-        //rt_printk("Before openair0_start_rt_acquisition \n");
-        openair0_start_rt_acquisition(card);
+		//LOG_D(HW,"Before openair0_start_rt_acquisition \n");
+		openair0_start_rt_acquisition(card);
 		
 		hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
-		rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
+		LOG_D(HW,"Got synch: hw_slot_offset %d\n",hw_slot_offset);
 	      }
 	  }
 	  else {
@@ -793,7 +822,7 @@ static void *UE_thread(void *arg)
 
       /*
       if ((slot%2000)<10)
-        rt_printk("fun0: doing very hard work\n");
+        LOG_D(HW,"fun0: doing very hard work\n");
       */
       slot++;
       if (slot==20) {
@@ -801,15 +830,17 @@ static void *UE_thread(void *arg)
           frame++;
       }
     }
-  rt_printk("UE_thread: finished, ran %d times.\n",frame);
+  LOG_D(HW,"UE_thread: finished, ran %d times.\n",frame);
 
 #ifdef HARD_RT
   rt_make_soft_real_time();
 #endif
 
   // clean task
+#ifdef RTAI
   rt_task_delete(task);
-  rt_printk("Task deleted. returning\n");
+#endif
+  LOG_D(HW,"Task deleted. returning\n");
   return 0;
 }
 
@@ -819,7 +850,9 @@ static void *UE_thread(void *arg)
 
 int main(int argc, char **argv) {
 
+#ifdef RTAI
   RT_TASK *task;
+#endif
   int i,j,aa;
   void *status;
 
@@ -869,9 +902,7 @@ int main(int argc, char **argv) {
   int l;
   int ret, ant;
 
-#ifdef EMOS
   int error_code;
-#endif
 
   const struct option long_options[] = {
     {"calib-ue-rx", required_argument, NULL, 256},
@@ -1007,6 +1038,10 @@ int main(int argc, char **argv) {
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
 
+#ifndef RTAI
+  check_clock();
+#endif
+
   // init the parameters
   frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
   frame_parms->N_RB_DL            = 25;
@@ -1086,7 +1121,7 @@ int main(int argc, char **argv) {
     
     openair_daq_vars.manual_timing_advance = 0;
     //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
-    openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
+    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
     openair_daq_vars.auto_freq_correction = 0;
     openair_daq_vars.use_ia_receiver = 1;
 
@@ -1169,7 +1204,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
     openair_daq_vars.target_ue_dl_mcs=0;
     openair_daq_vars.ue_ul_nb_rb=6;
-    openair_daq_vars.target_ue_ul_mcs=6;
+    openair_daq_vars.target_ue_ul_mcs=19;
 
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
@@ -1236,7 +1271,7 @@ int main(int argc, char **argv) {
   }
   if (UE_flag) {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
-    p_exmimo_config->rf.rf_mode[1]    = my_rf_mode2;
+    p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
   }
   else {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
@@ -1287,7 +1322,7 @@ int main(int argc, char **argv) {
 
   // connect the TX/RX buffers
   if (UE_flag==1) {
-      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
+      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,1);
       printf("Setting UE buffer to all-RX\n");
       // Set LSBs for antenna switch (ExpressMIMO)
       for (i=0; i<frame_parms->samples_per_tti*10; i++)
@@ -1344,9 +1379,11 @@ int main(int argc, char **argv) {
     printf("[OPENAIR][SCHED][INIT] Problem creating EMOS FIFO %d, error_code %d\n",CHANSOUNDER_FIFO_MINOR,error_code);
 #endif
 
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
+#ifdef RTAI
   // make main thread LXRT soft realtime
   task = rt_task_init_schmod(nam2num("MYTASK"), 9, 0, 0, SCHED_FIFO, 0xF);
-  mlockall(MCL_CURRENT | MCL_FUTURE);
 
   // start realtime timer and scheduler
   //rt_set_oneshot_mode();
@@ -1366,6 +1403,7 @@ int main(int argc, char **argv) {
     }
   else
     printf("mutex=%p\n",mutex);
+#endif
 
   DAQ_MBOX = (volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0];
 
@@ -1423,21 +1461,51 @@ int main(int argc, char **argv) {
   printf("EMOS thread created, ret=%d\n",ret);
 #endif
 
-  rt_sleep(nano2count(10*FRAME_PERIOD));
+  rt_sleep_ns(10*FRAME_PERIOD);
 
+#ifndef RTAI
+  pthread_attr_init (&attr_dlsch_threads);
+  pthread_attr_setstacksize(&attr_dlsch_threads,OPENAIR_THREAD_STACK_SIZE);
+  //attr_dlsch_threads.priority = 1;
+  p.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
+  pthread_attr_setschedparam  (&attr_dlsch_threads, &p);
+  pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
+#endif
 
   // start the main thread
   if (UE_flag == 1) {
+#ifdef RTAI
     thread1 = rt_thread_create(UE_thread, NULL, 100000000);
+#else
+    error_code = pthread_create(&thread1, &attr_dlsch_threads, UE_thread, NULL);
+    if (error_code!= 0) {
+      LOG_D(HW,"[lte-softmodem.c] Could not allocate UE_thread, error %d\n",error_code);
+      return(error_code);
+    }
+    else {
+      LOG_D(HW,"[lte-softmodem.c] Allocate UE_thread successful\n");
+    }
+#endif
 #ifdef DLSCH_THREAD
     init_rx_pdsch_thread();
-    rt_sleep(nano2count(FRAME_PERIOD/10));
+    rt_sleep_ns(FRAME_PERIOD/10);
     init_dlsch_threads();
 #endif
     printf("UE threads created\n");
   }
   else {
+#ifdef RTAI
     thread0 = rt_thread_create(eNB_thread, NULL, 100000000);
+#else
+    error_code = pthread_create(&thread0, &attr_dlsch_threads, eNB_thread, NULL);
+    if (error_code!= 0) {
+      LOG_D(HW,"[lte-softmodem.c] Could not allocate eNB_thread, error %d\n",error_code);
+      return(error_code);
+    }
+    else {
+      LOG_D(HW,"[lte-softmodem.c] Allocate eNB_thread successful\n");
+    }
+#endif
 #ifdef ULSCH_THREAD
     init_ulsch_threads();
 #endif
@@ -1451,7 +1519,7 @@ int main(int argc, char **argv) {
 
   // stop threads
   oai_exit=1;
-  rt_sleep(nano2count(FRAME_PERIOD));
+  rt_sleep_ns(FRAME_PERIOD);
 
   printf("stopping threads\n");
 #ifdef XFORMS
@@ -1478,19 +1546,29 @@ int main(int argc, char **argv) {
 
   // cleanup
   if (UE_flag == 1) {
+#ifdef RTAI
     rt_thread_join(thread1); 
+#else
+    pthread_join(thread1,&status); 
+#endif
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
     cleanup_rx_pdsch_thread();
 #endif
   }
   else {
+#ifdef RTAI
     rt_thread_join(thread0); 
+#else
+    pthread_join(thread0,&status); 
+#endif
 #ifdef ULSCH_THREAD
     cleanup_ulsch_threads();
 #endif
   }
+#ifdef RTAI
   stop_rt_timer();
+#endif
 
   printf("stopping card\n");
   openair0_stop(card);

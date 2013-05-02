@@ -41,15 +41,9 @@
 #include <stdlib.h>
 #include <sched.h>
 
-#include <rtai_lxrt.h>
-#include <rtai_sem.h>
-#include <rtai_msg.h>
+#include "rt_wrapper.h"
 
-/*#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif */
+#include <sys/mman.h>
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -105,21 +99,23 @@ static void * dlsch_thread(void *param) {
   u8 harq_pid;
 
   RTIME time_in,time_out;
+#ifdef RTAI
   RT_TASK *task;
+  char task_name[8];
+#endif
 
   int eNB_id = 0, UE_id = 0;
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[UE_id];
-
-  char task_name[8];
 
   if ((dlsch_thread_index <0) || (dlsch_thread_index>7)) {
       LOG_E(PHY,"[SCHED][DLSCH] Illegal dlsch_thread_index %d (%p)!!!!\n",dlsch_thread_index,param);
     return 0;
   }
 
+#ifdef RTAI
   sprintf(task_name,"DLSCH%d",dlsch_thread_index);
   task = rt_task_init_schmod(nam2num(task_name), 0, 0, 0, SCHED_FIFO, 0xF);
-  
+
   if (task==NULL) {
       LOG_E(PHY,"[SCHED][DLSCH] Problem starting dlsch_thread_index %d (%s)!!!!\n",dlsch_thread_index,task_name);
       return 0;
@@ -129,6 +125,7 @@ static void * dlsch_thread(void *param) {
             dlsch_thread_index,
             task);
   }
+#endif
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -161,7 +158,7 @@ static void * dlsch_thread(void *param) {
     
     LOG_I(PHY,"[SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d\n",phy_vars_ue->frame,dlsch_thread_index);
 
-    time_in = rt_get_time();
+    time_in = rt_get_time_ns();
     
     if (phy_vars_ue->frame < phy_vars_ue->dlsch_errors[eNB_id]) {
         phy_vars_ue->dlsch_errors[eNB_id]=0;
@@ -240,7 +237,7 @@ static void * dlsch_thread(void *param) {
       
     }
 
-    time_out = rt_get_time();
+    time_out = rt_get_time_ns();
 
 #ifdef DEBUG_PHY
     LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",

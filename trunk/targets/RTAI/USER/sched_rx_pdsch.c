@@ -41,15 +41,9 @@
 #include <stdlib.h>
 #include <sched.h>
 
-#include <rtai_lxrt.h>
-#include <rtai_sem.h>
-#include <rtai_msg.h>
+#include "rt_wrapper.h"
 
-/*#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif */
+#include <sys/mman.h>
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -104,12 +98,15 @@ static void * rx_pdsch_thread(void *param) {
   u8 i_mod = 0;
 
   RTIME time_in,time_out;
+#ifdef RTAI
   RT_TASK *task;
+#endif
 
   int m,eNB_id = 0;
   int eNB_id_i = 1;
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[0];
 
+#ifdef RTAI
   task = rt_task_init_schmod(nam2num("RX_PDSCH_THREAD"), 0, 0, 0, SCHED_FIFO, 0xF);
 
   if (task==NULL) {
@@ -119,6 +116,7 @@ static void * rx_pdsch_thread(void *param) {
   else {
     LOG_I(PHY,"[SCHED][RX_PDSCH] rx_pdsch_thread started for with id %p\n",task);
   }
+#endif
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -196,7 +194,7 @@ static void * rx_pdsch_thread(void *param) {
 
     LOG_D(PHY,"[SCHED][RX_PDSCH] Frame %d, slot %d: Calling rx_pdsch_decoding with harq_pid %d\n",phy_vars_ue->frame,last_slot,harq_pid);
 
-    time_in = rt_get_time();
+    time_in = rt_get_time_ns();
 
     // Check if we are in even or odd slot
     if (last_slot%2) { // odd slots
@@ -262,7 +260,7 @@ static void * rx_pdsch_thread(void *param) {
         }
     }    
     
-    time_out = rt_get_time();
+    time_out = rt_get_time_ns();
     
     if (pthread_mutex_lock(&rx_pdsch_mutex) != 0) {
         msg("[openair][SCHED][RX_PDSCH] error locking mutex.\n");

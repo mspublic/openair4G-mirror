@@ -19,7 +19,7 @@ RTAI=1
 endif
 
 ifeq ($(RTAI),1)
-RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o
+RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o
 else
 OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o
 endif
