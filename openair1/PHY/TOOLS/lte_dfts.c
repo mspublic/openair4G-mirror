@@ -5975,7 +5975,7 @@ int main(int argc, char**argv) {
   int i;
 
   set_taus_seed(0);
-
+/*
   ((int16_t *)&tw0)[0] = 32767;
   ((int16_t *)&tw0)[1] = 0;
   ((int16_t *)&tw0)[2] = 32767;
@@ -6293,7 +6293,7 @@ int main(int argc, char**argv) {
   for (i=0;i<4;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
   printf("\n");
-
+*/
   for (i=0;i<128;i++) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
@@ -6310,7 +6310,7 @@ int main(int argc, char**argv) {
   }
   stop_meas(&ts);
   printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials/1000);
-  printf("X: ");
+  /*printf("X: ");
   for (i=0;i<16;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
   printf("\nY:");
@@ -6318,7 +6318,7 @@ int main(int argc, char**argv) {
   for (i=0;i<16;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
   printf("\n");
-
+*/
   for (i=0;i<256;i++) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
@@ -6330,7 +6330,7 @@ int main(int argc, char**argv) {
     stop_meas(&ts);
   }
   printf("\n\n128-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  printf("X: ");
+ /* printf("X: ");
   for (i=0;i<32;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
   printf("\nY:");
@@ -6338,7 +6338,7 @@ int main(int argc, char**argv) {
   for (i=0;i<32;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
   printf("\n");
-
+*/
   for (i=0;i<512;i++) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
@@ -6350,7 +6350,7 @@ int main(int argc, char**argv) {
     stop_meas(&ts);
   }
   printf("\n\n256-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  printf("X: ");
+ /* printf("X: ");
   for (i=0;i<64;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
   printf("\nY:");
@@ -6358,7 +6358,7 @@ int main(int argc, char**argv) {
   for (i=0;i<64;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
   printf("\n");
-
+*/
   reset_meas(&ts);
   for (i=0;i<10000;i++) {
     start_meas(&ts);
