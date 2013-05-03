@@ -131,6 +131,7 @@ typedef enum {
   EPA,
   EVA,
   ETU,
+  MBSFN,
   Rayleigh8,
   Rayleigh1,
   Rayleigh1_800,

@@ -109,6 +109,9 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   return(chan_desc);
 }
 
+double mbsfn_delays[] = {0,.03,.15,.31,.37,1.09,12.490,12.52,12.64,12.80,12.86,13.58,27.49,27.52,27.64,27.80,27.86,28.58};
+double mbsfn_amps_dB[] = {0,-1.5,-1.4,-3.6,-0.6,-7.0,-10,-11.5,-11.4,-13.6,-10.6,-17.0,-20,-21.5,-21.4,-23.6,-20.6,-27};
+
 double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
 double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
 
@@ -363,7 +366,42 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       }
     }
     break;
+  case MBSFN:
+    chan_desc->nb_taps        = 18;
+    chan_desc->Td             = 28.58;
+    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*mbsfn_amps_dB[i]); 
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = mbsfn_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->random_aoa     = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
+    for (i = 0; i<chan_desc->nb_taps; i++) 
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
 
+    chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
+    for (i = 0; i<6; i++) {
+      chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+      for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+	chan_desc->R_sqrt[i][j].x = 1.0;
+	chan_desc->R_sqrt[i][j].y = 0.0;
+      }
+      LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+    }
+    break;
   case Rayleigh8:
       nb_taps = 8;
       Td = 0.8;

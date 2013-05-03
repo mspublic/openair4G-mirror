@@ -234,13 +234,15 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     return(-1);
   }
 
+  /*
   // DL power control: Scaling of Channel estimates for PDSCH
   dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 		      frame_parms,
 		      dlsch_ue,
 		      symbol,
 		      nb_rb);
-    
+  */
+
   if (first_symbol_flag==1) {
     dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			frame_parms,
@@ -261,7 +263,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     //	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
         
     
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);// + 2
+    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 2;// + 2
         // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
         //      + log2_approx(frame_parms->nb_antennas_rx-1);
 
@@ -351,11 +353,12 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     if ((dual_stream_flag==1) && (eNB_id_i==phy_vars_ue->n_connected_eNB)) {
 
       // Scale the channel estimates for interfering stream
-      dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+
+      /*      dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
 			  frame_parms,
 			  dlsch_ue,
 			  symbol,
-			  nb_rb);      
+			  nb_rb);      */
 
       /* compute new log2_maxh for effective channel */
       if (first_symbol_flag==1) {
@@ -1328,9 +1331,13 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
     
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
-    pilots=1;
-    
+  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
+    if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size    
+      nb_rb=1+(5*nb_rb/6);
+    else  
+      pilots=1;
+  }
+
   // Determine scaling amplitude based the symbol
   ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 

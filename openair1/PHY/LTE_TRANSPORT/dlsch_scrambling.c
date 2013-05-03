@@ -37,6 +37,9 @@
 * \note
 * \warning
 */
+
+//#define DEBUG_SCRAMBLING 1
+
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
@@ -63,14 +66,20 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   else {
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
   }
-  //  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
+#ifdef DEBUG_SCRAMBLING
+  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);  
+#endif
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
  
     for (j=0;j<32;j++,k++) {
-      //            printf("scrambling %d : %d => ",k,e[k]);
+#ifdef DEBUG_SCRAMBLING
+      printf("scrambling %d : %d => ",k,e[k]);
+#endif
       e[k] = (e[k]&1) ^ ((s>>j)&1);
-      //                  printf("%d\n",e[k]);
+#ifdef DEBUG_SCRAMBLING
+      printf("%d\n",e[k]);
+#endif
     }
    s = lte_gold_generic(&x1, &x2, 0);
   }
@@ -97,13 +106,19 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
     x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   else
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
-  //  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
+#ifdef DEBUG_SCRAMBLING
+  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
+#endif
   s = lte_gold_generic(&x1, &x2, 1);
   for (i=0; i<(1+(G>>5)); i++) {
     for (j=0;j<32;j++,k++) {
-      //               printf("unscrambling %d : %d => ",k,llr[k]);
+#ifdef DEBUG_SCRAMBLING
+      printf("unscrambling %d : %d => ",k,llr[k]);
+#endif
       llr[k] = ((2*((s>>j)&1))-1)*llr[k];
-      //             printf("%d\n",llr[k]);
+#ifdef DEBUG_SCRAMBLING
+      printf("%d\n",llr[k]);
+#endif
     }
     s = lte_gold_generic(&x1, &x2, 0);
   }

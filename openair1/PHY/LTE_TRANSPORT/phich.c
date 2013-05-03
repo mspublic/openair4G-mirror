@@ -40,6 +40,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
 #include "defs.h"
 #ifndef USER_MODE
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
@@ -52,7 +53,7 @@
 
 //unsigned short phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
-u8 get_mi(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
+uint8_t get_mi(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
   // for FDD
   if (frame_parms->frame_type == 0)
@@ -122,7 +123,7 @@ unsigned char subframe2_ul_harq(LTE_DL_FRAME_PARMS *frame_parms,unsigned char su
   return(0);
 }
 
-u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe) {
+uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,uint8_t frame,uint8_t subframe) {
   if (frame_parms->frame_type == 0) {
     return((subframe<4) ? (frame - 1) : frame);
   }
@@ -132,7 +133,7 @@ u8 phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,u8 frame,u8 subframe
   }
 }
 
-u8 phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe) {
+uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
   if (frame_parms->frame_type == 0)
     return(subframe<4 ? ((subframe+8)%10) : subframe-4);
@@ -334,8 +335,8 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 
 
 void generate_phich_emul(LTE_DL_FRAME_PARMS *frame_parms,
-			 u8 HI,
-			 u8 subframe) {
+			 uint8_t HI,
+			 uint8_t subframe) {
 
 
 }
@@ -346,30 +347,30 @@ mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1,
 // This routine generates the PHICH 
 
 void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
-		    s16 amp,
-		    u8 nseq_PHICH,
-		    u8 ngroup_PHICH,
-		    u8 HI,
-		    u8 subframe,
+		    int16_t amp,
+		    uint8_t nseq_PHICH,
+		    uint8_t ngroup_PHICH,
+		    uint8_t HI,
+		    uint8_t subframe,
 		    mod_sym_t **y) {
   
-  s16 d[24],*dp;
+  int16_t d[24],*dp;
   //  unsigned int i,aa;
   unsigned int re_offset;
-  s16 y0_16[8],y1_16[8];
-  s16 *y0,*y1;
+  int16_t y0_16[8],y1_16[8];
+  int16_t *y0,*y1;
   // scrambling
-  u32 x1, x2, s=0;
-  u8 reset = 1;
-  s16 cs[12];
-  u32 i,i2,i3,m,j;
-  s16 gain_lin_QPSK;
-  u32 subframe_offset=((frame_parms->Ncp==0)?14:12)*frame_parms->ofdm_symbol_size*subframe;
+  uint32_t x1, x2, s=0;
+  uint8_t reset = 1;
+  int16_t cs[12];
+  uint32_t i,i2,i3,m,j;
+  int16_t gain_lin_QPSK;
+  uint32_t subframe_offset=((frame_parms->Ncp==0)?14:12)*frame_parms->ofdm_symbol_size*subframe;
 
-  memset(d,0,24*sizeof(s16));
+  memset(d,0,24*sizeof(int16_t));
 
   if (frame_parms->mode1_flag==1) 
-    gain_lin_QPSK = (s16)(((s32)amp*ONE_OVER_SQRT2_Q15)>>15);  
+    gain_lin_QPSK = (int16_t)(((int32_t)amp*ONE_OVER_SQRT2_Q15)>>15);  
   else
     gain_lin_QPSK = amp/2;  
 
@@ -386,7 +387,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
   
   // compute scrambling sequence
   for (i=0;i<12;i++) {
-    cs[i] = (u8)((s>>(i&0x1f))&1);
+    cs[i] = (uint8_t)((s>>(i&0x1f))&1);
     cs[i] = (cs[i] == 0) ? (1-(HI<<1)) : ((HI<<1)-1);
   }
 
@@ -496,8 +497,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
-      y1 = (s16*)&y[1][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
+      y1 = (int16_t*)&y[1][re_offset+subframe_offset];
       
       // first antenna position n -> x0
       y0_16[0]   = d[0]*gain_lin_QPSK;
@@ -537,8 +538,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
-      y1 = (s16*)&y[1][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
+      y1 = (int16_t*)&y[1][re_offset+subframe_offset];
       
       // first antenna position n -> x0
       y0_16[0]   = d[8]*gain_lin_QPSK;
@@ -579,8 +580,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
-      y1 = (s16*)&y[1][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
+      y1 = (int16_t*)&y[1][re_offset+subframe_offset];
       
       // first antenna position n -> x0
       y0_16[0]   = d[16]*gain_lin_QPSK;
@@ -625,7 +626,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
       //      printf("y0 %p\n",y0);
 
       y0_16[0]   = d[0]*gain_lin_QPSK;
@@ -650,7 +651,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
       
       y0_16[0]   = d[8]*gain_lin_QPSK;
       y0_16[1]   = d[9]*gain_lin_QPSK;
@@ -675,7 +676,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
  
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
       
       y0_16[0]   = d[16]*gain_lin_QPSK;
       y0_16[1]   = d[17]*gain_lin_QPSK;
@@ -694,7 +695,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       }
       /*
       for (i=0;i<512;i++)
-	printf("re %d (%d): %d,%d\n",i,subframe_offset+i,((s16*)&y[0][subframe_offset+i])[0],((s16*)&y[0][subframe_offset+i])[1]);
+	printf("re %d (%d): %d,%d\n",i,subframe_offset+i,((int16_t*)&y[0][subframe_offset+i])[0],((int16_t*)&y[0][subframe_offset+i])[1]);
       */
     } // mode1_flag
   }
@@ -777,8 +778,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
-      y1 = (s16*)&y[1][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
+      y1 = (int16_t*)&y[1][re_offset+subframe_offset];
       
       // first antenna position n -> x0
       y0_16[0]   = d[0]*gain_lin_QPSK;
@@ -819,8 +820,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
       re_offset += (frame_parms->ofdm_symbol_size);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
-      y1 = (s16*)&y[1][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
+      y1 = (int16_t*)&y[1][re_offset+subframe_offset];
 
       // first antenna position n -> x0
       y0_16[0]   = d[8]*gain_lin_QPSK;
@@ -859,8 +860,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
       re_offset += (frame_parms->ofdm_symbol_size<<1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
-      y1 = (s16*)&y[1][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
+      y1 = (int16_t*)&y[1][re_offset+subframe_offset];
 
       // first antenna position n -> x0
       y0_16[0]   = d[16]*gain_lin_QPSK;
@@ -900,7 +901,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->ofdm_symbol_size)
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
       
       y0_16[0]   = d[0]*gain_lin_QPSK;
       y0_16[1]   = d[1]*gain_lin_QPSK;
@@ -924,7 +925,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
       re_offset += (frame_parms->ofdm_symbol_size);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
       
       y0_16[0]   = d[8]*gain_lin_QPSK;
       y0_16[1]   = d[9]*gain_lin_QPSK;
@@ -947,7 +948,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 	re_offset -= (frame_parms->ofdm_symbol_size-1);
       re_offset += (frame_parms->ofdm_symbol_size<<1);
 
-      y0 = (s16*)&y[0][re_offset+subframe_offset];
+      y0 = (int16_t*)&y[0][re_offset+subframe_offset];
       
       y0_16[0]   = d[16]*gain_lin_QPSK;
       y0_16[1]   = d[17]*gain_lin_QPSK;
@@ -971,30 +972,30 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 void rx_phich(PHY_VARS_UE *phy_vars_ue,
-	      u8 subframe,
-	      u8 eNB_id) {
+	      uint8_t subframe,
+	      uint8_t eNB_id) {
 
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
 
-  //  u8 HI;
-  u8 harq_pid = phich_subframe_to_harq_pid(frame_parms,phy_vars_ue->frame,subframe);
+  //  uint8_t HI;
+  uint8_t harq_pid = phich_subframe_to_harq_pid(frame_parms,phy_vars_ue->frame,subframe);
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
-  s16 phich_d[24],*phich_d_ptr,HI16;
+  int16_t phich_d[24],*phich_d_ptr,HI16;
   //  unsigned int i,aa;
-  s8 d[24],*dp;
+  int8_t d[24],*dp;
   u16 reg_offset;
 
   // scrambling
-  u32 x1, x2, s=0;
-  u8 reset = 1;
-  s16 cs[12];
-  u32 i,i2,i3,phich_quad;
-  s32 **rxdataF_comp = lte_ue_pdcch_vars[eNB_id]->rxdataF_comp;
-  u8 Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
-  u8 NSF_PHICH = 4;
-  u8 pusch_subframe;
+  uint32_t x1, x2, s=0;
+  uint8_t reset = 1;
+  int16_t cs[12];
+  uint32_t i,i2,i3,phich_quad;
+  int32_t **rxdataF_comp = lte_ue_pdcch_vars[eNB_id]->rxdataF_comp;
+  uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
+  uint8_t NSF_PHICH = 4;
+  uint8_t pusch_subframe;
   
   // check if we're expecting a PHICH in this subframe
   LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe);
@@ -1022,7 +1023,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     return;
   }
 
-  memset(d,0,24*sizeof(s8));
+  memset(d,0,24*sizeof(int8_t));
   phich_d_ptr = phich_d;
 
   // x1 is set in lte_gold_generic
@@ -1215,7 +1216,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   //#endif
   /*  
   for (i=0;i<200;i++)
-    printf("re %d: %d %d\n",i,((s16*)&rxdataF_comp[0][i])[0],((s16*)&rxdataF_comp[0][i])[1]);
+    printf("re %d: %d %d\n",i,((int16_t*)&rxdataF_comp[0][i])[0],((int16_t*)&rxdataF_comp[0][i])[1]);
   */
   for (phich_quad=0;phich_quad<3;phich_quad++) {
     if (frame_parms->Ncp == 1) 
@@ -1227,10 +1228,10 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     dp = &d[phich_quad*8];;
 
     for (i=0;i<8;i++) {      
-      phich_d_ptr[i] = ((s16*)&rxdataF_comp[0][reg_offset])[i]; 
+      phich_d_ptr[i] = ((int16_t*)&rxdataF_comp[0][reg_offset])[i]; 
       
 #ifdef DEBUG_PHICH
-      LOG_D(PHY,"%d,",((s16*)&rxdataF_comp[0][reg_offset])[i]);
+      LOG_D(PHY,"%d,",((int16_t*)&rxdataF_comp[0][reg_offset])[i]);
 #endif	  
       
       HI16 += (phich_d_ptr[i] * dp[i]);	  
@@ -1310,20 +1311,20 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			unsigned char subframe,
-			s16 amp,
-			u8 sect_id,
-			u8 abstraction_flag) {
+			int16_t amp,
+			uint8_t sect_id,
+			uint8_t abstraction_flag) {
 
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
   LTE_eNB_ULSCH_t **ulsch_eNB = phy_vars_eNB->ulsch_eNB;
   mod_sym_t **txdataF = phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id];  
-  u8 harq_pid;
-  u8 Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
-  u8 NSF_PHICH = 4;
-  u8 pusch_subframe;
-  u8 UE_id;
-  u32 pusch_frame;
+  uint8_t harq_pid;
+  uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
+  uint8_t NSF_PHICH = 4;
+  uint8_t pusch_subframe;
+  uint8_t UE_id;
+  uint32_t pusch_frame;
 
   // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
   

@@ -44,6 +44,7 @@
 #endif
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #ifdef __SSE3__
@@ -2429,14 +2430,14 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 }
 #endif 
 
-static u8 dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
-static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
  
 void dci_decoding(u8 DCI_LENGTH,
 		  u8 aggregation_level,
 		  s8 *e,
 		  u8 *decoded_output) {
 
+  uint8_t dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
+  int8_t w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
 
   u16 RCC;
 
@@ -2457,7 +2458,7 @@ void dci_decoding(u8 DCI_LENGTH,
 #endif
   
   // now do decoding
-  memset(dummy_w_rx,0,3*D);
+  memset((void*)dummy_w_rx,0,3*D);
   RCC = generate_dummy_w_cc(DCI_LENGTH+16,
 			    dummy_w_rx);
 

@@ -71,7 +71,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag);
  */
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 
-LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag);
+LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,uint8_t max_turbo_iterations,u8 abstraction_flag);
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 

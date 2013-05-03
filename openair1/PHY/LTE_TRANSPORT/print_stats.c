@@ -44,7 +44,9 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
-//extern int number_of_cards;
+
+
+extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
 
 #ifdef EXMIMO
 #ifdef DRIVER2013
@@ -60,7 +62,7 @@ extern int card;
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t mode, int input_level_dBm) {
 
-  u8 eNB=0,number_of_cards=1;
+  u8 eNB=0;
   u32 RRC_status;
   int len=length;
 #ifdef EXMIMO

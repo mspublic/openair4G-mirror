@@ -840,12 +840,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    */
 	  }
 #ifdef DEBUG_PHY_PROC
-#ifdef DEBUG_ULSCH
+	  //#ifdef DEBUG_ULSCH
 	  LOG_I(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
-	    LOG_T(PHY,"%x.",ulsch_input_buffer[i]);
-	  LOG_T(PHY,"\n");
-#endif
+	    printf("%x.",ulsch_input_buffer[i]);
+	  printf("\n");
+	  //#endif
 #endif
 #else //OPENAIR2
       // the following lines were necessary for the calibration in CROWN
@@ -2333,10 +2333,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
 	  }
 
-	  // for debugging
-	  // ret = (1+MAX_TURBO_ITERATIONS);
-	
-	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	  if (ret == (1+phy_vars_ue->dlsch_ue[eNB_id][0]->max_turbo_iterations)) {
 	    phy_vars_ue->dlsch_errors[eNB_id]++;
 	  
 #ifdef DEBUG_PHY_PROC
@@ -2505,11 +2502,9 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
                              harq_pid,
                              0);
 
-	    //ret = 1+MAX_TURBO_ITERATIONS;
-
 #ifdef DEBUG_PHY_PROC
 	    for (i=0;i<11;i++)
-              LOG_D(PHY,"SI dlsch_output_buffer[%d]=%x\n",i,phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->c[0][i]);
+              LOG_I(PHY,"dlsch_output_buffer[%d]=%x\n",i,phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->c[0][i]);
 #endif
 
 	  }
@@ -2523,7 +2518,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  }
 #endif
 
-	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	  if (ret == (1+phy_vars_ue->dlsch_ue_SI[eNB_id]->max_turbo_iterations)) {
 	    phy_vars_ue->dlsch_SI_errors[eNB_id]++;
 #ifdef DEBUG_PHY_PROC
 	    LOG_I(PHY,"[UE  %d] Frame %d, subframe %d, received SI in error\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,((last_slot==0)?9 : ((last_slot>>1)-1)));
@@ -2648,7 +2643,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	}
 #endif
 
-	if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	if (ret == (1+phy_vars_ue->dlsch_ue_ra[eNB_id]->max_turbo_iterations)) {
 	  phy_vars_ue->dlsch_ra_errors[eNB_id]++;
 	  LOG_D(PHY,"[UE  %d] Frame %d, subframe %d, received RA in error\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,((last_slot==0)?9 : ((last_slot>>1)-1)));
 #ifdef USER_MODE
@@ -2939,14 +2934,15 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			     0,
 			     0);    
 	
-	if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	if (ret == (1+phy_vars_ue->dlsch_ue_MCH[0]->max_turbo_iterations)) {
 	  phy_vars_ue->dlsch_mch_errors[eNB_id]++;
 	  LOG_I(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error, not passing to L2\n",phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1);
-	  //	  dump_mch(phy_vars_ue,0,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G);
-	  //	  exit(-1);
-	  for (i=0;i<32;i++){
+	  dump_mch(phy_vars_ue,0,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G);
+	  
+	  for (i=0;i<phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->TBS>>3;i++){
 	    printf("%2x.",phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->c[0][i]);
 	  }
+	  exit(-1);
 	}
 	else {
 #ifdef Rel10
