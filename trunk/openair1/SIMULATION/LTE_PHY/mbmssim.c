@@ -28,7 +28,7 @@
 
 #include "OCG_vars.h"
 
-#define BW 5.0
+//#define BW 5.0
 
 
 PHY_VARS_eNB *PHY_vars_eNB;
@@ -116,10 +116,11 @@ int main(int argc, char **argv) {
   double **s_re,**s_im,**r_re,**r_im;
   double iqim = 0.0;
   int subframe=1;
-  //  char fname[40], vname[40];
-  u8 transmission_mode = 1,n_tx=1,n_rx=1;
+  char fname[40];//, vname[40];
+  u8 transmission_mode = 1,n_tx=1,n_rx=2;
   u16 Nid_cell=0;
 
+  FILE *fd;
 
   int eNB_id = 0;
   unsigned char mcs=0,awgn_flag=0,round;
@@ -133,9 +134,10 @@ int main(int argc, char **argv) {
 
   
   u16 NB_RB=25;
+
   int tdd_config=3;
   
-  SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
+  SCM_t channel_model=MBSFN;
 
 
   unsigned char *input_buffer;
@@ -145,7 +147,8 @@ int main(int argc, char **argv) {
   unsigned int trials,errs[4]={0,0,0,0};//,round_trials[4]={0,0,0,0};
   
   u8 N_RB_DL=25,osf=1;
-  
+  double BW=5.0;
+
   lte_frame_type_t frame_type = FDD; 
 
 
@@ -172,42 +175,16 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hA:Cp:g:n:s:S:t:x:y:z:N:F:R:O:dm:i:")) != -1)
+  while ((c = getopt (argc, argv, "ahA:Cp:n:s:S:t:x:y:z:N:F:R:O:dm:i:")) != -1)
     {
       switch (c)
 	{
+	case 'a':
+	  awgn_flag=1;
+	  break;
 	case 'd':
 	  frame_type = 0;
 	  break;
-	case 'g':
-	  switch((char)*optarg) {
-	  case 'A': 
-	    channel_model=SCM_A;
-	    break;
-	  case 'B': 
-	    channel_model=SCM_B;
-	    break;
-	  case 'C': 
-	    channel_model=SCM_C;
-	    break;
-	  case 'D': 
-	    channel_model=SCM_D;
-	    break;
-	  case 'E': 
-	    channel_model=EPA;
-	    break;
-	  case 'F': 
-	    channel_model=EVA;
-	    break;
-	  case 'G': 
-	    channel_model=ETU;
-	    break;
-	  default:
-	    msg("Unsupported channel model!\n");
-	    exit(-1);
-	  }
-	break;
-
 	case 'n':
 	  n_frames = atoi(optarg);
 	  break;
@@ -226,38 +203,8 @@ int main(int argc, char **argv) {
 	  snr1set=1;
 	  msg("Setting SNR1 to %f\n",snr1);
 	  break;
-	  /*
-	case 't':
-	  Td= atof(optarg);
-	  break;
-	  */
 	case 'p': // subframe no;
 	  subframe=atoi(optarg);
-	  break;
-	  /*
-	case 'r':
-	  ricean_factor = pow(10,-.1*atof(optarg));
-	  if (ricean_factor>1) {
-	    printf("Ricean factor must be between 0 and 1\n");
-	    exit(-1);
-	  }
-	  break;
-	  */
-	case 'x':
-	  transmission_mode=atoi(optarg);
-	  if ((transmission_mode!=1) &&
-	      (transmission_mode!=2) &&
-	      (transmission_mode!=6)) {
-	    msg("Unsupported transmission mode %d\n",transmission_mode);
-	    exit(-1);
-	  }
-	  break;
-	case 'y':
-	  n_tx=atoi(optarg);
-	  if ((n_tx==0) || (n_tx>2)) {
-	    msg("Unsupported number of tx antennas %d\n",n_tx);
-	    exit(-1);
-	  }
 	  break;
 	case 'z':
 	  n_rx=atoi(optarg);
@@ -271,6 +218,24 @@ int main(int argc, char **argv) {
 	  break;
 	case 'R':
 	  N_RB_DL = atoi(optarg);
+	  switch (N_RB_DL) {
+	  case 6:
+	    BW=1.25;
+	    break;
+	  case 25:
+	    BW=5.0;
+	    break;
+	  case 50:
+	    BW=10.0;
+	    break;
+	  case 100:
+	    BW=20.0;
+	    break;
+	  default:
+	    printf("Unsupported Bandwidth %d\n",N_RB_DL);
+	    exit(-1);
+	    break;
+	  }
 	  break;
 	case 'O':
 	  osf = atoi(optarg);
@@ -279,6 +244,7 @@ int main(int argc, char **argv) {
 	case 'h':
 	  printf("%s -h(elp) -p(subframe) -N cell_id -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -i snr increment -z RXant \n",argv[0]);
 	  printf("-h This message\n");
+	  printf("-a Use AWGN Channel\n");
 	  printf("-p Use extended prefix mode\n");
 	  printf("-d Use TDD\n");
 	  printf("-n Number of frames to simulate\n");
@@ -302,6 +268,8 @@ int main(int argc, char **argv) {
 	  break;
 	}
     }
+  if (awgn_flag == 1)
+    channel_model = AWGN;
 
   // check that subframe is legal for eMBMS
 
@@ -330,6 +298,28 @@ int main(int argc, char **argv) {
 
   frame_parms = &PHY_vars_eNB->lte_frame_parms;
 
+  if (awgn_flag == 0)
+    sprintf(fname,"embms_%d_%d.m",mcs,N_RB_DL); 
+  else
+    sprintf(fname,"embms_awgn_%d_%d.m",mcs,N_RB_DL);
+  fd = fopen(fname,"w");
+  if (awgn_flag==0) 
+    fprintf(fd,"SNR_%d_%d=[];errs_mch_%d_%d=[];mch_trials_%d_%d=[];\n",
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL);
+  else
+    fprintf(fd,"SNR_awgn_%d_%d=[];errs_mch_awgn_%d_%d=[];mch_trials_awgn_%d_%d=[];\n",
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL,
+	    mcs,N_RB_DL);
+  fflush(fd);
 
   txdata = PHY_vars_eNB->lte_eNB_common_vars.txdata[0];
 
@@ -339,8 +329,8 @@ int main(int argc, char **argv) {
   r_im = malloc(2*sizeof(double*));
   nsymb = 12;
 
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
-	 frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d, AWGN %d\n",NUMBER_OF_OFDM_CARRIERS,
+	 frame_parms->Ncp,frame_parms->samples_per_tti,nsymb,awgn_flag);
 
   for (i=0;i<2;i++) {
 
@@ -370,7 +360,7 @@ int main(int argc, char **argv) {
     exit(-1);
   }
   
-  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,0);
+  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS_MBSFN,0);
 
   PHY_vars_eNB->lte_frame_parms.num_MBSFN_config = 1;
   PHY_vars_eNB->lte_frame_parms.MBSFN_config[0].radioframeAllocationPeriod = 0;
@@ -459,32 +449,14 @@ int main(int argc, char **argv) {
       
       for (i=0;i<2*frame_parms->samples_per_tti;i++) {
 	for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
-	  if (awgn_flag == 0) {
-	    s_re[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
-	    s_im[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-	  }
-	  else {
-	    for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
-	      if (aa==0) {
-		r_re[aarx][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		r_im[aarx][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-	      }
-	      else {
-		r_re[aarx][i] += ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		r_im[aarx][i] += ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-	      }
-	      
-	    }
-	  }
+	  s_re[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
+	  s_im[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[0][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 	}
       }
       //Multipath channel
-      if (awgn_flag == 0) {	
-	multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			  2*frame_parms->samples_per_tti,hold_channel);
-      }
+      multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+			2*frame_parms->samples_per_tti,hold_channel);
       
-      //    SNR =snr0;
       //AWGN
       sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
       sigma2 = pow(10,sigma2_dB/10);
@@ -538,11 +510,23 @@ int main(int argc, char **argv) {
 			   0,0);    
       if (n_frames==1)
 	printf("MCH decoding returns %d\n",ret);
-      if (ret == (1+MAX_TURBO_ITERATIONS))
+      if (ret == (1+PHY_vars_UE->dlsch_ue_MCH[0]->max_turbo_iterations))
 	errs[0]++;
     }
     printf("errors %d/%d (Pe %e)\n",errs[round],trials,(double)errs[round]/trials);
-    if (errs[round] < (trials/100))
+
+    if (awgn_flag==0)
+      fprintf(fd,"SNR_%d = [SNR_%d %f]; errs_mch_%d =[errs_mch_%d  %d]; mch_trials_%d =[mch_trials_%d  %d];\n",
+	      mcs,mcs,SNR,
+	      mcs,mcs,errs[0],
+	      mcs,mcs,trials);
+    else
+      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %f]; errs_mch_awgn_%d =[errs_mch_awgn_%d  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
+	      mcs,mcs,SNR,
+	      mcs,mcs,errs[0],
+	      mcs,mcs,trials);
+    fflush(fd);
+    if (errs[0] == 0)
       break;
     }
 
@@ -556,7 +540,7 @@ int main(int argc, char **argv) {
   free_eNB_dlsch(PHY_vars_eNB->dlsch_eNB_MCH);
   free_ue_dlsch(PHY_vars_UE->dlsch_ue_MCH[0]);
 
-  
+  fclose(fd);
   
   printf("Freeing channel I/O\n");
   for (i=0;i<2;i++) {

@@ -911,7 +911,8 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
         // symbol has no pilots
         len = (nb_rb*12) - pbch_pss_sss_adjust;
     }
-    
+
+    //    printf("qpsk_qpsk: len %d, llr16 %p\n",len,llr16);
     qpsk_qpsk((short *)rxF,
               (short *)rxF_i,
               (short *)llr16,
@@ -954,7 +955,6 @@ length = number of resource elements
 #endif
 
     int i;
-
     ONE_OVER_SQRT_8 = _mm_set1_epi16(23170); //round(2^16/sqrt(8))
 
     for (i=0;i<length>>2;i+=2) {
@@ -1087,10 +1087,10 @@ length = number of resource elements
         y0i = _mm_adds_epi16(y0i,logmax_num_im0);
         y0i = _mm_subs_epi16(y0i,logmax_den_im0);
 
-        stream0_128i_out[i] = _mm_unpacklo_epi16(y0r,y0i); // = [L1(1), L2(1), L1(2), L2(2)]
-        if (i<((length>>1) - 1)) // false if only 2 REs remain
-            stream0_128i_out[i+1] = _mm_unpackhi_epi16(y0r,y0i);
-   
+	_mm_storeu_si128(&stream0_128i_out[i],_mm_unpacklo_epi16(y0r,y0i)); // = [L1(1), L2(1), L1(2), L2(2)]
+	if (i<((length>>1) - 1)) // false if only 2 REs remain
+	  _mm_storeu_si128(&stream0_128i_out[i+1],_mm_unpackhi_epi16(y0r,y0i));
+	
     }
     _mm_empty();
     _m_empty();

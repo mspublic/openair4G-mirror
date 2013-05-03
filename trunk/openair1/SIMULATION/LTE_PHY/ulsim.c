@@ -564,7 +564,7 @@ FILE *csv_fdUL;
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
     PHY_vars_eNB->dlsch_eNB[0][i] = new_eNB_dlsch(1,8,0);
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
   
     if (!PHY_vars_eNB->dlsch_eNB[0][i]) {
       printf("Can't get eNB dlsch structures\n");

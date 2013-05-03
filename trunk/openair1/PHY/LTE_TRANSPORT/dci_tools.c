@@ -40,6 +40,7 @@
  */
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 #ifdef DEBUG_DCI_TOOLS
@@ -184,7 +185,15 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
     break;
   case 50:
     if (ra_header == 0) {// Type 0 Allocation
-      
+
+      for (i=16;i>0;i--) {
+	if ((rb_alloc&(1<<i)) != 0)
+	  rb_alloc2[(3*i)>>5] |= (7<<((3*(16-i))%32));
+          //      printf("rb_alloc2 (type 0) %x\n",rb_alloc2);
+      }
+      if ((rb_alloc&1) != 0)
+          rb_alloc2[0] |= (3<<16);
+      /*      
       for (i=0;i<16;i++) {
 	if (((rb_alloc>>(16-i))&1) != 0)
 	  rb_alloc2[(3*i)>>5] |= (7<<((3*i)%32));
@@ -197,6 +206,7 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
       if ((rb_alloc&1) != 0)
 	rb_alloc2[1] |= (3<<i);
       //    printf("rb_alloc2[%d] (type 0) %x ((%x>>%d)&1=%d)\n",(3*i)>>5,rb_alloc2[(3*i)>>5],rb_alloc,i,(rb_alloc>>i)&1);
+      */
     }
     else {
       LOG_E(PHY,"resource type 1 not supported for  N_RB_DL=100\n");
@@ -286,13 +296,14 @@ uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL) {
     break;
   case 50:
     if (ra_header == 0) {// Type 0 Allocation
-      
+            
       for (i=0;i<16;i++) {
 	if ((rb_alloc&(1<<(16-i))) != 0)
 	  nprb += 3;
       }
       if ((rb_alloc&1) != 0)
 	nprb += 2;
+
     }
     else {
       for (i=0;i<17;i++) {
@@ -2806,7 +2817,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   uint8_t transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   ANFBmode_t AckNackFBMode = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[0];
-  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
+  //  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   //  uint32_t current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
@@ -2818,8 +2829,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   uint32_t ndi;
   uint32_t mcs;
   uint32_t rballoc,RIV_max;
-  uint32_t hopping;
-  uint32_t type;
+  //  uint32_t hopping;
+  //  uint32_t type;
 
   if (dci_format == format0) {
 
@@ -2849,8 +2860,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -2859,8 +2870,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max6;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT6[rballoc];
@@ -2877,8 +2888,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_5MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -2887,8 +2898,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_5MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_5MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_5MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_5MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_5MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_5MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_5MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max25;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[rballoc];
@@ -2905,8 +2916,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_10MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -2915,8 +2926,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_10MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_10MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_10MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_10MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_10MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_10MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_10MHz_FDD_t *)dci_pdu)->type;
       }
 
       RIV_max = RIV_max50;
@@ -2934,8 +2945,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_20MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -2944,8 +2955,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_20MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_20MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_20MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_20MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_20MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_20MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_20MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max100;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT100[rballoc];
@@ -3238,8 +3249,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   uint32_t ndi;
   uint32_t mcs;
   uint32_t rballoc,RIV_max;
-  uint32_t hopping;
-  uint32_t type;
+  //  uint32_t hopping;
+  //  uint32_t type;
 
 #ifdef DEBUG_DCI
   msg("dci_tools.c: filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
@@ -3266,8 +3277,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -3276,8 +3287,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_1_5MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max6;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT6[rballoc];
@@ -3293,8 +3304,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_5MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -3303,8 +3314,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_5MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_5MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_5MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_5MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_5MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_5MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_5MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max25;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[rballoc];
@@ -3320,8 +3331,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_10MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -3330,8 +3341,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_10MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_10MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_10MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_10MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_10MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_10MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_10MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max50;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT50[rballoc];
@@ -3347,8 +3358,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->hopping;
-	type    = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->type;
       }
       else {
 	cqi_req = ((DCI0_20MHz_FDD_t *)dci_pdu)->cqi_req;
@@ -3357,8 +3368,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ndi     = ((DCI0_20MHz_FDD_t *)dci_pdu)->ndi;
 	mcs     = ((DCI0_20MHz_FDD_t *)dci_pdu)->mcs;
 	rballoc = ((DCI0_20MHz_FDD_t *)dci_pdu)->rballoc;
-	hopping = ((DCI0_20MHz_FDD_t *)dci_pdu)->hopping;
-	type    = ((DCI0_20MHz_FDD_t *)dci_pdu)->type;
+	//	hopping = ((DCI0_20MHz_FDD_t *)dci_pdu)->hopping;
+	//	type    = ((DCI0_20MHz_FDD_t *)dci_pdu)->type;
       }
       RIV_max = RIV_max100;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT100[rballoc];
@@ -3533,7 +3544,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue, u8 eNB_id){
   s32 **dl_channel_est = phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id];
   double *s_dB;
   s_dB = phy_vars_ue->sinr_CQI_dB;   
-  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id]; 
+  //  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id]; 
   //for the calculation of SINR_eff for CQI calculation
   int count,a_rx,a_tx;
   double abs_channel,channelx, channely,channelx_i, channely_i;
@@ -3670,7 +3681,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue, u8 eNB_id){
 		      channelx += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
 		      channely += ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+1+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];
 		    }
-		  break;
+		  break; 
 		case 1:
 		    if (channelx==0 || channely==0){
 		    channelx = ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count+(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2];

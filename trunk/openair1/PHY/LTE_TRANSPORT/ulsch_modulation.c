@@ -51,7 +51,7 @@
 __m128i dft_in128[4][1200],dft_in128[4][1200],dft_out128[4][1200],dft_out128[4][1200];
 
 #ifndef OFDMA_ULSCH
-void dft_lte(mod_sym_t *z,mod_sym_t *d, int Msc_PUSCH, u8 Nsymb) {
+void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
 
   uint32_t *dft_in0=(uint32_t*)dft_in128[0],*dft_out0=(uint32_t*)dft_out128[0];
   uint32_t *dft_in1=(uint32_t*)dft_in128[1],*dft_out1=(uint32_t*)dft_out128[1];
@@ -66,7 +66,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int Msc_PUSCH, u8 Nsymb) {
 
   //  msg("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
-  d0 = d;
+  d0 = (uint32_t *)d;
   d1 = d0+Msc_PUSCH;
   d2 = d1+Msc_PUSCH;
   d3 = d2+Msc_PUSCH;
@@ -208,7 +208,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int Msc_PUSCH, u8 Nsymb) {
     break;
   }
 
-  z0 = z;
+  z0 = (uint32_t *)z;
   z1 = z0+Msc_PUSCH;
   z2 = z1+Msc_PUSCH;
   z3 = z2+Msc_PUSCH;
@@ -244,29 +244,29 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int Msc_PUSCH, u8 Nsymb) {
 #endif
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
-		      u32 frame,
-		      u32 subframe,
+		      uint32_t frame,
+		      uint32_t subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch) {
 
-  u8 qam64_table_offset_re = 0;
-  u8 qam64_table_offset_im = 0;
-  u8 qam16_table_offset_re = 0;
-  u8 qam16_table_offset_im = 0;
+  uint8_t qam64_table_offset_re = 0;
+  uint8_t qam64_table_offset_im = 0;
+  uint8_t qam16_table_offset_re = 0;
+  uint8_t qam16_table_offset_im = 0;
   short gain_lin_QPSK;
 
   int re_offset,re_offset0,i,Msymb,j,k,nsymb,Msc_PUSCH,l;
-  //  u8 harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  u8 harq_pid = subframe2harq_pid(frame_parms,((subframe==0)?1:0)+frame,subframe);
-  u8 Q_m;
+  //  uint8_t harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  uint8_t harq_pid = subframe2harq_pid(frame_parms,((subframe==0)?1:0)+frame,subframe);
+  uint8_t Q_m;
   mod_sym_t *txptr;
-  u32 symbol_offset;
-  u16 first_rb;
-  u16 nb_rb;
+  uint32_t symbol_offset;
+  uint16_t first_rb;
+  uint16_t nb_rb;
   int G;
   
-  u32 x1, x2, s=0;
-  u8 reset = 1,c;
+  uint32_t x1, x2, s=0;
+  uint8_t c;
 
   // x1 is set in lte_gold_generic
   x2 = (ulsch->rnti<<14) + (subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
@@ -311,22 +311,24 @@ void ulsch_modulation(mod_sym_t **txdataF,
   //msg("ulsch bits: ");
   s = lte_gold_generic(&x1, &x2, 1);
   k=0;
+  //printf("G %d\n",G);
   for (i=0;i<(1+(G>>5));i++) {
     for (j=0;j<32;j++,k++) {
-      c = (u8)((s>>j)&1);
+      c = (uint8_t)((s>>j)&1);
 
       if (ulsch->h[k] == PUSCH_x) {
-      //      msg("i %d: PUSCH_x\n",i);
+	//	msg("i %d: PUSCH_x\n",i);
 	ulsch->b_tilde[k] = 1;
       }
       else if (ulsch->h[k] == PUSCH_y) {
-	//      msg("i %d: PUSCH_y\n",i);
+	//	msg("i %d: PUSCH_y\n",i);
 	ulsch->b_tilde[k] = ulsch->b_tilde[k-1];
       }
       else {
 	ulsch->b_tilde[k] = (ulsch->h[k]+c)&1;  
-	//      msg("i %d : %d (h %d c %d)\n", i,ulsch->b_tilde[i],ulsch->h[i],c);
+	//	msg("i %d : %d (h %d c %d)\n", (i<<5)+j,ulsch->b_tilde[k],ulsch->h[k],c);
       }
+      
     }
     s = lte_gold_generic(&x1, &x2, 0);
   }
@@ -350,14 +352,14 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 
 	  //UE1, -x1*
-	  ((s16*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
-	  ((s16*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  //      if (i<Msc_PUSCH)
-	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
+	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
 	  // UE1, x0*
-	  ((s16*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((s16*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((int16_t*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((int16_t*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
 
 	  break;
 
@@ -383,8 +385,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 
       
-	  ((s16*)&ulsch->d[i])[0]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
 
 	  //UE1,x0*
 	  qam16_table_offset_re = 0;
@@ -404,10 +406,10 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 
       
-	  //	  ((s16*)&ulsch->d[i+1])[0]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
-	  //	  ((s16*)&ulsch->d[i+1])[1]=(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
-	  ((s16*)&ulsch->d[i+1])[0]=(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((s16*)&ulsch->d[i+1])[1]=-(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
+	  //	  ((int16_t*)&ulsch->d[i+1])[0]=-(int16_t)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  //	  ((int16_t*)&ulsch->d[i+1])[1]=(int16_t)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
+	  ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
 
       
 	  break;
@@ -440,8 +442,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
       
       
-	  ((s16*)&ulsch->d[i])[0]=-(s16)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
 
 	  //UE1,x0*
 	  qam64_table_offset_re = 0;
@@ -467,8 +469,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
       
       
-	  ((s16*)&ulsch->d[i+1])[0]=(s16)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((s16*)&ulsch->d[i+1])[1]=-(s16)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
 
 	  break;
 
@@ -484,10 +486,10 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	case 2:
 	  // TODO: this has to be updated!!!
 
-	  ((s16*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((s16*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  //      if (i<Msc_PUSCH)
-	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
+	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
 	  break;
 
@@ -509,9 +511,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 
       
-	  ((s16*)&ulsch->d[i])[0]=(s16)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
-	  //      msg("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((s16*)&ulsch->d[i])[0],((s16*)&ulsch->d[i])[1]);
+	  ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((s32)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((s32)amp*qam16_table[qam16_table_offset_im])>>15);
+	  //      msg("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 	  break;
      
 	case 6:
@@ -539,8 +541,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
       
       
-	  ((s16*)&ulsch->d[i])[0]=(s16)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((s16*)&ulsch->d[i])[1]=(s16)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((s32)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((s32)amp*qam64_table[qam64_table_offset_im])>>15);
 
 	  break;
 
@@ -584,7 +586,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       //      msg("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
 #ifdef DEBUG_ULSCH_MODULATION
-	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1]);
+	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1]);
 #endif
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==frame_parms->ofdm_symbol_size)
@@ -603,7 +605,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   //  printf("txdataF %p\n",&txdataF[0][0]);
   for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
     re_offset = re_offset0;
-    symbol_offset = (u32)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
+    symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
     msg("ulsch_mod (OFDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
@@ -617,7 +619,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       for (i=0;i<Msc_PUSCH;i++,j++) {
 
 #ifdef DEBUG_ULSCH_MODULATION
-	msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((s16*)&ulsch->z[j])[0],((s16*)&ulsch->z[j])[1],&txptr[re_offset]);
+	msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1],&txptr[re_offset]);
 #endif //DEBUG_ULSCH_MODULATION
 	txptr[re_offset++] = ulsch->z[j];
 

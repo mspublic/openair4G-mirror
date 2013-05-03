@@ -26,6 +26,6 @@ plot(dl1_rxF_comp0,'x');title 'Comp 1 interferer';
 dlsch0_rxF_llr
 rho
 figure;
-plot(real(rho_0)); title 'Rho';
+plot(real(rho_0),'x'); title 'Rho';
 figure;
 plot(dl0_llr,'x'); title 'Llr';

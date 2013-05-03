@@ -72,7 +72,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   //  RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
   uint8_t *rar = (uint8_t *)(rar_pdu+1);
-  u8 harq_pid = get_Msg3_harq_pid(frame_parms,frame,subframe);
+  uint8_t harq_pid = get_Msg3_harq_pid(frame_parms,frame,subframe);
   uint16_t rballoc;
   uint8_t cqireq;
   uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
@@ -167,8 +167,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      unsigned char eNB_id ){
   
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
-  u8 transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
-  u32 frame              = phy_vars_ue->ulsch_ue_Msg3_frame[eNB_id];
+  uint8_t transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
   unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
   LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
@@ -177,7 +176,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
 
   uint8_t *rar = (uint8_t *)(rar_pdu+1);
-  u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
+  uint8_t harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
   uint16_t rballoc;
   uint8_t cqireq;
   double sinr_eff;

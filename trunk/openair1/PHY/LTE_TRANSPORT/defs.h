@@ -578,18 +578,12 @@ typedef struct {
   uint8_t active;
   /// Transmission mode
   uint8_t mode1_flag;
-  /// downlink power offset field
-    //  uint8_t dl_power_off;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
   /// Current HARQ process id
   uint8_t current_harq_pid;
-  /// Current RB allocation
-    //  uint32_t rb_alloc[4];
-  /// Current subband PMI allocation
-    //  uint16_t pmi_alloc;
   /// Current subband antenna selection
   uint32_t antenna_alloc;
   /// Current subband RI allocation
@@ -598,20 +592,18 @@ typedef struct {
   uint32_t cqi_alloc1;
   /// Current subband CQI2 allocation
   uint32_t cqi_alloc2;
-  /// Current Number of RBs
-    //  uint16_t nb_rb;
   /// HARQ-ACKs
   harq_status_t harq_ack[10];
   /// Pointers to up to 8 HARQ processes
   LTE_DL_UE_HARQ_t *harq_processes[8];   
   /// Layer index for this DLSCH
   uint8_t layer_index;              
-  /// Number of soft channel bits
-    //  uint16_t G;
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
   uint8_t Mdlharq;              
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Kmimo;                
+  uint8_t Kmimo;
+  /// Maximum number of Turbo iterations
+  uint8_t max_turbo_iterations;
 } LTE_UE_DLSCH_t;
 
 typedef enum {format0,

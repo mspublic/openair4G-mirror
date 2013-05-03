@@ -315,7 +315,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
     frame_parms->Ncp=1;
     frame_parms->frame_type=0;
     init_frame_parms(frame_parms,1);
-    sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+    if (sync_pos < frame_parms->nb_prefix_samples)
+      sync_pos2 = sync_pos + FRAME_LENGTH_COMPLEX_SAMPLES - frame_parms->nb_prefix_samples;
+    else
+      sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
     // PSS is hypothesized in last symbol of first slot in Frame
     sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - (frame_parms->nb_prefix_samples);
     
@@ -353,7 +356,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
       frame_parms->Ncp=0;
       frame_parms->frame_type=1;
       init_frame_parms(frame_parms,1);
-      sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+
+      if (sync_pos >= frame_parms->nb_prefix_samples)
+	sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+      else
+	sync_pos2 = sync_pos + FRAME_LENGTH_COMPLEX_SAMPLES - frame_parms->nb_prefix_samples;
 
       // PSS is hypothesized in 2nd symbol of third slot in Frame (S-subframe)
       sync_pos_slot = frame_parms->samples_per_tti + 
@@ -398,6 +405,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
 	frame_parms->frame_type=1;
 	init_frame_parms(frame_parms,1);
 	sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+	if (sync_pos >= frame_parms->nb_prefix_samples)
+	  sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+	else
+	  sync_pos2 = sync_pos + FRAME_LENGTH_COMPLEX_SAMPLES - frame_parms->nb_prefix_samples;
 
 	// PSS is hypothesized in 2nd symbol of third slot in Frame (S-subframe)
 	sync_pos_slot = frame_parms->samples_per_tti + (frame_parms->ofdm_symbol_size<<1) + (frame_parms->nb_prefix_samples<<1);

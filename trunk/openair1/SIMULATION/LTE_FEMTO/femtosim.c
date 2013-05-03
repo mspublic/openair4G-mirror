@@ -647,7 +647,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
 					num_common_dci,
 					dci_alloc,
 					0,
-					(s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
+					0,//(s16)(((s32)AMP*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
 					&PHY_vars_eNB->lte_frame_parms,
 					PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
 					opts.subframe);
@@ -663,7 +663,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
 			   num_common_dci,
 			   dci_alloc,
 			   0,
-			   (s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
+			   0,//(s16)(((s32)AMP*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
 			   &PHY_vars_eNB->lte_frame_parms,
 			   interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
 			   opts.subframe);
@@ -911,7 +911,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      //Modulation
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
-					      opts.amp,
+					      AMP,
 					      opts.subframe,
 					      &PHY_vars_eNB->lte_frame_parms,
 					      num_pdcch_symbols,
@@ -920,7 +920,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	      for(i=0;i<opts.nInterf;i++)
                 {
 		  dlsch_modulation(interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
-				   opts.amp,
+				   AMP,
 				   opts.subframe,
 				   &(interf_PHY_vars_eNB[i])->lte_frame_parms,
 				   num_pdcch_symbols,
@@ -937,13 +937,13 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 				
 				
 	      generate_pilots(PHY_vars_eNB,PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
-			      opts.amp,
+			      AMP,
 			      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 				
 	      for(i=0;i<opts.nInterf;i++)
 		{
 		  generate_pilots(interf_PHY_vars_eNB[i],interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
-				  opts.amp,
+				  AMP,
 				  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 		}
                 
@@ -1033,7 +1033,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	      /*********Reciver **************/
 	      //TODO: Optimize and clean code
 	      // Inner receiver scheduling for 3 slots
-	      for (Ns=(2*opts.subframe); Ns<((2*opts.subframe)+3); Ns++)
+	      for (Ns=(2*opts.subframe); Ns<((2*opts.subframe)+2); Ns++)
                 {
 		  for (l=0; l<opts.pilot2 ; l++)
                     {  		            
@@ -1257,6 +1257,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      if(opts.nframes==1)
 		{
+		  printf("Dumping DLSCH output\n");
 		  _writeOuputOneFrame(opts,coded_bits_per_codeword,uncoded_ber_bit,tbs);
 		  write_output("fch0e.m","ch0e",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
 		  write_output("fch1e.m","ch1e",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
@@ -1468,6 +1469,8 @@ void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncod
   }
 
   write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[opts.Nid_cell][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
+  write_output("dlsch00_ch1.m","dl00_ch1",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
+  
 
   write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
   write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
