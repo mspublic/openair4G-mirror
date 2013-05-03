@@ -11,9 +11,9 @@ help:
 all: help
 
 oaisim: 
-	(cd $(OPENAIR_TARGETS)/SIMU/USER && make all ) 
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && make -j2 all NAS=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ) 
 oaisim_nas: 
-	(cd $(OPENAIR_TARGETS)/SIMU/USER && make all OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1) 
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && make -j2 all OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS=1) 
 nasmesh:
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
