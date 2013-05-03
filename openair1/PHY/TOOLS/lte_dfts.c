@@ -1350,16 +1350,33 @@ void dft256(int16_t *x,int16_t *y,int scale) {
   __m128i xtmp[64],ytmp[64],*tw256a_128p=(__m128i *)tw256a,*tw256b_128p=(__m128i *)tw256b,*x128=(__m128i *)x,*y128=(__m128i *)y,*y128p=(__m128i *)y;
   __m128i *ytmpp = &ytmp[0];
   int i,j;
-  
+
+#ifdef D256STATS
+  time_stats_t ts_t,ts_d,ts_b;
+
+  reset_meas(&ts_t);
+  reset_meas(&ts_d);
+  reset_meas(&ts_b);
+  start_meas(&ts_t);
+#endif  
   for (i=0,j=0;i<64;i+=4,j++) {
     transpose16_ooff(x128+i,xtmp+j,16);
   }
   
+#ifdef D256STATS
+  stop_meas(&ts_t);
+  start_meas(&ts_d);
+#endif
 
   dft64((int16_t*)(xtmp),(int16_t*)(ytmp),1);
   dft64((int16_t*)(xtmp+16),(int16_t*)(ytmp+16),1);
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+32),1);
   dft64((int16_t*)(xtmp+48),(int16_t*)(ytmp+48),1);
+
+#ifdef D256STATS
+  stop_meas(&ts_d);
+  start_meas(&ts_b);
+#endif
 
   for (i=0;i<16;i+=4) {
     bfly4_16(ytmpp,ytmpp+16,ytmpp+32,ytmpp+48,
@@ -1383,6 +1400,11 @@ void dft256(int16_t *x,int16_t *y,int scale) {
     y128p+=4;
     ytmpp+=4;
   }
+
+#ifdef D256STATS
+  stop_meas(&ts_b);
+  printf("t: %llu cycles, d: %llu cycles, b: %llu cycles\n",ts_t.diff,ts_d.diff,ts_b.diff);
+#endif
     
   if (scale>0) {
 
