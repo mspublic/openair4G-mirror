@@ -187,7 +187,7 @@ public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag,rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                                 mem_block_t* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
 #else
 /*! \fn BOOL pdcp_data_req(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
@@ -207,11 +207,12 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
 */
 public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, u32 muiP, u32 confirmP, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 mode);)
 
-/*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
+/*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
 * \brief This functions handles data transfer indications coming from RLC
 * \param[in] module_id Module ID
 * \param[in] frame Frame number
 * \param[in] Shows if relevant PDCP entity is part of an eNB or a UE
+* \param[in] Tells if MBMS traffic
 * \param[in] rab_id Radio Bearer ID
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer Buffer carrying SDU
@@ -220,7 +221,7 @@ public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                                 mem_block_t* sdu_buffer, u8 is_data_plane);)
 #endif // PDCP_UNIT_TEST
 

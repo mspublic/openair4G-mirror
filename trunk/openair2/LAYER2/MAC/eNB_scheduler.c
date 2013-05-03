@@ -557,7 +557,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 	LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d \n",
 	      Mod_id,frame, rx_lengths[i], UE_id);
 
-	mac_rlc_data_ind(Mod_id,frame,1,
+	mac_rlc_data_ind(Mod_id,frame,1,RLC_MBMS_NO,
 			 rx_lcids[i]+(UE_id)*NB_RB_MAX,
 			 (char *)payload_ptr,
 			 rx_lengths[i],
@@ -578,7 +578,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
       LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
 	    Mod_id,frame, rx_lengths[i], UE_id,rx_lcids[i]);
       if (rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) {   // MAX SIZE OF transport block
-	mac_rlc_data_ind(Mod_id,frame,1,
+	mac_rlc_data_ind(Mod_id,frame,1,RLC_MBMS_NO,
 			 DTCH+(UE_id)*NB_RB_MAX,
 			 (char *)payload_ptr,
 			 rx_lengths[i],
@@ -1327,7 +1327,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
       //      LOG_I(MAC,"[eNB %d][MBMS USER-PLANE], Frame %d, MTCH->MCH, Requesting %d bytes from RLC (header len mtch %d)\n",
       //    Mod_id,frame,TBS-header_len_mcch-header_len_msi-sdu_length_total-header_len_mtch,header_len_mtch);
  
-      sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,
+      sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame, RLC_MBMS_NO
 					       MTCH+(MAX_NUM_RB*(NUMBER_OF_UE_MAX+1)),
 					       (char*)&mch_buffer[sdu_length_total]);
       LOG_I(MAC,"[eNB %d][MBMS USER-PLANE] Got %d bytes for MTCH %d\n",Mod_id,sdu_lengths[num_sdus],MTCH+(MAX_NUM_RB*(NUMBER_OF_UE_MAX+1)));
@@ -2749,13 +2749,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       header_len_dcch = 2; // 2 bytes DCCH SDU subheader 
 
     
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+(NB_RB_MAX*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,RLC_MBMS_NO, DCCH+(NB_RB_MAX*next_ue),
 				      (TBS-ta_len-header_len_dcch)); // transport block set size
 
       sdu_lengths[0]=0;
       if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
 	LOG_D(MAC,"[eNB %d] Frame %d, DL-DCCH->DLSCH, Requesting %d bytes from RLC (RRC message)\n",Mod_id,frame,TBS-header_len_dcch);
-	sdu_lengths[0] += mac_rlc_data_req(Mod_id,frame,
+	sdu_lengths[0] += mac_rlc_data_req(Mod_id,frame,RLC_MBMS_NO,
 					 DCCH+(NB_RB_MAX*next_ue),
 					 (char *)&dlsch_buffer[sdu_lengths[0]]);
 
@@ -2778,14 +2778,14 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       }
 
       // check for DCCH1 and update header information (assume 2 byte sub-header)
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DCCH+1+(NB_RB_MAX*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,RLC_MBMS_NO, DCCH+1+(NB_RB_MAX*next_ue),
 				      (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
                                                                                  // DCCH SDU
 
       if (rlc_status.bytes_in_buffer > 0) {
 	LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, Requesting %d bytes from RLC (RRC message)\n",
 	      Mod_id,frame,TBS-header_len_dcch-sdu_length_total);
-	sdu_lengths[num_sdus] += mac_rlc_data_req(Mod_id,frame,
+	sdu_lengths[num_sdus] += mac_rlc_data_req(Mod_id,frame,RLC_MBMS_NO,
 						  DCCH+1+(NB_RB_MAX*next_ue),
 						  (char *)&dlsch_buffer[sdu_lengths[0]]);
 	sdu_lcids[num_sdus] = DCCH1;
@@ -2805,14 +2805,14 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	    Mod_id,frame,DTCH+(NB_RB_MAX*next_ue),TBS,
 	    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,DTCH+(NB_RB_MAX*next_ue),
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,RLC_MBMS_NO, DTCH+(NB_RB_MAX*next_ue),
 				      TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
 
       if (rlc_status.bytes_in_buffer > 0) {
 	
 	LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB], Frame %d, DTCH->DLSCH, Requesting %d bytes from RLC (hdr len dtch %d)\n",
 	      Mod_id,frame,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
-	sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,
+	sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id,frame,RLC_MBMS_NO,
 						 DTCH+(NB_RB_MAX*next_ue),
 						 (char*)&dlsch_buffer[sdu_length_total]);
 	

@@ -65,6 +65,7 @@ typedef struct rlc_um_entity {
   u8_t              protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
   u16_t             is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
   boolean_t         is_enb;             /*!< \brief To know if the RLC belongs to a eNB or UE. */
+  boolean_t         is_mxch;            /*!< \brief To know if the RLC belongs to a MBMS bearer. */
   //-----------------------------
   // PROTOCOL VARIABLES
   //-----------------------------

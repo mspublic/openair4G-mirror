@@ -80,52 +80,55 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
   return tbs_size;
 }
 //-----------------------------------------------------------------------------
-tbs_size_t mac_rlc_data_req     (module_id_t module_idP, u32_t frame, chan_id_t channel_idP, char* bufferP) {
+tbs_size_t mac_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t MBMS_flagP, chan_id_t channel_idP, char* bufferP) {
 //-----------------------------------------------------------------------------
-  struct mac_data_req data_request;
-  if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
-      if ((channel_idP >= 0) && (channel_idP < MAX_RAB)) {
-                  switch (rlc[module_idP].m_rlc_pointer[channel_idP].rlc_type) {
+    struct mac_data_req    data_request;
+    rb_id_t                rb_id;
+
+    if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
+        if ((channel_idP >= 0) && (channel_idP < RLC_MAX_LC)) {
+            rb_id = rlc[module_idP].m_lcid2rbid[channel_idP];
+            if ((rb_id > 0) && (rb_id < RLC_MAX_RB)) {
+                switch (rlc[module_idP].m_rlc_pointer[rb_id].rlc_type) {
                     case RLC_NONE:
                         //handle_event(WARNING,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no radio bearer configured :%d\n", __FILE__, __LINE__, channel_idP);
                         break;
 
                     case RLC_AM:
-                        data_request = rlc_am_mac_data_request(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame);
+                        data_request = rlc_am_mac_data_request(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame);
                         return mac_rlc_serialize_tb(bufferP, data_request.data);
                         break;
 
                     case RLC_UM:
-                        data_request = rlc_um_mac_data_request(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame);
+                        data_request = rlc_um_mac_data_request(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame);
                         return mac_rlc_serialize_tb(bufferP, data_request.data);
                         break;
 
                     case RLC_TM:
-                        data_request = rlc_tm_mac_data_request(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame);
+                        data_request = rlc_tm_mac_data_request(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame);
                         return mac_rlc_serialize_tb(bufferP, data_request.data);
                         break;
 
                     default:;
                         //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no RLC found for this radio bearer %d\n", __FILE__, __LINE__, channel_idP);
-
-                  }
+                }
+            } else {
+                LOG_E(RLC, "%s() : radio bearer id out of bounds :%d\n", __FUNCTION__, rb_id);
+            }
       } else {
           //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, channel_idP);
-          LOG_E(RLC, "mac_rlc_data_req() : parameter rb_id out of bounds :%d\n", channel_idP);
-	  return(-1);
-#ifdef USER_MODE
-	  exit(-1);
-#endif
+          LOG_E(RLC, "%s() : parameter channel_id out of bounds :%d\n", __FUNCTION__, channel_idP);
+          return(-1);
       }
   } else {
-      //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
-    LOG_E(RLC, "FONCTION mac_rlc_data_req() : parameter module_id out of bounds :%d\n", module_idP);
+      LOG_E(RLC, "%s() : parameter module_id out of bounds :%d\n", __FUNCTION__, module_idP);
   }
   return (tbs_size_t)0;
 }
 //-----------------------------------------------------------------------------
-void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, chan_id_t rb_idP, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs) {
+void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, chan_id_t channel_idP, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs) {
 //-----------------------------------------------------------------------------
+    rb_id_t                rb_id;
 #ifdef DEBUG_MAC_INTERFACE
     if (num_tbP) {
         LOG_D(RLC, "\n[RLC] Inst %d: MAC_RLC_DATA_IND on RB %d, Num_tb %d\n",module_idP,rb_idP,num_tbP);
@@ -133,65 +136,71 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
 #endif // DEBUG_MAC_INTERFACE
 
     if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
-        if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
-          //msg("OK for RB_ID\n");
-            //if (num_tbP > 0) {
-                //msg("OK for NB_TB\n");
+        if ((channel_idP >= 0) && (channel_idP < RLC_MAX_LC)) {
+            rb_id = rlc[module_idP].m_lcid2rbid[channel_idP];
+            if ((rb_id > 0) && (rb_id < RLC_MAX_RB)) {
+                //if (num_tbP > 0) {
                 struct mac_data_ind data_ind = mac_rlc_deserialize_tb(bufferP, tb_sizeP, num_tbP, crcs);
 
-
-                switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
+                switch (rlc[module_idP].m_rlc_pointer[rb_id].rlc_type) {
                     case RLC_NONE:
                         //handle_event(WARNING,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no radio bearer configured :%d\n", __FILE__, __LINE__, rb_idP);
-                        LOG_W(RLC, " FONCTION mac_rlc_data_ind()  : no radio bearer configured :%d\n",  rb_idP);
+                        LOG_W(RLC, " FONCTION mac_rlc_data_ind()  : no radio bearer configured :%d\n",  rb_id);
                         break;
 
                     case RLC_AM:
 #ifdef DEBUG_MAC_INTERFACE
-                        LOG_D(RLC, "MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+                        LOG_D(RLC, "MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_id].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index].module_id);
 #endif
 
-                        rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
+                        rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     case RLC_UM:
 #ifdef DEBUG_MAC_INTERFACE
-                        LOG_D(RLC, "MAC DATA IND TO RLC_UM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+                        LOG_D(RLC, "MAC DATA IND TO RLC_UM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_id].rlc_index, rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index].module_id);
 #endif
-                        rlc_um_mac_data_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
+                        rlc_um_mac_data_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     case RLC_TM:
 #ifdef DEBUG_MAC_INTERFACE
-                        LOG_D(RLC, "MAC DATA IND TO RLC_TM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+                        LOG_D(RLC, "MAC DATA IND TO RLC_TM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_id].rlc_index, rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index].module_id);
 #endif
-                        rlc_tm_mac_data_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, eNB_flag, data_ind);
+                        rlc_tm_mac_data_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame, eNB_flag, data_ind);
                         break;
 
                     default:
                         //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no RLC found for this radio bearer %d\n", __FILE__, __LINE__, rb_idP);
-                        LOG_W(RLC, "FILE  FONCTION mac_rlc_data_ind() LINE  : no RLC found for this radio bearer %d\n",  rb_idP);
+                        LOG_W(RLC, "FILE  FONCTION mac_rlc_data_ind() LINE  : no RLC found for this radio bearer %d\n",  rb_id);
                         ;
 
                 }
-            //}
+            } else {
+                LOG_E(RLC, "%s() : radio bearer id out of bounds :%d\n", __FUNCTION__, rb_id);
+            }
         } else {
-            //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, rb_idP);
+            LOG_E(RLC, "%s() : parameter channel_id out of bounds :%d\n", __FUNCTION__, channel_idP);
         }
     } else {
-        //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
+        LOG_E(RLC, "%s() : parameter module_id out of bounds :%d\n", __FUNCTION__, module_idP);
     }
 }
 //-----------------------------------------------------------------------------
-mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, chan_id_t channel_idP, tb_size_t tb_sizeP) {
+mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, chan_id_t channel_idP, tb_size_t tb_sizeP) {
 //-----------------------------------------------------------------------------
-  mac_rlc_status_resp_t mac_rlc_status_resp;
+  rb_id_t                rb_id = 0;
+  mac_rlc_status_resp_t  mac_rlc_status_resp;
+
   mac_rlc_status_resp.bytes_in_buffer = 0;
   mac_rlc_status_resp.pdus_in_buffer  = 0;
+
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
-      if ((channel_idP >= 0) && (channel_idP < MAX_RAB)) {
-          struct mac_status_resp status_resp;
-          struct mac_status_ind tx_status;
+      if ((channel_idP >= 0) && (channel_idP < RLC_MAX_LC)) {
+          rb_id = rlc[module_idP].m_lcid2rbid[channel_idP];
+          if ((rb_id > 0) && (rb_id < RLC_MAX_RB)) {
+              struct mac_status_resp status_resp;
+              struct mac_status_ind tx_status;
                   switch (rlc[module_idP].m_rlc_pointer[channel_idP].rlc_type) {
                     case RLC_NONE:
                         //handle_event(WARNING,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no radio bearer configured :%d\n", __FILE__, __LINE__, channel_idP);
@@ -206,29 +215,31 @@ mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t fram
 
                     case RLC_UM:
                         //msg("[RLC_UM][MOD %d] mac_rlc_status_ind  tb_size %d\n", module_idP,  tb_sizeP);
-
-		      status_resp = rlc_um_mac_status_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame, eNB_flag, tb_sizeP, tx_status);
+                        status_resp = rlc_um_mac_status_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame, eNB_flag, tb_sizeP, tx_status);
                         mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
                         //mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
                         return mac_rlc_status_resp;
                         break;
 
                     case RLC_TM:
-		      status_resp = rlc_tm_mac_status_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame, tb_sizeP, tx_status);
-		      mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
-		      mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
-		      return mac_rlc_status_resp;
-		      break;
+                        status_resp = rlc_tm_mac_status_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], frame, tb_sizeP, tx_status);
+                        mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
+                        mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
+                        return mac_rlc_status_resp;
+                        break;
 
                     default:;
                         //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no RLC found for this radio bearer %d\n", __FILE__, __LINE__, channel_idP);
 
                   }
+          } else {
+              // two many traces because MAC probe inactive channels. LOG_E(RLC, "%s(Mod=%d, eNB_flag=%d, mbms flag=%d,channel_id=%d) : radio bearer id out of bounds :%d \n", __FUNCTION__, module_idP, eNB_flag, MBMS_flagP, channel_idP, rb_id);
+          }
       } else {
-          //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, channel_idP);
+          LOG_E(RLC, "%s() : parameter channel_id out of bounds :%d\n", __FUNCTION__, channel_idP);
       }
   } else {
-      //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
+      LOG_E(RLC, "%s() : parameter module_id out of bounds :%d\n", __FUNCTION__, module_idP);
   }
   return mac_rlc_status_resp;
 }

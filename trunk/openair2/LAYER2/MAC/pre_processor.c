@@ -104,7 +104,7 @@ void store_dlsch_buffer (unsigned char Mod_id,
     
     for(i=0;i< MAX_NUM_LCID; i++){ // loop over all the logical channels
       
-      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,i+(NB_RB_MAX*next_ue),0 ); 
+      rlc_status = mac_rlc_status_ind(Mod_id,frame,1,RLC_MBMS_NO,i+(NB_RB_MAX*next_ue),0 );
       eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_info[i] = rlc_status.bytes_in_buffer; //storing the dlsch buffer for each logical channel
       
       eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_total = eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_total + eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_info[i];//storing the total dlsch buffer

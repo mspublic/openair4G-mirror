@@ -88,18 +88,19 @@ typedef volatile struct {
 */
 public_rlc_um_control_primitives(   void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, rlc_um_info_t * config_umP, rb_id_t rb_idP, rb_type_t rb_typeP);)
 
-/*! \fn void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
+/*! \fn void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, u8_t mbms_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
 * \brief    Allocate memory for RLC UM instance, reset protocol variables, and set protocol parameters. After this configuration the RLC UM protocol instance will be in RLC_DATA_TRANSFER_READY_STATE state.
 * \param[in]  rlcP                      RLC UM protocol instance pointer.
 * \param[in]  frame                     Frame index.
 * \param[in]  eNB_flag                  Flag to indicate eNB (1) or UE (0)
+* \param[in]  mbms_flagP                Flag to indicate if this RLC is configured for MBMS.
 * \param[in]  module_idP                Virtualized module identifier.
 * \param[in]  ul_rlcP                   Configuration parameters for RLC UM UL instance.
 * \param[in]  dl_rlcP                   Configuration parameters for RLC UM DL instance.
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  rb_typeP                  Radio bearer type (Signalling or Data).
 */
-public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP);)
+public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, u8_t mbms_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP);)
 
 /*! \fn void rlc_um_init (rlc_um_entity_t *rlcP)
 * \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
