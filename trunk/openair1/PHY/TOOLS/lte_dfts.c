@@ -1359,10 +1359,28 @@ void dft256(int16_t *x,int16_t *y,int scale) {
   reset_meas(&ts_b);
   start_meas(&ts_t);
 #endif  
+  /*
   for (i=0,j=0;i<64;i+=4,j++) {
     transpose16_ooff(x128+i,xtmp+j,16);
   }
-  
+  */
+    transpose16_ooff(x128+0,xtmp+0,16);
+    transpose16_ooff(x128+4,xtmp+1,16);
+    transpose16_ooff(x128+8,xtmp+2,16);
+    transpose16_ooff(x128+12,xtmp+3,16);
+    transpose16_ooff(x128+16,xtmp+4,16);
+    transpose16_ooff(x128+20,xtmp+5,16);
+    transpose16_ooff(x128+24,xtmp+6,16);
+    transpose16_ooff(x128+28,xtmp+7,16);
+    transpose16_ooff(x128+32,xtmp+8,16);
+    transpose16_ooff(x128+36,xtmp+9,16);
+    transpose16_ooff(x128+40,xtmp+10,16);
+    transpose16_ooff(x128+44,xtmp+11,16);
+    transpose16_ooff(x128+48,xtmp+12,16);
+    transpose16_ooff(x128+52,xtmp+13,16);
+    transpose16_ooff(x128+56,xtmp+14,16);
+    transpose16_ooff(x128+60,xtmp+15,16);
+
 #ifdef D256STATS
   stop_meas(&ts_t);
   start_meas(&ts_d);
