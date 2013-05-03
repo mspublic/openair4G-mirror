@@ -1605,15 +1605,43 @@ void dft512(int16_t *x,int16_t *y,int scale) {
   dft256((int16_t*)(xtmp+128),(int16_t*)(ytmp+64),1);
 
 
-  for (i=0;i<64;i++) {
+  for (i=0;i<64;i+=8) {
     bfly2_16(ytmpp,ytmpp+64,
 	     y128p,y128p+64,
 	     tw512a_128p,
 	     tw512b_128p);
-    tw512a_128p++;
-    tw512b_128p++;
-    y128p++;
-    ytmpp++;    
+    bfly2_16(ytmpp+1,ytmpp+65,
+	     y128p+1,y128p+65,
+	     tw512a_128p+1,
+	     tw512b_128p+1);
+    bfly2_16(ytmpp+2,ytmpp+66,
+	     y128p+2,y128p+66,
+	     tw512a_128p+2,
+	     tw512b_128p+2);
+    bfly2_16(ytmpp+3,ytmpp+67,
+	     y128p+3,y128p+67,
+	     tw512a_128p+3,
+	     tw512b_128p+3);
+    bfly2_16(ytmpp+4,ytmpp+68,
+	     y128p+4,y128p+68,
+	     tw512a_128p+4,
+	     tw512b_128p+4);
+    bfly2_16(ytmpp+5,ytmpp+69,
+	     y128p+5,y128p+69,
+	     tw512a_128p+5,
+	     tw512b_128p+5);
+    bfly2_16(ytmpp+6,ytmpp+70,
+	     y128p+6,y128p+70,
+	     tw512a_128p+6,
+	     tw512b_128p+6);
+    bfly2_16(ytmpp+7,ytmpp+71,
+	     y128p+7,y128p+71,
+	     tw512a_128p+7,
+	     tw512b_128p+7);
+    tw512a_128p+=8;
+    tw512b_128p+=8;
+    y128p+=8;
+    ytmpp+=8;    
   }
 
   if (scale>0) {
