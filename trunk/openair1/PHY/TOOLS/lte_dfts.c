@@ -1361,15 +1361,27 @@ void dft256(int16_t *x,int16_t *y,int scale) {
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+32),1);
   dft64((int16_t*)(xtmp+48),(int16_t*)(ytmp+48),1);
 
-  for (i=0;i<16;i++) {
+  for (i=0;i<16;i+=4) {
     bfly4_16(ytmpp,ytmpp+16,ytmpp+32,ytmpp+48,
 	     y128p,y128p+16,y128p+32,y128p+48,
 	     tw256a_128p,tw256a_128p+16,tw256a_128p+32,
 	     tw256b_128p,tw256b_128p+16,tw256b_128p+32);
-    tw256a_128p++;
-    tw256b_128p++;
-    y128p++;
-    ytmpp++;
+    bfly4_16(ytmpp+1,ytmpp+17,ytmpp+33,ytmpp+49,
+	     y128p+1,y128p+17,y128p+33,y128p+49,
+	     tw256a_128p+1,tw256a_128p+17,tw256a_128p+33,
+	     tw256b_128p+1,tw256b_128p+17,tw256b_128p+33);
+    bfly4_16(ytmpp+2,ytmpp+18,ytmpp+34,ytmpp+50,
+	     y128p+2,y128p+18,y128p+34,y128p+50,
+	     tw256a_128p+2,tw256a_128p+18,tw256a_128p+34,
+	     tw256b_128p+2,tw256b_128p+18,tw256b_128p+34);
+    bfly4_16(ytmpp+3,ytmpp+19,ytmpp+35,ytmpp+51,
+	     y128p+3,y128p+19,y128p+35,y128p+51,
+	     tw256a_128p+3,tw256a_128p+19,tw256a_128p+35,
+	     tw256b_128p+3,tw256b_128p+19,tw256b_128p+35);
+    tw256a_128p+=4;
+    tw256b_128p+=4;
+    y128p+=4;
+    ytmpp+=4;
   }
     
   if (scale>0) {
