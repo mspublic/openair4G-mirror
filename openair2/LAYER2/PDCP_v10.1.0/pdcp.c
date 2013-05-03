@@ -113,7 +113,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 
   // PDCP transparent mode for MBMS traffic 
   if (mode == PDCP_TM) { 
-    rlc_status = rlc_data_req(module_id, frame, eNB_flag, 1, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
+    rlc_status = rlc_data_req(module_id, frame, eNB_flag, RLC_MBMS_YES, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
   } else {
     // calculate the pdcp header and trailer size
     if ((rb_id % NB_RB_MAX) < DTCH) {
@@ -246,7 +246,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer, pdcp_t* pdcp_test_entity, list_t* test_list)
 #else
-BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb_id, sdu_size_t sdu_buffer_size, \
+BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, rb_id_t rb_id, sdu_size_t sdu_buffer_size, \
                    mem_block_t* sdu_buffer, u8 is_data_plane)
 #endif
 {

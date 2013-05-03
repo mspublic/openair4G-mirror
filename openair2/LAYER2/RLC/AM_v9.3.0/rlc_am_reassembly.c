@@ -85,7 +85,7 @@ void rlc_am_send_sdu (rlc_am_entity_t *rlcP,u32_t frame, u8_t eNB_flag)
                    rlcP->output_sdu_size_to_write,
                    rlcP->output_sdu_in_construction);
         #else
-        rlc_data_ind (rlcP->module_id, frame, eNB_flag, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction, rlcP->is_data_plane);
+        rlc_data_ind (rlcP->module_id, frame, eNB_flag, RLC_MBMS_NO, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction, rlcP->is_data_plane);
         #endif
         rlcP->output_sdu_in_construction = NULL;
     } else {

@@ -32,7 +32,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "mem_block.h"
 #include "../MAC/extern.h"
 #include "UTIL/LOG/log.h"
-extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP, u8 is_data_plane);
+extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, u8_t MBMS_flag, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP, u8 is_data_plane);
 
 #define DEBUG_RLC_PDCP_INTERFACE
 
@@ -280,7 +280,9 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, u8_t MBMS_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP) {
 //-----------------------------------------------------------------------------
   mem_block_t* new_sdu;
-
+#ifdef Rel10
+  rb_id_t      mbms_rb_id = 0;
+#endif
 #ifdef DEBUG_RLC_DATA_REQ
   LOG_D(RLC,"rlc_data_req: module_idP %d (%d), rb_idP %d (%d), muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,MAX_MODULES,rb_idP,MAX_RAB,muiP,confirmP,sdu_sizeP,sduP);
 #endif
@@ -428,9 +430,14 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
           //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, rb_idP);
           return RLC_OP_STATUS_BAD_PARAMETER;
       }
+#ifdef Rel10
   } else if ((module_idP >= 0) && (module_idP < MAX_MODULES) && (MBMS_flagP == 1)) {
-      if (((eNB_flagP) && (rb_idP >= ((maxDRB + 3) * MAX_MOBILES_PER_RG)) && (rb_idP < MAX_RAB)) ||
-          ((eNB_flagP == 0) && (rb_idP < MAX_RAB))) { // TO DO check right bounds for UE
+      if (rb_idP < (maxSessionPerPMCH * maxServiceCount)) {
+          if (eNB_flagP) {
+              mbms_rb_id = rb_idP + (maxDRB + 3) * MAX_MOBILES_PER_RG;
+          } else {
+              mbms_rb_id = rb_idP + (maxDRB + 3);
+          }
           if (sduP != NULL) {
               if (sdu_sizeP > 0) {
                   LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
@@ -446,20 +453,20 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
                       free_mem_block(sduP);
 
                       LOG_D(RLC, "%s\n",RLC_FG_BRIGHT_COLOR_RED);
-                      if (rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].is_data_plane) {
+                      if (rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[mbms_rb_id].rlc_index].is_data_plane) {
                           LOG_D(RLC, "[MSC_MSG][FRAME %05d][PDCP][MOD %02d][RB %02d][--- RLC_UM_DATA_REQ/%d Bytes (MBMS) --->][RLC_UM][MOD %02d][RB %02d]\n",
-                            frame, module_idP, rb_idP, sdu_sizeP, module_idP, rb_idP);
+                            frame, module_idP, mbms_rb_id, sdu_sizeP, module_idP, mbms_rb_id);
                       } else {
                           if (eNB_flagP) {
                               LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- RLC_UM_DATA_REQ/%d Bytes (MBMS) --->][RLC_UM][MOD %02d][RB %02d]\n",
-                                 frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                                 frame, module_idP,  sdu_sizeP, module_idP, mbms_rb_id);
                           } else {
                               LOG_D(RLC, "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- RLC_UM_DATA_REQ/%d Bytes (MBMS) --->][RLC_UM][MOD %02d][RB %02d]\n",
-                                 frame, module_idP,  sdu_sizeP, module_idP, rb_idP);
+                                 frame, module_idP,  sdu_sizeP, module_idP, mbms_rb_id);
                           }
                       }
                       LOG_D(RLC, "%s\n",RLC_FG_COLOR_DEFAULT);
-                      rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], frame, new_sdu);
+                      rlc_um_data_req(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[mbms_rb_id].rlc_index], frame, new_sdu);
 
                       //free_mem_block(new_sdu);
                       return RLC_OP_STATUS_OK;
@@ -475,6 +482,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
       } else {
           return RLC_OP_STATUS_BAD_PARAMETER;
       }
+#endif
   } else {
       free_mem_block(sduP);
       //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
@@ -483,7 +491,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t eNB_
 }
 
 //-----------------------------------------------------------------------------
-void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
+void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP) {
 //-----------------------------------------------------------------------------
     LOG_D(RLC, "[FRAME %05d][RLC][MOD %02d][RB %02d] Display of rlc_data_ind:\n", frame, module_idP, rb_idP);
     rlc_util_print_hex_octets(RLC, (unsigned char*)sduP->data, sdu_sizeP);
@@ -508,33 +516,7 @@ void rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id
              LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][PDCP][MOD %02d][RB %02d]\n",frame, module_idP,rb_idP,sdu_sizeP, module_idP,rb_idP);
              break;
       }
-      pdcp_data_ind (module_idP, frame, eNB_flag, rb_idP, sdu_sizeP, sduP, is_data_planeP);
-      /*     } else {
-        if (rlc_rrc_data_ind != NULL) {
-#ifdef DEBUG_RLC_PDCP_INTERFACE
-            msg("[RLC] Frame %d, INST %d : Receiving SDU (%p) of size %d bytes to Rb_id %d\n",
-	    frame, module_idP,
-	    sduP,
-	    sdu_sizeP,
-            rb_idP);
-#endif //DEBUG_RLC_PDCP_INTERFACE
-	    switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
-            case RLC_AM:
-                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_AM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
-                break;
-            case RLC_UM:
-                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_UM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
-                break;
-            case RLC_TM:
-                LOG_D(RLC, "[MSC_MSG][FRAME %05d][RLC_TM][MOD %02d][RB %02d][--- RLC_DATA_IND/%d Bytes --->][RRC_%s][MOD %02d][]\n",frame, module_idP,rb_idP,sdu_sizeP, ( eNB_flag == 1) ? "eNB":"UE", module_idP);
-                break;
-        }
-	  // msg("[RLC] RRC DATA IND\n");
-            rlc_rrc_data_ind(module_idP , frame, eNB_flag, rb_idP , sdu_sizeP , sduP->data);
-	  //msg("[RLC] Freeing SDU\n");
-            free_mem_block(sduP);
-	    }*/
-	 // }
+      pdcp_data_ind (module_idP, frame, eNB_flag, MBMS_flagP, rb_idP, sdu_sizeP, sduP, is_data_planeP);
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP) {

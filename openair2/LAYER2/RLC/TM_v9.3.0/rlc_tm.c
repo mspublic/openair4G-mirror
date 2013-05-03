@@ -64,8 +64,7 @@ rlc_tm_send_sdu (rlc_tm_entity_t *rlcP, u32_t frame, u8_t eNB_flag, u8_t error_i
 
         memcpy (&rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write], srcP, length_in_bytes);
 
-        #warning loss of error indication parameter
-        rlc_data_ind (rlcP->module_id, frame, eNB_flag, rlcP->rb_id, length_in_bytes, rlcP->output_sdu_in_construction, rlcP->is_data_plane);
+        rlc_data_ind (rlcP->module_id, frame, eNB_flag, RLC_MBMS_NO, rlcP->rb_id, length_in_bytes, rlcP->output_sdu_in_construction, rlcP->is_data_plane);
         rlcP->output_sdu_in_construction = NULL;
     } else {
         msg ("[RLC_TM %p][SEND_SDU] ERROR  OUTPUT SDU IS NULL\n", rlcP);

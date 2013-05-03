@@ -68,7 +68,7 @@ void config_req_rlc_um (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, modu
 //-----------------------------------------------------------------------------
 u32_t t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
 
-void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
+void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP, u8_t mbms_flagP, module_id_t module_idP, UL_UM_RLC_t* ul_rlcP, DL_UM_RLC_t* dl_rlcP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
   u32_t  ul_sn_FieldLength = 0;
   u32_t  dl_sn_FieldLength = 0;
@@ -129,14 +129,14 @@ void config_req_rlc_um_asn1 (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flagP,
                t_Reordering,
                ul_sn_FieldLength,
                dl_sn_FieldLength,
-               0);
+               mbms_flagP);
       } else {
           rlc_um_configure(rlcP,
                frame,
                t_Reordering,
                dl_sn_FieldLength,
                ul_sn_FieldLength,
-               0);
+               mbms_flagP);
       }
     }
 }
@@ -282,6 +282,7 @@ void rlc_um_configure(rlc_um_entity_t *rlcP,
         rlcP->tx_um_window_size = 0;
         rlcP->rx_um_window_size = 0;
     }
+    rlcP->is_mxch = is_mXchP;
 
     rlcP->last_reassemblied_sn  = rlcP->rx_sn_modulo - 1;
     rlcP->last_reassemblied_missing_sn  = rlcP->rx_sn_modulo - 1;
