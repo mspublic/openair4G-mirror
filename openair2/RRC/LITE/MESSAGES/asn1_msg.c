@@ -224,7 +224,11 @@ uint8_t do_MIB(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t *buffer)
     break;
   }
 
-  printf("[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  mib.message.dl_Bandwidth,frame_parms->phich_config_common.phich_duration,mib.message.phich_Config.phich_Resource,sfn);
+  printf("[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",  
+	 (uint32_t)mib.message.dl_Bandwidth,
+	 (uint32_t)frame_parms->phich_config_common.phich_duration,
+	 (uint32_t)mib.message.phich_Config.phich_Resource,
+	 (uint32_t)sfn);
   mib.message.phich_Config.phich_Duration = frame_parms->phich_config_common.phich_duration;
   mib.message.systemFrameNumber.buf = &sfn;
   mib.message.systemFrameNumber.size = 1;
@@ -237,6 +241,9 @@ uint8_t do_MIB(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t *buffer)
 				   (void*)&mib,
 				   buffer,
 				   100);
+  if (enc_rval.encoded==-1)
+    return(-1);
+  return((enc_rval.encoded+7)/8);
   /*
   printf("MIB: %x ((MIB>>10)&63)+(MIB&3<<6)=SFN %x, MIB>>2&3 = phich_resource %d, MIB>>4&1 = phich_duration %d, MIB>>5&7 = system_bandwidth %d)\n",*(uint32_t *)buffer,
 	 (((*(uint32_t *)buffer)>>10)&0x3f)+(((*(uint32_t *)buffer)&3)<<6),
@@ -1395,7 +1402,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   DL_DCCH_Message_t dl_dcch_msg;
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
 
-  int i;
+  //  int i;
 
   memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
@@ -1436,9 +1443,11 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList       = MeasId_list;  
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList   = MeasObj_list;  
 
+
+  // Note: RK, I'm not sure this is ok, we have to use ASN_SEQ_ADD
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   if ((nas_pdu == NULL) || (nas_length == 0)) {
-      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = (DedicatedInfoNAS_t*)NULL;
   } else {
       DedicatedInfoNAS_t *dedicatedInfoNAS;
       dedicatedInfoNAS = &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList;
@@ -1646,7 +1655,7 @@ uint8_t do_MeasurementReport(uint8_t *buffer,int measid,int phy_id,int rsrp_s,in
 
     measresulteutra2->cgi_Info=measresult_cgi2;
     struct MeasResultEUTRA__measResult meas2;
-    int rsrp_va=10;
+    //    int rsrp_va=10;
     meas2.rsrpResult=&rsrp_t;
     		//&rsrp_va;
     meas2.rsrqResult=&rsrq_t;
