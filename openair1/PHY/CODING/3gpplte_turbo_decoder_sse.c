@@ -34,6 +34,26 @@
 #include "mex.h"
 #endif
 
+#define SHUFFLE16(a,b,c,d,e,f,g,h) _mm_set_epi8(h==-1?-1:h*2+1,	\
+						h==-1?-1:h*2,	\
+						g==-1?-1:g*2+1,	\
+						g==-1?-1:g*2,	\
+						f==-1?-1:f*2+1,	\
+						f==-1?-1:f*2,	\
+						e==-1?-1:e*2+1,	\
+						e==-1?-1:e*2,	\
+						d==-1?-1:d*2+1,	\
+						d==-1?-1:d*2,	\
+						c==-1?-1:c*2+1,	\
+						c==-1?-1:c*2,	\
+						b==-1?-1:b*2+1,	\
+						b==-1?-1:b*2,	\
+						a==-1?-1:a*2+1,	\
+						a==-1?-1:a*2);
+
+
+
+
 
 //#define DEBUG_LOGMAP
 
@@ -974,8 +994,6 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
 
     m11p = (__m128i*)m_11;
     m10p = (__m128i*)m_10;
-    __m128i max_val=_mm_set1_epi8(32);
-    __m128i zeros=_mm_set1_epi8(0);
 
     for (k=0;
 	 k<l;
@@ -1021,8 +1039,6 @@ void compute_alpha(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sho
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[5]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[6]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[7]);
-      __m128i tmp = _mm_cmpgt_epi8(alpha_max,max_val);
-      alpha_max = _mm_blendv_epi8(zeros,alpha_max,tmp);
 
       alpha_ptr[0] = _mm_subs_epi8(alpha_ptr[0],alpha_max);
       alpha_ptr[1] = _mm_subs_epi8(alpha_ptr[1],alpha_max);
@@ -1230,7 +1246,8 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
 #endif
     
 #ifndef LLR8    
-    for (k=(frame_length>>3)-1;k>=((rerun_flag==0)?0:((frame_length-L)>>3));k--){
+    int loopval=((rerun_flag==0)?0:((frame_length-L)>>3));
+    for (k=(frame_length>>3)-1;k>=loopval;k--){
       m11_128=((__m128i*)m_11)[k];  
       m10_128=((__m128i*)m_10)[k];
 
@@ -1270,7 +1287,6 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[5]);
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi16(beta_max   ,beta_ptr[7]);
-
 
       beta_ptr[0] = _mm_subs_epi16(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi16(beta_ptr[1],beta_max);
@@ -1432,10 +1448,10 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
 	   _mm_extract_epi8(beta_ptr[7],14),
 	   _mm_extract_epi8(beta_ptr[7],15));
  #endif
+    int loopval=(rerun_flag==0)?0:((frame_length-L)>>4);
     __m128i max_val=_mm_set1_epi8(32); 
     __m128i zeros=_mm_set1_epi8(0);
-  
-    for (k=(frame_length>>4)-1;k>=((rerun_flag==0)?0:((frame_length-L)>>4));k--){
+    for (k=(frame_length>>4)-1;k>=loopval;k--){
 
       m11_128=((__m128i*)m_11)[k];  
       m10_128=((__m128i*)m_10)[k];
@@ -1490,10 +1506,6 @@ void compute_beta(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned shor
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[5]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[7]);
-
-      __m128i tmp = _mm_cmpgt_epi8(beta_max,max_val);
-      beta_max = _mm_blendv_epi8(zeros,beta_max,tmp);
- 
       beta_ptr[0] = _mm_subs_epi8(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi8(beta_ptr[1],beta_max);
       beta_ptr[2] = _mm_subs_epi8(beta_ptr[2],beta_max);
@@ -1664,7 +1676,7 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 {
   __m128i *alpha128=(__m128i *)alpha;
   __m128i *beta128=(__m128i *)beta;
-  __m128i *m11_128,*m10_128,*ext_128,*systematic_128;
+  __m128i *m11_128,*m10_128,*ext_128;
   __m128i *alpha_ptr,*beta_ptr;
   __m128i m00_1,m00_2,m00_3,m00_4;
   __m128i m01_1,m01_2,m01_3,m01_4;
@@ -1690,7 +1702,6 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
     m11_128        = (__m128i*)&m_11[k<<3];
     m10_128        = (__m128i*)&m_10[k<<3];
     ext_128        = (__m128i*)&ext[k<<3];
-    systematic_128 = (__m128i*)&systematic[k<<3];
     /*
       printf("EXT %03d\n",k);
       print_shorts("a0:",&alpha_ptr[0]);
@@ -1771,7 +1782,7 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
     //      print_shorts("m01_1:",&m01_1);
     //      print_shorts("m10_1:",&m10_1);
 
-    *ext_128 = _mm_subs_epi16(m10_1,_mm_adds_epi16(m01_1,*systematic_128));
+    *ext_128 = _mm_subs_epi16(m10_1,m01_1);
       
     /*
       print_shorts("ext:",ext_128);
@@ -1793,7 +1804,6 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
     m11_128        = (__m128i*)&m_11[k<<4];
     m10_128        = (__m128i*)&m_10[k<<4];
     ext_128        = (__m128i*)&ext[k<<4];
-    systematic_128 = (__m128i*)&systematic[k<<4];
 
     m00_4 = _mm_adds_epi8(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
     m11_4 = _mm_adds_epi8(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
@@ -1836,7 +1846,7 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
     m10_1 = _mm_max_epi8(m10_1,m11_1);
 
 
-    *ext_128 = _mm_subs_epi8(m10_1,_mm_adds_epi8(m01_1,*systematic_128));
+    *ext_128 = _mm_subs_epi8(m10_1,m01_1);
       
     alpha_ptr+=8;
     beta_ptr+=8;
@@ -1974,8 +1984,6 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
   u8 temp;
-  __m128i tmp128[(n+8)>>3];
-
 
   __m128i tmp, zeros=_mm_setzero_si128();
 #ifdef LLR8
@@ -2027,7 +2035,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   
 #ifdef LLR8
   for (i=0,j=0;i<(3*(n2>>4))+1;i++,j+=2) {
-    ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],3),_mm_srai_epi16(((__m128i *)y)[j+1],3));
+    ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],1),_mm_srai_epi16(((__m128i *)y)[j+1],1));
     //((__m128i *)y8)[i] = _mm_packs_epi16(((__m128i *)y)[j],((__m128i *)y)[j+1]);
   }
   yp128 = (__m128i*)y8; 
@@ -2051,7 +2059,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     j=pi2_p[0];
 
 
-    tmpe = _mm_load_si128(&yp128[0]);
+    tmpe = _mm_load_si128(yp128);
 
     s[j]   = _mm_extract_epi16(tmpe,0); 
     yp1[j] = _mm_extract_epi16(tmpe,1); 
@@ -2279,47 +2287,39 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     start_meas(intl1_stats);
 #ifndef LLR8
  
-    for (i=0;i<(n2>>3);i++) { 
-      tmp128[i] = _mm_adds_epi16(((__m128i *)ext)[i],((__m128i *)systematic0)[i]);
-    }
-  
     pi4_p=pi4tab[iind];
     for (i=0;i<(n2>>3);i++) { // steady-state portion
       
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],0);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],1);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],2);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],3);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],4);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],5);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],6);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)tmp128)[*pi4_p++],7);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],0);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],1);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],2);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],3);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],4);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],5);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],6);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],7);
     }
 
 #else
     
-    for (i=0;i<(n2>>4);i++) {
-      tmp128[i] = _mm_adds_epi8(((__m128i *)ext)[i],((__m128i *)systematic0)[i]);
-    }
-
     pi4_p=pi4tab[iind];
     for (i=0;i<(n2>>4);i++) { // steady-state portion      
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],0);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],1);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],2);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],3);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],4);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],5);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],6);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],7);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],8);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],9);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],10);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],11);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],12);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],13);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],14);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],15);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],0);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],1);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],2);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],3);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],4);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],5);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],6);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],7);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],8);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],9);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],10);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],11);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],12);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],13);
+      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],14);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],15);
     }
 #endif
 
@@ -2341,27 +2341,20 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],5);
       tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],6);
       tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],7);
-      ((__m128i *)systematic1)[i] =_mm_adds_epi16(tmp,((__m128i *)systematic0)[i]);
-      tmp128[i] = _mm_adds_epi16(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
-
+      ((__m128i *)systematic1)[i] = _mm_adds_epi16(_mm_subs_epi16(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
     }
-    /*
-    for (i=0;i<(n>>3);i++) {
-      tmp128[i] = _mm_adds_epi16(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
-    }
-    */
     if (iteration_cnt>1) {
       start_meas(intl2_stats);
       pi6_p=pi6tab[iind];
       for (i=0;i<(n2>>3);i++) {
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],7);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],6);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],5);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],4);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],3);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],2);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],1);
-	tmp=_mm_insert_epi16(tmp, ((llr_t*)tmp128)[*pi6_p++],0);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],7);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],6);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],5);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],4);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],3);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],2);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],1);
+	tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],0);
 	tmp=_mm_cmpgt_epi8(_mm_packs_epi16(tmp,zeros),zeros);
 	decoded_bytes[i]=(unsigned char)_mm_movemask_epi8(tmp);
 	
@@ -2369,6 +2362,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     }
 #else
     pi5_p=pi5tab[iind];
+    u16 decoded_bytes_interl[6144/16] __attribute__((aligned(16)));
     for (i=0;i<(n2>>4);i++) {
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
@@ -2386,41 +2380,37 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
-      ((__m128i *)systematic1)[i] = _mm_adds_epi8(tmp,((__m128i *)systematic0)[i]);
-      tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
+      decoded_bytes_interl[i]=(u16) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
+      ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
     }
-    /*
-    for (i=0;i<(n2>>4);i++) {
-      tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
-    }
-    */
     if (iteration_cnt>1) {
       start_meas(intl2_stats);
       pi6_p=pi6tab[iind];
-      for (i=0;i<(n2>>4);i++) {
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],7);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],6);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],5);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],4);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],3);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],2);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],1);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],0);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],15);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],14);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],13);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],12);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],11);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],10);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],9);
-	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],8);
-	tmp=_mm_cmpgt_epi8(tmp,zeros);
-	((uint16_t *)decoded_bytes)[i]=(uint16_t)_mm_movemask_epi8(tmp);
+      __m128i* dbytes=(__m128i*)decoded_bytes_interl;
+      __m128i shuffle=SHUFFLE16(7,6,5,4,3,2,1,0);
+      __m128i mask  __attribute__((aligned(16)));
+      int n_128=n2>>7;
+      for (i=0;i<n_128;i++) {
+        mask=_mm_set1_epi16(1);
+        __m128i tmp __attribute__((aligned(16)));
+        tmp=_mm_shuffle_epi8(dbytes[i],shuffle);
+        __m128i tmp2 __attribute__((aligned(16))) ;
+
+        tmp2=_mm_and_si128(tmp,mask);
+        tmp2=_mm_cmpeq_epi16(tmp2,mask);
+        decoded_bytes[n_128*0+i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+        
+        int j;
+        for (j=1; j<16; j++) {
+        mask=_mm_slli_epi16(mask,1);
+        tmp2=_mm_and_si128(tmp,mask);
+        tmp2=_mm_cmpeq_epi16(tmp2,mask);
+        decoded_bytes[n_128*j +i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+        }
       }
     }
     
 #endif
-    
     
     // check status on output
     if (iteration_cnt>1) {
@@ -2468,11 +2458,24 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     // do log_map from first parity bit
     if (iteration_cnt < max_iterations) {
       log_map(systematic1,yparity1,m11,m10,alpha,beta,ext,n2,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
+      __m128i* ext_128=(__m128i*) ext;
+      __m128i* s1_128=(__m128i*) systematic1;
+      __m128i* s0_128=(__m128i*) systematic0;
+#ifndef LLR8
+      int myloop=n2>>3;
+      for (i=0;i<myloop;i++) {
+       *ext_128=_mm_adds_epi16(_mm_subs_epi16(*ext_128,*s1_128++),*s0_128++);
+       ext_128++;
+      }  
+#else
+      int myloop=n2>>4;
+      for (i=0;i<myloop;i++) {
+       *ext_128=_mm_adds_epi8(_mm_subs_epi8(*ext_128,*s1_128++),*s0_128++);
+       ext_128++;
+      }  
+#endif
     }
   }
-
-  _mm_empty();
-  _m_empty();
 
   return(iteration_cnt);
 }
