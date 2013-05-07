@@ -1033,7 +1033,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	      /*********Reciver **************/
 	      //TODO: Optimize and clean code
 	      // Inner receiver scheduling for 3 slots
-	      for (Ns=(2*opts.subframe); Ns<((2*opts.subframe)+2); Ns++)
+	      for (Ns=(2*opts.subframe); Ns<((2*opts.subframe)+3); Ns++)
                 {
 		  for (l=0; l<opts.pilot2 ; l++)
                     {  		            
