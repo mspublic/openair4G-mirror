@@ -392,6 +392,8 @@ typedef struct {
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   uint8_t Mdlharq; 
+  /// Maximum number of iterations used in eNB turbo decoder
+  uint8_t max_turbo_iterations;
   /// CQI CRC status
   uint8_t cqi_crc_status;
   /// Pointer to CQI data

@@ -88,7 +88,7 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   }
 }
 
-LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t abstraction_flag) {
+LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t abstraction_flag) {
 
   LTE_eNB_ULSCH_t *ulsch;
   uint8_t exit_flag = 0,i,r;
@@ -96,6 +96,7 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t abstraction_flag) {
   ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     ulsch->Mdlharq = Mdlharq;
+    ulsch->max_turbo_iterations = max_turbo_iterations;
 
     for (i=0;i<Mdlharq;i++) {
       //      msg("new_ue_ulsch: Harq process %d\n",i);
@@ -1161,7 +1162,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 					  Kr,
 					  f1f2mat_old[iind*2],   
 					  f1f2mat_old[(iind*2)+1], 
-					  MAX_TURBO_ITERATIONS,
+					  ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 					  crc_type,
 					  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
 					  &phy_vars_eNB->ulsch_tc_init_stats,
@@ -1175,7 +1176,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       stop_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
 
       status[r] = ret;
-      if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
+      if (ret==(1+ulsch->max_turbo_iterations)) {// a Code segment is in error so break;
 #ifdef DEBUG_ULSCH_DECODING    
 	msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
 #endif
@@ -1200,7 +1201,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
   ret = 1;
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
-    if (status[r] != (1+MAX_TURBO_ITERATIONS)) {
+    if (status[r] != (1+ulsch->max_turbo_iterations)) {
       if (r<ulsch->harq_processes[harq_pid]->Cminus)
 	Kr = ulsch->harq_processes[harq_pid]->Kminus;
       else
@@ -1222,11 +1223,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 	       Kr_bytes - ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
 	offset += (Kr_bytes- ((ulsch->harq_processes[harq_pid]->C>1)?3:0));
       }
-      if (ret != (1+MAX_TURBO_ITERATIONS))
+      if (ret != (1+ulsch->max_turbo_iterations))
 	ret = status[r];
     }
     else {
-      ret = 1+MAX_TURBO_ITERATIONS;
+      ret = 1+ulsch->max_turbo_iterations;
     }
     
   }
@@ -1626,7 +1627,7 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   if (UE_id==NB_UE_INST) {
     LOG_W(PHY,"[eNB %d] ulsch_decoding_emul: FATAL, didn't find UE with rnti %x\n",phy_vars_eNB->Mod_id, rnti);
-    return(1+MAX_TURBO_ITERATIONS);
+    return(1+phy_vars_eNB->ulsch_eNB[UE_id]->max_turbo_iterations);
   }
   else {
     LOG_D(PHY,"[eNB %d] Found UE with rnti %x => UE_id %d\n",phy_vars_eNB->Mod_id, rnti,UE_id);
@@ -1707,7 +1708,7 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 0;
 
     // retransmission
-    return(1+MAX_TURBO_ITERATIONS);
+    return(1+phy_vars_eNB->ulsch_eNB[UE_index]->max_turbo_iterations);
   }
 
 }
