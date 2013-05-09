@@ -186,13 +186,15 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
   case 50:
     if (ra_header == 0) {// Type 0 Allocation
 
-      for (i=16;i>0;i--) {
-	if ((rb_alloc&(1<<i)) != 0)
-	  rb_alloc2[(3*i)>>5] |= (7<<((3*(16-i))%32));
-          //      printf("rb_alloc2 (type 0) %x\n",rb_alloc2);
+      for (i=1;i<16;i++) {
+        if ((rb_alloc&(1<<(16-i))) != 0) 
+          rb_alloc2[(3*i)>>5] |= (7<<((3*i)%32));
       }
+      // bit mask across 
+      if ((rb_alloc2[0]>>31)==1)
+        rb_alloc2[1] |= 1;
       if ((rb_alloc&1) != 0)
-          rb_alloc2[0] |= (3<<16);
+          rb_alloc2[1] |= (3<<16);
       /*      
       for (i=0;i<16;i++) {
 	if (((rb_alloc>>(16-i))&1) != 0)
