@@ -2590,8 +2590,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
     case 2:
       nb_candidates = 6;
       break;
-    case 3:
     case 4:
+    case 8:
       nb_candidates = 2;
       break;
     }    
@@ -2657,12 +2657,15 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
 	msg("crc =>%x\n",crc);
 #endif
 	
+      if((format_c == format1)&&(L==0))
+        msg("CCEind %d, crc => %x\n", CCEind, crc);
 	if (((L>1) && ((crc == si_rnti)||
 		       (crc == ra_rnti)))||
 	    (crc == lte_ue_pdcch_vars[eNB_id]->crnti))   {
 	  dci_alloc[*dci_cnt].dci_length = sizeof_bits;
 	  dci_alloc[*dci_cnt].rnti       = crc;
 	  dci_alloc[*dci_cnt].L          = L;
+          dci_alloc[*dci_cnt].nCCE       = CCEind;
 	  
 	  if (sizeof_bytes<=4) {
 	    dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[0];
@@ -3034,7 +3037,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   if (tmode < 3) {
     // Now check UE_SPEC format 1 search spaces at aggregation 1 
     old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,0,
+    dci_decoding_procedure0(lte_ue_pdcch_vars,0,subframe,
 			    dci_alloc,
 			    eNB_id,
 			    frame_parms,
@@ -3062,7 +3065,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     
     // Now check UE_SPEC format 1 search spaces at aggregation 2 
     old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,0,
+    dci_decoding_procedure0(lte_ue_pdcch_vars,0,subframe,
 			    dci_alloc,
 			    eNB_id,
 			    frame_parms,
