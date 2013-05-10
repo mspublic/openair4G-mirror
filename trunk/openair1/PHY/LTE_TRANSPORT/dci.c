@@ -2656,9 +2656,6 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
 #ifdef DEBUG_DCI_DECODING
 	msg("crc =>%x\n",crc);
 #endif
-	
-      if((format_c == format1)&&(L==0))
-        msg("CCEind %d, crc => %x\n", CCEind, crc);
 	if (((L>1) && ((crc == si_rnti)||
 		       (crc == ra_rnti)))||
 	    (crc == lte_ue_pdcch_vars[eNB_id]->crnti))   {
