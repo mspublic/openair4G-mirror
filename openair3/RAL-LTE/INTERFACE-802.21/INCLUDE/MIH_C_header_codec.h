@@ -61,7 +61,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <netdb.h>
+//#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/time.h>

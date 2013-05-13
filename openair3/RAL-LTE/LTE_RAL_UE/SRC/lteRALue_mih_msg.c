@@ -1,20 +1,53 @@
+/***************************************************************************
+                         lteRALue_mih_msg.c  -  description
+ ***************************************************************************
+  Eurecom OpenAirInterface 3
+  Copyright(c) 1999 - 2013 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 450 route des Chappes, 06410 Biot Sophia Antipolis, France
+*******************************************************************************/
+/*! \file lteRALue_mih_msg.c
+ * \brief Interface for MIH primitives in LTE-RAL-UE
+ * \author WETTERWALD Michelle, GAUTHIER Lionel, MAUREL Frederic
+ * \date 2013
+ * \company EURECOM
+ * \email: michelle.wetterwald@eurecom.fr, lionel.gauthier@eurecom.fr, frederic.maurel@eurecom.fr
+ */
+/*******************************************************************************/
 #define MRAL_MODULE
 #define MRALLTE_MIH_MSG_C
 //-----------------------------------------------------------------------------
-#include "mRALlte_mih_msg.h"
-#include "mRALlte_subscribe.h"
-#include "mRALlte_variables.h"
-#include "mRALlte_parameters.h"
-#include "mRALlte_thresholds.h"
-#include "mRALlte_action.h"
+#include "lteRALue_mih_msg.h"
+#include "lteRALue_variables.h"
+#include "lteRALue_mih_execute.h"
 //-----------------------------------------------------------------------------
 
 static char  g_msg_codec_tmp_print_buffer[8192];
 #ifdef MSCGEN_PYTOOL
-#define MSC_GEN_BUF_SIZE                         1024
+#define MSC_GEN_BUF_SIZE 1024
 // global instead of poisonning the stack
-static char                                      g_msc_gen_buf[MSC_GEN_BUF_SIZE];
-static unsigned int                              g_msc_gen_buffer_index;
+static char g_msc_gen_buf[MSC_GEN_BUF_SIZE];
+static unsigned int g_msc_gen_buffer_index;
 #endif
 
 
@@ -202,6 +235,11 @@ int mRALlte_mihf_connect(void){
     }
     return -1;
 }
+
+/***************************************************************************
+     Transmission side
+ ***************************************************************************/
+
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_register_indication(MIH_C_TRANSACTION_ID_T  *transaction_idP) {
 //-----------------------------------------------------------------------------
@@ -215,11 +253,6 @@ void mRALlte_send_link_register_indication(MIH_C_TRANSACTION_ID_T  *transaction_
     memset(&message, 0, sizeof (MIH_C_Message_Link_Register_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)1;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)6;
@@ -234,7 +267,8 @@ void mRALlte_send_link_register_indication(MIH_C_TRANSACTION_ID_T  *transaction_
     message.primitive.Link_Id.link_type        = MIH_C_WIRELESS_UMTS;
     message.primitive.Link_Id.link_addr.choice = (MIH_C_CHOICE_T)MIH_C_CHOICE_3GPP_ADDR;
 
-    MIH_C_3GPP_ADDR_set(&message.primitive.Link_Id.link_addr._union._3gpp_addr, (u_int8_t*)DEFAULT_ADDRESS_3GPP, strlen(DEFAULT_ADDRESS_3GPP));
+    MIH_C_3GPP_ADDR_set(&message.primitive.Link_Id.link_addr._union._3gpp_addr, (u_int8_t*)&(ralpriv->ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
+    //MIH_C_3GPP_ADDR_set(&message.primitive.Link_Id.link_addr._union._3gpp_addr, (u_int8_t*)DEFAULT_ADDRESS_3GPP, strlen(DEFAULT_ADDRESS_3GPP));
     //MIH_C_3GPP_ADDR_load_3gpp_str_address(&message.primitive.Link_Id.link_addr._union._3gpp_addr, (u_int8_t*)DEFAULT_ADDRESS_3GPP);
 
     message_total_length = MIH_C_Link_Message_Encode_Link_Register_indication(bb, &message);
@@ -279,11 +313,6 @@ void mRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *transaction_
     memset(&message, 0, sizeof (MIH_C_Message_Link_Detected_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)2;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)1;
@@ -347,11 +376,6 @@ void mRALlte_send_link_up_indication(MIH_C_TRANSACTION_ID_T    *transaction_idP,
     memset(&message, 0, sizeof (MIH_C_Message_Link_Up_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)2;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)2;
@@ -409,11 +433,6 @@ void mRALlte_send_link_parameters_report_indication(MIH_C_TRANSACTION_ID_T      
     memset(&message, 0, sizeof (MIH_C_Message_Link_Parameters_Report_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)2;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)5;
@@ -457,6 +476,7 @@ void mRALlte_send_link_parameters_report_indication(MIH_C_TRANSACTION_ID_T      
     }
     free_BitBuffer(bb);
 }
+
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_going_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_idP,
                                                     MIH_C_LINK_TUPLE_ID_T       *link_identifierP,
@@ -473,11 +493,6 @@ void mRALlte_send_link_going_down_indication(MIH_C_TRANSACTION_ID_T      *transa
     memset(&message, 0, sizeof (MIH_C_Message_Link_Going_Down_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)2;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)6;
@@ -515,6 +530,7 @@ void mRALlte_send_link_going_down_indication(MIH_C_TRANSACTION_ID_T      *transa
     }
     free_BitBuffer(bb);
 }
+
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_idP,
                                        MIH_C_LINK_TUPLE_ID_T       *link_identifierP,
@@ -531,11 +547,6 @@ void mRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_
     memset(&message, 0, sizeof (MIH_C_Message_Link_Going_Down_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)2;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)3;
@@ -573,6 +584,7 @@ void mRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T      *transaction_
     }
     free_BitBuffer(bb);
 }
+
 //-----------------------------------------------------------------------------
 void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_idP,
                                       MIH_C_STATUS_T             *statusP,
@@ -592,11 +604,6 @@ void mRALlte_send_link_action_confirm(MIH_C_TRANSACTION_ID_T     *transaction_id
     memset(&message, 0, sizeof (MIH_C_Message_Link_Action_confirm_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)3;
     message.header.operation_code       = (MIH_C_OPCODE_T)0;
     message.header.action_identifier    = (MIH_C_AID_T)3;
@@ -668,11 +675,6 @@ void mRALte_send_capability_discover_confirm(MIH_C_TRANSACTION_ID_T  *transactio
     memset(&message, 0, sizeof (MIH_C_Message_Link_Capability_Discover_confirm_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)1;
     message.header.operation_code       = (MIH_C_OPCODE_T)0;
     message.header.action_identifier    = (MIH_C_AID_T)1;
@@ -718,6 +720,7 @@ void mRALte_send_capability_discover_confirm(MIH_C_TRANSACTION_ID_T  *transactio
     }
     free_BitBuffer(bb);
 }
+
 //-----------------------------------------------------------------------------
 void mRALte_send_event_subscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_idP,
                                          MIH_C_STATUS_T          *statusP,
@@ -733,11 +736,6 @@ void mRALte_send_event_subscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_id
     memset(&message, 0, sizeof (MIH_C_Message_Link_Event_Subscribe_confirm_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)1;
     message.header.operation_code       = (MIH_C_OPCODE_T)0;
     message.header.action_identifier    = (MIH_C_AID_T)4;
@@ -780,6 +778,7 @@ void mRALte_send_event_subscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_id
     }
     free_BitBuffer(bb);
 }
+
 //-----------------------------------------------------------------------------
 void mRALte_send_event_unsubscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_idP,
                                            MIH_C_STATUS_T          *statusP,
@@ -795,11 +794,6 @@ void mRALte_send_event_unsubscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_
     memset(&message, 0, sizeof (MIH_C_Message_Link_Event_Unsubscribe_confirm_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)1;
     message.header.operation_code       = (MIH_C_OPCODE_T)0;
     message.header.action_identifier    = (MIH_C_AID_T)5;
@@ -842,7 +836,8 @@ void mRALte_send_event_unsubscribe_confirm(MIH_C_TRANSACTION_ID_T  *transaction_
     }
     free_BitBuffer(bb);
 }
- //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 void mRALte_send_configure_thresholds_confirm(MIH_C_TRANSACTION_ID_T   *transaction_idP,
                                          MIH_C_STATUS_T               *statusP,
                                          MIH_C_LINK_CFG_STATUS_LIST_T *link_configure_status_listP) {
@@ -860,11 +855,6 @@ void mRALte_send_configure_thresholds_confirm(MIH_C_TRANSACTION_ID_T   *transact
     memset(&message, 0, sizeof (MIH_C_Message_Link_Configure_Thresholds_confirm_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)3;
     message.header.operation_code       = (MIH_C_OPCODE_T)0;
     message.header.action_identifier    = (MIH_C_AID_T)2;
@@ -909,6 +899,7 @@ void mRALte_send_configure_thresholds_confirm(MIH_C_TRANSACTION_ID_T   *transact
     }
     free_BitBuffer(bb);
 }
+
 //-----------------------------------------------------------------------------
 void mRALte_send_get_parameters_confirm     (MIH_C_TRANSACTION_ID_T       *transaction_idP,
                                              MIH_C_STATUS_T               *statusP,
@@ -931,11 +922,6 @@ void mRALte_send_get_parameters_confirm     (MIH_C_TRANSACTION_ID_T       *trans
     memset(&message, 0, sizeof (MIH_C_Message_Link_Get_Parameters_confirm_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)3;
     message.header.operation_code       = (MIH_C_OPCODE_T)0;
     message.header.action_identifier    = (MIH_C_AID_T)1;
@@ -998,6 +984,11 @@ void mRALte_send_get_parameters_confirm     (MIH_C_TRANSACTION_ID_T       *trans
     }
     free_BitBuffer(bb);
 }
+
+/***************************************************************************
+     Reception side
+ ***************************************************************************/
+
 //-----------------------------------------------------------------------------
 int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *message_wrapperP) {
 //-----------------------------------------------------------------------------
@@ -1241,6 +1232,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
     }
     return status;
 }
+
 //-----------------------------------------------------------------------------
 int mRALlte_mih_link_process_message(void){
 //-----------------------------------------------------------------------------
@@ -1252,7 +1244,6 @@ int mRALlte_mih_link_process_message(void){
     Bit_Buffer_t            *bb;
     struct sockaddr_in       udp_socket;
     socklen_t                sockaddr_len;
-
 
     total_bytes_to_decode = 0;
     nb_bytes_received     = 0;
@@ -1268,7 +1259,7 @@ int mRALlte_mih_link_process_message(void){
 
     if (nb_bytes_received > 0) {
         DEBUG(" \n");
-        DEBUG(" %s Received %d bytes from MIHF\n", __FUNCTION__, nb_bytes_received);
+        DEBUG(" %s: Received %d bytes from MIHF\n", __FUNCTION__, nb_bytes_received);
         mRALlte_print_buffer((char*)g_msg_codec_recv_buffer, nb_bytes_received);
         total_bytes_to_decode += nb_bytes_received;
         BitBuffer_wrap(bb, g_msg_codec_recv_buffer, total_bytes_to_decode);
@@ -1294,7 +1285,7 @@ int mRALlte_mih_link_process_message(void){
         } else if (status == MIH_MESSAGE_DECODE_FAILURE) {
             memset(g_msg_codec_recv_buffer, 0, MSG_CODEC_RECV_BUFFER_SIZE);
             total_bytes_to_decode = 0;
-        } else if ((status == MIH_MESSAGE_DECODE_TOO_SHORT)) {
+        } else if (status == MIH_MESSAGE_DECODE_TOO_SHORT) {
         }
         DEBUG(" \n");
     }

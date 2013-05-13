@@ -158,8 +158,12 @@ int MIH_C_Link_Primitive_Decode_Link_Action_request(Bit_Buffer_t* bbP, MIH_C_Lin
     MIH_C_TLV_TYPE_decode(bbP, &tlv);
     assert(tlv == MIH_C_TLV_LINK_ACTION);
     MIH_C_LIST_LENGTH_decode(bbP, &length);
+    // Patch MW 03/05/2013
+    if (length >2) {
     MIH_C_LINK_ACTION_decode(bbP, &primitiveP->LinkAction);
-
+    } else {
+    MIH_C_LINK_ACTION_short_decode(bbP, &primitiveP->LinkAction) ;
+    }
 
     MIH_C_TLV_TYPE_decode(bbP, &tlv);
     assert(tlv == MIH_C_TLV_LINK_TIME_INTERVAL);

@@ -95,6 +95,8 @@ public_Medieval_extensions(inline void         MIH_C_LINK_AC_PARAM_decode(Bit_Bu
 public_Medieval_extensions(unsigned int        MIH_C_LINK_ACTION2String(MIH_C_LINK_ACTION_T *dataP, char* bufP);)
 public_Medieval_extensions(inline void         MIH_C_LINK_ACTION_encode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_T *dataP);)
 public_Medieval_extensions(inline void         MIH_C_LINK_ACTION_decode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_T *dataP);)
+public_Medieval_extensions(inline void         MIH_C_LINK_ACTION_short_decode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_T *dataP);)
+
 #endif
 #endif
 /** @}*/

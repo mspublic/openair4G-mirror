@@ -23,8 +23,9 @@ char* getTimeStamp4Log()
     clock_gettime (CLOCK_REALTIME, &time_spec);
     time_now_s      = (unsigned int) time_spec.tv_sec % 3600;
     time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
-    len=snprintf(g_log_buffer_time,24, "%06d:%06d", time_now_s, time_now_micros);
-    return g_log_buffer_time;
+    //len=snprintf(g_log_buffer_time,24, "%06d:%06d", time_now_s, time_now_micros);
+    len=snprintf(g_log_buffer_time,24, "%03d:%03d", time_now_s, time_now_micros);
+   return g_log_buffer_time;
 }
 //-----------------------------------------------------------------------------
 int is_newline( char *str, int size){
@@ -44,14 +45,14 @@ int MIH_C_log_init(unsigned int log_outputP) {
     g_mih_c_log_output = log_outputP;
 
 
-    g_log_level2string[LOG_EMERG]         = "LOG_EMERG";
-    g_log_level2string[LOG_ALERT]         = "LOG_ALERT";
-    g_log_level2string[LOG_CRIT]          = "CRIT     ";
-    g_log_level2string[LOG_ERR]           = "ERR      ";
-    g_log_level2string[LOG_WARNING]       = "WARNING  ";
-    g_log_level2string[LOG_NOTICE]        = "NOTICE   ";
-    g_log_level2string[LOG_INFO]          = "INFO     ";
-    g_log_level2string[LOG_DEBUG]         = "DEBUG    ";
+    g_log_level2string[LOG_EMERG]         = "EMERG";
+    g_log_level2string[LOG_ALERT]         = "ALERT";
+    g_log_level2string[LOG_CRIT]          = "CRIT ";
+    g_log_level2string[LOG_ERR]           = "ERR  ";
+    g_log_level2string[LOG_WARNING]       = "WARN ";
+    g_log_level2string[LOG_NOTICE]        = "NOTCE";
+    g_log_level2string[LOG_INFO]          = "INFO ";
+    g_log_level2string[LOG_DEBUG]         = "DEBUG";
 
     g_bypass_header = 0;
 
@@ -98,8 +99,8 @@ int MIH_C_log_record(int levelP, const char * log_msgP, ...) {
                 clock_gettime (CLOCK_REALTIME, &time_spec);
                 time_now_s      = (unsigned int) time_spec.tv_sec;
                 time_now_micros = (unsigned int) time_spec.tv_nsec/1000;
-                printf("[%06d:%06d][%s][%s]", time_now_s, time_now_micros, MIH_C_SYSLOG_NAME, g_log_level2string[levelP]);
-            }
+                printf("[%06d:%06d][%s][%s] ", time_now_s, time_now_micros, MIH_C_SYSLOG_NAME, g_log_level2string[levelP]);
+           }
             printf("%s",g_log_buffer);
             fflush(stdout);
             fflush(stderr);

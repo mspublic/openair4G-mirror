@@ -1,21 +1,55 @@
 /***************************************************************************
-                          mRALteInt.c (main)  -  description
-                             -------------------
-    copyright            : (C) 2012 by Eurecom
-    email                : davide.brizzolara@eurecom.fr, michelle.wetterwald@eurecom.fr
+                         lteRALue_main.c  -  description
  ***************************************************************************
- mRALlte main
- ***************************************************************************/
+  Eurecom OpenAirInterface 3
+  Copyright(c) 1999 - 2013 Eurecom
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 450 route des Chappes, 06410 Biot Sophia Antipolis, France
+*******************************************************************************/
+/*! \file lteRALue_main.c
+ * \brief This file contains the main() function for the LTE-RAL-UE
+ * \author WETTERWALD Michelle, GAUTHIER Lionel, MAUREL Frederic
+ * \date 2013
+ * \company EURECOM
+ * \email: michelle.wetterwald@eurecom.fr, lionel.gauthier@eurecom.fr, frederic.maurel@eurecom.fr
+ */
+/*******************************************************************************/
 #define MRAL_MODULE
 #define MRALLTE_MAIN_C
 //-----------------------------------------------------------------------------
-#include "mRALlte_main.h"
-#include "mRALlte_constants.h"
-#include "mRALlte_variables.h"
-#include "mRALlte_proto.h"
-#include "mRALlte_mih_msg.h"
-#include "nas_ue_netlink.h"
-#include "nasUE_config.h"
+#include "lteRALue_main.h"
+#include "lteRALue_constants.h"
+#include "lteRALue_variables.h"
+#include "lteRALue_proto.h"
+#include "lteRALue_mih_msg.h"
+// UMTS sub-system
+#include "nas_ue_ioctl.h"
+#include "rrc_nas_primitives.h"
+#include "nasmt_constant.h"
+#include "nasmt_iocontrol.h"
+
+/*#include "nas_ue_netlink.h"
+#include "nasUE_config.h"*/
 //-----------------------------------------------------------------------------
 #include "MIH_C.h"
 //-----------------------------------------------------------------------------
@@ -26,31 +60,33 @@
 #define SVN_REV   "0.1"
 #endif
 // Global variables
-int netl_s, s_nas;
-struct sockaddr_un ralu_socket;
+int fd;
+
+//int netl_s, s_nas;
+//struct sockaddr_un ralu_socket;
 int wait_start_mihf;
 int listen_mih;
 struct ral_lte_priv rl_priv;
 struct ral_lte_priv *ralpriv;
+//ioctl
+struct nas_ioctl gifr;
 
-
-char message[NAS_UE_NETL_MAXLEN];
 static int  g_log_output;
 //-----------------------------------------------------------------------------
 static void arg_usage(char *exec_nameP) {
 //-----------------------------------------------------------------------------
     fprintf(stderr,
-            "Usage: %s [options]\nOptions:\n"
-            "  -V,          --version             Display version information\n"
-            "  -?, -h,      --help                Display this help text\n"
-            "  -P <number>, --ral-listening-port  Listening port for incoming MIH-F messages\n"
-            "  -I <string>, --ral-ip-address      Binding IP(v4 or v6) address for RAL\n"
-            "  -p <number>, --mihf-remote-port    MIH-F remote port\n"
-            "  -i <string>, --mihf-ip-address     MIH-F IP(v4 or v6) address\n"
-            "  -c,          --output-to-console   All stream outputs are redirected to console\n"
-            "  -f,          --output-to-syslog    All stream outputs are redirected to file\n"
-            "  -s,          --output-to-syslog    All stream outputs are redirected to syslog\n",
-            exec_nameP);
+      "Usage: %s [options]\nOptions:\n"
+      "  -V,          --version             Display version information\n"
+      "  -?, -h,      --help                Display this help text\n"
+      "  -P <number>, --ral-listening-port  Listening port for incoming MIH-F messages\n"
+      "  -I <string>, --ral-ip-address      Binding IP(v4 or v6) address for RAL\n"
+      "  -p <number>, --mihf-remote-port    MIH-F remote port\n"
+      "  -i <string>, --mihf-ip-address     MIH-F IP(v4 or v6) address\n"
+      "  -c,          --output-to-console   All stream outputs are redirected to console\n"
+      "  -f,          --output-to-syslog    All stream outputs are redirected to file\n"
+      "  -s,          --output-to-syslog    All stream outputs are redirected to syslog\n",
+      exec_nameP);
 }
 
 //---------------------------------------------------------------------------
@@ -128,31 +164,19 @@ int parse_opts(int argc, char *argv[]) {
     }
     return 0;
 }
+
 //---------------------------------------------------------------------------
-void IAL_D_Netlink_socket_init(void){
+void IAL_NAS_ioctl_init(void){
 //---------------------------------------------------------------------------
-    int len;
-    struct sockaddr_un local;
-    if ((netl_s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        perror("IAL_D_Netlink_socket_init : socket command failed, err %d\n");
-        exit(1);
-    }
-
-    local.sun_family = AF_UNIX;
-    strcpy(local.sun_path, SOCK_NAS_PATH);
-    unlink(local.sun_path);
-    len = strlen(local.sun_path) + sizeof(local.sun_family);
-
-    if (bind(netl_s, (struct sockaddr *)&local, len) == -1) {
-        perror("IAL_D_Netlink_socket_init : bind command failed, \n");
-        exit(1);
-    }
-
-    if (listen(netl_s, 1) == -1) {
-        perror("IAL_D_Netlink_socket_init : listen command failed, \n");
-        exit(1);
-    }
+  // Get an UDP IPv6 socket ??
+  fd=socket(AF_INET6, SOCK_DGRAM, 0);
+  if (fd<0) {
+    ERR("Error opening socket for ioctl\n");
+    exit(1);
+  }
+  strcpy(gifr.name, "oai0");
 }
+
 //---------------------------------------------------------------------------
 void mRALlte_get_IPv6_addr(void) {
 //---------------------------------------------------------------------------
@@ -162,7 +186,7 @@ void mRALlte_get_IPv6_addr(void) {
     char * eth0_name="eth0";/* interface name  */
 #endif
 #ifdef RAL_REALTIME
-    char * graal0_name="graal0";/* interface name */
+    char * graal0_name="oai0";/* interface name */
 #endif
 
     FILE *f;
@@ -232,9 +256,7 @@ void mRALlte_get_IPv6_addr(void) {
 //---------------------------------------------------------------------------
 int inits(int argc, char *argv[]) {
     //---------------------------------------------------------------------------
-    MIH_C_TRANSACTION_ID_T           transaction_id;
-    unsigned int                     t;
-    struct sockaddr_un               nas_socket;
+    MIH_C_TRANSACTION_ID_T transaction_id;
 
     ralpriv = &rl_priv;
     memset(ralpriv, 0, sizeof(struct ral_lte_priv));
@@ -294,29 +316,22 @@ int inits(int argc, char *argv[]) {
     NOTICE("[MSC_NEW][%s][RAL=%s]\n", getTimeStamp4Log(), g_link_id);
     NOTICE("[MSC_NEW][%s][NAS=%s]\n", getTimeStamp4Log(), "nas");
 
-    IAL_D_Netlink_socket_init();
-    DEBUG("Waiting for a connection from NAS Driver ...\n");
-    t = sizeof(nas_socket);
-    if ((s_nas = accept(netl_s, (struct sockaddr *)&nas_socket, &t)) == -1) {
-        perror("main - s_nas - accept ");
-        exit(1);
-    }
+    IAL_NAS_ioctl_init();
     DEBUG("NAS Driver Connected.\n\n");
-
 
     // get interface ipv6 address
     mRALlte_get_IPv6_addr();
     // get L2 identifier
-    IAL_process_DNAS_message(IO_OBJ_IMEI, IO_CMD_ADD, 0);
+    RAL_process_NAS_message(IO_OBJ_IMEI, IO_CMD_ADD, 0);
 
-    IAL_decode_NAS_message();
+    DEBUG ("IMEI value: = ");
+    mRALlte_print_buffer((char *)(&ralpriv->ipv6_l2id[0]),8);
 
     // Initialize measurements
     IAL_NAS_measures_init();
     ralpriv->state = DISCONNECTED;
-
-    IAL_process_DNAS_message(IO_OBJ_MEAS, IO_CMD_LIST, ralpriv->cell_id);
-    IAL_decode_NAS_message();
+    // should be commented? MW, 7/05/2013
+    RAL_process_NAS_message(IO_OBJ_MEAS, IO_CMD_LIST, ralpriv->cell_id);
 
 
     transaction_id = (MIH_C_TRANSACTION_ID_T)0;
@@ -335,15 +350,15 @@ int main(int argc, char *argv[]){
 
     inits(argc, argv);
 
-    done                       = 0;
+    done = 0;
     ralpriv->pending_req_flag = 0;
-    meas_polling_counter       = 1;
+    meas_polling_counter = 1;
 
     do{
         // Create fd_set and wait for input;
         FD_ZERO(&readfds);
         FD_SET(g_sockd_mihf, &readfds);
-        FD_SET (s_nas, &readfds);
+
         tv.tv_sec  = MIH_C_RADIO_POLLING_INTERVAL_SECONDS;
         tv.tv_usec = MIH_C_RADIO_POLLING_INTERVAL_MICRO_SECONDS;
 
@@ -357,17 +372,11 @@ int main(int argc, char *argv[]){
         if(rc >= 0){
             if(FD_ISSET(g_sockd_mihf, &readfds)){
                 done=mRALlte_mih_link_process_message();
-            } /*else { // tick
-                mRALlte_mih_fsm(NULL, 0);
-            }*/
-            if (FD_ISSET(s_nas,&readfds)){
-                //printf("\n something received s_nas\n");
-                  done = RAL_process_NAS_message();
-            }
+            } 
 
             //get measures from NAS - timer = 21x100ms  -- impair
+            if (meas_polling_counter ++ == 21){
 //            if (meas_polling_counter ++ == 51){
-            if (meas_polling_counter ++ == 51){
                 IAL_NAS_measures_update(meas_polling_counter);
                 rallte_NAS_measures_polling();
                 meas_polling_counter =1;
@@ -382,7 +391,6 @@ int main(int argc, char *argv[]){
     }while(!done);
 
     close(g_sockd_mihf);
-    close(netl_s);
     MIH_C_exit();
     return 0;
 }

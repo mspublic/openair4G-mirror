@@ -194,6 +194,18 @@ inline void MIH_C_LINK_ACTION_decode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_T *dat
     MIH_C_LINK_AC_PARAM_decode(bbP, &dataP->link_ac_param);
 #endif
 }
+
+//-----------------------------------------------------------------------------
+// MW Function to bypass ODTONE problem
+inline void MIH_C_LINK_ACTION_short_decode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_T *dataP) {
+//-----------------------------------------------------------------------------
+    MIH_C_LINK_AC_TYPE_decode(bbP, &dataP->link_ac_type);
+    MIH_C_LINK_AC_ATTR_decode(bbP, &dataP->link_ac_attr);
+//#ifdef MIH_C_MEDIEVAL_EXTENSIONS
+    //MIH_C_LINK_AC_PARAM_decode(bbP, &dataP->link_ac_param);
+//#endif
+}
+
 //-----------------------------------------------------------------------------
 inline void MIH_C_LINK_ACTION_REQ_encode(Bit_Buffer_t* bbP, MIH_C_LINK_ACTION_REQ_T *dataP) {
 //-----------------------------------------------------------------------------
