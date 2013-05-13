@@ -61,11 +61,13 @@ extern int card;
 #endif
 #endif
 
-//#define DEBUG_PHY_PROC
+#define DEBUG_PHY_PROC
 #define UE_TX_POWER (-10)
 
 #ifdef OPENAIR2
+#ifndef PUCCH
 #define PUCCH
+#endif
 #endif
 
 //#ifdef OPENAIR2
@@ -278,9 +280,6 @@ UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
 }
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
 
-#ifdef CBMIMO1  
-  u8 card_id;
-#endif
   /*
   if ((timing_advance>>10) & 1) //it is negative
     timing_advance = timing_advance - (1<<11);
@@ -289,10 +288,6 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
   if (openair_daq_vars.manual_timing_advance == 0) {
     phy_vars_ue->timing_advance = timing_advance*4;    
 
-#ifdef CBMIMO1
-    for (card_id=0;card_id<number_of_cards;card_id++)
-      pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance + phy_vars_ue->timing_advance;
-#endif
   }
 
 #ifdef DEBUG_PHY_PROC  
@@ -303,10 +298,7 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
 
 void process_timing_advance(u8 Mod_id,s16 timing_advance) {
 
-#ifdef CBMIMO1
-  u8 card_id;
-#endif
-  u32 frame = PHY_vars_UE_g[Mod_id]->frame;
+  //  u32 frame = PHY_vars_UE_g[Mod_id]->frame;
  
   if ((timing_advance>>5) & 1) //it is negative
     timing_advance = timing_advance - (1<<6);
@@ -315,11 +307,6 @@ void process_timing_advance(u8 Mod_id,s16 timing_advance) {
     //if ( (frame % 100) == 0) {
     //if ((timing_advance > 3) || (timing_advance < -3) )
     PHY_vars_UE_g[Mod_id]->timing_advance = cmax(0,(int)PHY_vars_UE_g[Mod_id]->timing_advance+timing_advance*4);
-      
-#ifdef CBMIMO1
-    for (card_id=0;card_id<number_of_cards;card_id++)
-      pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
-#endif
       
     //}
   }
@@ -331,11 +318,11 @@ void process_timing_advance(u8 Mod_id,s16 timing_advance) {
 
 u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
   
-  LOG_T(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR TXOp (sr_ConfigIndex %d)\n",
+  LOG_I(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR TXOp (sr_ConfigIndex %d)\n",
       phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,subframe,
       phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex);
   
-  if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 5) {        // 5 ms SR period
+  if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex <= 4) {        // 5 ms SR period
     if ((subframe%5) == phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)
       return(1);
   }
@@ -571,7 +558,7 @@ int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
 
 void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
   
-  int i_d;
+  //  int i_d;
   u16 first_rb, nb_rb;
   u8 harq_pid;
   unsigned int input_buffer_length;
@@ -588,8 +575,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   u8 generate_ul_signal = 0;
   u8 ack_status=0;
   s8 Po_PUCCH;
-  s32 ulsch_start=0,ulsch_end=0,overflow=0;
-  int k,l;
+  s32 ulsch_start=0;//,ulsch_end=0,overflow=0;
+  //  int k,l;
 
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_IN);
@@ -608,40 +595,6 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//	printf("[PHY][UE][RAROC] frame %d subframe %d Clearing TX buffer\n",phy_vars_ue->frame,next_slot>>1);
 	memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti],
 	       0,frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*sizeof(s32));
-	/*
-#ifdef BIT8_TX //this is the CBMIMO1 case
-	ulsch_start = (frame_parms->samples_per_tti*subframe)>>1;
-	memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0,
-	       (frame_parms->samples_per_tti)*sizeof(s16));
-#else
-#ifdef EXMIMO //this is the EXPRESS MIMO case
-	ulsch_start = (phy_vars_ue->rx_offset+subframe*frame_parms->samples_per_tti-TIMING_ADVANCE_HW);
-	if (ulsch_start<0)
-	  ulsch_start+=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-	if (ulsch_start>=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-	  ulsch_start-=(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-	if (ulsch_start>(9*frame_parms->samples_per_tti)) //we have to divide the memset in two parts
-	  {
-	      ulsch_end = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti - ulsch_start;
-	    for (i=0;i<ulsch_end;i++)
-	      ((u32*)&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start])[i] = 0x00010001;
-	    ulsch_end = ulsch_start-(9*frame_parms->samples_per_tti);
-	    for (i=0;i<ulsch_end;i++)
-	      ((u32*)&phy_vars_ue->lte_ue_common_vars.txdata[aa][0])[i] = 0x00010001;
-
-	  }
-	else {
-	  ulsch_end = frame_parms->samples_per_tti+1;
-	  for (i=0;i<ulsch_end;i++)
-	    ((u32*)&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start])[i] = 0x00010001;
-	}
-#else //this is the normal case
-	ulsch_start = (frame_parms->samples_per_tti*subframe);
-	memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0,
-	       (frame_parms->samples_per_tti)*sizeof(s32));
-#endif //else EXMIMO
-#endif //else BIT8_TX
-	*/
       }
     }
 
@@ -957,8 +910,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	// Check for SR and do ACK/NACK accordingly
 	if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
-	  //LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR for PUSCH from MAC\n",
-	  //	phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1);
+	  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR for PUSCH from MAC\n",
+	 	phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1);
 	  SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
 					    phy_vars_ue->frame,
 					    eNB_id,
@@ -1099,15 +1052,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  subframe = next_slot>>1;
 	  nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-#ifdef CBMIMO1 //this is the CBMIMO1 case
-	ulsch_start = (frame_parms->samples_per_tti*subframe)>>1;
-#else
 #ifdef EXMIMO //this is the EXPRESS MIMO case
 	ulsch_start = (phy_vars_ue->rx_offset+subframe*frame_parms->samples_per_tti-openair_daq_vars.timing_advance-phy_vars_ue->timing_advance+5)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
 #else //this is the normal case
 	ulsch_start = (frame_parms->samples_per_tti*subframe);
 #endif //else EXMIMO
-#endif //else CBMIMO1
 
 	for (aa=0; aa<1/*frame_parms->nb_antennas_tx*/; aa++) {
 	    if (frame_parms->Ncp == 1) 
@@ -1270,7 +1219,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 }
 
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
-  int i,aa;
+  int aa;//i,aa;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
 
   if (abstraction_flag==0) {
@@ -1282,10 +1231,6 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
     
     
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
-#ifdef CBMIMO1 //this is the CBMIMO1 case
-      memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][0],0,
-	     (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti)*sizeof(s16));
-#else
 #ifdef EXMIMO //this is the EXPRESS MIMO case
       // set the whole tx buffer to RX
       for (i=0;i<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti;i++)
@@ -1294,7 +1239,7 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
       memset(&phy_vars_ue->lte_ue_common_vars.txdata[aa][0],0,
 	     (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti)*sizeof(s32));
 #endif //else EXMIMO
-#endif //else CBMIMO1
+
     }
   }
 }
@@ -1302,7 +1247,7 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
 void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
   
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
-  int aa;
+  //  int aa;
 #if defined(EXMIMO) && defined(DRIVER2013)
   exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
 #endif
@@ -1335,11 +1280,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
       //LOG_D(PHY,"Calling measurements with rxdata %p\n",phy_vars_ue->lte_ue_common_vars.rxdata);
 
       lte_ue_measurements(phy_vars_ue,
-#ifdef HW_PREFIX_REMOVAL 
-			  ((last_slot>>1)*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME),
-#else
 			  ((last_slot>>1)*frame_parms->samples_per_tti+phy_vars_ue->rx_offset)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME),
-#endif
 			  (last_slot == 2) ? 1 : 0,
 			  0);
     }
@@ -1416,9 +1357,6 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
       if (phy_vars_ue->frame % 100 == 0) {
 	if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
 	  openair_daq_vars.freq_offset+=100;
-#ifdef CBMIMO1
-	  openair_set_freq_offset(0,openair_daq_vars.freq_offset);
-#endif
 #if defined(EXMIMO) && defined(DRIVER2013)
 	  for (aa = 0; aa<4; aa++) { 
 	    p_exmimo_config->rf.rf_freq_rx[aa] = carrier_freq[aa]+=openair_daq_vars.freq_offset;
@@ -1428,9 +1366,6 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
  	}
 	else if ((phy_vars_ue->lte_ue_common_vars.freq_offset<-100) && (openair_daq_vars.freq_offset > -1000)) {
 	  openair_daq_vars.freq_offset-=100;
-#ifdef CBMIMO1
-	  openair_set_freq_offset(0,openair_daq_vars.freq_offset);
-#endif
 #if defined(EXMIMO) && defined(DRIVER2013)
 	  for (aa = 0; aa<4; aa++) { 
 	    p_exmimo_config->rf.rf_freq_rx[aa] = carrier_freq[aa]+=openair_daq_vars.freq_offset;
@@ -1530,7 +1465,7 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
 
 void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
-  u8 last_slot;
+  //  u8 last_slot;
 
   LOG_D(PHY,"[UE  %d] frame %d, slot %d, restarting PHY!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame);
   mac_xface->macphy_exit("");
@@ -1545,13 +1480,6 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
     phy_vars_ue->UE_mode[eNB_id] = PRACH;
     phy_vars_ue->prach_resources[eNB_id]=NULL;
   }
-#ifdef CBMIMO1
-#ifdef USER_MODE
-  // TODO: send IOCTL
-#else
-  openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-#endif //USER_MODE
-#endif //CBMIMO1
   phy_vars_ue->frame = -1;
   openair_daq_vars.synch_wait_cnt=0;
   openair_daq_vars.sched_cnt=-1;
@@ -1586,7 +1514,7 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
 void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 abstraction_flag) {
 
-  int i;
+  //  int i;
   int pbch_tx_ant=0;
   u8 pbch_phase;
   u16 frame_tx;
@@ -1799,7 +1727,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       LOG_E(PHY,"[UE  %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
       mac_xface->macphy_exit("");
       vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
-      return;
+      return(-1);
     }
     LOG_D(PHY,"Calling dci_decoding_proc_emul ...\n");
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
@@ -2168,17 +2096,8 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       slot_fep(phy_vars_ue,
 	       l,
 	       last_slot,
-#ifdef CBMIMO1
-	       0,
-#else
 	       phy_vars_ue->rx_offset,
-#endif
-#ifdef HW_PREFIX_REMOVAL
-	       1
-#else
-	       0
-#endif
-	       );
+	       0);
     }
   
     //if (subframe_select(&phy_vars_ue->lte_frame_parms,last_slot>>1) == SF_DL)
