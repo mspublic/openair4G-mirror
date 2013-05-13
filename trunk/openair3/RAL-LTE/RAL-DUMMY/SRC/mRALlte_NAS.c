@@ -61,15 +61,14 @@ int IAL_decode_NAS_message(void){
     }
 
     if (!done) {
-        DEBUG("\nRAL_decode_NAS_message: primitive from NAS\n");
+        DEBUG(" ");
+        DEBUG("RAL_decode_NAS_message: primitive from NAS\n");
         msgToRcve = (struct nas_ue_netl_reply *) message;
 
         switch (msgToRcve->type) {
 
             case NAS_UE_MSG_CNX_ESTABLISH_REPLY:
-                NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_CNX_ESTABLISH_REPLY --->][%s]\n",
-                        getTimeStamp4Log(),
-                        g_link_id);
+                NOTICE("[MSC_MSG][%s][nas][--- NAS_UE_MSG_CNX_ESTABLISH_REPLY --->][%s]\n", getTimeStamp4Log(), g_link_id);
                 DEBUG("NAS_UE_MSG_CNX_ESTABLISH_REPLY received\n");
                 ralpriv->pending_req_action = MIH_C_LINK_AC_TYPE_NONE;
                 ralpriv->state = DISCONNECTED;
@@ -244,6 +243,8 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
   msgToSend = (struct nas_ue_netl_request *) message;
   memset(message,0,NAS_UE_NETL_MAXLEN);
 
+  NOTICE(" \n");
+
   switch (ioctl_obj){
       case IO_OBJ_CNX:
          switch (ioctl_cmd){
@@ -308,7 +309,7 @@ int IAL_process_DNAS_message(int ioctl_obj, int ioctl_cmd, int ioctl_cellid){
                 msgToSend->type=NAS_UE_MSG_RB_LIST_REQUEST;
                 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+ sizeof(struct nas_ue_netl_request);
                 //
-          			DEBUG("ioctl : Radio bearer list requested\n");
+          	DEBUG("ioctl : Radio bearer list requested\n");
                 rc = 0;
                }
       		  break;

@@ -77,7 +77,7 @@ int NAS_mihuser_connect(void){
         setsockopt( g_sockd_mih_user, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
         if(rp->ai_family == AF_INET) {
-            printf(" %s is an ipv4 address\n",g_mih_user_ip_address);
+            printf("Destination address  %s is an ipv4 address\n",g_mih_user_ip_address);
             addr             = (struct sockaddr_in *)(&buf[0]);
             addr->sin_port   = htons(atoi(g_nas_listening_port_for_mih_user));
             addr->sin_family = AF_INET;
@@ -104,7 +104,7 @@ int NAS_mihuser_connect(void){
                 close(g_sockd_mih_user);
             }
         } else if (rp->ai_family == AF_INET6) {
-            printf(" %s is an ipv6 address\n",g_mih_user_ip_address);
+            printf("Destination address  %s is an ipv6 address\n",g_mih_user_ip_address);
             addr6              = (struct sockaddr_in6 *)(&buf[0]);
             addr6->sin6_port   = htons(atoi(g_nas_listening_port_for_mih_user));
             addr6->sin6_family = AF_INET6;
@@ -124,7 +124,7 @@ int NAS_mihuser_connect(void){
                 return -1;
             }
             if (connect(g_sockd_mih_user, rp->ai_addr, rp->ai_addrlen) != -1) {
-                printf(" NAS is now UDP-CONNECTED to MIH-F\n");
+                printf(" NAS is now able to receive UDP control messages from MIH-User\n");
                 return 0;
             } else {
                 close(g_sockd_mih_user);
@@ -136,7 +136,7 @@ int NAS_mihuser_connect(void){
     }
 
     if (rp == NULL) {   /* No address succeeded */
-        printf("ERR Could not connect to MIH-F\n");
+        printf("ERR Could not establish socket to MIH-User\n");
         return -1;
     }
     return -1;
@@ -166,6 +166,7 @@ int NAS_MIHUSERreceive(int sock)
             g_mih_user_rssi_increment = RSSI_INCREMENT_STEP;
             break;
         default:
+            printf("received %hx\n", str[0]);
             return -1;
     }
     return 0;
@@ -206,7 +207,7 @@ int NAS_IALreceive(int s)
     done =0;
     t=recv(s, str1, NAS_UE_NETL_MAXLEN, 0);
     if (t <= 0) {
-        if (t < 0) perror("IAL_process_command : recv");
+        if (t < 0) perror("RAL_process_command : recv");
         done = 1;
     }
     printf("\nmessage from RAL, length:  %d\n", t);
@@ -217,24 +218,24 @@ int NAS_IALreceive(int s)
     switch (msgToRcve->type){
        case NAS_UE_MSG_CNX_ESTABLISH_REQUEST:
            printf("NAS_UE_MSG_CNX_ESTABLISH_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_CNX_ESTABLISH_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_establish_reply);
+           msgToSend->type = NAS_UE_MSG_CNX_ESTABLISH_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_establish_reply);
            msgToSend->ialNASPrimitive.cnx_est_rep.status = NAS_CONNECTED;
            state = NAS_CONNECTED;
            cell_id = msgToRcve->ialNASPrimitive.cnx_req.cellid;
            break;
        case NAS_UE_MSG_CNX_RELEASE_REQUEST:
            printf("NAS_UE_MSG_CNX_RELEASE_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_CNX_RELEASE_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_release_reply);
+           msgToSend->type = NAS_UE_MSG_CNX_RELEASE_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_release_reply);
            msgToSend->ialNASPrimitive.cnx_rel_rep.status = NAS_DISCONNECTED;
            state = NAS_DISCONNECTED;
            cell_id = CONF_UNKNOWN_CELL_ID;
            break;
        case NAS_UE_MSG_CNX_LIST_REQUEST:
            printf("NAS_UE_MSG_CNX_LIST_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_CNX_LIST_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_list_reply);
+           msgToSend->type = NAS_UE_MSG_CNX_LIST_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_list_reply);
            msgToSend->ialNASPrimitive.cnx_list_rep.state = state;
            msgToSend->ialNASPrimitive.cnx_list_rep.cellid = cell_id;
            msgToSend->ialNASPrimitive.cnx_list_rep.iid4 = CONF_iid4;
@@ -247,8 +248,8 @@ int NAS_IALreceive(int s)
            break;
        case NAS_UE_MSG_CNX_STATUS_REQUEST:
            printf("NAS_UE_MSG_CNX_STATUS_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_CNX_STATUS_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_status_reply);
+           msgToSend->type = NAS_UE_MSG_CNX_STATUS_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_cnx_status_reply);
            msgToSend->ialNASPrimitive.cnx_stat_rep.status = state;
            msgToSend->ialNASPrimitive.cnx_stat_rep.cellid = cell_id;
            if (state == NAS_CONNECTED){
@@ -258,8 +259,8 @@ int NAS_IALreceive(int s)
            break;
        case NAS_UE_MSG_RB_LIST_REQUEST:
            printf("NAS_UE_MSG_RB_LIST_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_RB_LIST_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_rb_list_reply);
+           msgToSend->type = NAS_UE_MSG_RB_LIST_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_rb_list_reply);
            if (state == NAS_CONNECTED){
               msgToSend->ialNASPrimitive.rb_list_rep.num_rb = CONF_num_rb;
               for (i=0; i<CONF_num_rb; i++){
@@ -271,8 +272,8 @@ int NAS_IALreceive(int s)
            break;
        case NAS_UE_MSG_STATISTIC_REQUEST:
            printf("NAS_UE_MSG_STATISTIC_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_STATISTIC_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_statistic_reply);
+           msgToSend->type = NAS_UE_MSG_STATISTIC_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_statistic_reply);
            if (state == NAS_CONNECTED){
                msgToSend->ialNASPrimitive.statistics_rep.rx_packets = CONF_rx_packets;
                msgToSend->ialNASPrimitive.statistics_rep.tx_packets = CONF_tx_packets;
@@ -286,9 +287,10 @@ int NAS_IALreceive(int s)
            break;
        case NAS_UE_MSG_MEAS_REQUEST:
            printf("NAS_UE_MSG_MEAS_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_MEAS_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_measure_reply);
+           msgToSend->type = NAS_UE_MSG_MEAS_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_msg_measure_reply);
            msgToSend->ialNASPrimitive.meas_rep.num_cells = CONF_num_cells;
+           printf("\tSignal levels sent ");
            for (i=0; i<CONF_num_rb; i++){
               #ifdef MIH_USER_CONTROL
               // LG TEST WITH ONLY i =0
@@ -301,12 +303,14 @@ int NAS_IALreceive(int s)
               msgToSend->ialNASPrimitive.meas_rep.measures[i].cell_id = conf_cell_id[i];
               msgToSend->ialNASPrimitive.meas_rep.measures[i].level = conf_level[i];
               msgToSend->ialNASPrimitive.meas_rep.measures[i].provider_id = conf_provider_id[i];
+              printf ("| cell %d : %d ", conf_cell_id[i], conf_level[i]);
            }
+           printf("\n");
            break;
        case NAS_UE_MSG_IMEI_REQUEST:
            printf("NAS_UE_MSG_IMEI_REQUEST received\n");
-					 msgToSend->type = NAS_UE_MSG_IMEI_REPLY;
-					 msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_l2id_reply);
+           msgToSend->type = NAS_UE_MSG_IMEI_REPLY;
+           msgToSend->length = sizeof(struct nas_ue_netl_hdr)+sizeof(struct nas_ue_l2id_reply);
            msgToSend->ialNASPrimitive.l2id_rep.l2id[0] = conf_iid6_0[CONF_MT0];
            msgToSend->ialNASPrimitive.l2id_rep.l2id[1] = conf_iid6_1[CONF_MT0];
            state = NAS_DISCONNECTED;
@@ -321,7 +325,7 @@ int NAS_IALreceive(int s)
         done = 1;
     }
 
-    printf ("message sent to IAL %d\n",msgToSend->length);
+    printf ("Response message sent to RAL %d\n",msgToSend->length);
 
     return done;
 
@@ -336,8 +340,8 @@ int main(void)
 
     do {
         s= NAS_IAL_sock_connect();
-	if (s <= 0) {
-		sleep(2);
+     if (s <= 0) {
+          sleep(2);
         }
     } while (s < 0);
 

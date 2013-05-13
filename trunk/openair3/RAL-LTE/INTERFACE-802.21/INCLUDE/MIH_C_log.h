@@ -73,8 +73,8 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #define LOG_TO_DEFAULT LOG_TO_CONSOLE
 
 #define MIH_C_LOGFILE_NAME "/tmp/MIH_C_log.txt"
-#define MIH_C_SYSLOG_NAME  "MIH_C"
-#define MIH_C_VERSION     "Din_construction"  //Release date :  see readme
+#define MIH_C_SYSLOG_NAME  "LTE"
+#define MIH_C_VERSION     "1.0"  //Release date :  see readme
 
 #define EMERG(args...)   MIH_C_log_record( (LOG_EMERG),   ##args)
 #define ALERT(args...)   MIH_C_log_record( (LOG_ALERT),   ##args)

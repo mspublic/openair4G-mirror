@@ -13,7 +13,7 @@ mRALlte Constants
 #define DEFAULT_REMOTE_PORT_MIHF  "1025"
 #define DEFAULT_IP_ADDRESS_MIHF   "127.0.0.1"
 #define DEFAULT_IP_ADDRESS_RAL    "127.0.0.1"
-#define DEFAULT_LINK_ID           "link"
+#define DEFAULT_LINK_ID           "link" //"lte"
 #define DEFAULT_MIHF_ID           "mihf1"
 #define DEFAULT_ADDRESS_3GPP      "0335060080149150"
 
