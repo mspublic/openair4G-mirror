@@ -455,7 +455,7 @@ typedef struct DCI1A_10MHz_FDD DCI1A_10MHz_FDD_t;
 ///  DCI Format Type 0 (20 MHz,FDD, 25 bits)
 struct DCI0_20MHz_FDD {
   /// Padding
-  uint32_t padding:7;
+  uint32_t padding:5;
   /// CQI Request
   uint32_t cqi_req:1;
   /// DRS Cyclic Shift
@@ -467,7 +467,7 @@ struct DCI0_20MHz_FDD {
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
   /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
-  uint32_t rballoc:11;
+  uint32_t rballoc:13;
   /// Hopping flag
   uint32_t hopping:1;
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
