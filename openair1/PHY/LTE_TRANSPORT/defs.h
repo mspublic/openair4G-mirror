@@ -223,7 +223,7 @@ typedef struct {
   /// Pointers to 8 HARQ processes for the DLSCH
   LTE_DL_eNB_HARQ_t *harq_processes[8];     
   /// Number of soft channel bits
-  uint16_t G;
+  uint32_t G;
   /// Layer index for this dlsch (0,1)
   uint8_t layer_index;          
   /// Codebook index for this dlsch (0,1,2,3)
@@ -492,7 +492,7 @@ typedef struct {
   /// current delta_pucch
   s8 delta_PUCCH;
   /// Number of soft channel bits
-  uint16_t G;
+  uint32_t G;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Current subband PMI allocation
