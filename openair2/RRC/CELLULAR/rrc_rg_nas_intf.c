@@ -22,6 +22,7 @@
 #include "rrc_messages.h"
 //-----------------------------------------------------------------------------
 #include "rrc_proto_int.h"
+
 //-----------------------------------------------------------------------------
 // For FIFOS interface
 #ifdef USER_MODE
@@ -29,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
  #ifdef RRC_NETLINK
  #include <sys/socket.h>
  #include <linux/netlink.h>
