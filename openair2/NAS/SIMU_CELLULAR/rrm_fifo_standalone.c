@@ -57,10 +57,12 @@ void nasrg_rrm_fifos_init (void){
 
   while ((rrc_rg_rrm_in_fifo = open (RRM_INPUT_SAPI, write_flag)) < 0) {
     printf ("%s returned value %d\n", RRM_INPUT_SAPI, rrc_rg_rrm_in_fifo);
+    fflush(stdout);
     sleep (1);
   }
   while ((rrc_rg_rrm_out_fifo = open (RRM_OUTPUT_SAPI, read_flag)) < 0) {
     printf ("%s returned value %d\n", RRM_OUTPUT_SAPI, rrc_rg_rrm_out_fifo);
+    fflush(stdout);
     sleep (1);
   }
 
@@ -310,6 +312,7 @@ void nasrg_rrm_from_rrc_read (void){
     default:
       break;
     }
+    fflush(stdout);
   }
 }
 
@@ -324,6 +327,7 @@ int main (int argc, char **argv){
   tXmit_id =0;
   nasrg_rrm_fifos_init ();
   printf ("[RRM] RRM FIFOs ready\n");
+  fflush(stdout);
 
   while (1) {
     usleep (100000);
