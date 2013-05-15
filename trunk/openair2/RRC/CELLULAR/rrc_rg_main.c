@@ -40,7 +40,7 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   //protocol_bs->rrc.current_SFN = frame;
   //  if (protocol_bs->rrc.current_SFN % 50 == 0) {
   #ifdef DEBUG_RRC_DETAILS
-  if (protocol_bs->rrc.current_SFN % 20 == 0) {
+  if (protocol_bs->rrc.current_SFN % 50 == 0) {
      msg ("\n\n[RRC][MSG_TEST] System Time : %d\n", protocol_bs->rrc.current_SFN);
   }
   #endif
@@ -116,6 +116,9 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       //exit(1);
       // }
 
+      #ifdef USER_MODE
+        fflush(stdout);
+      #endif
       return 0;
   }
 }
