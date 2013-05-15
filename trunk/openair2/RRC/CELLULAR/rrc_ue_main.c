@@ -61,7 +61,7 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   // return 0;
 
   #ifdef DEBUG_RRC_DETAILS
-  if (protocol_ms->rrc.current_SFN % 20 == 0) {
+  if (protocol_ms->rrc.current_SFN % 50 == 0) {
      msg ("\n\n[RRC][MSG_TEST] System Time : %d\n", protocol_ms->rrc.current_SFN);
      #ifdef  DEBUG_RRC_BROADCAST
      msg ("[RRC_BCH-UE] DEBUG ue_wait_establish_req = %d.\n", protocol_ms->rrc.ue_wait_establish_req );
@@ -136,7 +136,10 @@ int rrc_ue_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 
   //Force Uplink RLC communication
   rrc_ue_force_uplink ();
-  // Test RLC interface
-  //rrc_ue_test_lchannels ();
+
+  #ifdef USER_MODE
+   fflush(stdout);
+  #endif
+
   return 0;
 }
