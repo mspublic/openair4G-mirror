@@ -300,7 +300,7 @@ static const struct net_device_ops nasrg_netdev_ops = {
   .ndo_validate_addr      = NULL,
   .ndo_get_stats          = nasrg_get_stats,
 //#ifdef  KERNEL_VERSION_GREATER_THAN_32
-  .ndo_set_multicast_list = NULL,
+//  .ndo_set_multicast_list = NULL,
   .ndo_set_mac_address    = nasrg_set_mac_address,
   .ndo_set_config         = nasrg_set_config,
   .ndo_do_ioctl           = nasrg_CTL_ioctl,
@@ -501,6 +501,6 @@ void cleanup_module(void){
 #define DRV_COPYRIGHT   "-Copyright(c) GNU GPL Eurecom 2013"
 #define DRV_AUTHOR      "Michelle Wetterwald <michelle.wetterwald@eurecom.fr>"DRV_COPYRIGHT
 
-MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("LTE Driver for eNodeB, playing as Non Access Stratum");
-MODULE_AUTHOR("Michelle Wetterwald <michelle.wetterwald@eurecom.fr>");
+// MODULE_LICENSE("GPL");
+// MODULE_DESCRIPTION("LTE Driver for eNodeB, playing as Non Access Stratum");
+// MODULE_AUTHOR("Michelle Wetterwald <michelle.wetterwald@eurecom.fr>");

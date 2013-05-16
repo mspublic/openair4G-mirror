@@ -311,7 +311,7 @@ static const struct net_device_ops nasmt_netdev_ops = {
     .ndo_validate_addr      = NULL,
     .ndo_get_stats          = nasmt_get_stats,
 //#ifdef  KERNEL_VERSION_GREATER_THAN_32
-    .ndo_set_multicast_list = NULL,
+//    .ndo_set_multicast_list = NULL,
     .ndo_set_mac_address    = nasmt_set_mac_address,
     .ndo_set_config         = nasmt_set_config,
     .ndo_do_ioctl           = nasmt_CTL_ioctl,
@@ -518,7 +518,7 @@ module_param_array_named(nas_IMEI,nas_IMEI,byte,&m_arg,0);
 MODULE_PARM_DESC(nas_IMEI,"Terminal IMEI Identifier (14 digits, only first 10 significant if ETH option ON)");
 
 
-MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("LTE Driver for Mobile Terminal, playing as Non Access Stratum");
-MODULE_AUTHOR("Michelle Wetterwald <michelle.wetterwald@eurecom.fr>");
+// MODULE_LICENSE("GPL");
+// MODULE_DESCRIPTION("LTE Driver for Mobile Terminal, playing as Non Access Stratum");
+// MODULE_AUTHOR("Michelle Wetterwald <michelle.wetterwald@eurecom.fr>");
 
