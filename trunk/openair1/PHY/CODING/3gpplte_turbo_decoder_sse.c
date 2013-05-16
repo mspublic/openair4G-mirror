@@ -2012,12 +2012,13 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   n2=n;
 #endif
 
+
   for (iind=0;f1f2mat[iind].nb_bits!=n && iind <188; iind++);
   if ( iind == 188 ) {
     msg("Illegal frame length!\n");
     return 255;
   }
-
+  
   switch (crc_type) {
   case CRC24_A:
   case CRC24_B:
@@ -2408,7 +2409,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
         decoded_bytes[n_128*j +i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
         }
       }
-    }
+    }  
     
 #endif
     

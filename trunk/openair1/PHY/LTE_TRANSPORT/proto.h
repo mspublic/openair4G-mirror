@@ -252,9 +252,10 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
     @param phy_vars_ue Pointer to UE variables
     @param eNB_id index of eNB in ue variables
     @param coded_bits_per_codeword G from 36.211
+    @param subframe Index of subframe
     @returns 0 on success
 */
-void dump_mch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword);
+void dump_mch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int subframe);
 
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
