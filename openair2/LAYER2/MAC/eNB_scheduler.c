@@ -1391,19 +1391,19 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
     for (j=0;j<(TBS-sdu_length_total-offset);j++)
       eNB_mac_inst[Mod_id].MCH_pdu.payload[offset+sdu_length_total+j] = (char)(taus()&0xff);
 
-    //   return 1;
+       return 1;
   } 
-  //  else 
-  //    return 0;
+    else 
+      return 0;
   
   //this is for testing 
-  if (mtch_flag == 1) {
+  /*  if (mtch_flag == 1) {
     //  LOG_D(MAC,"DUY: mch_buffer length so far is : %ld\n", &mch_buffer[sdu_length_total]-&mch_buffer[0]);
     return 1;
   }
   else 
     return 0;
-  
+  */
 }
 
 MCH_PDU *get_mch_sdu(uint8_t Mod_id,uint32_t frame, uint32_t subframe) {
