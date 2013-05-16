@@ -232,7 +232,7 @@ void ra_failed(u8 Mod_id,u8 eNB_index) {
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index] = PRACH;
   LOG_I(PHY,"[UE %d] Frame %d Random-access procedure fails, going back to PRACH\n",Mod_id,PHY_vars_UE_g[Mod_id]->frame);
-  mac_xface->macphy_exit("");
+  //mac_xface->macphy_exit("");
   //  exit(-1);
 }
 
@@ -558,6 +558,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       break;
 
     case PRACH:
+      msg("PRACH, config_enabled=%d\n", phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_Config_enabled);
 #ifdef OPENAIR2
       if(phy_vars_ue->lte_frame_parms[eNB_id]->prach_config_common.prach_Config_enabled == 1)
 #else
@@ -576,6 +577,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
           }
 #endif
 
+          msg("prach_resource %p\n", phy_vars_ue->prach_resources[eNB_id]);
           if(phy_vars_ue->prach_resources[eNB_id] != NULL) {
             phy_vars_ue->generate_prach=1;
             phy_vars_ue->prach_cnt=0;
@@ -1367,7 +1369,8 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCCH_PROCEDURES, VCD_FUNCTION_IN);
 
   for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
-    //msg("[PHY][UE  %d] Trying PBCH %d (NidCell %d, eNB_id %d)\n",phy_vars_ue->Mod_id,pbch_phase,phy_vars_ue->lte_frame_parms.Nid_cell,eNB_id);
+    LOG_D(PHY, "[UE %d][eNB %d] Trying PBCH %d (NidCell %d)\n",
+        phy_vars_ue->Mod_id, eNB_id, pbch_phase, phy_vars_ue->lte_frame_parms[eNB_id]->Nid_cell);
     if (abstraction_flag == 0) {
       pbch_tx_ant = rx_pbch(phy_vars_ue->lte_ue_common_vars[eNB_id],
                             phy_vars_ue->lte_ue_pbch_vars[eNB_id],
@@ -1428,7 +1431,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 
     if (first_run) {
       first_run = 0;
-      LOG_I(PHY,"[UE  %d] frame %d, slot %d: Adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, phase %d).\n",
+      LOG_I(PHY,"[UE %d] frame %d, slot %d: Adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, phase %d).\n",
 	    phy_vars_ue->Mod_id, 
 	    phy_vars_ue->frame,
 	    last_slot,
@@ -1440,7 +1443,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     else 
       if (((frame_tx & 0x03FF) != (phy_vars_ue->frame & 0x03FF))) { 
 	  // ||(pbch_tx_ant != phy_vars_ue->lte_frame_parms[eNB_id]->nb_antennas_tx)) {
-	LOG_D(PHY,"[UE  %d] frame %d, slot %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, frame%1024=%d, phase %d).\n",
+	LOG_D(PHY,"[UE %d] frame %d, slot %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, frame%1024=%d, phase %d).\n",
 	      phy_vars_ue->Mod_id, 
 	      phy_vars_ue->frame,
 	      last_slot,
@@ -1470,7 +1473,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       }
         
 #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[UE  %d] frame %d, slot %d, eNB %d, PBCH: mode1_flag %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
+    LOG_D(PHY,"[UE %d] frame %d, slot %d, eNB %d, PBCH: mode1_flag %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	      phy_vars_ue->Mod_id, 
 	      phy_vars_ue->frame,
 	      last_slot,
@@ -1482,7 +1485,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	      phy_vars_ue->lte_frame_parms[eNB_id]->phich_config_common.phich_duration,
 	      phy_vars_ue->lte_frame_parms[eNB_id]->phich_config_common.phich_resource);  
     if ((phy_vars_ue->frame%100==0)&&(phy_vars_ue!=NULL)) {
-      LOG_I(PHY,"[UE  %d] frame %d, slot %d, eNB %d, PBCH: mode1_flag %d, tx_ant %d, frame_tx %d, phase %d. N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
+      LOG_I(PHY,"[UE %d] frame %d, slot %d, eNB %d, PBCH: mode1_flag %d, tx_ant %d, frame_tx %d, phase %d. N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	      phy_vars_ue->Mod_id, 
 	      phy_vars_ue->frame,
 	      last_slot,
@@ -1501,11 +1504,11 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   }  
   else {
     if(phy_vars_ue->UE_mode[eNB_id] == PBCH_SEARCH) {
-      LOG_D(PHY,"[UE  %d] frame %d, slot %d, eNB %d, PBCH not detected\n",
+      LOG_D(PHY,"[UE %d] frame %d, slot %d, eNB %d, PBCH not detected\n",
           phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, eNB_id);
     }
     else {
-      LOG_D(PHY,"[UE  %d] frame %d, slot %d, eNB %d, Error decoding PBCH!\n",
+      LOG_D(PHY,"[UE %d] frame %d, slot %d, eNB %d, Error decoding PBCH!\n",
           phy_vars_ue->Mod_id,phy_vars_ue->frame, last_slot, eNB_id);
       phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq++;
       phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors++;
@@ -1914,11 +1917,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   }
 
   if(phy_vars_ue->UE_mode[eNB_id] == PBCH_SEARCH) {
-    //   if (abstraction_flag == 0) {
-      if(last_slot == 1) {
-        lte_ue_pbch_procedures(eNB_id, last_slot, phy_vars_ue, abstraction_flag);
-      }
-      // }
+    if(last_slot == 1) {
+      LOG_D(PHY, "[UE %d][eNB %d] pbch_procedures\n", phy_vars_ue->Mod_id, eNB_id);
+      lte_ue_pbch_procedures(eNB_id, last_slot, phy_vars_ue, abstraction_flag);
+    }
     return 0;
   }
 
