@@ -16,7 +16,7 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
   u8 eNB_id = 0;//ue_common_vars->eNb_id;
   
   unsigned char aa;
-  unsigned char frame_type = 0; // Frame Type: 0 - FDD, 1 - TDD;
+  unsigned char frame_type = frame_parms->frame_type; // Frame Type: 0 - FDD, 1 - TDD;
   unsigned int nb_prefix_samples = frame_parms->ofdm_symbol_size>>2;//(no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = frame_parms->ofdm_symbol_size>>2;//(no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   unsigned int subframe_offset;
@@ -62,12 +62,18 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
     return(-1);
   }
   
-  if ((subframe == 0) || (subframe == 5) ||    // SFn 0,4,5,9;
-      (subframe == 4) || (subframe == 9))	  {   //check for valid MBSFN subframe
-    msg("slot_fep_mbsfn: Subframe must be 1,2,3,6,7,8 for FDD (Frame type=0), Got %d \n",subframe);  //and 3,4,7,8,9 for TDD(Frame type=1)
+  if (((subframe == 0) || (subframe == 5) ||    // SFn 0,4,5,9;
+       (subframe == 4) || (subframe == 9)) 
+      && (frame_type==FDD) )	  {   //check for valid MBSFN subframe
+    msg("slot_fep_mbsfn: Subframe must be 1,2,3,6,7,8 for FDD, Got %d \n",subframe);  
     return(-1);
   }
-
+  else if (((subframe == 0) || (subframe == 1) || (subframe==2) ||    // SFn 0,4,5,9;
+	    (subframe == 5) || (subframe == 6)) 
+	   && (frame_type==TDD) )	  {   //check for valid MBSFN subframe
+    msg("slot_fep_mbsfn: Subframe must be 3,4,7,8,9 for TDD, Got %d \n",subframe);  
+    return(-1);
+  }
 #ifdef DEBUG_FEP
   msg("slot_fep_mbsfn: subframe %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, subframe_offset %d, sample_offset %d\n", subframe, l, nb_prefix_samples,nb_prefix_samples0,subframe_offset,sample_offset);
 #endif

@@ -33,11 +33,7 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 #endif
     
     PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
-#ifdef BIT8_TX
-		 txdata+(i*frame_parms->samples_per_tti>>2),         // output
-#else
 		 txdata+(i*frame_parms->samples_per_tti>>1),         // output
-#endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
 		 1,                 // number of symbols
 		 frame_parms->nb_prefix_samples0,               // number of prefix samples
@@ -49,13 +45,9 @@ void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *fra
 #endif    
 
     PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS+(i*NUMBER_OF_OFDM_CARRIERS*(frame_parms->symbols_per_tti>>1)),        // input
-#ifdef BIT8_TX
-		 txdata+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0>>1)+(i*(frame_parms->samples_per_tti>>2)),         // output
-#else
 		 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
-#endif
 		 frame_parms->log2_symbol_size,                // log2_fft_size
-		 (frame_parms->symbols_per_tti>>1)-1,//6,                 // number of symbols
+		 (short_offset==1) ? 1 :(frame_parms->symbols_per_tti>>1)-1,//6,                 // number of symbols
 		 frame_parms->nb_prefix_samples,               // number of prefix samples
 		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 frame_parms->rev,           // bit-reversal permutation
@@ -79,11 +71,8 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   unsigned short i,j;
   short k;
 
-#ifdef BIT8_TX
-  volatile short *output_ptr=(short*)0;
-#else
   volatile int *output_ptr=(int*)0;
-#endif
+
   int *temp_ptr=(int*)0;
   void (*idft)(int16_t *,int16_t *, int);
 
@@ -144,11 +133,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     
     switch (etype) {
     case CYCLIC_PREFIX:
-#ifdef BIT8_TX
-      output_ptr = &(((short*)output)[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)]);
-#else
       output_ptr = &output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)];
-#endif
       temp_ptr = (int *)temp;
       
 
@@ -156,14 +141,10 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
 #ifndef NEW_FFT
       for (j=0;j<((1<<log2fftsize)) ; j++) {
-#ifdef BIT8_TX
-	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
-	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
-#else
-	output_ptr[j] = temp_ptr[j];
 
+	output_ptr[j] = temp_ptr[j];
 	output_ptr[j] = temp_ptr[2*j];
-#endif
+
       }
 #else
       if (log2fftsize==7) {
@@ -182,23 +163,14 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case CYCLIC_SUFFIX:
       
       
-#ifdef BIT8_TX
-      output_ptr = &(((short*)output)[(i<<log2fftsize)+ (i*nb_prefix_samples)]);
-#else
       output_ptr = &output[(i<<log2fftsize)+ (i*nb_prefix_samples)];
-#endif
       
       temp_ptr = (int *)temp;
       
       //      msg("Doing cyclic suffix method\n");
 
       for (j=0;j<(1<<log2fftsize) ; j++) {
-#ifdef BIT8_TX
-	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
-	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif
       }
       
       
@@ -214,20 +186,13 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case NONE:
 
       //      msg("NO EXTENSION!\n");
-#ifdef BIT8_TX
-      output_ptr = &(((short*)output)[(i<<log2fftsize)]);
-#else
       output_ptr = &output[(i<<log2fftsize)];
-#endif
+
       temp_ptr = (int *)temp;
       
       for (j=0;j<(1<<log2fftsize) ; j++) {
-#ifdef BIT8_TX
-	((char*)output_ptr)[2*j] = (char)(((short*)temp_ptr)[4*j]);
-	((char*)output_ptr)[2*j+1] = (char)(((short*)temp_ptr)[4*j+1]);
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif
+
 
       }
 

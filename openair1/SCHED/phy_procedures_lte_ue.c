@@ -2856,7 +2856,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	if (ret == (1+phy_vars_ue->dlsch_ue_MCH[0]->max_turbo_iterations)) {
 	  phy_vars_ue->dlsch_mch_errors[eNB_id]++;
 	  LOG_I(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error, not passing to L2\n",phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1);
-	  dump_mch(phy_vars_ue,0,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G);
+	  dump_mch(phy_vars_ue,0,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G,(last_slot>>1));
 	  
 	  for (i=0;i<phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->TBS>>3;i++){
 	    printf("%2x.",phy_vars_ue->dlsch_ue_MCH[eNB_id]->harq_processes[0]->c[0][i]);

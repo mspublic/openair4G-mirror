@@ -24,7 +24,7 @@ __m128i zeroM;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_ove
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroM,(xmmy)))
 #endif
 
-void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword) {
+void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword,int subframe) {
 
   unsigned int nsymb_pmch=12;
   char fname[32],vname[32];
@@ -60,7 +60,11 @@ void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword) {
 	       phy_vars_ue->lte_frame_parms.ofdm_symbol_size*12,1,1);
 
   write_output("rxsig_mch.m","rxs_mch",
-	       &phy_vars_ue->lte_ue_common_vars.rxdata[0][7*phy_vars_ue->lte_frame_parms.samples_per_tti],
+	       &phy_vars_ue->lte_ue_common_vars.rxdata[0][subframe*phy_vars_ue->lte_frame_parms.samples_per_tti],
+	       phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
+
+  write_output("txsig_mch.m","txs_mch",
+	       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0][subframe*phy_vars_ue->lte_frame_parms.samples_per_tti],
 	       phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
 }
 

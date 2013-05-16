@@ -534,7 +534,8 @@ int main(int argc, char **argv) {
   if (n_frames==1) {
     printf("Dumping PMCH files ( G %d)\n",PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G);
     dump_mch(PHY_vars_UE,0,
-	     PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G);
+	     PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G,
+	     subframe);
   }
   printf("Freeing dlsch structures\n");
   free_eNB_dlsch(PHY_vars_eNB->dlsch_eNB_MCH);
