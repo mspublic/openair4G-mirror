@@ -696,7 +696,7 @@ main (int argc, char **argv)
   s32* enb_txF_frame[NUMBER_OF_eNB_MAX];
 
   float pbch_scale = 0.5;
-  float pdcch_pilot_scale = 0.5;
+  float pdcch_pilot_scale = 0.0;
 
 #ifdef ICIC
   remove ("dci.txt");

@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
   const char* results_fn = NULL;
   FILE* results = NULL;
 
-  SCM_t channel_model=Rayleigh1_anticorr;
+  SCM_t channel_model=Rice1_corr;
 
   DCI_ALLOC_t dci_alloc[NUMBER_OF_CONNECTED_eNB_MAX][8];
   DCI_ALLOC_t dci_alloc_rx[8];
@@ -938,7 +938,7 @@ int main(int argc, char **argv) {
       sigma2 = pow(10,sigma2_dB/10);
       //	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
       for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
-        for (aa=0;aa<PHY_vars_eNB[0]->lte_frame_parms.nb_antennas_rx;aa++) {
+        for (aa=0;aa<PHY_vars_UE->lte_frame_parms[0]->nb_antennas_rx;aa++) {
           ((short*) PHY_vars_UE->lte_ue_common_vars[0]->rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms[0]->samples_per_tti) + 2*i] = (short) (.667*(r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
           ((short*) PHY_vars_UE->lte_ue_common_vars[0]->rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms[0]->samples_per_tti) + 2*i+1] = (short) (.667*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
         }
