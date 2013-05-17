@@ -51,11 +51,20 @@ enum RLC_OPERATION_MODE { TRANSMITTER_ONLY = 0x00,
 RECEIVER_ONLY = 0x01,
 TRANSMITTER_AND_RECEIVER = 0x02
 };
+#define JUMBO_FRAME 1 
+
+#ifdef JUMBO_FRAME 
+#    define RLC_SDU_MAX_SIZE                            9000
+#    define RLC_SDU_MAX_SIZE_DATA_PLANE                 9000
+#    define RLC_MAX_FLEXIBLE_DATA_PDU_SIZE              8703
+#else 
 //----------------------------------------------------------
 #    define RLC_SDU_MAX_SIZE                            1800
-#    define RLC_SDU_MAX_SIZE_CONTROL_PLANE              2000
 #    define RLC_SDU_MAX_SIZE_DATA_PLANE                 1800
 #    define RLC_MAX_FLEXIBLE_DATA_PDU_SIZE              1503
+#endif 
+
+#    define RLC_SDU_MAX_SIZE_CONTROL_PLANE              2000
 //----------------------------------------------------------
 // dimensions
 #    define SN_12BITS_MASK                            0x0FFF

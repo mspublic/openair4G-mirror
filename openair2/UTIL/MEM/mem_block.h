@@ -93,8 +93,13 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    define MEM_MNGT_POOL_ID7           7
 
 #    define MEM_MNGT_MB8_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*256
-                                                                // 16384
+
+#ifdef JUMBO_FRAMES
+#    define MEM_MNGT_MB8_NB_BLOCKS      256 * MEM_SCALE
+#else
 #    define MEM_MNGT_MB8_NB_BLOCKS      16 * MEM_SCALE
+                                                                // 16384
+#endif
 #    define MEM_MNGT_POOL_ID8           8
 
 #    define MEM_MNGT_MB9_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*512
