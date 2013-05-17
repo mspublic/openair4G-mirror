@@ -1256,7 +1256,12 @@ main (int argc, char **argv)
     PHY_vars_UE_g[UE_id]->mrpsch_index = UE_id;
     PHY_vars_UE_g[UE_id]->mrpsch_power_dbm = 0;
   }
-  
+
+  for(UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+    for(i = 0; i < nb_connected_eNB; i++)
+      PHY_vars_UE_g[UE_id]->lte_ue_common_vars[i]->eNb_id = i;
+  }
+
   
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);

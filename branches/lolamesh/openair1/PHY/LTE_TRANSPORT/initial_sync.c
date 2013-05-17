@@ -423,7 +423,8 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, u8 eNB_id, u8 abstraction_flag, runmo
       for(k = 1; k < phy_vars_ue->n_connected_eNB; k++) {
         phy_vars_ue->lte_frame_parms[k]->Ncp = frame_parms->Ncp;
         phy_vars_ue->lte_frame_parms[k]->frame_type = frame_parms->frame_type;
-        phy_vars_ue->lte_frame_parms[k]->Nid_cell = phy_vars_ue->lte_ue_common_vars[k]->eNb_id;//frame_parms->Nid_cell+k;
+        //phy_vars_ue->lte_frame_parms[k]->Nid_cell = phy_vars_ue->lte_ue_common_vars[k]->eNb_id;//frame_parms->Nid_cell+k;
+        phy_vars_ue->lte_frame_parms[k]->Nid_cell = 1-phy_vars_ue->lte_frame_parms[0]->Nid_cell;
         phy_vars_ue->lte_frame_parms[k]->nushift = phy_vars_ue->lte_frame_parms[k]->Nid_cell%6;
         init_frame_parms(phy_vars_ue->lte_frame_parms[k], 1);
         lte_gold(phy_vars_ue->lte_frame_parms[k], phy_vars_ue->lte_gold_table[k][0], phy_vars_ue->lte_frame_parms[k]->Nid_cell);
