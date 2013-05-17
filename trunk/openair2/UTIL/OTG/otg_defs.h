@@ -375,7 +375,7 @@ typedef struct {
   // num stream for each src
   // int stream [NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; // this requires multi thread for parallel stream for a givcen src	
   // emu info
-  int duration[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; /*!\brief Duration of traffic generation or use the emuulation time instead */
+  int duration[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; /*!\brief Duration of traffic generation or use the emuulation time instead */
   int seed; /*!\brief The seed used to generate the random positions*/
 
 

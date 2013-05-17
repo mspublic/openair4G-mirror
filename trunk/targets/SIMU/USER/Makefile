@@ -85,6 +85,9 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
+ifdef JF
+CFLAGS += -DJUMBO_FRAME
+endif
 # ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
 # make cleanasn1
 #make all Rel10=1
@@ -363,17 +366,19 @@ otg_all : otg_latency otg_gp
 
 # need to check if the file exists before calling otgplot
 otg_latency:
-	@env TITLE="Application OWD(ms)" 
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency.dat" "[1:$(NUM)]"
+	export TITLE="Application OWD(ms)" 
+	cp /tmp/otg_latency.dat /tmp/onewaydelay.dat	
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency.dat" "[$(COL1):$(COL2)]"
 otg_latency_bg:
-	@env TITLE="Background OWD(ms)" 
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency_bg.dat [1:$(NUM)]"
+	export TITLE="Background OWD(ms)" 
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency_bg.dat" "[$(COL1):$(COL2)]"
 otg_gp:
-	@env TITLE="Application Goodput(Kb/s)" 
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP.dat" "[1:$(NUM)]"
+	export TITLE="Application Goodput(Kb/s)" 
+	cp /tmp/otg_GP.dat /tmp/goodput.dat
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/goodput.dat" "[$(COL1):$(COL2)]"
 otg_gp_bg:
-	@env TITLE="Background Goodput(Kb/s)" 
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP_bg.dat [1:$(NUM)]"
+	export TITLE="Background Goodput(Kb/s)" 
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP_bg.dat" "[$(COL1):$(COL2)]"
 
 pexpect = $(shell if [ `dpkg -l | grep pexpect -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
 

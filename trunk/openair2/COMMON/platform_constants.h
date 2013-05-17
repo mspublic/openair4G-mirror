@@ -17,7 +17,12 @@
 #    define NB_MODULES_MAX 1
 #endif //PHY_EMUL
 #    define NB_NODE_MAX    64
-#    define MAX_IP_PACKET_SIZE         4096
+
+#ifdef JUMBO_FRAME
+#    define MAX_IP_PACKET_SIZE         9000
+#else
+#    define MAX_IP_PACKET_SIZE         1500
+#endif
 #    define MAX_MODULES                NB_MODULES_MAX
 #    define MAX_RG                     2
 

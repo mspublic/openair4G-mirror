@@ -322,7 +322,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
   u16 rnti,rnti1,rnti2;
   LTE_eNB_UE_stats* eNB_UE_stats1;
   LTE_eNB_UE_stats* eNB_UE_stats2;
-  
+  u16 min_rb_unit=2;
 
   granted_UEs = find_dlgranted_UEs(Mod_id);
 
@@ -365,30 +365,34 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
     if(nb_rbs_required[i] > 0)
       total_ue_count = total_ue_count + 1;
   }
-
-  if(total_ue_count > 0)
-    average_rbs_per_user = mac_xface->lte_frame_parms->N_RB_DL/total_ue_count;
+  // hypotetical assignement
+  if((total_ue_count > 0) && ( min_rb_unit * total_ue_count <= mac_xface->lte_frame_parms->N_RB_DL ) )
+    average_rbs_per_user = (u16) ceil(mac_xface->lte_frame_parms->N_RB_DL/total_ue_count);
+  else 
+    average_rbs_per_user = min_rb_unit;
 
   for(i=0;i<granted_UEs;i++){
+    // control channel 
     if (mac_get_rrc_status(Mod_id,1,i) < RRC_RECONFIGURED)
       nb_rbs_required_remaining_1[i] = nb_rbs_required[i];
     else
       nb_rbs_required_remaining_1[i] = cmin(average_rbs_per_user,nb_rbs_required[i]);
   }
   
-
   
-
-  for(r1=0;r1<2;r1++){ //Allocation to UEs is done in 2 rounds,1st round:average number of RBs allocated to each UE, 2nd round: remaining RBs are allocated to high priority UEs
+  //Allocation to UEs is done in 2 rounds,
+  // 1st round: average number of RBs allocated to each UE
+  // 2nd round: remaining RBs are allocated to high priority UEs
+  for(r1=0;r1<2;r1++){ 
 
     for(i=0; i<granted_UEs;i++)
       {
 	if(r1 == 0)
 	  nb_rbs_required_remaining[i] = nb_rbs_required_remaining_1[i];
-	else
+	else  // rb required based only on the buffer - rb allloctaed in the 1st round + extra reaming rb form the 1st round 
 	  nb_rbs_required_remaining[i] = nb_rbs_required[i]-nb_rbs_required_remaining_1[i]+nb_rbs_required_remaining[i];
       }
-    
+    // retransmission in control channels
     for (i = 0 ;i<granted_UEs; i++){
    
       next_ue = UE_id_sorted[i];
@@ -412,15 +416,15 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
 	    if(mac_xface->get_transmission_mode(Mod_id,rnti)==5)
 	      dl_pow_off[next_ue] = 1;
-
+	    // if the total rb is odd 
 	    if((j == mac_xface->lte_frame_parms->N_RBGS-1) && (mac_xface->lte_frame_parms->N_RB_DL%2 == 1)){
 	      nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 1;
 	      pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 1;
 	    }
 	    else
 	      {
-		nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - 2;
-		pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + 2;
+		nb_rbs_required_remaining[next_ue] = nb_rbs_required_remaining[next_ue] - min_rb_unit;
+		pre_nb_available_rbs[next_ue] = pre_nb_available_rbs[next_ue] + min_rb_unit;
 	      }
 	  }
 	}
@@ -429,7 +433,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
 
 
-
+    // retransmission in data channels
     for (i = 0 ;i<granted_UEs; i++){
     
       next_ue = UE_id_sorted[i];
@@ -469,7 +473,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
     }
 
 
-
+    // control channel in the 1st transmission 
     for (i = 0 ;i<granted_UEs; i++){
     
       next_ue = UE_id_sorted[i];
@@ -511,7 +515,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
   
 
-
+    // data chanel TM5
     for (i = 0 ;i<granted_UEs; i++){
     
      
@@ -587,7 +591,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 	}
       }
     }
-
+    // data channel for all TM
     for (i = 0;i<granted_UEs; i++){
     
       next_ue = UE_id_sorted[i];

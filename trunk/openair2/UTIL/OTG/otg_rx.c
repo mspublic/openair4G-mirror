@@ -120,7 +120,7 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
  
 	if (otg_info->owd_const[src][dst][otg_hdr_rx->flow_id]==0)
 	  owd_const_gen(src,dst,otg_hdr_rx->flow_id, otg_hdr_rx->traffic_type);
-
+	
 
 
 	if (otg_hdr_rx->time<=ctime){
@@ -269,12 +269,12 @@ void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned in
 void owd_const_gen(int src, int dst, int flow_id, unsigned int flag){
   otg_info->owd_const[src][dst][flow_id]=(owd_const_mobile_core()+owd_const_IP_backbone()+owd_const_application())/2;
 
-	if ((flag==M2M)||(flag==M2M_TRAFFIC)||(flag==AUTO_PILOT_L)||(flag==AUTO_PILOT_M)||(flag==AUTO_PILOT_H)||(flag==VIRTUAL_GAME_L)||(flag==VIRTUAL_GAME_M)|| (flag==VIRTUAL_GAME_H)||(flag==VIRTUAL_GAME_F)||(flag==ALARM_HUMIDITY)||(flag==ALARM_SMOKE)||(flag==ALARM_TEMPERATURE)||(flag==OPENARENA)||(flag==IQSIM_MANGO)||(flag==IQSIM_NEWSTEO)) {
-		otg_info->owd_const[src][dst][flow_id]+=(owd_const_capillary()/2);
-			LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC_TYPE IS M2M [Add Capillary const]\n", src, dst, flow_id);
-		}
-	else 
-		LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC_TYPE WITHOUT M2M [Capillary const]\n", src, dst, flow_id);
+  if ((flag==M2M)||(flag==M2M_TRAFFIC)||(flag==AUTO_PILOT_L)||(flag==AUTO_PILOT_M)||(flag==AUTO_PILOT_H)||(flag==VIRTUAL_GAME_L)||(flag==VIRTUAL_GAME_M)|| (flag==VIRTUAL_GAME_H)||(flag==VIRTUAL_GAME_F)||(flag==ALARM_HUMIDITY)||(flag==ALARM_SMOKE)||(flag==ALARM_TEMPERATURE)||(flag==OPENARENA)||(flag==IQSIM_MANGO)||(flag==IQSIM_NEWSTEO)) {
+    otg_info->owd_const[src][dst][flow_id]+=(owd_const_capillary()/2);
+    LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC_TYPE IS M2M [Add Capillary const]\n", src, dst, flow_id);
+  }
+  else 
+    LOG_D(OTG,"(RX) [src %d] [dst %d] [ID %d] TRAFFIC_TYPE WITHOUT M2M [Capillary const]\n", src, dst, flow_id);
 }
 
 

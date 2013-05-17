@@ -212,7 +212,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
 
   LOG_T(OTG,"[src %d] [dst %d ]MY_CTIME %d, MAX_FRAME %d\n",src,  dst, ctime, g_otg->max_nb_frames);
 
-
+  
 	*pkt_size=0;
 	init_packet_gen(src, dst,ctime);
 	size=check_data_transmit(src,dst,ctime);
@@ -224,7 +224,8 @@ Send Packets when:
 - when (emutime- ctime)>20m ==> to avoid the fact that TX transmit and RX 
 	can't received due to the end of the emulation 
 */
-	if (((size>0) || (otg_info->traffic_type_background[src][dst]==1)) && (((g_otg->max_nb_frames*10)-ctime)>20))   { 
+	if (((size>0) || (otg_info->traffic_type_background[src][dst]==1)) && 
+	    (((g_otg->max_nb_frames*10)-ctime)>20))   { 
 
 	/* No aggregation for background traffic   */
 	if (otg_info->traffic_type_background[src][dst]==0){
@@ -375,7 +376,11 @@ int check_data_transmit(int src,int dst, int ctime){
 	//LOG_D(OTG,"FLOW_INFO [src %d][dst %d] [IDX %d] [APPLICATION TYPE %d] MAX %d [M2M %d ]\n", src, dst, application , g_otg->application_type[src][dst][application],g_otg->application_idx[src][dst], g_otg->m2m[src][dst][application]);
 	
 	// do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
-	if ((g_otg->application_type[src][dst][application]==0)&&(g_otg->idt_dist[src][dst][application][PE_STATE]==0)){  
+	
+	if (g_otg->duration[src][dst][application] > ctime){
+	  //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d, duration %d < ctime %d \n", src, dst,g_otg->duration[src][dst][application], ctime); 
+	  size+=0;	
+	}else if ((g_otg->application_type[src][dst][application]==0)&&(g_otg->idt_dist[src][dst][application][PE_STATE]==0)){  
 	  //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
 	  size+=0;	 
 	}
