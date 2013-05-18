@@ -30,10 +30,6 @@
 #include <string.h>
 #endif
 
-#ifdef MEX
-#include "mex.h"
-#endif
-
 #define SHUFFLE16(a,b,c,d,e,f,g,h) _mm_set_epi8(h==-1?-1:h*2+1,	\
 						h==-1?-1:h*2,	\
 						g==-1?-1:g*2+1,	\
@@ -1863,16 +1859,6 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 //int pi2[n],pi3[n+8],pi5[n+8],pi4[n+8],pi6[n+8],
 int *pi2tab[188],*pi5tab[188],*pi4tab[188],*pi6tab[188];
 
-void free_td() {
-    int ind;
-    for (ind=0;ind<188;ind++) {
-        free(pi2tab[ind]);
-        free(pi5tab[ind]);
-        free(pi4tab[ind]);
-        free(pi6tab[ind]);
-    }
-}
-
 void init_td() {
 
   int ind,i,i2,i3,j,n,n2,pi,pi3;
@@ -1882,18 +1868,10 @@ void init_td() {
 
     n = f1f2mat[ind].nb_bits;
     base_interleaver=il_tb+f1f2mat[ind].beg_index;
-#ifdef MEX
-    // This is needed for the Mex implementation to make the memory persistent
-    pi2tab[ind] = mxMalloc((n+8)*sizeof(int));
-    pi5tab[ind] = mxMalloc((n+8)*sizeof(int));
-    pi4tab[ind] = mxMalloc((n+8)*sizeof(int));
-    pi6tab[ind] = mxMalloc((n+8)*sizeof(int));
-#else
     pi2tab[ind] = malloc((n+8)*sizeof(int));
     pi5tab[ind] = malloc((n+8)*sizeof(int));
     pi4tab[ind] = malloc((n+8)*sizeof(int));
     pi6tab[ind] = malloc((n+8)*sizeof(int));
-#endif
 
 #ifdef LLR8
     if ((n&15)>0) {
@@ -1984,6 +1962,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
   u8 temp;
+  __m128i tmp128[(n+8)>>3];
 
   __m128i tmp, zeros=_mm_setzero_si128();
 #ifdef LLR8
@@ -2012,13 +1991,12 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   n2=n;
 #endif
 
-
   for (iind=0;f1f2mat[iind].nb_bits!=n && iind <188; iind++);
   if ( iind == 188 ) {
     msg("Illegal frame length!\n");
     return 255;
   }
-  
+
   switch (crc_type) {
   case CRC24_A:
   case CRC24_B:
@@ -2363,7 +2341,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
     }
 #else
     pi5_p=pi5tab[iind];
-    u16 decoded_bytes_interl[6144/16] __attribute__((aligned(16)));
+    u16 decoded_bytes_interl[6144/16];
     for (i=0;i<(n2>>4);i++) {
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
@@ -2381,9 +2359,11 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
       tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
-      decoded_bytes_interl[i]=(u16) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
+      //      decoded_bytes_interl[i]=(u16) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
+      tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
       ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
     }
+    /* LT modification, something wrong here  
     if (iteration_cnt>1) {
       start_meas(intl2_stats);
       pi6_p=pi6tab[iind];
@@ -2396,20 +2376,46 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
         __m128i tmp __attribute__((aligned(16)));
         tmp=_mm_shuffle_epi8(dbytes[i],shuffle);
         __m128i tmp2 __attribute__((aligned(16))) ;
-
+	
         tmp2=_mm_and_si128(tmp,mask);
         tmp2=_mm_cmpeq_epi16(tmp2,mask);
         decoded_bytes[n_128*0+i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
         
         int j;
         for (j=1; j<16; j++) {
-        mask=_mm_slli_epi16(mask,1);
-        tmp2=_mm_and_si128(tmp,mask);
-        tmp2=_mm_cmpeq_epi16(tmp2,mask);
-        decoded_bytes[n_128*j +i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+	  mask=_mm_slli_epi16(mask,1);
+	  tmp2=_mm_and_si128(tmp,mask);
+	  tmp2=_mm_cmpeq_epi16(tmp2,mask);
+	  decoded_bytes[n_128*j +i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
         }
       }
-    }  
+    }
+*/
+    // Previous version
+    if (iteration_cnt>1) {
+      start_meas(intl2_stats);
+      pi6_p=pi6tab[iind];
+      for (i=0;i<(n2>>4);i++) {
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],7);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],6);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],5);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],4);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],3);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],2);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],1);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],0);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],15);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],14);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],13);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],12);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],11);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],10);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],9);
+	tmp=_mm_insert_epi8(tmp, ((llr_t*)tmp128)[*pi6_p++],8);
+	tmp=_mm_cmpgt_epi8(tmp,zeros);
+	((uint16_t *)decoded_bytes)[i]=(uint16_t)_mm_movemask_epi8(tmp);
+      }
+    }
     
 #endif
     
