@@ -25,7 +25,7 @@ void mexFunction( int mlhs, mxArray *plhs[],
     
     // Init CRC tables
     // 	crcTableInit();	
-	init_td();
+	init_td16();
     
     // assign output
     plhs[0] = mxCreateNumericMatrix(4,1, mxUINT32_CLASS, mxREAL);

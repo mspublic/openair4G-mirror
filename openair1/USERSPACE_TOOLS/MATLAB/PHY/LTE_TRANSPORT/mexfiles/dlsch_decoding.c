@@ -121,7 +121,7 @@ void mexFunction( int mlhs, mxArray *plhs[],
 	ret = (unsigned int*) mxGetPr(plhs[0]);         	
 	
     /* Algo */	
-	*ret = dlsch_decoding(phy_vars_ue, dlsch_llr, frame_parms, dlsch, dlsch->harq_processes[harq_pid], subframe, dlsch->current_harq_pid, 1);
+	*ret = dlsch_decoding(phy_vars_ue, dlsch_llr, frame_parms, dlsch, dlsch->harq_processes[harq_pid], subframe, dlsch->current_harq_pid, 1,0);
 					
 	/* free dlsch */
 	free_ue_dlsch(dlsch);
