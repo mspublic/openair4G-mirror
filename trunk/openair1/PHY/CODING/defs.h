@@ -319,6 +319,15 @@ void ccodedab_init_inv(void);
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);
 
+/*!\fn void init_td8(void)
+\brief This function initializes the tables for 8-bit LLR Turbo decoder.*/
+void init_td8 (void);
+
+
+/*!\fn void init_td16(void)
+\brief This function initializes the tables for 16-bit LLR Turbo decoder.*/
+void init_td16 (void);
+
 /*!\fn uint32_t crc24a(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('a' variant for overall transport block) 
 based on 3GPP UMTS/LTE specifications.
@@ -407,7 +416,8 @@ int32_t rate_matching_lte(uint32_t N_coded,
 
 
 /*!
-\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
+\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing and 16-bit
+LLR arithmetic, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
 @param y LLR input (16-bit precision)
 @param decoded_bytes Pointer to decoded output
 @param n number of coded bits (including tail bits)
@@ -418,21 +428,50 @@ int32_t rate_matching_lte(uint32_t N_coded,
 @param F Number of filler bits at start of packet 
 @returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
 */
-uint8_t phy_threegpplte_turbo_decoder(int16_t *y,
-				 uint8_t *decoded_bytes,
-				 uint16_t n,			       
-				 uint16_t interleaver_f1,
-				 uint16_t interleaver_f2,
-				 uint8_t max_iterations,
-				 uint8_t crc_type,
-				 uint8_t F,
-				 time_stats_t *init_stats,
-				 time_stats_t *alpha_stats,
-				 time_stats_t *beta_stats,
-				 time_stats_t *gamma_stats,
-				 time_stats_t *ext_stats,
-				 time_stats_t *intl1_stats,
-				 time_stats_t *intl2_stats);
+uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
+					uint8_t *decoded_bytes,
+					uint16_t n,			       
+					uint16_t interleaver_f1,
+					uint16_t interleaver_f2,
+					uint8_t max_iterations,
+					uint8_t crc_type,
+					uint8_t F,
+					time_stats_t *init_stats,
+					time_stats_t *alpha_stats,
+					time_stats_t *beta_stats,
+					time_stats_t *gamma_stats,
+					time_stats_t *ext_stats,
+					time_stats_t *intl1_stats,
+					time_stats_t *intl2_stats);
+
+/*!
+\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing and 8-bit
+LLR arithmetic, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
+@param y LLR input (16-bit precision)
+@param decoded_bytes Pointer to decoded output
+@param n number of coded bits (including tail bits)
+@param max_iterations The maximum number of iterations to perform
+@param interleaver_f1 F1 generator
+@param interleaver_f2 F2 generator
+@param crc_type Length of 3GPPLTE crc (CRC24a,CRC24b,CRC16,CRC8)
+@param F Number of filler bits at start of packet 
+@returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
+*/
+uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
+				       uint8_t *decoded_bytes,
+				       uint16_t n,			       
+				       uint16_t interleaver_f1,
+				       uint16_t interleaver_f2,
+				       uint8_t max_iterations,
+				       uint8_t crc_type,
+				       uint8_t F,
+				       time_stats_t *init_stats,
+				       time_stats_t *alpha_stats,
+				       time_stats_t *beta_stats,
+				       time_stats_t *gamma_stats,
+				       time_stats_t *ext_stats,
+				       time_stats_t *intl1_stats,
+				       time_stats_t *intl2_stats);
 
 uint8_t phy_threegpplte_turbo_decoder_scalar(int16_t *y,
 					uint8_t *decoded_bytes,

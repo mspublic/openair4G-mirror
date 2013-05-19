@@ -275,6 +275,7 @@ int main(int argc, char **argv) {
   int avg_iter,iter_trials;
   int rballocset=0;
   int print_perf=0;
+  int llr8_flag=0;
 
   reset_meas(&ts);
   start_meas(&ts);
@@ -293,7 +294,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:P")) != -1) {
+  while ((c = getopt (argc, argv, "hadpDe:m:n:o:s:f:t:c:g:r:F:x:y:z:M:N:I:i:R:S:C:T:b:u:v:w:B:PL")) != -1) {
     switch (c)
       {
       case 'a':
@@ -477,6 +478,9 @@ int main(int argc, char **argv) {
 	break;
       case 'P':
 	print_perf=1;
+	break;
+      case 'L':
+	llr8_flag=1;
 	break;
       case 'h':
       default:
@@ -2193,7 +2197,7 @@ int main(int argc, char **argv) {
 			       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid],
 			       subframe,
 			       PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid,
-			       1);
+			       1,llr8_flag);
 	  stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
 
 	  if (ret <= PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations) {

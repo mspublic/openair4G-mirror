@@ -986,6 +986,7 @@ void dlsch_scale_channel(s32 **dl_ch_estimates_ext,
     @param subframe Subframe number
     @param num_pdcch_symbols Number of PDCCH symbols
     @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
+    @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
     @returns 0 on success, 1 on unsuccessful decoding
 */
 uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
@@ -995,7 +996,8 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 			LTE_DL_UE_HARQ_t *harq_process,
 			uint8_t subframe,
 			uint8_t harq_pid,
-			uint8_t is_crnti);
+			uint8_t is_crnti,
+			uint8_t llr8_flag);
 
 uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			     uint8_t subframe,

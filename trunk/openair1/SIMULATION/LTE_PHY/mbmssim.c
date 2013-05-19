@@ -507,7 +507,7 @@ int main(int argc, char **argv) {
 			   PHY_vars_UE->dlsch_ue_MCH[0],
 			   PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0],
 			   subframe,
-			   0,0);    
+			   0,0,0);    
       if (n_frames==1)
 	printf("MCH decoding returns %d\n",ret);
       if (ret == (1+PHY_vars_UE->dlsch_ue_MCH[0]->max_turbo_iterations))

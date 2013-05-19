@@ -2233,13 +2233,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
                                    ((((last_slot>>1)==0) ? 9 : ((last_slot>>1))-1))<<1);
         
 	    ret = dlsch_decoding(phy_vars_ue,
-                             phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
-                             &phy_vars_ue->lte_frame_parms,
-                             phy_vars_ue->dlsch_ue[eNB_id][0],
-                             phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
-                             (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
-                             harq_pid,
-                             1);
+				 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+				 &phy_vars_ue->lte_frame_parms,
+				 phy_vars_ue->dlsch_ue[eNB_id][0],
+				 phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
+				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
+				 harq_pid,
+				 1,0);
 	  }
 
 	  else {
@@ -2413,13 +2413,13 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
                            ((((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)))<<1);
 	    
 	    ret = dlsch_decoding(phy_vars_ue,
-                             phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0],
-                             &phy_vars_ue->lte_frame_parms,
-                             phy_vars_ue->dlsch_ue_SI[eNB_id],
-                             phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0],
-                             (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
-                             harq_pid,
-                             0);
+				 phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0],
+				 &phy_vars_ue->lte_frame_parms,
+				 phy_vars_ue->dlsch_ue_SI[eNB_id],
+				 phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0],
+				 (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
+				 harq_pid,
+				 0,0);
 
 #ifdef DEBUG_PHY_PROC
 	    for (i=0;i<11;i++)
@@ -2549,7 +2549,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
                              phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0],
                              (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),  // subframe
                              harq_pid,
-                             0);
+                             0,0);
 	}
 
 #ifdef PHY_ABSTRACTION
@@ -2851,7 +2851,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			     phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0],
 			     last_slot>>1,
 			     0,
-			     0);    
+			     0,0);    
 	
 	if (ret == (1+phy_vars_ue->dlsch_ue_MCH[0]->max_turbo_iterations)) {
 	  phy_vars_ue->dlsch_mch_errors[eNB_id]++;
