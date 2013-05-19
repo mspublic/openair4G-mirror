@@ -212,6 +212,7 @@ int main(int argc, char **argv) {
   int dump_perf=0;
 
   uint8_t max_turbo_iterations=4;
+  uint8_t llr8_flag=0;
 
   reset_meas(&ts);
   start_meas(&ts);
@@ -224,7 +225,7 @@ int main(int argc, char **argv) {
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:d:D:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:d:D:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:L")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -383,6 +384,9 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       dump_perf=1;
+      break;
+    case 'L':
+      llr8_flag=1;
       break;
     case 'I':
       max_turbo_iterations=atoi(optarg);
@@ -1104,8 +1108,8 @@ int main(int argc, char **argv) {
 			      0, // UE_id
 			      subframe,
 			      control_only_flag,
-			      1  // Nbundled 
-			      );
+			      1,  // Nbundled 
+			      llr8_flag);
 	  stop_meas(&PHY_vars_eNB->ulsch_decoding_stats);
 	  if (cqi_flag > 0) {
 	    cqi_error = 0;

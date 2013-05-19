@@ -1464,13 +1464,15 @@ s32 ulsch_encoding_emul(uint8_t *ulsch_buffer,
   @param subframe Index of subframe for PUSCH
   @param control_only_flag Receive PUSCH with control information only
   @param Nbundled Nbundled parameter for ACK/NAK scrambling from 36-212/36-213
+  @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
   @returns 0 on success
 */
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 			     uint8_t UE_id,
 			     uint8_t subframe,
 			     uint8_t control_only_flag,
-			     uint8_t Nbundled);
+			     uint8_t Nbundled,
+			     uint8_t llr8_flag);
 
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			     uint8_t subframe,

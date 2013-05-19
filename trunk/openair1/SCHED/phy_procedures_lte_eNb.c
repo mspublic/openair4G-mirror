@@ -2611,8 +2611,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			     i,
 			     last_slot>>1,
 			     0, // control_only_flag
-			     0  //Nbundled, to be updated!!!!
-			     );  
+			     0, //Nbundled, to be updated!!!!
+			     0);  
       }
 #ifdef PHY_ABSTRACTION
       else {
