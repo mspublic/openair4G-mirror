@@ -117,7 +117,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                          LTE_DL_UE_HARQ_t *harq_process,
                          uint8_t subframe,
                          uint8_t harq_pid,
-                         uint8_t is_crnti) {
+                         uint8_t is_crnti,
+			 uint8_t llr8_flag) {
   
   
   time_stats_t *dlsch_rate_unmatching_stats=&phy_vars_ue->dlsch_rate_unmatching_stats;
@@ -134,6 +135,22 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
+  uint8_t (*tc)(int16_t *y,
+		uint8_t *,
+		uint16_t,			       
+		uint16_t,
+		uint16_t,
+		uint8_t,
+		uint8_t,
+		uint8_t,
+		time_stats_t *,
+		time_stats_t *,
+		time_stats_t *,
+		time_stats_t *,
+		time_stats_t *,
+		time_stats_t *,
+		time_stats_t *);
+
   if (!dlsch_llr) {
     msg("dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(dlsch->max_turbo_iterations);
@@ -154,6 +171,10 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       return(dlsch->max_turbo_iterations);
   }
 
+  if (llr8_flag == 0)
+    tc = phy_threegpplte_turbo_decoder16;
+  else
+    tc = phy_threegpplte_turbo_decoder8;
   //  nb_rb = dlsch->nb_rb;
 
   /*
@@ -315,7 +336,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef TURBO_S
       ret = phy_threegpplte_turbo_decoder_scalar
 #else
-      ret = phy_threegpplte_turbo_decoder
+	
+      ret = tc
 #endif
 	(&harq_process->d[r][96],
 	 harq_process->c[r],

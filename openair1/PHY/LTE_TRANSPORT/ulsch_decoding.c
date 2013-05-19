@@ -1157,21 +1157,21 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       
       start_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
       
-      ret = phy_threegpplte_turbo_decoder(&ulsch->harq_processes[harq_pid]->d[r][96],
-					  ulsch->harq_processes[harq_pid]->c[r],
-					  Kr,
-					  f1f2mat_old[iind*2],   
-					  f1f2mat_old[(iind*2)+1], 
-					  ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
-					  crc_type,
-					  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					  &phy_vars_eNB->ulsch_tc_init_stats,
-					  &phy_vars_eNB->ulsch_tc_alpha_stats,
-					  &phy_vars_eNB->ulsch_tc_beta_stats,
-					  &phy_vars_eNB->ulsch_tc_gamma_stats,
-					  &phy_vars_eNB->ulsch_tc_ext_stats,
-					  &phy_vars_eNB->ulsch_tc_intl1_stats,
-					  &phy_vars_eNB->ulsch_tc_intl2_stats);
+      ret = phy_threegpplte_turbo_decoder16(&ulsch->harq_processes[harq_pid]->d[r][96],
+					    ulsch->harq_processes[harq_pid]->c[r],
+					    Kr,
+					    f1f2mat_old[iind*2],   
+					    f1f2mat_old[(iind*2)+1], 
+					    ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
+					    crc_type,
+					    (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
+					    &phy_vars_eNB->ulsch_tc_init_stats,
+					    &phy_vars_eNB->ulsch_tc_alpha_stats,
+					    &phy_vars_eNB->ulsch_tc_beta_stats,
+					    &phy_vars_eNB->ulsch_tc_gamma_stats,
+					    &phy_vars_eNB->ulsch_tc_ext_stats,
+					    &phy_vars_eNB->ulsch_tc_intl1_stats,
+					    &phy_vars_eNB->ulsch_tc_intl2_stats);
       
       stop_meas(&phy_vars_eNB->ulsch_turbo_decoding_stats);
 
