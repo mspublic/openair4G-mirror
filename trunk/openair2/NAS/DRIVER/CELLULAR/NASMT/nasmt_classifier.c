@@ -136,7 +136,7 @@ struct classifier_entity *nasmt_CLASS_add_sclassifier(struct cx_entity *cx, u8 d
       return gc;
     }
   }
-  gc=(struct classifier_entity *)kmalloc(sizeof(struct classifier_entity), GFP_KERNEL);
+  gc=(struct classifier_entity *)kmalloc(sizeof(struct classifier_entity), GFP_ATOMIC);
   if (gc==NULL)
     return NULL;
   memset(gc, 0, sizeof(struct classifier_entity));
