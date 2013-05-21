@@ -142,7 +142,7 @@ struct classifier_entity *nasrg_CLASS_add_sclassifier(struct cx_entity *cx, u8 d
       return gc;
     }
   }
-  gc=(struct classifier_entity *)kmalloc(sizeof(struct classifier_entity), GFP_KERNEL);
+  gc=(struct classifier_entity *)kmalloc(sizeof(struct classifier_entity), GFP_ATOMIC);
   if (gc==NULL)
     return NULL;
   memset(gc, 0, sizeof(struct classifier_entity));
@@ -208,7 +208,7 @@ struct classifier_entity *nasrg_CLASS_add_mbmsclassifier(int mbms_ix, u16 classr
       return gc;
     }
   }
-  gc=(struct classifier_entity *)kmalloc(sizeof(struct classifier_entity), GFP_KERNEL);
+  gc=(struct classifier_entity *)kmalloc(sizeof(struct classifier_entity), GFP_ATOMIC);
   if (gc==NULL)
     return NULL;
   gc->next=gpriv->mbmsclassifier[mbms_ix];
