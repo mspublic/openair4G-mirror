@@ -69,3 +69,90 @@ uint16_t in6_cksum(const struct in6_addr *src, const struct in6_addr *dst,
 
 	return (uint16_t)~sum;
 }
+
+unsigned int csum_partial(const void *data, socklen_t datalen, unsigned int sumP)
+{
+    register unsigned long sum = sumP;
+    uint16_t *addr;
+    socklen_t count;
+    int i;
+
+    count = datalen;
+    addr = (uint16_t *)data;
+
+    while (count > 1) {
+        sum += *(addr++);
+        count -= 2;
+    }
+
+    /*while (sum >> 16)
+        sum = (sum & 0xffff) + (sum >> 16);
+
+    return (uint16_t)~sum;*/
+    return sum;
+}
+
+uint16_t csum_fold(uint32_t csum)
+{
+	uint32_t sum = (uint32_t)csum;
+        sum = (sum & 0xffff) + (sum >> 16);
+        sum = (sum & 0xffff) + (sum >> 16);
+        return (uint16_t)~sum;
+}
+
+
+uint16_t csum_ipv6_magic(const struct in6_addr *saddr,
+                                          const struct in6_addr *daddr,
+                                          uint32_t len, unsigned short proto,
+                                          uint32_t csum)
+{
+
+        int carry;
+        uint32_t ulen;
+        uint32_t uproto;
+        uint32_t sum = (uint32_t)csum;
+
+        sum += (uint32_t)saddr->s6_addr32[0];
+        carry = (sum < (uint32_t)saddr->s6_addr32[0]);
+        sum += carry;
+
+        sum += (uint32_t)saddr->s6_addr32[1];
+        carry = (sum < (uint32_t)saddr->s6_addr32[1]);
+        sum += carry;
+
+        sum += (uint32_t)saddr->s6_addr32[2];
+        carry = (sum < (uint32_t)saddr->s6_addr32[2]);
+        sum += carry;
+
+        sum += (uint32_t)saddr->s6_addr32[3];
+        carry = (sum < (uint32_t)saddr->s6_addr32[3]);
+        sum += carry;
+
+        sum += (uint32_t)daddr->s6_addr32[0];
+        carry = (sum < (uint32_t)daddr->s6_addr32[0]);
+        sum += carry;
+
+        sum += (uint32_t)daddr->s6_addr32[1];
+        carry = (sum < (uint32_t)daddr->s6_addr32[1]);
+        sum += carry;
+
+        sum += (uint32_t)daddr->s6_addr32[2];
+        carry = (sum < (uint32_t)daddr->s6_addr32[2]);
+        sum += carry;
+
+        sum += (uint32_t)daddr->s6_addr32[3];
+        carry = (sum < (uint32_t)daddr->s6_addr32[3]);
+        sum += carry;
+
+        ulen = (uint32_t)htonl((uint32_t) len);
+        sum += ulen;
+        carry = (sum < ulen);
+        sum += carry;
+
+        uproto = (uint32_t)htonl(proto);
+        sum += uproto;
+        carry = (sum < uproto);
+        sum += carry;
+
+        return csum_fold((uint32_t)sum);
+}

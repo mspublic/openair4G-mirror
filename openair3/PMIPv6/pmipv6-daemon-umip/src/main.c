@@ -244,6 +244,7 @@ int main(int argc, char **argv)
 		goto mh_failed;
 	if (icmp6_init() < 0)
 		goto icmp6_failed;
+	if (!(is_ha()) &&  !(is_mag()))
 	if (xfrm_init() < 0)
 		goto xfrm_failed;
 	cn_init();
