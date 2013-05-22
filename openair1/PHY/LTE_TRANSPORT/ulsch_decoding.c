@@ -1624,8 +1624,9 @@ int ulsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint8_t mcs,uint16_t nrb
 #endif
 
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
-			uint8_t subframe,
-			uint8_t UE_index) {
+			     uint8_t subframe,
+			     uint8_t UE_index,
+			     uint16_t *crnti) {
 
   uint8_t UE_id;
   uint16_t rnti;
@@ -1648,12 +1649,15 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   }
 
   if (UE_id==NB_UE_INST) {
-    LOG_W(PHY,"[eNB %d] ulsch_decoding_emul: FATAL, didn't find UE with rnti %x\n",phy_vars_eNB->Mod_id, rnti);
+    LOG_W(PHY,"[eNB %d] ulsch_decoding_emul: FATAL, didn't find UE with rnti %x (UE index %d)\n",
+	  phy_vars_eNB->Mod_id, rnti, UE_index);
     return(1+phy_vars_eNB->ulsch_eNB[UE_id]->max_turbo_iterations);
   }
   else {
-    LOG_D(PHY,"[eNB %d] Found UE with rnti %x => UE_id %d\n",phy_vars_eNB->Mod_id, rnti,UE_id);
+    LOG_D(PHY,"[eNB %d] Found UE with rnti %x => UE_id %d\n",phy_vars_eNB->Mod_id, rnti, UE_id);
   }
+  *crnti = rnti;
+  
   // Do abstraction here to determine if packet it in error
  /* if (ulsch_abstraction_MIESM(phy_vars_eNB->sinr_dB_eNB,1, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb) == 1) 
   flag = 1;
@@ -1717,6 +1721,8 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
     phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
     phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
+   
+    phy_vars_eNB->ulsch_eNB[UE_index]->uci_format = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->uci_format;    
     memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o,MAX_CQI_BYTES); 
     memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o_RI,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_RI,2); 
 

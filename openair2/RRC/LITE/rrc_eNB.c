@@ -235,8 +235,8 @@ void init_SI(u8 Mod_id) {
 #endif
 #ifdef CBA
 		       ,
-		       eNB_rrc_inst[Mod_id].num_active_cba_groups,
-		       eNB_rrc_inst[Mod_id].CBA_RNTI[0]
+		       0,//eNB_rrc_inst[Mod_id].num_active_cba_groups,
+		       0 //eNB_rrc_inst[Mod_id].cba_rnti[0]
 #endif 
 		       );
   }
@@ -393,14 +393,14 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
 #endif
 #ifdef CBA   
   for(j=0; j<NUM_MAX_CBA_GROUP; j++)
-    eNB_rrc_inst[Mod_id].CBA_RNTI[j] = CBA_OFFSET + j;
+    eNB_rrc_inst[Mod_id].cba_rnti[j] = CBA_OFFSET + j;
   
   if (eNB_rrc_inst[Mod_id].num_active_cba_groups > NUM_MAX_CBA_GROUP)
     eNB_rrc_inst[Mod_id].num_active_cba_groups = NUM_MAX_CBA_GROUP;
   
   LOG_D(RRC, "[eNB %d] Initialization of 4 cba_RNTI values (%x %x %x %x) num active groups %d\n",
-	Mod_id, eNB_rrc_inst[Mod_id].CBA_RNTI[0], eNB_rrc_inst[Mod_id].CBA_RNTI[1],
-	eNB_rrc_inst[Mod_id].CBA_RNTI[2],eNB_rrc_inst[Mod_id].CBA_RNTI[3],
+	Mod_id, eNB_rrc_inst[Mod_id].cba_rnti[0], eNB_rrc_inst[Mod_id].cba_rnti[1],
+	eNB_rrc_inst[Mod_id].cba_rnti[2],eNB_rrc_inst[Mod_id].cba_rnti[3],
 	eNB_rrc_inst[Mod_id].num_active_cba_groups); 
 #endif
 
@@ -909,11 +909,20 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   cba_RNTI->size = 2;
   cba_RNTI->bits_unused=0;
   // associate UEs to the CBa groups as a function of their UE id
-  cba_RNTI->buf[0] = rrc_inst->CBA_RNTI[UE_index % rrc_inst->num_active_cba_groups]&0xff;
-  cba_RNTI->buf[1] = 0xff;
-  LOG_D(RRC,"[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n", 
-	Mod_id, frame, rrc_inst->CBA_RNTI[UE_index % rrc_inst->num_active_cba_groups], 
-	UE_index%rrc_inst->num_active_cba_groups, UE_index);
+  if (rrc_inst->num_active_cba_groups){
+    cba_RNTI->buf[0] = rrc_inst->cba_rnti[UE_index % rrc_inst->num_active_cba_groups]&0xff;
+    cba_RNTI->buf[1] = 0xff;
+    LOG_D(RRC,"[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n", 
+	  Mod_id, frame, rrc_inst->cba_rnti[UE_index % rrc_inst->num_active_cba_groups], 
+	  UE_index%rrc_inst->num_active_cba_groups, UE_index);
+  } else {
+    cba_RNTI->buf[0] = 0x0;
+    cba_RNTI->buf[1] = 0x0;
+    LOG_D(RRC,"[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n", 
+	  Mod_id, frame,  UE_index);
+  }
+    
+ 
 #endif 
 
   //
@@ -1428,9 +1437,9 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 #endif
 #ifdef CBA
 			     ,
-			     0,
-			     0
-#endif
+			     eNB_rrc_inst[Mod_id].num_active_cba_groups,
+			     eNB_rrc_inst[Mod_id].cba_rnti[0]
+#endif 
 			     );
 	  
 	}

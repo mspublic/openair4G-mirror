@@ -9,7 +9,9 @@ typedef enum {
   HLC_subband_cqi_nopmi, //HLC_subband_cqi_nopmi,
   HLC_subband_cqi_rank1_2A, //HLC_subband_cqi_rank1_2A,
   HLC_subband_cqi_rank2_2A, //HLC_subband_cqi_rank2_2A,
-  HLC_subband_cqi_modes123 //HLC_subband_cqi_modes123
+  HLC_subband_cqi_modes123, //HLC_subband_cqi_modes123
+  HLC_subband_cqi_mcs_CBA,
+  unknown_cqi// 
 } UCI_format_t;
 
 typedef struct __attribute__((packed)) {
@@ -58,6 +60,13 @@ typedef struct __attribute__((packed)) {
   u32 cqi1:4;
 } HLC_subband_cqi_modes123_5MHz;
 #define sizeof_HLC_subband_cqi_modes123_5MHz 18
+
+typedef struct __attribute__((packed)) { 
+  u32 padding:12;
+  u32 crnti:16;   
+  u32 mcs:4;
+} HLC_subband_cqi_mcs_CBA_5MHz;
+#define sizeof_HLC_subband_cqi_mcs_CBA_5MHz 20
 
 
 

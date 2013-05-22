@@ -1341,6 +1341,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      uint16_t si_rnti,
 				      uint16_t ra_rnti,
 				      uint16_t p_rnti,
+				      uint16_t cba_rnti,
 				      uint8_t eNB_id,
 				      uint8_t use_srs);
 
@@ -1357,6 +1358,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       uint16_t si_rnti,
 				       uint16_t ra_rnti,
 				       uint16_t p_rnti,
+	 				   uint16_t cba_rnti,
 				       uint8_t use_srs);
 
 #ifdef USER_MODE
@@ -1439,6 +1441,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 uint32_t ulsch_encoding(uint8_t *a,
 			PHY_VARS_UE *phy_vars_ue,
 			uint8_t harq_pid,
+			uint8_t eNB_id,
 			uint8_t tmode,
 			uint8_t control_only_flag,
 			uint8_t Nbundled);
@@ -1476,7 +1479,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			     uint8_t subframe,
-			     uint8_t UE_index);
+			     uint8_t UE_index,
+				 uint16_t *crnti);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			uint8_t subframe,
@@ -1512,9 +1516,10 @@ uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,uint8_t frame,u
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id);
 
-void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats);
+void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats,uint16_t * crnti, uint8_t * access_mode);
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mode,double sinr_eff);
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id, uint16_t rnti, uint8_t trans_mode,double sinr_eff);
+void reset_cba_uci(void *o);
 
 uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id);
 uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id);

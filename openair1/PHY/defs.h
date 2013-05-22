@@ -149,6 +149,15 @@
 
 typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
 
+enum transmission_access_mode{
+  NO_ACCESS=0,
+  POSTPONED_ACCESS,
+  CANCELED_ACCESS,
+  UNKNOWN_ACCESS,
+  SCHEDULED_ACCESS,
+  CBA_ACCESS
+};
+
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {

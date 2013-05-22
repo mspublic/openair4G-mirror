@@ -140,7 +140,7 @@ char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
 #ifdef CBA 
   int j;
   for(j=0; j<NUM_MAX_CBA_GROUP; j++)
-    UE_rrc_inst[Mod_id].CBA_RNTI[j] = 0x0000;
+    UE_rrc_inst[Mod_id].cba_rnti[j] = 0x0000;
   UE_rrc_inst[Mod_id].num_active_cba_groups = 0;
 #endif
 
@@ -626,17 +626,17 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
     cba_RNTI = (uint16_t) (((radioResourceConfigDedicated->cba_RNTI_vlola->buf[1]&0xff) << 8) | 
 			   (radioResourceConfigDedicated->cba_RNTI_vlola->buf[0]&0xff));
     for (i=0 ; i< NUM_MAX_CBA_GROUP; i++) {
-      if (UE_rrc_inst[Mod_id].CBA_RNTI[i] == cba_RNTI ) {
+      if (UE_rrc_inst[Mod_id].cba_rnti[i] == cba_RNTI ) {
 	cba_found=1;
 	break;
-      } else if (UE_rrc_inst[Mod_id].CBA_RNTI[i] == 0 )
+      } else if (UE_rrc_inst[Mod_id].cba_rnti[i] == 0 )
 	break;
     }
     if (cba_found==0) {
       UE_rrc_inst[Mod_id].num_active_cba_groups++;
-      UE_rrc_inst[Mod_id].CBA_RNTI[i]=cba_RNTI;
+      UE_rrc_inst[Mod_id].cba_rnti[i]=cba_RNTI;
       LOG_D(RRC, "[UE %d] Frame %d: radioResourceConfigDedicated reveived CBA_RNTI = %x for group %d from eNB %d \n", 
-	    Mod_id,frame, UE_rrc_inst[Mod_id].CBA_RNTI[i], i, eNB_index);
+	    Mod_id,frame, UE_rrc_inst[Mod_id].cba_rnti[i], i, eNB_index);
     }
   }
 #endif 
@@ -838,7 +838,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 #ifdef CBA
 			   ,
 			   UE_rrc_inst[Mod_id].num_active_cba_groups, // 
-			   UE_rrc_inst[Mod_id].CBA_RNTI[0]
+			   UE_rrc_inst[Mod_id].cba_rnti[0]
 #endif
 			   );
 

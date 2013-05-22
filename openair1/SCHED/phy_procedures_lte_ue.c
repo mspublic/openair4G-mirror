@@ -95,6 +95,7 @@ extern inline unsigned int taus(void);
 extern int oai_exit;
 
 u8 ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
+u8 access_mode;
 
 #ifdef DLSCH_THREAD
 extern int dlsch_instance_cnt[8];
@@ -663,8 +664,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #else
 	phy_vars_ue->tx_power_dBm = UE_TX_POWER;
 #endif
-	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d Po_PUSCH : %d dBm\n",
-	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,phy_vars_ue->tx_power_dBm);	
+	LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d harq pid %d, Po_PUSCH : %d dBm\n",
+	      phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->tx_power_dBm);	
 
 	// deactivate service request
 	phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
@@ -746,6 +747,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if (ulsch_encoding(phy_vars_ue->prach_resources[eNB_id]->Msg3,
 			       phy_vars_ue,
 			       harq_pid,
+			       eNB_id,
 			       phy_vars_ue->transmission_mode[eNB_id],0,0)!=0) {
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
 	      mac_xface->macphy_exit("");
@@ -773,12 +775,14 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  //  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
 	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) { 
 	    //if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
-
+	    access_mode=SCHEDULED_ACCESS;
 	    mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
 				  phy_vars_ue->frame,
+				  (next_slot>>1),
 				  eNB_id,
 				  ulsch_input_buffer,
-				  input_buffer_length);
+				  input_buffer_length,
+				  &access_mode);
 	    
 	    //}
 	    /*
@@ -834,6 +838,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    if (ulsch_encoding(ulsch_input_buffer,
 			       phy_vars_ue,
 			       harq_pid,
+			       eNB_id,
 			       phy_vars_ue->transmission_mode[eNB_id],0,
 			       0)!=0) {  //  Nbundled, to be updated!!!!
 	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
@@ -892,6 +897,48 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  phy_vars_ue->sr[next_slot>>1]=0;
 	}
       } // ULSCH is active
+      else if ((phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_cba_scheduling_flag == 1) && 
+	  (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->status == CBA_ACTIVE)) {
+	phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+	phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->status= IDLE; 
+	first_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb;
+	nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
+	input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
+	access_mode=CBA_ACCESS;
+	
+	mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
+			      phy_vars_ue->frame,
+			      (next_slot>>1),
+			      eNB_id,
+			      ulsch_input_buffer,
+			      input_buffer_length,
+			      &access_mode);
+	
+	if (access_mode > UNKNOWN_ACCESS){
+	   
+	  if (abstraction_flag==0) {
+	    if (ulsch_encoding(ulsch_input_buffer,
+			       phy_vars_ue,
+			       harq_pid,
+			       eNB_id,
+			       phy_vars_ue->transmission_mode[eNB_id],0,
+			       0)!=0) {  //  Nbundled, to be updated!!!!
+	      LOG_E(PHY,"ulsch_coding.c: FATAL ERROR: returning\n");
+              vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
+	      return;
+	    }
+	  }
+#ifdef PHY_ABSTRACTION
+	  else {
+	    ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
+	  }
+#endif
+	} else {
+	  reset_cba_uci(phy_vars_ue->ulsch_ue[eNB_id]->o);
+	  LOG_N(PHY,"[UE %d] Frame %d, subframe %d: CBA transmission cancelled or postponed\n",
+		phy_vars_ue->Mod_id, phy_vars_ue->frame,(next_slot>>1));
+	}
+      }
 #ifdef PUCCH
       else if (phy_vars_ue->UE_mode[eNB_id] == PUSCH){  // check if we need to use PUCCH 1a/1b
 	//      debug_LOG_D(PHY,"[UE%d] Frame %d, subframe %d: Checking for PUCCH 1a/1b\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1);
@@ -1843,7 +1890,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	    dci_alloc_rx[i].format,
             phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
             phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[last_slot>>1],
-get_nCCE(3,&phy_vars_ue->lte_frame_parms,get_mi(&phy_vars_ue->lte_frame_parms,0)));
+	    get_nCCE(3,&phy_vars_ue->lte_frame_parms,get_mi(&phy_vars_ue->lte_frame_parms,0)));
 
       /*
       if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
@@ -1979,7 +2026,8 @@ get_nCCE(3,&phy_vars_ue->lte_frame_parms,get_mi(&phy_vars_ue->lte_frame_parms,0)
       else if( (dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) && 
 	       (dci_alloc_rx[i].format == format0)) {
 #ifdef DEBUG_PHY_PROC
-	LOG_I(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found rnti %x, format 0, dci_cnt %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].rnti,i);
+	LOG_I(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found rnti %x, format 0, dci_cnt %d\n",
+	      phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].rnti,i);
 	/*
 	  if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
 	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -2006,6 +2054,7 @@ get_nCCE(3,&phy_vars_ue->lte_frame_parms,get_mi(&phy_vars_ue->lte_frame_parms,0)
 					      SI_RNTI,
 					      0,
 					      P_RNTI,
+					      CBA_RNTI,
 					      eNB_id,
 					      0)==0) {
 	  
@@ -2014,11 +2063,58 @@ get_nCCE(3,&phy_vars_ue->lte_frame_parms,get_mi(&phy_vars_ue->lte_frame_parms,0)
 #endif
 
 	}
+      } 
+      else if( (dci_alloc_rx[i].rnti == phy_vars_ue->ulsch_ue[eNB_id]->cba_rnti[0]) && 
+	       (dci_alloc_rx[i].format == format0)) {
+	// UE could belong to more than one CBA group 
+       // phy_vars_ue->Mod_id%phy_vars_ue->ulsch_ue[eNB_id]->num_active_cba_groups]
+#ifdef DEBUG_PHY_PROC
+	LOG_I(PHY,"[UE  %d][PUSCH] Frame %d subframe %d: Found cba rnti %x, format 0, dci_cnt %d\n",
+	      phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,dci_alloc_rx[i].rnti,i);
+	/*
+	  if (((phy_vars_ue->frame%100) == 0) || (phy_vars_ue->frame < 20))
+	  dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+	*/
+#endif      
+#ifdef DIAG_PHY
+	if ((last_slot>>1) != 8) {
+	  LOG_E(PHY,"[UE  %d][DIAG] frame %d, subframe %d: should not have received CBA RNTI Format 0!\n",
+		phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1);
+	  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_errors++;
+	  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false++;
+          vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
+	  return(-1);
+	}
+#endif
+	
+	phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
+	//dump_dci(&phy_vars_ue->lte_frame_parms,&dci_alloc_rx[i]);
+
+	if (generate_ue_ulsch_params_from_dci((void *)&dci_alloc_rx[i].dci_pdu,
+					      phy_vars_ue->ulsch_ue[eNB_id]->cba_rnti[0],
+					      last_slot>>1,
+					      format0,
+					      phy_vars_ue,
+					      SI_RNTI,
+					      0,
+					      P_RNTI,
+					      CBA_RNTI,
+					      eNB_id,
+					      0)==0) {
+	  
+#ifdef DEBUG_PHY_PROC
+	  LOG_D(PHY,"[UE  %d] Generate UE ULSCH CBA_RNTI format 0 (subframe %d)\n",phy_vars_ue->Mod_id,last_slot>>1);
+#endif
+
+	}
       }
   
     else {
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[UE  %d] frame %d, subframe %d: received DCI %d with RNTI=%x (%x) and format %d!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,i,dci_alloc_rx[i].rnti,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_rx[i].format);
+      LOG_D(PHY,"[UE  %d] frame %d, subframe %d: received DCI %d with RNTI=%x (C-RNTI:%x, CBA_RNTI %x) and format %d!\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,last_slot>>1,i,dci_alloc_rx[i].rnti,
+	    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+	    phy_vars_ue->ulsch_ue[eNB_id]->cba_rnti[0],
+	    dci_alloc_rx[i].format);
       //      dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
 #endif
 #ifdef DIAG_PHY

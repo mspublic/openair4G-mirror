@@ -606,7 +606,8 @@ typedef struct{
   MCH_PDU MCH_pdu;
 #endif
 #ifdef CBA
-  uint16_t CBA_RNTI[NUM_MAX_CBA_GROUP];
+  uint8_t num_active_cba_groups; 
+  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
 #endif 
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
@@ -755,7 +756,8 @@ typedef struct{
   u8 msi_status;// could be an array if there are >1 MCH in one MBSFN area
 #endif
 #ifdef CBA
-  uint16_t CBA_RNTI[NUM_MAX_CBA_GROUP];
+  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
+  uint8_t cba_last_access;
 #endif 
 }UE_MAC_INST;
 
@@ -834,7 +836,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 #ifdef CBA
 		       ,
 		       u8 num_active_cba_groups,
-		       u16 CBA_RNTI
+		       u16 cba_rnti
 #endif
 		       );
 
@@ -867,14 +869,32 @@ void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
 int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe);
 
 
-/** \brief ULSCH Scheduling for TDD (config 1-6).
+/** \brief top ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, u8 sched_subframe, unsigned int *nCCE);
+void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_flag,unsigned char subframe,unsigned char sched_subframe,unsigned int *nCCE);
+
+/** \brief ULSCH Scheduling per RNTI TDD config (config 1-6).
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
+@param nCCE Pointer to current nCCE count
+*/
+void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, u8 granted_UEs, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
+
+/** \brief ULSCH Scheduling for CBA  RNTI TDD config (config 1-6).
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
+@param nCCE Pointer to current nCCE count
+*/
+void schedule_ulsch_cba_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, u8 granted_UEs, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB
@@ -1031,7 +1051,8 @@ u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id );
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
-
+u8 find_num_active_UEs_in_cbagroup(unsigned char Mod_id, unsigned char group_id);
+u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id);
 /** \brief Round-robin scheduler for ULSCH traffic.
 @param Mod_id Instance ID for eNB
 @param subframe Subframe number on which to act
@@ -1107,7 +1128,7 @@ int ue_query_mch(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 @param subframe subframe number
 @returns 0 for no SR, 1 for SR
 */
-void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+void ue_get_sdu(u8 Mod_id, u32 frame, u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u8 *access_mode);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
 @param Mod_id Index of UE instance
@@ -1191,6 +1212,16 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 */
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
 
+/*! \fn  int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index);
+\brief determine whether to use cba resource to transmit or not
+\param[in] Mod_id instance of the UE
+\param[in] frame the frame number
+\param[in] subframe the subframe number
+\param[in] eNB_index instance of eNB
+\param[out] access(1) or postpone (0) 
+*/
+int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index);
+
 /*! \fn  int get_bsr_lcgid (u8 Mod_id);
 \brief determine the lcgid for the bsr
 \param[in] Mod_id instance of the UE
@@ -1228,7 +1259,7 @@ BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 \param[in] frame Frame index
 \param[in] lcid logical channel identifier
 */
-int update_bsr(u8 Mod_id, u32 frame, u8 lcid);
+int update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 lcgid);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 

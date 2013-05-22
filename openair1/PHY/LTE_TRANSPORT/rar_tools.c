@@ -255,7 +255,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     //  {
     sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, eNB_id);
     
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode,sinr_eff);
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,0, transmission_mode,sinr_eff);
     //  }
     // else
     // fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);

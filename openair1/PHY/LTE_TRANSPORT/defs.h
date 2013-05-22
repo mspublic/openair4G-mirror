@@ -71,6 +71,7 @@
 
 #define SI_RNTI 0xffff 
 #define P_RNTI  0xfffd
+#define CBA_RNTI 0xfff4
 #define C_RNTI  0x1234
 
 #define PMI_2A_11 0
@@ -81,6 +82,7 @@
 typedef enum {
   SCH_IDLE,
   ACTIVE,
+  CBA_ACTIVE,
   DISABLED
 } SCH_status_t;
 
@@ -135,6 +137,8 @@ typedef struct {
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_scheduling_flag;
+  /// Subframe cba scheduling indicator (i.e. Transmission opportunity indicator)
+  uint8_t subframe_cba_scheduling_flag;
   /// First Allocated RB 
   uint16_t first_rb;
   /// Current Number of RBs
@@ -308,6 +312,10 @@ typedef struct {
   int16_t Po_PUSCH;
   /// PHR - current power headroom (based on last PUSCH transmission)
   int16_t PHR;
+  /// num active cba group 
+  uint8_t num_active_cba_groups;
+  /// allocated CBA RNTI
+  uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -321,6 +329,8 @@ typedef struct {
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_scheduling_flag;
+  /// Subframe cba scheduling indicator (i.e. CBA Transmission opportunity indicator)
+  uint8_t subframe_cba_scheduling_flag;
   /// PHICH active flag
   uint8_t phich_active;
   /// PHICH ACK
@@ -444,6 +454,10 @@ typedef struct {
   uint8_t cyclicShift;
   /// cooperation flag
   uint8_t cooperation_flag;
+  /// num active cba group 
+  uint8_t num_active_cba_groups;
+  /// allocated CBA RNTI for this ulsch
+  uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } LTE_eNB_ULSCH_t;
 
 typedef struct {
