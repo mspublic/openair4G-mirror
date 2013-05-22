@@ -458,15 +458,18 @@ static int ndisc_send_unspec(int oif, const struct in6_addr *dest,
 	datalen += written;
 
 	/* Fill in the IPv6 header */
-	frame.ip.ip6_vfc = 0x60;
+	frame.ip.ip6_vfc  = 0x60;
 	frame.ip.ip6_plen = htons(datalen);
-	frame.ip.ip6_nxt = IPPROTO_ICMPV6;
+	frame.ip.ip6_nxt  = IPPROTO_ICMPV6;
 	frame.ip.ip6_hlim = 255;
-	frame.ip.ip6_dst = *dest;
+	frame.ip.ip6_dst  = *dest;
 	/* all other fields are already set to zero */
 
-	frame.icmp.icmp6_cksum = in6_cksum(&in6addr_any, dest, &frame.icmp,
-					   datalen, IPPROTO_ICMPV6);
+	//frame.icmp.icmp6_cksum = in6_cksum(&in6addr_any, dest, &frame.icmp,
+	//				   datalen, IPPROTO_ICMPV6);
+	frame.icmp.icmp6_cksum = csum_ipv6_magic(&in6addr_any, dest, datalen,
+                                       IPPROTO_ICMPV6,
+                                       csum_partial(&frame.icmp, datalen, 0));
 
 	iov.iov_base = &frame;
 	iov.iov_len = sizeof(frame.ip) + datalen;
@@ -491,7 +494,10 @@ static int ndisc_send_unspec(int oif, const struct in6_addr *dest,
 
 	ret = sendmsg(fd, &msgh, 0);
 	if (ret < 0)
-		dbg("sendmsg: %s\n", strerror(errno));
+		dbg("sendmsg: if index %u dest %x:%x:%x:%x:%x:%x:%x:%x: %s\n",
+				oif,
+				NIP6ADDR(dest),
+				strerror(errno));
 
 	close(fd);
 	type = hdr[0];

@@ -210,6 +210,12 @@ static inline long max(long a, long b)
 uint16_t in6_cksum(const struct in6_addr *src, const struct in6_addr *dst,
 		   const void *data, socklen_t datalen, uint8_t nh);
 
+unsigned int csum_partial(const void *data, socklen_t datalen, unsigned int sum);
+
+uint16_t csum_ipv6_magic(const struct in6_addr *saddr,
+                                          const struct in6_addr *daddr,
+                                          uint32_t len, unsigned short proto,
+                                          uint32_t csum);
 /*
  * XXX: These may be missing on kernel header because either kernel is not
  * ready or should be removed since kernel will never support it.
