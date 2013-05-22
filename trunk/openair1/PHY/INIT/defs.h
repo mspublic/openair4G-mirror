@@ -174,6 +174,16 @@ void phy_config_sib13_ue(u8 Mod_id,u8 CH_index,int mbsfn_Area_idx,
 void phy_config_sib13_eNB(u8 Mod_id,int mbsfn_Area_idx,
 			  long mbsfn_AreaId_r9);
 
+/**
+\brief Configure cba rnti for .
+@param Mod_id Instance ID for eNB
+@param eNB_flag flag indicating whether the nodeis eNB (1) or UE (0)
+@param index index of the node 
+@param cba_rnti rnti for the cba transmission
+@param num_active_cba_groups num active cba group
+*/
+void  phy_config_cba_rnti (u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 num_active_cba_groups);
+
 void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated);
 

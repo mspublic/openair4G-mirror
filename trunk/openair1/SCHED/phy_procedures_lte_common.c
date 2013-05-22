@@ -568,6 +568,15 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
       return(i);
     }
   }
+#ifdef CBA  
+  for (i=0; i<NUM_MAX_CBA_GROUP; i++){
+    if ((phy_vars_eNB->ulsch_eNB[i]) && // ue J is the representative of group j
+	(phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups) &&
+	(phy_vars_eNB->ulsch_eNB[i]->cba_rnti[i]== rnti))
+      return(i);
+  }
+#endif 
+    
   return(-1);
 }
 

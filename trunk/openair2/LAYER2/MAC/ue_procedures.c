@@ -105,9 +105,9 @@ void ue_init_mac(){
       LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
       UE_mac_inst[i].scheduling_info.Bj[j]=-1;
       UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
-      if (j < DTCH) 
+      if (j < DTCH) // initilize all control channels lcgid to 0
 	UE_mac_inst[i].scheduling_info.LCGID[j]=0;
-      else 
+      else // initialize all the data channels lcgid to 1 
 	UE_mac_inst[i].scheduling_info.LCGID[j]=1;
       UE_mac_inst[i].scheduling_info.LCID_status[j]=0;
     }
@@ -741,7 +741,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
   if (crnti) {
 #ifdef DEBUG_HEADER_PARSING
-    LOG_D(MAC,"[MAC][UE] CRNTI : %x (first_element %d)\n",*crnti,first_element);
+    LOG_D(MAC,"[UE] CRNTI : %x (first_element %d)\n",*crnti,first_element);
 #endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
@@ -919,7 +919,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
 }
 
-void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
+void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u16 buflen, u8 *access_mode) {
 
   mac_rlc_status_resp_t rlc_status;
   u8 dcch_header_len=0,dcch1_header_len=0,dtch_header_len=0;
@@ -942,7 +942,15 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   // Compute header length
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
-
+  
+  if (*access_mode==CBA_ACCESS){
+    //if (UE_mac_inst[Mod_id].scheduling_info.LCID_status[DTCH] == LCID_EMPTY) 
+    if (use_cba_access(Mod_id,frame,subframe,eNB_index)==0){
+      *access_mode=POSTPONED_ACCESS;
+      return;
+    }
+    LOG_D(MAC,"[UE %d] CBA transmission oppurtunity, tbs %d\n",Mod_id, buflen);
+  }
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
@@ -983,7 +991,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     sdu_lcids[0] = DCCH;
     LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
     num_sdus = 1;
-    update_bsr(Mod_id, frame, UE_mac_inst[Mod_id].scheduling_info.LCGID[DCCH]);
+    update_bsr(Mod_id, frame, DCCH, UE_mac_inst[Mod_id].scheduling_info.LCGID[DCCH]);
     //header_len +=2;
   }
   else {
@@ -1044,7 +1052,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     sdu_lcids[num_sdus] = DTCH;
     sdu_length_total += sdu_lengths[num_sdus];
     num_sdus++;
-    update_bsr(Mod_id, frame, UE_mac_inst[Mod_id].scheduling_info.LCGID[DTCH]);
+    update_bsr(Mod_id, frame, DTCH, UE_mac_inst[Mod_id].scheduling_info.LCGID[DTCH]);
   }
   else { // no rlc pdu : generate the dummy header
     dtch_header_len = 0;
@@ -1092,7 +1100,10 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   else 
     dtch_header_len= (dtch_header_len >0)? 1: dtch_header_len;   // for short and long, cut the length+F fields  
   
-  if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
+  if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) == buflen) {
+    *access_mode=CANCELED_ACCESS;
+    return;
+  } else if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
     short_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
     post_padding = 0;
   }
@@ -1266,9 +1277,9 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 	else
 	  UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration;
       }
-      if (update_bsr(Mod_id,frame, UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid])) { 
+      if (update_bsr(Mod_id,frame, lcid, UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid])) { 
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending= 1;
-	LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCGID %d with BSR level %d (%d bytes in RLC)\n",
+	LOG_D(MAC,"[UE %d][SR] Frame %d subframe %d SR for PUSCH is pending for LCGID %d with BSR level %d (%d bytes in RLC)\n",
 	      Mod_id, frame,subframe,UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid],
 	      UE_mac_inst[Mod_id].scheduling_info.BSR[UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid]],
 	      UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid]]);
@@ -1290,7 +1301,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
-    LOG_T(MAC,"[MAC][UE %d] Release all SRs \n", Mod_id);
+    LOG_T(MAC,"[UE %d] Release all SRs \n", Mod_id);
   }
 
   // Put this in a function
@@ -1322,6 +1333,27 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
   return(CONNECTION_OK);
   }
+
+// to be improved
+int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
+  
+  if (((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 )  ||
+       (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 )  ||
+       (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ))   )
+    return 1;
+  else 
+    return 0;
+  
+  /*
+  if ((UE_mac_inst[Mod_id].scheduling_info.SR_pending == 0) &&
+      (10 - UE_mac_inst[Mod_id].cba_last_access >  0)) {
+    return 0;
+  } else  {
+    UE_mac_inst[Mod_id].cba_last_access=frame*10+subframe;
+    return 1;
+  }
+  */
+}
 
 int get_bsr_lcgid (u8 Mod_id){
   int lcgid, lcgid_tmp=-1;
@@ -1367,31 +1399,31 @@ u8 get_bsr_len (u8 Mod_id, u16 buflen) {
 }
 
 
-int  update_bsr(u8 Mod_id, u32 frame, u8 lcg_id){
+int  update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 lcg_id){
 
   mac_rlc_status_resp_t rlc_status;
-  u8 lcid=0, sr_pending = 0;
+  u8 sr_pending = 0;
   if ((lcg_id < 0) || (lcg_id > MAX_NUM_LCGID) )
     return sr_pending;
   
   UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id]=0;
   UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id]=0;
-  for (lcid =0 ; lcid < MAX_NUM_LCID; lcid++) {
-    if (UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid] == lcg_id) {
-      rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,RLC_MBMS_NO,
-				      lcid,
-				      0);
-      if (rlc_status.bytes_in_buffer > 0 ) {
-	sr_pending = 1;
-	UE_mac_inst[Mod_id].scheduling_info.LCID_status[lcid] = LCID_NOT_EMPTY;
-	UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id] += locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status.bytes_in_buffer);
-	UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id] += rlc_status.bytes_in_buffer;
-    // UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid = lcid; // only applicable to short bsr
-      }
-      else 
-	UE_mac_inst[Mod_id].scheduling_info.LCID_status[lcid]=LCID_EMPTY; 
+  //  for (lcid =0 ; lcid < MAX_NUM_LCID; lcid++) {
+  if (UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid] == lcg_id) {
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,RLC_MBMS_NO,
+				    lcid,
+				    0);
+    if (rlc_status.bytes_in_buffer > 0 ) {
+      sr_pending = 1;
+      UE_mac_inst[Mod_id].scheduling_info.LCID_status[lcid] = LCID_NOT_EMPTY;
+      UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id] += locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status.bytes_in_buffer);
+      UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id] += rlc_status.bytes_in_buffer;
+      // UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid = lcid; // only applicable to short bsr
     }
+    else 
+      UE_mac_inst[Mod_id].scheduling_info.LCID_status[lcid]=LCID_EMPTY; 
   }
+  //}
   //LOG_D(MAC,"[UE %d] BSR level %d (LCGID %d, rlc buffer %d byte)\n",
   //	 Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id],lcg_id,  UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id]);
   return sr_pending;

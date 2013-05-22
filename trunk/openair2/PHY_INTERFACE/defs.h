@@ -121,6 +121,8 @@ typedef struct
     /// Get MCH sdu and corresponding MCS for particular MBSFN subframe
     MCH_PDU* (*get_mch_sdu)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 #endif
+    // configure the cba rnti at the physical layer 
+    void (*phy_config_cba_rnti)(u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 num_active_cba_groups);
 
     // UE functions
 
@@ -143,7 +145,7 @@ typedef struct
 #endif
 
   /// Retrieve ULSCH sdu from MAC
-    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 subframe, u8 CH_index,u8 *ulsch_buffer,u16 buflen,u8 *access_mode);
 
     /// Retrieve RRCConnectionReq from MAC
     PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);

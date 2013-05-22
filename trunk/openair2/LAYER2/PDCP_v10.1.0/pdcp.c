@@ -77,8 +77,8 @@ extern int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned in
 BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb_id, sdu_size_t sdu_buffer_size, \
                    unsigned char* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list)
 #else
-  BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb_id, u32 muiP, u32 confirmP, \
-		     sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 mode)
+BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb_id, u32 muiP, u32 confirmP, \
+		   sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 mode)
 #endif
 {
   //-----------------------------------------------------------------------------
@@ -112,8 +112,14 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
   }
 
   // PDCP transparent mode for MBMS traffic 
-  if (mode == PDCP_TM) { 
-    rlc_status = rlc_data_req(module_id, frame, eNB_flag, RLC_MBMS_YES, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
+  if (mode == PDCP_TM) {   
+    LOG_D(PDCP, "Asking for a new mem_block of size %d\n", pdcp_pdu_size);
+    pdcp_pdu = get_free_mem_block(sdu_buffer_size);
+    if (pdcp_pdu != NULL) 
+      memcpy(&pdcp_pdu->data, sdu_buffer, sdu_buffer_size); 
+    
+    rlc_status = rlc_data_req(module_id, frame, eNB_flag, RLC_MBMS_YES, rb_id, muiP, confirmP, sdu_buffer_size, pdcp_pdu);
+    
   } else {
     // calculate the pdcp header and trailer size
     if ((rb_id % NB_RB_MAX) < DTCH) {

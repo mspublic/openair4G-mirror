@@ -2748,7 +2748,7 @@ uint32_t fill_subband_cqi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mo
   return(cqivect);
 }
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mode, double sinr_eff) {
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint16_t rnti, uint8_t trans_mode, double sinr_eff) {
   
   //  msg("[PHY][UE] Filling CQI for eNB %d, meas->wideband_cqi_tot[%d] %d\n",
   //      eNB_id,eNB_id,meas->wideband_cqi_tot[eNB_id]);
@@ -2785,6 +2785,12 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id,trans_mode);
     ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNB_id);
     break;
+  case HLC_subband_cqi_mcs_CBA:
+    // this is the cba mcs uci for cba transmission 
+    ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs     = 2; //fixme
+    ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti  = rnti;
+    LOG_I(PHY,"fill uci for cba rnti %x\n", rnti);
+    break;
   case ue_selected:
     msg("dci_tools.c: fill_CQI ue_selected CQI not supported yet!!!\n");
     mac_xface->macphy_exit("");
@@ -2797,6 +2803,11 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB
   }
 }
 
+void reset_cba_uci(void *o) {
+  // this is the cba mcs uci for cba transmission 
+  ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs     = 0; //fixme
+  ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti  = 0x0;
+}
 
 uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi) {
 
@@ -2818,13 +2829,14 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      uint16_t si_rnti,
 				      uint16_t ra_rnti,
 				      uint16_t p_rnti,
+				      uint16_t cba_rnti,
 				      uint8_t eNB_id,
 				      uint8_t use_srs) {
 
   uint8_t harq_pid;
   uint8_t transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   ANFBmode_t AckNackFBMode = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
-  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[0];
+  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
   //  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
@@ -2986,8 +2998,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     // indicate that this process is to be serviced in subframe n+4
-    ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-
+    if ((rnti >= cba_rnti) && (rnti < p_rnti))
+      ulsch->harq_processes[harq_pid]->subframe_cba_scheduling_flag = 1;
+    else 
+      ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+    
     ulsch->harq_processes[harq_pid]->TPC                                   = TPC;
 
     if (phy_vars_ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
@@ -3013,8 +3028,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->n_DMRS                                = cshift;     
 
     //printf("nb_rb %d, first_rb %d (RIV %d)\n",ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb,rballoc);
-    ulsch->rnti = rnti;
-
+    if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+      // ulsch->cba_rnti[0]=rnti;
+    } else {
+      ulsch->rnti = rnti;
+    }
     //    msg("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
     //	   ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
@@ -3058,7 +3076,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       switch(transmission_mode){ 
 	// The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
       case 1:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	}
+	else  if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
 	  ulsch->uci_format                          = HLC_subband_cqi_nopmi;
 	  ulsch->o_RI[0]                             = 0;
@@ -3070,7 +3093,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       case 2:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	} 
+	else if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
 	  ulsch->uci_format                          = HLC_subband_cqi_nopmi;
 	  ulsch->o_RI[0]                             = 0;
@@ -3082,7 +3110,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       case 3:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	} 
+	else if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
 	  ulsch->uci_format                          = HLC_subband_cqi_nopmi;
 	  ulsch->o_RI[0]                             = 0;
@@ -3094,7 +3127,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       case 4:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	}
+	else if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
 	  ulsch->uci_format                          = wideband_cqi_rank1_2A;
 	  ulsch->o_RI[0]                             = 0;
@@ -3106,7 +3144,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       case 5:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	}
+	else if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
 	  ulsch->uci_format                          = wideband_cqi_rank1_2A;
 	  ulsch->o_RI[0]                             = 0;
@@ -3118,7 +3161,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       case 6:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	}
+	else if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
 	  ulsch->uci_format                          = wideband_cqi_rank1_2A;
 	  ulsch->o_RI[0]                             = 0;
@@ -3130,7 +3178,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       case 7:
-	if(meas->rank[eNB_id] == 0){
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){
+	  ulsch->O                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                          = HLC_subband_cqi_mcs_CBA;
+	  ulsch->o_RI[0]                             = 0;
+	}
+	else if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
 	  ulsch->uci_format                          = HLC_subband_cqi_nopmi;
 	  ulsch->o_RI[0]                             = 0;
@@ -3177,7 +3230,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->bundling = 1-AckNackFBMode;
 
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
-      ulsch->harq_processes[harq_pid]->status = ACTIVE;
+      if ((rnti >= cba_rnti) && (rnti < p_rnti))
+		ulsch->harq_processes[harq_pid]->status = CBA_ACTIVE;
+      else 
+		ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = mcs;
       //      ulsch->harq_processes[harq_pid]->calibration_flag =0;
@@ -3241,6 +3297,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       uint16_t si_rnti,
 				       uint16_t ra_rnti,
 				       uint16_t p_rnti,
+				       uint16_t cba_rnti,
 				       uint8_t use_srs) {
 
   uint8_t harq_pid;
@@ -3410,34 +3467,76 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       switch(transmission_mode){ 
 	// The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
       case 1:
-	ulsch->Or2                                   = 0;
-	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_mcs_CBA;
+	}
+	else {
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	}
 	break;
       case 2:
-	ulsch->Or2                                   = 0;
-	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_mcs_CBA;
+	}
+	else {
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	}
 	break;
       case 3:
-	ulsch->Or2                                   = 0;
-	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_mcs_CBA;
+	}
+	else {
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	}
 	break;
       case 4:
-	ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
-	ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
-	ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_mcs_CBA;
+	}
+	else {
+	  ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
+	  ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
+	  ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	}
 	break;
       case 5:
-	ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
-	ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
-	ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_mcs_CBA;
+	}
+	else {
+	  ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
+	  ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
+	  ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	}
 	break;
       case 6:
-	ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
-	ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
-	ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+	  ulsch->Or2                                   = 0;
+	  ulsch->Or1                                   = sizeof_HLC_subband_cqi_mcs_CBA_5MHz;
+	  ulsch->uci_format                            = HLC_subband_cqi_mcs_CBA;
+	}
+	else {
+	  ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
+	  ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
+	  ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	}
 	break;
       case 7:
 	ulsch->Or2                                   = 0;
@@ -3493,7 +3592,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
 
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
-      ulsch->harq_processes[harq_pid]->status = ACTIVE;
+      if ((rnti >= cba_rnti) && (rnti < p_rnti))
+		ulsch->harq_processes[harq_pid]->status = CBA_ACTIVE;
+      else 
+		ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = mcs;
       //      ulsch->harq_processes[harq_pid]->calibration_flag = 0;
@@ -3520,8 +3622,11 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       }
       //      ulsch->harq_processes[harq_pid]->round++;
     }
-    ulsch->rnti = rnti;
-
+    if ((rnti >= cba_rnti) && (rnti < p_rnti)){ 
+      ulsch->cba_rnti[0] = rnti;
+    }else{
+      ulsch->rnti = rnti;      
+    }
     //ulsch->n_DMRS2 = cshift;
 
 #ifdef DEBUG_DCI

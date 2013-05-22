@@ -222,7 +222,7 @@ typedef struct{
 #endif 
 #ifdef CBA
   uint8_t                        num_active_cba_groups;
-  uint16_t                       CBA_RNTI[NUM_MAX_CBA_GROUP];
+  uint16_t                       cba_rnti[NUM_MAX_CBA_GROUP];
 #endif
   SRB_ToAddModList_t                *SRB_configList[NUMBER_OF_UE_MAX];
   DRB_ToAddModList_t                *DRB_configList[NUMBER_OF_UE_MAX];
@@ -284,7 +284,7 @@ typedef struct{
 #endif 
 #ifdef CBA
   uint8_t                         num_active_cba_groups;
-  uint16_t                        CBA_RNTI[NUM_MAX_CBA_GROUP];
+  uint16_t                        cba_rnti[NUM_MAX_CBA_GROUP];
 #endif
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];

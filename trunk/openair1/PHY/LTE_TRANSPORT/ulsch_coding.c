@@ -160,6 +160,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
 u32 ulsch_encoding(u8 *a,
 		   PHY_VARS_UE *phy_vars_ue,
 		   u8 harq_pid,
+		   u8 eNB_id,
 		   u8 tmode,
 		   u8 control_only_flag,
 		   u8 Nbundled) {
@@ -189,9 +190,10 @@ u32 ulsch_encoding(u8 *a,
   u32 wACK_idx;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
-  LTE_UE_ULSCH_t *ulsch=phy_vars_ue->ulsch_ue[0];
-  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[0];
+  LTE_UE_ULSCH_t *ulsch=phy_vars_ue->ulsch_ue[eNB_id];
+  LTE_UE_DLSCH_t **dlsch = phy_vars_ue->dlsch_ue[eNB_id];
   double sinr_eff;
+  u16 rnti;
   if (!ulsch) {
     msg("ulsch_coding.c: Null ulsch ptr %p\n",ulsch);
     return(-1);
@@ -217,8 +219,8 @@ u32 ulsch_encoding(u8 *a,
   // fill CQI/PMI information
   if (ulsch->O>0) {
     sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, 0); //eNB_id is missing here
-
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,0,tmode,sinr_eff);
+    rnti = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti;
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,0,rnti, tmode,sinr_eff);
    
     LOG_D(PHY,"UE CQI\n");
     print_CQI(ulsch->o,ulsch->uci_format,0);
@@ -842,19 +844,22 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
   double sinr_eff;  
-  LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
+  u16 rnti=phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti;
+  LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",
+	eNB_id,phy_vars_ue->Mod_id, harq_pid, rnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
   if (ulsch->O>0) {
     // int flag_LA =0;
    
-    sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, 0); //eNB_id is missing here
-
-    fill_CQI(ulsch->o,ulsch->uci_format,meas,0,tmode,sinr_eff);
+    sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, eNB_id);
+   
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,rnti,tmode,sinr_eff);
        //LOG_D(PHY,"UE CQI\n");
-    //print_CQI(ulsch->o,ulsch->uci_format,0);
+    //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    // if (ulsch->uci_format != HLC_subband_cqi_mcs_CBA)
     dlsch[0]->harq_processes[harq_pid]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
   }
 
