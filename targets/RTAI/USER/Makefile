@@ -118,7 +118,7 @@ OBJ += $(NAS_OBJS)
 endif
 
 RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags) -DRTAI
-LDFLAGS = -lpthread -lm -lforms
+LDFLAGS += -lpthread -lm -lforms
 ifeq ($(RTAI),1)
 LDFLAGS += $(shell rtai-config --lxrt-ldflags) 
 else
