@@ -269,6 +269,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
     int src_id, dst_id,ctime; // otg param
     u8 pdcp_header_len=0, pdcp_tailer_len=0;
     u16 sequence_number;
+    u8 payload_offset=0;
 
     LOG_I(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rb_id, sdu_buffer_size);
 
@@ -276,49 +277,50 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
       LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
       return FALSE;
     }
-
+    
     /*
      * Check if incoming SDU is long enough to carry a PDU header
      */
-    if ((rb_id % NB_RB_MAX) < DTCH) {
-      pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
-      pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
-    } else {
-      pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
-      pdcp_tailer_len = 0;
-    }
-
-    if (sdu_buffer_size < pdcp_header_len + pdcp_tailer_len ) {
-      LOG_W(PDCP, "Incoming (from RLC) SDU is short of size (size:%d)! Ignoring...\n", sdu_buffer_size);
+    if (MBMS_flagP == 0 ) {
+      if ((rb_id % NB_RB_MAX) < DTCH) {
+	pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
+	pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
+      } else {
+	pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+	pdcp_tailer_len = 0;
+      }
+      
+      if (sdu_buffer_size < pdcp_header_len + pdcp_tailer_len ) {
+	LOG_W(PDCP, "Incoming (from RLC) SDU is short of size (size:%d)! Ignoring...\n", sdu_buffer_size);
 #ifndef PDCP_UNIT_TEST
-      free_mem_block(sdu_buffer);
+	free_mem_block(sdu_buffer);
 #endif
-      return FALSE;
-    }
+	return FALSE;
+      }
 
-    /*
-     * Parse the PDU placed at the beginning of SDU to check
-     * if incoming SN is in line with RX window
-     */
-
-    if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) { // DRB
-      sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer->data);
-      u8 dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
-    } else { //SRB1/2
-      sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer->data);
-    }
-    if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp) == TRUE) {
-      LOG_D(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window, yay!\n", sequence_number);
-      /* if (dc == PDCP_DATA_PDU )
-	 LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
-	 else
-	 LOG_D(PDCP, "Passing piggybacked SDU to RRC ...\n");*/
-    } else {
-      LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
       /*
-       * XXX Till we implement in-sequence delivery and duplicate discarding
-       * mechanism all out-of-order packets will be delivered to RRC/IP
+       * Parse the PDU placed at the beginning of SDU to check
+       * if incoming SN is in line with RX window
        */
+      
+      if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) { // DRB
+	sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer->data);
+	u8 dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
+      } else { //SRB1/2
+	sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer->data);
+      }
+      if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp) == TRUE) {
+	LOG_D(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window, yay!\n", sequence_number);
+	/* if (dc == PDCP_DATA_PDU )
+	   LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
+	   else
+	   LOG_D(PDCP, "Passing piggybacked SDU to RRC ...\n");*/
+      } else {
+	LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
+	/*
+	 * XXX Till we implement in-sequence delivery and duplicate discarding
+	 * mechanism all out-of-order packets will be delivered to RRC/IP
+	 */
 #if 0
       LOG_D(PDCP, "Ignoring PDU...\n");
       free_mem_block(sdu_buffer);
@@ -326,40 +328,53 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 #else
       LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
 #endif
-    }
-    // SRB1/2: control-plane data
-    if ( (rb_id % NB_RB_MAX) <  DTCH ){
-      /*new_sdu = get_free_mem_block(sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
-	if (new_sdu) {
-	memcpy(new_sdu->data,
-	&sdu_buffer->data[pdcp_header_len],
-	sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
-	rrc_lite_data_ind(module_id,
-	frame,
-	eNB_flag,
-	rb_id,
-	sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
-	new_sdu->data);
-	}*/
-      //rrc_lite_data_ind(module_id, //Modified MW - L2 Interface
-      pdcp_rrc_data_ind(module_id,
-			frame,
-			eNB_flag,
-			rb_id,
-			sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
-		        &sdu_buffer->data[pdcp_header_len]);
-      free_mem_block(sdu_buffer);
-      // free_mem_block(new_sdu);
-      return TRUE;
+      }
+      // SRB1/2: control-plane data
+      if ( (rb_id % NB_RB_MAX) <  DTCH ){
+	/*new_sdu = get_free_mem_block(sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
+	  if (new_sdu) {
+	  memcpy(new_sdu->data,
+	  &sdu_buffer->data[pdcp_header_len],
+	  sdu_buffer_size - pdcp_header_len - pdcp_tailer_len);
+	  rrc_lite_data_ind(module_id,
+	  frame,
+	  eNB_flag,
+	  rb_id,
+	  sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
+	  new_sdu->data);
+	  }*/
+	//rrc_lite_data_ind(module_id, //Modified MW - L2 Interface
+	pdcp_rrc_data_ind(module_id,
+			  frame,
+			  eNB_flag,
+			  rb_id,
+			  sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
+			  &sdu_buffer->data[pdcp_header_len]);
+	free_mem_block(sdu_buffer);
+	// free_mem_block(new_sdu);
+	return TRUE;
+      }
+      payload_offset=PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+    } else {
+      payload_offset=0;
     }
 #if defined(USER_MODE) && defined(OAI_EMU)
     if (oai_emulation.info.otg_enabled ==1 ){
-      src_id = (eNB_flag == 1) ? (rb_id - DTCH) / NB_RB_MAX  /*- NB_eNB_INST */ + 1 :  ((rb_id - DTCH) / NB_RB_MAX);
+      src_id = 0;
       dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;
       ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
       LOG_D(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rb_id, src_id, dst_id);
-      if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE],
-		     sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) {
+      
+      if (MBMS_flagP == 0) {
+	src_id = (eNB_flag == 1) ? (rb_id - DTCH) / NB_RB_MAX  /*- NB_eNB_INST */ + 1 :  ((rb_id - DTCH) / NB_RB_MAX);
+      }else {
+#ifdef Rel10
+	src_id = (rb_id - MTCH  - 3 - maxDRB) / maxSessionPerPMCH  /*- NB_eNB_INST */ ;
+#endif
+      }
+      
+      if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[payload_offset],
+		     sdu_buffer_size - payload_offset ) == 0 ) {
 	free_mem_block(sdu_buffer);
 	return TRUE;
       }
@@ -371,7 +386,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
       return TRUE;
     }
 #endif
-    new_sdu = get_free_mem_block(sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof (pdcp_data_ind_header_t));
+    new_sdu = get_free_mem_block(sdu_buffer_size - payload_offset + sizeof (pdcp_data_ind_header_t));
 
     if (new_sdu) {
       /*
@@ -379,7 +394,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
        */
       memset(new_sdu->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu->data)->rb_id     = rb_id;
-      ((pdcp_data_ind_header_t *) new_sdu->data)->data_size = sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+      ((pdcp_data_ind_header_t *) new_sdu->data)->data_size = sdu_buffer_size - payload_offset;
 
       // Here there is no virtualization possible
 #ifdef IDROMEL_NEMO
@@ -400,15 +415,15 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
        * PDCP header)
        */
       memcpy(&new_sdu->data[sizeof (pdcp_data_ind_header_t)], \
-	     &sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], \
-	     sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
+	     &sdu_buffer->data[payload_offset], \
+	     sdu_buffer_size - payload_offset);
       list_add_tail_eurecom (new_sdu, sdu_list);
 
       /* Print octets of incoming data in hexadecimal form */
-      LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n", sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof(pdcp_data_ind_header_t),
-	    sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
+      LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n", sdu_buffer_size  - payload_offset + sizeof(pdcp_data_ind_header_t),
+	    sdu_buffer_size  - payload_offset);
       //util_print_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof(pdcp_data_ind_header_t));
-      util_flush_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size  - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + sizeof(pdcp_data_ind_header_t));
+      util_flush_hex_octets(PDCP, (unsigned char*)new_sdu->data, sdu_buffer_size  - payload_offset  + sizeof(pdcp_data_ind_header_t));
 
       /*
        * Update PDCP statistics
