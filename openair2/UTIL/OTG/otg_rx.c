@@ -92,11 +92,12 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
 	  nb_loss_pkts=otg_info->nb_loss_pkts_ul[src][dst][otg_hdr_rx->traffic_type];
       }
       else if (otg_hdr_info_rx->flag == 0x1000){
-	seq_num_rx=otg_multicast_info->rx_sn[src][dst][otg_hdr_rx->traffic_type];
-	otg_multicast_info->ran_owd[src][dst][otg_hdr_rx->traffic_type]=ctime- otg_hdr_rx->time;
-	nb_loss_pkts=otg_multicast_info->loss_rate[src][dst][otg_hdr_rx->traffic_type];
-	rx_check_loss(src, dst, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, &seq_num_rx, &nb_loss_pkts);
+	seq_num_rx = otg_multicast_info->rx_sn[src][dst][otg_hdr_rx->traffic_type];
+	otg_multicast_info->ran_owd[src][dst][otg_hdr_rx->traffic_type] = ctime- otg_hdr_rx->time;
+	nb_loss_pkts = otg_multicast_info->loss_rate[src][dst][otg_hdr_rx->traffic_type];
+	//	rx_check_loss(src, dst, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, &seq_num_rx, &nb_loss_pkts);
 	otg_multicast_info->loss_rate[src][dst][otg_hdr_rx->traffic_type]=nb_loss_pkts;
+	otg_multicast_info->rx_sn[src][dst][otg_hdr_rx->traffic_type]=seq_num_rx;
 	LOG_I(OTG,"received a multicast packet with size %d sn %d ran owd %d loss rate %d\n",
 	      otg_hdr_info_rx->size, seq_num_rx, ctime- otg_hdr_rx->time, nb_loss_pkts);
 	return 0;
