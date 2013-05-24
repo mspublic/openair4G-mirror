@@ -3176,7 +3176,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     
     int num_active_cba_groups = phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups;
     if (num_active_cba_groups > 0 )
-    LOG_T(PHY,"[eNB] last slot %d trying cba transmission decoding UE %d num_grps %d rnti %x flag %d\n",
+    LOG_D(PHY,"[eNB] last slot %d trying cba transmission decoding UE %d num_grps %d rnti %x flag %d\n",
 	  last_slot, i, num_active_cba_groups,phy_vars_eNB->ulsch_eNB[i]->cba_rnti[i%num_active_cba_groups],
 	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_cba_scheduling_flag );
     if ((phy_vars_eNB->ulsch_eNB[i]) &&
@@ -3235,10 +3235,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,&phy_vars_eNB->eNB_UE_stats[i], &rnti, &access_mode);
 	phy_vars_eNB->eNB_UE_stats[i].rank = phy_vars_eNB->ulsch_eNB[i]->o_RI[0];
       }
-      /* LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d harq_pid %d resetting the subframe_scheduling_flag, total cba groups %d\n",
+       LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d harq_pid %d resetting the subframe_scheduling_flag, total cba groups %d %d\n",
 	    phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->frame,last_slot>>1,i,harq_pid,
-	    phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups);
-      */
+	     phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups,num_active_cba_groups);
+      
       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_cba_scheduling_flag=0;
       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->status= SCH_IDLE;
       
@@ -3254,6 +3254,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->harq_processes[harq_pid]->subframe_cba_scheduling_flag=1;
 	phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->harq_processes[harq_pid]->status= CBA_ACTIVE;
+	phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->harq_processes[harq_pid]->TBS=phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS;
       }
       
       if (ret == (1+MAX_TURBO_ITERATIONS)) {

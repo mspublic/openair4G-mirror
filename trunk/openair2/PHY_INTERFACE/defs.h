@@ -122,7 +122,7 @@ typedef struct
     MCH_PDU* (*get_mch_sdu)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 #endif
     // configure the cba rnti at the physical layer 
-    void (*phy_config_cba_rnti)(u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 num_active_cba_groups);
+    void (*phy_config_cba_rnti)(u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 cba_group_id, u8 num_active_cba_groups);
 
     // UE functions
 

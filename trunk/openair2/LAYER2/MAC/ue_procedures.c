@@ -949,7 +949,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
       *access_mode=POSTPONED_ACCESS;
       return;
     }
-    LOG_D(MAC,"[UE %d] CBA transmission oppurtunity, tbs %d\n",Mod_id, buflen);
+    LOG_D(MAC,"[UE %d] frame %d subframe %d CBA transmission oppurtunity, tbs %d\n", Mod_id, frame, subframe,buflen);
   }
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
@@ -1086,7 +1086,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)){
     phr_p->PH = get_phr_mapping(Mod_id,eNB_index);
     phr_p->R  = 0;
-     LOG_D(MAC,"[UE %d] Frame %d report PHR with mapping (%d->%d) for LCGID %d\n", 
+     LOG_D(MAC,"[UE %d] Frame %d report PHR with mapping (%d->%d) for LCID %d\n", 
 	   Mod_id,frame, mac_xface->get_PHR(Mod_id,eNB_index), phr_p->PH,POWER_HEADROOM);
      update_phr(Mod_id);
   }else
@@ -1339,11 +1339,12 @@ int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   
   if (((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 )  ||
        (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 )  ||
-       (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ))   )
+       (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 )) ) {
+    UE_mac_inst[Mod_id].cba_last_access=frame*10+subframe;
     return 1;
-  else 
+  } else {
     return 0;
-  
+  }
   /*
   if ((UE_mac_inst[Mod_id].scheduling_info.SR_pending == 0) &&
       (10 - UE_mac_inst[Mod_id].cba_last_access >  0)) {

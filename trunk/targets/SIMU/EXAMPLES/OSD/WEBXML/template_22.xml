@@ -51,7 +51,7 @@
 
   <APPLICATION_CONFIG>
     <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>1:2</SOURCE_ID> <!-- valid formats are: -->					
+      <SOURCE_ID>1:3</SOURCE_ID> <!-- valid formats are: -->					
       <APPLICATION_TYPE>scbr</APPLICATION_TYPE> 
       <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
     </PREDEFINED_TRAFFIC>
