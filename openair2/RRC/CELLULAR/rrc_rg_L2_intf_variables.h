@@ -40,16 +40,11 @@ struct rrc_rg_srb_drb_asn1{
 };
 */
 
-struct rrc_srb_drb_asn1{
-/*  struct SRB_ToAddMod             *SRB1_config;
+struct rrc_rg_srb_drb_asn1{
+  struct SRB_ToAddMod             *SRB1_config;
   struct SRB_ToAddMod             *SRB2_config;
   struct DRB_ToAddMod             *DRB1_config;
-  struct DRB_ToAddMod             *DRB2_config;*/
-  int DRB1_active;
-  int DRB2_active;
-  SRB_ToAddModList_t   *SRB_configList[NUMBER_OF_UE_MAX];
-  DRB_ToAddModList_t   *DRB_configList[NUMBER_OF_UE_MAX];
-
+  struct DRB_ToAddMod             *DRB2_config;
   struct PhysicalConfigDedicated  *physicalConfigDedicated;
   //struct SPS_Config               *sps_Config[NB_CNX_eNB];
   MAC_MainConfig_t                *mac_MainConfig;

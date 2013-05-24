@@ -1322,7 +1322,7 @@ int main(int argc, char **argv) {
 
   // connect the TX/RX buffers
   if (UE_flag==1) {
-      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,1);
+      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
       printf("Setting UE buffer to all-RX\n");
       // Set LSBs for antenna switch (ExpressMIMO)
       for (i=0; i<frame_parms->samples_per_tti*10; i++)

@@ -24,9 +24,9 @@ __m128i zeroM;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_ove
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroM,(xmmy)))
 #endif
 
-void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword,int subframe) {
+void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword) {
 
-  unsigned int nsymb_pmch=12;
+  unsigned int nsymb=(phy_vars_ue->lte_frame_parms.Ncp==NORMAL)?14:12,nsymb_pmch=12;
   char fname[32],vname[32];
   int N_RB_DL=phy_vars_ue->lte_frame_parms.N_RB_DL;
   
@@ -60,11 +60,7 @@ void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword,int
 	       phy_vars_ue->lte_frame_parms.ofdm_symbol_size*12,1,1);
 
   write_output("rxsig_mch.m","rxs_mch",
-	       &phy_vars_ue->lte_ue_common_vars.rxdata[0][subframe*phy_vars_ue->lte_frame_parms.samples_per_tti],
-	       phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
-
-  write_output("txsig_mch.m","txs_mch",
-	       &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0][subframe*phy_vars_ue->lte_frame_parms.samples_per_tti],
+	       &phy_vars_ue->lte_ue_common_vars.rxdata[0][7*phy_vars_ue->lte_frame_parms.samples_per_tti],
 	       phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
 }
 
@@ -276,7 +272,7 @@ void mch_extract_rbs(int **rxdataF,
 	rxdataF_ext[aarx][j+symbol*(frame_parms->N_RB_DL*12)]                                  = rxdataF[aarx][i+frame_parms->first_carrier_offset + (symbol*frame_parms->ofdm_symbol_size)]; 
 	rxdataF_ext[aarx][(frame_parms->N_RB_DL*3)+j+symbol*(frame_parms->N_RB_DL*12)]         = rxdataF[aarx][i+1+ (symbol*frame_parms->ofdm_symbol_size)]; 
 	dl_ch_estimates_ext[aarx][j+symbol*(frame_parms->N_RB_DL*12)]                          = dl_ch_estimates[aarx][i+(symbol*frame_parms->ofdm_symbol_size)]; 
-	dl_ch_estimates_ext[aarx][(frame_parms->N_RB_DL*3)+j+symbol*(frame_parms->N_RB_DL*12)] = dl_ch_estimates[aarx][i+(frame_parms->N_RB_DL*6)+(symbol*frame_parms->ofdm_symbol_size)]; 
+	dl_ch_estimates_ext[aarx][(frame_parms->N_RB_DL*3)+j+symbol*(frame_parms->N_RB_DL*12)] = dl_ch_estimates[aarx][i+(frame_parms->N_RB_DL*3)+(symbol*frame_parms->ofdm_symbol_size)]; 
       }
     }
     else {
@@ -355,7 +351,7 @@ void mch_channel_compensation(int **rxdataF_ext,
 
   if (mod_order == 4) {
     QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
-    QAM_amp128b = _mm_setzero_si128();
+    QAM_amp128b = _mm_xor_si128(QAM_amp128b,QAM_amp128b);
   }    
   else if (mod_order == 6) {
     QAM_amp128  = _mm_set1_epi16(QAM64_n1); // 
@@ -703,11 +699,8 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
   avgs = 0;  
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
     avgs = cmax(avgs,avg_pmch[aarx]);  
- 
-  if (get_Qm(dlsch_ue[0]->harq_processes[0]->mcs)==2)
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) ;// + 2
-  else
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2); // + 5;// + 2
+
+  lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);// + 2
 
   mch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
 			   lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,

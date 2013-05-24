@@ -232,11 +232,6 @@ void init_SI(u8 Mod_id) {
 		       eNB_rrc_inst[Mod_id].MBMS_flag,
 		       (MBSFN_AreaInfoList_r9_t *)&eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9,
 		       (PMCH_InfoList_r9_t *)NULL
-#endif
-#ifdef CBA
-		       ,
-		       0,//eNB_rrc_inst[Mod_id].num_active_cba_groups,
-		       0 //eNB_rrc_inst[Mod_id].cba_rnti[0]
 #endif 
 		       );
   }
@@ -263,7 +258,6 @@ void init_MCCH(u8 Mod_id) {
     LOG_D(RRC, "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.count);
     LOG_D(RRC, "[eNB %d] First MBSFN Subframe Pattern: %02x (in hex)\n", Mod_id, eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.array[0]->subframeAllocation.choice.oneFrame.buf[0]);
 
-
    }
   else {
     LOG_E(RRC, "[eNB] init_MCCH: FATAL, no memory for MCCH MESSAGE allocated\n");
@@ -279,9 +273,7 @@ void init_MCCH(u8 Mod_id) {
   // ??Configure MCCH logical channel
   // call mac_config_req with appropriate structure from ASN.1 description
 
-  //LOG_I(RRC, "DUY: lcid before entering rrc_mac_config_req is %02d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
-  //  LOG_I(RRC, "DUY: serviceID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
-  //LOG_I(RRC, "DUY: session ID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
+
   rrc_mac_config_req(Mod_id,1,0,0,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     (struct PhysicalConfigDedicated *)NULL,
@@ -302,48 +294,32 @@ void init_MCCH(u8 Mod_id) {
 		     ,
 		     0,
 		     (MBSFN_AreaInfoList_r9_t *)NULL,
-		     (PMCH_InfoList_r9_t *) &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
+		     (PMCH_InfoList_r9_t *)&eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9
 #endif 
-#ifdef CBA
-		     ,
-		     0,
-		     0
-#endif
 		     );
-
-  //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
   
 }
 
 void init_MBMS(u8 Mod_id, u32 frame) {// init the configuration for MTCH 
-  //  int j,i, num_mch;
+  int j,i, num_mch;
   if (eNB_rrc_inst[Mod_id].MBMS_flag ==1) {
-
-    //  LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
-    // Configuring PDCP and RLC for MBMS Radio Bearer
-    
-    rrc_pdcp_config_asn1_req(Mod_id,frame,1,0,
-			     NULL, // SRB_ToAddModList
-			     NULL, // DRB_ToAddModList
-			     (DRB_ToReleaseList_t*)NULL
-#ifdef Rel10
-			     ,
-			     &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
-#endif
-			     );
-    
-    rrc_rlc_config_asn1_req(Mod_id, frame, 1, 0,
-			    NULL,// SRB_ToAddModList
-			    NULL,// DRB_ToAddModList
-			    NULL,// DRB_ToReleaseList
-			    &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9));
-    
-    
-    //rrc_mac_config_req();
-    // use the same as of DTCH for the moment,need to check the flag for mXch 
-    
-  }  
-  
+    num_mch = eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.count;
+    // loop for all MCHs, only MCH[0] is impelmented here
+    LOG_I(RRC,"Number of MCH is %d\n",num_mch);
+    for (i=0; i<num_mch;i++) {
+      LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
+      //     rrc_pdcp_config_req();
+      rrc_rlc_config_asn1_req(Mod_id, frame, 1, 0,
+			      NULL,// SRB_ToAddModList
+			      NULL,// DRB_ToAddModList
+			      NULL,// DRB_ToReleaseList
+			      &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[i]->mbms_SessionInfoList_r9));
+      
+     
+      //rrc_mac_config_req();
+      // use the same as of DTCH for the moment,need to check the flag for mXch 
+    }  
+  }
 }
 
 #endif
@@ -391,18 +367,6 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
 #else 
   printf("Rel8 RRC\n");
 #endif
-#ifdef CBA   
-  for(j=0; j<NUM_MAX_CBA_GROUP; j++)
-    eNB_rrc_inst[Mod_id].cba_rnti[j] = CBA_OFFSET + j;
-  
-  if (eNB_rrc_inst[Mod_id].num_active_cba_groups > NUM_MAX_CBA_GROUP)
-    eNB_rrc_inst[Mod_id].num_active_cba_groups = NUM_MAX_CBA_GROUP;
-  
-  LOG_D(RRC, "[eNB %d] Initialization of 4 cba_RNTI values (%x %x %x %x) num active groups %d\n",
-	Mod_id, eNB_rrc_inst[Mod_id].cba_rnti[0], eNB_rrc_inst[Mod_id].cba_rnti[1],
-	eNB_rrc_inst[Mod_id].cba_rnti[2],eNB_rrc_inst[Mod_id].cba_rnti[3],
-	eNB_rrc_inst[Mod_id].num_active_cba_groups); 
-#endif
 
   init_SI(Mod_id);
 
@@ -413,7 +377,7 @@ char openair_rrc_lite_eNB_init(u8 Mod_id){
     /// MTCH data bearer init
     init_MBMS(Mod_id,0);
   }
-#endif 
+#endif
 
 #ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on(Mod_id,1);
@@ -628,7 +592,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       return -1;
     }
     return 0;
- }
+  }
   else {
     LOG_E(RRC,"[UE %d] Frame %d : Unknown error\n",Mod_id,frame);
     return -1;
@@ -745,7 +709,7 @@ int rrc_eNB_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info){
 				 (DRB_ToAddModList_t*)NULL, 
 				 (DRB_ToReleaseList_t*)NULL
 #ifdef Rel10
-				 ,(PMCH_InfoList_r9_t *)NULL
+				 ,(MBMS_SessionInfoList_r9_t *)NULL
 #endif
 				 );
 	
@@ -889,6 +853,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   MeasIdToAddMod_t *MeasId0,*MeasId1,*MeasId2,*MeasId3,*MeasId4,*MeasId5;
 #if Rel10
   long * sr_ProhibitTimer_r9;
+  struct PUSCH_CAConfigDedicated_vlola  *pusch_CAConfigDedicated_vlola;
 #endif
 
   long *logicalchannelgroup,*logicalchannelgroup_drb;
@@ -898,32 +863,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   struct MeasConfig__speedStatePars *Sparams;
   CellsToAddMod_t *CellToAdd;
   CellsToAddModList_t *CellsToAddModList;
- 
-  C_RNTI_t *cba_RNTI=NULL;
-#ifdef CBA
-  //struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
-  uint8_t *cba_RNTI_buf;
-  cba_RNTI = CALLOC(1,sizeof(C_RNTI_t));
-  cba_RNTI_buf = CALLOC(1, 2*sizeof(uint8_t));
-  cba_RNTI->buf = cba_RNTI_buf;
-  cba_RNTI->size = 2;
-  cba_RNTI->bits_unused=0;
-  // associate UEs to the CBa groups as a function of their UE id
-  if (rrc_inst->num_active_cba_groups){
-    cba_RNTI->buf[0] = rrc_inst->cba_rnti[UE_index % rrc_inst->num_active_cba_groups]&0xff;
-    cba_RNTI->buf[1] = 0xff;
-    LOG_D(RRC,"[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n", 
-	  Mod_id, frame, rrc_inst->cba_rnti[UE_index % rrc_inst->num_active_cba_groups], 
-	  UE_index%rrc_inst->num_active_cba_groups, UE_index);
-  } else {
-    cba_RNTI->buf[0] = 0x0;
-    cba_RNTI->buf[1] = 0x0;
-    LOG_D(RRC,"[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n", 
-	  Mod_id, frame,  UE_index);
-  }
-    
- 
-#endif 
+
+
 
   //
   // Configure SRB2
@@ -1275,12 +1216,12 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
                                          MeasId_list,
                                          mac_MainConfig,
                                          NULL,
-					 cba_RNTI,
                                          nas_pdu,
                                          nas_length
 					 ); //*measGapConfig);
 
-  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",Mod_id,frame, size, UE_index);
+  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
+        Mod_id,frame, size, UE_index);
  
   LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
         frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*NB_RB_MAX)+DCCH);
@@ -1337,7 +1278,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			  DRB_configList,
 			  (DRB_ToReleaseList_t*)NULL
 #ifdef Rel10
-			  ,(PMCH_InfoList_r9_t *)NULL
+			  ,(MBMS_SessionInfoList_r9_t *)NULL
 #endif
 			  );
   // Refresh SRBs/DRBs
@@ -1435,11 +1376,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			     (PMCH_InfoList_r9_t *)NULL
 			     
 #endif
-#ifdef CBA
-			     ,
-			     eNB_rrc_inst[Mod_id].num_active_cba_groups,
-			     eNB_rrc_inst[Mod_id].cba_rnti[0]
-#endif 
+
 			     );
 	  
 	}
@@ -1479,11 +1416,6 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
 			     (MBSFN_AreaInfoList_r9_t *)NULL,
 			     (PMCH_InfoList_r9_t *)NULL
 
-#endif
-#ifdef CBA
-			     ,
-			     0,
-			     0
 #endif
 			     );
 	}
@@ -1550,11 +1482,6 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u32 frame, u16 UE_index) {
 			   0,
 			   (MBSFN_AreaInfoList_r9_t *)NULL,
 			   (PMCH_InfoList_r9_t *)NULL
-#endif
-#ifdef CBA
-			   ,
-			   0,
-			   0
 #endif
 			   );
 	break;

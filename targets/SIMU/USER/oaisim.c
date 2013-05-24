@@ -19,9 +19,7 @@
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
-#ifndef CELLULAR
 #include "RRC/LITE/vars.h"
-#endif
 #include "PHY_INTERFACE/vars.h"
 //#endif
 
@@ -36,15 +34,6 @@
 
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
-#endif
-
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-const char smbv_fname[] = "smbv_config_file.smbv";
-unsigned short smbv_nframes = 4; // how many frames to configure 1,..,4
-const unsigned short config_frames[4] = {2,9,10,11};
-//const unsigned short config_frames[4] = {1};
-unsigned char  smbv_frame_cnt = 0;
 #endif
 
 #include "oaisim.h"
@@ -147,42 +136,39 @@ help (void) {
 
   printf ("-h provides this help message!\n");
   printf ("-a Activates PHY abstraction mode\n");
-  printf ("-A set the multipath channel simulation,  options are: SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr,Rayleigh1_anticorr, Rice8,, Rice1, AWGN \n");
-  printf ("-b Set the number of local eNB\n");
-  printf ("-B Set the mobility model for eNB, options are: STATIC, RWP, RWALK, \n");
-  printf ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
-  printf ("-C [0-6] Sets TDD configuration\n");
-  printf ("-e Activates extended prefix mode\n");
-  printf ("-E Random number generator seed\n"); 
-  printf ("-f Set the forgetting factor for time-variation\n");
   printf ("-F Activates FDD transmission (TDD is default)\n");
-  printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
-  printf ("-G Enable background traffic \n");
-  printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
-  printf ("-k Set the Ricean factor (linear)\n");
-  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error) \n");
+  printf ("-C [0-6] Sets TDD configuration\n");
   printf ("-L [0-1] 0 to disable new link adaptation, 1 to enable new link adapatation\n");
-  printf ("-m Gives a fixed DL mcs\n");
-  printf ("-M Set the machine ID for Ethernet-based emulation\n");
-  printf ("-n Set the number of frames for the simulation\n");
-  printf ("-O [mme ipv4 address] Enable MME mode\n");
-  printf ("-p Set the total number of machine in emulation - valid if M is set\n");
-  printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
-  printf ("-Q Activate the MBMS service\n");
   printf ("-R [6,15,25,50,75,100] Sets N_RB_DL\n");
+  printf ("-e Activates extended prefix mode\n");
+  printf ("-m Gives a fixed DL mcs\n");
   printf ("-r Activates rate adaptation (DL for now)\n");
+  printf ("-n Set the number of frames for the simulation\n");
   printf ("-s snr_dB set a fixed (average) SNR, this deactivates the openair channel model generator (OCM)\n");
   printf ("-S snir_dB set a fixed (average) SNIR, this deactivates the openair channel model generator (OCM)\n");
+  printf ("-k Set the Ricean factor (linear)\n");
   printf ("-t Set the delay spread (microseconds)\n");
-  printf ("-T activate the traffic generator: cbr, mcbr, bcbr, mscbr \n");
+  printf ("-f Set the forgetting factor for time-variation\n");
+  printf ("-A set the multipath channel simulation,  options are: SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr,Rayleigh1_anticorr, Rice8,, Rice1, AWGN \n");
+  printf ("-b Set the number of local eNB\n");
   printf ("-u Set the number of local UE\n");
-  printf ("-U Set the mobility model for UE, options are: STATIC, RWP, RWALK \n");
-  printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
-  printf ("-w number of CBA groups, if not specified or zero, CBA is inactive\n");
-  printf ("-W IP address to connect to SMBV and configure SMBV from config file. Requires compilation with SMBV=1, -W0 uses default IP 192.168.12.201\n");
-  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
+  printf ("-M Set the machine ID for Ethernet-based emulation\n");
+  printf ("-p Set the total number of machine in emulation - valid if M is set\n");
+  printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
+  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error) \n");
   printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
+  printf ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
+  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
+  printf ("-T activate the traffic generator: cbr, mcbr, bcbr, mscbr \n");
+  printf ("-B Set the mobility model for eNB, options are: STATIC, RWP, RWALK, \n");
+  printf ("-U Set the mobility model for UE, options are: STATIC, RWP, RWALK \n");
+  printf ("-E Random number generator seed\n"); 
+  printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
+  printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
+  printf ("-V Enable VCD dump, file = openair_vcd_dump.vcd\n");
+  printf ("-G Enable background traffic \n");
+  printf ("-O [mme ipv4 address] Enable MME mode\n");
   printf ("-Z Reserved\n");
 }
 
@@ -281,11 +267,7 @@ main (int argc, char **argv)
   u8 target_dl_mcs = 4;
   u8 target_ul_mcs = 2;
   u8 rate_adaptation_flag;
-#ifdef SMBV
-  u8 config_smbv = 0;
-  char smbv_ip[16];
-  strcpy(smbv_ip,DEFAULT_SMBV_IP);
-#endif
+
   u8 abstraction_flag = 0, ethernet_flag = 0;
   u16 Nid_cell = 0;
   s32 UE_id, eNB_id,ret;
@@ -357,11 +339,11 @@ main (int argc, char **argv)
   snr_dB = 30;
   cooperation_flag = 0;         // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
   int eMBMS_active = 0;
- 
+
   init_oai_emulation(); // to initialize everything !!!
   
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:w:W:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:QrR:s:S:t:T:u:U:vVx:y:X:z:Z:Y:")) != -1) {
 
     switch (c) {
     case 'L':                   // set FDD
@@ -507,6 +489,26 @@ main (int argc, char **argv)
       break;
     case 'U':
       oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = optarg;
+      /*oai_emulation.info.omg_model_ue = atoi (optarg);
+      switch (oai_emulation.info.omg_model_ue){
+      case STATIC:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
+        break;
+      case RWP:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
+        break;
+      case RWALK:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWALK";
+        break;
+      case TRACE:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "TRACE";
+        break;
+      case SUMO:
+        oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "SUMO";
+        break;
+      default:
+        LOG_N(OMG, "Unsupported generator %d \n", oai_emulation.info.omg_model_ue);
+        }*/
       break;
     case 'T':
       oai_emulation.info.otg_enabled = 1;
@@ -550,16 +552,6 @@ main (int argc, char **argv)
     case 'V':
       ouput_vcd = 1;
       oai_emulation.info.vcd_enabled = 1;
-      break;
-    case 'w':
-      oai_emulation.info.cba_group_active = atoi (optarg);
-      break;
-    case 'W':
-#ifdef SMBV
-        config_smbv = 1;
-        if(atoi(optarg)!=0)
-            strcpy(smbv_ip,optarg);
-#endif
       break;
     case 'G' :
       oai_emulation.info.otg_bg_traffic_enabled = 1;
@@ -715,8 +707,8 @@ main (int argc, char **argv)
     eNB_avg_thr = fopen (eNB_stats_th_filename, "w"); 
   } 
 #ifdef OPENAIR2
-    eNB_l2_stats = fopen ("eNB_l2_stats.txt", "w");
-    LOG_I(EMU,"eNB_l2_stats=%p\n", eNB_l2_stats);
+  /*  eNB_l2_stats = fopen ("eNB_l2_stats.txt", "w");
+      LOG_I(EMU,"eNB_l2_stats=%p\n", eNB_l2_stats);*/
 #endif 
 
 #endif
@@ -749,11 +741,6 @@ main (int argc, char **argv)
 
         }
     }
-
-#ifdef SMBV
-    smbv_init_config(smbv_fname, smbv_nframes);
-    smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
-#endif
 
 
 
@@ -916,7 +903,7 @@ main (int argc, char **argv)
 
 
 #ifdef OPENAIR2
-  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,eMBMS_active, oai_emulation.info.cba_group_active);
+  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,eMBMS_active);
   printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after L2 init: frame_type %d,tdd_config %d\n", 
           PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
@@ -1115,12 +1102,12 @@ main (int argc, char **argv)
 	  fflush(eNB_stats);
 	}
 #ifdef OPENAIR2
-	if (eNB_l2_stats) {
+	/*	if (eNB_l2_stats) {
 	  len = dump_eNB_l2_stats (stats_buffer, 0);
 	  rewind (eNB_l2_stats);
 	  fwrite (stats_buffer, 1, len, eNB_l2_stats);
 	  fflush(eNB_l2_stats);
-	}
+	  }*/
 #endif 	
 #endif
       }
@@ -1305,20 +1292,9 @@ main (int argc, char **argv)
       usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
     }
-#ifdef SMBV
-    if ((frame == config_frames[0]) || (frame == config_frames[1]) || (frame == config_frames[2]) || (frame == config_frames[3])) {
-        smbv_frame_cnt++;        
-    }
-#endif
   }     //end of frame
   //  fclose(SINRpost);
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
-
-#ifdef SMBV
-  if (config_smbv) {
-      smbv_send_config (smbv_fname,smbv_ip);
-  }
-#endif
 
   //Perform KPI measurements
    if (oai_emulation.info.otg_enabled==1)
@@ -1385,9 +1361,9 @@ main (int argc, char **argv)
     fclose (eNB_stats);
   if (eNB_avg_thr)
     fclose (eNB_avg_thr);
-  if (eNB_l2_stats)
+  /* if (eNB_l2_stats)
     fclose (eNB_l2_stats);
-  
+  */
 #endif
 
   // stop OMG

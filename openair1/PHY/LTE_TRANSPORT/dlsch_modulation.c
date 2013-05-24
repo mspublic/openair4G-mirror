@@ -955,8 +955,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  qam_table_s = NULL;
 
 	if (rb_alloc_ind > 0)
-        {
-	  //printf("Allocated rb %d, subframe_offset %d, symbol_offset %d, re_offset %d\n",rb,subframe_offset,symbol_offset,re_offset);
+	  //	  	  printf("Allocated rb %d, subframe_offset %d\n",rb,subframe_offset);
 	  allocate_REs_in_RB(txdataF,
 			     &jj,
 			     re_offset,
@@ -974,7 +973,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     skip_half,
 			     (frame_parms->mode1_flag==1)?1:0,
 			     frame_parms);
-      }
+
 	re_offset+=12; // go to next RB
 	
 
@@ -1007,9 +1006,11 @@ int mch_modulation(mod_sym_t **txdataF,
   uint8_t nsymb,nsymb_pmch;
   uint32_t i,jj,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
-  uint8_t skip_dc=0;
+  uint8_t pilots=0;
+  uint8_t skip_dc,skip_half;
   uint8_t mod_order = get_Qm(dlsch->harq_processes[0]->mcs);
-  int16_t qam16_table_a[4],qam64_table_a[8];//,qam16_table_b[4],qam64_table_b[8];
+  int16_t amp_rho_a, amp_rho_b;
+  int16_t qam16_table_a[4],qam64_table_a[8],qam16_table_b[4],qam64_table_b[8];
   int16_t *qam_table_s;
 
   nsymb_pmch = 12;
@@ -1032,12 +1033,20 @@ int mch_modulation(mod_sym_t **txdataF,
     msg("Generating MCH (mod %d) in %d\n",mod_order, l);
 #endif    
 
+    if ((l==4)||(l==9))
+	pilots=2;
+    else if (l==6)
+      pilots=1;
+    else
+      pilots=0;
+    
+
     re_offset = frame_parms->first_carrier_offset;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 
     for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
       
-
+      skip_half=0;
       if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
 	
 	if ((rb==frame_parms->N_RB_DL>>1))

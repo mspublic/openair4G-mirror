@@ -6,9 +6,6 @@
   EMAIL   : Lionel.Gauthier@eurecom.fr
 
  ***************************************************************************/
-
-#include "RRC/LITE/MESSAGES/asn1_constants.h"
-
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
 #ifdef USER_MODE
@@ -17,12 +14,7 @@
 #    define NB_MODULES_MAX 1
 #endif //PHY_EMUL
 #    define NB_NODE_MAX    64
-
-#ifdef JUMBO_FRAME
-#    define MAX_IP_PACKET_SIZE         9000
-#else
-#    define MAX_IP_PACKET_SIZE         1500
-#endif
+#    define MAX_IP_PACKET_SIZE         4096
 #    define MAX_MODULES                NB_MODULES_MAX
 #    define MAX_RG                     2
 
@@ -95,8 +87,7 @@
 #        define DELIVERY_OF_ERRONEOUS_SDU_NO_DETECT    2
 
 
-// CBA constant 
-#define NUM_MAX_CBA_GROUP 4
+
 
 #    ifndef __cplusplus
 #        ifndef NULL
@@ -112,5 +103,6 @@
 #ifdef USER_MODE
 #define printk printf
 #endif
+
 
 #endif

@@ -50,7 +50,6 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
-#    include "asn1_constants.h"
 #    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
 #    include "PHY/defs.h"
@@ -60,7 +59,7 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #    include "SRB-ToAddMod.h"
 #    include "SRB-ToAddModList.h"
 #ifdef Rel10
-#include "PMCH-InfoList-r9.h"
+#include "MBMS-SessionInfoList-r9.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -151,25 +150,10 @@ typedef struct {
 //-----------------------------------------------------------------------------
 //   PRIVATE INTERNALS OF RLC
 //-----------------------------------------------------------------------------
-#define  RLC_MAX_NUM_INSTANCES_RLC_AM  ((maxDRB * MAX_MOBILES_PER_RG)/2)
-#ifdef Rel10
-#define  RLC_MAX_NUM_INSTANCES_RLC_UM  ((maxDRB * MAX_MOBILES_PER_RG)/2 + maxSessionPerPMCH * maxServiceCount)
-#else
-#define  RLC_MAX_NUM_INSTANCES_RLC_UM  ((maxDRB * MAX_MOBILES_PER_RG)/2)
-#endif
-#define  RLC_MAX_NUM_INSTANCES_RLC_TM  (MAX_MOBILES_PER_RG)
+#define  RLC_MAX_NUM_INSTANCES_RLC_AM  MAX_RB/2
+#define  RLC_MAX_NUM_INSTANCES_RLC_UM  (2*MAX_RB)/3
+#define  RLC_MAX_NUM_INSTANCES_RLC_TM  MAX_RB/3
 
-#ifdef Rel10
-#define  RLC_MAX_RB  ((maxDRB + 3) * MAX_MOBILES_PER_RG + maxSessionPerPMCH * maxServiceCount)
-#else
-#define  RLC_MAX_RB  ((maxDRB + 3)* MAX_MOBILES_PER_RG)
-#endif
-
-#ifdef Rel10
-#define  RLC_MAX_LC  ((max_val_DRB_Identity+1) * MAX_MOBILES_PER_RG + maxSessionPerPMCH * maxServiceCount)
-#else
-#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* MAX_MOBILES_PER_RG)
-#endif
 
 
 protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , u32_t, u8_t, rb_id_t , sdu_size_t , char* );)
@@ -187,15 +171,37 @@ typedef struct rlc_pointer_t {
 * \brief Structure to be instanciated to allocate memory for RLC protocol instances.
 */
 typedef struct rlc_t {
-    //int                  m_mbms_rlc_pointer[maxSessionPerPMCH][maxServiceCount];                              /*!< \brief Link between (service id, session id) and (implicit) RLC UM protocol instance. */
-    signed long int      m_lcid2rbid[RLC_MAX_LC];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
-    rlc_pointer_t        m_rlc_pointer[RLC_MAX_RB];                        /*!< \brief Link between radio bearer ID and RLC protocol instance. */
+    rlc_pointer_t        m_rlc_pointer[MAX_RB];                            /*!< \brief Link between radio bearer ID and RLC protocol instance. */
     rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
     rlc_tm_entity_t      m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
     char                 m_mscgen_trace[260];
     unsigned char        m_mscgen_trace_length;
 }rlc_t;
+
+/******************************************************************************************************
+typedef struct rlc_entity_s {
+	union {
+	    rlc_am_entity_t am;
+	    rlc_um_entity_t um;
+	    rlc_tm_entity_t tm;
+	} u;
+	rlc_mode_t             choice_rlc_mode;
+} rlc_entity_t;
+
+typedef struct rlc_t {
+	rlc_um_entity_t                       m_rlc_mbms_session[NB_MBMS_MAX_SERVICES][...]... ;          !< \brief .
+    lcid_t                                m_rlc_pointer[NB_RB_MAX * MAX UE];          !< \brief Link between radio bearer ID and LCID.
+    rlc_entity_t                          m_rlc_array[NB_LCID_MAX * MAX UE ]; !< \brief RLC protocol instances. indexed by LCID
+
+    NB_RB_MAX                     1..32
+    NB_LCID_MAX                   11
+    NB_MBMS_SESSIONS_PER_PMCH_MAX 28
+    NB_MBMS_MAX_SERVICES          16
+    NB_MBMS_MAX_SESSION_PER_CELL
+}rlc_t;
+
+******************************************************************************************************/
 
 // RK-LG was protected, public for debug
 /*! \var rlc_t rlc[MAX_MODULES]
@@ -235,10 +241,10 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 * \param[in]  srb2add_listP      SRB configuration list to be created.
 * \param[in]  drb2add_listP      DRB configuration list to be created.
 * \param[in]  drb2release_listP  DRB configuration list to be released.
-* \param[in]  pmch_info_listP    eMBMS pmch info list to be created.
+* \param[in]  SessionInfo_listP  eMBMS Session info list to be created.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, u8_t UE_index, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*, PMCH_InfoList_r9_t *pmch_info_listP);)
+public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_t, u8_t UE_index, SRB_ToAddModList_t*, DRB_ToAddModList_t*, DRB_ToReleaseList_t*, MBMS_SessionInfoList_r9_t *SessionInfo_listP);)
 #else
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP,  u8_t UE_index, SRB_ToAddModList_t* srb2add_listP, DRB_ToAddModList_t* drb2add_listP, DRB_ToReleaseList_t*  drb2release_listP, MBMS_SessionInfoList_r9_t *SessionInfo_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
@@ -263,16 +269,15 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (module_id_t, u32_t, u8_
 */
 private_rlc_rrc(rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t, u32_t, rb_id_t);)
 
-/*! \fn rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t rb_idP, chan_id_t chan_idP, rlc_mode_t rlc_modeP)
+/*! \fn rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t rb_idP, rlc_mode_t rlc_modeP)
 * \brief  Add a RLC protocol instance to a radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frameP           Frame index.
 * \param[in]  rb_idP           Radio bearer identifier.
-* \param[in]  chan_idP         Logical channel identifier.
 * \param[in]  rlc_modeP        Mode of RLC (AM, UM, TM).
 * \return     A status about the processing, OK or error code.
 */
-private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, u32_t, rb_id_t, chan_id_t, rlc_mode_t);)
+private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, u32_t, rb_id_t, rlc_mode_t);)
 
 /*! \fn rlc_op_status_t rrc_rlc_config_req (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, config_action_t actionP, rb_id_t rb_idP, rb_type_t rb_typeP, rlc_info_t rlc_infoP)
 * \brief  Function for RRC to configure a Radio Bearer.
@@ -292,7 +297,6 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t ,
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
 * \param[in]  eNB_flag         Flag to indicate eNB (1) or UE (0)
-* \param[in]  MBMS_flag        Flag to indicate whether this is an MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -300,7 +304,7 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, u32_t, u8_t ,
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
+public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 
 /*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
@@ -313,23 +317,21 @@ public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH MAC
 //-----------------------------------------------------------------------------
-/*! \fn tbs_size_t mac_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t MBMS_flagP, chan_id_t rb_idP, char* bufferP)
+/*! \fn tbs_size_t mac_rlc_data_req     (module_id_t module_idP, u32_t frame, chan_id_t rb_idP, char* bufferP)
 * \brief    Interface with MAC layer, map data request to the RLC corresponding to the radio bearer.
 * \param [in]     module_idP       Virtualized module identifier.
 * \param [in]     frame            Frame index
-* \param [in]     MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param [in]     rb_idP           Radio bearer identifier.
-* \param [in,out] bufferP          Memory area to fill with the bytes requested by MAC.
+* \param [in,out] bufferP       Memory area to fill with the bytes requested by MAC.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, u8_t, chan_id_t, char*);)
+public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, chan_id_t, char*);)
 
-/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, u8_t MBMS_flagP, chan_id_t rb_idP, u32_t frame, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
+/*! \fn void mac_rlc_data_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flagP, chan_id_t rb_idP, u32_t frame, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
 * \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
 * \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
-* \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  frame            Frame index.
 * \param[in]  bufferP          Memory area containing the transport blocks sent by MAC.
@@ -337,19 +339,18 @@ public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, u32_t, u
 * \param[in]  num_tbP          Number of transport blocks.
 * \param[in]  crcs             Array of CRC decoding.
 */
-public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, u32_t, u8_t, u8_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
+public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, u32_t, u8_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
 
-/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, chan_id_t rb_idP, tb_size_t tb_sizeP)
+/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, u32_t frame, u8_t eNB_flag, chan_id_t rb_idP, tb_size_t tb_sizeP)
 * \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index.
 * \param[in]  eNB_flag         Flag to indicate eNB operation (1 true, 0 false)
-* \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  tb_sizeP         Size of a transport block set in bytes.
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
-public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, u8_t, u8_t, chan_id_t, tb_size_t );)
+public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, u8_t, chan_id_t, tb_size_t );)
 
 //-----------------------------------------------------------------------------
 //   PUBLIC RLC CONSTANTS
@@ -363,10 +364,6 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, u32_t, u
 /** RLC TM type identifier. */
 #define  RLC_TM    4
 
-#define  RLC_MBMS_NO   0
-#define  RLC_MBMS_YES  1
-
-#define RLC_CHANNEL_ID_DUMMY -1
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------
@@ -381,12 +378,11 @@ public_rlc(void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char*
 
 
 
-/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, u8_t eNB_flagP, u8_t MBMS_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
+/*! \fn rlc_op_status_t rlc_data_req(module_id_t module_idP, u32_t frame, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sduP)
 * \brief    Interface with higher layers, map request to the RLC corresponding to the radio bearer.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index.
 * \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
-* \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
@@ -394,20 +390,19 @@ public_rlc(void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char*
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, u8_t, u8_t,rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
+public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, u32_t, u8_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
 
-/*! \fn void rlc_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
+/*! \fn void rlc_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t* sduP, boolean_t is_data_planeP)
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.
 * \param[in]  module_idP       Virtualized module identifier.
 * \param[in]  frame            Frame index
 * \param[in]  eNB_flagP        Flag to indicate eNB (1) or UE (0)
-* \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
 * \param[in]  sdu_sizeP        Size of SDU in bytes.
 * \param[in]  sduP             SDU.
 * \param[in]  is_data_planeP   Boolean, is data radio bearer or not.
 */
-public_rlc(void            rlc_data_ind     (module_id_t, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
+public_rlc(void            rlc_data_ind     (module_id_t, u32_t frame, u8_t eNB_flag, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
 
 
 /*! \fn void rlc_data_conf     (module_id_t module_idP, u32_t frameP, u8_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP, boolean_t is_data_planeP)

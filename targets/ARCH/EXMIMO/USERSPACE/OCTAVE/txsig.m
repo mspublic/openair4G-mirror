@@ -4,10 +4,12 @@ rxgain=30;
 txgain=20;
 eNB_flag = 0;
 card = 0;
+chan_sel = zeros(1,4);
+chan_sel(ch) = 1;
 
 limeparms;
-rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM) * [1 1 0 0 ];
-rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*[1 1 0 0];
+rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM) * chan_sel;
+rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX) * chan_sel;
 %rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
 %rf_local= [8253704   8253704   8257340   8257340]; %eNB2tx %850MHz
 %rf_local= [8255004   8253440   8257340   8257340]; % ex2 700 MHz
@@ -19,28 +21,28 @@ rf_rxdc = rf_rxdc * ones(1,4);
 rf_vcocal = rf_vcocal_19G * ones(1,4);
 rxgain = rxgain*ones(1,4);
 txgain = txgain*ones(1,4);
-freq_tx = fc*[1 1 1 1];
+freq_tx = fc*ones(1,4);
 freq_rx = freq_tx;
 %freq_tx = freq_rx+1920000;
 tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
 syncmode = SYNCMODE_FREE;
 rffe_rxg_low = 61*[1 1 1 1];
 rffe_rxg_final = 61*[1 1 1 1];
-rffe_band = 19G*[1 1 1 1];
+rffe_band = B19G_TDD*[1 1 1 1];
 
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 amp = pow2(14)-1;
 n_bit = 16;
 
-s = zeros(76800,2);
+s = zeros(76800,4);
 
 select = 1;
 
 switch(select)
 
 case 1
-  s(:,1) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
-  s(:,2) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
+  %s(:,1) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
+  s(:,ch) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
 
 case 2
   s(38400+128,1)= 80-1j*40;
@@ -76,6 +78,7 @@ s = s*2;
 %s(38400:end,2) = (1+1j);
 
 sleep (1)
+
 oarf_send_frame(card,s,n_bit);
 
 figure(1)

@@ -538,10 +538,10 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 	msg("------------------------------------------------------------\n");
 
       }
-#ifdef CBA
-      if (physicalConfigDedicated->pusch_CBAConfigDedicated_vlola){
-	phy_vars_ue->pusch_ca_config_dedicated[CH_index].betaOffset_CA_Index = (u16) *physicalConfigDedicated->pusch_CBAConfigDedicated_vlola->betaOffset_CBA_Index;
-	phy_vars_ue->pusch_ca_config_dedicated[CH_index].cShift = (u16) *physicalConfigDedicated->pusch_CBAConfigDedicated_vlola->cShift_CBA;
+#ifdef Rel10
+      if (physicalConfigDedicated->pusch_CAConfigDedicated_vlola){
+	phy_vars_ue->pusch_ca_config_dedicated[CH_index].betaOffset_CA_Index = (u16) *physicalConfigDedicated->pusch_CAConfigDedicated_vlola->betaOffset_CA_Index;
+	phy_vars_ue->pusch_ca_config_dedicated[CH_index].cShift = (u16) *physicalConfigDedicated->pusch_CAConfigDedicated_vlola->cShift;
 	LOG_D(PHY,"[UE %d ] physicalConfigDedicated pusch CBA config dedicated: beta offset %d cshift %d \n",Mod_id, 
 	      phy_vars_ue->pusch_ca_config_dedicated[CH_index].betaOffset_CA_Index,
 	      phy_vars_ue->pusch_ca_config_dedicated[CH_index].cShift);
@@ -555,21 +555,6 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
     
 }
 
-void  phy_config_cba_rnti (u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 num_active_cba_groups){
-  u8 i;
-  
-  if (eNB_flag == 0 ) {
-    //LOG_D(PHY,"[UE %d] configure cba group %d with rnti %x, num active cba grp %d\n", index, index, cba_rnti, num_active_cba_groups);
-    PHY_vars_UE_g[Mod_id]->ulsch_ue[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_UE_g[Mod_id]->ulsch_ue[index]->cba_rnti[Mod_id%num_active_cba_groups]=cba_rnti;
-  }else {
-    //for (i=index; i < NUMBER_OF_UE_MAX; i+=num_active_cba_groups){
-      //  LOG_D(PHY,"[eNB %d] configure cba group %d with rnti %x for UE %d, num active cba grp %d\n",Mod_id, i%num_active_cba_groups, cba_rnti, i, num_active_cba_groups);
-    PHY_vars_eNB_g[Mod_id]->ulsch_eNB[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_eNB_g[Mod_id]->ulsch_eNB[index]->cba_rnti[index%num_active_cba_groups] = cba_rnti;
-      //}  
-  }
-}
 
 void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 
@@ -586,8 +571,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-  init_td8();
-  init_td16();
+  init_td();
 
 #ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);

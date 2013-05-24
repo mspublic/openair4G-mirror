@@ -11,6 +11,7 @@
   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
   more details.
+
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
@@ -114,6 +115,7 @@ void init_MCCH_UE(u8 Mod_id, u8 eNB_index) {
 /*------------------------------------------------------------------------------*/
 char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
   /*-----------------------------------------------------------------------------*/
+
   LOG_D(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",Mod_id,eNB_index);
   LOG_D(RRC,"[MSC_NEW][FRAME 00000][RRC_UE][MOD %02d][]\n", Mod_id+NB_eNB_INST);
   LOG_D(RRC, "[MSC_NEW][FRAME 00000][IP][MOD %02d][]\n", Mod_id+NB_eNB_INST);
@@ -137,12 +139,6 @@ char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
 #ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on(Mod_id,0);
 #endif
-#ifdef CBA 
-  int j;
-  for(j=0; j<NUM_MAX_CBA_GROUP; j++)
-    UE_rrc_inst[Mod_id].cba_rnti[j] = 0x0000;
-  UE_rrc_inst[Mod_id].num_active_cba_groups = 0;
-#endif
 
   return 0;
 }
@@ -158,13 +154,8 @@ void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 eNB_index){
 
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
-      for (i=0;i<6;i++) {
-#ifdef SMBV   
-          // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
-          rv[i]=i;
-#else
-          rv[i]=taus()&0xff;
-#endif
+    for (i=0;i<6;i++) {
+      rv[i]=taus()&0xff;
       LOG_T(RRC,"%x.",rv[i]);
     }
     LOG_T(RRC,"\n");
@@ -495,11 +486,6 @@ void  rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig)
 		       (MBSFN_AreaInfoList_r9_t *)NULL,
 		       (PMCH_InfoList_r9_t *)NULL
 #endif
-#ifdef CBA
-		       ,
-		       0,
-		       0
-#endif
 		       );
   }
   if (measConfig->reportConfigToRemoveList != NULL) {
@@ -583,10 +569,6 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   long SRB_id,DRB_id;
   int i,cnt;
   LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
-#ifdef CBA  
-  uint8_t cba_found = 0;
-  uint16_t cba_RNTI;
-#endif 
 
   // Save physicalConfigDedicated if present
   if (radioResourceConfigDedicated->physicalConfigDedicated) {
@@ -621,25 +603,6 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
       UE_rrc_inst[Mod_id].sps_Config[eNB_index] = radioResourceConfigDedicated->sps_Config;
     }
   }
-#ifdef CBA
-  if (radioResourceConfigDedicated->cba_RNTI_vlola) {
-    cba_RNTI = (uint16_t) (((radioResourceConfigDedicated->cba_RNTI_vlola->buf[1]&0xff) << 8) | 
-			   (radioResourceConfigDedicated->cba_RNTI_vlola->buf[0]&0xff));
-    for (i=0 ; i< NUM_MAX_CBA_GROUP; i++) {
-      if (UE_rrc_inst[Mod_id].cba_rnti[i] == cba_RNTI ) {
-	cba_found=1;
-	break;
-      } else if (UE_rrc_inst[Mod_id].cba_rnti[i] == 0 )
-	break;
-    }
-    if (cba_found==0) {
-      UE_rrc_inst[Mod_id].num_active_cba_groups++;
-      UE_rrc_inst[Mod_id].cba_rnti[i]=cba_RNTI;
-      LOG_D(RRC, "[UE %d] Frame %d: radioResourceConfigDedicated reveived CBA_RNTI = %x for group %d from eNB %d \n", 
-	    Mod_id,frame, UE_rrc_inst[Mod_id].cba_rnti[i], i, eNB_index);
-    }
-  }
-#endif 
   // Establish SRBs if present
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
@@ -713,11 +676,6 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			     (MBSFN_AreaInfoList_r9_t *)NULL,
 			     (PMCH_InfoList_r9_t *)NULL
 #endif
-#ifdef CBA
-			     ,
-			     0,
-			     0
-#endif
 			     );
 	}
       }
@@ -767,11 +725,6 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			 0,
 			 (MBSFN_AreaInfoList_r9_t *)NULL,
 			 (PMCH_InfoList_r9_t *)NULL
-#endif
-#ifdef CBA
-			 ,
-			 0,
-			 0
 #endif
 			 );
 	}
@@ -834,11 +787,6 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 			   0,
 			   (MBSFN_AreaInfoList_r9_t *)NULL,
 			   (PMCH_InfoList_r9_t *)NULL
-#endif
-#ifdef CBA
-			   ,
-			   UE_rrc_inst[Mod_id].num_active_cba_groups, // 
-			   UE_rrc_inst[Mod_id].cba_rnti[0]
 #endif
 			   );
 
@@ -1271,11 +1219,6 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 		     (MBSFN_AreaInfoList_r9_t *)NULL,
 		     (PMCH_InfoList_r9_t *)NULL
 #endif
-#ifdef CBA
-		     ,
-		     0,
-		     0
-#endif
 		     );
 
   UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status = 1;
@@ -1438,11 +1381,6 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 (MBSFN_AreaInfoList_r9_t *)NULL,
 			 (PMCH_InfoList_r9_t *)NULL
 #endif
-#ifdef CBA
-			 ,
-			 0,
-			 0
-#endif
 			 );
       UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
       // After SI is received, prepare RRCConnectionRequest
@@ -1525,11 +1463,6 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 &UE_rrc_inst[Mod_id].sib13[eNB_index]->mbsfn_AreaInfoList_r9,
 			 (PMCH_InfoList_r9_t *)NULL
 #endif
-#ifdef CBA
-			 ,
-			 0,
-			 0
-#endif
 			 );
       UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
       break;
@@ -1607,11 +1540,6 @@ void decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index) {
 		     0,
 		     (MBSFN_AreaInfoList_r9_t *)NULL,
 		     &UE_rrc_inst[Mod_id].mcch_message[eNB_index]->pmch_InfoList_r9
-#endif
-#ifdef CBA
-		     ,
-		     0,
-		     0
 #endif
 		     );
 

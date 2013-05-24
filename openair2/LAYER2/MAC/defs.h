@@ -84,11 +84,10 @@
 #define DCCH1 2 // srb2
 #define DTCH  3 // DTCH + lcid < 11
 
-
-#define MCCH 4 // MCCH
-
-#define MTCH 5 // MTCH
 #ifdef Rel10
+#define MCCH 4 // MCCH
+#define MTCH 5 // MTCH
+
 
 // Mask for identifying subframe for MBMS 
 #define MBSFN_TDD_SF3 0x80// for TDD
@@ -338,121 +337,7 @@ typedef struct {
   u16 serving_num;  
   UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
-typedef struct{
-  /// BW
-  uint16_t num_dlactive_UEs;
-  /// total available number of PRBs
-  uint16_t available_prbs;
-  /// aggregation 
-  /// total avilable nccc : num control channel element 
-  uint16_t available_ncces;
-  // only for a new transmission, should be extended for retransmission  
-  // current dlsch  bit rate for all transport channels 
-  uint32_t dlsch_bitrate;
-  //
-  uint32_t dlsch_bytes_tx;
-  //
-  uint32_t dlsch_pdus_tx;
- //
-  uint32_t total_dlsch_bitrate;
-  //
-  uint32_t total_dlsch_bytes_tx;
-  //
-  uint32_t total_dlsch_pdus_tx;
 
-  //
-  uint32_t ulsch_bitrate;
-  //
-  uint32_t ulsch_bytes_rx;
-  //
-  uint64_t ulsch_pdus_rx;
-  // here for RX
-}eNB_STATS;
-
-typedef struct{
-
-  /// CRNTI of UE
-  uint16_t crnti; ///user id (rnti) of connected UEs
-  // rrc status 
-  uint8_t rrc_status;
-  /// harq pid
-  uint8_t harq_pid;
-  /// harq rounf 
-  uint8_t harq_round;
-  /// DL Wideband CQI index (2 TBs) 
-  uint8_t dl_cqi;
-  /// total available number of PRBs for a new transmission
-  uint16_t rbs_used;
-  /// total available number of PRBs for a retransmission
-  uint16_t rbs_used_retx;
-  /// total nccc used for a new transmission: num control channel element 
-  uint16_t ncce_used;
-  /// total avilable nccc for a retransmission: num control channel element 
-  uint16_t ncce_used_retx;
- 
-  // mcs1 before the rate adaptaion 
-  uint8_t dlsch_mcs1;
-  /// Target mcs2 after rate-adaptation 
-  uint8_t dlsch_mcs2;
-  //  current TBS with mcs2 
-  uint32_t TBS;
-  //  total TBS with mcs2 
-  //  uint32_t total_TBS;
- //  total rb used for a new transmission 
-  uint32_t total_rbs_used;
- //  total rb used for retransmission 
-  uint32_t total_rbs_used_retx;
- 
-
-  /// TX 
-  /// Num pkt
-  uint32_t num_pdu_tx[NB_RB_MAX];
-  /// num bytes
-  uint32_t num_bytes_tx[NB_RB_MAX];
-  /// num retransmission / harq
-  uint32_t num_retransmission;
-  /// instantaneous tx throughput for each TTI
-  //  uint32_t tti_throughput[NB_RB_MAX];
- 
-  /// overall 
-  //
-  uint32_t  dlsch_bitrate; 
-  //total 
-  uint32_t  total_dlsch_bitrate; 
-  /// headers+ CE +  padding bytes for a MAC PDU 
-  uint64_t overhead_bytes;
- /// headers+ CE +  padding bytes for a MAC PDU 
-  uint64_t total_overhead_bytes;
- /// headers+ CE +  padding bytes for a MAC PDU 
-  uint64_t avg_overhead_bytes;
-  // MAC multiplexed payload 
-  uint64_t total_sdu_bytes;
-  // total MAC pdu bytes
-  uint64_t total_pdu_bytes;
-  
-  // total num pdu
-  uint32_t total_num_pdus;
-  //
-  //  uint32_t avg_pdu_size;
- 
-  /// RX 
-  /// num rx pdu 
-  uint32_t num_pdu_rx[NB_RB_MAX];
-  /// num bytes rx 
-  uint32_t num_bytes_rx[NB_RB_MAX];
- /// instantaneous rx throughput for each TTI
-  //  uint32_t tti_goodput[NB_RB_MAX];
-  /// errors 
-  uint32_t num_errors_rx; 
-  /// overall 
-
-  // total MAC pdu bytes
-  uint64_t total_pdu_bytes_rx;
-  // total num pdu
-  uint32_t total_num_pdus_rx;
-
-}eNB_UE_STATS;
- 
 typedef struct{
   /// C-RNTI of UE
   u16 rnti;
@@ -605,19 +490,9 @@ typedef struct{
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
 #endif
-#ifdef CBA
-  uint8_t num_active_cba_groups; 
-  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-#endif 
+
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
-  
-  ///  active flag for Other lcid 
-  u8 lcid_active[NB_RB_MAX];
-  // eNB stats 
-  eNB_STATS eNB_stats;
-  /// eNB to UE statistics 
-  eNB_UE_STATS eNB_UE_stats[NUMBER_OF_UE_MAX];
 }eNB_MAC_INST;
 
 typedef struct {
@@ -755,10 +630,7 @@ typedef struct{
   /// MSI status
   u8 msi_status;// could be an array if there are >1 MCH in one MBSFN area
 #endif
-#ifdef CBA
-  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-  uint8_t cba_last_access;
-#endif 
+
 }UE_MAC_INST;
 
 typedef struct {
@@ -833,11 +705,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       PMCH_InfoList_r9_t *pmch_InfoList
 
 #endif
-#ifdef CBA
-		       ,
-		       u8 num_active_cba_groups,
-		       u16 cba_rnti
-#endif
 		       );
 
 
@@ -869,32 +736,14 @@ void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
 int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe);
 
 
-/** \brief top ULSCH Scheduling for TDD (config 1-6).
+/** \brief ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_flag,unsigned char subframe,unsigned char sched_subframe,unsigned int *nCCE);
-
-/** \brief ULSCH Scheduling per RNTI TDD config (config 1-6).
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
-@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
-@param nCCE Pointer to current nCCE count
-*/
-void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, u8 granted_UEs, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
-
-/** \brief ULSCH Scheduling for CBA  RNTI TDD config (config 1-6).
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
-@param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
-@param nCCE Pointer to current nCCE count
-*/
-void schedule_ulsch_cba_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, u8 granted_UEs, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
+void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, u8 sched_subframe, unsigned int *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 @param Mod_id Instance of eNB
@@ -940,7 +789,7 @@ void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
 
 void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
 
-int mac_top_init(int eMBMS_active, u8 cba_group_active);
+int mac_top_init(int eMBMS_active);
 
 char layer2_init_UE(u8 Mod_id);
 
@@ -1051,8 +900,7 @@ u8 is_UE_active(unsigned char Mod_id, unsigned char UE_id );
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
-u8 find_num_active_UEs_in_cbagroup(unsigned char Mod_id, unsigned char group_id);
-u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id);
+
 /** \brief Round-robin scheduler for ULSCH traffic.
 @param Mod_id Instance ID for eNB
 @param subframe Subframe number on which to act
@@ -1128,7 +976,7 @@ int ue_query_mch(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 @param subframe subframe number
 @returns 0 for no SR, 1 for SR
 */
-void ue_get_sdu(u8 Mod_id, u32 frame, u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u8 *access_mode);
+void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
 @param Mod_id Index of UE instance
@@ -1196,7 +1044,7 @@ u8 *parse_ulsch_header(u8 *mac_header,
 		       u16 tx_lenght);
 
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_active);
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active);
 int mac_init(void);
 void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
@@ -1211,16 +1059,6 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 @returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t direction,u8 eNB_index);
-
-/*! \fn  int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index);
-\brief determine whether to use cba resource to transmit or not
-\param[in] Mod_id instance of the UE
-\param[in] frame the frame number
-\param[in] subframe the subframe number
-\param[in] eNB_index instance of eNB
-\param[out] access(1) or postpone (0) 
-*/
-int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index);
 
 /*! \fn  int get_bsr_lcgid (u8 Mod_id);
 \brief determine the lcgid for the bsr
@@ -1259,7 +1097,7 @@ BSR_LONG * get_bsr_long(u8 Mod_id, u8 bsr_len);
 \param[in] frame Frame index
 \param[in] lcid logical channel identifier
 */
-int update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 lcgid);
+int update_bsr(u8 Mod_id, u32 frame, u8 lcid);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
@@ -1345,8 +1183,6 @@ void dl_phy_sync_success(unsigned char Mod_id,
 			 u32 frame,
 			 unsigned char eNB_index,
 			 u8 first_sync);
-
-int dump_eNB_l2_stats(char *buffer, int length);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

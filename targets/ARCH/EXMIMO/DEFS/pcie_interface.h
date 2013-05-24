@@ -318,6 +318,9 @@ typedef struct
     
     uint32_t switch_offset[4];      // sample offsets (relative to start of frame) used to control the RX/TX switch in TDD mode
 
+  // decimation here
+
+
 } exmimo_framing_t;
 
 

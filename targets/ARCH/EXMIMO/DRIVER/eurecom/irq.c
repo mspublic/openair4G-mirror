@@ -55,12 +55,15 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
 
 
     //printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
+    // this should be done also for the recent version (needs an update in the hardware)
     if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY) {
         // get AHBPCIE interrupt line
         irqval = ioread32(bar[card_id]+PCIE_CONTROL0);
         // clear PCIE interrupt bit (bit 7 of register 0x0)
         if ( (irqval&0x80) != 0)
             iowrite32(irqval&0xffffff7f,bar[card_id]+PCIE_CONTROL0);
+	else
+	  return IRQ_NONE;
     }
 
     irqcmd = ioread32(bar[card_id]+pcie_control);   // On ExMIMO2, this ioread is sufficient to clear the IRQ

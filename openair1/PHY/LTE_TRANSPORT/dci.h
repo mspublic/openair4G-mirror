@@ -455,7 +455,7 @@ typedef struct DCI1A_10MHz_FDD DCI1A_10MHz_FDD_t;
 ///  DCI Format Type 0 (20 MHz,FDD, 25 bits)
 struct DCI0_20MHz_FDD {
   /// Padding
-  uint32_t padding:5;
+  uint32_t padding:7;
   /// CQI Request
   uint32_t cqi_req:1;
   /// DRS Cyclic Shift
@@ -467,7 +467,7 @@ struct DCI0_20MHz_FDD {
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
   /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
-  uint32_t rballoc:13;
+  uint32_t rballoc:11;
   /// Hopping flag
   uint32_t hopping:1;
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
@@ -557,7 +557,7 @@ typedef struct DCI1_5MHz_TDD DCI1_5MHz_TDD_t;
 /// DCI Format Type 1 (10 MHz, TDD, 34 bits)
 struct DCI1_10MHz_TDD {
   /// Dummy bits to align to 64-bits
-  uint64_t dummy:30;
+  uint64_t dummy:31;
   /// DAI (TDD)
   uint64_t dai:2;
   /// Power Control
@@ -653,7 +653,7 @@ typedef struct DCI1_5MHz_FDD DCI1_5MHz_FDD_t;
 /// DCI Format Type 1 (10 MHz, FDD, 31 bits)
 struct DCI1_10MHz_FDD {
   /// dummy bits (not transmitted)
-  uint32_t dummy:1;
+  uint32_t dummy:2;
   /// Power Control
   uint32_t TPC:2;
   /// Redundancy version
@@ -676,7 +676,7 @@ typedef struct DCI1_10MHz_FDD DCI1_10MHz_FDD_t;
 /// DCI Format Type 1 (20 MHz, FDD, 39 bits)
 struct DCI1_20MHz_FDD {
   /// dummy bits (not transmitted)
-  uint64_t dummy:25;
+  uint64_t dummy:21;
   /// Power Control
   uint64_t TPC:2;
   /// Redundancy version

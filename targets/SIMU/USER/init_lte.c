@@ -51,7 +51,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	PHY_vars_eNB->dlsch_eNB[i][j]->rnti=0;
       }
     }
-    PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(8,MAX_TURBO_ITERATIONS,abstraction_flag);
+    PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(8,abstraction_flag);
     if (!PHY_vars_eNB->ulsch_eNB[1+i]) {
       LOG_E(PHY,"Can't get eNB ulsch structures\n");
       exit(-1);
@@ -66,7 +66,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   }
   
   // ULSCH for RA
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,MAX_TURBO_ITERATIONS,abstraction_flag);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,abstraction_flag);
   if (!PHY_vars_eNB->ulsch_eNB[0]) {
     LOG_E(PHY,"Can't get eNB ulsch structures\n");
     exit(-1);
@@ -108,7 +108,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
   for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
     for (j=0;j<2;j++) {
-      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,abstraction_flag);
+      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
       if (!PHY_vars_UE->dlsch_ue[i][j]) {
 	LOG_E(PHY,"Can't get ue dlsch structures\n");
 	exit(-1);
@@ -125,14 +125,14 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
       exit(-1);
       }
     
-    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,abstraction_flag);
-    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,abstraction_flag);
+    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
+    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
         
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
   PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
-  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS_MBSFN,0);
+  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,0);
 
   return (PHY_vars_UE);
 }

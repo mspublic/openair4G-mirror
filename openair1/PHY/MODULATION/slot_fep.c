@@ -83,7 +83,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
     if (l==0) {
       rx_offset = sample_offset + slot_offset + nb_prefix_samples0 + subframe_offset - SOFFSET;
       // Align with 128 bit
-      //     rx_offset = rx_offset - rx_offset % 4;
+      rx_offset = rx_offset - rx_offset % 4;
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
 	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
 	       (short *)&ue_common_vars->rxdata[aa][0],
@@ -113,7 +113,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
         (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
         (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) + subframe_offset - SOFFSET;
       
-      //      rx_offset = rx_offset - (rx_offset % 4);
+      rx_offset = rx_offset - (rx_offset % 4);
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
 	memcpy((short *)&ue_common_vars->rxdata[aa][frame_length_samples],
@@ -152,11 +152,10 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	   frame_parms->ofdm_symbol_size*sizeof(int));
 #endif
     */
-  }
-#ifndef PERFECT_CE    
+  }    
   if ((l==0) || (l==(4-frame_parms->Ncp))) {
     for (aa=0;aa<frame_parms->nb_antennas_tx_eNB;aa++) {
-
+#ifndef PERFECT_CE
 #ifdef DEBUG_FEP
       msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
@@ -176,7 +175,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				  symbol);
       }
     }
-
+#endif
 
       // do frequency offset estimation here!
       // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1}) 
@@ -193,7 +192,6 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
       }
   }
-#endif
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");
 #endif

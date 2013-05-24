@@ -1,7 +1,7 @@
 #ifndef __PHY_PROCEDURES_EMOS_H__
 #define __PHY_PROCEDURES_EMOS_H__
 
-#ifdef NO_RTAI
+#ifndef RTAI
 typedef long long unsigned int RTIME;
 #else
 #include <rtai.h>

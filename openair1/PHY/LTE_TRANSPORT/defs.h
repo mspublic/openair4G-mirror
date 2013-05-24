@@ -71,7 +71,6 @@
 
 #define SI_RNTI 0xffff 
 #define P_RNTI  0xfffd
-#define CBA_RNTI 0xfff4
 #define C_RNTI  0x1234
 
 #define PMI_2A_11 0
@@ -82,7 +81,6 @@
 typedef enum {
   SCH_IDLE,
   ACTIVE,
-  CBA_ACTIVE,
   DISABLED
 } SCH_status_t;
 
@@ -137,8 +135,6 @@ typedef struct {
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_scheduling_flag;
-  /// Subframe cba scheduling indicator (i.e. Transmission opportunity indicator)
-  uint8_t subframe_cba_scheduling_flag;
   /// First Allocated RB 
   uint16_t first_rb;
   /// Current Number of RBs
@@ -227,7 +223,7 @@ typedef struct {
   /// Pointers to 8 HARQ processes for the DLSCH
   LTE_DL_eNB_HARQ_t *harq_processes[8];     
   /// Number of soft channel bits
-  uint32_t G;
+  uint16_t G;
   /// Layer index for this dlsch (0,1)
   uint8_t layer_index;          
   /// Codebook index for this dlsch (0,1,2,3)
@@ -312,10 +308,6 @@ typedef struct {
   int16_t Po_PUSCH;
   /// PHR - current power headroom (based on last PUSCH transmission)
   int16_t PHR;
-  /// num active cba group 
-  uint8_t num_active_cba_groups;
-  /// allocated CBA RNTI
-  uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -329,8 +321,6 @@ typedef struct {
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_scheduling_flag;
-  /// Subframe cba scheduling indicator (i.e. CBA Transmission opportunity indicator)
-  uint8_t subframe_cba_scheduling_flag;
   /// PHICH active flag
   uint8_t phich_active;
   /// PHICH ACK
@@ -402,8 +392,6 @@ typedef struct {
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   uint8_t Mdlharq; 
-  /// Maximum number of iterations used in eNB turbo decoder
-  uint8_t max_turbo_iterations;
   /// CQI CRC status
   uint8_t cqi_crc_status;
   /// Pointer to CQI data
@@ -454,10 +442,6 @@ typedef struct {
   uint8_t cyclicShift;
   /// cooperation flag
   uint8_t cooperation_flag;
-  /// num active cba group 
-  uint8_t num_active_cba_groups;
-  /// allocated CBA RNTI for this ulsch
-  uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } LTE_eNB_ULSCH_t;
 
 typedef struct {
@@ -506,7 +490,7 @@ typedef struct {
   /// current delta_pucch
   s8 delta_PUCCH;
   /// Number of soft channel bits
-  uint32_t G;
+  uint16_t G;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Current subband PMI allocation
@@ -594,12 +578,18 @@ typedef struct {
   uint8_t active;
   /// Transmission mode
   uint8_t mode1_flag;
+  /// downlink power offset field
+    //  uint8_t dl_power_off;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
   /// Current HARQ process id
   uint8_t current_harq_pid;
+  /// Current RB allocation
+    //  uint32_t rb_alloc[4];
+  /// Current subband PMI allocation
+    //  uint16_t pmi_alloc;
   /// Current subband antenna selection
   uint32_t antenna_alloc;
   /// Current subband RI allocation
@@ -608,18 +598,20 @@ typedef struct {
   uint32_t cqi_alloc1;
   /// Current subband CQI2 allocation
   uint32_t cqi_alloc2;
+  /// Current Number of RBs
+    //  uint16_t nb_rb;
   /// HARQ-ACKs
   harq_status_t harq_ack[10];
   /// Pointers to up to 8 HARQ processes
   LTE_DL_UE_HARQ_t *harq_processes[8];   
   /// Layer index for this DLSCH
   uint8_t layer_index;              
+  /// Number of soft channel bits
+    //  uint16_t G;
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
   uint8_t Mdlharq;              
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Kmimo;
-  /// Maximum number of Turbo iterations
-  uint8_t max_turbo_iterations;
+  uint8_t Kmimo;                
 } LTE_UE_DLSCH_t;
 
 typedef enum {format0,

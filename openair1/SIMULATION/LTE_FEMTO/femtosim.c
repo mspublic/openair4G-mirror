@@ -410,7 +410,7 @@ void _allocDLSChannel(options_t opts) {
 	}
                 
       //UE
-      PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
+      PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,0);
       if (!PHY_vars_UE->dlsch_ue[0][i]) {
 	printf("Can't get ue dlsch structures\n");
 	exit(-1);
@@ -647,7 +647,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
 					num_common_dci,
 					dci_alloc,
 					0,
-					0,//(s16)(((s32)AMP*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
+					(s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
 					&PHY_vars_eNB->lte_frame_parms,
 					PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
 					opts.subframe);
@@ -663,7 +663,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
 			   num_common_dci,
 			   dci_alloc,
 			   0,
-			   0,//(s16)(((s32)AMP*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
+			   (s16)(((s32)opts.amp*PHY_vars_eNB->dlsch_eNB[0][0]->sqrt_rho_b)>>13),
 			   &PHY_vars_eNB->lte_frame_parms,
 			   interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
 			   opts.subframe);
@@ -713,7 +713,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
   //Other defaults values
     
   u8 i_mod = 2;
-  u8 num_pdcch_symbols=1,num_pdcch_symbols_2=0;
+  u8 num_pdcch_symbols=3,num_pdcch_symbols_2=0;
     
   int eNB_id_i = 1;//Id Interferer;
   int idUser=0;   //index of  number of user, this program use just one user allowed in position 0 of  PHY_vars_eNB->dlsch_eNB
@@ -887,14 +887,14 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      //scrambling
 	      dlsch_scrambling(&PHY_vars_eNB->lte_frame_parms,
-			       0,
+			       num_pdcch_symbols,
 			       PHY_vars_eNB->dlsch_eNB[idUser][0],
 			       coded_bits_per_codeword, 0, opts.subframe<<1);
                                  
 	      for(i=0;i<opts.nInterf;i++)
                 {
 		  dlsch_scrambling(&(interf_PHY_vars_eNB[i]->lte_frame_parms),
-				   0,
+				   num_pdcch_symbols,
 				   interf_PHY_vars_eNB[i]->dlsch_eNB[0][0],
 				   coded_bits_per_codeword, 0, opts.subframe<<1);
 		}
@@ -911,7 +911,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      //Modulation
 	      re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
-					      AMP,
+					      opts.amp,
 					      opts.subframe,
 					      &PHY_vars_eNB->lte_frame_parms,
 					      num_pdcch_symbols,
@@ -920,7 +920,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	      for(i=0;i<opts.nInterf;i++)
                 {
 		  dlsch_modulation(interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
-				   AMP,
+				   opts.amp,
 				   opts.subframe,
 				   &(interf_PHY_vars_eNB[i])->lte_frame_parms,
 				   num_pdcch_symbols,
@@ -937,13 +937,13 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 				
 				
 	      generate_pilots(PHY_vars_eNB,PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
-			      AMP,
+			      opts.amp,
 			      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 				
 	      for(i=0;i<opts.nInterf;i++)
 		{
 		  generate_pilots(interf_PHY_vars_eNB[i],interf_PHY_vars_eNB[i]->lte_eNB_common_vars.txdataF[0],
-				  AMP,
+				  opts.amp,
 				  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 		}
                 
@@ -1257,7 +1257,6 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      if(opts.nframes==1)
 		{
-		  printf("Dumping DLSCH output\n");
 		  _writeOuputOneFrame(opts,coded_bits_per_codeword,uncoded_ber_bit,tbs);
 		  write_output("fch0e.m","ch0e",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
 		  write_output("fch1e.m","ch1e",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
@@ -1293,9 +1292,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 																	
 
 	      PHY_vars_UE->dlsch_ue[0][0]->rnti = opts.n_rnti;
-	      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->G = coded_bits_per_codeword;
 	      dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
-				 0,
+				 PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
 				 PHY_vars_UE->dlsch_ue[0][0],
 				 coded_bits_per_codeword,
 				 PHY_vars_UE->lte_ue_pdsch_vars[opts.Nid_cell]->llr[0],
@@ -1308,7 +1306,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 				   PHY_vars_UE->dlsch_ue[0][0],
 				   PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0],
 				   opts.subframe,0,
-				   1);
+				   PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols);
 			
 			 
 #ifdef XFORMS
@@ -1341,7 +1339,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
   
 		  if (opts.nframes==1)
                     {
-		      printf("DLSCH in error in round %d (ret %d)\n",round,ret);
+		      printf("DLSCH in error in round %d\n",round);
 		      printf("DLSCH errors found, uncoded ber %f\n",uncoded_ber);
 		      _dumpTransportBlockSegments(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->C,
 						  PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Cminus,
@@ -1469,8 +1467,6 @@ void _writeOuputOneFrame(options_t opts,u32 coded_bits_per_codeword,short *uncod
   }
 
   write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[opts.Nid_cell][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
-  write_output("dlsch00_ch1.m","dl00_ch1",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][0][0]),PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*opts.nsymb/2,1,1);
-  
 
   write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->e,coded_bits_per_codeword,1,4);
   write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
@@ -1533,10 +1529,10 @@ void _dumpTransportBlockSegments(u32 C,u32 Cminus,u32 Kminus,u32 Kplus,  u8 ** c
       //  printf("Decoded_output (Segment %d):\n",s);
       for (i=0; i<Kr_bytes; i++)
         {
-	  if ( c_UE !=NULL)
-	    printf("%d : %x (%x)\n",i,c_UE[s][i],c_UE[s][i]^c_eNB[s][i]);
-	  else
-	    printf("%d : (%x)\n",i,c_eNB[s][i]);
+	  /*  if ( c_UE !=NULL)
+	      printf("%d : %x (%x)\n",i,c_UE[s][i],c_UE[s][i]^c_eNB[s][i]);
+	      else
+	      printf("%d : (%x)\n",i,c_eNB[s][i]);*/
         }
     }
 }

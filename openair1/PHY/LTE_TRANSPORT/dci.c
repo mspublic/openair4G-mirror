@@ -44,7 +44,6 @@
 #endif
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "SCHED/defs.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #ifdef __SSE3__
@@ -1967,14 +1966,11 @@ u8 get_num_pdcch_symbols(u8 num_dci,
     numCCE += (1<<(dci_alloc[i].L));
   }
 
-  //if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
-  if (numCCE <= get_nCCE(1, frame_parms, get_mi(frame_parms, subframe)))
+  if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
     return(cmax(1,nCCEmin));
-  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 4 : 5)))
-  else if (numCCE < get_nCCE(2, frame_parms, get_mi(frame_parms, subframe)))
+  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 4 : 5)))
     return(cmax(2,nCCEmin));
-  //else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 7 : 8)))
-  else if (numCCE < get_nCCE(3, frame_parms, get_mi(frame_parms, subframe)))
+  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx_eNB==4) ? 7 : 8)))
     return(cmax(3,nCCEmin));
   else if (frame_parms->N_RB_DL<=10) { 
     if (frame_parms->Ncp == 0) { // normal CP
@@ -2385,7 +2381,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
   eNB_transport_info[phy_vars_eNB->Mod_id].num_ue_spec_dci = num_ue_spec_dci;
   eNB_transport_info[phy_vars_eNB->Mod_id].num_common_dci = num_common_dci;
 
-  LOG_D(PHY,"[eNB %d][DCI][EMUL] num spec dci %d num comm dci %d\n", phy_vars_eNB->Mod_id, num_ue_spec_dci,num_common_dci);
+  LOG_D(PHY,"[DCI][EMUL] num spec dci %d num comm dci %d\n", num_ue_spec_dci,num_common_dci);
   n_dci_dl =0;
   for (n_dci =0 ; 
        n_dci < (eNB_transport_info[phy_vars_eNB->Mod_id].num_ue_spec_dci+ eNB_transport_info[phy_vars_eNB->Mod_id].num_common_dci);
@@ -2430,14 +2426,14 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 }
 #endif 
 
+static u8 dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
+static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
  
 void dci_decoding(u8 DCI_LENGTH,
 		  u8 aggregation_level,
 		  s8 *e,
 		  u8 *decoded_output) {
 
-  uint8_t dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
-  int8_t w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
 
   u16 RCC;
 
@@ -2458,7 +2454,7 @@ void dci_decoding(u8 DCI_LENGTH,
 #endif
   
   // now do decoding
-  memset((void*)dummy_w_rx,0,3*D);
+  memset(dummy_w_rx,0,3*D);
   RCC = generate_dummy_w_cc(DCI_LENGTH+16,
 			    dummy_w_rx);
 
@@ -2580,7 +2576,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
     // compute Yk
     Yk = (unsigned int)lte_ue_pdcch_vars[eNB_id]->crnti;
 
-    for (i=0;i<=subframe;i++)
+    for (i=0;i<subframe;i++)
       Yk = (Yk*39827)%65537;
 
     Yk = Yk % (nCCE/L2);
@@ -2590,8 +2586,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
     case 2:
       nb_candidates = 6;
       break;
+    case 3:
     case 4:
-    case 8:
       nb_candidates = 2;
       break;
     }    
@@ -2656,13 +2652,13 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,u8 s
 #ifdef DEBUG_DCI_DECODING
 	msg("crc =>%x\n",crc);
 #endif
+	
 	if (((L>1) && ((crc == si_rnti)||
 		       (crc == ra_rnti)))||
 	    (crc == lte_ue_pdcch_vars[eNB_id]->crnti))   {
 	  dci_alloc[*dci_cnt].dci_length = sizeof_bits;
 	  dci_alloc[*dci_cnt].rnti       = crc;
 	  dci_alloc[*dci_cnt].L          = L;
-          dci_alloc[*dci_cnt].nCCE       = CCEind;
 	  
 	  if (sizeof_bytes<=4) {
 	    dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[0];
@@ -2762,7 +2758,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   u32 CCEmap0=0,CCEmap1=0,CCEmap2=0;
   LTE_UE_PDCCH **lte_ue_pdcch_vars = phy_vars_ue->lte_ue_pdcch_vars;
   LTE_DL_FRAME_PARMS *frame_parms  = &phy_vars_ue->lte_frame_parms;
-  u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,subframe);
+  u8 mi = get_mi(&phy_vars_ue->lte_frame_parms,0);
   u16 ra_rnti=99;
   u8 format0_found=0,format_c_found=0;
   u8 tmode = phy_vars_ue->transmission_mode[eNB_id];
@@ -3034,7 +3030,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   if (tmode < 3) {
     // Now check UE_SPEC format 1 search spaces at aggregation 1 
     old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,0,subframe,
+    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,0,
 			    dci_alloc,
 			    eNB_id,
 			    frame_parms,
@@ -3062,7 +3058,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     
     // Now check UE_SPEC format 1 search spaces at aggregation 2 
     old_dci_cnt=dci_cnt;
-    dci_decoding_procedure0(lte_ue_pdcch_vars,0,subframe,
+    dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,0,
 			    dci_alloc,
 			    eNB_id,
 			    frame_parms,

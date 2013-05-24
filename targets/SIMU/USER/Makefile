@@ -56,9 +56,6 @@ cygwin=1
 OCG_FLAG = 0
 endif
 
-ifdef SMBV
-CFLAGS += -DSMBV
-endif
 
 ifdef XFORMS
 CFLAGS += -DXFORMS
@@ -85,34 +82,21 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-ifdef JF
-CFLAGS += -DJUMBO_FRAME
-endif
 # ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
 # make cleanasn1
 #make all Rel10=1
+export IS_REL10=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ] ; then  echo "1" ; else  echo "0" ; fi)
+export IS_REL8=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ] ; then  echo "1" ; else  echo "0" ; fi)
 
-
-#export IS_REL10=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ] ; then  echo "1" ; else  echo "0" ; fi)
-#export IS_REL8=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ] ; then  echo "1" ; else  echo "0" ; fi)
-
-ifdef CBA
+ifdef  Rel10
 CFLAGS += -DRel10
-CFLAGS += -DCBA
-@echo Rel10=1 CBA=1
-
-else ifdef Rel10
-CFLAGS += -DRel10
-@echo Rel10=1
-#ifeq ($(IS_REL10), 0)
-# $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
-#endif
+ifeq ($(IS_REL10), 0)
+ $(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ; ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; ln -s asn1-86_constants.h asn1_constants.h ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ;)
+endif
 else # default is rel 8
-@echo Rel8=1
-CFLAGS += -DRel8
-#ifeq ($(IS_REL8), 0)
-# $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-86.asn EUTRA-RRC-Definitions.asn ;  cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
-#endif
+ifeq ($(IS_REL8), 0)
+ $(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ; ln -s EUTRA-RRC-Definitions-86.asn EUTRA-RRC-Definitions.asn ;  cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; ln -s asn1-a20_constants.h asn1_constants.h ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; )
+endif
 endif
 
 ifeq ($(NAS), 1)
@@ -150,9 +134,9 @@ endif
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
-include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/S1AP/Makefile.inc
@@ -259,13 +243,17 @@ $(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/
 	$(AR) rcs $@ $^
 
 ifdef USE_MME
-oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(S1AP_DIR)/libs1ap.a oaisim.c
+oaisim : $(OBJ) $(ASN1_MSG_OBJS1) $(S1AP_DIR)/libs1ap.a oaisim.c
 else
-oaisim : $(ASN1_MSG_OBJS1) $(OBJ) oaisim.c
+oaisim : $(OBJ) $(ASN1_MSG_OBJS1) oaisim.c
 endif
 	@echo "Compiling oaisim.c ..."
 	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
 	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
+
+oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
+	@echo "Compiling oaisimCROWN.c ..."
+	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -273,10 +261,6 @@ endif
 ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
-
-oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
-	@echo "Compiling oaisimCROWN.c ..."
-	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 test_nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
@@ -303,8 +287,6 @@ nas_sim_mt_cellular:
 nas_sim_rg_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasrg_sim MASTER=1 CELLULAR=1 NO_RRM=1)
 
-rrm_std_cellular:
-	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make cell_rrm CELL_RRM=1 CELLULAR=1 NO_RRM=1)
 
 
 cleanall: clean cleanasn1 cleanmmeasn1
@@ -328,14 +310,9 @@ cleanl1:
 cleanl2:
 	rm -f $(L2_OBJS)
 	rm $(ASN1_MSG_INC)/asn1_msg.o
-
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
-	$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; rm -f $(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS) *.o *.d )
-	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.am.sample
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
-	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
-	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
 
 cleanmmeasn1:
 	rm -f $(S1AP_BUILT_OBJS)
@@ -362,24 +339,6 @@ showcflags:
 	@echo $(CFLAGS)
 
 
-otg_all : otg_latency otg_gp
-
-# need to check if the file exists before calling otgplot
-otg_latency:
-	export TITLE="Application OWD(ms)" 
-	cp /tmp/otg_latency.dat /tmp/onewaydelay.dat	
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency.dat" "[$(COL1):$(COL2)]"
-otg_latency_bg:
-	export TITLE="Background OWD(ms)" 
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency_bg.dat" "[$(COL1):$(COL2)]"
-otg_gp:
-	export TITLE="Application Goodput(Kb/s)" 
-	cp /tmp/otg_GP.dat /tmp/goodput.dat
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/goodput.dat" "[$(COL1):$(COL2)]"
-otg_gp_bg:
-	export TITLE="Background Goodput(Kb/s)" 
-	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP_bg.dat" "[$(COL1):$(COL2)]"
-
 pexpect = $(shell if [ `dpkg -l | grep pexpect -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
 
 pre-ci: 
@@ -394,5 +353,5 @@ else
 	python $(OPENAIR_TARGETS)/TEST/OAI/test01.py -w $(PW)
 endif
 else
-	@echo "Python pexpect package is missing, please install"
+	@echo "Python pexpect package is missing, plase install"
 endif 

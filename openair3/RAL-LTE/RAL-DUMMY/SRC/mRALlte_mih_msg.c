@@ -1039,8 +1039,6 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                     DEBUG("%s", g_msg_print_buffer);
 
                     mih_status = MIH_C_STATUS_SUCCESS;
-                    DEBUG("**\n");
-                    DEBUG(" %s Sending MIH_C_MESSAGE_LINK_CAPABILITY_DISCOVER_CONFIRM\n\n", __FUNCTION__);
 
                     mRALte_send_capability_discover_confirm(&message_wrapperP->_union_message.link_capability_discover_request.header.transaction_id,
                                                             &mih_status,
@@ -1074,8 +1072,6 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                         g_msc_gen_buf,
                         msg_dst);
                     #endif
-                    DEBUG("**\n");
-
                     mRALlte_subscribe_request(&message_wrapperP->_union_message.link_event_subscribe_request);
                 } else {
                     #ifdef MSCGEN_PYTOOL
@@ -1107,7 +1103,6 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                         g_msc_gen_buf,
                         msg_dst);
                     #endif
-                    DEBUG("**\n");
                     mRALlte_unsubscribe_request(&message_wrapperP->_union_message.link_event_unsubscribe_request);
                 } else {
                     #ifdef MSCGEN_PYTOOL
@@ -1147,8 +1142,7 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                         g_msc_gen_buf,
                         msg_dst);
                     #endif
-                    DEBUG("**\n");
-                     mRALlte_get_parameters_request(&message_wrapperP->_union_message.link_get_parameters_request);
+                    mRALlte_get_parameters_request(&message_wrapperP->_union_message.link_get_parameters_request);
                 } else {
                     #ifdef MSCGEN_PYTOOL
                     MIH_C_MIHF_ID2String(&(message_wrapperP->_union_message.link_get_parameters_request.source), msg_src);
@@ -1180,7 +1174,6 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                         g_msc_gen_buf,
                         msg_dst);
                     #endif
-                    DEBUG("**\n");
                     mRALlte_configure_thresholds_request(&message_wrapperP->_union_message.link_configure_thresholds_request);
                 } else {
                     #ifdef MSCGEN_PYTOOL
@@ -1216,7 +1209,6 @@ int mRALlte_mih_link_msg_decode(Bit_Buffer_t* bbP, MIH_C_Message_Wrapper_t *mess
                         g_msc_gen_buf,
                         msg_dst);
                     #endif
-                    DEBUG("**\n");
                     mRALlte_action_request(&message_wrapperP->_union_message.link_action_request);
                 } else {
                     #ifdef MSCGEN_PYTOOL
@@ -1267,8 +1259,7 @@ int mRALlte_mih_link_process_message(void){
                                  &sockaddr_len);
 
     if (nb_bytes_received > 0) {
-        DEBUG(" \n");
-        DEBUG(" %s Received %d bytes from MIHF\n", __FUNCTION__, nb_bytes_received);
+        DEBUG(" %s Received %d bytes\n", __FUNCTION__, nb_bytes_received);
         mRALlte_print_buffer((char*)g_msg_codec_recv_buffer, nb_bytes_received);
         total_bytes_to_decode += nb_bytes_received;
         BitBuffer_wrap(bb, g_msg_codec_recv_buffer, total_bytes_to_decode);
@@ -1296,7 +1287,6 @@ int mRALlte_mih_link_process_message(void){
             total_bytes_to_decode = 0;
         } else if ((status == MIH_MESSAGE_DECODE_TOO_SHORT)) {
         }
-        DEBUG(" \n");
     }
     free_BitBuffer(bb);
     return 0;

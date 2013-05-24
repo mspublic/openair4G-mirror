@@ -1,39 +1,10 @@
-/*******************************************************************************
+/*________________________mac_phy_primitives.h________________________
 
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2010 Eurecom
+ Authors : Hicham Anouar, Raymond Knopp
+ Company : EURECOM
+ Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
+________________________________________________________________*/
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-/*! \file defs.h
-* \brief mac phy interface primitives 
-* \author Raymond Knopp and Navid Nikaein
-* \date 2011
-* \version 0.5
-* @ingroup _mac
-
-*/
 
 #ifndef __MAC_PHY_PRIMITIVES_H__
 #    define __MAC_PHY_PRIMITIVES_H__
@@ -57,7 +28,7 @@
 typedef struct
   {
     /// Pointer function that initializes L2
-    void (*macphy_init)(int eMBMS_active, u8 CBA_enabled);
+    void (*macphy_init)(int eMBMS_active);
 
     /// Pointer function that stops the low-level scheduler due an exit condition        
     void (*macphy_exit)(const char *);          
@@ -121,8 +92,6 @@ typedef struct
     /// Get MCH sdu and corresponding MCS for particular MBSFN subframe
     MCH_PDU* (*get_mch_sdu)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 #endif
-    // configure the cba rnti at the physical layer 
-    void (*phy_config_cba_rnti)(u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 num_active_cba_groups);
 
     // UE functions
 
@@ -145,7 +114,7 @@ typedef struct
 #endif
 
   /// Retrieve ULSCH sdu from MAC
-    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 subframe, u8 CH_index,u8 *ulsch_buffer,u16 buflen,u8 *access_mode);
+    void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 
     /// Retrieve RRCConnectionReq from MAC
     PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);

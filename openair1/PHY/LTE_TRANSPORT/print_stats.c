@@ -38,15 +38,11 @@
 * \warning
 */
 
-#include "PHY/LTE_TRANSPORT/proto.h"
-
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
-
-
-extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
+//extern int number_of_cards;
 
 #ifdef EXMIMO
 #ifdef DRIVER2013
@@ -60,11 +56,10 @@ extern int card;
 #endif
 #endif
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t mode, int input_level_dBm) {
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len, runmode_t mode, int input_level_dBm) {
 
-  u8 eNB=0;
+  u8 eNB=0,number_of_cards=1;
   u32 RRC_status;
-  int len=length;
 #ifdef EXMIMO
 #ifdef DRIVER2013
   exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
@@ -246,7 +241,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
   return len;
 } // is_clusterhead
 
-int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
+int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int l) {
 
   unsigned int success=0;
   u8 eNB,UE_id,i,j,number_of_cards=1;
@@ -257,7 +252,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
   if (phy_vars_eNB==NULL)
     return 0;
 
-  int len = length;
+  int len = l;
 
   //  if(phy_vars_eNB->frame==0){
   phy_vars_eNB->total_dlsch_bitrate = 0;//phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;

@@ -78,7 +78,6 @@
 #include "SRB-ToAddModList.h"
 #ifdef Rel10
 #include "MBMS-SessionInfoList-r9.h"
-#include "PMCH-InfoList-r9.h"
 #endif
 
 #define TRUE 0x01
@@ -104,8 +103,7 @@ typedef struct pdcp_t {
   u8 rlc_mode; 
   u8 status_report;
   u8 seq_num_size;
-
-  u8 lcid; 
+  
   /*
    * Sequence number state variables
    *
@@ -134,17 +132,10 @@ typedef struct pdcp_t {
    * which is not also a valid sequence number
    */
   short int first_missing_pdu;
+ // mbms active
+  uint8_t               MBMS_flag;
 } pdcp_t;
 
-typedef struct pdcp_mbms_t {
-  BOOL instanciated_instance;
- 
-  uint16_t service_id; 
-  uint32_t session_id; // lcid
-
-  uint16_t rb_id; 
-  
-} pdcp_mbms_t;
 /*
  * Following symbolic constant alters the behaviour of PDCP
  * and makes it linked to PDCP test code under targets/TEST/PDCP/
@@ -187,7 +178,7 @@ public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag,rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                                 mem_block_t* sdu_buffer, pdcp_t* test_pdcp_entity, list_t* test_list);)
 #else
 /*! \fn BOOL pdcp_data_req(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
@@ -207,12 +198,11 @@ public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_fla
 */
 public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, u32 muiP, u32 confirmP, sdu_size_t sdu_buffer_size, unsigned char* sdu_buffer, u8 mode);)
 
-/*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
+/*! \fn BOOL pdcp_data_ind(module_id_t, u32_t, u8_t, rb_id_t, sdu_size_t, unsigned char*)
 * \brief This functions handles data transfer indications coming from RLC
 * \param[in] module_id Module ID
 * \param[in] frame Frame number
 * \param[in] Shows if relevant PDCP entity is part of an eNB or a UE
-* \param[in] Tells if MBMS traffic
 * \param[in] rab_id Radio Bearer ID
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer Buffer carrying SDU
@@ -221,7 +211,7 @@ public_pdcp(BOOL pdcp_data_req (module_id_t module_id, u32_t frame, u8_t eNB_fla
 * \note None
 * @ingroup _pdcp
 */
-public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, u8_t MBMS_flagP, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
+public_pdcp(BOOL pdcp_data_ind (module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rab_id, sdu_size_t sdu_buffer_size, \
                                 mem_block_t* sdu_buffer, u8 is_data_plane);)
 #endif // PDCP_UNIT_TEST
 
@@ -251,7 +241,7 @@ public_pdcp(void rrc_pdcp_config_req (module_id_t module_id, u32 frame, u8_t eNB
 * \return     A status about the processing, OK or error code.
 */
 #ifdef Rel10
-public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list,PMCH_InfoList_r9_t*  pmch_InfoList_r9);)
+public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list, MBMS_SessionInfoList_r9_t  *mbms_SessionInfoList_r9);)
 #else
 public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list);)
 #endif
@@ -270,7 +260,7 @@ public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u
 * \param[in]  security_mode      set the integrity and ciphering algs
 * \return     A status about the processing, OK or error code.
 */
-public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index, rlc_mode_t rlc_mode, u32  action, u16 lc_id, u16 mch_id, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
+public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index, rlc_mode_t rlc_mode, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
 
 /*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused
@@ -338,7 +328,6 @@ typedef struct pdcp_missing_pdu_info_t {
 
 protected_pdcp(signed int             pdcp_2_nas_irq;)
 protected_pdcp(pdcp_t                 pdcp_array[MAX_MODULES][MAX_RB];)
-protected_pdcp(pdcp_mbms_t            pdcp_mbms_array[16][29];) // MAX_SERVICEx MAX_SESSION
 protected_pdcp(sdu_size_t             pdcp_output_sdu_bytes_to_write;)
 protected_pdcp(sdu_size_t             pdcp_output_header_bytes_to_write;)
 protected_pdcp(list_t                 pdcp_sdu_list;)

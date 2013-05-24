@@ -36,11 +36,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
 		       PMCH_InfoList_r9_t *pmch_InfoList
 #endif 
-#ifdef CBA
-		       ,
-		       u8 num_active_cba_groups,
-		       u16 cba_rnti
-#endif
 		       ) {
 
   int i;
@@ -270,31 +265,6 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     }
   }
  
-#endif
-#ifdef CBA
-  if (eNB_flag == 0){
-    if (cba_rnti) {
-      UE_mac_inst[Mod_id].cba_rnti[Mod_id%num_active_cba_groups] = cba_rnti;
-      LOG_D(MAC,"[UE %d] configure CBA group %d RNTI %x for eNB %d (total active cba group %d)\n", 
-	    Mod_id,Mod_id%num_active_cba_groups, cba_rnti,eNB_index,num_active_cba_groups);
-      mac_xface->phy_config_cba_rnti(Mod_id,eNB_flag,eNB_index,cba_rnti,num_active_cba_groups);
-    }
-  }else {
-    if (cba_rnti) {
-      LOG_D(MAC,"[eNB %d] configure CBA RNTI for UE  %d (total active cba groups %d)\n", 
-	      Mod_id, UE_id, num_active_cba_groups);
-      eNB_mac_inst[Mod_id].num_active_cba_groups=num_active_cba_groups;
-      for (i=0; i < num_active_cba_groups; i ++){
-	eNB_mac_inst[Mod_id].cba_rnti[i] = cba_rnti + i;
-	//only configure UE ids up to num_active_cba_groups 
-	//we use them as candidates for the transmission of dci format0)
-	mac_xface->phy_config_cba_rnti(Mod_id,eNB_flag,UE_id,cba_rnti + i,num_active_cba_groups );
-	LOG_D(MAC,"[eNB %d] configure CBA groups %d with RNTI %x for UE  %d (total active cba groups %d)\n", 
-	      Mod_id, i, eNB_mac_inst[Mod_id].cba_rnti[i],UE_id, num_active_cba_groups);
-      }
-    }
-  }
-
 #endif
 
   return(0);

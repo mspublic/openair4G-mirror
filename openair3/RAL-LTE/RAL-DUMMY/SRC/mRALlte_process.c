@@ -84,9 +84,7 @@ void IAL_integrate_measure(int measure, int i){
   //apply correction to get a value between 0-100 - now is linear
   new_integrated = (new_integrated*100)/MEAS_MAX_RSSI;
   // print result
-  #ifdef DEBUG_MRALU_MEASURES
-  DEBUG ("Integrate measure : old %d, new %d, integrated %d\n", ralpriv->last_meas_level[i], measure,new_integrated  );
-  #endif
+  DEBUG ("Integrate measure : old %d, new %d, integrated %d", ralpriv->last_meas_level[i], measure,new_integrated  );
   // store the result
   ralpriv->last_meas_level[i] =  measure;
   ralpriv->prev_integrated_meas_level[i] = ralpriv->integrated_meas_level[i];

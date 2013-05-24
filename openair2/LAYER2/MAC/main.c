@@ -81,8 +81,7 @@ void dl_phy_sync_success(unsigned char Mod_id,
   // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
   if (first_sync==1) {
     if( (layer2_init_UE(Mod_id)==-1) ||
-	(openair_rrc_ue_init(Mod_id,eNB_index)==-1) ) {
-	//(openair_rrc_lite_ue_init(Mod_id,eNB_index)==-1) ) {
+	(openair_rrc_lite_ue_init(Mod_id,eNB_index)==-1) ) {
       //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
   }
@@ -96,8 +95,7 @@ void dl_phy_sync_success(unsigned char Mod_id,
 void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   /***********************************************************************/
   LOG_I(MAC,"FRAME %d: Node %d, NO PHY SYNC to master\n",frame,Mod_id);
-  //if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
-  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_eNB_init(Mod_id)==-1)){
+  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
     //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
     }
 
@@ -134,7 +132,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 
 
 /***********************************************************************/
-int mac_top_init(int eMBMS_active, u8 cba_group_active){
+int mac_top_init(int eMBMS_active){
 /***********************************************************************/
   unsigned char  Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -172,7 +170,7 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active){
   if (Is_rrc_registered == 1){
     LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
-    openair_rrc_top_init(eMBMS_active, cba_group_active);
+    openair_rrc_top_init(eMBMS_active);
 #endif
   }
     else {
@@ -213,13 +211,11 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active){
       RA_template[j].RA_dci_fmt1        = format1A;
       RA_template[j].RA_dci_fmt2        = format1A;
     }
-    
-    memset (&eNB_mac_inst[i].eNB_stats,0,sizeof(eNB_STATS));
+
+
     UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
     for (j=0;j<NUMBER_OF_UE_MAX;j++) {
       UE_template[j].rnti=0;
-      // initiallize the eNB to UE statistics
-      memset (&eNB_mac_inst[i].eNB_UE_stats[j],0,sizeof(eNB_UE_STATS));
     }
   }
 
@@ -327,7 +323,7 @@ void mac_top_cleanup(void){
   free( Mac_rlc_xface);
 }
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_active) {
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active) {
 
 
 
@@ -404,9 +400,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->phy_config_sib13_eNB        = phy_config_sib13_eNB;
   mac_xface->phy_config_sib13_ue         = phy_config_sib13_ue;
 #endif
-#ifdef CBA
-  mac_xface->phy_config_cba_rnti        = phy_config_cba_rnti ;
-#endif 
+
   mac_xface->phy_config_meas_ue         = phy_config_meas_ue;
 
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
@@ -419,7 +413,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
-  mac_xface->macphy_init(eMBMS_active,cba_group_active);
+  mac_xface->macphy_init(eMBMS_active);
 
   //Mac_rlc_xface->Is_cluster_head[0] = 1;
   //Mac_rlc_xface->Is_cluster_head[1] = 0;
