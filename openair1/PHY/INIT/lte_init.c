@@ -555,18 +555,18 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
     
 }
 
-void  phy_config_cba_rnti (u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 num_active_cba_groups){
+void  phy_config_cba_rnti (u8 Mod_id,u8 eNB_flag, u8 index, u16 cba_rnti, u8 cba_group_id, u8 num_active_cba_groups){
   u8 i;
   
   if (eNB_flag == 0 ) {
     //LOG_D(PHY,"[UE %d] configure cba group %d with rnti %x, num active cba grp %d\n", index, index, cba_rnti, num_active_cba_groups);
     PHY_vars_UE_g[Mod_id]->ulsch_ue[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_UE_g[Mod_id]->ulsch_ue[index]->cba_rnti[Mod_id%num_active_cba_groups]=cba_rnti;
+    PHY_vars_UE_g[Mod_id]->ulsch_ue[index]->cba_rnti[cba_group_id]=cba_rnti;
   }else {
     //for (i=index; i < NUMBER_OF_UE_MAX; i+=num_active_cba_groups){
       //  LOG_D(PHY,"[eNB %d] configure cba group %d with rnti %x for UE %d, num active cba grp %d\n",Mod_id, i%num_active_cba_groups, cba_rnti, i, num_active_cba_groups);
     PHY_vars_eNB_g[Mod_id]->ulsch_eNB[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_eNB_g[Mod_id]->ulsch_eNB[index]->cba_rnti[index%num_active_cba_groups] = cba_rnti;
+    PHY_vars_eNB_g[Mod_id]->ulsch_eNB[index]->cba_rnti[cba_group_id] = cba_rnti;
       //}  
   }
 }

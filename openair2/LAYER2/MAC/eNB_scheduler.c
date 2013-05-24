@@ -478,8 +478,8 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	  mac_header_ptr += 3;//sizeof(SCH_SUBHEADER_LONG);
 	}
       }
-      LOG_D(MAC,"[eNB] sdu %d lcid %d length %d (offset now %d)\n",
-	    num_sdus,lcid,length,mac_header_ptr-mac_header);
+      LOG_D(MAC,"[eNB] sdu %d lcid %d tb_length %d length %d (offset now %d)\n",
+	    num_sdus,lcid,tb_length, length,mac_header_ptr-mac_header);
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
       num_sdus++;
