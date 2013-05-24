@@ -1787,7 +1787,7 @@ void schedule_ulsch_cba_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 fram
 	ULSCH_dci_tdd16->cqi_req  = 1;
 	
 	//add_ue_spec_dci
-	  add_common_dci(DCI_pdu,
+	add_common_dci(DCI_pdu,
 			ULSCH_dci_tdd16,
 			eNB_mac_inst[Mod_id].cba_rnti[cba_group],
 			sizeof(DCI0_5MHz_TDD_1_6_t),
@@ -1820,7 +1820,7 @@ void schedule_ulsch_cba_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 fram
       }
       *nCCE = (*nCCE) + (1<<aggregation) * num_cba_resources[cba_group];
       *nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
-      break;// for the moment only schedule one
+      //      break;// for the moment only schedule one
     }
   } 
 }
