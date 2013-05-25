@@ -1966,7 +1966,8 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	   mcs = round + 28; 
 	 LOG_D(MAC,"[eNB %d] ULSCH scheduler for CORNTI: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
 	 
-	
+	 LOG_N(MAC,"[eNB %d] Limit the MCS for the ULSCH collaborative links to 15 \n", Mod_id);
+	 mcs = 15;
   
 	 if ((ndi==1) && (mcs < 29)) {
 	   rb_table_index = 1;
@@ -4627,9 +4628,9 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
 #ifdef EXMIMO
   eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,15);
 #endif
-  
-  LOG_N(MAC,"limit the MCS for the collaborative links\n");
-  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,2);
+
+  LOG_N(MAC,"[eNB %d] Limit the MCS for the DLSCH collaborative links to 15 \n", Mod_id);
+  eNB_UE_stats->dlsch_mcs1 = 15;
   
   // Get candidate harq_pid from PHY
   mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);

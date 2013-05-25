@@ -454,7 +454,20 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 	if ((mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/)&& (frame > 110) ) { 
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
-	    //rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
+	    rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
+	    //rab_id = (MAX_NUM_RB * NUMBER_OF_UE_MAX) + VLID_OFFSET; 
+	    LOG_I(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
+	    pdcp_data_req(module_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_DATA_PDU);
+	    LOG_N(OTG,"Check if RLC is freeing the mem or not \n");
+	    // free(otg_pkt); // 
+	  }
+	} //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
+      }
+      for (dst_id = 0; dst_id < NB_eNB_INST; dst_id++) {
+	// generate traffic if the ue is rrc reconfigured state 
+	if ((frame > 200) ) { 
+	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
+	  if (otg_pkt != NULL) {
 	    rab_id = (MAX_NUM_RB * NUMBER_OF_UE_MAX) + VLID_OFFSET; 
 	    LOG_N(OTG,"RAB ID is set for the collaborative logical link (vLINK only) \n");
 	    LOG_I(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
