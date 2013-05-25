@@ -1797,8 +1797,8 @@ main (int argc, char **argv)
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   //Perform KPI measurements
-  // if (oai_emulation.info.otg_enabled==1)
-  //   kpi_gen();
+  if (oai_emulation.info.otg_enabled==1)
+    kpi_gen();
 
   // relase all rx state
   if (ethernet_flag == 1) {
