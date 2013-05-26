@@ -269,7 +269,6 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     msg("\n");
  
     vlid = mac_forwarding_get_vlid(cornti);
-    //dst_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,eNB_index,cornti);
     dst_cornti= mac_forwarding_get_output_CORNTI(Mod_id,0,vlid,cornti);
     dst_eNB = mac_forwarding_get_output_eNB(Mod_id,eNB_index,vlid);
     LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d, i_cornti %x -> o_cornti %x, src_eNB %d-> dst->eNB %d (%d bytes)\n", 
