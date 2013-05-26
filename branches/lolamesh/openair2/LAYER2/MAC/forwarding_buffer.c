@@ -660,7 +660,7 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
  
  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
  if ( (data == NULL) || (b_index == -1) ){
-	LOG_D(MAC,"[UE %d] mac_buffer_data_ind data==NULL\n");
+	LOG_D(MAC,"[UE %d] mac_buffer_data_ind data==NULL\n", Mod_id);
 	//LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
 	return 0 ;
  }
