@@ -334,7 +334,10 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   }
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ){
-  src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
+    if (rab_id < NUMBER_OF_UE_MAX * MAX_NUM_RB )
+      src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
+    else // fixme 
+      src_id =  (module_id ==0)? 1: 0;//((rab_id - (NUMBER_OF_UE_MAX * MAX_NUM_RB) - VLID_OFFSET ) 
   dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;
   ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
   LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
@@ -526,7 +529,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
 //OTG
 /*
   if ( eNB_flag == 0){
-    char *rx_packet_out;
+    char packet_out;
     rx_packet_out=check_packet(0, 0, frame, packet_gen(0, 0, 0, frame));
     if (rx_packet_out!=NULL){
       rx_packet_out=NULL;

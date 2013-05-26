@@ -240,7 +240,9 @@ char traffic_type[12];
 #else
 	LOG_I(OTG,"----------------------------------------------------------\n");
 	LOG_I(OTG,"Total Time= %d \n", otg_info->ctime);
-        if (i<NB_eNB_INST){
+	if ((i<NB_eNB_INST) && (j < NB_eNB_INST){
+	 LOG_I(OTG,"[%s] DL [eNB:%d, eNB:%d] \n",traffic_type, i, j);}
+        else if (i<NB_eNB_INST){
 	 LOG_I(OTG,"[%s] DL [eNB:%d, UE:%d] \n",traffic_type, i, j);}
 	else
 	  LOG_I(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
@@ -267,10 +269,12 @@ char traffic_type[12];
 	}
 	LOG_F(OTG,"----------------------------------------------------------\n");
 	LOG_F(OTG,"Total Time= %d \n", otg_info->ctime);
-	if (i<NB_eNB_INST){
-		LOG_F(OTG,"[%s] DL [eNB:%d, UE:%d] \n",traffic_type ,i, j);}
+	if (i<NB_eNB_INST && j < NB_eNB_INST){
+	  LOG_F(OTG,"[%s] DL [eNB:%d, eNB:%d] \n",traffic_type, i, j);}
+	else if (i<NB_eNB_INST){
+	  LOG_F(OTG,"[%s] DL [eNB:%d, UE:%d] \n",traffic_type ,i, j);}
 	else
-		LOG_F(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
+	  LOG_F(OTG,"[%s] UL [eNB:%d, UE:%d] \n",traffic_type, j, i);
 		LOG_F(OTG,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j]);
 		LOG_F(OTG,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j]);
 		LOG_F(OTG,"[%s] RTT MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j]);

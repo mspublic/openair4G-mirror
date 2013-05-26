@@ -1735,7 +1735,9 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
        
        LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
        
-	 
+       LOG_N(MAC,"[eNB %d] Limit the MCS for the ULSCH collaborative links to 15 \n", Mod_id);
+       mcs = 15;
+
        if((cooperation_flag > 0) && (next_ue == 1)) { // Allocation on same set of RBs
 	 rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms[Mod_id]->N_RB_UL, // RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c 
 					 ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
