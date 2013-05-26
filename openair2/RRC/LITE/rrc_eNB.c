@@ -1193,7 +1193,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u32 frame,u8
   for (i=0;i<MAX_NUM_CO_RB;i++) { // num max CODRB = 4
 
     if (eNB_rrc_inst[Mod_id].CODRB_config[i]) {
-      //TCS LOLAmesh
+
       DRB_id = (long)eNB_rrc_inst[Mod_id].CODRB_config[i]->drb_Identity - 1;
       logical_channel_id = ((u32)*eNB_rrc_inst[Mod_id].CODRB_config[i]->logicalChannelIdentity) + MAX_NUM_RB * NUMBER_OF_UE_MAX ;// + CO_LCID_SHIFT;
       

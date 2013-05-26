@@ -168,7 +168,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, u8_t 
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB AM\n", module_idP, rb_idP);
                     config_req_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 				      frame,
-                      eNB_flagP,
+				      eNB_flagP,
 				      module_idP,
 				      &rlc_infoP.rlc.rlc_am_info,
 				      rb_idP, rb_typeP);
@@ -177,7 +177,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, u32_t frame, u8_t 
                     LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d] MODIFY RB UM\n", module_idP, rb_idP);
                     config_req_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 				      frame,
-                      eNB_flagP,
+				      eNB_flagP,
 				      module_idP,
 				      &rlc_infoP.rlc.rlc_um_info,
 				      rb_idP, rb_typeP);

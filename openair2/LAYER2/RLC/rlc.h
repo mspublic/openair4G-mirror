@@ -162,7 +162,7 @@ typedef struct rlc_pointer_t {
 * \brief Structure to be instanciated to allocate memory for RLC protocol instances.
 */
 typedef struct rlc_t {
-    rlc_pointer_t        m_rlc_pointer[MAX_RB];                            /*!< \brief Link between radio bearer ID and RLC protocol instance. */
+    rlc_pointer_t        m_rlc_pointer[MAX_RAB];                            /*!< \brief Link between radio bearer ID and RLC protocol instance. */
     rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];     /*!< \brief RLC AM protocol instances. */
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];     /*!< \brief RLC UM protocol instances. */
     rlc_tm_entity_t      m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];     /*!< \brief RLC TM protocol instances. */
