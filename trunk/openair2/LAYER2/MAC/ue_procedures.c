@@ -1343,7 +1343,7 @@ int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   if (((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 )  ||
        (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 )  ||
        (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 )) ) {
-    UE_mac_inst[Mod_id].cba_last_access=frame*10+subframe;
+    //UE_mac_inst[Mod_id].cba_last_access=frame*10+subframe;
     return 1;
   } else {
     return 0;
