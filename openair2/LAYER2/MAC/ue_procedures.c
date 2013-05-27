@@ -942,7 +942,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   // Compute header length
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
-  
+
+#ifdef CBA  
   if (*access_mode==CBA_ACCESS){
     //if (UE_mac_inst[Mod_id].scheduling_info.LCID_status[DTCH] == LCID_EMPTY) 
     if (use_cba_access(Mod_id,frame,subframe,eNB_index)==0){
@@ -951,6 +952,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
     }
     LOG_D(MAC,"[UE %d] frame %d subframe %d CBA transmission oppurtunity, tbs %d\n", Mod_id, frame, subframe,buflen);
   }
+#endif
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   dcch1_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
   // hypo length,in case of long header skip the padding byte
@@ -1335,6 +1337,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   }
 
 // to be improved
+#ifdef CBA
 int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   
   if (((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 )  ||
@@ -1355,6 +1358,7 @@ int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   }
   */
 }
+#endif
 
 int get_bsr_lcgid (u8 Mod_id){
   int lcgid, lcgid_tmp=-1;
