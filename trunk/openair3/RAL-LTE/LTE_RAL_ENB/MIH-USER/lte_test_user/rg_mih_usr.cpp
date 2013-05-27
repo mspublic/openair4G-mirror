@@ -671,9 +671,11 @@ void mih_user::receive_MIH_Link_Up_indication(odtone::mih::message& msg)
 	log_(0, "MIH_Link_Up.indication - RECEIVED - Begin\n");
 
 	odtone::mih::link_tuple_id link;
+//        odtone::mih::tlv_old_access_router oldAR;
 
 	msg >> 	odtone::mih::indication()
 	  & odtone::mih::tlv_link_identifier(link);
+//          & odtone::mih::tlv_old_access_router(oar);
 
 	log_(0, "[MSC_MSG]["+getTimeStamp4Log()+"]["+ msg.source().to_string() +"][--- MIH_Link_Up.indication --->]["+msg.destination().to_string()+"]\n");
 
@@ -889,7 +891,8 @@ void mih_user::receive_MIH_Event_Subscribe_confirm(odtone::mih::message& msg)
 	}
 	log_(0, "");
 
-	mih_user::send_MIH_Link_Actions_request(link, odtone::mih::link_ac_type_link_activate_resources);
+	//mih_user::send_MIH_Link_Actions_request(link, odtone::mih::link_ac_type_link_activate_resources);
+	log_(0, "TEMP : Resource scenario deactivated\n");
 
 	log_(0, "MIH_Event_Subscribe.confirm - End\n");
 }
@@ -999,7 +1002,7 @@ void mih_user::send_MIH_Link_Actions_request(const odtone::mih::link_id& link, o
 	odtone::mih::qos qos;		// Class Of Service
 	qos.value     = 56;
 	res.qos_val   = qos;
-        res.fid = 555;
+        res.fid = 555 + _current_link_action_request;
 
 // 	// Flow identifier
 // 	res.fid.src.ip = _mihf_ip;

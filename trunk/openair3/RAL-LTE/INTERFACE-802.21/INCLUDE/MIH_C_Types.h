@@ -722,6 +722,7 @@ TYPEDEF_ENUMERATED(MIH_C_BOOLEAN)
             ERR(" DATA_TYPE_NAME ## _set String length out of bounds\n");\
             octet_strP->length = 0;\
         } else {\
+            DEBUG_ENCODE("%s: Length %d MAX LENGTH %d\n", __FUNCTION__, lengthP, MAX_LENGTH);\
             octet_strP->length = lengthP;\
             memcpy((char *)octet_strP->val, (char *)strP, lengthP);\
         }\
@@ -1111,11 +1112,12 @@ TYPEDEF_ENUMERATED(MIH_C_PROTO)
 * \brief Five tuple, consisting on the source and destination address
 * and ports plus the transport protocol used.
 */
-typedef struct MIH_C_FLOW_ID {
+/*typedef struct MIH_C_FLOW_ID {
     MIH_C_IP_TUPLE_T              source_addr;
     MIH_C_IP_TUPLE_T              dest_addr;
     MIH_C_PROTO_T                 transport_protocol;
-} MIH_C_FLOW_ID_T;
+} MIH_C_FLOW_ID_T;*/
+TYPEDEF_UNSIGNED_INT4(MIH_C_FLOW_ID)
 //-------------------------------------------
 /*! \struct MIH_C_MARK_T
 * \ingroup MIH_C_MEDIEVAL_EXTENSIONS

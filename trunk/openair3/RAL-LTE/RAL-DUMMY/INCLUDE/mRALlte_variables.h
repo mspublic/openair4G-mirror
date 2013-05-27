@@ -51,8 +51,6 @@
 struct ral_lte_priv {
    // only to call ralu_verifyPendingConnection
    u8 pending_req_flag;
-
-
 // network parameters
    u16 cell_id;
    u16 nas_state;
@@ -103,12 +101,9 @@ struct ral_lte_priv {
    MIH_C_LINK_EVENT_LIST_T         mih_supported_link_event_list;
    // Initialised, then read-only
    MIH_C_LINK_CMD_LIST_T           mih_supported_link_command_list;
-
-
    LIST(MIH_C_LINK_CFG_PARAM, mih_link_cfg_param_thresholds);
    // to tell what are the configured thresholds in mih_link_cfg_param_thresholds_list
    MIH_C_BOOLEAN_T                 active_mih_link_cfg_param_threshold[MIH_C_LINK_CFG_PARAM_LIST_LENGTH];
-
    MIH_C_BOOLEAN_T                 link_to_be_detected;
 };
 

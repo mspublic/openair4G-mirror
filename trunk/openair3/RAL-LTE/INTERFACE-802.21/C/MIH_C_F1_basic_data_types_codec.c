@@ -215,7 +215,9 @@ inline void MIH_C_LIST_LENGTH_encode(Bit_Buffer_t* bbP, u_int16_t lengthP) {
     unsigned int num_more_bytes;
     int          length;
     if (lengthP <= 128) {
+        #ifdef DEBUG_TRACE_DETAILS
         DEBUG_ENCODE("%s: Length %02X\n", __FUNCTION__, lengthP);
+        #endif
         BitBuffer_write8(bbP, (MIH_C_UNSIGNED_INT1_T)lengthP);
     } else {
         num_more_bytes = (lengthP - 128) / 255;
@@ -265,10 +267,14 @@ inline void MIH_C_LIST_LENGTH_decode(Bit_Buffer_t* bbP, u_int16_t *lengthP) {
             *lengthP = *lengthP + BitBuffer_read(bbP, sizeof(MIH_C_UNSIGNED_INT1_T)*8);
             num_more_bytes = num_more_bytes - 1;
         }
+        #ifdef DEBUG_TRACE_DETAILS
         DEBUG_DECODE("%s: Length %d \n", __FUNCTION__, *lengthP);
+        #endif
     } else {
         *lengthP = byte1;
+        #ifdef DEBUG_TRACE_DETAILS
         DEBUG_DECODE("%s: Length %d \n", __FUNCTION__, *lengthP);
+        #endif
     }
 }
 
