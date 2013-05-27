@@ -78,7 +78,7 @@ install_oai_user:
 	insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko
 
 updatefw:
-	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr/main -s 0x43fffff0 
+	USERSPACE_TOOLS/OAI_FW_INIT/updatefw -f $$OPENAIR0_DIR/express-mimo/software/sdr_exmimo2/main -s 0x43fffff0 
 
 boot_exmimo:
 	sudo make install_oai_user

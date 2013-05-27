@@ -6418,14 +6418,13 @@ int main(int argc, char**argv) {
   dft64((int16_t *)x,(int16_t *)y,1);
   dft64((int16_t *)x,(int16_t *)y,1); 
   reset_meas(&ts);
-  start_meas(&ts);
   for (i=0;i<1000;i++) {
-
+    start_meas(&ts);
     dft64((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
 
   }
-  stop_meas(&ts);
-  printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials/1000);
+  printf("\n\n64-point (%f cycles)\n",(double)ts.diff/(double)ts.trials);
   /*printf("X: ");
   for (i=0;i<16;i++)
     printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);

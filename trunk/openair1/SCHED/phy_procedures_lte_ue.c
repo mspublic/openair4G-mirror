@@ -576,8 +576,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   u8 generate_ul_signal = 0;
   u8 ack_status=0;
   s8 Po_PUCCH;
-  s32 ulsch_start=0;//,ulsch_end=0,overflow=0;
-  //  int k,l;
+  s32 ulsch_start=0;
+#ifdef EXMIMO
+  int ulsch_end=0,overflow=0;
+  int k,l;
+#endif
+
 
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_IN);
@@ -1279,6 +1283,7 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
     
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
 #ifdef EXMIMO //this is the EXPRESS MIMO case
+      int i;
       // set the whole tx buffer to RX
       for (i=0;i<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti;i++)
 	phy_vars_ue->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
@@ -1297,6 +1302,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
   //  int aa;
 #if defined(EXMIMO) && defined(DRIVER2013)
   exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
+  int aa;
 #endif
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
