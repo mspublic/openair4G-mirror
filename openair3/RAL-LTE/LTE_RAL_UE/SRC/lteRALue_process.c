@@ -268,6 +268,7 @@ int rallte_NAS_corresponding_cell(int req_index)
 void rallte_verifyPendingConnection(void){
 //---------------------------------------------------------------------------
     int if_ready = 0;
+    MIH_C_LINK_TUPLE_ID_T               link_identifier;
 
     if ((ralpriv->pending_req_flag)%5==0){
         DEBUG("**\n");
@@ -294,6 +295,15 @@ void rallte_verifyPendingConnection(void){
                 ralpriv->pending_req_ac_result = MIH_C_LINK_AC_RESULT_FAILURE;
              }
             mRALlte_send_link_action_confirm(&ralpriv->pending_req_transaction_id, &ralpriv->pending_req_status, NULL, &ralpriv->pending_req_ac_result);
+
+            /*
+            //alternative : send linkup
+            link_identifier.link_id.link_type        = MIH_C_WIRELESS_UMTS;
+            link_identifier.link_id.link_addr.choice = (MIH_C_CHOICE_T)MIH_C_CHOICE_3GPP_ADDR;
+            MIH_C_3GPP_ADDR_set(&link_identifier.link_id.link_addr._union._3gpp_addr, (u_int8_t*)&(ralpriv->ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
+            link_identifier.choice                   = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
+            mRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &link_identifier, NULL, NULL, NULL, NULL);
+            */
 
             DEBUG("After response, Pending Req Flag = %d, cell_id = %d\n", ralpriv->pending_req_flag, ralpriv->cell_id);
             ralpriv->pending_req_flag = 0;
