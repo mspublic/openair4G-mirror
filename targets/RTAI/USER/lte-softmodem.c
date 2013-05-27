@@ -1247,7 +1247,10 @@ int main(int argc, char **argv) {
   p_exmimo_config->framing.eNB_flag   = !UE_flag;
   p_exmimo_config->framing.tdd_config = 0;
   carrier_freq[0] = 0; //don't use this LIME for card 1
+  carrier_freq[2] = 0; //don't use this LIME for card 1
+  carrier_freq[3] = 0; //don't use this LIME for card 1
   for (ant = 0; ant<4; ant++) { 
+    p_exmimo_config->rf.do_autocal[ant] = 1;
     p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];
     p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
     p_exmimo_config->rf.rx_gain[ant][0] = rxgain[ant];
@@ -1284,13 +1287,17 @@ int main(int argc, char **argv) {
 
   openair0_dump_config(card);
 
+  for (ant=0;ant<4;ant++)
+    p_exmimo_config->rf.do_autocal[ant] = 0;
+
   dump_frame_parms(frame_parms);
   
   mac_xface = malloc(sizeof(MAC_xface));
   
 #ifdef OPENAIR2
   int eMBMS_active=0;
-  l2_init(frame_parms,eMBMS_active);
+  l2_init(frame_parms,eMBMS_active,
+	  0); // cba_group_active
   if (UE_flag == 1)
     mac_xface->dl_phy_sync_success (0, 0, 0, 1);
   else

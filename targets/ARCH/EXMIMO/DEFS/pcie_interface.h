@@ -231,42 +231,43 @@ typedef struct
 
 typedef struct
 {
-    uint32_t rf_freq_rx[MAX_ANTENNAS];
-    uint32_t rf_freq_tx[MAX_ANTENNAS];
-
-    // TX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
-    uint32_t tx_gain[MAX_ANTENNAS][2];
-
-    // RX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
-    uint32_t rx_gain[MAX_ANTENNAS][2];
-
-    //LIME RF modes
-    // 21    | 20:19 | 18:16 |15:14  | 13:12|11:8 |  7    |6:3  |2      |1   |0   |
-    // TXBYP | RXBYP | RF/BB |LNAMode| LNA  |RXLPF|RXLPFen|TXLPF|TXLPFen|TXen|RXen|
-    uint32_t rf_mode[MAX_ANTENNAS];
-
-    // LIME LO Calibration Constants
-    // | RXLOQ | RXLOI | TXLOQ | TXLOI |
-    // | 23:18 | 17:12 | 11:6  | 5:0   |
-    uint32_t rf_local[MAX_ANTENNAS];
-
-    // LIME RX DC OFFSET
-    // | RXDCQ | RXDCI |
-    // | 15:8  | 7:0   |
-    uint32_t rf_rxdc[MAX_ANTENNAS];
-
-    // LIME VCO Calibration Constants
-    // | RXVCOCAP | TXVCOCAP |
-    // | 11:6     | 5:0      |
-    uint32_t rf_vcocal[MAX_ANTENNAS];
-    
-    // External RF Frontend, as used on ExpressMIMO-2
-    uint32_t rffe_gain_txlow[MAX_ANTENNAS];
-    uint32_t rffe_gain_txhigh[MAX_ANTENNAS];
-    uint32_t rffe_gain_rxfinal[MAX_ANTENNAS];
-    uint32_t rffe_gain_rxlow[MAX_ANTENNAS];
-    uint32_t rffe_band_mode[MAX_ANTENNAS];
-
+  uint32_t do_autocal[MAX_ANTENNAS];
+  uint32_t rf_freq_rx[MAX_ANTENNAS];
+  uint32_t rf_freq_tx[MAX_ANTENNAS];
+  
+  // TX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
+  uint32_t tx_gain[MAX_ANTENNAS][2];
+  
+  // RX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
+  uint32_t rx_gain[MAX_ANTENNAS][2];
+  
+  //LIME RF modes
+  // 21    | 20:19 | 18:16 |15:14  | 13:12|11:8 |  7    |6:3  |2      |1   |0   |
+  // TXBYP | RXBYP | RF/BB |LNAMode| LNA  |RXLPF|RXLPFen|TXLPF|TXLPFen|TXen|RXen|
+  uint32_t rf_mode[MAX_ANTENNAS];
+  
+  // LIME LO Calibration Constants
+  // | RXLOQ | RXLOI | TXLOQ | TXLOI |
+  // | 23:18 | 17:12 | 11:6  | 5:0   |
+  uint32_t rf_local[MAX_ANTENNAS];
+  
+  // LIME RX DC OFFSET
+  // | RXDCQ | RXDCI |
+  // | 15:8  | 7:0   |
+  uint32_t rf_rxdc[MAX_ANTENNAS];
+  
+  // LIME VCO Calibration Constants
+  // | RXVCOCAP | TXVCOCAP |
+  // | 11:6     | 5:0      |
+  uint32_t rf_vcocal[MAX_ANTENNAS];
+  
+  // External RF Frontend, as used on ExpressMIMO-2
+  uint32_t rffe_gain_txlow[MAX_ANTENNAS];
+  uint32_t rffe_gain_txhigh[MAX_ANTENNAS];
+  uint32_t rffe_gain_rxfinal[MAX_ANTENNAS];
+  uint32_t rffe_gain_rxlow[MAX_ANTENNAS];
+  uint32_t rffe_band_mode[MAX_ANTENNAS];
+  
 } exmimo_rf_t;
 
 

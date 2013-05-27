@@ -188,7 +188,8 @@ static void * dlsch_thread(void *param) {
                              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
                              dlsch_subframe[dlsch_thread_index],
                              harq_pid,
-                             1);
+                             1, // is_crnti
+			     0);  // llr8_flag
 
       	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
               phy_vars_ue->Mod_id,

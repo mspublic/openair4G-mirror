@@ -1,5 +1,7 @@
-fc = 1907600000;
+fc  = 2660000000;
+%fc  = 1907600000;
 %fc = 859.5e6;
+
 rxgain=30;
 txgain=20;
 eNB_flag = 0;
@@ -16,17 +18,19 @@ rf_local = [8254744   8255063   8257340   8257340]; %eNB2tx 1.9GHz
 %rf_local  = rf_local * ones(1,4);
 rf_rxdc = rf_rxdc * ones(1,4);
 %rf_vcocal = rf_vcocal_859 * ones(1,4);
-rf_vcocal = rf_vcocal_19G * ones(1,4);
+%rf_vcocal = rf_vcocal_19G * ones(1,4);
+rf_vcocal = rf_vcocal_26G_eNB * ones(1,4);
 rxgain = rxgain*ones(1,4);
 txgain = txgain*ones(1,4);
-freq_tx = fc*[1 1 1 1];
-freq_rx = freq_tx;
+freq_tx = fc*[0 1 1 1];
+%freq_rx = freq_tx;
+freq_rx = freq_tx-120000000*[0 1 1 1];
 %freq_tx = freq_rx+1920000;
 tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
 syncmode = SYNCMODE_FREE;
 rffe_rxg_low = 61*[1 1 1 1];
 rffe_rxg_final = 61*[1 1 1 1];
-rffe_band = 19G*[1 1 1 1];
+rffe_band = B19G_TDD*[1 1 1 1];
 
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 amp = pow2(14)-1;

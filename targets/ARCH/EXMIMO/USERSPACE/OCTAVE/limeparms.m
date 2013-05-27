@@ -85,8 +85,10 @@ rf_vcocal_19G = ((0xE)*(2^6)) + (0xE); % VCO calibration values for 1.9 GHz
 rf_vcocal_700 = ((0x24)*(2^6)) + (0x24); % 700 MHz
 rf_vcocal_850 = ((0x1d)*(2^6)) + (0x1d); %850 MHz
 rf_vcocal_859 = ((31)*(2^6)) + (31); %859.5 MHz
-rf_vcocal_26G_eNB = ((0x1f)*(2^6)) + (0x13); 
-rf_vcocal_26G_UE  = ((0x13)*(2^6)) + (0x1f);
+%rf_vcocal_26G_eNB = ((0x1f)*(2^6)) + (0x13); 
+%rf_vcocal_26G_UE  = ((0x13)*(2^6)) + (0x1f);
+rf_vcocal_26G_UE = ((0x3)*(2^6)) + (0x26); 
+rf_vcocal_26G_eNB  = ((0x26)*(2^6)) + (0x0); 
 
 % register values and masks for tdd_config
 DUPLEXMODE_MASK   = 1*(2^0);
