@@ -158,8 +158,12 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
       if ((ralpriv->mt[mt_ix].num_class - previous_num_class)&&(list[mt_ix].state == NAS_CX_DCH)){
          DEBUG ("\n\n");
          DEBUG (" MOBILE TERMINAL %d IS NOW COMPLETELY CONNECTED.\n\n",mt_ix);
-         // send linkup
-         eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, NULL, NULL, NULL);
+         // send linkup: new_ar will contain the address from the MT
+         new_ar.choice = MIH_C_CHOICE_3GPP_ADDR;
+         MIH_C_3GPP_ADDR_set(&(new_ar._union._3gpp_addr), (u_int8_t*)&(ralpriv->mt[mt_ix].ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
+
+         eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, &new_ar, NULL, NULL);
+         //eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, NULL, NULL, NULL);
       }
     }else{
       // MT unknown or different
@@ -196,20 +200,6 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
           //ltid = &ralpriv->mt[mt_ix].ltid;
           DEBUG (" MOBILE TERMINAL %d IS COMPLETELY CONNECTED.\n\n",mt_ix);
           // new_ar will contain the address from the MT
-          /*MIH_C_LINK_ADDR_T new_ar;
-typedef struct MIH_C_LINK_ADDR {
-    MIH_C_CHOICE_T               choice;
-    union  {
-        MIH_C_MAC_ADDR_T         mac_addr;
-        MIH_C_3GPP_3G_CELL_ID_T  _3gpp_3g_cell_id;
-        MIH_C_3GPP_2G_CELL_ID_T  _3gpp_2g_cell_id;
-        MIH_C_3GPP_ADDR_T        _3gpp_addr;
-        MIH_C_3GPP2_ADDR_T       _3gpp2_addr;
-        MIH_C_OTHER_L2_ADDR_T    other_l2_addr;
-    } _union;
-} MIH_C_LINK_ADDR_T;
-
-          */
           new_ar.choice = MIH_C_CHOICE_3GPP_ADDR;
           MIH_C_3GPP_ADDR_set(&(new_ar._union._3gpp_addr), (u_int8_t*)&(ralpriv->mt[mt_ix].ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
 
