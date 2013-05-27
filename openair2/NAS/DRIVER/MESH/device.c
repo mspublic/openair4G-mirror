@@ -51,6 +51,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
+#include <linux/moduleparam.h>
 
 #include <asm/io.h>
 #include <asm/bitops.h>
@@ -308,7 +309,9 @@ static const struct net_device_ops nasmesh_netdev_ops = {
 	.ndo_start_xmit		= nas_hard_start_xmit,
 	.ndo_validate_addr	= NULL,
 #ifdef  KERNEL_VERSION_GREATER_THAN_32
+#ifndef KERNEL_VERSION_GREATER_THAN_301
 	.ndo_set_multicast_list	= NULL,
+#endif
 #endif
 	.ndo_set_mac_address	= NULL,
 	.ndo_set_config     = nas_set_config,
@@ -563,9 +566,11 @@ MODULE_PARM_DESC(nas_IMEI,"The IMEI Hardware address (64-bit, decimal nibbles)")
 module_param(nas_is_clusterhead,uint,0444);
 MODULE_PARM_DESC(nas_is_clusterhead,"The Clusterhead Indicator");
 
+#ifndef KERNEL_VERSION_GREATER_THAN_301
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
 MODULE_AUTHOR(DRV_AUTHOR);
+#endif
 #endif
 
 

@@ -135,7 +135,6 @@ static int __init openair_init_module( void )
             return -ENODEV;
         }
         else {
-            printk("[openair][INIT_MODULE][INFO]: *** CARD DEVICE %d (pdev=%p) ENABLED, irq %d\n",card,pdev[card],irq);
             printk("[openair][INIT_MODULE][INFO]: *** CARD DEVICE %d (pdev=%p) ENABLED, irq %d\n",card,pdev[card],pdev[card]->irq);
             openair_pci_device_enabled[card] = 1;
         }
