@@ -130,10 +130,8 @@
 #define LCGID2 2
 #define LCGID3 3
 
-
 #define LCID_EMPTY 0
 #define LCID_NOT_EMPTY 1
-
 
 typedef enum {
   CONNECTION_OK=0,
@@ -221,6 +219,8 @@ typedef struct {
   u32 Buffer_size0:6;
   u32 padding:8;
 } __attribute__((__packed__))BSR_LONG;
+
+#define BSR_LONG_SIZE  (sizeof(BSR_LONG))
 
 typedef struct {
   u8 TA:6;
@@ -492,14 +492,13 @@ typedef struct{
   //Resource Block indication for each sub-band in MU-MIMO 
   u8 rballoc_subband[8][50];
 
-
   // Logical channel info for link with RLC
-  
-  /// UE BSR info for each logical channel
-  u8 bsr_info[MAX_NUM_LCID]; 
-  
-  /// phr information 
-   u8 phr_info; 
+
+  /// UE BSR info for each logical channel group id
+  u8 bsr_info[MAX_NUM_LCGID];
+
+  /// phr information
+  u8 phr_info;
 
   //dl buffer info
   u32_t dl_buffer_info[MAX_NUM_LCID];
