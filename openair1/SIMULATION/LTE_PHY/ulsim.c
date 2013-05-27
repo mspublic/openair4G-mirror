@@ -670,6 +670,7 @@ int main(int argc, char **argv) {
 				    SI_RNTI,
 				    0,
 				    P_RNTI,
+				    CBA_RNTI,
 				    0,
 				    srs_flag);
 
@@ -684,6 +685,7 @@ int main(int argc, char **argv) {
 				     SI_RNTI,
 				     0,
 				     P_RNTI,
+				     CBA_RNTI,
 				     srs_flag);
 
 
@@ -868,6 +870,7 @@ int main(int argc, char **argv) {
 	    if (ulsch_encoding(input_buffer,
 			       PHY_vars_UE,
 			       harq_pid,
+			       eNB_id,
 			       2, // transmission mode
 			       control_only_flag,
 			       1// Nbundled
