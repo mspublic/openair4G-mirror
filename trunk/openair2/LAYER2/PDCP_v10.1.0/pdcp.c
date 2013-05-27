@@ -112,14 +112,13 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
   }
 
   // PDCP transparent mode for MBMS traffic 
-  if (mode == PDCP_TM) {   
-    LOG_D(PDCP, "Asking for a new mem_block of size %d\n", pdcp_pdu_size);
+
+  if (mode == PDCP_TM) { 
+    LOG_D(PDCP, "Asking for a new mem_block of size %d\n",sdu_buffer_size);
     pdcp_pdu = get_free_mem_block(sdu_buffer_size);
-    if (pdcp_pdu != NULL) 
-      memcpy(&pdcp_pdu->data, sdu_buffer, sdu_buffer_size); 
-    
-    rlc_status = rlc_data_req(module_id, frame, eNB_flag, RLC_MBMS_YES, rb_id, muiP, confirmP, sdu_buffer_size, pdcp_pdu);
-    
+    if (pdcp_pdu != NULL)
+      memcpy(&pdcp_pdu->data[0], sdu_buffer, sdu_buffer_size);
+    rlc_status = rlc_data_req(module_id, frame, eNB_flag, RLC_MBMS_YES, rb_id, muiP, confirmP, sdu_buffer_size,pdcp_pdu);
   } else {
     // calculate the pdcp header and trailer size
     if ((rb_id % NB_RB_MAX) < DTCH) {
@@ -370,6 +369,8 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
       }else {
 #ifdef Rel10
 	src_id = (rb_id - MTCH  - 3 - maxDRB) / maxSessionPerPMCH  /*- NB_eNB_INST */ ;
+	//dst_id is now = module_id (supoosed to be 1 for UE), take the same as module from rlc_data_ind
+	// dst_id generated data from OTG is is 1 (session_id)
 #endif
       }
       
@@ -480,6 +481,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
     */
     // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
 #if defined(USER_MODE) && defined(OAI_EMU)
+
     if (oai_emulation.info.otg_enabled ==1 ){
       module_id = (eNB_flag == 1) ? eNB_index : UE_index + NB_eNB_INST;
       src_id = module_id;
@@ -499,17 +501,24 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 	  } //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
 	}
 #ifdef Rel10
+	// if (frame > 100) {
 	// MBSM multicast traffic 
-	for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
-	  for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
-	    if (pdcp_mbms_array[service_id][session_id].instanciated_instance== module_id + 1 ){ // this service/session is configured
-	      // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
-	      rb_id = pdcp_mbms_array[service_id][session_id].rb_id;
-	      otg_pkt=(u8*) packet_gen_multicast(module_id, session_id, ctime, &pkt_size);
-	      if (otg_pkt != NULL) {
-		LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, session_id, pkt_size);
-		pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
+	if (frame > 48) {// only generate when UE can receive MTCH (need to control this value, set 50 for the moment)
+	  for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
+	    for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
+	      //   LOG_I(OTG,"DUY:frame %d, pdcp_mbms_array[module_id][rb_id].instanciated_instance is %d\n",frame,pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance);
+	      if ((pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance== module_id + 1) && (eNB_flag == 1)){ // this service/session is configured
+		// LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
+		// Duy add
+		//LOG_I(OTG, "frame %d, multicast packet gen for (service/mch %d, session/lcid %d, rb_id %d)\n",frame, service_id, session_id,service_id*maxSessionPerPMCH + session_id);
+		// end Duy add
+		rb_id = pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].rb_id;
+		otg_pkt=(u8*) packet_gen_multicast(module_id, session_id, ctime, &pkt_size);
+		if (otg_pkt != NULL) {
+		  LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, session_id, pkt_size);
+		  pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
 		free(otg_pkt);
+		}
 	      }
 	    }
 	  }
@@ -562,225 +571,229 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 
   }
 
-  BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, 
-				 SRB_ToAddModList_t* srb2add_list, 
-				 DRB_ToAddModList_t* drb2add_list, 
-				 DRB_ToReleaseList_t*  drb2release_list
+BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index, 
+			       SRB_ToAddModList_t* srb2add_list, 
+			       DRB_ToAddModList_t* drb2add_list, 
+			       DRB_ToReleaseList_t*  drb2release_list
 #ifdef Rel10
-				 ,PMCH_InfoList_r9_t*  pmch_InfoList_r9
+			       ,PMCH_InfoList_r9_t*  pmch_InfoList_r9
 #endif
-				 ){
-
-    long int        rb_id        = 0;
-    long int        lc_id        = 0;
-    long int        srb_id        = 0;
-    long int        mch_id         = 0;
-    rlc_mode_t      rlc_type    = RLC_NONE;
-    DRB_Identity_t  drb_id       = 0;
-    DRB_Identity_t* pdrb_id      = NULL;
-    u8              drb_sn       = 0;
-    u8              srb_sn       = 5; // fixed sn for SRBs
-    u8              drb_report   = 0;
-    long int        cnt          = 0;
-    int i,j;
-    u8 header_compression_profile = 0;
-    u32 action                   = ACTION_ADD;
-    SRB_ToAddMod_t* srb_toaddmod = NULL;
-    DRB_ToAddMod_t* drb_toaddmod = NULL;
-
+			       ){
+  
+  long int        rb_id        = 0;
+  long int        lc_id        = 0;
+  long int        srb_id        = 0;
+  long int        mch_id         = 0;
+  rlc_mode_t      rlc_type    = RLC_NONE;
+  DRB_Identity_t  drb_id       = 0;
+  DRB_Identity_t* pdrb_id      = NULL;
+  u8              drb_sn       = 0;
+  u8              srb_sn       = 5; // fixed sn for SRBs
+  u8              drb_report   = 0;
+  long int        cnt          = 0;
+  int i,j;
+  u8 header_compression_profile = 0;
+  u32 action                   = ACTION_ADD;
+  SRB_ToAddMod_t* srb_toaddmod = NULL;
+  DRB_ToAddMod_t* drb_toaddmod = NULL;
+  
 #ifdef Rel10
-    MBMS_SessionInfoList_r9_t	 *mbms_SessionInfoList_r9;
-    MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL;
+  MBMS_SessionInfoList_r9_t	 *mbms_SessionInfoList_r9;
+  MBMS_SessionInfo_r9_t	 *MBMS_SessionInfo= NULL;
 #endif
-
-    LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 for %s %d\n",module_id, 
-	  (eNB_flag == 1)? "eNB": "UE", index);
-    // srb2add_list does not define pdcp config, we use rlc info to setup the pdcp dcch0 and dcch1 channels
- 
-
-    if (srb2add_list != NULL) {
-      for (cnt=0;cnt<srb2add_list->list.count;cnt++) {
-	srb_id = srb2add_list->list.array[cnt]->srb_Identity;
-	rb_id = (index * NB_RB_MAX) + srb_id;
-	if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
-	  action = ACTION_MODIFY;
-	else 
-	  action = ACTION_ADD;
-	srb_toaddmod = srb2add_list->list.array[cnt];
-	rlc_type = RLC_MODE_AM;
-	if (srb_toaddmod->rlc_Config) {
-	  switch (srb_toaddmod->rlc_Config->present) {
-	  case SRB_ToAddMod__rlc_Config_PR_NOTHING:
-	    break;
-	  case SRB_ToAddMod__rlc_Config_PR_explicitValue:
-	    switch (srb_toaddmod->rlc_Config->choice.explicitValue.present) {
-	    case RLC_Config_PR_NOTHING:
-	      break;
-	    default:
-	      pdcp_config_req_asn1 (module_id,
-				    frame, 
-				    eNB_flag, // not really required
-				    index, // ue/enb index : used for log
-				    rlc_type,
-				    action, 
-				    lc_id,
-				    mch_id,
-				    rb_id,
-				    srb_sn,
-				    0, // drb_report
-				    0, // header compression
-				    0xff); //UNDEF_SECURITY_MODE
-	      break;
-	    }
-	    break;
-	  case SRB_ToAddMod__rlc_Config_PR_defaultValue:
-	    // already the default values 
-	    break;
-	  default:;
-	  }
-	}
-      }
-    }
-    // reset the action
- 
-    if (drb2add_list != NULL) {
-      for (cnt=0;cnt<drb2add_list->list.count;cnt++) {
-    
-	drb_toaddmod = drb2add_list->list.array[cnt];
-      
-	drb_id = drb_toaddmod->drb_Identity;
-      
-	if (drb_toaddmod->logicalChannelIdentity != null) {
-	  lc_id = *drb_toaddmod->logicalChannelIdentity;
-	} else {
-	  lc_id = -1;
-	}
-	rb_id =  (index * NB_RB_MAX) + lc_id;
-	if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
-	  action = ACTION_MODIFY;
-	else
-	  action = ACTION_ADD;
-	if (drb_toaddmod->pdcp_Config){
-	  if (drb_toaddmod->pdcp_Config->discardTimer) {
-	    // set the value of the timer
-	  }
-	  if (drb_toaddmod->pdcp_Config->rlc_AM) {
-	    drb_report = drb_toaddmod->pdcp_Config->rlc_AM->statusReportRequired;
-	    rlc_type =RLC_MODE_AM;
-	  }
-	  if (drb_toaddmod->pdcp_Config->rlc_UM){
-	    drb_sn = drb_toaddmod->pdcp_Config->rlc_UM->pdcp_SN_Size;
-	    rlc_type =RLC_MODE_UM;
-	  }
-	  switch (drb_toaddmod->pdcp_Config->headerCompression.present) {
-	  case PDCP_Config__headerCompression_PR_NOTHING:
-	  case PDCP_Config__headerCompression_PR_notUsed:
-	    header_compression_profile=0x0;
-	    break;
-	  case PDCP_Config__headerCompression_PR_rohc:
-	    // parse the struc and get the rohc profile
-	    if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0001)
-	      header_compression_profile=0x0001;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0002)
-	      header_compression_profile=0x0002;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0003)
-	      header_compression_profile=0x0003;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0004)
-	      header_compression_profile=0x0004;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0006)
-	      header_compression_profile=0x0006;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0101)
-	      header_compression_profile=0x0101;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0102)
-	      header_compression_profile=0x0102;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0103)
-	      header_compression_profile=0x0103;
-	    else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0104)
-	      header_compression_profile=0x0104;
-	    else {
-	      header_compression_profile=0x0;
-	      LOG_W(PDCP,"unknown header compresion profile\n");
-	    }
-	    // set the applicable profile
+  
+  LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 for %s %d\n",module_id, 
+	(eNB_flag == 1)? "eNB": "UE", index);
+  // srb2add_list does not define pdcp config, we use rlc info to setup the pdcp dcch0 and dcch1 channels
+  
+  
+  if (srb2add_list != NULL) {
+    for (cnt=0;cnt<srb2add_list->list.count;cnt++) {
+      srb_id = srb2add_list->list.array[cnt]->srb_Identity;
+      rb_id = (index * NB_RB_MAX) + srb_id;
+      if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
+	action = ACTION_MODIFY;
+      else 
+	action = ACTION_ADD;
+      srb_toaddmod = srb2add_list->list.array[cnt];
+      rlc_type = RLC_MODE_AM;
+      if (srb_toaddmod->rlc_Config) {
+	switch (srb_toaddmod->rlc_Config->present) {
+	case SRB_ToAddMod__rlc_Config_PR_NOTHING:
+	  break;
+	case SRB_ToAddMod__rlc_Config_PR_explicitValue:
+	  switch (srb_toaddmod->rlc_Config->choice.explicitValue.present) {
+	  case RLC_Config_PR_NOTHING:
 	    break;
 	  default:
-	    LOG_W(PDCP,"[MOD_id %d][RB %d] unknown drb_toaddmod->PDCP_Config->headerCompression->present \n",module_id,drb_id);
+	    pdcp_config_req_asn1 (module_id,
+				  frame, 
+				  eNB_flag, // not really required
+				  index, // ue/enb index : used for log
+				  rlc_type,
+				  action, 
+				  lc_id,
+				  mch_id,
+				  rb_id,
+				  srb_sn,
+				  0, // drb_report
+				  0, // header compression
+				  0xff); //UNDEF_SECURITY_MODE
+	    break;
 	  }
-	  pdcp_config_req_asn1 (module_id,
-				frame, 
-				eNB_flag, // not really required
-				index, 
-				rlc_type,
-				action, 
-				lc_id,
-				mch_id,
-				rb_id,
-				drb_sn,
-				drb_report,
-				header_compression_profile,
-				0xff);
+	  break;
+	case SRB_ToAddMod__rlc_Config_PR_defaultValue:
+	  // already the default values 
+	  break;
+	default:;
 	}
       }
     }
+  }
+  // reset the action
   
-    if (drb2release_list != NULL) {
-      for (cnt=0;cnt<drb2add_list->list.count;cnt++) {
-	pdrb_id = drb2release_list->list.array[cnt]; 
-	rb_id =  (index * NB_RB_MAX) + pdrb_id;
-	action = ACTION_REMOVE;
+  if (drb2add_list != NULL) {
+    for (cnt=0;cnt<drb2add_list->list.count;cnt++) {
+      
+      drb_toaddmod = drb2add_list->list.array[cnt];
+      
+      drb_id = drb_toaddmod->drb_Identity;
+      
+      if (drb_toaddmod->logicalChannelIdentity != null) {
+	lc_id = *drb_toaddmod->logicalChannelIdentity;
+      } else {
+	lc_id = -1;
+      }
+      rb_id =  (index * NB_RB_MAX) + lc_id;
+      if (pdcp_array[module_id][rb_id].instanciated_instance == module_id + 1)
+	action = ACTION_MODIFY;
+      else
+	action = ACTION_ADD;
+      if (drb_toaddmod->pdcp_Config){
+	if (drb_toaddmod->pdcp_Config->discardTimer) {
+	  // set the value of the timer
+	}
+	if (drb_toaddmod->pdcp_Config->rlc_AM) {
+	  drb_report = drb_toaddmod->pdcp_Config->rlc_AM->statusReportRequired;
+	    rlc_type =RLC_MODE_AM;
+	}
+	if (drb_toaddmod->pdcp_Config->rlc_UM){
+	  drb_sn = drb_toaddmod->pdcp_Config->rlc_UM->pdcp_SN_Size;
+	  rlc_type =RLC_MODE_UM;
+	}
+	switch (drb_toaddmod->pdcp_Config->headerCompression.present) {
+	case PDCP_Config__headerCompression_PR_NOTHING:
+	case PDCP_Config__headerCompression_PR_notUsed:
+	  header_compression_profile=0x0;
+	  break;
+	case PDCP_Config__headerCompression_PR_rohc:
+	  // parse the struc and get the rohc profile
+	  if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0001)
+	    header_compression_profile=0x0001;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0002)
+	    header_compression_profile=0x0002;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0003)
+	    header_compression_profile=0x0003;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0004)
+	    header_compression_profile=0x0004;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0006)
+	    header_compression_profile=0x0006;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0101)
+	    header_compression_profile=0x0101;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0102)
+	    header_compression_profile=0x0102;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0103)
+	    header_compression_profile=0x0103;
+	  else if(drb_toaddmod->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0104)
+	    header_compression_profile=0x0104;
+	  else {
+	    header_compression_profile=0x0;
+	    LOG_W(PDCP,"unknown header compresion profile\n");
+	  }
+	  // set the applicable profile
+	  break;
+	default:
+	  LOG_W(PDCP,"[MOD_id %d][RB %d] unknown drb_toaddmod->PDCP_Config->headerCompression->present \n",module_id,drb_id);
+	}
 	pdcp_config_req_asn1 (module_id,
 			      frame, 
 			      eNB_flag, // not really required
 			      index, 
-			      rlc_type, 
+			      rlc_type,
 			      action, 
 			      lc_id,
 			      mch_id,
 			      rb_id,
-			      0,
+			      drb_sn,
+			      drb_report,
+			      header_compression_profile,
+			      0xff);
+      }
+    }
+  }
+  
+  if (drb2release_list != NULL) {
+    for (cnt=0;cnt<drb2add_list->list.count;cnt++) {
+      pdrb_id = drb2release_list->list.array[cnt]; 
+      rb_id =  (index * NB_RB_MAX) + pdrb_id;
+      action = ACTION_REMOVE;
+      pdcp_config_req_asn1 (module_id,
+			    frame, 
+			    eNB_flag, // not really required
+			    index, 
+			    rlc_type, 
+			    action, 
+			    lc_id,
+			    mch_id,
+			    rb_id,
+			    0,
+			    0,
+			    0,
+			    0xff);
+    }
+  }
+  
+#ifdef Rel10 
+  if (pmch_InfoList_r9 != NULL){
+    for (i=0;i<pmch_InfoList_r9->list.count;i++){
+      mbms_SessionInfoList_r9 = &(pmch_InfoList_r9->list.array[i]->mbms_SessionInfoList_r9);
+      for (j=0;j<mbms_SessionInfoList_r9->list.count;j++) {
+	MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[j];
+	//lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
+	lc_id = MBMS_SessionInfo->sessionId_r9->buf[0];  
+	mch_id = MBMS_SessionInfo->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
+	                                                        // can set the mch_id = i
+	if (eNB_flag)
+	  rb_id =  (mch_id * maxSessionPerPMCH ) + lc_id ;
+	else 
+	  rb_id =  (mch_id * maxSessionPerPMCH ) + lc_id + (maxDRB + 3);
+	if (pdcp_mbms_array[module_id][rb_id].instanciated_instance == module_id + 1)
+	  action = ACTION_MBMS_MODIFY;
+	else 
+	  action = ACTION_MBMS_ADD;
+	
+	rlc_type = RLC_MODE_UM;
+	pdcp_config_req_asn1 (module_id,
+			      frame, 
+			      eNB_flag, // not really required
+			      index, 
+			      rlc_type,
+			      action, 
+			      lc_id,
+			      mch_id, 
+			      rb_id,
+			      0, // set to deafult
 			      0,
 			      0,
 			      0xff);
       }
     }
-
-#ifdef Rel10 
-    if (pmch_InfoList_r9 != NULL){
-      for (i=0;i<pmch_InfoList_r9->list.count;i++){
-	mbms_SessionInfoList_r9 = &(pmch_InfoList_r9->list.array[i]->mbms_SessionInfoList_r9);
-	for (j=0;j<mbms_SessionInfoList_r9->list.count;j++) {
-	  MBMS_SessionInfo = mbms_SessionInfoList_r9->list.array[j];
-	  //lc_id = MBMS_SessionInfo->logicalChannelIdentity_r9; // lcid
-	  lc_id = MBMS_SessionInfo->sessionId_r9->buf[0];  
-	  mch_id = MBMS_SessionInfo->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
-	  rb_id =  (mch_id * maxSessionPerPMCH ) + lc_id ; 
-	  if (pdcp_mbms_array[mch_id][lc_id].instanciated_instance == module_id + 1)
-	    action = ACTION_MBMS_MODIFY;
-	  else 
-	    action = ACTION_MBMS_ADD;
-	
-	  rlc_type = RLC_MODE_UM;
-	  pdcp_config_req_asn1 (module_id,
-				frame, 
-				eNB_flag, // not really required
-				index, 
-				rlc_type,
-				action, 
-				lc_id,
-				mch_id, 
-				rb_id,
-				0, // set to deafult
-				0,
-				0,
-				0xff);
-	}
-      }
-    }
-#endif
-
-    return 1;
-
   }
+#endif
+  
+  return 1;
+  
+}
 
 
   BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index,  
@@ -862,12 +875,12 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
       break;
     case ACTION_MBMS_ADD:
     case ACTION_MBMS_MODIFY:
-      pdcp_mbms_array[mch_id][lc_id].instanciated_instance = module_id + 1 ;
-      pdcp_mbms_array[mch_id][lc_id].service_id = mch_id; 
-      pdcp_mbms_array[mch_id][lc_id].session_id = lc_id;
-      pdcp_mbms_array[mch_id][lc_id].rb_id = rb_id;
-      LOG_I(PDCP,"[eNB %d] Config request : ACTION_MBMS_ADD: Frame %d service_id/mch index %d, session_id/lcid %d, rbid %d configured\n",
-	    module_id, frame, mch_id, lc_id, rb_id);
+      pdcp_mbms_array[module_id][rb_id].instanciated_instance = module_id + 1 ;
+      pdcp_mbms_array[module_id][rb_id].service_id = mch_id; 
+      pdcp_mbms_array[module_id][rb_id].session_id = lc_id;
+      pdcp_mbms_array[module_id][rb_id].rb_id = rb_id;
+      LOG_I(PDCP,"[%s %d] Config request : ACTION_MBMS_ADD: Frame %d service_id/mch index %d, session_id/lcid %d, rbid %d configured\n",
+	    (eNB_flag == 1) ? "eNB" : "UE", module_id, frame, mch_id, lc_id, rb_id);
       break;
     case ACTION_SET_SECURITY_MODE:
       if ((security_mode >= 0 ) && (security_mode <=0x77)) {
@@ -1012,8 +1025,8 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
       }
       
     }
-    for (i=0; i < 16; i++) { // MAX service 
-      for (j=0; j < 29; j++) { // max session 
+    for (i=0; i < MAX_MODULES; i++) { // MAX service 
+      for (j=0; j < 16*29; j++) { // max session 
 	memset((void*)&pdcp_mbms_array[i][j], 0, sizeof(pdcp_mbms_t));
       }
     }
