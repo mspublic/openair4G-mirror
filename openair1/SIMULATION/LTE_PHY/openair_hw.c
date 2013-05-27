@@ -43,6 +43,7 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms) {
 	 frame_parms->carrier_freq[0],frame_parms->carrier_freq[1],frame_parms->carrier_freq[2],frame_parms->carrier_freq[3],
 	 frame_parms->rxgain[0],frame_parms->rxgain[1],frame_parms->rxgain[2],frame_parms->rxgain[3]);
 
+
   fc = 0;
   
   printf("Opening /dev/openair0\n");
@@ -50,9 +51,11 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms) {
     fprintf(stderr,"Error %d opening /dev/openair0\n",openair_fd);
     exit(-1);
   }
-  
+
+
   ioctl(openair_fd,openair_DUMP_CONFIG,frame_parms);
   sleep(1);
+
 
   //    ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
   ioctl(openair_fd,openair_GET_VARS,&dummy_tx_rx_vars);
@@ -81,7 +84,7 @@ int setup_oai_hw(LTE_DL_FRAME_PARMS *frame_parms) {
     msg("Could not map physical memory\n");
     close(openair_fd);
     exit(-1);
-  }
+  } 
 
   return(openair_fd);
   
@@ -149,4 +152,20 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
 
 #ifdef OPENAIR_ITS
 
+void setup_dot11_buffers(s32 **rxdata,s32 **txdata,int antenna_index) {
+  int i;
+
+  printf("rxdata %p,txdata %p : Antenna %d\n",rxdata,txdata,antenna_index);
+  *rxdata = (s32*)((int)dummy_tx_rx_vars.RX_DMA_BUFFER[antenna_index]-bigphys_top+mem_base);
+  printf("rxdata @ %p\n",*rxdata);
+  *txdata = (s32*)((int)dummy_tx_rx_vars.TX_DMA_BUFFER[antenna_index]-bigphys_top+mem_base);
+  printf("txdata @ %p\n",*txdata);
+
+  for (i=0;i<76800;i++) {
+    if (i<1024)
+      ((uint32_t *)*txdata)[i] = 0x0;
+    else
+      ((uint32_t *)*txdata)[i] = 0x00010001;
+  }
+}
 #endif

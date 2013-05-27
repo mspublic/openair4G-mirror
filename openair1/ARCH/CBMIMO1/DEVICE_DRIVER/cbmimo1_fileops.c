@@ -982,6 +982,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.get_frame_done = 0;
       setup_regs(0,frame_parms);
       get_frame_cnt=0;
+      rt_enable_irq(pdev[0]->irq);
       printk("calling openair_dma(0,EXMIMO_GET_FRAME);\n");
       openair_dma(0,EXMIMO_GET_FRAME);
       
@@ -994,6 +995,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
         printk("TIMEOUT: GET_FRAME_DONE didn't arrive within 100ms.\n");
       rt_disable_irq(pdev[0]->irq);
 
+      rt_disable_irq(pdev[0]->irq);
       pci_dma_sync_single_for_cpu(pdev[0], 
 				  exmimo_pci_interface->rf.adc_head[0],
 				  76800*4, 
