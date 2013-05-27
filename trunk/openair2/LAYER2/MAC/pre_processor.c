@@ -123,7 +123,7 @@ void assign_rbs_required (unsigned char Mod_id,
 
  
   unsigned char next_ue,harq_pid=0,round=0;
-  u16 rnti,TBS;
+  u16 rnti,TBS = 0;
   LTE_eNB_UE_stats* eNB_UE_stats;
   mac_rlc_status_resp_t rlc_status;
   unsigned char UE_id,granted_UEs,i=0;  
@@ -217,17 +217,16 @@ void assign_rbs_required (unsigned char Mod_id,
       if (eNB_UE_stats->dlsch_mcs1==0) nb_rbs_required[next_ue] = 4;  // don't let the TBS get too small
       else nb_rbs_required[next_ue] = 2;
       
-      
-      TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]); 
+      TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]);
       
       while (TBS < eNB_mac_inst[Mod_id].UE_template[next_ue].dl_buffer_total)  {
 	nb_rbs_required[next_ue] += 2;  
 	if (nb_rbs_required[next_ue]>mac_xface->lte_frame_parms->N_RB_DL) { 
-	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
+          TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
 	  nb_rbs_required[next_ue] = mac_xface->lte_frame_parms->N_RB_DL;// calculating required number of RBs for each UE
 	  break;
 	}
-	TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]);
+        TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rbs_required[next_ue]);
       }
       
     }

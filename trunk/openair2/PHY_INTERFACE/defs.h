@@ -206,8 +206,11 @@ typedef struct
     /// RIV computation from PHY
     u16 (*computeRIV)(u16 N_RB_DL,u16 RBstart,u16 Lcrbs);
 
-    /// TBS table lookup from PHY
-    u16 (*get_TBS)(u8 mcs, u16 nb_rb);
+    /// Downlink TBS table lookup from PHY
+    u16 (*get_TBS_DL)(u8 mcs, u16 nb_rb);
+
+    /// Uplink TBS table lookup from PHY
+    u16 (*get_TBS_UL)(u8 mcs, u16 nb_rb);
 
     /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
     int (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);

@@ -106,7 +106,7 @@ unsigned char I_TBS2I_MCS(unsigned char I_TBS) {
   return I_MCS;
 }
 
-u16 get_TBS(u8 mcs,u16 nb_rb) {
+u16 get_TBS_DL(u8 mcs, u16 nb_rb) {
 
   u16 TBS;
 
@@ -124,6 +124,26 @@ u16 get_TBS(u8 mcs,u16 nb_rb) {
     return(0);
   }
 }
+
+u16 get_TBS_UL(u8 mcs, u16 nb_rb) {
+
+  u16 TBS = 0;
+
+  if ((nb_rb > 0) && (mcs < 29)) {
+#ifdef TBS_FIX
+    TBS = 3*TBStable[get_I_TBS_UL(mcs)][nb_rb-1]/4;
+    TBS = TBS>>3;
+#else
+    TBS = TBStable[get_I_TBS_UL(mcs)][nb_rb-1];
+    TBS = TBS>>3;
+#endif
+    return(TBS);
+  }
+  else {
+    return(0);
+  }
+}
+
 
 int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol) {
 
