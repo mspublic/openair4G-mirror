@@ -56,7 +56,7 @@ int IAL_decode_NAS_message(void){
     #endif
     n = recv(s_nas, message, NAS_UE_NETL_MAXLEN, 0);
     if (n <= 0) {
-        if (n < 0) perror("IAL_decode_NAS_message : recv");
+        if (n < 0) perror("RAL_process_DNAS_message : recv");
         done = 1;
     }
 

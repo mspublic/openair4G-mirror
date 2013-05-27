@@ -1,29 +1,28 @@
 /*****************************************************************************
- *			Eurecom OpenAirInterface 3
- * 			Copyright(c) 2012 Eurecom
+ *   Eurecom OpenAirInterface 3
+ *    Copyright(c) 2012 Eurecom
  *
- * Source	eRALlte_variables.h
+ * Source eRALlte_variables.h
  *
- * Version	0.1
+ * Version 0.1
  *
- * Date		06/26/2012
+ * Date  06/26/2012
  *
- * Product	MIH RAL LTE
+ * Product MIH RAL LTE
  *
- * Subsystem	RAL-LTE internal data structure
+ * Subsystem RAL-LTE internal data structure
  *
- * Authors	Michelle Wetterwald, Lionel Gauthier, Frederic Maurel
+ * Authors Michelle Wetterwald, Lionel Gauthier, Frederic Maurel
  *
- * Description	Defines the data structure managed by the RAL-LTE process at
- *		the network side and the access router dummy configuration.
+ * Description Defines the data structure managed by the RAL-LTE process at
+ *  the network side and the access router dummy configuration.
  *
  *****************************************************************************/
-
 #ifndef __RAL_LTE_VAR_H__
 #define __RAL_LTE_VAR_H__
 
 #include "rrc_d_types.h"
-#include "nas_rg_netlink.h"
+//#include "nas_rg_netlink.h"
 
 #include "MIH_C_Types.h"
 #include "MIH_C_header_codec.h"
@@ -32,22 +31,12 @@
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
-
-#define RAL_DUMMY
-//#define RAL_REALTIME
-
-
-/* Radio Bearer attachment status; must be the same as NAS interface	    */
-#define RB_CONNECTED		NAS_CONNECTED
-#define RB_DISCONNECTED		NAS_DISCONNECTED
+//#define RAL_DUMMY
+#define RAL_REALTIME
 
 #ifdef RAL_REALTIME
-/*
- * --------------------------------------------------------------------------
- * Arguments ioctl command
- * --------------------------------------------------------------------------
+/*Arguments ioctl command
  */
-
 //arg[0]
 #define IO_OBJ_STATS 0
 #define IO_OBJ_CNX   1
@@ -58,31 +47,40 @@
 #define IO_CMD_DEL   1
 #define IO_CMD_LIST  2
 
+#define NAS_CONNECTED     1  //same as NAS interface
+#define NAS_DISCONNECTED  0
 #endif // RAL_REALTIME
 
-/*
- * --------------------------------------------------------------------------
- * Access Router configuration
- * --------------------------------------------------------------------------
+/* Radio Bearer attachment status; must be the same as NAS interface     */
+#define RB_CONNECTED  NAS_CONNECTED
+#define RB_DISCONNECTED  NAS_DISCONNECTED
+
+#define RAL_TRUE 1
+#define RAL_FALSE 0
+
+
+/*Access Router configuration
  */
+#ifdef RAL_REALTIME
+//#define NAS_RG_NETL_MAX_RABS 27 //spec value
+#define NAS_RG_NETL_MAX_RABS 5 //test value
+#define NAS_RG_NETL_MAX_MEASURE_NB  5
+#define NAS_RG_NETL_MAX_MTs 3
+#endif
 
 /* Maximum number of supported Radio Bearers */
-#define RAL_MAX_RB 	NAS_RG_NETL_MAX_RABS
-
+#define RAL_MAX_RB  NAS_RG_NETL_MAX_RABS
 /* Maximum number of supported Mobile Terminals */
-#define RAL_MAX_MT	NAS_RG_NETL_MAX_MTs
-
+#define RAL_MAX_MT NAS_RG_NETL_MAX_MTs
 /* Maximum number of Radio Bearers per User Equipment */
-#define RAL_MAX_RB_PER_UE	32
-
+#define RAL_MAX_RB_PER_UE 32
 /* Default Radio Bearer identifier */
-#define RAL_DEFAULT_RAB_ID 	6 // RBID 5 => MBMS, 6 => DEFAULTRAB, 7+ => others
-
+#define RAL_DEFAULT_MC_RAB_ID 5
+#define RAL_DEFAULT_RAB_ID  6 // RBID 5 => MBMS, 6 => DEFAULTRAB, 7+ => others
 /* Default Radio Bearer QoS value */
-#define RAL_DEFAULT_RAB_QoS	2 // RRC_QOS_CONV_64_64
-
+#define RAL_DEFAULT_RAB_QoS 2 // RRC_QOS_CONV_64_64
 /* Default current cell identifier */
-#define RAL_DEFAULT_CELL_ID	5
+#define RAL_DEFAULT_CELL_ID 5
 
 /* Default bit rates */
 #define RAL_BITRATE_32k   32000
@@ -93,17 +91,15 @@
 #define RAL_BITRATE_384k 384000
 #define RAL_BITRATE_440k 440000
 
-/* Public Lan Mobile Network */
-#define DEFAULT_PLMN_SIZE	  3
+/* Public Land Mobile Network */
+#define DEFAULT_PLMN_SIZE   3
 #ifdef DEFINE_GLOBAL_CONSTANTS
 const u_int8_t DefaultPLMN[DEFAULT_PLMN_SIZE] = {0x20, 0x80, 0x20};
 #else
 extern const u_int8_t DefaultPLMN[DEFAULT_PLMN_SIZE];
 #endif
 
-/*
- * Destination addresses
- * ---------------------
+/*Destination addresses
  */
 enum {
     ADDR_MT1 = 0,
@@ -133,7 +129,7 @@ extern const char DestIpv6Addr[ADDR_MAX][16];
 /****************************************************************************/
 
 /* List of link action types */
-TYPEDEF_BITMAP8(MIH_C_LINK_AC_TYPE_LIST)
+TYPEDEF_BITMAP8(MIH_C_LINK_AC_TYPE_LIST);
 
 /*
  * Radio Bearer data
@@ -175,7 +171,7 @@ struct ral_lte_mt {
 };
 
 /*
- * Multicast data
+ * Multicast data  // TEMP MW A supprimer!!!!
  */
 struct ral_lte_mcast {
     /* The identifier of the multicast link that is associated with a PoA */
@@ -196,13 +192,22 @@ struct ral_lte_priv {
     u8 pending_req_flag;
     u8 pending_req_mt_ix;
     u8 pending_req_ch_ix;
+    u8 pending_req_multicast;
+//    u16 pending_req_transaction_id;
+//    u8 pending_req_status;
     MIH_C_FLOW_ID_T pending_req_fid;
 
     struct ral_lte_mt pending_mt;
     int pending_mt_timer;
+    int pending_mt_flag;
 
     struct ral_lte_mt mt[RAL_MAX_MT];
     struct ral_lte_mcast mcast;
+
+
+//     struct tqal_ar_mobile mt[TQAL_MAX_MTs];
+//     struct tqal_ar_channel multicast_channel;
+//     u8  mc_group_addr[16];
 
     /* MIH-INTERFACE data */
     MIH_C_LINK_AC_TYPE_LIST_T       mih_supported_link_action_list;
@@ -215,6 +220,8 @@ struct ral_lte_priv {
     MIH_C_STATUS_T                  pending_req_status;
     MIH_C_LINK_AC_RESULT_T          pending_req_ac_result;
     MIH_C_TRANSACTION_ID_T          pending_req_transaction_id;
+
+    char buffer[800];
 };
 
 /****************************************************************************/

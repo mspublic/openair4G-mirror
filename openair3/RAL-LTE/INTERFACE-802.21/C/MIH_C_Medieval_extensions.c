@@ -39,7 +39,7 @@ inline void MIH_C_IP_TUPLE_decode(Bit_Buffer_t* bbP, MIH_C_IP_TUPLE_T *dataP) {
     MIH_C_IP_ADDR_decode(bbP, &dataP->ip_addr);
     MIH_C_PORT_decode(bbP, &dataP->port);
 }
-//-----------------------------------------------------------------------------
+/*//-----------------------------------------------------------------------------
 unsigned int MIH_C_FLOW_ID2String(MIH_C_FLOW_ID_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------
     unsigned int buffer_index = 0;
@@ -67,7 +67,7 @@ inline void MIH_C_FLOW_ID_decode(Bit_Buffer_t* bbP, MIH_C_FLOW_ID_T *dataP) {
     MIH_C_IP_TUPLE_decode(bbP, &dataP->source_addr);
     MIH_C_IP_TUPLE_decode(bbP, &dataP->dest_addr);
     MIH_C_PROTO_decode(bbP, &dataP->transport_protocol);
-}
+}*/
 //-----------------------------------------------------------------------------
 unsigned int MIH_C_MARK2String(MIH_C_MARK_T *dataP, char* bufP) {
 //-----------------------------------------------------------------------------

@@ -362,7 +362,7 @@ int main(int argc, char *argv[]){
             }*/
             if (FD_ISSET(s_nas,&readfds)){
                 //printf("\n something received s_nas\n");
-                  done = RAL_process_NAS_message();
+                  done = IAL_decode_NAS_message();
             }
 
             //get measures from NAS - timer = 21x100ms  -- impair

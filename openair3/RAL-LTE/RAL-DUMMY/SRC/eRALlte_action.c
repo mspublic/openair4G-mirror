@@ -80,6 +80,7 @@ typedef struct {
     int n_flows;
 #define ACTION_MAX_FLOW		((RAL_MAX_MT)*(RAL_MAX_RB))
     struct Data_flow flow [ACTION_MAX_FLOW];
+    int flow_id [ACTION_MAX_FLOW];  //added TEMP MW 23/05/13
 } eRALlte_action_DataFlowList_t;
 
 static eRALlte_action_DataFlowList_t g_flows = {};
@@ -289,8 +290,7 @@ void eRALlte_action_request(MIH_C_Message_Link_Action_request_t* msgP)
  **		 Others:	None                                       **
  **                                                                        **
  ***************************************************************************/
-extern int eRALlte_action_save_flow_id(MIH_C_FLOW_ID_T* flowId, int cnxid)
-{
+extern int eRALlte_action_save_flow_id(MIH_C_FLOW_ID_T* flowId, int cnxid){
     return _eRALlte_action_set_channel_id(flowId, cnxid);
 }
 
@@ -299,27 +299,20 @@ extern int eRALlte_action_save_flow_id(MIH_C_FLOW_ID_T* flowId, int cnxid)
 /****************************************************************************/
 
 /****************************************************************************
- **                                                                        **
  ** Name:	 eRALlte_action_set_channel_id()                           **
  **                                                                        **
  ** Description: Set the Connection identifier and store data of the       **
  **		 specified data flow in the list of active data flows.     **
- **                                                                        **
  ** Inputs:	 flowId:	The data flow identifier                   **
  ** 	 	 cnxid:		The connection identifier                  **
- ** 	 	 Others:	None                                       **
- **                                                                        **
  ** Outputs:	 None                                                      **
  **		 Return:	The index of the specified data flow in    **
  **				the list of active data flows.             **
  **				-1 if the list is full.                    **
- **		 Others:	None                                       **
- **                                                                        **
  ***************************************************************************/
-static int _eRALlte_action_set_channel_id (MIH_C_FLOW_ID_T* flowId, int cnxid)
-{
+static int _eRALlte_action_set_channel_id (MIH_C_FLOW_ID_T* flowId, int cnxid){
     char addr[128];
-    char port[8];
+    //char port[8];
     int f_ix;
 
     assert(cnxid != 0);
@@ -327,53 +320,56 @@ static int _eRALlte_action_set_channel_id (MIH_C_FLOW_ID_T* flowId, int cnxid)
     for (f_ix = 0; f_ix < ACTION_MAX_FLOW; f_ix++) {
 	if (g_flows.flow[f_ix].cnxid > 0) continue;
 	g_flows.flow[f_ix].cnxid = cnxid;
+	g_flows.flow_id[f_ix] = (int) flowId;
 	g_flows.n_flows += 1;
-	MIH_C_TRANSPORT_ADDR_VALUE2String(&flowId->dest_addr.ip_addr.address, addr);
+
+        // Modified Michelle
+	memcpy((char*)&(DestIpv6Addr[0][16]), addr, 16);
+	eRALlte_process_mt_addr_to_l2id(&g_flows.flow[f_ix].addr[8],
+					&g_flows.flow[f_ix].l2id[0]);
+
+/*	MIH_C_TRANSPORT_ADDR_VALUE2String(&flowId->dest_addr.ip_addr.address, addr);
 	memcpy((char*)&(g_flows.flow[f_ix].addr), addr, 16);
 	eRALlte_process_mt_addr_to_l2id(&g_flows.flow[f_ix].addr[8],
 					&g_flows.flow[f_ix].l2id[0]);
 	MIH_C_PORT2String(&flowId->dest_addr.port, port);
 	g_flows.flow[f_ix].port = strtol(port, (char**) NULL, 16);
-	g_flows.flow[f_ix].proto = flowId->transport_protocol;
+	g_flows.flow[f_ix].proto = flowId->transport_protocol;*/
 	return f_ix;
     }
     return (-1);
 }
 
 /****************************************************************************
- **                                                                        **
  ** Name:	 eRALlte_action_get_channel_id()                           **
  **                                                                        **
  ** Description: Returns the Connection identifier of the specified data   **
  **		 flow.                                                     **
- **                                                                        **
  ** Inputs:	 flowId:	The data flow identifier                   **
  ** 	 	 Others:	None                                       **
- **                                                                        **
- ** Outputs:	 cnxid:		The connection identifier allocated to the **
+  ** Outputs:	 cnxid:		The connection identifier allocated to the **
  **				specified data flow.                       **
  **		 Return:	The index of the specified data flow in    **
  **				the list of active data flows.             **
  **				-1 if no any connection identifier exists  **
  **				for the specified data flow.               **
  **		 Others:	None                                       **
- **                                                                        **
  ***************************************************************************/
-static int _eRALlte_action_get_channel_id (MIH_C_FLOW_ID_T* flowId, int* cnxid)
-{
-    char addr[128];
-    char port[8];
-    unsigned int dp;
+static int _eRALlte_action_get_channel_id (MIH_C_FLOW_ID_T* flowId, int* cnxid){
+    //char addr[128];
+    //char port[8];
+    //unsigned int dp;
     int f_ix;
 
-    MIH_C_TRANSPORT_ADDR_VALUE2String(&flowId->dest_addr.ip_addr.address, addr);
-    MIH_C_PORT2String(&flowId->dest_addr.port, port);
-    dp = strtol(port, (char**) NULL, 16);
+//     MIH_C_TRANSPORT_ADDR_VALUE2String(&flowId->dest_addr.ip_addr.address, addr);
+//     MIH_C_PORT2String(&flowId->dest_addr.port, port);
+//     dp = strtol(port, (char**) NULL, 16);
 
     for (f_ix = 0; f_ix < ACTION_MAX_FLOW; f_ix++) {
-	if (!eRALlte_process_cmp_mt_addr((const char*)addr, (const char*)g_flows.flow[f_ix].l2id)) continue;
+/*	if (!eRALlte_process_cmp_mt_addr((const char*)addr, (const char*)g_flows.flow[f_ix].l2id)) continue;
 	if (g_flows.flow[f_ix].port != dp) continue;
-	if (g_flows.flow[f_ix].proto != flowId->transport_protocol) continue;
+	if (g_flows.flow[f_ix].proto != flowId->transport_protocol) continue;*/
+        if (g_flows.flow_id[f_ix] != *flowId) continue;
 	*cnxid = g_flows.flow[f_ix].cnxid;
 	return f_ix;
     }
@@ -564,7 +560,14 @@ static MIH_C_LINK_AC_RESULT_T _eRALlte_action_link_activate_resources(void)
      * within the MIH_C_RESOURCE_DESC parameters of the request.
      */
     char mt_addr[128];
-    int len = MIH_C_TRANSPORT_ADDR_VALUE2String(&res->flow_id.dest_addr.ip_addr.address, mt_addr);
+    //original code: int len = MIH_C_TRANSPORT_ADDR_VALUE2String(&res->flow_id.dest_addr.ip_addr.address, mt_addr);
+
+    MIH_C_TRANSPORT_ADDR_VALUE_T mihc_transport_addr_value;
+    MIH_C_TRANSPORT_ADDR_VALUE_set(&mihc_transport_addr_value, (unsigned char*)"2001:660:382:14:335:600:8014:9150", strlen("2001:660:382:14:335:600:8014:9150"));
+
+    int len = MIH_C_TRANSPORT_ADDR_VALUE2String(&mihc_transport_addr_value, mt_addr);
+    //int len = MIH_C_TRANSPORT_ADDR_VALUE2String(&DestIpv6Addr[0][16], mt_addr);
+
     if ( (len > 0) && (len < 128)) {
 	DEBUG (" %s: MT's address = %s\n", __FUNCTION__, eRALlte_process_mt_addr_to_string((unsigned char*)mt_addr));
     }
