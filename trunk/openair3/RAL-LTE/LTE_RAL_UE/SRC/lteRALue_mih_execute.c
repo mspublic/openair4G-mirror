@@ -522,9 +522,7 @@ void mRALlte_check_thresholds_signal_strength(MIH_C_THRESHOLD_VAL_T new_valP, MI
         MIH_C_3GPP_ADDR_set(&link_identifier.link_id.link_addr._union._3gpp_addr, (u_int8_t*)&(ralpriv->ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
         link_identifier.choice                   = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
 
-        mRALlte_send_link_parameters_report_indication(&transaction_id,
-                                                       &link_identifier,
-                                                       &LinkParametersReportList_list);
+        mRALlte_send_link_parameters_report_indication(&transaction_id,  &link_identifier, &LinkParametersReportList_list);
     }
 }
 
