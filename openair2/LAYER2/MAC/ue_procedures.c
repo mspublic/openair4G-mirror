@@ -832,8 +832,13 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = LONG_BSR;
     last_size=1;
-    *((BSR_LONG *)ce_ptr)=(*long_bsr);
-    ce_ptr+=sizeof(BSR_LONG);
+
+    *(ce_ptr)     = (long_bsr->Buffer_size0 << 2) | ((long_bsr->Buffer_size1 & 0x30) >> 4);
+    *(ce_ptr + 1) = ((long_bsr->Buffer_size1 & 0x0F) << 4) | ((long_bsr->Buffer_size2 & 0x3C) >> 2);
+    *(ce_ptr + 2) = ((long_bsr->Buffer_size2 & 0x03) << 2) | (long_bsr->Buffer_size3 & 0x3F);
+    /* Padding */
+    *(ce_ptr + 3) = 0;
+    ce_ptr += BSR_LONG_SIZE;
 
     //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
   }

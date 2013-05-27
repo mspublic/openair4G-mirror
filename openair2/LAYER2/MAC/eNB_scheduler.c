@@ -515,13 +515,13 @@ void SR_indication(u8 Mod_id,u32 frame, u16 rnti, u8 subframe) {
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 1;
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_active = 1;
 }
+
 void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[NB_RB_MAX];
   unsigned short rx_lengths[NB_RB_MAX];
   unsigned char UE_id = find_UE_id(Mod_id,rnti);
-  BSR_LONG *tmp;
   int ii,j;
   for(ii=0; ii<NB_RB_MAX; ii++) rx_lengths[ii] = 0;
   
@@ -536,33 +536,43 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
     switch (rx_ces[i]) { // implement and process BSR + CRNTI +
     case POWER_HEADROOM:
-      eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info =  (payload_ptr[0]&0x3f);// - PHR_MAPPING_OFFSET; 
-      LOG_D(MAC,"[eNB] MAC CE_LCID %d : Received PHR PH = %d (db)\n", rx_ces[i], eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info =  (payload_ptr[0] & 0x3f);// - PHR_MAPPING_OFFSET; 
+      LOG_D(MAC, "[eNB] MAC CE_LCID %d : Received PHR PH = %d (db)\n", rx_ces[i], eNB_mac_inst[Mod_id].UE_template[UE_id].phr_info);
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
     case CRNTI:
-      LOG_D(MAC,"[eNB] MAC CE_LCID %d : Received CRNTI %d \n", rx_ces[i], payload_ptr[0]);
+      LOG_D(MAC, "[eNB] MAC CE_LCID %d : Received CRNTI %d \n", rx_ces[i], payload_ptr[0]);
       payload_ptr+=1;
       break;
     case TRUNCATED_BSR:
-    case SHORT_BSR :
-      LOG_D(MAC,"[eNB] MAC CE_LCID %d : Received short BSR LCGID = %d bsr = %d\n", rx_ces[i],(payload_ptr[0]>>6), payload_ptr[0]&0x3f);
-      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[(payload_ptr[0]>>6)] = (payload_ptr[0]&0x3f);
-      payload_ptr+=1;//sizeof(SHORT_BSR); // fixme
-      break;
-    case LONG_BSR :
-      LOG_D(MAC,"[eNB] MAC CE_LCID %d :Received long BSR \n", rx_ces[i]);
-      tmp = (BSR_LONG*) payload_ptr;
-      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[3] = tmp->Buffer_size3; 
-      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[2] = tmp->Buffer_size2; 
-      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[1] = tmp->Buffer_size1; 
-      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[0] = tmp->Buffer_size0; 
-      payload_ptr+=(sizeof(LONG_BSR)-1);
+    case SHORT_BSR: {
+      u8 lcgid;
+
+      lcgid = (payload_ptr[0] >> 6);
+      LOG_D(MAC, "[eNB] MAC CE_LCID %d : Received short BSR LCGID = %u bsr = %d\n",
+            rx_ces[i], lcgid, payload_ptr[0] & 0x3f);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[lcgid] = (payload_ptr[0] & 0x3f);
+      payload_ptr += 1;//sizeof(SHORT_BSR); // fixme
+    } break;
+    case LONG_BSR:
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0] = ((payload_ptr[0] & 0xFC) >> 2);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1] =
+      ((payload_ptr[0] & 0x03) << 4) | ((payload_ptr[1] & 0xF0) >> 4);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2] =
+      ((payload_ptr[1] & 0x0F) << 2) | ((payload_ptr[2] & 0xC0) >> 6);
+      eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3] = (payload_ptr[2] & 0x3F);
+      LOG_D(MAC, "[eNB] MAC CE_LCID %d: Received long BSR LCGID0 = %u LCGID1 = "
+                 "%u LCGID2 = %u LCGID3 = %u\n",
+            rx_ces[i],
+            eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0],
+            eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1],
+            eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2],
+            eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID3]);
       break;
     default:
+      LOG_E(MAC, "[eNB] Received unknown MAC header (0x%02x)\n", rx_ces[i]);
       break;
     }
-
   }
 
   for (i=0;i<num_sdu;i++) {
