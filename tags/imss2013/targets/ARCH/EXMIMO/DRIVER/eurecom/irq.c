@@ -55,18 +55,19 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
 
 
     //printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
-    // this should be done also for the recent version (needs an update in the hardware)
     if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY) {
         // get AHBPCIE interrupt line
         irqval = ioread32(bar[card_id]+PCIE_CONTROL0);
+       // printk ("irq val read after interrupt received : %x\n",irqval);
         // clear PCIE interrupt bit (bit 7 of register 0x0)
-        if ( (irqval&0x80) != 0)
+        if (( (irqval&0x80) == 0) || (irqval == 0xffffffff))
+          //  NULL;
             iowrite32(irqval&0xffffff7f,bar[card_id]+PCIE_CONTROL0);
-	else
-	  return IRQ_NONE;
+        else
+            return IRQ_NONE;
     }
 
-    irqcmd = ioread32(bar[card_id]+pcie_control);   // On ExMIMO2, this ioread is sufficient to clear the IRQ
+       irqcmd = ioread32(bar[card_id]+pcie_control);   // On ExMIMO2, this ioread is sufficient to clear the IRQ
 
     //printk("IRQ: ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
     
@@ -105,7 +106,10 @@ void openair_do_tasklet (unsigned long card_id)
         pcie_control = PCIE_CONTROL1;
     else if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS)
         pcie_control = PCIE_CONTROL2;
-        
+    
+    //printk("Exmimo Board swrev : %d\n",exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev);
+
+    
     irqcmd = ioread32(bar[card_id]+pcie_control);
     
     if (save_irq_cnt > 1)
@@ -126,7 +130,7 @@ void openair_do_tasklet (unsigned long card_id)
             break;
             
         default:
-            printk("[openair][IRQ tasklet] : Got unknown PCIe cmd: card_id = %li, irqcmd(CONTROL1) = %i (0x%X)\n", card_id, irqcmd, irqcmd);
+            printk("[openair][IRQ tasklet] : Got unknown PCIe cmd: card_id = %li, irqcmd(%x) = %i (0x%X)\n", card_id, pcie_control,irqcmd, irqcmd);
     }
     
     iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);

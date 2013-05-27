@@ -246,9 +246,11 @@ int exmimo_firmware_init(int card)
     iowrite32( pphys_exmimo_pci_phys[card], (bar[card]+PCIE_PCIBASEL) );  // lower 32bit of address
     iowrite32( 0, (bar[card]+PCIE_PCIBASEH) );                            // higher 32bit of address
     
+   // printk ("checking board swrev : %d   %d\n",exmimo_pci_kvirt[card].exmimo_id_ptr->board_swrev,BOARD_SWREV_CMDREGISTERS);
     if ( exmimo_pci_kvirt[card].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS )
         iowrite32( EXMIMO_CONTROL2_COOKIE, bar[card]+PCIE_CONTROL2 );
 
+     //   printk ("CONTROL2 READBACK : %x\n",ioread32(bar[card]+PCIE_CONTROL2));
     //printk("exmimo_firmware_init(): initializing Leon (EXMIMO_PCIE_INIT)...\n");
     exmimo_send_pccmd(card, EXMIMO_PCIE_INIT);
     
@@ -306,7 +308,8 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
     val = ioread32(bar[card_id]+PCIE_CONTROL0);     // this is only necessary for ExMIMO1. ExMIMO2 will not overwrite any bits in CONTROL0 whenever bit0 is set.
     // set interrupt bit to trigger LEON interrupt
     iowrite32(val|0x1,bar[card_id]+PCIE_CONTROL0);
-    //    printk("Readback of control0 %x\n",ioread32(bar[0]+PCIE_CONTROL0));
+       msleep(1);
+       //printk("Readback of control2 %x\n",ioread32(bar[0]+PCIE_CONTROL2));
     
     // workaround for ExMIMO1: no command ack -> sleep
     if ( exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY ) {
@@ -319,7 +322,7 @@ int exmimo_send_pccmd(int card_id, unsigned int cmd)
     }
     else {
         while (cnt<100 && ( ioread32(bar[card_id]+PCIE_CONTROL1) != EXMIMO_NOP )) {
-            //printk("ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
+        //    printk("ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", ioread32(bar[card_id]+PCIE_CONTROL0), ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
             msleep(100);
             cnt++;
         }
