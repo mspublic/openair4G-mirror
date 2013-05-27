@@ -359,7 +359,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
-  mac_xface->get_SB_size	       = Get_SB_size;
+  mac_xface->get_SB_size               = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->Msg1_transmitted          = Msg1_tx;
@@ -391,11 +391,12 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->get_fid_prach_tdd      = get_fid_prach_tdd;
   mac_xface->get_deltaP_rampup      = get_deltaP_rampup;
   mac_xface->computeRIV             = computeRIV;
-  mac_xface->get_TBS                = get_TBS;
+  mac_xface->get_TBS_DL             = get_TBS_DL;
+  mac_xface->get_TBS_UL             = get_TBS_UL;
   mac_xface->get_nCCE_max           = get_nCCE_max;
   mac_xface->get_ue_mode            = get_ue_mode;
   mac_xface->phy_config_sib1_eNB    = phy_config_sib1_eNB;
-  mac_xface->phy_config_sib1_ue    = phy_config_sib1_ue;
+  mac_xface->phy_config_sib1_ue     = phy_config_sib1_ue;
 
   mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
@@ -405,15 +406,15 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->phy_config_sib13_ue         = phy_config_sib13_ue;
 #endif
 #ifdef CBA
-  mac_xface->phy_config_cba_rnti        = phy_config_cba_rnti ;
+  mac_xface->phy_config_cba_rnti         = phy_config_cba_rnti ;
 #endif 
-  mac_xface->phy_config_meas_ue         = phy_config_meas_ue;
+  mac_xface->phy_config_meas_ue          = phy_config_meas_ue;
 
-  mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
-  mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
+  mac_xface->phy_config_dedicated_eNB    = phy_config_dedicated_eNB;
+  mac_xface->phy_config_dedicated_ue     = phy_config_dedicated_ue;
 
 #ifdef Rel10
-  mac_xface->get_mch_sdu                = get_mch_sdu;
+  mac_xface->get_mch_sdu                 = get_mch_sdu;
 #endif
 
   mac_xface->get_PHR = get_PHR;

@@ -970,44 +970,43 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
     LOG_D(MAC,"[eNB %d] Frame %d : BCCH->DLSCH, Received %d bytes \n",Mod_id,frame,bcch_sdu_length);
 
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
-      if (bcch_sdu_length <= (mac_xface->get_TBS(0,3)))
+      if (bcch_sdu_length <= (mac_xface->get_TBS_DL(0,3)))
 	BCCH_alloc_pdu.mcs=0;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(1,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(1,3)))
 	BCCH_alloc_pdu.mcs=1;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(2,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(2,3)))
 	BCCH_alloc_pdu.mcs=2;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(3,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(3,3)))
 	BCCH_alloc_pdu.mcs=3;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(4,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(4,3)))
 	BCCH_alloc_pdu.mcs=4;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(5,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(5,3)))
 	BCCH_alloc_pdu.mcs=5;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(6,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(6,3)))
 	BCCH_alloc_pdu.mcs=6;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(7,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(7,3)))
 	BCCH_alloc_pdu.mcs=7;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(8,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(8,3)))
 	BCCH_alloc_pdu.mcs=8;
-      
     }
     else {
-      if (bcch_sdu_length <= (mac_xface->get_TBS(0,3)))
+      if (bcch_sdu_length <= (mac_xface->get_TBS_DL(0,3)))
 	BCCH_alloc_pdu_fdd.mcs=0;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(1,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(1,3)))
 	BCCH_alloc_pdu_fdd.mcs=1;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(2,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(2,3)))
 	BCCH_alloc_pdu_fdd.mcs=2;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(3,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(3,3)))
 	BCCH_alloc_pdu_fdd.mcs=3;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(4,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(4,3)))
 	BCCH_alloc_pdu_fdd.mcs=4;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(5,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(5,3)))
 	BCCH_alloc_pdu_fdd.mcs=5;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(6,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(6,3)))
 	BCCH_alloc_pdu_fdd.mcs=6;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(7,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(7,3)))
 	BCCH_alloc_pdu_fdd.mcs=7;
-      else if (bcch_sdu_length <= (mac_xface->get_TBS(8,3)))
+      else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(8,3)))
 	BCCH_alloc_pdu_fdd.mcs=8;
     }
 
@@ -1024,14 +1023,14 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 	    frame,
 	    bcch_sdu_length,
 	    BCCH_alloc_pdu.mcs,
-	    mac_xface->get_TBS(BCCH_alloc_pdu.mcs,3));
+	    mac_xface->get_TBS_DL(BCCH_alloc_pdu.mcs,3));
     }
     else {
       LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (FDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
 	    frame,
 	    bcch_sdu_length,
 	    BCCH_alloc_pdu_fdd.mcs,
-	    mac_xface->get_TBS(BCCH_alloc_pdu_fdd.mcs,3));
+	    mac_xface->get_TBS_DL(BCCH_alloc_pdu_fdd.mcs,3));
     }
     eNB_mac_inst[Mod_id].bcch_active=1;
     *nprb=3;
@@ -1334,7 +1333,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
   if (mtch_flag == 1) {
 
     // Calculate TBS
-    TBS = mac_xface->get_TBS(eNB_mac_inst[Mod_id].MCH_pdu.mcs, mac_xface->lte_frame_parms->N_RB_DL);
+    TBS = mac_xface->get_TBS_DL(eNB_mac_inst[Mod_id].MCH_pdu.mcs, mac_xface->lte_frame_parms->N_RB_DL);
 
     //    get MTCH data from RLC (like for DTCH)
     LOG_D(MAC,"[eNB %d] Frame %d : MTCH data is transmitted on this subframe\n",Mod_id,frame);  
@@ -1915,7 +1914,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	}
 	else if ((ndi==1) && (mcs < 29)) {
 	  rb_table_index = 1;
-	  TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
+      TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  buffer_occupancy = ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]  == 0) &&
 			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]  == 0) &&
 			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]  == 0) &&
@@ -1942,26 +1941,26 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 		  rb_table_index,TBS);
 	    */
 	    rb_table_index++;
-	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
+        TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  }
 
 	  if (rb_table[rb_table_index]>(mac_xface->lte_frame_parms->N_RB_UL-1-*first_rb)) {
 	    rb_table_index--;
-	    TBS = mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
+        TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  }
 	  //rb_table_index = 8;
 /*
 	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
 		first_rb,rb_table[rb_table_index],
-		rb_table_index,mac_xface->get_TBS(mcs,rb_table[rb_table_index]));
+        rb_table_index,mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]));
 */
 	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 					  *first_rb,
 					  rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
 
 	  *first_rb+=rb_table[rb_table_index];  // increment for next UE allocation
-	  buffer_occupancy -= mac_xface->get_TBS(mcs,rb_table[rb_table_index]);
+	  buffer_occupancy -= mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 
 	  i = bytes_to_bsr_index((s32)buffer_occupancy);
 
@@ -2905,7 +2904,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
       //TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
-      TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+      TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
       // check first for RLC data on DCCH
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload  
       ta_len = ((eNB_UE_stats->timing_advance_update/4)!=0) ? 2 : 0;
@@ -3013,17 +3012,17 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	if (mcs==0) nb_rb = 4;   // don't let the TBS get too small
 	else nb_rb=2;
 
-	TBS = mac_xface->get_TBS(mcs,nb_rb); 
+    TBS = mac_xface->get_TBS_DL(mcs,nb_rb); 
 	
 	while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len))  {
 	  nb_rb += 2;  // 
 	  if (nb_rb>nb_available_rb) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+	    TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
 	    nb_rb = nb_available_rb;
 	    break;
 	  }
-	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
+	  TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rb);
 	}
 
 	if(nb_rb == pre_nb_available_rbs[next_ue])
@@ -3055,13 +3054,13 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	// decrease mcs until TBS falls below required length
 	while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs>0)) {
 	  mcs--;
-	  TBS = mac_xface->get_TBS(mcs,nb_rb);
+      TBS = mac_xface->get_TBS_DL(mcs,nb_rb);
 	}
 
 	// if we have decreased too much or we don't have enough RBs, increase MCS
 	while ((TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && ((( dl_pow_off[next_ue]>0) && (mcs<28)) || ( (dl_pow_off[next_ue]==0) && (mcs<=15)))) {
 	  mcs++;
-	  TBS = mac_xface->get_TBS(mcs,nb_rb);
+      TBS = mac_xface->get_TBS_DL(mcs,nb_rb);
 	}
 
 	LOG_D(MAC,"dlsch_mcs before and after the rate matching = (%d, %d)\n",eNB_UE_stats->dlsch_mcs1, mcs);

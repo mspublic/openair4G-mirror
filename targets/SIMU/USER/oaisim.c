@@ -1408,6 +1408,7 @@ main (int argc, char **argv)
   //bring oai if down
   terminate();
   logClean();
+  vcd_signal_dumper_close();
   
   return(0);
 }

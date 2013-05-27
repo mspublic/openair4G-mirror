@@ -1188,9 +1188,17 @@ uint8_t get_I_TBS(uint8_t I_MCS);
     @param I_MCS */
 unsigned char get_I_TBS_UL(unsigned char I_MCS);
 
-/** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS */
-uint16_t get_TBS(uint8_t mcs,uint16_t nb_rb);
+/** \brief Compute Q (modulation order) based on downlink I_MCS. Implements table 7.1.7.1-1 from 36.213.
+    @param I_MCS
+    @param nb_rb
+    @return Transport block size */
+u16 get_TBS_DL(u8 mcs, u16 nb_rb);
+
+/** \brief Compute Q (modulation order) based on uplink I_MCS. Implements table 7.1.7.1-1 from 36.213.
+    @param I_MCS
+    @param nb_rb
+    @return Transport block size */
+u16 get_TBS_UL(u8 mcs, u16 nb_rb);
 
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
    @param vrb_type VRB type (0=localized,1=distributed)
