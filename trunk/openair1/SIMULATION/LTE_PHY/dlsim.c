@@ -121,6 +121,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_ue(PHY_vars_UE,1,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
+  generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
+  generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
   
   // DL power control init
   PHY_vars_eNB->pdsch_config_dedicated->p_a  = 4; // 4 = 0dB
@@ -1650,7 +1652,7 @@ int main(int argc, char **argv) {
 
 	  // Multipath channel
 	  if (awgn_flag == 0) {	
-	    multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
+	    multipath_channel(eNB2UE[0],s_re,s_im,r_re,r_im,
 			      2*frame_parms->samples_per_tti,hold_channel);
 	    if(abstx==1)
 	      if(round==0 && hold_channel==0){
@@ -1877,6 +1879,8 @@ int main(int argc, char **argv) {
 	      if ((Ns==(2*subframe)) && (l==pilot1)) {// process symbols 0,1,2
 
 		if (dci_flag == 1) {
+                  PHY_vars_UE->UE_mode[0] = PUSCH;
+
 		  rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
 			   PHY_vars_UE->lte_ue_pdcch_vars,
 			   &PHY_vars_UE->lte_frame_parms,
