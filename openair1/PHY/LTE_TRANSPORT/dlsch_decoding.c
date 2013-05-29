@@ -301,11 +301,12 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     stop_meas(dlsch_deinterleaving_stats);
     
 #ifdef DEBUG_DLSCH_DECODING    
-    if (r==0) {
-        //      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-        //      write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
-    }
     /*
+    if (r==0) {
+              write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
+              write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
+    }
+    
     msg("decoder input(segment %d) :",r);
     int i; for (i=0;i<(3*8*Kr_bytes)+12;i++)
       msg("%d : %d\n",i,harq_process->d[r][96+i]);
@@ -362,7 +363,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
       
     if ((err_flag == 0) && (ret>=(1+dlsch->max_turbo_iterations))) {// a Code segment is in error so break;
-      //      msg("CRC failed\n");
+      //msg("CRC failed, segment %d\n",r);
       err_flag = 1;
     }
 

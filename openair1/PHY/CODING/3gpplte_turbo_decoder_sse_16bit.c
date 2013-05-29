@@ -720,7 +720,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
     s[j]   = _mm_extract_epi16(tmpe,0); 
     yp1[j] = _mm_extract_epi16(tmpe,1); 
     yp2[j] = _mm_extract_epi16(tmpe,2);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+    //        printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
     
     j=pi2_p[1];
 
@@ -923,6 +923,8 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
       }  
     }
   }
+
+  //  printf("crc %x, oldcrc %x\n",crc,oldcrc);
 
   _mm_empty();
   _m_empty();
