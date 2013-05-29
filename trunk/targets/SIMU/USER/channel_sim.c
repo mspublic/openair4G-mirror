@@ -55,7 +55,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame,u16 next_slot
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
     if (is_pmch_subframe(frame,next_slot>>1,frame_parms)) {
       if ((next_slot%2)==0) {
-	printf("MBSFN eNB sim: Frame %d, subframe %d: Doing MBSFN modulation\n",frame,next_slot>>1); 
+	printf("MBSFN eNB sim: Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset); 
 	PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
 		     &txdata[aa][slot_offset],         // output
 		     frame_parms->log2_symbol_size,                // log2_fft_size
@@ -237,7 +237,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
 		  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
-		  PHY_vars_eNB_g[eNB_id]->frame,next_slot,
+		  ((next_slot==19) ? -1 : 0 ) + PHY_vars_eNB_g[eNB_id]->frame,next_slot,
 		  &PHY_vars_eNB_g[eNB_id]->lte_frame_parms);
     }
 
