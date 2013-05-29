@@ -315,7 +315,8 @@ DEFUN_DLD (oarf_config_exmimo, args, nargout,"configure the openair interface - 
       p_exmimo_config->framing.eNB_flag   = eNB_flag;
       p_exmimo_config->framing.tdd_config = tdd_config;
       p_exmimo_config->framing.multicard_syncmode = multicard_syncmode;
-        
+      p_exmimo_config->framing.resampling_factor = 2;
+
       for (ant=0; ant<4; ant++)
         {
 	  p_exmimo_config->rf.do_autocal[ant]  = 1;

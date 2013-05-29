@@ -306,19 +306,19 @@ typedef struct
 
 typedef struct
 {
-    uint32_t multicard_syncmode;
-    
-    uint32_t eNB_flag;
-
-    uint32_t tdd_config;
-
-    uint32_t frame_length;          // e.g. 76800
-    uint32_t frame_start;           // e.g. 18
-    uint32_t adac_buffer_period;    // e.g. 2048
-    uint32_t adac_intr_period;      // e.g. 1024
-    
-    uint32_t switch_offset[4];      // sample offsets (relative to start of frame) used to control the RX/TX switch in TDD mode
-
+  uint32_t multicard_syncmode;
+  
+  uint32_t eNB_flag;
+  
+  uint32_t tdd_config;
+  
+  uint32_t frame_length;          // e.g. 76800
+  uint32_t frame_start;           // e.g. 18
+  uint32_t adac_buffer_period;    // e.g. 2048
+  uint32_t adac_intr_period;      // e.g. 1024
+  
+  uint32_t switch_offset[4];      // sample offsets (relative to start of frame) used to control the RX/TX switch in TDD mode
+  uint32_t resampling_factor;     // 0=>1, 1=>2, 2=>4, applied equally to each chain and TX/RX
 } exmimo_framing_t;
 
 
