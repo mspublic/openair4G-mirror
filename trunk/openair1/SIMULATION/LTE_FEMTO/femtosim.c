@@ -133,12 +133,16 @@ int main(int argc,char **argv)
       break;
     case 50:
       if (opts.rballocset==0) 
-      {DLSCH_RB_ALLOC = 0x1ffff;}
+      {//DLSCH_RB_ALLOC = 0x1ffff;
+       DLSCH_RB_ALLOC2[0] = 0x1fe00;		 
+	   DLSCH_RB_ALLOC2[1] = 0x1ff;}
       BW = 10.00;
       break;
     case 100:
       if (opts.rballocset==0) 
-      {DLSCH_RB_ALLOC = 0x1ffffff;}
+      {//DLSCH_RB_ALLOC = 0x1ffffff;
+       DLSCH_RB_ALLOC2[0] = 0x1ffe000;		 
+	   DLSCH_RB_ALLOC2[1] = 0x1fff;}
       BW = 20.00;
       break;
     }  
@@ -1022,11 +1026,13 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		    case 50:
 		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 1;
 		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = 0;
+		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc         = DLSCH_RB_ALLOC2[0];
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_10MHz_TDD_t));
 		      break;
 		    case 100:
 		      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 1;
 		      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = 0;
+		      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc         = DLSCH_RB_ALLOC2[0];
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_20MHz_TDD_t));
 		      break;
 		    }
@@ -1090,11 +1096,13 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		    case 50:
 		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 0;
 		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = round&3;
+		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc			= DLSCH_RB_ALLOC2[round];
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_10MHz_TDD_t));
 		      break;
 		    case 100:
 		      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 0;
 		      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = round&3;
+		      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc			= DLSCH_RB_ALLOC2[round];
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_20MHz_TDD_t));
 		      break;
 		    }
