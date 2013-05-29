@@ -55,7 +55,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 
   int option_index = 0;   
 		
-  while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:fab:w:c:em:A:Dp:k:",long_options, &option_index)) != -1)
+  while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:fab:r:R:w:c:em:A:Dp:B:k:",long_options, &option_index)) != -1)
     {
       //printf("%c %s\n",c,optarg);
       switch (c)
@@ -65,6 +65,9 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	  opts->channel_model=AWGN;
 	  sprintf(opts->parameters,"%s -a",opts->parameters);
 	  break;
+	  case 'B':
+		opts->N_RB_DL=atoi(optarg);
+		break;
 	case 'f':
 	  opts->fixed_channel_flag=1;               
 	  sprintf(opts->parameters,"%s -f",opts->parameters);
@@ -81,8 +84,12 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	case 'e':
 	  opts->dci_flag=1;               
 	  sprintf(opts->parameters,"%s -d",opts->parameters);
+	  break; 
+	  case 'r':  
+	  opts->DLSCH_RB_ALLOC = atoi(optarg);
+	  opts->rballocset = 1;
 	  break;
-        case 's':
+      case 's':
 	  opts->snr_init=atof(optarg);
 	  opts->snr_max= opts->snr_init+5;
 	  sprintf(opts->parameters,"%s  -s%f",opts->parameters,opts->snr_init);
@@ -239,14 +246,15 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	  opts->n_adj_cells=atoi(optarg);
 	  sprintf(opts->parameters,"%s  -b%d",opts->parameters, opts->n_adj_cells);
 	  break;
-	case 'r':
+	case 'R':
 	  opts->num_rounds=atoi(optarg);
-	  sprintf(opts->parameters,"%s  -r%d",opts->parameters, opts->num_rounds);
+	  sprintf(opts->parameters,"%s  -R%d",opts->parameters, opts->num_rounds);
 	  if(opts->num_rounds>4 )
             {
 	      msg("Max num round = 4 \n");                
 	      exit(-1);
 	    }
+	   opts->fix_rounds=1;
 	  break;
 	case 'p':		 
 	  sprintf(aux,"%s",optarg);
@@ -275,13 +283,15 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	  printf("-a    Use AWGN channel and not multipath\n");
 	  printf("-b    Test Number\n");
 	  printf("-c    CellId Number for interferer\n");
+	  printf("-r    ressource block allocation (see  section 7.1.6.3 in 36.213\n");
 	  printf("-m    MCS\n");            
 	  printf("-D    Enable interference cancellation\n"); 
 	  printf("-e    Enable verification of DCI\n"); 
 	  printf("-A    Indicates  number of interfering  to estimate, by default does not estimate the channel from the interfering\n"); 
-	  printf("-r    Number of rounds\n"); 
+	  printf("-R    Number of rounds\n"); 
 	  printf("-k    Probability of each interferer list (0-100)  separeted by ',' \n");
 	  printf("-f    Use fixed data and channel\n");
+	  printf("-B    Number of PRBs depending on the bandwidth\n");
 	  exit (-1);
 	  break;
 
