@@ -957,13 +957,15 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef Rel10
 	  // get MCH from MAC
 	  mch_pdu = mac_xface->get_mch_sdu(phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1);
-	  LOG_I(PHY,"[eNB%d][MCH] Frame %d: Got MCH pdu for MBSFN Subframe %d : MCS %d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,mch_pdu->mcs);
+
 	  fill_eNB_dlsch_MCH(phy_vars_eNB,mch_pdu->mcs,1,0);
+	  
+	  LOG_D(PHY,"[eNB%d][MCH] Frame %d: Got MCH pdu for MBSFN Subframe %d : MCS %d, TBS %d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,mch_pdu->mcs,phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3);
 	  // Generate PMCH
 	  generate_mch(phy_vars_eNB,next_slot>>1,(uint8_t*)mch_pdu->payload);
-	  for (i=0;i<phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3;i++)
+	  /*for (i=0;i<phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3;i++)
 	    printf("%2x.",(uint8_t)mch_pdu->payload[i]);
-	  printf("\n");
+	    printf("\n");*/
 #endif
 	}
       }

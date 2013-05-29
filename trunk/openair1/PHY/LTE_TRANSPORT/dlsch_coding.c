@@ -215,9 +215,10 @@ int dlsch_encoding(unsigned char *a,
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
 
     /*
+    int i;
     printf("dlsch (tx): \n");
-    for (i=0;i<4;i++)
-      printf("%x ",a[i]);
+    for (i=0;i<(A>>3);i++)
+      printf("%02x.",a[i]);
     printf("\n");
     */
     // Add 24-bit crc (polynomial A) to payload
@@ -226,6 +227,7 @@ int dlsch_encoding(unsigned char *a,
     a[A>>3] = ((u8*)&crc)[2];
     a[1+(A>>3)] = ((u8*)&crc)[1];
     a[2+(A>>3)] = ((u8*)&crc)[0];
+    //    printf("CRC %x (A %d)\n",crc,A);
 
     dlsch->harq_processes[harq_pid]->B = A+24;
     //    dlsch->harq_processes[harq_pid]->b = a;
