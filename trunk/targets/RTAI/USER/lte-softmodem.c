@@ -1246,6 +1246,8 @@ int main(int argc, char **argv) {
 
   p_exmimo_config->framing.eNB_flag   = !UE_flag;
   p_exmimo_config->framing.tdd_config = 0;
+  p_exmimo_config->framing.resampling_factor = 2;
+
   carrier_freq[0] = 0; //don't use this LIME for card 1
   carrier_freq[2] = 0; //don't use this LIME for card 1
   carrier_freq[3] = 0; //don't use this LIME for card 1
@@ -1596,6 +1598,7 @@ int main(int argc, char **argv) {
 void test_config(int card, int ant, unsigned int rf_mode, int UE_flag) {
     p_exmimo_config->framing.eNB_flag   = !UE_flag;
     p_exmimo_config->framing.tdd_config = 0;
+    p_exmimo_config->framing.resampling_factor = 2;
     
     p_exmimo_config->rf.rf_freq_rx[ant] = 1907600000;
     p_exmimo_config->rf.rf_freq_tx[ant] = 1907600000;;
