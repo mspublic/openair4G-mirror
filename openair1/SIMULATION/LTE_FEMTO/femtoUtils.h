@@ -44,6 +44,7 @@ typedef struct {
     char interfProbability[150];
     
     u16 Nid_cell;
+    u16 tdd_config;
     u8 oversampling;
     SCM_t channel_model;    
     int awgn_flag;
@@ -63,6 +64,7 @@ typedef struct {
     FILE *outputTrougput;    
     
     u8 num_rounds;
+    u8 fix_rounds;
     u8 subframe;
  //   int eNB_id;
     ///	Amplitude of QPSK symbols
@@ -83,6 +85,11 @@ typedef struct {
 	u8 dual_stream_UE;
 	
 	int perfect_ce;
+	int common_flag;
+	int TPC;
+	u8 N_RB_DL;
+	int rballocset;
+	u32 DLSCH_RB_ALLOC;
 	
 	PA_t p_a;
 	u8 	 p_b;	
@@ -139,7 +146,7 @@ void _generatesRandomChannel(options_t opts);
 void _allocDLSChannel(options_t opts);
 void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx);//,u8 **input_buffer);
 void _freeMemory(data_t data,options_t opts);
-void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u16 NB_RB,LTE_DL_FRAME_PARMS  *frame_parms);
+void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u32 *NB_RB2,LTE_DL_FRAME_PARMS  *frame_parms,u8 num_pdcch_symbols);
 void _printResults(u32 *errs,u32 *round_trials,u32 dci_errors,double rate);
 void _printFileResults(double SNR, double rate,u32  *errs,u32  *round_trials,u32 dci_errors,options_t opts,double BER);
 void _initErrsRoundsTrials(u32 **errs,u32 **trials,int allocFlag,options_t opts);
