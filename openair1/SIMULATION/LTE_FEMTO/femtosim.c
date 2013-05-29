@@ -39,7 +39,7 @@ double BW = 7.68;					//TVT: 20MHz BW 7.68
 #define N_RB  25		         //TVT: 50 for 10MHz and 25 for 5 MHz 100 for 20MHz
 #define UL_RB_ALLOC 0x1ff;
 u32 DLSCH_RB_ALLOC = 0x1fff;  // TVT: 0x1fff for 5MHz 0x1ffffff for 20MHz
-u32 DLSCH_RB_ALLOC2[2]; //TVT: RB_ALLOC per round
+u32 DLSCH_RB_ALLOC2[4]; //TVT: RB_ALLOC per round
 
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 
@@ -72,7 +72,7 @@ int main(int argc,char **argv)
   options_t opts;
   data_t data;
   u16 NB_RB;
-  u32 NB_RB2[2];  
+  u32 NB_RB2[4];  
   u8 num_pdcch_symbols=1;
   
         
@@ -141,24 +141,26 @@ int main(int argc,char **argv)
       {DLSCH_RB_ALLOC = 0x1ffffff;}
       BW = 20.00;
       break;
-    }
-    //if (opts.fix_rounds==1){		  
+    }  
+    DLSCH_RB_ALLOC2[2]=DLSCH_RB_ALLOC2[0];
+    DLSCH_RB_ALLOC2[3]=DLSCH_RB_ALLOC2[1];
 			  NB_RB2[0]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[0],opts.N_RB_DL);
 			  NB_RB2[1]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[1],opts.N_RB_DL);
-		//	  }
-		  //else	
+			  NB_RB2[2]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[2],opts.N_RB_DL);
+			  NB_RB2[3]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[3],opts.N_RB_DL);	
 			//NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,opts.N_RB_DL);
   }
   else 
     NB_RB = 4;
-  //****************************************************  
-     
-  //if (opts.fix_rounds==1){		  
+  	  
 	 NB_RB2[0]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[0],opts.N_RB_DL);
 	 NB_RB2[1]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[1],opts.N_RB_DL);
-  //else	  
+	 NB_RB2[2]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[2],opts.N_RB_DL);
+	 NB_RB2[3]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[3],opts.N_RB_DL);
+	  
   NB_RB=conv_nprb(0,(u32)DLSCH_RB_ALLOC,opts.N_RB_DL);		
-    
+   //****************************************************  
+      
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
   form = create_form_lte_scope();
@@ -1062,7 +1064,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		  
 		}
 	      }
-	      else { // set Ndi to 0
+	      else { // set Ndi to 0 round>0
 		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 0;
 		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round&3;
 		
@@ -1162,7 +1164,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
                 
 	      tbs = (double)dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb-1];
-
+		  printf("\nround: %d dlsch_enB=->nb_rb: %d\n",round,PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb);
 
 	      rate = (double)tbs/(double)coded_bits_per_codeword;
 
@@ -1331,11 +1333,11 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      _fillData(opts,data,2);
 	      numOFDMSymbSubcarrier=PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(NB_RB2[round]*12);
-		  printf("numOFDMSymbSubcarrier: %d\n",numOFDMSymbSubcarrier);
+		  
                 
 	      sigma2_dB = 10*log10((double)tx_lev) +10*log10(numOFDMSymbSubcarrier) - SNR- get_pa_dB(PHY_vars_eNB->pdsch_config_dedicated);
 	      sigma2 = pow(10,sigma2_dB/10);
-                
+                //printf("\nround: %d sigma2_dB: %f\n",round,sigma2_dB);
 	      //Noise and Interference
 				
 	      _apply_Multipath_Noise_Interference(opts,data,sigma2_dB,sigma2,2);
