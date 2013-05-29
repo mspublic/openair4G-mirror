@@ -463,7 +463,7 @@ void _allocDLSChannel(options_t opts) {
 	}
                 
       //UE
-      PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,0,0);
+      PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
      // PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
       if (!PHY_vars_UE->dlsch_ue[0][i]) {
 	printf("Can't get ue dlsch structures\n");
@@ -1659,8 +1659,15 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 			else
 				round++;
 		 
-		  if (opts.nframes==1)
-		    printf("No DLSCH errors found\n");
+			 if (opts.nframes==1) {
+			   printf("No DLSCH errors found\n");
+			   _dumpTransportBlockSegments(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->C,
+						       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Cminus,
+						       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Kminus,
+						       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->Kplus,
+						       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->c,
+						       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->c);
+			 }
                 }
 	      else
                 {
