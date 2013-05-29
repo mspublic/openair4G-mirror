@@ -6,11 +6,11 @@
 	<PATHLOSS_EXPONENT>3.67</PATHLOSS_EXPONENT>
 	<PATHLOSS_0_dB>-128</PATHLOSS_0_dB><!--pathloss at 1km -->
       </FREE_SPACE_MODEL_PARAMETERS>
-      <SMALL_SCALE>AWGN</SMALL_SCALE>
+      <SMALL_SCALE>Rayleigh8</SMALL_SCALE>
     </FADING>
     <SYSTEM_BANDWIDTH_MB>7.68</SYSTEM_BANDWIDTH_MB>
     <SYSTEM_FREQUENCY_GHz>1.9</SYSTEM_FREQUENCY_GHz>
-    <TRANSMISSION_MODE>1</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
+    <TRANSMISSION_MODE>2</TRANSMISSION_MODE> <!-- validavalue: 1, 2, 5, 6 -->
     <ANTENNA>
       <eNB_ANTENNA>
 	<RX_NOISE_LEVEL_dB>0</RX_NOISE_LEVEL_dB>
@@ -39,7 +39,7 @@
 	  <NUMBER_OF_NODES>1</NUMBER_OF_NODES>
 	</RANDOM_UE_DISTRIBUTION>
 	<UE_MOBILITY_TYPE>TRACE</UE_MOBILITY_TYPE> 
-	<TRACE_MOBILITY_FILE>mobility_2ues.tr</TRACE_MOBILITY_FILE> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
+	<TRACE_MOBILITY_FILE>static_2ues.tr</TRACE_MOBILITY_FILE> <!-- file should be located at $(OPENAIR2)/UTIL/OMG/TRACE/, see README there-->
       </UE_MOBILITY>
       <eNB_MOBILITY>
 	<eNB_INITIAL_DISTRIBUTION>random</eNB_INITIAL_DISTRIBUTION>
@@ -60,13 +60,13 @@
       <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>10</IDT_MIN_ms>
       <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>1500</SIZE_MIN_byte>
+      <SIZE_MIN_byte>1000</SIZE_MIN_byte>
     </CUSTOMIZED_TRAFFIC>  
 
     </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>5000</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> 
     <CURVE>disable</CURVE>
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
