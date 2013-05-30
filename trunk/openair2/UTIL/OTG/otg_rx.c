@@ -308,7 +308,7 @@ void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned in
   /* (3) Receieved packet with a sequence number less than the expected sequence number: recovery after loss/out of sequence  */
   else if (seq_num< *seq_num_rx){ //the received packet arrived late 
     *nb_loss_pkts-=1;
-    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
+    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: recovery after loss or out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
   }
   else
     LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) ::  packet seq_num TX=%d , seq_num RX=%d (ERROR)\n",src,dst,flag, seq_num, *seq_num_rx);

@@ -511,7 +511,7 @@ void SR_indication(u8 Mod_id,u32 frame, u16 rnti, u8 subframe) {
 
   u8 UE_id = find_UE_id(Mod_id,rnti);
 
-  LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframe %d Signaling SR\n",Mod_id,rnti,frame,subframe);
+  LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframe %d Signaling SR for UE %d \n",Mod_id,rnti,frame,subframe, UE_id);
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 1;
   eNB_mac_inst[Mod_id].UE_template[UE_id].ul_active = 1;
 }

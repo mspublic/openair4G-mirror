@@ -950,7 +950,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
 
 #ifdef CBA  
   if (*access_mode==CBA_ACCESS){
-    //if (UE_mac_inst[Mod_id].scheduling_info.LCID_status[DTCH] == LCID_EMPTY) 
+    LOG_D(MAC,"[UE %d] frame %d subframe %d try CBA transmission\n", Mod_id, frame, subframe);
+ //if (UE_mac_inst[Mod_id].scheduling_info.LCID_status[DTCH] == LCID_EMPTY) 
     if (use_cba_access(Mod_id,frame,subframe,eNB_index)==0){
       *access_mode=POSTPONED_ACCESS;
       return;

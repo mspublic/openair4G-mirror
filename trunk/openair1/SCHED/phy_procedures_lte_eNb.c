@@ -2405,6 +2405,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   int sync_pos;
   u16 rnti=0;
   u8 access_mode;
+  int num_active_cba_groups;
 
   if (abstraction_flag == 0) {
     remove_7_5_kHz(phy_vars_eNB,last_slot);
@@ -2518,8 +2519,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   */
 
   pusch_active = 0;
+  // reset the cba flag used for collision detection 
+  for (i=0; i < NUM_MAX_CBA_GROUP; i++){
+    phy_vars_eNB->cba_last_reception[i]=0;
+  }
   for (i=0;i<NUMBER_OF_UE_MAX;i++) { 
-
+  
     /*
       if ((i == 1) && (phy_vars_eNB->cooperation_flag > 0) && (two_ues_connected == 1))
       break;
@@ -3176,11 +3181,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       phy_vars_eNB->eNB_UE_stats[i].total_TBS_last = phy_vars_eNB->eNB_UE_stats[i].total_TBS;
     }
     
-    int num_active_cba_groups = phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups;
-    if (num_active_cba_groups > 0 )
+    num_active_cba_groups = phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups;
+    /*if (num_active_cba_groups > 0 )
     LOG_D(PHY,"[eNB] last slot %d trying cba transmission decoding UE %d num_grps %d rnti %x flag %d\n",
 	  last_slot, i, num_active_cba_groups,phy_vars_eNB->ulsch_eNB[i]->cba_rnti[i%num_active_cba_groups],
 	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_cba_scheduling_flag );
+    */ 
     if ((phy_vars_eNB->ulsch_eNB[i]) &&
 		(num_active_cba_groups > 0) &&
 		(phy_vars_eNB->ulsch_eNB[i]->cba_rnti[i%num_active_cba_groups]>0) &&
@@ -3237,22 +3243,22 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,&phy_vars_eNB->eNB_UE_stats[i], &rnti, &access_mode);
 	phy_vars_eNB->eNB_UE_stats[i].rank = phy_vars_eNB->ulsch_eNB[i]->o_RI[0];
       }
-       LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d harq_pid %d resetting the subframe_scheduling_flag, total cba groups %d %d\n",
+      /*  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d harq_pid %d resetting the subframe_scheduling_flag, total cba groups %d %d\n",
 	    phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->frame,last_slot>>1,i,harq_pid,
 	     phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups,num_active_cba_groups);
-      
+      */
       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_cba_scheduling_flag=0;
       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->status= SCH_IDLE;
       
       if ((num_active_cba_groups > 0) &&
-	  (i % num_active_cba_groups == 0) && // this ue is used a a template for the CBA
+	  //  (i % num_active_cba_groups == 0) && // this ue is used a a template for the CBA
 	  (i + num_active_cba_groups < NUMBER_OF_UE_MAX) &&
 	  (phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->cba_rnti[i%num_active_cba_groups] > 0 ) &&
 	  (phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->num_active_cba_groups> 0)) {
 #ifdef DEBUG_PHY_PROC
-	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d harq_pid %d resetting the subframe_scheduling_flag for cba groups %d members\n",
+	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d harq_pid %d resetting the subframe_scheduling_flag for Ue %d cba groups %d members\n",
 	      phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->frame,last_slot>>1,i,harq_pid,
-	      i%phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups);
+	      i+num_active_cba_groups, i%phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups);
 #endif
 	phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->harq_processes[harq_pid]->subframe_cba_scheduling_flag=1;
 	phy_vars_eNB->ulsch_eNB[i+num_active_cba_groups]->harq_processes[harq_pid]->status= CBA_ACTIVE;
@@ -3289,11 +3295,23 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		phy_vars_eNB->Mod_id, phy_vars_eNB->frame,last_slot>>1,
 		i, phy_vars_eNB->ulsch_eNB[i]->rnti,
 		i % phy_vars_eNB->ulsch_eNB[i]->num_active_cba_groups, phy_vars_eNB->ulsch_eNB[i]->cba_rnti[i%num_active_cba_groups]);
-	  mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
-			    phy_vars_eNB->frame,
-			    phy_vars_eNB->ulsch_eNB[i]->rnti,
-			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
-			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
+	  // detect if there is a CBA collision 
+	  if (phy_vars_eNB->cba_last_reception[i%num_active_cba_groups] == 0 ) {
+	    mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
+			      phy_vars_eNB->frame,
+			      phy_vars_eNB->ulsch_eNB[i]->rnti,
+			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
+			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
+	    phy_vars_eNB->cba_last_reception[i%num_active_cba_groups]=(last_slot>>1);
+	  } else {
+	    LOG_N(PHY,"[eNB %d] Frame %d subframe %d : CBA collision detected for UE%d for group %d, set the SR for this UE \n ",
+		  phy_vars_eNB->Mod_id,phy_vars_eNB->frame,last_slot>>1,
+		  i,i%num_active_cba_groups ); 
+	    mac_xface->SR_indication(phy_vars_eNB->Mod_id,
+				     phy_vars_eNB->frame,
+				     phy_vars_eNB->dlsch_eNB[i][0]->rnti,last_slot>>1);
+	  }
+	  
 	}
       } // ULSCH CBA not in error 
     }
