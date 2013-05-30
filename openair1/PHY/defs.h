@@ -255,7 +255,9 @@ typedef struct
   // Transmission mode per UE
   u8 transmission_mode[NUMBER_OF_UE_MAX];
 
-
+  /// cba_last successful reception for each group, used for collision detection
+  uint8_t cba_last_reception[4];
+  
   // Pointers for active physicalConfigDedicated to be applied in current subframe
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 

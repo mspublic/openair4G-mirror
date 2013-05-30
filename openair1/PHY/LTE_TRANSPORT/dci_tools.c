@@ -3204,12 +3204,13 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->O                                   = 0;
       ulsch->uci_format                          = HLC_subband_cqi_nopmi;
     }
-
+    
+    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     //FK: moved this part to ulsch_coding to be more recent
     /*
       fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
-      //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+      print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
    
       // save PUSCH pmi for later (transmission modes 4,5,6)
       // msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
