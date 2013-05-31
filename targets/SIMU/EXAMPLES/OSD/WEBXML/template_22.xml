@@ -54,12 +54,12 @@
       <SOURCE_ID>1:9</SOURCE_ID> <!-- valid formats are: -->					
       <APPLICATION_TYPE>scbr</APPLICATION_TYPE> 
       <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
-      <DURATION_ms>2000</DURATION_ms> <!-- start at -->
+  <!--    <DURATION_ms>2000</DURATION_ms> --> <!-- start at -->
     </PREDEFINED_TRAFFIC>
   </APPLICATION_CONFIG>
 
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>5000</EMULATION_TIME_ms> <!--set to infinity--> 
+    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> <!--set to infinity--> 
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
       <LATENCY>1</LATENCY>

@@ -855,7 +855,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
    
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,rnti,tmode,sinr_eff);
        //LOG_D(PHY,"UE CQI\n");
-    //print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
+    //    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
