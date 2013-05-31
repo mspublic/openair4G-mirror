@@ -314,6 +314,8 @@ typedef struct {
   int16_t PHR;
   /// num active cba group 
   uint8_t num_active_cba_groups;
+  /// num dci found for cba
+  uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } LTE_UE_ULSCH_t;
