@@ -1656,7 +1656,12 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   else {
     LOG_D(PHY,"[eNB %d] Found UE with rnti %x => UE_id %d\n",phy_vars_eNB->Mod_id, rnti, UE_id);
   }
-  *crnti = rnti;
+
+  if (PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->status == CBA_ACTIVE){
+    *crnti = rnti;
+    PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->status=IDLE;
+  } else 
+    *crnti = 0x0;
   
   // Do abstraction here to determine if packet it in error
  /* if (ulsch_abstraction_MIESM(phy_vars_eNB->sinr_dB_eNB,1, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->mcs,phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb, phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb) == 1) 

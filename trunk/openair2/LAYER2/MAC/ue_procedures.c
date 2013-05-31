@@ -1187,7 +1187,6 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   
     LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
 	  Mod_id,payload_offset, sdu_length_total);
-    UE_mac_inst[Mod_id].ul_active = 0;
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
@@ -1350,23 +1349,32 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
 // to be improved
 #ifdef CBA
+double uniform_rngen(int min, int max) {		
+  double random = (double)taus()/((double)0xffffffff);
+  return (max - min) * random + min;
+}
+
 int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   
   if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1] < 19))   ||
         ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2] < 19))   ||
         ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3] < 19)) // )){
-	&& ( UE_mac_inst[Mod_id].ul_active == 0) 
-	&& ((Mod_id+1)% ((subframe%2)+1) == 0 ))) {
-    /*
-      UE_mac_inst[Mod_id].cba_last_access[subframe]=1;
-      UE_mac_inst[Mod_id].cba_last_access[(subframe+1)%2]=1;
-    */    
+	&& (UE_mac_inst[Mod_id].ul_active == 0) // check if the ul is acrtive
+	&& (UE_mac_inst[Mod_id].cba_last_access[0] <= 0) )) { // backoff
+    
+    UE_mac_inst[Mod_id].cba_last_access[0]= round(uniform_rngen(1,10));
+    LOG_D(MAC,"[UE %d] Frame %d Subframe %d: start a new CBA backoff  %d \n", Mod_id, frame, subframe,
+	  UE_mac_inst[Mod_id].cba_last_access[0] );   
+    UE_mac_inst[Mod_id].ul_active == 1;
+    
     return 1;
   } else {
     /*
       UE_mac_inst[Mod_id].cba_last_access[subframe]=0;
       UE_mac_inst[Mod_id].cba_last_access[(subframe+1)%2]=0;
 	*/
+    if (UE_mac_inst[Mod_id].cba_last_access[0]>0)
+      UE_mac_inst[Mod_id].cba_last_access[0]-=1;
     return 0;
   }
   /*

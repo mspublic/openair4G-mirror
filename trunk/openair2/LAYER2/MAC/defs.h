@@ -758,7 +758,7 @@ typedef struct{
 #endif
 #ifdef CBA
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-  uint8_t cba_last_access[10];
+  uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
 #endif 
 }UE_MAC_INST;
 
