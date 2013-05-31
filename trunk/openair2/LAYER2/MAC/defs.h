@@ -678,6 +678,8 @@ typedef struct{
   u32 subframe;
   /// C-RNTI of UE
   u16 crnti;
+  /// uplink active flag
+  uint8_t ul_active;
   /// pointer to RRC PHY configuration 
   RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
   /// pointer to RRC PHY configuration 
@@ -756,7 +758,7 @@ typedef struct{
 #endif
 #ifdef CBA
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-  uint8_t cba_last_access;
+  uint8_t cba_last_access[10];
 #endif 
 }UE_MAC_INST;
 

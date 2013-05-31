@@ -3302,7 +3302,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			      phy_vars_eNB->ulsch_eNB[i]->rnti,
 			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
 			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
-	    phy_vars_eNB->cba_last_reception[i%num_active_cba_groups]=(last_slot>>1);
+	    phy_vars_eNB->cba_last_reception[i%num_active_cba_groups]=1;//(last_slot>>1);
 	  } else {
 	    LOG_N(PHY,"[eNB %d] Frame %d subframe %d : CBA collision detected for UE%d for group %d, set the SR for this UE \n ",
 		  phy_vars_eNB->Mod_id,phy_vars_eNB->frame,last_slot>>1,

@@ -677,7 +677,7 @@ int k;
        g_otg->trans_proto[i][j][k] = UDP;
        g_otg->ip_v[i][j][k] = IPV4;
        g_otg->idt_dist[i][j][k][PE_STATE] = FIXED;
-       g_otg->idt_min[i][j][k][PE_STATE] =  100;//uniform_rng(50,100); // random idt amoong different UEs 
+       g_otg->idt_min[i][j][k][PE_STATE] =  100+i;//uniform_rng(100,500); // random idt amoong different UEs 
        g_otg->idt_max[i][j][k][PE_STATE] =  10;
        g_otg->size_dist[i][j][k][PE_STATE] = FIXED;
        g_otg->size_min[i][j][k][PE_STATE] =  50;

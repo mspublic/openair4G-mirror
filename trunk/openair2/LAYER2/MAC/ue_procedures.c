@@ -236,6 +236,9 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
 	UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER,
 	(1<<(2+UE_mac_inst[Mod_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax)),
 	UE_mac_inst[Mod_id].scheduling_info.SR_pending);
+      
+    UE_mac_inst[Mod_id].ul_active =1;
+      
     return(1); //instruct phy to signal SR
   }
   else{
@@ -1060,7 +1063,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
     sdu_lcids[num_sdus] = DTCH;
     sdu_length_total += sdu_lengths[num_sdus];
     num_sdus++;
-    update_bsr(Mod_id, frame, DTCH, UE_mac_inst[Mod_id].scheduling_info.LCGID[DTCH]);
+    UE_mac_inst[Mod_id].ul_active = update_bsr(Mod_id, frame, DTCH, UE_mac_inst[Mod_id].scheduling_info.LCGID[DTCH]);
   }
   else { // no rlc pdu : generate the dummy header
     dtch_header_len = 0;
@@ -1127,7 +1130,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
  
   // Generate header
   // if (num_sdus>0) {
-
+  
   payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
 					   num_sdus,      // num sdus
 					   short_padding,            // short pading
@@ -1184,6 +1187,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   
     LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
 	  Mod_id,payload_offset, sdu_length_total);
+    UE_mac_inst[Mod_id].ul_active = 0;
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
@@ -1298,6 +1302,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   if ((UE_mac_inst[Mod_id].physicalConfigDedicated == NULL)) {
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    UE_mac_inst[Mod_id].ul_active=0;
     LOG_T(MAC,"[UE %d] Release all SRs \n", Mod_id);
     return(CONNECTION_OK);
   }
@@ -1309,6 +1314,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    UE_mac_inst[Mod_id].ul_active=0;
     LOG_T(MAC,"[UE %d] Release all SRs \n", Mod_id);
   }
 
@@ -1346,12 +1352,21 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 #ifdef CBA
 int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   
-  if (((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 )  ||
-       (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 )  ||
-       (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 )) ) {
-    //UE_mac_inst[Mod_id].cba_last_access=frame*10+subframe;
+  if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1] < 19))   ||
+        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2] < 19))   ||
+        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3] < 19)) // )){
+	&& ( UE_mac_inst[Mod_id].ul_active == 0) 
+	&& ((Mod_id+1)% ((subframe%2)+1) == 0 ))) {
+    /*
+      UE_mac_inst[Mod_id].cba_last_access[subframe]=1;
+      UE_mac_inst[Mod_id].cba_last_access[(subframe+1)%2]=1;
+    */    
     return 1;
   } else {
+    /*
+      UE_mac_inst[Mod_id].cba_last_access[subframe]=0;
+      UE_mac_inst[Mod_id].cba_last_access[(subframe+1)%2]=0;
+	*/
     return 0;
   }
   /*

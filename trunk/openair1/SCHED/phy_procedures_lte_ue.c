@@ -910,6 +910,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
 	access_mode=CBA_ACCESS;
 	
+	LOG_I(PHY,"[UE %d] Frame %d, subframe %d: CBA num dci %d \n", 
+	      phy_vars_ue->Mod_id,phy_vars_ue->frame,(next_slot>>1),
+	      phy_vars_ue->ulsch_ue[eNB_id]->num_cba_dci[(next_slot>>1)]);
+	
 	mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
 			      phy_vars_ue->frame,
 			      (next_slot>>1),
@@ -917,6 +921,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			      ulsch_input_buffer,
 			      input_buffer_length,
 			      &access_mode);
+	
+	phy_vars_ue->ulsch_ue[eNB_id]->num_cba_dci[(next_slot>>1)]=0;
 	
 	if (access_mode > UNKNOWN_ACCESS){
 	   
@@ -2111,7 +2117,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #ifdef DEBUG_PHY_PROC
 	  LOG_D(PHY,"[UE  %d] Generate UE ULSCH CBA_RNTI format 0 (subframe %d)\n",phy_vars_ue->Mod_id,last_slot>>1);
 #endif
-
+	  phy_vars_ue->ulsch_ue[eNB_id]->num_cba_dci[((last_slot>>1)+4)%10]++;
 	}
       }
   

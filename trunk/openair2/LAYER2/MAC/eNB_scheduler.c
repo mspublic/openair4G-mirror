@@ -1747,11 +1747,14 @@ void schedule_ulsch_cba_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 fram
       
       while ((*nCCE) + (1<<aggregation) * num_cba_resources[cba_group] > *nCCE_available)
 	num_cba_resources[cba_group]--;
-      
-       LOG_D(MAC,"[eNB %d] Frame %d, subframe %d: cba group %d weight/granted_ues %d/%d available/required rb (%d/%d), num resources %d \n", 
+         
+      LOG_N(MAC,"[eNB %d] Frame %d, subframe %d: cba group %d weight/granted_ues %d/%d available/required rb (%d/%d), num resources %d->1 (*scaled down*) \n", 
 	    Mod_id, frame, subframe, cba_group, 
 	    weight[cba_group], granted_UEs, available_rbs,required_rbs[cba_group],
 	    num_cba_resources[cba_group]);
+      
+      num_cba_resources[cba_group]=1;
+      
     }
   }
   // phase 2   
