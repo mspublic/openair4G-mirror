@@ -1170,6 +1170,8 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
   u16 min_sn = 20000000000; 
   int found = 0;
   
+  /*  if (*cornti_index >= 255)
+      return 0;*/
   for (UE_id=0;UE_id<granted_UEs;UE_id++){
     for (j=0;j<MAX_VLINK_PER_CH;j++){
       if (eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].cornti==cornti && eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0]!=0 ){
@@ -1189,8 +1191,8 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
   }
   
   
-  LOG_D(MAC,"CORNTI_is_to_be_scheduled *num_of_UE_id_ar %d min sn %d next ue %d and cornti index %d\n",
-	*num_of_UE_id_ar, min_sn, *next_ue , *cornti_index );
+  LOG_D(MAC,"[eNB %d] CORNTI_is_to_be_scheduled %s: *num_of_UE_id_ar %d min sn %d next ue %d and cornti index %d\n",
+	Mod_id,  (found ==1)? "YES" : "NO" ,  *num_of_UE_id_ar, min_sn, *next_ue , *cornti_index);
   if (found)   // uplink scheduling request
     return(1);
   else 
@@ -1735,7 +1737,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
        
        LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
        
-       LOG_N(MAC,"[eNB %d] Limit the MCS for the ULSCH collaborative links to 15 \n", Mod_id);
+       LOG_N(MAC,"[eNB %d] Limit the MCS for the ULSCH  links to 15 \n", Mod_id);
        mcs = 15;
 
        if((cooperation_flag > 0) && (next_ue == 1)) { // Allocation on same set of RBs
@@ -2106,15 +2108,24 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
  }
  
  for(i=0;i<MAX_VLINK_PER_CH*MAX_VLINK_PER_CH;i++){
-   free(UE_id_ar[i]);    
-   free(cornti_index_of_UE_id_ar[i]); 
-   free(seq_num_of_UE_id_ar[i]);
-   free(bsr_of_UE_id_ar[i]);
+   if (UE_id_ar[i])
+     free(UE_id_ar[i]);
+   if (cornti_index_of_UE_id_ar[i])
+     free(cornti_index_of_UE_id_ar[i]);
+   if (seq_num_of_UE_id_ar[i])
+     free(seq_num_of_UE_id_ar[i]);
+   if (bsr_of_UE_id_ar[i])
+     free(bsr_of_UE_id_ar[i]);
  }
- free(UE_id_ar);    
- free(cornti_index_of_UE_id_ar); 
- free(seq_num_of_UE_id_ar);
- free(bsr_of_UE_id_ar);
+ if(UE_id_ar)    
+   free(UE_id_ar);    
+ if(cornti_index_of_UE_id_ar) 
+   free(cornti_index_of_UE_id_ar); 
+ if (seq_num_of_UE_id_ar)
+   free(seq_num_of_UE_id_ar);
+ if (bsr_of_UE_id_ar)
+   free(bsr_of_UE_id_ar);
+ 
 }
 
 //APAPOSTO

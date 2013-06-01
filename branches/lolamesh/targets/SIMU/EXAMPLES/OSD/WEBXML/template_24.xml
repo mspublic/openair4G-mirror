@@ -28,7 +28,7 @@
       <eNB_MOBILITY>
 	<eNB_INITIAL_DISTRIBUTION>random</eNB_INITIAL_DISTRIBUTION>
 	<RANDOM_eNB_DISTRIBUTION>
-	  <NUMBER_OF_CELLS>2</NUMBER_OF_CELLS>
+	  <NUMBER_OF_CELLS>1</NUMBER_OF_CELLS>
 	</RANDOM_eNB_DISTRIBUTION>
 	<eNB_MOBILITY_TYPE>STATIC</eNB_MOBILITY_TYPE>
       </eNB_MOBILITY>
@@ -49,7 +49,7 @@
       <SIZE_MIN_byte>20</SIZE_MIN_byte>  <!--Minimum PAYLOAD size values in bytes-->
       <SIZE_MAX_byte>50</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
     </CUSTOMIZED_TRAFFIC>
-    
+   
     <!-- CH2 to CH1: small CBR traffic -->
      <CUSTOMIZED_TRAFFIC>	 
       <SOURCE_ID>1</SOURCE_ID> 		
@@ -81,5 +81,5 @@
     
   </EMULATION_CONFIG>
  
-  <PROFILE>MESH_VLINK_1</PROFILE>	
+  <PROFILE>MESH_PHYLINK_2</PROFILE>	
 </OAI_EMULATION>

@@ -691,13 +691,13 @@ int mac_buffer_add_tail(u8 Mod_id, u8 b_index, mem_element_t *elementP){
  avl_node_t *ptr_t;
  ptr_t=avl_tree_find(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, elementP->seq_num);
  if(ptr_t == NULL){ // pdu with the seq_num does not exist in the tree so I can add it into the list and then to the tree!
-	packet_list_add_tail(elementP, mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p);
-	mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn = avl_tree_insert_node(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, elementP, 1, 0, 0);
-	mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size = avl_tree_insert_node_pdu_size(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size, elementP);	
-	return 1;
+   packet_list_add_tail(elementP, mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p);
+   mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn = avl_tree_insert_node(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, elementP, 1, 0, 0);
+   mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size = avl_tree_insert_node_pdu_size(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size, elementP);	
+   return 1;
  }
  else{
-	return 0;
+   return 0;
  }
 }
 
