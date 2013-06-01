@@ -251,13 +251,14 @@ avl_node_t *avl_tree_insert_node(avl_node_t *t, struct mem_element_t *elementP, 
 
   if(elementP==NULL){
 	 return NULL;
-	}
+  }
   int key = elementP->seq_num;
-	int second_key = elementP->pdu_size;
+  int second_key = elementP->pdu_size;
   // 1.  Perform the normal BST rotation 
  if(t == NULL){
-	//	 Create and return a one-node tree 
-	t = malloc(sizeof(struct avl_node_t));
+   t = (avl_node_t *) t; 
+   //	 Create and return a one-node tree 
+   t = malloc(sizeof(struct avl_node_t));
 	if(t == NULL){
 	 //printf("Insufficient Memory - Allocation Error! avl_tree_insert_node()!\n");
 	 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure  for avl_tree_insert_node()\n");
@@ -308,9 +309,9 @@ avl_node_t *avl_tree_insert_node_pdu_size(avl_node_t *t, mem_element_t *elementP
  // 1.  Perform the normal BST rotation 
  if(t == NULL){
 	//	 Create and return a one-node tree 
-	t = malloc(sizeof(struct avl_node_t));
+   t = malloc(sizeof(struct avl_node_t));
 	if(t == NULL){
-	 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure  for avl_tree_insert_node_pdu_size()\n");
+	  LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure  for avl_tree_insert_node_pdu_size()\n");
    mac_xface->macphy_exit("out of memory for for avl_tree_insert_node_pdu_size()");
 	 return NULL;
 	}

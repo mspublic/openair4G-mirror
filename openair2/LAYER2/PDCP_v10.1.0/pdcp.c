@@ -452,12 +452,12 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     //rab_id    = (eNB_flag == 1) ? eNB_index * MAX_NUM_RB + DTCH : (NB_eNB_INST + UE_index -1 ) * MAX_NUM_RB + DTCH ;
     ctime = oai_emulation.info.time_ms; // current simulation time in ms
     if (eNB_flag == 1) { // search for DL traffic
-      for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
+      for (dst_id = 0; dst_id < NUMBER_OF_UE_MAX; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
-	if ((mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST ) > 2 /*RRC_CONNECTED*/)&& (frame > 110) ) { 
-	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
+	if ((mac_get_rrc_status(module_id, eNB_flag, dst_id ) > 2 /*RRC_CONNECTED*/)&& (frame > (dst_id + 1) * 50 ) ) { 
+	  otg_pkt=(u8*) packet_gen(module_id, dst_id+NB_eNB_INST, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
-	    rab_id = (/*NB_eNB_INST +*/ dst_id -1 ) * MAX_NUM_RB + DTCH;
+	    rab_id = dst_id * MAX_NUM_RB + DTCH;
 	    //rab_id = (MAX_NUM_RB * NUMBER_OF_UE_MAX) + VLID_OFFSET; 
 	    LOG_I(OTG,"[eNB %d] sending packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rab_id, module_id, dst_id, pkt_size);
 	    pdcp_data_req(module_id, frame, eNB_flag, rab_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_DATA_PDU);
@@ -468,7 +468,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
       }
       for (dst_id = 0; dst_id < NB_eNB_INST; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
-	if ((frame > 200) ) { 
+	if ((frame > 200) && dst_id != module_id && eNB_flag) { 
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
 	    rab_id = (MAX_NUM_RB * NUMBER_OF_UE_MAX) + VLID_OFFSET; 
@@ -483,7 +483,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     }else {
       src_id = module_id+NB_eNB_INST;
       dst_id = eNB_index;	
-      if ((mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) ) { 
+      if ((mac_get_rrc_status(module_id, eNB_flag, eNB_index ) > 2 /*RRC_CONNECTED*/) && (frame > (module_id+1) *50 )) { 
 	otg_pkt=(u8*) packet_gen(src_id, dst_id, ctime, &pkt_size);
 	if (otg_pkt != NULL){
 	  rab_id= eNB_index * MAX_NUM_RB + DTCH;
