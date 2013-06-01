@@ -1356,9 +1356,9 @@ double uniform_rngen(int min, int max) {
 
 int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   
-  if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1] < 19))   ||
-        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2] < 19))   ||
-        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3] < 19)) // )){
+  if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1] < 21))   ||
+        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2] < 21))   ||
+        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3] < 21)) // )){
 	&& (UE_mac_inst[Mod_id].ul_active == 0) // check if the ul is acrtive
 	&& (UE_mac_inst[Mod_id].cba_last_access[0] <= 0) )) { // backoff
     
