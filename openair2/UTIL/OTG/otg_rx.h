@@ -116,10 +116,10 @@ float owd_const_application();
 *\param[in] seq_num: packet sequence number
 *\param[in] seq_num_rx:RX sequence number
 *\param[in] nb_loss_pkts: number of lost packet 
-*\param[out] void
+*\param[out] lost_packet: (0) no lost packets, (1) lost packets
 *\note 
 *@ingroup  _otg
 */
-void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts);
+int rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts);
 
 #endif

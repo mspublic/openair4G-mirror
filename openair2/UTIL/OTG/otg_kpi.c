@@ -102,16 +102,50 @@ otg_info->total_loss_ul=0;
 
   for (i=0; i<(NB_eNB_INST + NB_UE_INST); i++){
     for (j=0; j<(NB_eNB_INST + NB_UE_INST); j++){
-  		for (k=0; k<MAX_EMU_TRAFFIC; k++){
- 				if (i<NB_eNB_INST)
-					otg_info->total_loss_dl+=(otg_info->nb_loss_pkts_dl[i][j][k] + otg_info->nb_loss_pkts_background_dl[i][j]);
-				else
-					otg_info->total_loss_ul+=(otg_info->nb_loss_pkts_ul[i][j][k] + otg_info->nb_loss_pkts_background_ul[i][j]);
-			}
-		}
-	}
+      for (k=0; k<MAX_EMU_TRAFFIC; k++){
+	if (i<NB_eNB_INST)
+	  otg_info->total_loss_dl+=(otg_info->nb_loss_pkts_dl[i][j][k] + otg_info->nb_loss_pkts_background_dl[i][j]);
+	else
+	  otg_info->total_loss_ul+=(otg_info->nb_loss_pkts_ul[i][j][k] + otg_info->nb_loss_pkts_background_ul[i][j]);
+      }
+    }
+  }
 }
 
+void average_pkt_jitter(int src, int dst, int application){
+ 
+  otg_info->rx_jitter_avg[src][dst][application]/= otg_info->rx_jitter_sample[src][dst][application];
+
+  if (otg_info->rx_jitter_avg[src][dst][application] > 0) {
+    if (src<NB_eNB_INST)
+      otg_info->average_jitter_dl+=otg_info->rx_jitter_avg[src][dst][application];
+    else
+      otg_info->average_jitter_ul+=otg_info->rx_jitter_avg[src][dst][application];
+    
+    LOG_T(OTG,"average_jitter_dl %lf average_jitter_ul %lf \n",otg_info->average_jitter_dl,otg_info->average_jitter_ul  );
+  }
+}
+
+void average_total_jitter(){
+unsigned int i,j,k;
+
+otg_info->average_jitter_dl=0;
+otg_info->average_jitter_ul=0;
+
+  for (i=0; i<(NB_eNB_INST + NB_UE_INST); i++){
+    for (j=0; j<(NB_eNB_INST + NB_UE_INST); j++){
+      for (k=0; k<MAX_EMU_TRAFFIC; k++){
+	if (i<NB_eNB_INST)
+	  otg_info->average_jitter_dl+=otg_info->rx_jitter_avg[i][j][k];
+	else
+	  otg_info->average_jitter_ul+=otg_info->rx_jitter_avg[i][j][k];
+      }
+    }
+  }
+  LOG_I(OTG,"average_jitter_dl %d average_jitter_ul %lf \n",otg_info->average_jitter_dl,otg_info->average_jitter_ul  );
+  //  otg_info->average_jitter_dl/= (float)NB_UE_INST;
+  // otg_info->average_jitter_ul/= (float)NB_UE_INST;
+}
 
 void kpi_gen() {
   int i, j,k;
@@ -137,6 +171,8 @@ void kpi_gen() {
   float min_owd_ul=0;
   float max_owd_ul=0;  
 
+  int num_active_source=0;
+ 
 char traffic_type[12];
 char traffic[30];
 
@@ -173,17 +209,21 @@ if (i<NB_eNB_INST){
       tx_throughput(i,j,k);
       rx_goodput(i,j,k);
       rx_loss_rate_pkts(i,j,k);
-      
+      average_pkt_jitter(i,j,k);
+
       //LOG_I(OTG,"KPI: (src=%d, dst=%d) NB packet TX= %d,  NB packet RX= %d\n ",i, j,  otg_info->tx_num_pkt[i][j],  otg_info->rx_num_pkt[i][j]);
       
       
      if ((otg_info->tx_throughput[i][j][k]>0)||((otg_info->tx_throughput_background[i][j]>0) && (otg_info->tx_num_bytes[i][j][k]>0)))  {
- 	if (i<NB_eNB_INST){
+       
+       num_active_source+=1;
+       
+       if (i<NB_eNB_INST){
    	tx_total_bytes_dl+=otg_info->tx_num_bytes[i][j][k];
 	  tx_total_pkts_dl+=otg_info->tx_num_pkt[i][j][k];	
 	  rx_total_bytes_dl+=otg_info->rx_num_bytes[i][j][k];
 	  rx_total_pkts_dl+=otg_info->rx_num_pkt[i][j][k];
-   	/*tx_total_bytes_dl_background+=otg_info->tx_num_bytes_background[i][j];
+	  /*tx_total_bytes_dl_background+=otg_info->tx_num_bytes_background[i][j];
 	  tx_total_pkts_dl_background+=otg_info->tx_num_pkt_background[i][j];	
 	  rx_total_bytes_dl_background+=otg_info->rx_num_bytes_background[i][j];
 	  rx_total_pkts_dl_background+=otg_info->rx_num_pkt_background[i][j]; */
@@ -376,6 +416,9 @@ if (i<NB_eNB_INST){
   LOG_I(OTG,"[%s] Total bytes(RX)= %d \n",traffic_type, otg_info->rx_num_bytes[i][j][k]);
   LOG_I(OTG,"[%s] OWD MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j][k]);
   LOG_I(OTG,"[%s] OWD MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j][k]);
+  LOG_I(OTG,"[%s] JITTER AVG ms= %.2f \n",traffic_type, otg_info->rx_jitter_avg[i][j][k]);
+  LOG_I(OTG,"[%s] JITTER MIN ms= %.2f \n",traffic_type, otg_info->rx_jitter_min[i][j][k]);
+  LOG_I(OTG,"[%s] JITTER MAX ms= %.2f \n",traffic_type, otg_info->rx_jitter_max[i][j][k]);
   LOG_I(OTG,"[%s] TX throughput = %.7f(Kbit/s) \n",traffic_type, otg_info->tx_throughput[i][j][k]);
   LOG_I(OTG,"[%s] RX goodput= %.7f (Kbit/s) \n",traffic_type, otg_info->rx_goodput[i][j][k]);
   if (otg_info->rx_loss_rate[i][j][k]>0){
@@ -406,6 +449,9 @@ if (i<NB_eNB_INST){
 	LOG_F(OTG,"[%s] Total bytes(RX)= %d \n",traffic_type, otg_info->rx_num_bytes[i][j][k]);
 	LOG_F(OTG,"[%s] OWD MIN (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_min[i][j][k]);
 	LOG_F(OTG,"[%s] OWD MAX (one way)ms= %.2f \n",traffic_type, otg_info->rx_owd_max[i][j][k]);
+	LOG_F(OTG,"[%s] JITTER AVG ms= %.2f \n",traffic_type, otg_info->rx_jitter_avg[i][j][k]);
+	LOG_F(OTG,"[%s] JITTER MIN ms= %.2f \n",traffic_type, otg_info->rx_jitter_min[i][j][k]);
+	LOG_F(OTG,"[%s] JITTER MAX ms= %.2f \n",traffic_type, otg_info->rx_jitter_max[i][j][k]);
 	LOG_F(OTG,"[%s] TX throughput = %.7f(Kbit/s) \n",traffic_type, otg_info->tx_throughput[i][j][k]);
 	LOG_F(OTG,"[%s] RX goodput= %.7f (Kbit/s) \n",traffic_type, otg_info->rx_goodput[i][j][k]);
 	if (otg_info->rx_loss_rate[i][j][k]>0){
@@ -490,6 +536,9 @@ if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
 
 		}	
   }
+  
+  //  average_total_jitter();
+  
 #ifdef STANDALONE
   fprintf (file,"**************** TOTAL DL RESULTS ******************\n");
   fprintf(file,"Total Time= %d \n", otg_info->ctime+1);
@@ -537,6 +586,7 @@ if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
   LOG_I(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
   LOG_I(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_dl);
   LOG_I(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_dl);
+  LOG_I(OTG,"[DATA] JITTER AVG ms= %lf \n", otg_info->average_jitter_dl/(float)num_active_source );
   LOG_I(OTG,"[DATA] TX throughput = %.7f(Kbit/s) \n", ((double)tx_total_bytes_dl*1000*8)/(otg_info->ctime*1024));
   LOG_I(OTG,"[DATA] RX throughput = %.7f(Kbit/s) \n", ((double)rx_total_bytes_dl*1000*8)/(otg_info->ctime*1024));
   LOG_I(OTG,"[DATA] NB lost packet = %d \n", tx_total_pkts_dl - rx_total_pkts_dl );
@@ -557,6 +607,7 @@ if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
   LOG_F(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_dl);
   LOG_F(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_dl);
   LOG_F(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_dl);
+  LOG_F(OTG,"[DATA] JITTER AVG ms= %lf \n",  otg_info->average_jitter_dl/(float)num_active_source);
   LOG_F(OTG,"[DATA] TX throughput = %.7f(Kbit/s) \n", ((double)tx_total_bytes_dl*1000*8)/(otg_info->ctime*1024));
   LOG_F(OTG,"[DATA] RX throughput = %.7f(Kbit/s) \n", ((double)rx_total_bytes_dl*1000*8)/(otg_info->ctime*1024));
   LOG_F(OTG,"[DATA] NB lost packet = %d \n", tx_total_pkts_dl - rx_total_pkts_dl );
@@ -578,6 +629,7 @@ if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
   LOG_I(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
   LOG_I(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_ul);
   LOG_I(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_ul);
+  LOG_I(OTG,"[DATA] JITTER AVG ms= %lf \n",  otg_info->average_jitter_ul/(float)num_active_source);
   LOG_I(OTG,"[DATA] TX throughput = %.7f(Kbit/s) \n", ((double)tx_total_bytes_ul*1000*8)/(otg_info->ctime*1024));
   LOG_I(OTG,"[DATA] RX throughput = %.7f(Kbit/s) \n", ((double)rx_total_bytes_ul*1000*8)/(otg_info->ctime*1024));
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){
@@ -597,6 +649,7 @@ if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
   LOG_F(OTG,"[DATA] Total bytes(RX)= %d \n", rx_total_bytes_ul);
   LOG_F(OTG,"[DATA] OWD MIN (one way)ms= %.2f \n", min_owd_ul);
   LOG_F(OTG,"[DATA] OWD MAX (one way)ms= %.2f \n", max_owd_ul);
+  LOG_F(OTG,"[DATA] JITTER AVG ms= %lf \n",  otg_info->average_jitter_ul/(float)num_active_source);
   LOG_F(OTG,"[DATA] TX throughput = %.7f(Kbit/s) \n", ((double)tx_total_bytes_ul*1000*8)/(otg_info->ctime*1024));
   LOG_F(OTG,"[DATA] RX throughput = %.7f(Kbit/s) \n", ((double)rx_total_bytes_ul*1000*8)/(otg_info->ctime*1024));
   if ((g_otg->background_stats==1)&&(tx_total_pkts_ul_background>0)){

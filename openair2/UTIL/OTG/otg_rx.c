@@ -53,7 +53,6 @@ extern unsigned char NB_UE_INST;
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
 
-
 // Check if the packet is well received or not and extract data
 int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size){
   
@@ -63,7 +62,8 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
   int is_size_ok=0;
   unsigned int seq_num_rx;
   unsigned int nb_loss_pkts;
-
+  unsigned int lost_packet=0;
+  unsigned int i;
   char * hdr_payload=NULL;
   //int header_size;
 
@@ -116,7 +116,7 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
       otg_info->aggregation_level[src][dst]=otg_hdr_rx->aggregation_level;
       
       /* Loss and out of sequence data management */
-      rx_check_loss(src, dst, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, &seq_num_rx, &nb_loss_pkts);
+      lost_packet= rx_check_loss(src, dst, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, &seq_num_rx, &nb_loss_pkts);
       
       
       if (otg_info->owd_const[src][dst][otg_hdr_rx->flow_id]==0)
@@ -143,11 +143,25 @@ float owd_const_application_v=owd_const_application()/2;
       if (otg_hdr_rx->time<=ctime){
 	otg_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
 	otg_multicast_info->radio_access_delay[src][dst]=ctime- otg_hdr_rx->time;
-      }
+      } else 
+	LOG_N(OTG,"received packet has tx time %d greater than the current time %d\n",otg_hdr_rx->time,ctime );
       
       otg_info->rx_pkt_owd[src][dst]=otg_info->owd_const[src][dst][otg_hdr_rx->flow_id]+ otg_info->radio_access_delay[src][dst];
       otg_multicast_info->rx_pkt_owd[src][dst]=otg_multicast_info->radio_access_delay[src][dst];
-	
+      // compute the jitter by ignoring the packet loss
+      if (lost_packet == 0){
+	otg_info->rx_pkt_owd_history[src][dst][1] = otg_info->rx_pkt_owd_history[src][dst][0]; // the previous owd
+	otg_info->rx_pkt_owd_history[src][dst][0] = otg_info->rx_pkt_owd[src][dst]; // the current owd
+	if (otg_info->rx_pkt_owd_history[src][dst][1] == 0) // first packet
+	  otg_info->rx_pkt_jitter[src][dst]=0;
+	else // for the consecutive packets
+	  otg_info->rx_pkt_jitter[src][dst]= abs(otg_info->rx_pkt_owd_history[src][dst][0] - otg_info->rx_pkt_owd_history[src][dst][1]);
+  
+	LOG_D(OTG,"The packet jitter for the pair (src %d, dst %d)) at %d is %lf (current %lf, previous %lf) \n",
+	      src, dst, ctime, otg_info->rx_pkt_jitter[src][dst],
+	      otg_info->rx_pkt_owd_history[src][dst][0], otg_info->rx_pkt_owd_history[src][dst][1]);
+      }
+
       if (otg_hdr_info_rx->flag == 0x1000){
 	
 	LOG_I(OTG,"INFO LATENCY :: [SRC %d][DST %d] radio access %.2f (tx time %d, ctime %d), OWD:%.2f (ms):\n", 
@@ -156,7 +170,7 @@ float owd_const_application_v=owd_const_application()/2;
 	if (otg_multicast_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]==0){
 	  otg_multicast_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]=otg_multicast_info->rx_pkt_owd[src][dst];
 	  otg_multicast_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type]=otg_multicast_info->rx_pkt_owd[src][dst];
-	}		
+	}	
 	else {
 	  otg_multicast_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]=MAX(otg_multicast_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type],otg_multicast_info->rx_pkt_owd[src][dst] );
 	  otg_multicast_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type]=MIN(otg_multicast_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type],otg_multicast_info->rx_pkt_owd[src][dst] );
@@ -185,6 +199,18 @@ float owd_const_application_v=owd_const_application()/2;
 	    otg_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type]=MAX(otg_info->rx_owd_max[src][dst][otg_hdr_rx->traffic_type],otg_info->rx_pkt_owd[src][dst] );
 	    otg_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type]=MIN(otg_info->rx_owd_min[src][dst][otg_hdr_rx->traffic_type],otg_info->rx_pkt_owd[src][dst] );
 	  }
+	  if (otg_info->rx_jitter_max[src][dst][otg_hdr_rx->traffic_type]==0){
+	    otg_info->rx_jitter_max[src][dst][otg_hdr_rx->traffic_type]=otg_info->rx_pkt_jitter[src][dst];
+	    otg_info->rx_jitter_min[src][dst][otg_hdr_rx->traffic_type]=otg_info->rx_pkt_jitter[src][dst];
+	  }		
+	  else if (lost_packet==0){
+	    otg_info->rx_jitter_max[src][dst][otg_hdr_rx->traffic_type]=MAX(otg_info->rx_jitter_max[src][dst][otg_hdr_rx->traffic_type],otg_info->rx_pkt_jitter[src][dst] );
+	    otg_info->rx_jitter_min[src][dst][otg_hdr_rx->traffic_type]=MIN(otg_info->rx_jitter_min[src][dst][otg_hdr_rx->traffic_type],otg_info->rx_pkt_jitter[src][dst] );
+	    // avg jitter
+	    otg_info->rx_jitter_avg[src][dst][otg_hdr_rx->traffic_type] +=  otg_info->rx_pkt_jitter[src][dst]; 
+	    otg_info->rx_jitter_sample[src][dst][otg_hdr_rx->traffic_type] +=1;
+	  }
+	  	  
 	}
 	 
 	if (g_otg->curve==1){ 
@@ -226,8 +252,10 @@ float owd_const_application_v=owd_const_application()/2;
 	if (g_otg->latency_metric) {
 	  if (g_otg->owd_radio_access==0)
 	    add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY); 
-	  else
+	  else {
 	    add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY); 
+	    add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_jitter[src][dst], OTG_JITTER); 
+	  }
 	}
 	
 	if (g_otg->throughput_metric)
@@ -290,29 +318,32 @@ float owd_const_application_v=owd_const_application()/2;
 
 
 
-void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts){
+int rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts){
 
   /* Loss and out of sequence data management, we have 3 case : */
   /* (1) Receieved packet corresponds to the expected one, in terms of the sequence number*/
-  
+  int lost_packet=0;
   if (seq_num==*seq_num_rx) {
     LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
     *seq_num_rx+=1;
   }
-			/* (2) Receieved packet with a sequence number higher than the expected sequence number (there is a gap): packet loss */
+  /* (2) Receieved packet with a sequence number higher than the expected sequence number (there is a gap): packet loss */
   else if (seq_num>*seq_num_rx){ // out of sequence packet:  previous packet lost 
     LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
     *nb_loss_pkts+=seq_num-(*seq_num_rx);
     *seq_num_rx=seq_num+1;
+    lost_packet=1;
   } 
   /* (3) Receieved packet with a sequence number less than the expected sequence number: recovery after loss/out of sequence  */
   else if (seq_num< *seq_num_rx){ //the received packet arrived late 
     *nb_loss_pkts-=1;
     LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: recovery after loss or out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
   }
-  else
+  else {
     LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) ::  packet seq_num TX=%d , seq_num RX=%d (ERROR)\n",src,dst,flag, seq_num, *seq_num_rx);
-  
+    lost_packet=1;
+  }
+  return lost_packet;
 }
 
 
