@@ -200,6 +200,14 @@ int logInit (void) {
     g_log->log_component[OTG_GP_BG].filelog = 0;
     g_log->log_component[OTG_GP_BG].filelog_name = "/tmp/otg_GP_bg.dat";
 
+    g_log->log_component[OTG_JITTER].name = "OTG_JITTER";
+    g_log->log_component[OTG_JITTER].level = LOG_FILE;
+    g_log->log_component[OTG_JITTER].flag =  LOG_MED;
+    g_log->log_component[OTG_JITTER].interval =  1;
+    g_log->log_component[OTG_JITTER].fd = 0;
+    g_log->log_component[OTG_JITTER].filelog = 0;
+    g_log->log_component[OTG_JITTER].filelog_name = "/tmp/otg_jitter.dat";
+    
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
     g_log->log_component[OCG].flag =  LOG_MED;

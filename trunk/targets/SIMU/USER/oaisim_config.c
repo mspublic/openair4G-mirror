@@ -384,7 +384,7 @@ void oaisim_config() {
     set_component_filelog(OTG_GP);
     set_component_filelog(OTG_LATENCY_BG);
     set_component_filelog(OTG_GP_BG);
-
+    set_component_filelog(OTG_JITTER);
     /* g_log->log_component[OTG].filelog=1;
     g_log->log_component[OTG_LATENCY].filelog=1;
     g_log->log_component[OTG_OWD].filelog = 1;*/
@@ -634,7 +634,7 @@ int ocg_config_app(){
       }
     }
   }
-  
+  LOG_D(OTG,"initializing the RNG with %s %d\n",(g_otg->seed==0)?"Random Seed" : "Fixed Seed", g_otg->seed);
   init_seeds(g_otg->seed); // initialize all the nodes, then configure the nodes the user specifically did in the XML in the following
   
   LOG_I(OTG,"oai_emulation.info.max_predefined_traffic_config_index = %d\n", oai_emulation.info.max_predefined_traffic_config_index);

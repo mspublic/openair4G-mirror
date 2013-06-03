@@ -512,9 +512,15 @@ typedef struct{
   // vars updated at each iteration of otg_rx	
   int rx_num_pkt[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC]; 		/*!< \brief  Number of data packet in the rx */
   int rx_num_bytes[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC]; 		/*!< \brief  Number of bytes in the rx */
-  float rx_pkt_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
+  float rx_pkt_owd[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime, */
   float rx_owd_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC];  		/*!< \brief  One way delay min*/
   float rx_owd_max[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC]; 		/*!< \brief  One way delay max*/
+  float rx_pkt_owd_history[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][2]; 		/*!< \brief  One way delay histoy used for jitter calculation: rx_ctime - tx_ctime, [2] to keep the owd for the current and previous pkt */  
+  float rx_pkt_jitter[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX]; 		/*!< \brief  One way delay: rx_ctime - tx_ctime */  
+  float rx_jitter_min[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC];  		/*!< \brief  One way delay min*/
+  float rx_jitter_max[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC]; 		/*!< \brief  One way delay max*/
+  float rx_jitter_avg[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC]; 		/*!< \brief  One way delay max*/
+  int rx_jitter_sample[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC]; 		/*!< \brief  One way delay max*/
   int nb_loss_pkts_ul[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC];		/*!< \brief  Number of data packets losses for UL*/
   int nb_loss_pkts_dl[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_EMU_TRAFFIC];		/*!< \brief  Number of data packets losses for DL*/
   float owd_const[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];		/*!< \brief  One way delay constant*/
@@ -551,7 +557,10 @@ typedef struct{
   unsigned int rx_total_bytes_ul;
   unsigned int total_loss_dl;
   unsigned int total_loss_ul;
+  float average_jitter_dl;
+  float average_jitter_ul;
 
+  
   /* VOIP tarffic parameters*/
   float voip_transition_prob[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
   unsigned int voip_state[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; 
