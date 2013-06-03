@@ -58,7 +58,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = 0;
+  lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx_eNB     = N_tx;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
@@ -94,12 +94,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
 
   memcpy((void*)&PHY_vars_eNB1->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB1->lte_frame_parms.nushift=1;
-  PHY_vars_eNB1->lte_frame_parms.Nid_cell=2;
+  PHY_vars_eNB1->lte_frame_parms.nushift=(Nid_cell+1)%6;
+  PHY_vars_eNB1->lte_frame_parms.Nid_cell=Nid_cell+1;
 
   memcpy((void*)&PHY_vars_eNB2->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB2->lte_frame_parms.nushift=2;
-  PHY_vars_eNB2->lte_frame_parms.Nid_cell=3;
+  PHY_vars_eNB2->lte_frame_parms.nushift=(Nid_cell+2)%6;
+  PHY_vars_eNB2->lte_frame_parms.Nid_cell=Nid_cell+2;
 
   phy_init_lte_eNB(PHY_vars_eNB1,0,0,0);
 
@@ -111,7 +111,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
   PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
   for (i=0;i<3;i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
+    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);    
   
   generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
   generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
@@ -798,7 +798,7 @@ int main(int argc, char **argv) {
   
 
 
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,0);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,MAX_TURBO_ITERATIONS,0);
   PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,0);
 
 
@@ -829,7 +829,6 @@ int main(int argc, char **argv) {
   }
 
 
-  randominit(0);
 
   PHY_vars_UE->UE_mode[0] = PUSCH;
   
@@ -860,11 +859,22 @@ int main(int argc, char **argv) {
     memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 #endif
     }
+    generate_pilots_slot(PHY_vars_eNB,
+        PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
+        1024,
+        (subframe*2),
+        0);
+    generate_pilots_slot(PHY_vars_eNB,
+        PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
+        1024,
+        (subframe*2)+1,
+        0);
+    /*
     generate_pilots(PHY_vars_eNB,
 	      PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
 	      1024,
 	      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-	
+    */	
 
     if (input_fd == NULL) {
       numCCE=0;
@@ -907,8 +917,8 @@ int main(int argc, char **argv) {
                                                       subframe);
         }
         if (n_frames==1) 
-            printf("dci %d: rnti 0x%x, format %d : nCCE %d/%d\n",i,DCI_pdu.dci_alloc[i].rnti, DCI_pdu.dci_alloc[i].format,
-          	   DCI_pdu.dci_alloc[i].nCCE, DCI_pdu.nCCE);
+            printf("dci %d: rnti 0x%x, format %d, L %d, nCCE %d/%d dci_length %d\n",i,DCI_pdu.dci_alloc[i].rnti, DCI_pdu.dci_alloc[i].format,
+          	   DCI_pdu.dci_alloc[i].L, DCI_pdu.dci_alloc[i].nCCE, DCI_pdu.nCCE, DCI_pdu.dci_alloc[i].dci_length);
       }
       
       num_pdcch_symbols = generate_dci_top(DCI_pdu.Num_ue_spec_dci,
@@ -920,7 +930,7 @@ int main(int argc, char **argv) {
           				  PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id],
           				  subframe);
       if (is_phich_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)) {
-        harq_pid = subframe2_ul_harq(&PHY_vars_eNB->lte_frame_parms,subframe);
+        harq_pid = phich_subframe_to_harq_pid(&PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->frame, subframe);
             
         phich_ACK = taus()&1;
         PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->phich_active = 1;
@@ -963,10 +973,6 @@ int main(int argc, char **argv) {
             PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 0;
             */
       }
-          
-      if (n_frames==1)
-        printf("Num_pdcch_symbols %d, Num_common_dci %d, Num_ue_spec_dci %d, Num_CCE %d/%d (nCCE %d, nREG %d)\n",num_pdcch_symbols,
-              DCI_pdu.Num_common_dci,DCI_pdu.Num_ue_spec_dci,DCI_pdu.nCCE,nCCE_max,get_nCCE(num_pdcch_symbols,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,subframe)),get_nquad(num_pdcch_symbols,frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,subframe)));
           
           //  write_output("pilotsF.m","rsF",txdataF[0],lte_PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 #ifdef IFFT_FPGA
@@ -1084,14 +1090,15 @@ int main(int argc, char **argv) {
     //	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
     for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
       for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
-        /*
+       
         ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + 2*i] = (short) (.667*(r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
         ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + 2*i+1] = (short) (.667*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-        */
+      /* 
       ((short*)PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + 2*i] = 
         ((short*)txdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + 2*i];
       ((short*)PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + 2*i+1] = 
         ((short*)txdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + 2*i+1];
+      */  
       }
     }    
 
@@ -1123,9 +1130,9 @@ int main(int argc, char **argv) {
       	        (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
       	        PHY_vars_UE->is_secondary_ue); 
         
-        PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe)]->status = ACTIVE;
-        PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe)]->Ndi = 1;
         if (is_phich_subframe(&PHY_vars_UE->lte_frame_parms,subframe)) {
+          PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe)]->status = ACTIVE;
+          PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms,0,subframe)]->Ndi = 1;
           rx_phich(PHY_vars_UE,
       	     subframe,
       	     0);
@@ -1140,20 +1147,26 @@ int main(int argc, char **argv) {
         common_rx=0;
         ul_rx=0;
         dl_rx=0;
+        if (n_frames==1)  {
+          numCCE = get_nCCE(PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols, &PHY_vars_UE->lte_frame_parms, get_mi(&PHY_vars_UE->lte_frame_parms,subframe));
+          for (i = 0; i < dci_cnt; i++) 
+            printf("dci %d: rnti 0x%x, format %d, L %d, nCCE %d/%d dci_length %d\n",i, dci_alloc_rx[i].rnti, dci_alloc_rx[i].format,
+          	   dci_alloc_rx[i].L, dci_alloc_rx[i].nCCE, numCCE, dci_alloc_rx[i].dci_length);
+        }
         for (i=0;i<dci_cnt;i++) {
           if (dci_alloc_rx[i].rnti == SI_RNTI) {
-            if (n_frames==1)
+            if (n_frames==1) 
               dump_dci(&PHY_vars_UE->lte_frame_parms, &dci_alloc_rx[i]);
             common_rx=1;
           }
           if ((dci_alloc_rx[i].rnti == n_rnti) && (dci_alloc_rx[i].format == format0)) {
-            if (n_frames==1)
+            if (n_frames==1) 
               dump_dci(&PHY_vars_UE->lte_frame_parms, &dci_alloc_rx[i]);
             ul_rx=1;
           }
-          if ((dci_alloc_rx[i].rnti == n_rnti) && ((dci_alloc_rx[i].format == format))) {
-            if (n_frames==1)
-      	      dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
+          if ((dci_alloc_rx[i].rnti == n_rnti) && ((dci_alloc_rx[i].format == format1))) {
+            if (n_frames==1) 
+              dump_dci(&PHY_vars_UE->lte_frame_parms, &dci_alloc_rx[i]);
             dl_rx=1;		       
           }
 
@@ -1178,7 +1191,7 @@ int main(int argc, char **argv) {
 
         
         if (is_phich_subframe(&PHY_vars_UE->lte_frame_parms,subframe)) 
-          if (PHY_vars_UE->ulsch_ue[0]->harq_processes[subframe2_ul_harq(&PHY_vars_UE->lte_frame_parms,subframe)]->Ndi != phich_ACK)
+          if (PHY_vars_UE->ulsch_ue[0]->harq_processes[phich_subframe_to_harq_pid(&PHY_vars_UE->lte_frame_parms, PHY_vars_UE->frame, subframe)]->Ndi != phich_ACK)
             n_errors_hi++;
 
         if (n_errors_cfi > 0)
