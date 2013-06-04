@@ -1,4 +1,5 @@
 CC = gcc
+MPICC = mpicc
 
 CPUFLAGS = -mmmx -msse -msse2 -msse4.1
 # FORCE ssse3 for compilation of openair on User Mode Linux
@@ -105,7 +106,7 @@ else ifdef Rel10
 CFLAGS += -DRel10
 @echo Rel10=1
 #ifeq ($(IS_REL10), 0)
-# $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
+# $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; rm -f oaisim_pad; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
 #endif
 else # default is rel 8
 @echo Rel8=1
@@ -187,9 +188,13 @@ OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o
 OAISIM_OBJS += cor_SF_sim.o
 #OAISIM_OBJS += phy_procedures_sim_form.o
+OAISIM_OBJS += oaisim_functions.o
 ifdef XFORMS
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 endif
+
+OAISIM_PAD_OBJS = discrete_event_generator.o
+OAISIM_PAD_OBJS += threadpool.o
 
 ifdef PROC
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
@@ -203,6 +208,8 @@ OBJ += $(L2_OBJS)
 endif
 
 all: oaisim
+
+pad: oaisim_pad
 
 userclean: cleanall oaisim
 
@@ -232,7 +239,7 @@ ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
 -include $(OBJ:.o=.d)
 -include $(ASN1_MSG_OBJS1:.o=.d)
 
-$(OBJ) $(ASN1_MSG_OBJS1) : %.o : %.c
+$(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
@@ -257,6 +264,11 @@ $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-CommonDat
 $(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp $(S1AP_BUILT_OBJS)
 	@echo Creating $@
 	$(AR) rcs $@ $^
+
+oaisim_pad : $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) oaisim_pad.c
+	@echo "Compiling oaisim_pad.c ..."
+	@$(MPICC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim_pad $(CFLAGS) $(EXTRA_CFLAGS) $^ \
+	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 ifdef USE_MME
 oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(S1AP_DIR)/libs1ap.a oaisim.c
@@ -311,6 +323,7 @@ cleanall: clean cleanasn1 cleanmmeasn1
 
 clean:
 	rm -f oaisim
+	rm -f oaisim_pad
 	rm -f $(OBJ)
 	rm -f $(S1AP_BUILT_OBJS)
 	rm -f $(ASN1MESSAGESDIR)/libs1ap.a

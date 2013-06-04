@@ -39,7 +39,7 @@
 */
 
 #include "otg_models.h"
-
+#include "UTIL/LOG/log.h"
 
 
 
@@ -97,8 +97,8 @@ double tarmaCalculateSample( double inputSamples[], tarmaProcess_t *proc){
 	Ypower *= Y;
   }
 
-  printf("OTG TARMA_DEBUG: tarmaCalculateSamples called: Z=%f\n",Z);
-  tarmaPrintProc(proc);
+  LOG_D(OTG,"TARMA_DEBUG: tarmaCalculateSamples called: Z=%f\n",Z);
+  //tarmaPrintProc(proc);
   return Z;
 }
 
@@ -111,11 +111,11 @@ double tarmaCalculateSample( double inputSamples[], tarmaProcess_t *proc){
  */
 void tarmaUpdateInputSample (tarmaStream_t *stream){
   int cnt;
-  printf("OTG TARMA_DEBUG: tarmaUpdateInputSample(%d)\n",(int)stream);
+  LOG_T(OTG,"TARMA_DEBUG: tarmaUpdateInputSample(%d)\n",(int)stream);
   if(stream){
 	for(cnt=0; cnt<TARMA_NUM_PROCESSES; cnt++){
 	  stream->tarma_input_samples[cnt]=gaussian_dist(10000,1)-10000;
-	  printf("OTG TARMA_DEBUG:   %f\n",stream->tarma_input_samples[cnt]);
+    LOG_D(OTG,"TARMA_DEBUG:   %f\n",stream->tarma_input_samples[cnt]);
 	}
   }
 }
@@ -153,7 +153,7 @@ tarmaStream_t *tarmaInitStream(tarmaStream_t *stream){
 	  proc->polyWeight[cntpy]=0;
 	}
   }
-  printf("OTG TARMA_DEBUG: tarmaInitStream(%d) called\n",(int)stream);
+  LOG_D(OTG,"TARMA_DEBUG: tarmaInitStream(%d) called\n",(int)stream);
   return stream;
 }
 
@@ -176,7 +176,7 @@ void tarmaSetupOpenarenaDownlink(tarmaStream_t *stream){
   stream->tarma_size.polyWeight[3]=-1.9;
   stream->tarma_size.polyWeight[4]=18.6;
   stream->tarma_size.polyWeight[5]=1.8;
-  tarmaPrintStreamInit(stream);
+  //tarmaPrintStreamInit(stream);
 }
 
 /* 
@@ -258,8 +258,8 @@ double tarmaCalculateVideoSample(tarmaVideo_t *video){
   if(video){
 	proc=&(video->tarma_size);
 	frameidx=video->tarmaVideoGopStructure[video->tarmaVideoFrameNumber];
-	printf("OTG TARMA_DEBUG: tarmaCalculateVideoSample(%d) called\n",(int)video);
-	printf("OTG TARMA_DEBUG:     frameidx=%d\n",frameidx);
+  LOG_D(OTG,"TARMA_DEBUG: tarmaCalculateVideoSample(%d) called\n",(int)video);
+  LOG_D(OTG,"TARMA_DEBUG:     frameidx=%d\n",frameidx);
 	if(frameidx>=0 && frameidx<=TARMA_NUM_FRAME_TYPES){
 	  for(cntpy=0; cntpy<TARMA_NUM_POLY_MAX; cntpy++){
 		proc->polyWeight[cntpy]=video->polyWeightFrame[frameidx][cntpy];
@@ -291,7 +291,7 @@ tarmaVideo_t *tarmaInitVideo(tarmaVideo_t *video){
   tarmaProcess_t *proc;
   int cntp, cntma, cntar, cntpy, cntgop, cnttype;
 
-  printf("OTG TARMA_DEBUG: tarmaInitVideo(%d) called\n",(int)video);
+  LOG_D(OTG,"TARMA_DEBUG: tarmaInitVideo(%d) called\n",(int)video);
   if(video==0){
 	video=(tarmaVideo_t*) malloc(sizeof(tarmaVideo_t));
   }
