@@ -112,7 +112,7 @@ static int thread1;
 pthread_t thread0;
 pthread_t thread1;
 pthread_attr_t attr_dlsch_threads;
-struct sched_param p;
+struct sched_param sched_param_dlsch;
 #endif
 
 pthread_t  thread2;
@@ -173,7 +173,7 @@ void cleanup_ulsch_threads(void);
 LTE_DL_FRAME_PARMS *frame_parms;
 
 void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms, int carrier);
-void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms);
+void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms, int carrier);
 void test_config(int card, int ant, unsigned int rf_mode, int UE_flag);
 
 unsigned int build_rflocal(txi, txq, rxi, rxq)
@@ -357,7 +357,10 @@ void *emos_thread (void *arg)
   printf("[EMOS] starting dump, channel_buffer_size=%d ...\n",channel_buffer_size);
   while (!oai_exit)
     {
-      bytes = rtf_read_all_at_once(fifo, fifo2file_ptr, channel_buffer_size);
+      bytes = rtf_read_timed(fifo, fifo2file_ptr, channel_buffer_size,100);
+      if (bytes==0)
+	continue;
+
       /*
       if (eNB_flag==1)
 	printf("eNB: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
@@ -1128,10 +1131,10 @@ int main(int argc, char **argv) {
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //    rxgain[i] = 20;
-    rxgain[0] = 0;
-    rxgain[1] = 0;
-    rxgain[2] = 0;
-    rxgain[3] = 0;
+    rxgain[0] = 20;
+    rxgain[1] = 20;
+    rxgain[2] = 20;
+    rxgain[3] = 20;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1246,6 +1249,7 @@ int main(int argc, char **argv) {
 
   p_exmimo_config->framing.eNB_flag   = !UE_flag;
   p_exmimo_config->framing.tdd_config = 0;
+  //carrier_freq[0] = 0; //don't use this LIME for card 1
   for (ant = 0; ant<4; ant++) { 
     p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];
     p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
@@ -1272,10 +1276,14 @@ int main(int argc, char **argv) {
   if (UE_flag) {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
     p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
+    p_exmimo_config->rf.rf_mode[2]    = 0;
+    p_exmimo_config->rf.rf_mode[3]    = 0;
   }
   else {
     p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
     p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
+    p_exmimo_config->rf.rf_mode[2]    = 0;
+    p_exmimo_config->rf.rf_mode[3]    = 0;
   }
 
 
@@ -1331,7 +1339,7 @@ int main(int argc, char **argv) {
       
   }
   else {
-      setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms);
+    setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms,0);
       if (fs4_test==0)
         {
           printf("Setting eNB buffer to all-RX\n");
@@ -1467,8 +1475,8 @@ int main(int argc, char **argv) {
   pthread_attr_init (&attr_dlsch_threads);
   pthread_attr_setstacksize(&attr_dlsch_threads,OPENAIR_THREAD_STACK_SIZE);
   //attr_dlsch_threads.priority = 1;
-  p.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
-  pthread_attr_setschedparam  (&attr_dlsch_threads, &p);
+  sched_param_dlsch.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
+  pthread_attr_setschedparam  (&attr_dlsch_threads, &sched_param_dlsch);
   pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
 #endif
 
@@ -1521,8 +1529,8 @@ int main(int argc, char **argv) {
   oai_exit=1;
   rt_sleep_ns(FRAME_PERIOD);
 
-  printf("stopping threads\n");
 #ifdef XFORMS
+  printf("waiting for XFORMS thread\n");
   if (do_forms==1)
     {
       pthread_join(thread2,&status);
@@ -1540,10 +1548,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-#ifdef EMOS
-  pthread_join(thread3,&status);
-#endif
-
+  printf("stopping MODEM threads\n");
   // cleanup
   if (UE_flag == 1) {
 #ifdef RTAI
@@ -1566,6 +1571,7 @@ int main(int argc, char **argv) {
     cleanup_ulsch_threads();
 #endif
   }
+
 #ifdef RTAI
   stop_rt_timer();
 #endif
@@ -1576,9 +1582,16 @@ int main(int argc, char **argv) {
   openair0_close();
 
 #ifdef EMOS
+  printf("waiting for EMOS thread\n");
+  pthread_cancel(thread3);
+  pthread_join(thread3,&status);
+#endif
+
+#ifdef EMOS
   error_code = rtf_destroy(CHANSOUNDER_FIFO_MINOR);
   printf("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
+
 
   return 0;
 }
@@ -1630,15 +1643,25 @@ void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
-void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms) {
+void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms, int carrier) {
 
   int i,j;
 
   if (phy_vars_eNB) {
+    if ((frame_parms->nb_antennas_rx>1) && (carrier>0)) {
+      printf("RX antennas > 1 and carrier > 0 not possible\n");
+      exit(-1);
+    }
+
+    if ((frame_parms->nb_antennas_tx>1) && (carrier>0)) {
+      printf("TX antennas > 1 and carrier > 0 not possible\n");
+      exit(-1);
+    }
+    
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
-        phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (s32*) openair0_exmimo_pci[card].adc_head[i];
+        phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (s32*) openair0_exmimo_pci[card].adc_head[i+carrier];
         
         printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
         for (j=0;j<16;j++) {
@@ -1648,7 +1671,7 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
-        phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*) openair0_exmimo_pci[card].dac_head[i];
+        phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
 
         printf("txdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
         for (j=0;j<16;j++) {
