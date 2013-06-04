@@ -209,6 +209,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   unsigned int flag;
   char *payload=NULL;
   char *header=NULL;
+  int header_size;
 
   LOG_T(OTG,"[src %d] [dst %d ]MY_CTIME %d, MAX_FRAME %d\n",src,  dst, ctime, g_otg->max_nb_frames);
 
@@ -229,19 +230,23 @@ Send Packets when:
 
 	/* No aggregation for background traffic   */
 	if (otg_info->traffic_type_background[src][dst]==0){
-  	header = random_string(otg_info->header_size[src][dst], g_otg->packet_gen_type, HEADER_ALPHABET);
-  	payload = random_string(size, RANDOM_STRING, PAYLOAD_ALPHABET);
+    if (otg_info->header_size[src][dst] <= 0)
+        otg_info->header_size[src][dst]=1;
+    header = random_string(otg_info->header_size[src][dst], g_otg->packet_gen_type, HEADER_ALPHABET);
+    header_size = (header != NULL)? strlen(header) : 0;
+    payload = random_string(size, RANDOM_STRING, PAYLOAD_ALPHABET);
+    if (payload == NULL) return;
   	flag=0xffff;
   	flow=otg_info->flow_id[src][dst];
   	seq_num=otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]];
   	otg_info->header_type[src][dst]=type_header;
   	otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]]+=1;
-  	otg_info->tx_num_bytes[src][dst][otg_info->traffic_type[src][dst]]+=  otg_hdr_size(src,dst) + strlen(header) + strlen(payload) ; 
+    otg_info->tx_num_bytes[src][dst][otg_info->traffic_type[src][dst]]+=  otg_hdr_size(src,dst) + header_size + strlen(payload) ;
   	otg_info->tx_num_pkt[src][dst][otg_info->traffic_type[src][dst]]+=1;
   	if (size!=strlen(payload))
   	  LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, 	size, strlen(payload), seq_num, header, payload);
   	else 
-  	  LOG_D(OTG,"[%d][%d] [0x %x] [m2m Aggre %d] [Flow %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, otg_info->m2m_aggregation[src][dst],otg_info->flow_id[src][dst], ctime,  size, strlen(header)+strlen(payload), seq_num,state, header, payload);
+      LOG_D(OTG,"[%d][%d] [0x %x] [m2m Aggre %d] [Flow %d]TX INFO pkt at time %d Size= [payload %d] [Total %d] with seq num %d, state=%d : |%s|%s| \n", src, dst, flag, otg_info->m2m_aggregation[src][dst],otg_info->flow_id[src][dst], ctime,  size, header_size+strlen(payload), seq_num,state, header, payload);
   LOG_D(OTG, "[%d]MY_SEQ %d \n", otg_info->traffic_type[src][dst], otg_info->seq_num[src][dst][otg_info->traffic_type[src][dst]] );  
 	 } 	
 	else {
@@ -256,7 +261,7 @@ Send Packets when:
 	  flag=0xbbbb;
  	 flow=flow_id_background;
  	 seq_num=otg_info->seq_num_background[src][dst];
-  	otg_info->tx_num_bytes_background[src][dst]+= otg_hdr_size(src,dst) + strlen(header) + strlen(payload) ; 
+    otg_info->tx_num_bytes_background[src][dst]+= otg_hdr_size(src,dst) + header_size + strlen(payload) ;
   	otg_info->tx_num_pkt_background[src][dst]+=1;
   	otg_info->seq_num_background[src][dst]+=1;
   	if (otg_info->size_background[src][dst]!=strlen(payload))
@@ -265,7 +270,7 @@ Send Packets when:
     	LOG_T(OTG,"[%d][%d][0x %x] TX INFO pkt at time %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime, otg_info->size_background[src][dst], seq_num, state, header, payload);
 	}
  
- 	buffer_size = otg_hdr_size(src,dst) + strlen(header) + strlen(payload);
+  buffer_size = otg_hdr_size(src,dst) + header_size + strlen(payload);
 	*pkt_size = buffer_size;
 	if (src<NB_eNB_INST)
 		otg_info->tx_total_bytes_dl+=buffer_size;

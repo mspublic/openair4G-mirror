@@ -756,10 +756,10 @@ typedef struct{
   /// MSI status
   u8 msi_status;// could be an array if there are >1 MCH in one MBSFN area
 #endif
-#ifdef CBA
+//#ifdef CBA
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
   uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
-#endif 
+//#endif
 }UE_MAC_INST;
 
 typedef struct {

@@ -46,6 +46,7 @@ AS_RLC_DIR                    = RLC
 AS_PDCP_DIR                   = PDCP_v10.1.0
 AS_MEM_DIR                    = ../UTIL/MEM
 AS_LIST_DIR                   = ../UTIL/LISTS
+AS_FIFO_DIR	              = ../UTIL/FIFO
 AS_MATH_DIR                   = ../UTIL/MATH
 AS_TIMER_DIR                  = ../UTIL/TIMER
 PHY_INTERFACE_DIR	      = ../PHY_INTERFACE
@@ -58,6 +59,7 @@ export AS_PDCP_DIR
 export AS_MPLS_DIR
 export AS_MEM_DIR
 export AS_LIST_DIR
+export AS_FIFO_DIR
 export AS_MATH_DIR
 export AS_TIMER_DIR
 export AS_RRM_CONFIG_DIR

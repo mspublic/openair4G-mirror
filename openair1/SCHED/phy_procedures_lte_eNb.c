@@ -73,6 +73,8 @@
 
 extern inline unsigned int taus(void);
 extern int exit_openair;
+extern void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms);
+
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 int eNB_sync_buffer0[640*6] __attribute__ ((aligned(16)));
@@ -1875,14 +1877,25 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
     }
 
-
-
-
-
+    /* seg fault for sect id > 0
+    if (abstraction_flag == 0) {
+      do_OFDM_mod(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
+		  phy_vars_eNB->lte_eNB_common_vars.txdata[sect_id],
+		  next_slot,
+		  &phy_vars_eNB->lte_frame_parms);
+    }
+    */
 #ifdef EMOS
     phy_procedures_emos_eNB_TX(next_slot, phy_vars_eNB);
 #endif
   }
+  // consider only sec id 0
+   if (abstraction_flag == 0) {
+    do_OFDM_mod(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
+		phy_vars_eNB->lte_eNB_common_vars.txdata[0],
+		((next_slot==19) ? -1 : 0 ) + phy_vars_eNB->frame,next_slot,
+		&phy_vars_eNB->lte_frame_parms);
+   } 
 }
 
 void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,u8 last_slot,u8 UE_id, u8 harq_pid) {

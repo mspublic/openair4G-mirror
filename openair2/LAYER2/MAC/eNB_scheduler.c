@@ -3468,7 +3468,7 @@ void UpdateSBnumber(unsigned char Mod_id){
 }
 #endif
 //end ALU's algo
-
+// phy_proc_lte_enb calls this function
 void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subframe) {//, int calibration_flag) {
 
   unsigned char nprb=0;
@@ -3492,7 +3492,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   eNB_mac_inst[Mod_id].subframe = subframe;
 
   //if (subframe%5 == 0)
-    pdcp_run(frame, 1, 0, Mod_id);
+
+  //pdcp_run(frame, 1, 0, Mod_id);
 
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, 0);
