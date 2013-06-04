@@ -145,6 +145,7 @@ void _generatesRandomChannel(options_t opts);
 */
 void _allocDLSChannel(options_t opts);
 void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx);//,u8 **input_buffer);
+double _allocRBs(options_t opts);
 void _freeMemory(data_t data,options_t opts);
 void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u32 *NB_RB2,LTE_DL_FRAME_PARMS  *frame_parms,u8 num_pdcch_symbols);
 void _printResults(u32 *errs,u32 *round_trials,u32 dci_errors,double rate);
