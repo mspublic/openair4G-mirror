@@ -91,7 +91,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	  break;
       case 's':
 	  opts->snr_init=atof(optarg);
-	  opts->snr_max= opts->snr_init+5;
+	  //opts->snr_max= opts->snr_init+5;
 	  sprintf(opts->parameters,"%s  -s%f",opts->parameters,opts->snr_init);
 	  break;
         case 'S':

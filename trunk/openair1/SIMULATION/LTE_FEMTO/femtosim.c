@@ -208,7 +208,7 @@ int main(int argc,char **argv)
 void _initDefaults(options_t *opts) {
 
   opts->snr_init =0;
-  opts->snr_max=5;
+  opts->snr_max=20;
   opts->snr_step=1;
   opts->nframes=1;
 
@@ -848,6 +848,12 @@ printf("num_pdcch_symbols %d , num_pdcch_symbols_2 %d=> ",num_pdcch_symbols,num_
   return num_pdcch_symbols_2;
 }
 
+double _allocRBs(options_t opts)
+{
+ double rho[16]={0.1686, 0.1759, 0.1845, 0.1946, 0.2062, 0.2194, 0.2344, 0.2510, 0.2692, 0.2889, 0.3098, 0.3318, 0.3543, 0.3772, 0.3998, 0.4220};
+  
+  return *rho;
+}
 
 void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u32 *NB_RB2,LTE_DL_FRAME_PARMS  *frame_parms,u8 num_pdcch_symbols)
 { 
@@ -930,9 +936,9 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	
 		
 		
-  for (SNR=opts.snr_init; SNR<opts.snr_max; SNR+=opts.snr_step)
+  for (SNR=opts.snr_init; SNR<=opts.snr_max; SNR+=opts.snr_step)
     {
-		
+	  printf("snr_init %f, snr_max %f \n",opts.snr_init,opts.snr_max);
       _initErrsRoundsTrials(&errs,&round_trials,0,opts);
 
       dci_errors=0;
