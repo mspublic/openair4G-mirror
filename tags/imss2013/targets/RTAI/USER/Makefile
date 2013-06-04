@@ -108,7 +108,7 @@ CFLAGS += -DHARD_RT
 endif
 
 ifeq ($(EMOS),1)
-CFLAGS += -DEMOS #-DEMOS_CHANNEL
+CFLAGS += -DEMOS -DEMOS_CHANNEL
 LDFLAGS += -lgps
 endif
 
