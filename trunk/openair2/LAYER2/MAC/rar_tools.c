@@ -76,7 +76,7 @@ unsigned short fill_rar(u8 Mod_id,
 
   // subheader fixed 
   rarh->E                     = 0; // First and last RAR
-  rarh->T                     = 0; // Preamble ID RAR
+  rarh->T                     = 1; // 0 for E/T/R/R/BI subheader, 1 for E/T/RAPID subheader
   rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[ra_idx].preamble_index; // Respond to Preamble 0 only for the moment
   /*
   rar->R                      = 0;
