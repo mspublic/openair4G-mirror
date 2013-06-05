@@ -36,7 +36,7 @@ MAX_DCI_SIZE_BITS = 45;
 EMOS_CHANNEL = 1;
 
 % enable this line to enable error checking
-get_dump_size
+% get_dump_size
 
 phy_measurements_struct = struct(...
     'rssi',                 int32(0),...

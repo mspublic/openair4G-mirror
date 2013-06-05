@@ -106,8 +106,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray  *prhs[] )
   {
     const char *FieldNames[] = {"size","align"}; // jaj 05/24/2004 added const
     plhs[0] = mxCreateStructMatrix(1, 1, 2, &FieldNames[0]);// jaj 05/24/2004 slightly altered
-    mxSetField(plhs[0], 0, "size", mxCreateScalarDouble(ByteCount));
-    mxSetField(plhs[0], 0, "align", mxCreateScalarDouble(Attributes.Alignment));
+    mxSetField(plhs[0], 0, "size", mxCreateDoubleScalar(ByteCount));
+    mxSetField(plhs[0], 0, "align", mxCreateDoubleScalar(Attributes.Alignment));
 
     if (nlhs >= 2)
     {
