@@ -129,7 +129,7 @@ void update_omg_model(char * key, void * value) {
 
 void update_otg_model(char * key, void * value) {
     printf("\n\n\nA NEW APP MODEL\n\n\n");
-    int i;
+    //int i;
 /*
 
 

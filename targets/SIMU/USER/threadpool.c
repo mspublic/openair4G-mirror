@@ -112,7 +112,6 @@ threadpool_t *threadpool_create(int thread_count)
 int threadpool_add(threadpool_t *pool, Job_elt *job)
 {
   int err = 0;
-  int next;
 
   if(pool == NULL || job == NULL) {
     return threadpool_invalid;
@@ -223,6 +222,7 @@ void *threadpool_thread(void *threadpool)
 {
   threadpool_t *pool = (threadpool_t *)threadpool;
   Job_elt * job_elt;
+  int err;
 
 
   printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());
@@ -246,16 +246,16 @@ void *threadpool_thread(void *threadpool)
     job_elt = job_list_remove_head(&(pool->job_queue));
 
 
-    if(pthread_mutex_lock(&(pool->sync_lock)) != 0) {
+    if((err = pthread_mutex_lock(&(pool->sync_lock))) != 0) {
       printf("Mutex Error \n");
-      return;
+      return err;
     }
 
     pool->active++;
 
-    if(pthread_mutex_unlock(&pool->sync_lock) != 0) {
+    if((err = pthread_mutex_unlock(&pool->sync_lock)) != 0) {
       printf("Mutex Error \n");
-      return;
+      return err;
     }
 
 
@@ -299,9 +299,9 @@ void *threadpool_thread(void *threadpool)
 
     }
 
-    if(pthread_mutex_lock(&(pool->sync_lock)) != 0) {
+    if((err = pthread_mutex_lock(&(pool->sync_lock))) != 0) {
       printf("Mutex Error \n");
-      return;
+      return err;
     }
 
     pool->active--;
@@ -314,9 +314,9 @@ void *threadpool_thread(void *threadpool)
     }
 
 
-    if(pthread_mutex_unlock(&pool->sync_lock) != 0) {
+    if((err = pthread_mutex_unlock(&pool->sync_lock)) != 0) {
       printf("Mutex Error \n");
-      return;
+      return err;
     }
 
 
