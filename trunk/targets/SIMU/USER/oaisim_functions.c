@@ -40,6 +40,7 @@ u8 abstraction_flag = 0, ethernet_flag = 0;
 double snr_step=1.0;
 u8 ue_connection_test=0;
 double forgetting_factor=0.0;
+u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 u8 target_ul_mcs = 2;
 LTE_DL_FRAME_PARMS *frame_parms;
 int map1,map2;
@@ -91,6 +92,8 @@ extern mapping small_scale_names[];
 extern pdcp_mbms_t pdcp_mbms_array[MAX_MODULES][16*29];
 extern int eMBMS_active;
 
+extern void help (void);
+
 void get_simulation_options(int argc, char *argv[]) {
   char c;
   int option_index;
@@ -103,7 +106,6 @@ void get_simulation_options(int argc, char *argv[]) {
   while ((c = getopt_long (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:y:X:z:Z:", long_options, &option_index)) != -1) {
 
     switch (c) {
-
     case 0:
       if (! strcmp(long_options[option_index].name, "pdcp_period")) {
         if (optarg) {
@@ -117,210 +119,229 @@ void get_simulation_options(int argc, char *argv[]) {
         }
       }
       break;
-
-        case 'F':                   // set FDD
-          printf("Setting Frame to FDD\n");
-          oai_emulation.info.frame_type = 0;
-          break;
-        case 'C':
-          oai_emulation.info.tdd_config = atoi (optarg);
-          if (oai_emulation.info.tdd_config > 6) {
-            LOG_E(EMU,"Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
-            exit (-1);
-          }
-          break;
-      case 'R':
-          oai_emulation.info.N_RB_DL = atoi (optarg);
-          if ((oai_emulation.info.N_RB_DL != 6) && (oai_emulation.info.N_RB_DL != 15) && (oai_emulation.info.N_RB_DL != 25)
-            && (oai_emulation.info.N_RB_DL != 50) && (oai_emulation.info.N_RB_DL != 75) && (oai_emulation.info.N_RB_DL != 100)) {
-            LOG_E(EMU,"Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
-            exit (-1);
-          }
-      case 'N':
-          Nid_cell = atoi (optarg);
-          if (Nid_cell > 503) {
-            LOG_E(EMU,"Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
-            exit(-1);
-          }
-          break;
-      case 'h':
-          help ();
-          exit (1);
-      case 'x':
-          oai_emulation.info.transmission_mode = atoi (optarg);
-          if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
-            LOG_E(EMU, "Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
-            exit(-1);
-          }
-          break;
-      case 'y':
-          nb_antennas_rx=atoi(optarg);
-          if (nb_antennas_rx>4) {
-            printf("Cannot have more than 4 antennas\n");
-            exit(-1);
-          }
-          break;
-      case 'm':
-          target_dl_mcs = atoi (optarg);
-          break;
-      case 'r':
-          rate_adaptation_flag = 1;
-          break;
-      case 'n':
-          oai_emulation.info.n_frames = atoi (optarg);
-          //n_frames = (n_frames >1024) ? 1024: n_frames; // adjust the n_frames if higher that 1024
-          oai_emulation.info.n_frames_flag = 1;
-          break;
-      case 's':
-          snr_dB = atoi (optarg);
-          //      set_snr = 1;
-          oai_emulation.info.ocm_enabled=0;
-          break;
-      case 'S':
-          sinr_dB = atoi (optarg);
-          set_sinr = 1;
-          oai_emulation.info.ocm_enabled=0;
-          break;
-      case 'J':
-          ue_connection_test=1;
-          oai_emulation.info.ocm_enabled=0;
-          snr_step = atof(optarg);
-          break;
-      case 'k':
-          //ricean_factor = atof (optarg);
-          LOG_E(EMU,"[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n");
-          exit(-1);
-          break;
-      case 't':
-          //Td = atof (optarg);
-          LOG_E(EMU,"[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n");
-          exit(-1);
-          break;
-      case 'f':
-          forgetting_factor = atof (optarg);
-          break;
-      case 'z':
-          cooperation_flag = atoi (optarg);
-          break;
-      case 'u':
-          oai_emulation.info.nb_ue_local = atoi (optarg);
-          break;
-      case 'b':
-          oai_emulation.info.nb_enb_local = atoi (optarg);
-          break;
-      case 'a':
-          abstraction_flag = 1;
-          break;
-      case 'A':
-          //oai_emulation.info.ocm_enabled=1;
-          if (optarg == NULL)
-            oai_emulation.environment_system_config.fading.small_scale.selected_option="AWGN";
-          else
-            oai_emulation.environment_system_config.fading.small_scale.selected_option= optarg;
-          //awgn_flag = 1;
-          break;
-      case 'p':
-          oai_emulation.info.nb_master = atoi (optarg);
-          break;
-      case 'M':
-          abstraction_flag = 1;
-          ethernet_flag = 1;
-          oai_emulation.info.ethernet_id = atoi (optarg);
-          oai_emulation.info.master_id = oai_emulation.info.ethernet_id;
-          oai_emulation.info.ethernet_flag = 1;
-          break;
-      case 'e':
-          oai_emulation.info.extended_prefix_flag = 1;
-          break;
-      case 'l':
-          oai_emulation.info.g_log_level = atoi(optarg);
-          break;
-      case 'c':
-          strcpy(oai_emulation.info.local_server, optarg);
-          oai_emulation.info.ocg_enabled=1;
-          break;
-      case 'g':
-          oai_emulation.info.multicast_group = atoi (optarg);
-          break;
-      case 'D':
-          oai_emulation.info.multicast_ifname = malloc(4*sizeof(char)); // allocate 4 byte for the interface name
-          oai_emulation.info.multicast_ifname=optarg;
-          break;
-      case 'B':
-          oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = optarg;
-          //oai_emulation.info.omg_model_enb = atoi (optarg);
-          break;
-      case 'U':
-          oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = optarg;
-          /*oai_emulation.info.omg_model_ue = atoi (optarg);
-        switch (oai_emulation.info.omg_model_ue){
-        case STATIC:
-          oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
-          break;
-        case RWP:
-          oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
-          break;
-        case RWALK:
-          oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWALK";
-          break;
-        case TRACE:
-          oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "TRACE";
-          break;
-        case SUMO:
-          oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "SUMO";
-          break;
-        default:
-          LOG_N(OMG, "Unsupported generator %d \n", oai_emulation.info.omg_model_ue);
-          }*/
-          break;
-      case 'T':
-          oai_emulation.info.otg_enabled = 1;
-          oai_emulation.info.otg_traffic = atoi (optarg);
-          break;
-      case 'P':
-          oai_emulation.info.opt_enabled = 1;
-          oai_emulation.info.opt_mode = atoi (optarg);
-          break;
-      case 'E':
-          set_seed = 1;
-          oai_emulation.info.seed = atoi (optarg);
-          break;
-      case 'I':
-          oai_emulation.info.cli_enabled = 1;
-          break;
-      case 'v':
-          oai_emulation.info.omv_enabled = 1;
-          break;
-      case 'V':
-          ouput_vcd = 1;
-          oai_emulation.info.vcd_enabled = 1;
-          break;
-      case 'G' :
-          oai_emulation.info.otg_bg_traffic_enabled = 1;
-          break;
-      case 'Z':
-          /* Sebastien ROUX: Reserved for future use (currently used in ltenow branch) */
-          break;
-      case 'O':
-#if defined(ENABLE_USE_MME)
-          oai_emulation.info.mme_enabled = 1;
-          if (optarg == NULL) /* No IP address provided: use localhost */
-          {
-            memcpy(&oai_emulation.info.mme_ip_address[0], "127.0.0.1", 10);
-          } else {
-            u8 ip_length = strlen(optarg) + 1;
-            memcpy(&oai_emulation.info.mme_ip_address[0], optarg, ip_length > 16 ? 16 : ip_length);
-          }
-#else
-          LOG_E(EMU, "You enabled MME mode without MME support...\n");
+    case 'L':                   // set FDD
+      flag_LA = atoi(optarg);
+      break;
+    case 'F':                   // set FDD
+      printf("Setting Frame to FDD\n");
+      oai_emulation.info.frame_type = 0;
+      break;
+    case 'C':
+      oai_emulation.info.tdd_config = atoi (optarg);
+      if (oai_emulation.info.tdd_config > 6) {
+        LOG_E(EMU,"Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
+        exit (-1);
+      }
+      break;
+    case 'Q':
+      eMBMS_active=1;
+      break;
+    case 'R':
+      oai_emulation.info.N_RB_DL = atoi (optarg);
+      if ((oai_emulation.info.N_RB_DL != 6) && (oai_emulation.info.N_RB_DL != 15) && (oai_emulation.info.N_RB_DL != 25)
+        && (oai_emulation.info.N_RB_DL != 50) && (oai_emulation.info.N_RB_DL != 75) && (oai_emulation.info.N_RB_DL != 100)) {
+        LOG_E(EMU,"Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
+        exit (-1);
+      }
+    case 'N':
+      Nid_cell = atoi (optarg);
+      if (Nid_cell > 503) {
+        LOG_E(EMU,"Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
+        exit(-1);
+      }
+      break;
+    case 'h':
+      help ();
+      exit (1);
+    case 'x':
+      oai_emulation.info.transmission_mode = atoi (optarg);
+      if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
+        LOG_E(EMU, "Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
+        exit(-1);
+      }
+      break;
+    case 'y':
+      nb_antennas_rx=atoi(optarg);
+      if (nb_antennas_rx>4) {
+        printf("Cannot have more than 4 antennas\n");
+        exit(-1);
+      }
+      break;
+    case 'm':
+      target_dl_mcs = atoi (optarg);
+      break;
+    case 'r':
+      rate_adaptation_flag = 1;
+      break;
+    case 'n':
+      oai_emulation.info.n_frames = atoi (optarg);
+      //n_frames = (n_frames >1024) ? 1024: n_frames; // adjust the n_frames if higher that 1024
+      oai_emulation.info.n_frames_flag = 1;
+      break;
+    case 's':
+      snr_dB = atoi (optarg);
+      //      set_snr = 1;
+      oai_emulation.info.ocm_enabled=0;
+      break;
+    case 'S':
+      sinr_dB = atoi (optarg);
+      set_sinr = 1;
+      oai_emulation.info.ocm_enabled=0;
+      break;
+    case 'J':
+      ue_connection_test=1;
+      oai_emulation.info.ocm_enabled=0;
+      snr_step = atof(optarg);
+      break;
+    case 'k':
+      //ricean_factor = atof (optarg);
+      LOG_E(EMU,"[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n");
+      exit(-1);
+      break;
+    case 't':
+      //Td = atof (optarg);
+      LOG_E(EMU,"[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n");
+      exit(-1);
+      break;
+    case 'f':
+      forgetting_factor = atof (optarg);
+      break;
+    case 'z':
+      cooperation_flag = atoi (optarg);
+      break;
+    case 'u':
+      oai_emulation.info.nb_ue_local = atoi (optarg);
+      break;
+    case 'b':
+      oai_emulation.info.nb_enb_local = atoi (optarg);
+      break;
+    case 'a':
+      abstraction_flag = 1;
+      break;
+    case 'A':
+      //oai_emulation.info.ocm_enabled=1;
+      if (optarg == NULL)
+        oai_emulation.environment_system_config.fading.small_scale.selected_option="AWGN";
+      else
+        oai_emulation.environment_system_config.fading.small_scale.selected_option= optarg;
+      //awgn_flag = 1;
+      break;
+    case 'p':
+      oai_emulation.info.nb_master = atoi (optarg);
+      break;
+    case 'M':
+      abstraction_flag = 1;
+      ethernet_flag = 1;
+      oai_emulation.info.ethernet_id = atoi (optarg);
+      oai_emulation.info.master_id = oai_emulation.info.ethernet_id;
+      oai_emulation.info.ethernet_flag = 1;
+      break;
+    case 'e':
+      oai_emulation.info.extended_prefix_flag = 1;
+      break;
+    case 'l':
+      oai_emulation.info.g_log_level = atoi(optarg);
+      break;
+   case 'Y':
+      oai_emulation.info.g_log_verbosity = optarg;
+      break;
+    case 'c':
+      strcpy(oai_emulation.info.local_server, optarg);
+      oai_emulation.info.ocg_enabled=1;
+      break;
+    case 'g':
+      oai_emulation.info.multicast_group = atoi (optarg);
+      break;
+    case 'D':
+      oai_emulation.info.multicast_ifname = malloc (strlen(optarg) + 1);
+        strcpy(oai_emulation.info.multicast_ifname, optarg);
+      break;
+    case 'B':
+      oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = optarg;
+      //oai_emulation.info.omg_model_enb = atoi (optarg);
+      break;
+    case 'U':
+      oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = optarg;
+      break;
+    case 'T':
+      oai_emulation.info.otg_enabled = 1;
+      oai_emulation.info.otg_traffic = optarg;
+      break;
+    case 'P':
+      oai_emulation.info.opt_enabled = 1;
+      oai_emulation.info.opt_mode = atoi (optarg);
+      break;
+    case 'E':
+      set_seed = 1;
+      oai_emulation.info.seed = atoi (optarg);
+      break;
+    case 'I':
+      oai_emulation.info.cli_enabled = 1;
+      break;
+    case 'X':
+#ifdef PROC
+      temp=atoi(optarg);
+      if(temp==0){
+        port=CHANNEL_PORT; Channel_Flag=1; Process_Flag=0; wgt=0;
+      }
+      else if(temp==1){
+        port=eNB_PORT; wgt=0;
+      }
+      else {
+        port=UE_PORT; wgt=MAX_eNB;
+      }
 #endif
-          break;
-      default:
-          help ();
-          exit (-1);
-          break;
-        }
-  }
+      break;
+    case 'i':
+#ifdef PROC
+      Process_Flag=1;
+      node_id = wgt+atoi(optarg);
+      port+=atoi(optarg);
+#endif
+      break;
+    case 'v':
+      oai_emulation.info.omv_enabled = 1;
+      break;
+    case 'V':
+      ouput_vcd = 1;
+      oai_emulation.info.vcd_enabled = 1;
+      break;
+    case 'w':
+      oai_emulation.info.cba_group_active = atoi (optarg);
+      break;
+    case 'W':
+#ifdef SMBV
+        config_smbv = 1;
+        if(atoi(optarg)!=0)
+            strcpy(smbv_ip,optarg);
+#endif
+      break;
+    case 'G' :
+      oai_emulation.info.otg_bg_traffic_enabled = 1;
+      break;
+    case 'Z':
+      /* Sebastien ROUX: Reserved for future use (currently used in ltenow branch) */
+      break;
+    case 'O':
+#if defined(ENABLE_USE_MME)
+      oai_emulation.info.mme_enabled = 1;
+      if (optarg == NULL) /* No IP address provided: use localhost */
+      {
+        memcpy(&oai_emulation.info.mme_ip_address[0], "127.0.0.1", 10);
+      } else {
+        u8 ip_length = strlen(optarg) + 1;
+        memcpy(&oai_emulation.info.mme_ip_address[0], optarg, ip_length > 16 ? 16 : ip_length);
+      }
+#else
+      LOG_E(EMU, "You enabled MME mode without MME support...\n");
+#endif
+      break;
+    default:
+      help ();
+      exit (-1);
+      break;
+    }
+    }
 }
 
 void check_and_adjust_params() {
@@ -431,10 +452,29 @@ void init_seed(u8 set_seed) {
 }
 
 void init_openair1() {
-  s32 UE_id;
+  s32 UE_id, eNB_id;
 
   // change the nb_connected_eNB
   init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag,nb_antennas_rx);
+
+  for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
+      for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
+          PHY_vars_eNB_g[eNB_id]->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
+          PHY_vars_eNB_g[eNB_id]->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
+          PHY_vars_eNB_g[eNB_id]->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = beta_CQI;
+          PHY_vars_UE_g[UE_id]->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index = beta_ACK;
+          PHY_vars_UE_g[UE_id]->pusch_config_dedicated[eNB_id].betaOffset_RI_Index  = beta_RI;
+          PHY_vars_UE_g[UE_id]->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
+          ((PHY_vars_UE_g[UE_id]->lte_frame_parms).pdsch_config_common).p_b = (frame_parms->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_a = rhob
+          ((PHY_vars_eNB_g[eNB_id]->lte_frame_parms).pdsch_config_common).p_b = (frame_parms->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_a = rhob
+
+      }
+  }
+
+#ifdef SMBV
+  smbv_init_config(smbv_fname, smbv_nframes);
+  smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
+#endif
 
   printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("AFTER init: frame_type %d,tdd_config %d\n",
@@ -451,8 +491,10 @@ void init_openair1() {
 
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
+  openair_daq_vars.ue_dl_rb_alloc=0x1fff;
+  openair_daq_vars.ue_ul_nb_rb=6;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
-  openair_daq_vars.ue_ul_nb_rb = 8;
+  openair_daq_vars.use_ia_receiver = 0;
 
   // init_ue_status();
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++) {
@@ -497,12 +539,13 @@ void init_ocm() {
   s32 UE_id, eNB_id;
   /* Added for PHY abstraction */
   if (abstraction_flag) {
+    if (0) { //the values of beta and awgn tables are hard coded in PHY/vars.h
     get_beta_map();
-
 #ifdef PHY_ABSTRACTION_UL
     get_beta_map_up();
 #endif
     get_MIESM_param();
+  }
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -645,7 +688,7 @@ void update_ocm() {
         calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
         //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
         UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-        LOG_D(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+        LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
               eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
               eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
       }
@@ -677,8 +720,7 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ) {
 
-    int dst_id, rb_id;
-    int service_id, session_id;
+    int dst_id;
     Packet_otg_elt *otg_pkt;
     
 
@@ -711,6 +753,7 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
     }
 
 #ifdef Rel10
+    int service_id, session_id, rb_id;
     // MBSM multicast traffic
     for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
       for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
@@ -1229,27 +1272,26 @@ void ia_receiver_on_off( FL_OBJECT *button, long arg) {
 }
 
 void init_xforms() {
-  fl_initialize (&argc, argv, NULL, 0, 0);
+  eNB_id = 0;
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-      form[eNB_id][UE_id] = create_form_phy_procedures_sim ();
-      sprintf (title, "LTE SIM UE %d eNB %d", UE_id, eNB_id);
-      fl_show_form (form[eNB_id][UE_id]->phy_procedures_sim, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    }
-  }
+      // DL scope at UEs
+      fl_initialize (&argc, argv, NULL, 0, 0);
+      form_ue[UE_id] = create_lte_phy_scope_ue();
+      sprintf (title, "LTE DL SCOPE eNB %d to UE %d", eNB_id, UE_id);
+      fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_dl[UE_id] = create_form_lte_scope();
-    sprintf (title, "LTE DL SCOPE UE %d", UE_id);
-    fl_show_form (form_dl[UE_id]->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-  }
+      // UL scope at eNB 0
+      fl_initialize (&argc, argv, NULL, 0, 0);
+      form_enb[UE_id] = create_lte_phy_scope_enb();
+      sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_id, eNB_id);
+      fl_show_form (form_enb[UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-  for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_ul[eNB_id] = create_form_lte_scope();
-    sprintf (title, "LTE UL SCOPE UE %d", eNB_id);
-    fl_show_form (form_ul[eNB_id]->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+      if (openair_daq_vars.use_ia_receiver == 1) {
+          fl_set_button(form_ue[UE_id]->button_0,1);
+          fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
+          fl_set_object_color(form_ue[UE_id]->button_0, FL_GREEN, FL_GREEN);
+      }
+
   }
 }
 

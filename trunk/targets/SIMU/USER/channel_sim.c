@@ -238,7 +238,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
   
   else { //abstraction_flag
     /* 
-       Call do_OFDM_mod from phy_procedures_eNB_TX funcgtion
+       Call do_OFDM_mod from phy_procedures_eNB_TX function
     */
     /*
      for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {

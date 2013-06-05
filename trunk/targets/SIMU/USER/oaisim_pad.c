@@ -387,11 +387,34 @@ void run(int argc, char *argv[]) {
 
   lte_subframe_t direction;
   char fname[64],vname[64];
+
+#ifdef XFORMS
+  // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
+  // at eNB 0, an UL scope for every UE
+  FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
+  FD_lte_phy_scope_enb *form_enb[NUMBER_OF_UE_MAX];
+  char title[255];
+#endif
+
+#ifdef PROC
+  int node_id;
+  int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
+#endif
+
   // u8 awgn_flag = 0;
 
 #ifdef PRINT_STATS
-  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr;
+  int len;
+  FILE *UE_stats[NUMBER_OF_UE_MAX], *UE_stats_th[NUMBER_OF_UE_MAX], *eNB_stats, *eNB_avg_thr, *eNB_l2_stats;
   char UE_stats_filename[255];
+  char UE_stats_th_filename[255];
+  char eNB_stats_th_filename[255];
+ #endif
+
+#ifdef SMBV
+  u8 config_smbv = 0;
+  char smbv_ip[16];
+  strcpy(smbv_ip,DEFAULT_SMBV_IP);
 #endif
 
 #ifdef OPENAIR2
@@ -611,13 +634,23 @@ void run(int argc, char *argv[]) {
 
 
 #ifdef PRINT_STATS
-
-      if (eNB_stats) {
-        len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
-        rewind (eNB_stats);
-        fwrite (stats_buffer, 1, len, eNB_stats);
-        fflush(eNB_stats);
-      }
+        if(last_slot==9 && frame%10==0)
+    if(eNB_avg_thr)
+      fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_id]->frame,(PHY_vars_eNB_g[eNB_id]->total_system_throughput)/((PHY_vars_eNB_g[eNB_id]->frame+1)*10));
+  if (eNB_stats) {
+    len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
+    rewind (eNB_stats);
+    fwrite (stats_buffer, 1, len, eNB_stats);
+    fflush(eNB_stats);
+  }
+#ifdef OPENAIR2
+  if (eNB_l2_stats) {
+    len = dump_eNB_l2_stats (stats_buffer, 0);
+    rewind (eNB_l2_stats);
+    fwrite (stats_buffer, 1, len, eNB_l2_stats);
+    fflush(eNB_l2_stats);
+  }
+#endif
 #endif
     }
 
@@ -684,12 +717,15 @@ void run(int argc, char *argv[]) {
         }
       }
 #ifdef PRINT_STATS
-      if (UE_stats[UE_id]) {
-        len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
-        rewind (UE_stats[UE_id]);
-        fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-        fflush(UE_stats[UE_id]);
-      }
+          if(last_slot==2 && frame%10==0)
+    if (UE_stats_th[UE_id])
+      fprintf(UE_stats_th[UE_id],"%d %d\n",frame, PHY_vars_UE_g[UE_id]->bitrate[0]/1000);
+    if (UE_stats[UE_id]) {
+      len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
+      rewind (UE_stats[UE_id]);
+      fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
+      fflush(UE_stats[UE_id]);
+    }
 #endif
     }
 
@@ -836,7 +872,11 @@ void run(int argc, char *argv[]) {
         usleep(sleep_time_us);
         sleep_time_us=0; // reset the timer, could be done per n SF
       }
-
+#ifdef SMBV
+    if ((frame == config_frames[0]) || (frame == config_frames[1]) || (frame == config_frames[2]) || (frame == config_frames[3])) {
+        smbv_frame_cnt++;
+    }
+#endif
     }
   }
 
@@ -848,6 +888,11 @@ void run(int argc, char *argv[]) {
 
   free(otg_pdcp_buffer);
 
+#ifdef SMBV
+  if (config_smbv) {
+      smbv_send_config (smbv_fname,smbv_ip);
+  }
+#endif
 
   //Perform KPI measurements
   if (oai_emulation.info.otg_enabled==1)
@@ -904,13 +949,19 @@ void run(int argc, char *argv[]) {
 #endif
 
 #ifdef PRINT_STATS
-  for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
+  for(UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (UE_stats[UE_id])
       fclose (UE_stats[UE_id]);
+    if(UE_stats_th[UE_id])
+      fclose (UE_stats_th[UE_id]);
+  }
   if (eNB_stats)
     fclose (eNB_stats);
   if (eNB_avg_thr)
     fclose (eNB_avg_thr);
+  if (eNB_l2_stats)
+    fclose (eNB_l2_stats);
+
 #endif
 
   // stop OMG
@@ -931,6 +982,7 @@ void run(int argc, char *argv[]) {
   //bring oai if down
   terminate();
   logClean();
+  vcd_signal_dumper_close();
   //printf("FOR MAIN TIMES = %d &&&& OTG TIMES = %d <-> FOR TIMES = %d <-> IF TIMES = %d\n", for_main_times, otg_times, for_times, if_times);
 
 }
