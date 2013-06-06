@@ -4154,13 +4154,12 @@ AS-Config ::=				SEQUENCE {
 	sourceSystemInformationBlockType2	SystemInformationBlockType2,
 	antennaInfoCommon					AntennaInfoCommon,
 	sourceDl-CarrierFreq				ARFCN-ValueEUTRA,
-	...,
-	[[	sourceSystemInformationBlockType1Ext	OCTET STRING (CONTAINING
+	sourceSystemInformationBlockType1Ext	OCTET STRING (CONTAINING
 												SystemInformationBlockType1-v890-IEs)	OPTIONAL,
 		sourceOtherConfig-r9				OtherConfig-r9
-	]],
-	[[	sourceSCellConfigList-r10			SCellToAddModList-r10			OPTIONAL
-	]]
+	,
+	sourceSCellConfigList-r10			SCellToAddModList-r10			OPTIONAL
+	
 }
 
 
@@ -4199,8 +4198,8 @@ RRM-Config ::=				SEQUENCE {
 									day2hr12, day3, day4, day5, day7, day10, day14, day19,
 									day24, day30, dayMoreThan30}		OPTIONAL,
 	...,
-	[[	candidateCellInfoList-r10	CandidateCellInfoList-r10		OPTIONAL
-	]]
+		candidateCellInfoList-r10	CandidateCellInfoList-r10		OPTIONAL
+	
 }
 
 CandidateCellInfoList-r10 ::=	SEQUENCE (SIZE (1..maxFreq)) OF CandidateCellInfo-r10
