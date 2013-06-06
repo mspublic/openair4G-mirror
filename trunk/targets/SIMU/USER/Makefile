@@ -1,5 +1,5 @@
 CC = gcc
-MPICC = mpicc
+MPICC = gcc #mpicc
 
 CPUFLAGS = -mmmx -msse -msse2 -msse4.1
 # FORCE ssse3 for compilation of openair on User Mode Linux
@@ -100,16 +100,16 @@ endif
 ifdef CBA
 CFLAGS += -DRel10
 CFLAGS += -DCBA
-@echo Rel10=1 CBA=1
+@echo "Rel10=1 CBA=1"
 
 else ifdef Rel10
 CFLAGS += -DRel10
-@echo Rel10=1
+@echo "Rel10=1"
 #ifeq ($(IS_REL10), 0)
 # $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; rm -f oaisim_pad; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
 #endif
 else # default is rel 8
-@echo Rel8=1
+@echo "Rel8=1"
 CFLAGS += -DRel8
 #ifeq ($(IS_REL8), 0)
 # $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-86.asn EUTRA-RRC-Definitions.asn ;  cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )

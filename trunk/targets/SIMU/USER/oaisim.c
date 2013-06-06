@@ -167,7 +167,7 @@ mapping small_scale_names[] = {
 void terminate(void);
 
 void 
-    help (void) {
+help (void) {
   printf
       ("Usage: oaisim -h -a -F -C tdd_config -V -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -A channel_model -z cooperation_flag -u nb_local_ue -U UE mobility -b nb_local_enb -B eNB_mobility -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable -T traffic model -D multicast network device\n");
 
@@ -653,9 +653,18 @@ int
         }
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
-          for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
+         // consider only sec id 0
+	for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+	  if (abstraction_flag == 0) {
+	    do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
+			  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
+			  frame,next_slot,
+			  frame_parms);
 	  }
+	}
+	for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
+	}
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){//if ((subframe<2) || (subframe>4))
           do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
@@ -671,7 +680,15 @@ int
       }
       if ((direction == SF_S)) {//it must be a special subframe
         if (next_slot%2==0) {//DL part
-          for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+          for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+	    if (abstraction_flag == 0) {
+	      do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
+			  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
+			  frame,next_slot,
+			  frame_parms);
+	    }
+	  }
+	  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 	    do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
 	  }
           /*

@@ -361,7 +361,6 @@ void logRecord( const char *file, const char *func,
        g_log->level = LOG_DEBUG;
      }
    }
-
   va_start(args, format);
   len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
   va_end(args);

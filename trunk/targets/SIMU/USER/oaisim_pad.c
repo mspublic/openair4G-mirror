@@ -9,7 +9,7 @@
 #include <execinfo.h>
 
 //<<PAD>>//
-#include <mpi.h>
+//#include <mpi.h>
 //#include "UTIL/FIFO/pad_list.h"
 #include "discrete_event_generator.h"
 #include "threadpool.h"
@@ -46,12 +46,6 @@
 #include "UTIL/OMG/omg_constants.h"
 
 
-//#ifdef PROC
-#include "../PROC/interface.h"
-#include "../PROC/channel_sim_proc.h"
-#include "../PROC/Tsync.h"
-#include "../PROC/Process.h"
-//#endif
 
 //#include "UTIL/LOG/vcd_signal_dumper.h"
 
