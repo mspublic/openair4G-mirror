@@ -79,10 +79,14 @@
 #include "PHY_INTERFACE/vars.h"
 #endif
 
+#ifdef SMBV
+#include "PHY/TOOLS/smbv.h"
+#endif
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_vars.h"
 #include "UTIL/MATH/oml.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
@@ -133,8 +137,8 @@ volatile unsigned int *DAQ_MBOX;
 int oai_exit = 0;
 
 //int time_offset[4] = {-138,-138,-138,-138};
-int time_offset[4] = {-145,-145,-145,-145};
-//int time_offset[4] = {0,0,0,0};
+//int time_offset[4] = {-145,-145,-145,-145};
+int time_offset[4] = {0,0,0,0};
 
 int fs4_test=0;
 char UE_flag=0;
@@ -794,7 +798,7 @@ static void *UE_thread(void *arg)
 		
 		hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
 		LOG_D(HW,"Got synch: hw_slot_offset %d\n",hw_slot_offset);
-	      }
+		}
 	  }
 	  else {
 	    if (openair_daq_vars.freq_offset >= 0) {
@@ -810,14 +814,14 @@ static void *UE_thread(void *arg)
 	    }
 	    else {
 	      LOG_I(PHY,"[initial_sync] trying carrier off %d Hz\n",openair_daq_vars.freq_offset);
-	      for (i=1; i<4; i++) {
+	      for (i=0; i<1; i++) {
 		p_exmimo_config->rf.rf_freq_rx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
 		p_exmimo_config->rf.rf_freq_tx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
 	      }
 	      openair0_dump_config(card);
 	      
-	    }
-	  }
+	      }
+	   }
         }
 
       /*
@@ -915,10 +919,14 @@ int main(int argc, char **argv) {
   mode = normal_txrx;
 
 
-  while ((c = getopt_long (argc, argv, "C:ST:UdF:",long_options,NULL)) != -1)
+  while ((c = getopt_long (argc, argv, "C:ST:UdF:V",long_options,NULL)) != -1)
     {
       switch (c)
         {
+	case 'V':
+          ouput_vcd = 1;
+          vcd_signal_dumper_init();
+	  break;
         case 'd':
           do_forms=1;
           break;
@@ -1088,7 +1096,7 @@ int main(int argc, char **argv) {
     g_log->log_component[PHY].level = LOG_INFO;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].level = LOG_DEBUG;
     g_log->log_component[MAC].flag  = LOG_HIGH;
     g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag  = LOG_HIGH;
@@ -1121,17 +1129,17 @@ int main(int argc, char **argv) {
     
     openair_daq_vars.manual_timing_advance = 0;
     //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
-    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+    openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
     openair_daq_vars.auto_freq_correction = 0;
     openair_daq_vars.use_ia_receiver = 1;
 
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //    rxgain[i] = 20;
-    rxgain[0] = 0;
-    rxgain[1] = 0;
-    rxgain[2] = 0;
-    rxgain[3] = 0;
+    rxgain[0] = 20;
+    rxgain[1] = 20;
+    rxgain[2] = 20;
+    rxgain[3] = 20;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1175,7 +1183,7 @@ int main(int argc, char **argv) {
     g_log->log_component[PHY].level = LOG_INFO;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].level = LOG_DEBUG;
     g_log->log_component[MAC].flag  = LOG_HIGH;
     g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag  = LOG_HIGH;
@@ -1202,7 +1210,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=0;
+    openair_daq_vars.target_ue_dl_mcs=20;
     openair_daq_vars.ue_ul_nb_rb=6;
     openair_daq_vars.target_ue_ul_mcs=19;
 
@@ -1248,7 +1256,7 @@ int main(int argc, char **argv) {
   p_exmimo_config->framing.tdd_config = 0;
   p_exmimo_config->framing.resampling_factor = 2;
 
-  carrier_freq[0] = 0; //don't use this LIME for card 1
+  carrier_freq[1] = 0; //don't use this LIME for card 1
   carrier_freq[2] = 0; //don't use this LIME for card 1
   carrier_freq[3] = 0; //don't use this LIME for card 1
   for (ant = 0; ant<4; ant++) { 
@@ -1276,14 +1284,18 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
   }
   if (UE_flag) {
-    //p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
-    p_exmimo_config->rf.rf_mode[0]    = 0;
-    p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
+    p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
+    p_exmimo_config->rf.rf_mode[1]    = 0;
+    p_exmimo_config->rf.rf_mode[2]    = 0;
+    p_exmimo_config->rf.rf_mode[3]    = 0;
+    //p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
   }
   else {
-    //p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
-    p_exmimo_config->rf.rf_mode[0]    = 0;
-    p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
+    p_exmimo_config->rf.rf_mode[0]    = my_rf_mode;
+    p_exmimo_config->rf.rf_mode[1]    = 0;
+    p_exmimo_config->rf.rf_mode[2]    = 0;
+    p_exmimo_config->rf.rf_mode[3]    = 0;
+    //p_exmimo_config->rf.rf_mode[1]    = my_rf_mode;
   }
 
 
@@ -1330,11 +1342,11 @@ int main(int argc, char **argv) {
     if (p_exmimo_id->board_exmimoversion==1) //ExpressMIMO1
       openair_daq_vars.timing_advance = 138;
     else //ExpressMIMO2
-      openair_daq_vars.timing_advance = 45;
+      openair_daq_vars.timing_advance = 0;
 
   // connect the TX/RX buffers
   if (UE_flag==1) {
-      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,1);
+      setup_ue_buffers(PHY_vars_UE_g[0],frame_parms,0);
       printf("Setting UE buffer to all-RX\n");
       // Set LSBs for antenna switch (ExpressMIMO)
       for (i=0; i<frame_parms->samples_per_tti*10; i++)
@@ -1343,7 +1355,7 @@ int main(int argc, char **argv) {
       
   }
   else {
-    setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms,1);
+    setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms,0);
       if (fs4_test==0)
         {
           printf("Setting eNB buffer to all-RX\n");

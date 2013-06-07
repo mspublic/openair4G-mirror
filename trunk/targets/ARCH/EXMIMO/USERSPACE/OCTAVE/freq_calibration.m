@@ -20,8 +20,8 @@ f_off_min = 1e6;
 
 limeparms;
 %rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*[1 1 1 1];
-rf_mode = (RXEN+0+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM+DMAMODE_RX+0)*[1 1 0 0];
-freq_rx = fc*[1 1 1 1];
+rf_mode = (RXEN+0+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM+DMAMODE_RX+0)*[1 0 0 0];
+freq_rx = fc*[1 0 0 0];
 freq_tx = freq_rx+1920000;
 rx_gain = 30*[1 1 1 1];
 tx_gain = 25*[1 1 1 1];
@@ -53,7 +53,7 @@ i=0;
 do 
   format long
   fc
-  freq_rx = fc*[1 1 1 1];
+  freq_rx = fc*[1 0 0 0];
   freq_tx = freq_rx+1920000;
   oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 
@@ -61,7 +61,7 @@ do
   sleep(1);
   s=oarf_get_frame(card);   %oarf_get_frame
 
-  nb_rx = size(s,2);
+  nb_rx = 1; %size(s,2);
 
   % find the DC component
   m = mean(s);

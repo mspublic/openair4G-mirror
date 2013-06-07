@@ -159,6 +159,8 @@ include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/S1AP/Makefile.inc
 include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
 
+LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
+
 CFLAGS += -DENB_MODE
 S1AP_BUILT_OBJS=
 

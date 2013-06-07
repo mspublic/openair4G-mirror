@@ -1,9 +1,9 @@
-fc  = 2660000000;
-%fc  = 1907600000;
+%fc  = 2660000000;
+fc  = 1907600000;
 %fc = 859.5e6;
 
 rxgain=30;
-txgain=20;
+txgain=25;
 eNB_flag = 0;
 card = 0;
 
@@ -18,13 +18,13 @@ rf_local = [8254744   8255063   8257340   8257340]; %eNB2tx 1.9GHz
 %rf_local  = rf_local * ones(1,4);
 rf_rxdc = rf_rxdc * ones(1,4);
 %rf_vcocal = rf_vcocal_859 * ones(1,4);
-%rf_vcocal = rf_vcocal_19G * ones(1,4);
-rf_vcocal = rf_vcocal_26G_eNB * ones(1,4);
+rf_vcocal = rf_vcocal_19G * ones(1,4);
+%rf_vcocal = rf_vcocal_26G_eNB * ones(1,4);
 rxgain = rxgain*ones(1,4);
 txgain = txgain*ones(1,4);
-freq_tx = fc*[0 1 1 1];
-%freq_rx = freq_tx;
-freq_rx = freq_tx-120000000*[0 1 1 1];
+freq_tx = fc*[1 1 1 1];
+freq_rx = freq_tx;
+%freq_rx = freq_tx-120000000*[1 1 1 1];
 %freq_tx = freq_rx+1920000;
 tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
 syncmode = SYNCMODE_FREE;
@@ -43,8 +43,8 @@ select = 1;
 switch(select)
 
 case 1
-  s(:,1) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
-  s(:,2) = floor(amp * (exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
+  s(:,1) = floor(amp * real(exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
+  s(:,2) = floor(amp * imag(exp(sqrt(-1)*.5*pi*(0:((76800)-1)))));
 
 case 2
   s(38400+128,1)= 80-1j*40;
@@ -80,6 +80,8 @@ s = s*2;
 %s(38400:end,2) = (1+1j);
 
 sleep (1)
+%keyboard
+
 oarf_send_frame(card,s,n_bit);
 
 figure(1)
