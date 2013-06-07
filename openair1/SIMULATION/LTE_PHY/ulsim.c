@@ -435,7 +435,7 @@ int main(int argc, char **argv) {
 
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
 
-  printf("Rate = %f (mod %d)\n",rate,get_Qm(mcs));
+  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm(mcs),coded_bits_per_codeword);
   
 	
   //	sprintf(ftxlev_name,"txlev_mcs%d_nrb%d_AWGN_nsim%d.m",mcs,nb_rb,n_frames);
