@@ -365,10 +365,12 @@ int main(int argc, char **argv) {
   PHY_vars_eNB->lte_frame_parms.num_MBSFN_config = 1;
   PHY_vars_eNB->lte_frame_parms.MBSFN_config[0].radioframeAllocationPeriod = 0;
   PHY_vars_eNB->lte_frame_parms.MBSFN_config[0].radioframeAllocationOffset = 0;
+  PHY_vars_eNB->lte_frame_parms.MBSFN_config[0].fourFrames_flag = 0;
   PHY_vars_eNB->lte_frame_parms.MBSFN_config[0].mbsfn_SubframeConfig=0xff; // activate all possible subframes
   PHY_vars_UE->lte_frame_parms.num_MBSFN_config = 1;
   PHY_vars_UE->lte_frame_parms.MBSFN_config[0].radioframeAllocationPeriod = 0;
   PHY_vars_UE->lte_frame_parms.MBSFN_config[0].radioframeAllocationOffset = 0;
+  PHY_vars_UE->lte_frame_parms.MBSFN_config[0].fourFrames_flag = 0;
   PHY_vars_UE->lte_frame_parms.MBSFN_config[0].mbsfn_SubframeConfig=0xff; // activate all possible subframes
 
   fill_eNB_dlsch_MCH(PHY_vars_eNB,mcs,1,0);
@@ -386,14 +388,15 @@ int main(int argc, char **argv) {
   input_buffer_length = PHY_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS/8;
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
   memset(input_buffer,0,input_buffer_length+4);
-  for (i=0;i<input_buffer_length;i++) {
+  for (i=0;i<input_buffer_length+4;i++) {
     input_buffer[i]= (unsigned char)(taus()&0xff);
   }
 
 
   snr_step = input_snr_step;
   for (SNR=snr0;SNR<snr1;SNR+=snr_step) {
-
+    PHY_vars_UE->frame=0;
+    PHY_vars_eNB->frame=0;
     errs[0]=0;
     errs[1]=0;
     errs[2]=0;
@@ -512,6 +515,8 @@ int main(int argc, char **argv) {
 	printf("MCH decoding returns %d\n",ret);
       if (ret == (1+PHY_vars_UE->dlsch_ue_MCH[0]->max_turbo_iterations))
 	errs[0]++;
+      PHY_vars_UE->frame++;
+      PHY_vars_eNB->frame++;
     }
     printf("errors %d/%d (Pe %e)\n",errs[round],trials,(double)errs[round]/trials);
 
