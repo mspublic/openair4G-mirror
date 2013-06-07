@@ -133,12 +133,14 @@ mem_element_t *mac_buffer_remove_middle(u8 Mod_id, u8 b_index, mem_element_t *pt
 mem_element_t *packet_list_get_head (packet_list_t *listP); // returns the head of the list without removing it!
 mem_element_t *mac_buffer_get_head(u8 Mod_id, u8 b_index); // returns the head of the list without removing it!
 
-void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 number_of_packets_asked, u16 **seq_num, u16 **size);
+void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 number_of_packets_asked, u16 seq_num[], u16 size[]);
 
 
-int packet_list_find_pdu_seq_num(packet_list_t *listP, int seq_num);
-int packet_list_find_pdu_seq_num2(packet_list_t *listP, int seq_num);
+//int packet_list_find_pdu_seq_num(packet_list_t *listP, int seq_num);
+//int packet_list_find_pdu_seq_num2(packet_list_t *listP, int seq_num);
 void packet_list_print(packet_list_t *listP);
+
+
 
 void packet_list_add_tail(mem_element_t *elementP, packet_list_t *listP); // pointers of elementP to packet trees are inserted with NULL, and are updated outside this func
 void packet_list_add_tail_2(mem_element_t *elementP, packet_list_t *listP); //pointers of elementP to packet trees are assigned already.
@@ -158,8 +160,8 @@ void mac_buffer_print_4(u8 Mod_id, u8 eNB_index, u16 cornti); // used also for d
 void mac_buffer_print_reverse(u8 Mod_id, u8 eNB_index, u16 cornti);  // used also for debugging
 void mac_buffer_print_all_per_MR(u8 Mod_id); // used also for debugging
 
-mem_element_t *packet_list_find_pivot_seq_num(int seq_num, packet_list_t *listP, int *after);
-mem_element_t *packet_list_find_pivot_pdu_size(int pdu_size, packet_list_t *listP, int *after);
+//mem_element_t *packet_list_find_pivot_seq_num(int seq_num, packet_list_t *listP, int *after);
+//mem_element_t *packet_list_find_pivot_pdu_size(int pdu_size, packet_list_t *listP, int *after);
 
 // MAC API
 int  mac_buffer_total_size(u8 Mod_id, u8 eNB_index, u16 cornti);
@@ -167,7 +169,9 @@ int  mac_buffer_nb_elements(u8 Mod_id, u8 eNB_index, u16 cornti);
 
 // just return the pointer to the element for consulting, do not remove from the buffer
 //mem_element_t *mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 eid);
-void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 **seq_num, u16 **size);
+void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 seq_num[], u16 size[]);
+
+
 
 mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_num, int requested_size, int HARQ_proccess_ID); 
 int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);// returns 1 for success otherwise 0 //

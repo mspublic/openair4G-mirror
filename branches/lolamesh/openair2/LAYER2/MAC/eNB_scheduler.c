@@ -1161,7 +1161,7 @@ u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
 }
 
 
-u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar){
+u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 UE_id_ar[], u8 cornti_index_of_UE_id_ar[], u8 seq_num_of_UE_id_ar[], u8 bsr_of_UE_id_ar[],  u8 *num_of_UE_id_ar){
   
   u8 UE_id,j;
   u16 granted_UEs;
@@ -1175,14 +1175,14 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
   for (UE_id=0;UE_id<granted_UEs;UE_id++){
     for (j=0;j<MAX_VLINK_PER_CH;j++){
       if (eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].cornti==cornti && eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0]!=0 ){
-        *UE_id_ar[(int)*num_of_UE_id_ar]=UE_id;
-        *cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar]=j;
-        *bsr_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0];
-        *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
-        if( *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] < min_sn){
-          min_sn = *seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar];
-          *next_ue = *UE_id_ar[(int)*num_of_UE_id_ar];
-          *cornti_index = *cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar];
+        UE_id_ar[(int)*num_of_UE_id_ar]=UE_id;
+        cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar]=j;
+        bsr_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0];
+        seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].sn[0];
+        if( seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar] < min_sn){
+          min_sn = seq_num_of_UE_id_ar[(int)*num_of_UE_id_ar];
+          *next_ue = UE_id_ar[(int)*num_of_UE_id_ar];
+          *cornti_index = cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar];
 	}
         *num_of_UE_id_ar+=1;
         found = 1;
@@ -1914,16 +1914,20 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
   u8 num_of_UE_id_ar=0;
   u8 cornti_index=-1;
 
-  u8 **UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
-  u8 **cornti_index_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
-  u8 **seq_num_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id 
-  u8 **bsr_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
+  //u8 **UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
+  //u8 **cornti_index_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
+  //u8 **seq_num_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id 
+  //u8 **bsr_of_UE_id_ar = malloc(sizeof(u8*)*MAX_VLINK_PER_CH*MAX_VLINK_PER_CH); // This length is the worst case where each cornti can belong to one exacly UE_id
   
   for(i=0;i<MAX_VLINK_PER_CH*MAX_VLINK_PER_CH;i++){
-    UE_id_ar[i] = malloc(sizeof(u8));     
-    cornti_index_of_UE_id_ar[i] = malloc(sizeof(u8));
-    seq_num_of_UE_id_ar[i] = malloc(sizeof(u8));
-    bsr_of_UE_id_ar[i] = malloc(sizeof(u8));
+   // UE_id_ar[i] = malloc(sizeof(u8));     
+   // cornti_index_of_UE_id_ar[i] = malloc(sizeof(u8));
+   // seq_num_of_UE_id_ar[i] = malloc(sizeof(u8));
+  //  bsr_of_UE_id_ar[i] = malloc(sizeof(u8));
+    UE_id_ar[i] =0;     
+    cornti_index_of_UE_id_ar[i] = 0;
+    seq_num_of_UE_id_ar[i] = 0;
+    bsr_of_UE_id_ar[i] = 0;
   }
     
   granted_UEs=find_ulgranted_UEs(Mod_id);
@@ -2108,15 +2112,20 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
  }
  
  for(i=0;i<MAX_VLINK_PER_CH*MAX_VLINK_PER_CH;i++){
-   if (UE_id_ar[i])
+    UE_id_ar[i]=0;     
+    cornti_index_of_UE_id_ar[i]=0; 
+    seq_num_of_UE_id_ar[i]=0;
+    bsr_of_UE_id_ar[i]=0;
+   /*if (UE_id_ar[i])
      free(UE_id_ar[i]);
    if (cornti_index_of_UE_id_ar[i])
      free(cornti_index_of_UE_id_ar[i]);
    if (seq_num_of_UE_id_ar[i])
      free(seq_num_of_UE_id_ar[i]);
    if (bsr_of_UE_id_ar[i])
-     free(bsr_of_UE_id_ar[i]);
+     free(bsr_of_UE_id_ar[i]);*/
  }
+ /*
  if(UE_id_ar)    
    free(UE_id_ar);    
  if(cornti_index_of_UE_id_ar) 
@@ -2125,7 +2134,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
    free(seq_num_of_UE_id_ar);
  if (bsr_of_UE_id_ar)
    free(bsr_of_UE_id_ar);
- 
+ */
 }
 
 //APAPOSTO
@@ -4974,8 +4983,10 @@ void schedule_ue(u8 Mod_id,u16 rnti, u8 co_flag, unsigned char UE_id,u32 frame,u
       //eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
       
       if (co_flag){
-	LOG_N(MAC,"[eNB %d] Bypass the physical layer for the DLSCH\n", Mod_id);
+	LOG_N(MAC,"[eNB %d] Bypass the physical layer for the DLSCH %d TBS\n", Mod_id, TBS);
 	ue_send_sdu_co(next_ue,frame,eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],TBS,Mod_id, rnti);
+  //ue_send_sdu_co(next_ue,frame,eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],sdu_length_total-offset,Mod_id, rnti);
+  
       }
 
 
