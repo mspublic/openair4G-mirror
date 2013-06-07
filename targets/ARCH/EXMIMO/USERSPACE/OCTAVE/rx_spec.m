@@ -1,10 +1,10 @@
 dual_tx=0;
 card=0;
 limeparms;
-active_rf = [1 0 0 0];
+active_rf = [0 1 0 0];
 %rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*[1 1 1 1];
 rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*active_rf;
-rf_mode = rf_mode+((DMAMODE_RX)*[1 0 0 0]);
+rf_mode = rf_mode+((DMAMODE_RX)*[0 1 0 0]);
 %freq_rx = 2540000000*[1 1 1 1];
 %freq_rx = 1907600000*[1 1 1 0];
 freq_rx = 1912600000*active_rf; %+ 2540000000*[0 1 0 0]; % + 859500000*[0 0 1 0];
