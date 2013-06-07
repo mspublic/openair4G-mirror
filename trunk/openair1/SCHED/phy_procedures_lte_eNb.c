@@ -514,6 +514,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
   DCI_pdu->Num_ue_spec_dci=0;
 
   switch (subframe) {
+	/*
       case 5:
       DCI_pdu->Num_common_dci = 1;
       DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
@@ -532,6 +533,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
       BCCH_alloc_pdu.TPC               = 1;      // set to 3 PRB
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&BCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
       break;
+	*/
   case 6:
     /*
       DCI_pdu->Num_ue_spec_dci = 1;
@@ -553,7 +555,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu1,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
     */
     break;
-  case 7:
+  case 5:
       DCI_pdu->Num_ue_spec_dci = 1;
     
     if (transmission_mode<3) {
@@ -1445,7 +1447,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					     0,
 					     P_RNTI,
 					     CBA_RNTI,
-					     0);//1);  // do_srs
+					     0);  // do_srs
 
 	  if ((DCI_pdu->dci_alloc[i].nCCE=get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
 							  DCI_pdu->nCCE,

@@ -13,7 +13,7 @@
 */
 
 /*!\brief Timing drift hysterisis in samples*/
-#define SYNCH_HYST 4
+#define SYNCH_HYST 1
 
 
 /*!
