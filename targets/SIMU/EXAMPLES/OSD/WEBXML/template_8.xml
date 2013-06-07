@@ -27,7 +27,7 @@
       <SOURCE_ID>0</SOURCE_ID> 		
       <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> 
       <IP_VERSION>ipv4</IP_VERSION> 
-      <DESTINATION_ID>2</DESTINATION_ID> 
+      <DESTINATION_ID>1</DESTINATION_ID> 
       <IDT_DIST>uniform</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
       <IDT_MIN_ms>40</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
       <IDT_MAX_ms>60</IDT_MAX_ms>  <!--MAximum IDT values in milliseconds-->

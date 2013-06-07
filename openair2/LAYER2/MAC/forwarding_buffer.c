@@ -188,6 +188,7 @@ mem_element_t *packet_list_remove_head(packet_list_t * listP){
 // access optimisation
  mem_element_t	*head;
  head = listP->head;
+
  // almost one element
  if(head != NULL){
 	
@@ -197,7 +198,8 @@ mem_element_t *packet_list_remove_head(packet_list_t * listP){
 	listP->head = head->next;
 	listP->nb_elements = listP->nb_elements - 1;
 	listP->total_size = listP->total_size - head->pdu_size;
-    // if only one element, update tail
+
+  // if only one element, update tail
 	if (listP->head == NULL){
 	 listP->tail = NULL;
 	}
@@ -262,6 +264,7 @@ mem_element_t *packet_list_remove_tail(packet_list_t * listP){
 // access optimisation;
  mem_element_t      *tail;
  tail = listP->tail;
+ 
  // almost one element;
  if(tail != NULL){
 	tail->avl_node_pdu_seqn = NULL;
@@ -269,8 +272,8 @@ mem_element_t *packet_list_remove_tail(packet_list_t * listP){
 	
 	listP->nb_elements = listP->nb_elements - 1;
 	listP->total_size = listP->total_size - tail->pdu_size;
-	
-	// if only one element, update head, tail;
+
+  // if only one element, update head, tail;
 	if(listP->head == tail){
 	 listP->head = NULL;
 	 listP->tail = NULL;
@@ -356,7 +359,7 @@ if(avl_node_pdu_seqn==NULL || avl_node_pdu_size == NULL ){
   }
 }
 
-void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 number_of_packets_asked, u16 **seq_num, u16 **size){
+void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 number_of_packets_asked, u16 seq_num[], u16 size[]){
 //-----------------------------------------------------------------------------
   // access optimisation
   mem_element_t  *head,*ptr;
@@ -370,15 +373,15 @@ void packet_list_get_info_from_the_first_elements(packet_list_t * listP, u16 num
   }
   else{
     for(i=0;i<number_of_packets_asked;i++){
-      *seq_num[i]= ptr->seq_num;
-      *size[i] = ptr->pdu_size;
+      seq_num[i]= ptr->seq_num;
+      size[i] = ptr->pdu_size;
       ptr=ptr->next;
     }
   }
 }
 
 
-void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 **seq_num, u16 **size){
+void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_packets_asked, u16 seq_num[], u16 size[]){
  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
  if(b_index == -1){
 	LOG_W(MAC,"[UE %d] Buffer for eNB_index %d and cornti %x does not exist\n",Mod_id,eNB_index,cornti);
@@ -425,7 +428,7 @@ mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_
  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
  mem_element_t *help_head = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
  mem_element_t *help_tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
- avl_node_t *ptr_t,*ptr_k;
+ struct avl_node_t *ptr_t,*ptr_k;
 
  if(b_index == -1){
    LOG_W(MAC,"[UE %d] Buffer for eNB_index %d and cornti %x does not exist\n",Mod_id,eNB_index,cornti); 
@@ -664,8 +667,8 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
 	//LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
 	return 0 ;
  }
- elementP = malloc(sizeof(struct mem_element_t));
- elementP->data = (char *)malloc(sizeof(pdu_size));
+ elementP = malloc(sizeof(mem_element_t));
+ elementP->data = (char *)malloc(sizeof(char)*pdu_size);
 
  
  if (elementP == NULL || elementP->data == NULL|| mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
@@ -676,7 +679,7 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
    elementP->seq_num = seq_num;
    elementP->pdu_size = pdu_size;
    elementP->HARQ_proccess_ID = HARQ_proccess_ID;
-   memcpy(elementP->data,data,pdu_size);
+   memcpy(elementP->data,data,pdu_size*sizeof(char));
    
    LOG_D(MAC,"mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
    
@@ -688,10 +691,10 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
 }
 
 int mac_buffer_add_tail(u8 Mod_id, u8 b_index, mem_element_t *elementP){
- avl_node_t *ptr_t;
+ struct avl_node_t *ptr_t;
  ptr_t=avl_tree_find(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, elementP->seq_num);
  if(ptr_t == NULL){ // pdu with the seq_num does not exist in the tree so I can add it into the list and then to the tree!
-   packet_list_add_tail(elementP, mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p);
+  packet_list_add_tail(elementP, mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p);
    mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn = avl_tree_insert_node(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, elementP, 1, 0, 0);
    mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size = avl_tree_insert_node_pdu_size(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_size, elementP);	
    return 1;
@@ -700,6 +703,7 @@ int mac_buffer_add_tail(u8 Mod_id, u8 b_index, mem_element_t *elementP){
    return 0;
  }
 }
+
 
 
 int  mac_buffer_total_size(u8 Mod_id, u8 eNB_index, u16 cornti){
@@ -994,7 +998,7 @@ void mac_buffer_print_4(u8 Mod_id, u8 eNB_index, u16 cornti){
 	 return;
 	}
   mem_element_t *ptr_p, *ptr_h1,* ptr_h2;
-	avl_node_t *ptr_r1,* ptr_r2;
+	struct avl_node_t *ptr_r1,* ptr_r2;
   ptr_p = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
 	
 	int flag=0;

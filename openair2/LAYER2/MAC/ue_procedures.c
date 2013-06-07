@@ -262,7 +262,7 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
 	  Mod_id,frame,UE_mac_inst[Mod_id].corntis.sn[eNB_index]);
     payload_ptr+=3; // for CE
     size = sdu_len-3;
- 
+     
     LOG_D(MAC,"[UE %d]dumping the mac buffer pdu size %d\n", Mod_id, size);
     for (i=0; i < size; i++)
       msg("%x.", payload_ptr[i]);
@@ -274,13 +274,12 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     LOG_I(MAC,"[UE %d][VLINK] Frame %d : DLSCH->vlink%d, i_cornti %x -> o_cornti %x, src_eNB %d-> dst->eNB %d (%d bytes)\n", 
 	  Mod_id, frame,vlid, cornti, dst_cornti, 
 	  eNB_index,dst_eNB, size);
-    if (mac_buffer_data_ind(Mod_id, dst_eNB, dst_cornti, (char *)payload_ptr, UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ){ 
+    if( mac_buffer_data_ind(Mod_id, dst_eNB, dst_cornti, (char *)payload_ptr, UE_mac_inst[Mod_id].corntis.sn[eNB_index],size, 0) == 1 ){ 
       LOG_D (MAC, "[UE %d] Frame %d : PDU is stored in the MAC buffer \n", Mod_id);
       mac_buffer_print_all_per_MR(Mod_id);
     }
     else 
       LOG_E(MAC, "[UE %d] Frame %d : failed to store the MAC PDU in the buffer\n", Mod_id);
- 
   }else {
     LOG_W(MAC,"unexpected LCID %d for collaborative vLink\n", lcid);
   }
@@ -1288,19 +1287,21 @@ void get_cobsr_info(u8 Mod_id, u16 buflen, u8 eNB_index, u8 *cobsr_len, u8 *corn
 }
 
 
-#define MAX_NB_ELEMENTS_MAC_BUFFER 4
+
 void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
 
   u8 i,j;
   u16 nb_elements;
-  u16 **co_seq_num=malloc(MAX_NB_ELEMENTS_MAC_BUFFER * sizeof(u16*));
-  u16 **co_size=malloc(MAX_NB_ELEMENTS_MAC_BUFFER * sizeof(u16*));
+  //u16 **co_seq_num=malloc(MAX_NB_ELEMENTS_MAC_COBSR * sizeof(u16*));
+  //u16 **co_size=malloc(MAX_NB_ELEMENTS_MAC_COBSR * sizeof(u16*));
   
-  for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){
-    co_seq_num[i]=malloc(sizeof(u16)); 
-    co_size[i]=malloc(sizeof(u16));
-    *co_seq_num[i]=0; 
-    *co_size[i]=0;
+  for (i=0;i<MAX_NB_ELEMENTS_MAC_COBSR;i++){
+   // co_seq_num[i]=malloc(sizeof(u16)); 
+   // co_size[i]=malloc(sizeof(u16));
+   // *co_seq_num[i]=0; 
+   // *co_size[i]=0;
+   co_seq_num[i]=0;
+   co_size[i]=0;
   } 
  if ((cornti_index >= 0) && (cornti_index <= MAX_VLINK_PER_MR))
     UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].cornti= cornti;
@@ -1309,20 +1310,20 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
    return;
  }
   nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
-  if (nb_elements > MAX_NB_ELEMENTS_MAC_BUFFER )
-    nb_elements=MAX_NB_ELEMENTS_MAC_BUFFER;
+  if (nb_elements > MAX_NB_ELEMENTS_MAC_COBSR )
+    nb_elements=MAX_NB_ELEMENTS_MAC_COBSR;
   if (nb_elements > 0 ) 
     mac_buffer_stat_ind(Mod_id, eNB_index, cornti, &nb_elements, co_seq_num, co_size);
 
-  for (j=0; j <  MAX_NB_ELEMENTS_MAC_BUFFER; j ++) {
+  for (j=0; j <  MAX_NB_ELEMENTS_MAC_COBSR; j ++) {
     if (j < nb_elements ) {
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, *co_size[j]);
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=  (u8) *co_seq_num[j];
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, co_size[j]);
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=  (u8) co_seq_num[j];
      
       LOG_D(MAC,"[UE %d/%x/%d] updating COBSR%d to (level %d, bytes %d) and COSN%d (%d,%d) for eNB %d (nb element %d)\n", 
 	    Mod_id,cornti, cornti_index, 
-	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j],*co_size[j],
-	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j],*co_seq_num[j],
+	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j],co_size[j],
+	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j],co_seq_num[j],
 	    eNB_index, nb_elements);
     } else {
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]=0;
@@ -1330,12 +1331,14 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
     }
   }
   
-  for (i=0;i<MAX_NB_ELEMENTS_MAC_BUFFER;i++){
-     free(co_seq_num[i]);
-     free (co_size[i]);
+  for (i=0;i<MAX_NB_ELEMENTS_MAC_COBSR;i++){
+     //free(co_seq_num[i]);
+     //free (co_size[i]);
+     co_seq_num[i]=0;
+     co_size[i]=0;
   }
-  free(co_seq_num);
-  free (co_size);
+ // free(co_seq_num);
+ // free (co_size);
        
 }
 

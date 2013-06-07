@@ -48,7 +48,7 @@
 
 
 
-avl_node_t * avl_tree_make_empty(avl_node_t *t){
+struct avl_node_t * avl_tree_make_empty(struct avl_node_t *t){
  if(t != NULL){
 	avl_tree_make_empty(t->left);
 	avl_tree_make_empty(t->right);
@@ -57,7 +57,7 @@ avl_node_t * avl_tree_make_empty(avl_node_t *t){
  return NULL;
 }
  
-avl_node_t *avl_tree_find(avl_node_t *t, int key){
+struct  avl_node_t *avl_tree_find(struct avl_node_t *t, int key){
  if(t==NULL)
 	return NULL;
  if(key < t->key)
@@ -69,9 +69,9 @@ avl_node_t *avl_tree_find(avl_node_t *t, int key){
 	 return t;
 }
  
-avl_node_t *avl_tree_find_less_or_equal(avl_node_t *t, int value){
- avl_node_t *ptr = t;
- avl_node_t *ptr_ind=NULL;
+struct avl_node_t *avl_tree_find_less_or_equal(struct avl_node_t *t, int value){
+ struct avl_node_t *ptr = t;
+ struct avl_node_t *ptr_ind=NULL;
  int ref=-1;
  if(ptr == NULL){
 	return NULL;
@@ -96,7 +96,7 @@ avl_node_t *avl_tree_find_less_or_equal(avl_node_t *t, int value){
  }
 }
 
-avl_node_t *avl_tree_find_min(avl_node_t *t){
+struct avl_node_t *avl_tree_find_min(struct avl_node_t *t){
  if(t == NULL)
 	return NULL;
  else
@@ -106,14 +106,14 @@ avl_node_t *avl_tree_find_min(avl_node_t *t){
 	 return avl_tree_find_min(t->left);
 }
  
-avl_node_t *avl_tree_find_max(avl_node_t *t){
+struct avl_node_t *avl_tree_find_max(struct avl_node_t *t){
  if(t != NULL)
 	while( t->right != NULL )
 	 t = t->right;
 	return t;
 }
  
-int avl_tree_height(avl_node_t *tree_node){
+int avl_tree_height(struct avl_node_t *tree_node){
  if(tree_node == NULL)
 	return 0;
  else
@@ -124,7 +124,7 @@ int Max(int Lhs, int Rhs){
     return Lhs > Rhs ? Lhs : Rhs;
 }
 
-int avl_tree_get_balance(avl_node_t *t){
+int avl_tree_get_balance(struct avl_node_t *t){
  if(t == NULL)
 	return 0;
  return avl_tree_height(t->left) - avl_tree_height(t->right);
@@ -134,8 +134,8 @@ int avl_tree_get_balance(avl_node_t *t){
 /* Perform a rotate between a node (K2) and its left child */
 /* Update heights, then return new root */
  
-avl_node_t *avl_tree_single_rotate_with_left(avl_node_t *K2){
- avl_node_t *K1;
+struct avl_node_t *avl_tree_single_rotate_with_left(struct avl_node_t *K2){
+ struct avl_node_t *K1;
  
  K1 = K2->left;
  K2->left = K1->right;
@@ -151,8 +151,8 @@ avl_node_t *avl_tree_single_rotate_with_left(avl_node_t *K2){
 /* Perform a rotate between a node (K1) and its right child */
 /* Update heights, then return new root */
  
-avl_node_t *avl_tree_single_rotate_with_right(avl_node_t *K1){
- avl_node_t *K2;
+struct avl_node_t *avl_tree_single_rotate_with_right(struct avl_node_t *K1){
+ struct avl_node_t *K2;
  
  K2 = K1->right;
  K1->right = K2->left;
@@ -169,7 +169,7 @@ avl_node_t *avl_tree_single_rotate_with_right(avl_node_t *K1){
 /* Do the left-right double rotation */
 /* Update heights, then return new root */
  
-avl_node_t *avl_tree_double_rotate_with_left(avl_node_t *K3){
+struct avl_node_t *avl_tree_double_rotate_with_left(struct avl_node_t *K3){
  /* Rotate between K1 and K2 */
  K3->left = avl_tree_single_rotate_with_right(K3->left);
  
@@ -182,7 +182,7 @@ avl_node_t *avl_tree_double_rotate_with_left(avl_node_t *K3){
 /* Do the right-left double rotation */
 /* Update heights, then return new root */
  
-avl_node_t *avl_tree_double_rotate_with_right(avl_node_t *K1){
+struct avl_node_t *avl_tree_double_rotate_with_right(struct avl_node_t *K1){
  /* Rotate between K3 and K2 */
  K1->right = avl_tree_single_rotate_with_left(K1->right);
  /* Rotate between K1 and K2 */
@@ -190,7 +190,7 @@ avl_node_t *avl_tree_double_rotate_with_right(avl_node_t *K1){
 }
  
  
-avl_node_t *avl_tree_balance(avl_node_t *t){
+ struct avl_node_t *avl_tree_balance(struct avl_node_t *t){
    // STEP 2: UPDATE HEIGHT OF THE CURRENT NODE
 	 t->height = Max(avl_tree_height(t->left), avl_tree_height(t->right)) + 1;
 	 // STEP 3: GET THE BALANCE FACTOR OF THIS NODE (to check whether //  this node became unbalanced)
@@ -216,7 +216,7 @@ avl_node_t *avl_tree_balance(avl_node_t *t){
 	 return t;
 }
 
-avl_node_t *avl_tree_balance_2(avl_node_t *t, int key){
+struct avl_node_t *avl_tree_balance_2(struct avl_node_t *t, int key){
   // 2. Update height of this ancestor node 
  t->height = Max(avl_tree_height(t->left), avl_tree_height(t->right)) + 1;
  
@@ -247,7 +247,7 @@ avl_node_t *avl_tree_balance_2(avl_node_t *t, int key){
  
 }
 
-avl_node_t *avl_tree_insert_node(avl_node_t *t, struct mem_element_t *elementP, int pdu_seq_num_tree, int pdu_size_tree, int pdu_size_tree_in_next){
+struct avl_node_t *avl_tree_insert_node(struct avl_node_t *t, struct mem_element_t *elementP, int pdu_seq_num_tree, int pdu_size_tree, int pdu_size_tree_in_next){
 
   if(elementP==NULL){
 	 return NULL;
@@ -256,9 +256,9 @@ avl_node_t *avl_tree_insert_node(avl_node_t *t, struct mem_element_t *elementP, 
   int second_key = elementP->pdu_size;
   // 1.  Perform the normal BST rotation 
  if(t == NULL){
-   t = (avl_node_t *) t; 
+   t = (struct avl_node_t *) t; 
    //	 Create and return a one-node tree 
-   t = malloc(sizeof(struct avl_node_t));
+   t = (struct avl_node_t *)malloc(sizeof(struct avl_node_t));
 	if(t == NULL){
 	 //printf("Insufficient Memory - Allocation Error! avl_tree_insert_node()!\n");
 	 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure  for avl_tree_insert_node()\n");
@@ -297,7 +297,7 @@ avl_node_t *avl_tree_insert_node(avl_node_t *t, struct mem_element_t *elementP, 
  return t;
 } 
 
-avl_node_t *avl_tree_insert_node_pdu_size(avl_node_t *t, mem_element_t *elementP){
+struct avl_node_t *avl_tree_insert_node_pdu_size(struct avl_node_t *t, mem_element_t *elementP){
 	if(elementP==NULL){
 	 LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure  in avl_tree_insert_node_pdu_size(), trying to add a NULL elementP\n");
    mac_xface->macphy_exit("elementP is NULL in avl_tree_insert_node_pdu_size()");
@@ -308,8 +308,9 @@ avl_node_t *avl_tree_insert_node_pdu_size(avl_node_t *t, mem_element_t *elementP
 	int second_key = elementP->seq_num;
  // 1.  Perform the normal BST rotation 
  if(t == NULL){
+  t = (struct avl_node_t *) t;
 	//	 Create and return a one-node tree 
-   t = malloc(sizeof(struct avl_node_t));
+	t = (struct avl_node_t *)malloc(sizeof(struct avl_node_t));
 	if(t == NULL){
 	  LOG_E(MAC,"[MEM_MGT][WARNING] Memory allocation failure  for avl_tree_insert_node_pdu_size()\n");
    mac_xface->macphy_exit("out of memory for for avl_tree_insert_node_pdu_size()");
@@ -349,7 +350,7 @@ avl_node_t *avl_tree_insert_node_pdu_size(avl_node_t *t, mem_element_t *elementP
  return t;
 }
  
-avl_node_t *avl_tree_delete_node(avl_node_t *t, int key, int pdu_seq_num_tree, int pdu_size_tree, int pdu_size_tree_in_next){
+struct avl_node_t *avl_tree_delete_node(struct avl_node_t *t, int key, int pdu_seq_num_tree, int pdu_size_tree, int pdu_size_tree_in_next){
 
  if (t == NULL){
 	return t;
@@ -363,10 +364,10 @@ avl_node_t *avl_tree_delete_node(avl_node_t *t, int key, int pdu_seq_num_tree, i
  else if(key == t->key){
   
 	if ((t->left == NULL) && (t->right != NULL)){
-   avl_node_t *remove_node;
+   struct avl_node_t *remove_node;
 	 remove_node = t->right;
 	// *t = *remove_node;
-   //memcpy(t,remove_node,sizeof(struct avl_node_t));
+   //memcpy(t,remove_node,sizeof(struct struct avl_node_t));
    t = remove_node;
    t->left=remove_node->left;
    t->right=remove_node->right;
@@ -386,10 +387,10 @@ avl_node_t *avl_tree_delete_node(avl_node_t *t, int key, int pdu_seq_num_tree, i
 //   free(remove_node); // this is for free-ing the memory
 	}
 	else if((t->right == NULL)  && (t->left != NULL)){
-   avl_node_t *remove_node;
+   struct avl_node_t *remove_node;
 	 remove_node = t->left;
 	// *t = *remove_node;
-  // memcpy(t,remove_node,sizeof(struct avl_node_t));
+  // memcpy(t,remove_node,sizeof(struct struct avl_node_t));
    t->left=remove_node->left;
    t->right=remove_node->right;
    t->height=remove_node->height;
@@ -408,12 +409,12 @@ avl_node_t *avl_tree_delete_node(avl_node_t *t, int key, int pdu_seq_num_tree, i
 	// free(remove_node);
 	}
 	else if ((t->right == NULL)  && (t->left == NULL)){
-   avl_node_t *remove_node;
+   struct avl_node_t *remove_node;
 	 remove_node = t;
 	 t = NULL;
 	}
 	else{
-    avl_node_t *remove_node;
+    struct avl_node_t *remove_node;
 	 remove_node =  avl_tree_find_min(t->right);
 	 t->key = remove_node->key;
 	 t->second_key = remove_node->second_key;
@@ -438,7 +439,7 @@ avl_node_t *avl_tree_delete_node(avl_node_t *t, int key, int pdu_seq_num_tree, i
  return t;
 }
 
-avl_node_t *avl_tree_delete_node_pdu_size_tree(avl_node_t *t, int key, int second_key){
+struct avl_node_t *avl_tree_delete_node_pdu_size_tree(struct avl_node_t *t, int key, int second_key){
  int flag =1;
 
  if (t == NULL){
@@ -469,10 +470,10 @@ avl_node_t *avl_tree_delete_node_pdu_size_tree(avl_node_t *t, int key, int secon
   }
   if(t->pdu_size_tree==1 && t->toDelete==1  ){
    if ((t->left == NULL) && (t->right != NULL)){
-    avl_node_t *remove_node;
+    struct avl_node_t *remove_node;
     remove_node = t->right;
 //    *t = *remove_node;
-  //  memcpy(t,remove_node,sizeof(struct avl_node_t));
+  //  memcpy(t,remove_node,sizeof(struct struct avl_node_t));
     if(t->pdu_size_tree==1){
      t->key=remove_node->key;
      t->second_key = remove_node->second_key;
@@ -485,10 +486,10 @@ avl_node_t *avl_tree_delete_node_pdu_size_tree(avl_node_t *t, int key, int secon
     free(remove_node);// this is for free-ing the memory
    }
    else if((t->right == NULL)  && (t->left != NULL)){
-    avl_node_t *remove_node;
+    struct avl_node_t *remove_node;
     remove_node = t->left;
  //   *t = *remove_node;
- //    memcpy(t,remove_node,sizeof(struct avl_node_t));
+ //    memcpy(t,remove_node,sizeof(struct struct avl_node_t));
     if(t->pdu_size_tree==1){
      t->key=remove_node->key;
      t->second_key = remove_node->second_key;
@@ -501,12 +502,12 @@ avl_node_t *avl_tree_delete_node_pdu_size_tree(avl_node_t *t, int key, int secon
     free(remove_node);
    }
    else if ((t->right == NULL)  && (t->left == NULL)){
-    avl_node_t *remove_node;
+    struct avl_node_t *remove_node;
     remove_node = t;
     t = NULL;
    }
    else{
-    avl_node_t *remove_node;
+    struct avl_node_t *remove_node;
     remove_node =  avl_tree_find_min(t->right);
     t->key = remove_node->key;
     t->second_key = remove_node->second_key;
@@ -528,11 +529,11 @@ avl_node_t *avl_tree_delete_node_pdu_size_tree(avl_node_t *t, int key, int secon
  
 }
 
-int avl_tree_get_key(avl_node_t *t){
+int avl_tree_get_key(struct avl_node_t *t){
     return t->key;
 }
 // debugging functions
-void avl_tree_pre_order_print(avl_node_t *t){
+void avl_tree_pre_order_print(struct avl_node_t *t){
  if(t != NULL){
 	printf("(%d |%d)", t->key,t->second_key);
 	avl_tree_pre_order_print(t->left);
@@ -540,8 +541,8 @@ void avl_tree_pre_order_print(avl_node_t *t){
  }
 }
 
-void avl_tree_pre_order_print_3(avl_node_t *t, int select, int *j){
- avl_node_t *ptr;
+void avl_tree_pre_order_print_3(struct avl_node_t *t, int select, int *j){
+ struct avl_node_t *ptr;
  if(t != NULL){
 	if(select == 0){ //pdu_seq_num_tree
 	 if(t->next==NULL){
@@ -567,11 +568,11 @@ void avl_tree_pre_order_print_3(avl_node_t *t, int select, int *j){
 }
 
 
-void avl_tree_level_order_print_pdu_seqn(avl_node_t *t, packet_list_t *q){
+void avl_tree_level_order_print_pdu_seqn(struct avl_node_t *t, packet_list_t *q){
  mem_element_t tmp,temp[2];// = malloc(sizeof(struct mem_element_t));
  temp[0].avl_node_pdu_seqn = malloc(sizeof(struct avl_node_t));
  temp[1].avl_node_pdu_seqn = malloc(sizeof(struct avl_node_t));
- avl_node_t *ref;
+ struct avl_node_t *ref;
  
  mem_element_t *packet;
  
@@ -602,11 +603,11 @@ void avl_tree_level_order_print_pdu_seqn(avl_node_t *t, packet_list_t *q){
  }
 }
 
-void avl_tree_level_order_print_pdu_size(avl_node_t *t, packet_list_t *q){
+void avl_tree_level_order_print_pdu_size(struct avl_node_t *t, packet_list_t *q){
  mem_element_t tmp,temp[2];// = malloc(sizeof(struct mem_element_t));
  temp[0].avl_node_pdu_size = malloc(sizeof(struct avl_node_t));
  temp[1].avl_node_pdu_size = malloc(sizeof(struct avl_node_t));
- avl_node_t *ref;
+ struct avl_node_t *ref;
  
  mem_element_t *packet;
  
@@ -637,7 +638,7 @@ void avl_tree_level_order_print_pdu_size(avl_node_t *t, packet_list_t *q){
  }
 }
 
-void avl_tree_level_order(avl_node_t *t){
+void avl_tree_level_order(struct avl_node_t *t){
  MAC_BUFFER *mac_q;
  packet_list_t *q;
  mac_q = mac_buffer_init("q","q",1,1);
