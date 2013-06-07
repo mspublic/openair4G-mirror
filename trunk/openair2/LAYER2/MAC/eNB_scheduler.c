@@ -474,7 +474,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	  mac_header_ptr += 2;//sizeof(SCH_SUBHEADER_SHORT);
 	}
 	else { // F = 1 
-	  length = length = ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB & 0x7f ) << 8 ) | (((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB & 0xff);
+	  length = ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_MSB & 0x7f ) << 8 ) | (((SCH_SUBHEADER_LONG *)mac_header_ptr)->L_LSB & 0xff);
 	  mac_header_ptr += 3;//sizeof(SCH_SUBHEADER_LONG);
 	}
       }
@@ -3264,7 +3264,6 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	  break;
 	case 9:
 	  eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[3] = DAI;
-	  break;
 	  break;
 	}
       case 2:
