@@ -48,6 +48,10 @@
 
 #include "vcd_signal_dumper.h"
 
+#if defined(ENABLE_RTAI_CLOCK)
+#include "rtai_lxrt.h"
+#endif
+
 #define VCDSIGNALDUMPER_VERSION_MAJOR 0
 #define VCDSIGNALDUMPER_VERSION_MINOR 1
 
@@ -112,6 +116,8 @@ FILE *vcd_fd = NULL;
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
 struct timespec     g_time_start;
+#elif defined(ENABLE_RTAI_CLOCK)
+RTIME start;
 #endif
 
 void vcd_signal_dumper_init(void)
@@ -125,7 +131,10 @@ void vcd_signal_dumper_init(void)
         }
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
         clock_gettime(CLOCK_MONOTONIC, &g_time_start);
+#elif defined(ENABLE_RTAI_CLOCK)
+	start=rt_get_time_ns();
 #endif
+
         vcd_signal_dumper_create_header();
     }
 }
@@ -157,6 +166,12 @@ static inline void vcd_signal_dumper_print_time_since_start(void)
         secondsSinceStart     = (long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec;
         /* Write time in nanoseconds */
         fprintf(vcd_fd, "#%llu\n", nanosecondsSinceStart + (secondsSinceStart * 1000000000UL));
+    }
+#elif defined(ENABLE_RTAI_CLOCK)
+    if (vcd_fd != NULL)
+    {
+        /* Write time in nanoseconds */
+        fprintf(vcd_fd, "#%llu\n",rt_get_time_ns()-start);
     }
 #endif
 }
