@@ -25,8 +25,11 @@ freq_tx = freq_rx + 0000000; % 1kHz offset: @30 MSPS: 2.5 sines, @15 MSPS: 5 sin
 tx_gain = 13*[1 1 1 1];
 rx_gain = 20*[1 1 1 1]; 
 rf_rxdc = (1 + 1*(2^8))*[1 1 1 1]; % I:LSB, Q:MSB
+rffe_rxg_low = 61*[1 1 1 1];
+rffe_rxg_final = 61*[1 1 1 1];
+rffe_band = B19G_TDD*[1 1 1 1];
 
-oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal)
+oarf_config_exmimo(card,freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band)
 
 
 
