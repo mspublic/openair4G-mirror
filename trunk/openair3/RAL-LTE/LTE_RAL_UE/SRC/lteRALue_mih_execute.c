@@ -97,6 +97,7 @@ void mRALlte_action_request(MIH_C_Message_Link_Action_request_t* messageP) {
             case MIH_C_LINK_AC_TYPE_LINK_DISCONNECT:
                 DEBUG("%s ACTION REQUESTED: MIH_C_LINK_AC_TYPE_LINK_DISCONNECT: NO ACTION\n", __FUNCTION__);
                 if (ralpriv->mih_supported_action_list  & MIH_C_LINK_AC_TYPE_LINK_DISCONNECT) {
+				// TO DO
                 } else {
                     link_action_result = MIH_C_LINK_AC_RESULT_INCAPABLE;
                     ralpriv->pending_req_status = 0;
@@ -107,6 +108,7 @@ void mRALlte_action_request(MIH_C_Message_Link_Action_request_t* messageP) {
             case MIH_C_LINK_AC_TYPE_LINK_LOW_POWER:
                 DEBUG("%s ACTION REQUESTED: MIH_C_LINK_AC_TYPE_LINK_LOW_POWER\n", __FUNCTION__);
                 if (ralpriv->mih_supported_action_list  & MIH_C_LINK_AC_TYPE_LINK_LOW_POWER) {
+				// TO DO
                 } else {
                     link_action_result = MIH_C_LINK_AC_RESULT_INCAPABLE;
                     ralpriv->pending_req_status = 0;
