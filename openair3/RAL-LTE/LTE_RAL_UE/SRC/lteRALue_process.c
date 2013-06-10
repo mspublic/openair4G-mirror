@@ -187,10 +187,7 @@ void rallte_NAS_measures_polling(void){
         MIH_C_3GPP_ADDR_set(&link_identifier.link_id.link_addr._union._3gpp_addr, (u_int8_t*)&(ralpriv->ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
         link_identifier.choice                   = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
 
-        mRALlte_send_link_down_indication(&transaction_id,
-                                          &link_identifier,
-                                          NULL,
-                                          &down_reason_code);
+        mRALlte_send_link_down_indication(&transaction_id, &link_identifier, NULL, &down_reason_code);
 
         ralpriv->link_to_be_detected = MIH_C_BOOLEAN_TRUE;
         // warning may be repeated several times

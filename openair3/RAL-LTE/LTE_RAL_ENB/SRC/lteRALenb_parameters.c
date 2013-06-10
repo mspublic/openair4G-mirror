@@ -43,7 +43,7 @@
  ***************************************************************************/
 void eRALlte_get_parameters_request(MIH_C_Message_Link_Get_Parameters_request_t* msgP)
 {
-    MIH_C_STATUS_T status = MIH_C_STATUS_REJECTED;
+    MIH_C_STATUS_T status = MIH_C_STATUS_SUCCESS;
 
     /* Get parameters link command is not supported at the network side */
     DEBUG(" Get Parameters request is not supported by the network\n");

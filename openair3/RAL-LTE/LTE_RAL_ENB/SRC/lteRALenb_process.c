@@ -20,6 +20,8 @@
 #include "lteRALenb_variables.h"
 #include "lteRALenb_proto.h"
 
+#include "lteRALenb_mih_msg.h"
+#include "MIH_C.h"
 /****************************************************************************/
 /*******************  G L O C A L    D E F I N I T I O N S  *****************/
 /****************************************************************************/
@@ -494,18 +496,8 @@ static void _eRALlte_process_waiting_RB(int mt_ix)
 }
 
 /****************************************************************************
- **                                                                        **
- ** Name:  _eRALlte_process_clean_pending_mt()                       **
- **                                                                        **
+ ** Name:  _eRALlte_process_clean_pending_mt()                             **
  ** Description: Deletes previously stored pending MT data.                **
- **                                                                        **
- ** Inputs:  None                                                      **
- **     Others: None                                       **
- **                                                                        **
- ** Outputs:  None                                                      **
- **   Return: None                                       **
- **     Others: ralpriv                                    **
- **                                                                        **
  ***************************************************************************/
 static void _eRALlte_process_clean_pending_mt(void)
 {
@@ -516,6 +508,9 @@ static void _eRALlte_process_clean_pending_mt(void)
     DEBUG(" Pending MT data deleted\n");
 }
 
+/****************************************************************************
+ **  MW Added                                                              **
+ ***************************************************************************/
 //---------------------------------------------------------------------------
 void RAL_printInitStatus(void){
 //---------------------------------------------------------------------------
@@ -537,4 +532,121 @@ void RAL_printInitStatus(void){
       ralpriv->mt[0].radio_channel[0].status );
 
     DEBUG("Number of connected MTs : %d\n\n", ralpriv->num_connected_mts);
+}
+
+//---------------------------------------------------------------------------
+// poll for measures in NAS
+void RAL_NAS_measures_polling(void){
+//---------------------------------------------------------------------------
+   #ifdef RAL_REALTIME
+   RAL_process_NAS_message(IO_OBJ_MEAS, IO_CMD_LIST,0,0);
+   #endif
+   #ifdef RAL_DUMMY 
+   eRALlte_NAS_send_measure_request();
+   #endif
+}
+
+//---------------------------------------------------------------------------
+// Temp - Enter hard-coded measures in IAL
+void RAL_NAS_measures_analyze(void){
+//---------------------------------------------------------------------------
+  MIH_C_TRANSACTION_ID_T transaction_id;
+  MIH_C_LINK_TUPLE_ID_T  link_identifier;
+  LIST(MIH_C_LINK_PARAM_RPT, LinkParametersReportList);
+  int ix;
+
+  LinkParametersReportList_list.length = 0;
+
+  if (ralpriv->congestion_flag == RAL_FALSE){
+  // Check congestion
+    for (ix=0; ix<ralpriv->num_UEs; ix++){
+       if ((ralpriv->rlcBufferOccupancy[ix] > ralpriv->congestion_threshold)&&
+           ((ralpriv->mih_subscribe_req_event_list && MIH_C_BIT_LINK_PARAMETERS_REPORT )>0)){
+           DEBUG("Congestion detected for UE%d, sending congestion notification to MIH User \n", ix);
+//            void eRALlte_send_link_parameters_report_indication(MIH_C_TRANSACTION_ID_T *tidP,
+//                                    MIH_C_LINK_TUPLE_ID_T       *lidP,
+//                                    MIH_C_LINK_PARAM_RPT_LIST_T *lparam_listP)
+           transaction_id = MIH_C_get_new_transaction_id();
+           link_identifier.link_id.link_type = MIH_C_WIRELESS_UMTS;
+           link_identifier.link_id.link_addr.choice = MIH_C_CHOICE_3GPP_3G_CELL_ID;
+           Bit_Buffer_t *plmn = new_BitBuffer_0();
+           BitBuffer_wrap(plmn, (unsigned char*) ralpriv->plmn, DEFAULT_PLMN_SIZE);
+           MIH_C_PLMN_ID_decode(plmn, &link_identifier.link_id.link_addr._union._3gpp_3g_cell_id.plmn_id);
+           free_BitBuffer(plmn);
+           link_identifier.link_id.link_addr._union._3gpp_3g_cell_id.cell_id = ralpriv->curr_cellId;
+           link_identifier.choice = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
+//
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_LTE;
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_lte = MIH_C_LINK_PARAM_LTE_L2_BUFFER_STATUS;
+//          LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_GEN;
+//          LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_gen = MIH_C_LINK_PARAM_LTE_L2_BUFFER_STATUS;
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.choice  = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param._union.link_param_val = ralpriv->rlcBufferOccupancy[ix];
+
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length].choice = MIH_C_LINK_PARAM_RPT_CHOICE_THRESHOLD;
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length]._union.threshold.threshold_val  = ralpriv->congestion_threshold;
+          LinkParametersReportList_list.val[LinkParametersReportList_list.length]._union.threshold.threshold_xdir = MIH_C_ABOVE_THRESHOLD;
+          LinkParametersReportList_list.length = LinkParametersReportList_list.length + 1;
+
+//
+           eRALlte_send_link_parameters_report_indication(&transaction_id,  &link_identifier, &LinkParametersReportList_list);
+
+           ralpriv->congestion_flag = RAL_TRUE;
+           break;
+       }
+    }
+  } else if (ralpriv->measures_triggered_flag == RAL_TRUE){
+  // Measures should be reported to MIH user
+      DEBUG("Sending traffic measures to MIH User \n");
+
+      transaction_id = MIH_C_get_new_transaction_id();
+      link_identifier.link_id.link_type = MIH_C_WIRELESS_UMTS;
+      link_identifier.link_id.link_addr.choice = MIH_C_CHOICE_3GPP_3G_CELL_ID;
+      Bit_Buffer_t *plmn = new_BitBuffer_0();
+      BitBuffer_wrap(plmn, (unsigned char*) ralpriv->plmn, DEFAULT_PLMN_SIZE);
+      MIH_C_PLMN_ID_decode(plmn, &link_identifier.link_id.link_addr._union._3gpp_3g_cell_id.plmn_id);
+      free_BitBuffer(plmn);
+      link_identifier.link_id.link_addr._union._3gpp_3g_cell_id.cell_id = ralpriv->curr_cellId;
+      link_identifier.choice = MIH_C_LINK_TUPLE_ID_CHOICE_NULL;
+      //
+      // send parameters  !!! Value link_param_val must be in 0...65535 range
+      // UE0 scheduledPRB
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_LTE;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_lte = MIH_C_LINK_PARAM_LTE_AVAILABLE_BW;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.choice  = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param._union.link_param_val = ralpriv->scheduledPRB[0];
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].choice = MIH_C_LINK_PARAM_RPT_CHOICE_NULL;
+      LinkParametersReportList_list.length = LinkParametersReportList_list.length + 1;
+      // UE0 totalDataVolume
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_LTE;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_lte = MIH_C_LINK_PARAM_LTE_AVAILABLE_BW;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.choice  = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param._union.link_param_val = (ralpriv->totalDataVolume[0]/1000);
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].choice = MIH_C_LINK_PARAM_RPT_CHOICE_NULL;
+      LinkParametersReportList_list.length = LinkParametersReportList_list.length + 1;
+      // UE1 scheduledPRB
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_LTE;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_lte = MIH_C_LINK_PARAM_LTE_AVAILABLE_BW;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.choice  = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param._union.link_param_val = ralpriv->scheduledPRB[1];
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].choice = MIH_C_LINK_PARAM_RPT_CHOICE_NULL;
+      LinkParametersReportList_list.length = LinkParametersReportList_list.length + 1;
+      // UE1 totalDataVolume
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_LTE;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_lte = MIH_C_LINK_PARAM_LTE_AVAILABLE_BW;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.choice  = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param._union.link_param_val = (ralpriv->totalDataVolume[1]/1000);
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].choice = MIH_C_LINK_PARAM_RPT_CHOICE_NULL;
+      LinkParametersReportList_list.length = LinkParametersReportList_list.length + 1;
+      // totalNumPRBs
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type.choice = MIH_C_LINK_PARAM_TYPE_CHOICE_LTE;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.link_param_type._union.link_param_lte = MIH_C_LINK_PARAM_LTE_AVAILABLE_BW;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param.choice  = MIH_C_LINK_PARAM_CHOICE_LINK_PARAM_VAL;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].link_param._union.link_param_val = ralpriv->totalNumPRBs;
+      LinkParametersReportList_list.val[LinkParametersReportList_list.length].choice = MIH_C_LINK_PARAM_RPT_CHOICE_NULL;
+      LinkParametersReportList_list.length = LinkParametersReportList_list.length + 1;
+//
+      eRALlte_send_link_parameters_report_indication(&transaction_id,  &link_identifier, &LinkParametersReportList_list);
+
+  }
 }

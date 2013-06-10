@@ -449,15 +449,13 @@ void eRALlte_send_event_unsubscribe_confirm(MIH_C_TRANSACTION_ID_T  *tidP,
  **     Others: g_msg_codec_send_buffer                    **
  **                                                                        **
  ***************************************************************************/
-void eRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *tidP,
-        MIH_C_LINK_DET_INFO_T   *linfoP)
-{
+void eRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *tidP, MIH_C_LINK_DET_INFO_T   *linfoP){
     MIH_C_Message_Link_Detected_indication_t  message;
     Bit_Buffer_t                             *bb;
     int                                       message_total_length;
 
     if (!(ralpriv->mih_supported_link_event_list & MIH_C_BIT_LINK_DETECTED)) {
- return;
+      return;
     }
 
     DEBUG(" Send MIH_C_MESSAGE_LINK_DETECTED_INDICATION\n");
@@ -517,28 +515,19 @@ void eRALlte_send_link_detected_indication(MIH_C_TRANSACTION_ID_T  *tidP,
 }
 
 /****************************************************************************
- **                                                                        **
- ** Name:  eRALlte_send_link_up_indication()                         **
- **                                                                        **
+ ** Name:  eRALlte_send_link_up_indication()                               **
  ** Description: Sends a Link_Up.indication message to the MIHF.           **
  **                                                                        **
- **   This notification is generated when a layer 2 connection  **
- **   is established for the specified link interface.          **
- **                                                                        **
- ** Inputs:  tidP  Transaction identifier                     **
- **   lidP:  Link identifier                            **
- **   old_arP: Old access router link address             **
- **   new_arP: New access router link address             **
- **   flagP:  Indicates whether the MN needs to change   **
- **    IP Address in the new PoA                  **
- **   mobil_mngtP: Indicates the type of Mobility Management  **
- **    Protocol supported by the new PoA          **
- **     Others: g_link_id, g_mihf_id,                      **
- **                                                                        **
- ** Outputs:  None                                                      **
- **   Return: None                                       **
- **     Others: g_msg_codec_send_buffer                    **
- **                                                                        **
+ **   This notification is generated when a layer 2 connection is          **
+ **   established for the specified link interface.                        **
+ ** Inputs:  tidP  Transaction identifier                                  **
+ **          lidP:  Link identifier                                        **
+ **          old_arP: Old access router link address                       **
+ **          new_arP: New access router link address                       **
+ **          flagP:  Indicates whether the MN needs to change IP Address   **
+ **                  in the new PoA                                        **
+ **          mobil_mngtP: Indicates the type of Mobility Management        **
+ **                       Protocol supported by the new PoA                **
  ***************************************************************************/
 void eRALlte_send_link_up_indication(MIH_C_TRANSACTION_ID_T  *tidP,
                                      MIH_C_LINK_TUPLE_ID_T   *lidP,
@@ -632,29 +621,19 @@ void eRALlte_send_link_up_indication(MIH_C_TRANSACTION_ID_T  *tidP,
 }
 
 /****************************************************************************
- **                                                                        **
- ** Name:  eRALlte_send_link_down_indication()                       **
- **                                                                        **
+ ** Name:  eRALlte_send_link_down_indication()                             **
  ** Description: Sends a Link_Down.indication message to the MIHF.         **
  **                                                                        **
- **   This notification is generated when layer 2 connectivity  **
- **   is lost. Layer 2 connectivity is lost explicitly in cases **
- **   where the MN initiates detach type procedures. In other   **
- **   cases, the MN can infer loss of link connectivity due to  **
- **   successive time-outs for acknowledgements of retransmit-  **
- **   ted packets along with loss of reception of broadcast     **
- **   frames.                                                   **
- **                                                                        **
- ** Inputs:  tidP  Transaction identifier                     **
- **   lidP:  Link identifier                            **
- **   old_arP: Old access router link address             **
- **   reason_codeP: Reason why the link went down              **
- **     Others: g_link_id, g_mihf_id,                      **
- **                                                                        **
- ** Outputs:  None                                                      **
- **   Return: None                                       **
- **     Others: g_msg_codec_send_buffer                    **
- **                                                                        **
+ **   This notification is generated when layer 2 connectivity is lost.    **
+ **   Layer 2 connectivity is lost explicitly in cases where the MN        **
+ **   initiates detach type procedures. In other cases, the MN can infer   **
+ **   loss of link connectivity due to successive time-outs for            **
+ **   acknowledgements of retransmitted packets along with loss  of        **
+ **   reception of broadcast frames.                                       **
+ ** Inputs:  tidP  Transaction identifier                                  **
+ **          lidP:  Link identifier                                        **
+ **          old_arP: Old access router link address                       **
+ **          reason_codeP: Reason why the link went down                   **
  ***************************************************************************/
 void eRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T *tidP,
                                        MIH_C_LINK_TUPLE_ID_T  *lidP,
@@ -677,11 +656,6 @@ void eRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T *tidP,
     memset(&message, 0, sizeof (MIH_C_Message_Link_Going_Down_indication_t));
 
     message.header.version              = (MIH_C_VERSION_T)MIH_C_PROTOCOL_VERSION;
-    //message.header.ack_req            = 0;
-    //message.header.ack_rsp            = 0;
-    //message.header.uir                = 0;
-    //message.header.more_fragment      = 0
-    //message.header.fragment_number    = 0;
     message.header.service_identifier   = (MIH_C_SID_T)2;
     message.header.operation_code       = (MIH_C_OPCODE_T)3;
     message.header.action_identifier    = (MIH_C_AID_T)3;
@@ -693,8 +667,7 @@ void eRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T *tidP,
 
     memcpy(&message.primitive.LinkIdentifier, lidP, sizeof(MIH_C_LINK_TUPLE_ID_T));
     message.primitive.OldAccessRouter = old_arP;
-    memcpy(&message.primitive.ReasonCode, reason_codeP,
-    sizeof(MIH_C_LINK_DN_REASON_T));
+    memcpy(&message.primitive.ReasonCode, reason_codeP, sizeof(MIH_C_LINK_DN_REASON_T));
 
     message_total_length = MIH_C_Link_Message_Encode_Link_Down_indication(bb, &message);
 
@@ -704,10 +677,10 @@ void eRALlte_send_link_down_indication(MIH_C_TRANSACTION_ID_T *tidP,
     g_msc_gen_buffer_index += MIH_C_LINK_ID2String(&lidP->link_id, &g_msc_gen_buf[g_msc_gen_buffer_index]);
     g_msc_gen_buffer_index += sprintf(&g_msc_gen_buf[g_msc_gen_buffer_index], "\\nOldAccessRouter=");
     if (old_arP) {
- g_msc_gen_buffer_index += MIH_C_LINK_ADDR2String(old_arP, &g_msc_gen_buf[g_msc_gen_buffer_index]);
+       g_msc_gen_buffer_index += MIH_C_LINK_ADDR2String(old_arP, &g_msc_gen_buf[g_msc_gen_buffer_index]);
     }
     else {
- g_msc_gen_buffer_index += sprintf(&g_msc_gen_buf[g_msc_gen_buffer_index], "null");
+       g_msc_gen_buffer_index += sprintf(&g_msc_gen_buf[g_msc_gen_buffer_index], "null");
     }
     g_msc_gen_buffer_index += sprintf(&g_msc_gen_buf[g_msc_gen_buffer_index], "\\nReasonCode=");
     g_msc_gen_buffer_index += MIH_C_LINK_DN_REASON2String(reason_codeP, &g_msc_gen_buf[g_msc_gen_buffer_index]);

@@ -31,18 +31,26 @@
 // LTE AS sub-system
 //#include "nas_ue_ioctl.h"
 #include <net/if.h>
+
+#ifdef RAL_REALTIME
 #include "rrc_nas_primitives.h"
 #include "nasrg_constant.h"
 #include "nasrg_iocontrol.h"
+#endif
 
 /****************************************************************************/
 /*******************  G L O C A L    D E F I N I T I O N S  *****************/
 /****************************************************************************/
 
+#ifdef RAL_REALTIME
 //ioctl
 struct nas_ioctl gifr;
 int fd;
-
+#endif
+#ifdef RAL_DUMMY
+/* NAS socket file descriptor  */
+int g_sockd_nas;  // referenced in lteRALenb_NAS.c
+#endif
 /* RAL LTE internal data  */
 struct ral_lte_priv *ralpriv;
 
@@ -68,8 +76,9 @@ struct ral_lte_priv rl_priv;
 // void get_IPv6_addr(const char* if_name);
 // int RAL_initialize(int argc, const char *argv[]);
 
-//static int netl_s; /* NAS net link socket */
-
+#ifdef RAL_DUMMY
+int netl_s; /* NAS net link socket */
+#endif
 /****************************************************************************/
 /*********************  L O C A L    F U N C T I O N S  *********************/
 /****************************************************************************/
@@ -81,6 +90,7 @@ struct ral_lte_priv rl_priv;
  **                                                                        **
  ***************************************************************************/
 static void arg_usage(const char *name){
+//-----------------------------------------------------------------------------
     fprintf(stderr,
             "Usage: %s [options]\nOptions:\n"
             "  -V,          --version             Display version information\n"
@@ -104,6 +114,7 @@ static void arg_usage(const char *name){
  **     argv:  Command line parameters                                     **
  ***************************************************************************/
 static int parse_opts(int argc, char *argv[]){
+//-----------------------------------------------------------------------------
     static struct option long_opts[] = {
         {"version", 0, 0, 'V'},
         {"help", 0, 0, 'h'},
@@ -169,24 +180,60 @@ static int parse_opts(int argc, char *argv[]){
     return 0;
 }
 
+#ifdef RAL_REALTIME
 //---------------------------------------------------------------------------
 void IAL_NAS_ioctl_init(void){
 //---------------------------------------------------------------------------
   // Get an UDP IPv6 socket ??
- fd=socket(AF_INET6, SOCK_DGRAM, 0);
- if (fd<0) {
-  ERR("Error opening socket for ioctl\n");
-    exit(1);
- }
- strcpy(gifr.name, "oai0");
+  fd=socket(AF_INET6, SOCK_DGRAM, 0);
+  if (fd<0) {
+   ERR("Error opening socket for ioctl\n");
+     exit(1);
+  }
+  strcpy(gifr.name, "oai0");
 }
+#endif
+
+#ifdef RAL_DUMMY
+/****************************************************************************
+ ** Name:  NAS_Netlink_socket_init()                                       **
+ ** Description: Initializes the communication channel with the NAS dummy  **
+ ** Others: netl_s : the NAS net link socket                               **
+ **                                                                        **
+ ***************************************************************************/
+void NAS_Netlink_socket_init(void){
+//-----------------------------------------------------------------------------
+    int len;
+    struct sockaddr_un local;
+    if ((netl_s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+        perror("NAS_Netlink_socket_init : socket() failed");
+        exit(1);
+    }
+
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, SOCK_RAL_NAS_PATH);
+    unlink(local.sun_path);
+    len = strlen(local.sun_path) + sizeof(local.sun_family);
+
+    if (bind(netl_s, (struct sockaddr *)&local, len) == -1) {
+        perror("NAS_Netlink_socket_init : bind() failed");
+        exit(1);
+    }
+
+    if (listen(netl_s, 1) == -1) {
+        perror("NAS_Netlink_socket_init : listen() failed");
+        exit(1);
+    }
+}
+#endif
 
 /****************************************************************************
  ** Name:  get_IPv6_addr()                                                 **
  ** Description: Gets the IPv6 address of the specified network interface. **
  ** Inputs:  if_name Interface name                                        **
  ***************************************************************************/
-static void get_IPv6_addr(const char* if_name){
+void get_IPv6_addr(const char* if_name){
+//-----------------------------------------------------------------------------
 #define IPV6_ADDR_LINKLOCAL 0x0020U
 
     FILE *f;
@@ -272,8 +319,15 @@ static void get_IPv6_addr(const char* if_name){
  **    g_link_id, g_mihf_id, g_log_output         **
  **    g_sockd_nas, ralpriv                       **
  ***************************************************************************/
-static int RAL_initialize(int argc, const char *argv[]){
+int RAL_initialize(int argc, const char *argv[]){
+//-----------------------------------------------------------------------------
     MIH_C_TRANSACTION_ID_T  transaction_id;
+
+    #ifdef RAL_DUMMY
+    unsigned int t;
+    struct sockaddr_un nas_socket;
+	#endif
+
     ralpriv = &rl_priv;
     memset(ralpriv, 0, sizeof(struct ral_lte_priv));
 
@@ -296,10 +350,8 @@ static int RAL_initialize(int argc, const char *argv[]){
 
     MIH_C_init(g_log_output);
 
-    DEBUG(" %s -I %s -P %s -i %s -p %s -l %s -m %s\n", argv[0],
-   g_ral_ip_address, g_ral_listening_port_for_mihf,
-   g_mihf_ip_address, g_mihf_remote_port,
-   g_link_id, g_mihf_id);
+    DEBUG(" %s -I %s -P %s -i %s -p %s -l %s -m %s\n", argv[0], g_ral_ip_address, g_ral_listening_port_for_mihf,
+        g_mihf_ip_address, g_mihf_remote_port, g_link_id, g_mihf_id);
 
     /* Connect to the MIF Function
      */
@@ -318,15 +370,22 @@ static int RAL_initialize(int argc, const char *argv[]){
                 (1 << MIH_C_LINK_AC_TYPE_LINK_ACTIVATE_RESOURCES) |
                 (1 << MIH_C_LINK_AC_TYPE_LINK_DEACTIVATE_RESOURCES);
     // excluded MIH_C_BIT_LINK_DETECTED
-    // excluded MIH_C_BIT_LINK_PARAMETERS_REPORT
     // excluded MIH_C_BIT_LINK_GOING_DOWN
     // excluded MIH_C_BIT_LINK_HANDOVER_IMMINENT
     // excluded MIH_C_BIT_LINK_HANDOVER_COMPLETE
     // excluded MIH_C_BIT_LINK_PDU_TRANSMIT_STATUS
-    ralpriv->mih_supported_link_event_list = MIH_C_BIT_LINK_UP | MIH_C_BIT_LINK_DOWN;
+    /*
+    ralpriv->mih_supported_link_event_list = MIH_C_BIT_LINK_UP | MIH_C_BIT_LINK_DOWN | MIH_C_BIT_LINK_PARAMETERS_REPORT;
     // excluded MIH_C_BIT_LINK_GET_PARAMETERS
     // excluded MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS
-    ralpriv->mih_supported_link_command_list = MIH_C_BIT_LINK_EVENT_SUBSCRIBE  |
+
+    ralpriv->mih_supported_link_command_list = MIH_C_BIT_LINK_EVENT_SUBSCRIBE | MIH_C_BIT_LINK_EVENT_UNSUBSCRIBE | \
+                                              MIH_C_BIT_LINK_GET_PARAMETERS  | MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS | MIH_C_BIT_LINK_ACTION;
+    */
+    ralpriv->mih_supported_link_event_list = MIH_C_BIT_LINK_UP | MIH_C_BIT_LINK_DOWN | MIH_C_BIT_LINK_PARAMETERS_REPORT;
+    // excluded MIH_C_BIT_LINK_GET_PARAMETERS
+    // excluded MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS
+    ralpriv->mih_supported_link_command_list = MIH_C_BIT_LINK_EVENT_SUBSCRIBE  | MIH_C_BIT_LINK_CONFIGURE_THRESHOLDS |
                 MIH_C_BIT_LINK_EVENT_UNSUBSCRIBE |
                 MIH_C_BIT_LINK_ACTION;
 
@@ -336,7 +395,18 @@ static int RAL_initialize(int argc, const char *argv[]){
 
     /*Initialize the NAS driver communication channel
      */
+    #ifdef RAL_REALTIME
     IAL_NAS_ioctl_init();
+	#endif
+    #ifdef RAL_DUMMY
+    NAS_Netlink_socket_init();
+    DEBUG(" Waiting for a connection from the NAS Driver ...\n");
+    t = sizeof(nas_socket);
+    if ((g_sockd_nas = accept(netl_s, (struct sockaddr *)&nas_socket, &t)) == -1) {
+        perror("RAL_initialize : g_sockd_nas - accept() failed");
+        exit(1);
+    }
+	#endif
     DEBUG("NAS Driver Connected.\n\n");
 
     /*Get the interface IPv6 address
@@ -351,10 +421,15 @@ static int RAL_initialize(int argc, const char *argv[]){
 
 //  Get list of MTs
     DEBUG("Obtaining list of MTs\n\n");
+	#ifdef RAL_REALTIME
     init_flag=1;
     RAL_process_NAS_message(IO_OBJ_CNX, IO_CMD_LIST,0,0);
     RAL_process_NAS_message(IO_OBJ_RB, IO_CMD_LIST,0,0);
     init_flag=0;
+    #endif
+    #ifdef RAL_DUMMY
+	eRALlte_NAS_get_MTs_list();
+    #endif
     RAL_printInitStatus();
     ralpriv->pending_req_flag = 0;
 //
@@ -363,7 +438,15 @@ static int RAL_initialize(int argc, const char *argv[]){
 //
     DEBUG(" List of MTs initialized\n\n");
 
+    // Initialize measures for demo3
+    ralpriv->meas_polling_interval = RAL_DEFAULT_MEAS_POLLING_INTERVAL;
+    ralpriv->meas_polling_counter = 1;
+
+    ralpriv->congestion_flag = RAL_FALSE;
+    ralpriv->measures_triggered_flag = RAL_FALSE;
+    ralpriv->congestion_threshold = RAL_DEFAULT_CONGESTION_THRESHOLD;
     transaction_id = (MIH_C_TRANSACTION_ID_T)0;
+
     eRALlte_send_link_register_indication(&transaction_id);
 
     return 0;
@@ -373,10 +456,11 @@ static int RAL_initialize(int argc, const char *argv[]){
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 int main(int argc, const char *argv[]){
+//-----------------------------------------------------------------------------
     int            rc, done;
     fd_set         readfds;
     struct timeval tv;
-    int time_counter=1;
+    int time_counter = 1;
 
     RAL_initialize(argc, argv);
 
@@ -387,6 +471,9 @@ int main(int argc, const char *argv[]){
  /* Initialize fd_set and wait for input */
         FD_ZERO(&readfds);
         FD_SET(g_sockd_mihf, &readfds);
+		#ifdef RAL_DUMMY
+        FD_SET(g_sockd_nas, &readfds);
+		#endif
         tv.tv_sec  = MIH_C_RADIO_POLLING_INTERVAL_SECONDS;
         tv.tv_usec = MIH_C_RADIO_POLLING_INTERVAL_MICRO_SECONDS;
 
@@ -402,6 +489,14 @@ int main(int argc, const char *argv[]){
               done = eRALlte_mih_link_process_message();
           }
 
+ 		#ifdef RAL_DUMMY
+         /* Read data coming from the NAS driver */
+          if (FD_ISSET(g_sockd_nas, &readfds)) {
+              //printf("Received something from NAS\n");
+              done = eRALlte_NAS_process_message();
+          }
+		#endif
+
           /* Wait until next pending MT's timer expiration */
           if (ralpriv->pending_mt_timer > 0) {
               ralpriv->pending_mt_timer --;
@@ -410,8 +505,15 @@ int main(int argc, const char *argv[]){
 
           if (time_counter ++ == 11){
              // check if a new MT appeared or disappeared
+	         #ifdef RAL_REALTIME
              RAL_process_NAS_message(IO_OBJ_CNX, IO_CMD_LIST,0,0);
+			 #endif
              time_counter = 1;
+          }
+            //get measures from NAS - timer = 21x100ms  -- impair
+          if (ralpriv->meas_polling_counter ++ == ralpriv->meas_polling_interval){
+              RAL_NAS_measures_polling();
+              ralpriv->meas_polling_counter =1;
           }
 
         }

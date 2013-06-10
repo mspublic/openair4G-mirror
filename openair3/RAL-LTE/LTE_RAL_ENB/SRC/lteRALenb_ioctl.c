@@ -128,6 +128,8 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
   struct nas_msg_cx_list_reply *list;
   //MIH_C_LINK_TUPLE_ID_T* ltid;
   MIH_C_LINK_ADDR_T new_ar;
+  MIH_C_LINK_DN_REASON_T reason_code;
+  MIH_C_TRANSACTION_ID_T transaction_id;
   int previous_num_class;
 
   list=(struct nas_msg_cx_list_reply *)(msgrep+1);
@@ -140,7 +142,6 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
         ralpriv->mt[mt_ix].num_rbs = list[mt_ix].num_rb;
         previous_num_class = ralpriv->mt[mt_ix].num_class;
         ralpriv->mt[mt_ix].num_class = list[mt_ix].nsclassifier;
-        ralpriv->mt[mt_ix].nas_state = list[mt_ix].state;
         if (ralpriv->mt[mt_ix].num_class>=2)
           ralpriv->mt[mt_ix].mt_state= RB_CONNECTED;
       //check if state has changed - MT disconnected FFS
@@ -154,7 +155,7 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
          DEBUG ("\n\n");
          DEBUG (" MOBILE TERMINAL %d WAS IDLE AND IS NOW CONNECTED.\n\n",mt_ix);
       }
-      //check if MT is completey connected
+      //check if MT is completely connected
       if ((ralpriv->mt[mt_ix].num_class - previous_num_class)&&(list[mt_ix].state == NAS_CX_DCH)){
          DEBUG ("\n\n");
          DEBUG (" MOBILE TERMINAL %d IS NOW COMPLETELY CONNECTED.\n\n",mt_ix);
@@ -164,7 +165,35 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
 
          eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, &new_ar, NULL, NULL);
          //eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, NULL, NULL, NULL);
+          // if RAL realtime and MEASURES are enabled, start the measuring process in RRC+Driver
+          #ifdef RAL_REALTIME
+          #ifdef ENABLE_MEDIEVAL_DEMO3
+          RAL_process_NAS_message(IO_OBJ_MEAS, IO_CMD_ADD,0,0);
+          #endif
+          #endif
+
       }
+	  //check enter sleep mode
+      if ((ralpriv->mt[mt_ix].nas_state==NAS_CX_DCH)&&(list[mt_ix].state == NAS_CX_RELEASING)){
+         DEBUG ("\n\n");
+         DEBUG (" MOBILE TERMINAL %d is entering sleep mode. Send LinkDown.\n\n",mt_ix);
+         // send linkdown: old_ar (represented by new_ar variable) will contain the address from the MT
+         transaction_id = MIH_C_get_new_transaction_id();
+         reason_code = MIH_C_LINK_DOWN_REASON_EXPLICIT_DISCONNECT;
+         new_ar.choice = MIH_C_CHOICE_3GPP_ADDR;
+         MIH_C_3GPP_ADDR_set(&(new_ar._union._3gpp_addr), (u_int8_t*)&(ralpriv->mt[mt_ix].ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
+         eRALlte_send_link_down_indication(&transaction_id, &ralpriv->mt[mt_ix].ltid, &new_ar, &reason_code);
+      }
+ 	  // check leave sleep mode
+      if ((ralpriv->mt[mt_ix].nas_state==NAS_CX_RELEASING)&&(list[mt_ix].state == NAS_CX_DCH)){
+         DEBUG ("\n\n");
+         DEBUG (" MOBILE TERMINAL %d WAS IN SLEEP MODE AND IS NOW ACTIVATED.\n\n",mt_ix);
+         // send linkup: new_ar will contain the address from the MT
+         new_ar.choice = MIH_C_CHOICE_3GPP_ADDR;
+         MIH_C_3GPP_ADDR_set(&(new_ar._union._3gpp_addr), (u_int8_t*)&(ralpriv->mt[mt_ix].ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
+         eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, &new_ar, NULL, NULL);
+      }
+        ralpriv->mt[mt_ix].nas_state = list[mt_ix].state;
     }else{
       // MT unknown or different
       if (list[mt_ix].state != NAS_IDLE){
@@ -204,6 +233,12 @@ void RAL_NASupdatetMTlist(u8 *msgrep, int num_mts){
           MIH_C_3GPP_ADDR_set(&(new_ar._union._3gpp_addr), (u_int8_t*)&(ralpriv->mt[mt_ix].ipv6_l2id[0]), strlen(DEFAULT_ADDRESS_3GPP));
 
           eRALlte_send_link_up_indication(&ralpriv->pending_req_transaction_id, &ralpriv->mt[mt_ix].ltid, NULL, &new_ar, NULL, NULL);
+          // if RAL realtime and MEASURES are enabled, start the measuring process in RRC+Driver
+          #ifdef RAL_REALTIME
+          #ifdef ENABLE_MEDIEVAL_DEMO3
+          RAL_process_NAS_message(IO_OBJ_MEAS, IO_CMD_ADD,0,0);
+          #endif
+          #endif
         }
         // enter default rb
         ch_ix = 0;
@@ -531,6 +566,79 @@ int RAL_process_NAS_message(int ioctl_obj, int ioctl_cmd, int mt_ix, int ch_ix){
                 }
                 DEBUG("List complete \n");
                }
+            break;
+      /***/
+            default:
+            ERR ("RAL_process_NAS_message : invalid ioctl command %d\n",ioctl_cmd);
+            rc= -1;
+         } //end switch ioctl_cmd 
+      break;
+/***************************/
+      case IO_OBJ_MEAS:
+         switch (ioctl_cmd){
+      /***/
+            case IO_CMD_ADD:
+              {
+                struct nas_msg_enb_measure_trigger *msgreq;
+                struct nas_msg_enb_measure_trigger_reply *msgrep;
+                //
+                gifr.type=NAS_MSG_ENB_MEAS_TRIGGER;
+                memset (ralpriv->buffer,0,800);
+                gifr.msg= &(ralpriv->buffer[0]);
+                msgreq=(struct nas_msg_enb_measure_trigger *)(gifr.msg);
+                msgrep=(struct nas_msg_enb_measure_trigger_reply *)(gifr.msg);
+                //
+                msgreq->cell_id = ralpriv->curr_cellId;
+                //
+                DEBUG("eNB measures triggered, cell_id %d\n", msgreq->cell_id);
+                err=ioctl(fd, NASRG_IOCTL_RAL, &gifr);
+                if (err<0){
+                  ERR("IOCTL error, err=%d\n",err);
+                  rc = -1;
+                }
+                //  check answer from NAS
+                if (msgrep->status != 0){
+                  ERR(" eNB measures trigger failure: %d\n",msgrep->status);
+                  rc = -1;
+                }else{
+                  DEBUG(" eNB measures triggered successfully \n");
+                  rc = 0;
+                }
+              }
+            break;
+      /***/
+            case IO_CMD_LIST:
+              {
+                struct nas_msg_enb_measure_retrieve *msgrep;
+				int ix;
+                //
+                gifr.type=NAS_MSG_ENB_MEAS_RETRIEVE;
+                memset (ralpriv->buffer,0,800);
+                gifr.msg= &(ralpriv->buffer[0]);
+                msgrep=(struct nas_msg_enb_measure_retrieve *)(gifr.msg);
+                //
+                DEBUG("Retrieving measure from NAS\n");
+                err=ioctl(fd, NASRG_IOCTL_RAL, &gifr);
+                if (err<0){
+                  ERR("IOCTL error, err=%d\n",err);
+                  rc = -1;
+                }
+                // Store the values received
+                ralpriv->num_UEs = msgrep->num_UEs;
+                for (ix=0; ix<ralpriv->num_UEs; ix++){
+                   ralpriv->rlcBufferOccupancy[ix] = msgrep->measures[ix].rlcBufferOccupancy;
+                   ralpriv->scheduledPRB[ix] = msgrep->measures[ix].scheduledPRB;
+                   ralpriv->totalDataVolume[ix] = msgrep->measures[ix].totalDataVolume;
+                }
+                ralpriv->totalNumPRBs = msgrep->totalNumPRBs;
+                #ifdef DEBUG_RAL_DETAILS
+                DEBUG("Measures received- cell %d, Number of UEs %d, Total number of PRBs %d\n", msgrep->cell_id, msgrep->num_UEs, msgrep->totalNumPRBs);
+                for (ix=0; ix<ralpriv->num_UEs; ix++)
+                  DEBUG("UE%d : RLC Buffers %d, scheduledPRB %d, totalDataVolume %d\n", ix, msgrep->measures[ix].rlcBufferOccupancy,
+                        msgrep->measures[ix].scheduledPRB, msgrep->measures[ix].totalDataVolume);
+                #endif
+                RAL_NAS_measures_analyze();
+              }
             break;
       /***/
             default:

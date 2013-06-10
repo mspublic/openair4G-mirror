@@ -21,8 +21,19 @@
 #ifndef __RAL_LTE_VAR_H__
 #define __RAL_LTE_VAR_H__
 
+// Define working mode : Dummy or Realtime
+//#define RAL_DUMMY
+#define RAL_REALTIME
+
+//#define ENABLE_MEDIEVAL_DEMO3
+
+//flag to reduce the logs
+#define DEBUG_RAL_DETAILS
+
 #include "rrc_d_types.h"
-//#include "nas_rg_netlink.h"
+#ifdef RAL_DUMMY
+#include "nas_rg_netlink.h"
+#endif
 
 #include "MIH_C_Types.h"
 #include "MIH_C_header_codec.h"
@@ -31,8 +42,6 @@
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
-//#define RAL_DUMMY
-#define RAL_REALTIME
 
 #ifdef RAL_REALTIME
 /*Arguments ioctl command
@@ -41,7 +50,9 @@
 #define IO_OBJ_STATS 0
 #define IO_OBJ_CNX   1
 #define IO_OBJ_RB    2
-#define IO_OBJ_MC    3  // multicast
+#define IO_OBJ_MEAS  3
+#define IO_OBJ_MC    4  // multicast
+
 //arg[1]
 #define IO_CMD_ADD   0
 #define IO_CMD_DEL   1
@@ -81,6 +92,9 @@
 #define RAL_DEFAULT_RAB_QoS 2 // RRC_QOS_CONV_64_64
 /* Default current cell identifier */
 #define RAL_DEFAULT_CELL_ID 5
+// Constants for Measures
+#define RAL_DEFAULT_MEAS_POLLING_INTERVAL 51
+#define RAL_DEFAULT_CONGESTION_THRESHOLD 80
 
 /* Default bit rates */
 #define RAL_BITRATE_32k   32000
@@ -203,23 +217,36 @@ struct ral_lte_priv {
 
     struct ral_lte_mt mt[RAL_MAX_MT];
     struct ral_lte_mcast mcast;
-
-
 //     struct tqal_ar_mobile mt[TQAL_MAX_MTs];
 //     struct tqal_ar_channel multicast_channel;
 //     u8  mc_group_addr[16];
+    //Added for demo 3 - MW
+    int meas_polling_interval;
+    int meas_polling_counter;
+    u16 num_UEs;
+    u32 rlcBufferOccupancy[RAL_MAX_MT];
+    u32 scheduledPRB[RAL_MAX_MT];
+    u32 totalDataVolume[RAL_MAX_MT];
+    u32 totalNumPRBs;
+    int congestion_flag;
+    int congestion_threshold;
+    int measures_triggered_flag;
+    int requested_period;
+    // MIH-INTERFACE data
+    MIH_C_LINK_AC_TYPE_LIST_T  mih_supported_link_action_list;
+    MIH_C_LINK_EVENT_LIST_T    mih_supported_link_event_list;
+    MIH_C_LINK_CMD_LIST_T      mih_supported_link_command_list;
+    MIH_C_LINK_EVENT_LIST_T    mih_subscribe_req_event_list;
 
-    /* MIH-INTERFACE data */
-    MIH_C_LINK_AC_TYPE_LIST_T       mih_supported_link_action_list;
-    MIH_C_LINK_EVENT_LIST_T         mih_supported_link_event_list;
-    MIH_C_LINK_CMD_LIST_T           mih_supported_link_command_list;
+    LIST(MIH_C_LINK_CFG_PARAM, mih_link_cfg_param_thresholds);
+    // to tell what are the configured thresholds in mih_link_cfg_param_thresholds_list
+    MIH_C_BOOLEAN_T  active_mih_link_cfg_param_threshold[MIH_C_LINK_CFG_PARAM_LIST_LENGTH];
 
-    MIH_C_LINK_EVENT_LIST_T         mih_subscribe_req_event_list;
 
-    MIH_C_LINK_AC_TYPE_T            pending_req_action;
-    MIH_C_STATUS_T                  pending_req_status;
-    MIH_C_LINK_AC_RESULT_T          pending_req_ac_result;
-    MIH_C_TRANSACTION_ID_T          pending_req_transaction_id;
+    MIH_C_LINK_AC_TYPE_T    pending_req_action;
+    MIH_C_STATUS_T          pending_req_status;
+    MIH_C_LINK_AC_RESULT_T  pending_req_ac_result;
+    MIH_C_TRANSACTION_ID_T  pending_req_transaction_id;
 
     char buffer[800];
 };
