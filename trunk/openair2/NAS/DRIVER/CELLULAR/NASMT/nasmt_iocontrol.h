@@ -229,7 +229,7 @@ struct nas_msg_measure_reply
   nioctlSignalLoss_t signal_lost_flag;
 };
 
-// Messages for Measurement transfer - MW 01/04/2005
+// Messages for L2Id transfer - MW
 typedef u32 nioctlL2Id_t[2];
 
 struct nas_msg_l2id_reply

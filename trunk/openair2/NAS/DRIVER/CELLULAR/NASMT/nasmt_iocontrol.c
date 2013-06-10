@@ -122,10 +122,13 @@ void nasmt_set_msg_cx_establishment_reply(struct nas_msg_cx_establishment_reply 
 #else
   struct cx_entity *cx;
   cx=nasmt_COMMON_search_cx(msgreq->lcr);
-  if (cx!=NULL)
-  {
-    cx->cellid=msgreq->cellid;
-    msgrep->status=nasmt_ASCTL_DC_send_cx_establish_request(cx);
+  if (cx!=NULL){
+    if (cx->state == NAS_CX_RELEASING){
+       msgrep->status=nasmt_ASCTL_leave_sleep_mode(cx);	
+	} else {
+       cx->cellid=msgreq->cellid;
+       msgrep->status=nasmt_ASCTL_DC_send_cx_establish_request(cx);
+	}   
   }
   else
     msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
@@ -161,9 +164,14 @@ void nasmt_set_msg_cx_release_reply(struct nas_msg_cx_release_reply *msgrep, str
 #else
   struct cx_entity *cx;
   cx=nasmt_COMMON_search_cx(msgreq->lcr);
-  if (cx!=NULL)
+  if (cx!=NULL){
+  #ifdef ENABLE_SLEEP_MODE
+    msgrep->status=nasmt_ASCTL_enter_sleep_mode(cx);	
+  #endif	
+  #ifndef ENABLE_SLEEP_MODE
     msgrep->status=nasmt_ASCTL_DC_send_cx_release_request(cx);
-  else
+  #endif	
+  } else
     msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
 #endif
 }

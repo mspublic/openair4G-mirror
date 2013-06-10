@@ -716,6 +716,12 @@ void nasmt_CLASS_send(struct sk_buff *skb){
   if (cx != NULL) {
     classref = 0;
     sp       = NULL;
+	if (cx->state!=NAS_CX_DCH){
+       #ifdef NAS_DEBUG_CLASS
+       printk("nasmt_CLASS_send: UE not connected, in state %d. Packet is dropped\n",cx->state);
+       #endif
+	   return;
+	}
     #ifdef NAS_DEBUG_CLASS
     printk("nasmt_CLASS_send: DSCP %d version %d: looking for classifier entry\n",dscp, version);
     #endif

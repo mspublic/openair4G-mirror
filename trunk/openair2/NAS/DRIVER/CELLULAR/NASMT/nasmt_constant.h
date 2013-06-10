@@ -57,6 +57,7 @@
 
 // Other flags
 #define DEMO_3GSM
+#define ENABLE_SLEEP_MODE
 
 // Parameters for the default RAB started after attachment (needs DEMO_3GSM defined)
 #define NASMT_DEFAULTRAB_CLASSREF   1  //MW-01/01/07-
@@ -90,7 +91,9 @@
 #define NAS_SIG_NUM_SRB 3  // number of srbs in LTE to send Rb_Id to PDCP
 
 //peer-to-peer messages between NAS entities
-#define NAS_CMD_OPEN_RB 1
+#define NAS_CMD_OPEN_RB     1
+#define NAS_CMD_ENTER_SLEEP 2
+#define NAS_CMD_LEAVE_SLEEP 3
 
 //#define NAS_IID1_CONTROL 0x0
 //#define NAS_IID2_CONTROL __constant_htonl(0xffffffff)

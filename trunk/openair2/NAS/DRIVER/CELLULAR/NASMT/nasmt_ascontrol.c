@@ -227,6 +227,50 @@ void nasmt_ASCTL_timer(unsigned long data){
   spin_unlock(&gpriv->lock);
 }
 
+//---------------------------------------------------------------------------
+// Request the sleep of a connexion
+int nasmt_ASCTL_enter_sleep_mode(struct cx_entity *cx){
+//---------------------------------------------------------------------------
+  u8 sig_category;
+// Start debug information
+#ifdef NAS_DEBUG_DC
+  printk("nasmt_ASCTL_enter_sleep_mode - begin \n");
+#endif
+  if (!cx){
+    printk("nasmt_ASCTL_enter_sleep_mode - input parameter cx is NULL \n");
+    return NAS_ERROR_NOTCORRECTVALUE;
+  }
+// End debug information
+  // send peer message to NASRG
+  sig_category = NAS_CMD_ENTER_SLEEP;
+  printk("nasmt_ASCTL_enter_sleep_mode - sig_category %u \n", sig_category);
+  nasmt_ASCTL_DC_send_peer_sig_data_request(cx, sig_category);
+  cx->state=NAS_CX_RELEASING;
+  return 0;
+}
+
+//---------------------------------------------------------------------------
+// Request to reactivate a connexion
+int nasmt_ASCTL_leave_sleep_mode(struct cx_entity *cx){
+//---------------------------------------------------------------------------
+  u8 sig_category;
+// Start debug information
+#ifdef NAS_DEBUG_DC
+  printk("nasmt_ASCTL_leave_sleep_mode - begin \n");
+#endif
+  if (!cx){
+    printk("nasmt_ASCTL_leave_sleep_mode - input parameter cx is NULL \n");
+    return NAS_ERROR_NOTCORRECTVALUE;
+  }
+// End debug information
+  cx->state=NAS_CX_DCH;
+  // send peer message to NASRG
+  sig_category = NAS_CMD_LEAVE_SLEEP;
+  printk("nasmt_ASCTL_leave_sleep_mode - sig_category %u \n", sig_category);
+  nasmt_ASCTL_DC_send_peer_sig_data_request(cx, sig_category);
+  return 0;
+}
+
 /***********************************************
  *  Transmit Functions                         *
  ***********************************************/
@@ -512,6 +556,7 @@ void nasmt_ASCTL_DC_send_peer_sig_data_request(struct cx_entity *cx, u8 sig_cate
 // Decode CONN_ESTABLISH_RESP message from RRC
 void nasmt_ASCTL_DC_decode_cx_establish_resp(struct cx_entity *cx, struct nas_ue_dc_element *p){
 //---------------------------------------------------------------------------
+
   u8 sig_category;
 // Start debug information
 #ifdef NAS_DEBUG_DC

@@ -913,7 +913,13 @@ void nasrg_CLASS_send(struct sk_buff *skb){
   // is found scan all protocol-based classification rules
   if (cx != NULL) {
     classref = 0;
-    sp       = NULL;
+    sp = NULL;
+    if (cx->state!=NAS_CX_DCH){
+      #ifdef NAS_DEBUG_CLASS
+      printk("nasrg_CLASS_send: UE not connected, in state %d. Packet is dropped\n",cx->state);
+      #endif
+      return;
+    }
     if (addr_type==NAS_IPV6_ADDR_MC_MBMS){
       sp = gpriv->mbmsclassifier[mbms_ix];
       if (sp!= NULL){
@@ -922,8 +928,17 @@ void nasrg_CLASS_send(struct sk_buff *skb){
         printk("nasrg_CLASS_send: classifier found for multicast service %d \n", mbms_ix);
         #endif
       }else{
+        // Temp MEDIEVAL : use default classifier
+        sp = cx->sclassifier[NAS_DSCP_DEFAULT];
+        if (sp!= NULL){
+        classref=sp->classref;
+        #ifdef NAS_DEBUG_SEND_DETAIL
+        printk("nasrg_CLASS_send: classifier for multicast service %d replaced by default %d\n", mbms_ix, classref);
+        #endif
+        } else {
         printk("nasrg_CLASS_send: No corresponding multicast bearer, so the message is dropped\n");
         return;
+        }
       }
     }else{
      #ifdef NAS_DEBUG_CLASS

@@ -648,6 +648,79 @@ int nasrg_ioCTL_ue_multicast_leave_request(struct nas_ioctl *gifr){
 	return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// ENB Measures
+// Messages for triggering measurement
+//---------------------------------------------------------------------------
+void nasrg_set_msg_eNBmeasure_trigger_reply(struct nas_msg_enb_measure_trigger_reply *msgrep, struct nas_msg_enb_measure_trigger *msgreq){
+//---------------------------------------------------------------------------
+  struct cx_entity *cx;
+  int lcr=0; // Temp lcr->mt =0 (should be GC uplink)
+
+  cx=nasrg_COMMON_search_cx(lcr);
+  if (msgreq->cell_id != cx->cellid)
+    printk("\nERROR : invalid cell_id received\n\n");
+  if (nasrg_ASCTL_DC_send_eNBmeasurement_req(cx)>0)
+    msgrep->status = 0;
+  else
+    msgrep->status = NAS_ERROR_NOTCORRECTVALUE ;
+}
+//---------------------------------------------------------------------------
+int nasrg_ioCTL_eNBmeasure_trigger_request(struct nas_ioctl *gifr){
+//---------------------------------------------------------------------------
+  struct nas_msg_enb_measure_trigger msgreq;
+  struct nas_msg_enb_measure_trigger_reply msgrep;
+  printk("nasrg_ioCTL_eNBmeasure_trigger_request: Measures triggered\n");
+	if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq))){
+		printk("nasrg_ioCTL_eNBmeasure_trigger_request: copy_from_user failure\n");
+		return -EFAULT;
+	}
+  nasrg_set_msg_eNBmeasure_trigger_reply(&msgrep, &msgreq);
+  if (copy_to_user(gifr->msg, &msgrep, sizeof(msgrep)))
+  {
+    printk("nasrg_ioCTL_eNBmeasure_trigger_request: copy_to_user failure\n");
+    return -EFAULT;
+  }
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ENb Measurement
+// Messages for Measurement retrieval
+//---------------------------------------------------------------------------
+void nasrg_set_msg_eNBmeasure_retrieve_reply(struct nas_msg_enb_measure_retrieve *msgrep){
+//---------------------------------------------------------------------------
+  int i;
+
+    msgrep->cell_id = gpriv->measured_cell_id;
+    msgrep->num_UEs = gpriv->num_UEs;
+    for (i=0; i<gpriv-> num_UEs; i++){
+      msgrep->measures[i].rlcBufferOccupancy = gpriv->rlcBufferOccupancy[i];
+      msgrep->measures[i].scheduledPRB = gpriv->scheduledPRB[i];
+      msgrep->measures[i].totalDataVolume = gpriv->totalDataVolume[i];
+      //clean variables 
+      gpriv->rlcBufferOccupancy[i] = 0;
+      gpriv->scheduledPRB[i] = 0;
+      gpriv->totalDataVolume[i] = 0;
+    }
+    msgrep->totalNumPRBs = gpriv->totalNumPRBs;
+    //clean variable 
+    gpriv->totalNumPRBs = 0;
+}
+//---------------------------------------------------------------------------
+int nasrg_ioCTL_eNBmeasure_retrieve_request(struct nas_ioctl *gifr){
+//---------------------------------------------------------------------------
+  struct nas_msg_enb_measure_retrieve msgrep;
+  printk("nasrg_ioCTL_eNBmeasure_retrieve_request: Measurement requested\n");
+
+  nasrg_set_msg_eNBmeasure_retrieve_reply(&msgrep);
+  if (copy_to_user(gifr->msg, &msgrep, sizeof(msgrep))){
+    printk("nasrg_ioCTL_eNBmeasure_retrieve_request: copy_to_user failure\n");
+    return -EFAULT;
+  }
+  return 0;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // IOCTL command
@@ -699,6 +772,12 @@ int nasrg_CTL_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd){
 			break;
 		case NAS_RG_MSG_MT_MCAST_LEAVE:
 			r=nasrg_ioCTL_ue_multicast_leave_request(gifr);
+			break;
+		case NAS_MSG_ENB_MEAS_TRIGGER:
+			r=nasrg_ioCTL_eNBmeasure_trigger_request(gifr);
+			break;
+		case NAS_MSG_ENB_MEAS_RETRIEVE:
+			r=nasrg_ioCTL_eNBmeasure_retrieve_request(gifr);
 			break;
 		default:
 			printk("nasrg_CTL_ioctl: unkwon request type, type=%x\n", gifr->type);
