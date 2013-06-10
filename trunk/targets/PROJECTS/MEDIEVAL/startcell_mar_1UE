@@ -230,7 +230,6 @@ $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -l6 > /tmp/log_oaiENB
 #sudo nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -l6
 #nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1234 -u0 -b1 -M0 -p2 -l6  > /dev/null 2>&1 &log_oaiENB
 #gdb --args /usr/local/src/trunk/targets/SIMU/USER/oaisim -E 1234 -u0 -M0 -p2 -g1 -l7  
-wait_process_started oaisim_eNB
 
 #echo "   Enabling ping broadcast"
 #bash_exec "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0"
@@ -245,7 +244,10 @@ wait_process_started oaisim_eNB
 #assert "`sudo sysctl -n net.ipv4.conf.all.forwarding` -eq 1" $LINENO
 
 
-#while true; do sleep 10000; done
+# ** Next lines start the RAL
+wait_process_started oaisim_eNB
+sleep 4
+$OPENAIR3_DIR/RAL-LTE/LTE_RAL_ENB/LTE_RAL_ENB
 
 echo "End"
 

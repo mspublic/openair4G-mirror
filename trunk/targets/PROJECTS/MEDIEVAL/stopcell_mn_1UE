@@ -137,7 +137,9 @@ control_c()
   echo -en "\n*** Exiting ***\n"
   pkill oaisim_UE
   wait_process_ended oaisim_UE
-  sleep 2
+  sleep 1
+  cp /tmp/log_oaiUE ./log_oaiUE.txt
+  sleep 1
   sudo ip link set oai0 down
   sudo /sbin/rmmod -w nascellmt
   exit $?
@@ -179,7 +181,9 @@ echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
 echo "Bring down UE interface"
 sudo pkill oaisim_UE
 wait_process_ended oaisim_UE
-sleep 2
+sleep 1
+cp /tmp/log_oaiUE ./log_oaiUE.txt
+sleep 1
 sudo ip link set oai0 down
 sudo /sbin/rmmod -w nascellmt
 echo "End"
