@@ -39,6 +39,11 @@
 // #endif
 
 /* **** */
+/* ** FLAG DEFINED FOR HANDLING of ENb Measures ** */
+/* **** */
+//#define RRC_ENABLE_REAL_ENB_MESURES
+
+/* **** */
 /* ** FLAGS DEFINED FOR HANDLING of NAS_INTERFACE ** */
 /* **** */
 // Case 1 : simulation = USER_MODE defined + RRC_NETLINK commented

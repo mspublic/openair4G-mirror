@@ -97,6 +97,11 @@ void rrc_rg_config_LTE_srb1 (unsigned char Mod_id);
 void rrc_rg_rcve_ccch(u8 Mod_id, char *Sdu, u16 Sdu_len);
 void rrc_rg_config_LTE_srb2 (unsigned char Mod_id);
 void rrc_rg_config_LTE_default_drb (unsigned char Mod_id);
+int rrc_rg_ENbMeas_get_rlcBufferOccupancy(int UE_id);
+int rrc_rg_ENbMeas_get_scheduledPRB(int UE_id);
+int rrc_rg_ENbMeas_get_totalDataVolume(int UE_id);
+int rrc_rg_ENbMeas_get_totalNumPRBs(void);
+
 #endif
 //-----------------------------------------------------------------------------
 void wcdma_handle_error (int errorP);

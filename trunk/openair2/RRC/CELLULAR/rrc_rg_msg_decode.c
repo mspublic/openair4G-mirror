@@ -136,6 +136,7 @@ void rrc_rg_srb2_decode (int UE_Id, char * sduP, int length){
           #endif
         protocol_bs->rrc.Mobile_List[UE_Id].conn_complete_timer =0;
         rrc_rg_fsm_control (UE_Id, RRC_CONN_SETUP_COMP);
+        protocol_bs->rrc.num_connected_UEs++;
         break;
       case UL_DCCH_rrcConnectionReleaseComplete:       // Not in 1st step
         status = FAILURE;
@@ -342,7 +343,20 @@ int rrc_rg_read_DCin_FIFO (int UE_Id, u8 *buffer, int count){
         }
         break;
       #endif
-      // end MBMS
+      // end MBMS  
+      // Next message to be transferred to GC FIFO.
+      case ENB_MEASUREMENT_REQ:
+        // TEMP : CELL_ID coordination to be checked
+        //if (protocol_bs->rrc.rg_cell_id  == (int)(p->nasRGDCPrimitive.eNBmeasurement_req.cell_id)){
+          protocol_bs->rrc.eNB_measures_flag = 1;
+          #ifdef DEBUG_RRC_STATE
+            rrc_print_buffer((char *)buffer,count);
+            msg("[RRC_RG] ENB_MEASUREMENT_REQ primitive length: %d\n",(int)(p->length));
+            msg("[RRC_RG] ENB measurement started for Cell_ID: %d\n",p->nasRGDCPrimitive.eNBmeasurement_req.cell_id);
+          #endif
+        //}
+        break;
+
       default:
         msg ("[RRC_RG] Invalid message received in DC SAP\n");
         rrc_print_buffer ((char *)buffer, count);

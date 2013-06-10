@@ -38,6 +38,9 @@
 #define MBMS_UE_NOTIFY_REQ        24
 #define MBMS_UE_NOTIFY_IND        25
 #define MBMS_UE_NOTIFY_CNF        26
+//Added for Medieval demo 3 - MW
+#define ENB_MEASUREMENT_REQ 27
+#define ENB_MEASUREMENT_IND 29
 
 //----------------------------------------------------------
 // Constants
@@ -49,6 +52,7 @@
 #define MAX_RABS 27   // = MAXURAB
 #define MAX_MEASURE_NB  5
 #define MAX_MBMS_SERVICES 4 //spec 128
+#define MAX_MEASURE_UE  3 // if applicable, should be identical with maxUsers value
 
 //Connection Establishment status
 // UE
@@ -96,6 +100,15 @@ typedef struct nasMBMSService {
 } nasMBMSService_t;
 typedef u32 nasMBMSDuration_t; //3 bytes
 typedef u16 nasMBMSStatus_t;   // UE notification status
+//Added for Medieval demo 3 - MW
+typedef u16 nasNumConnUEs_t; // number of UEs that are connected
+typedef u32 nasENbMeasure_t; // type definition to hold measures
+typedef struct nasENbMeasures {
+        nasENbMeasure_t rlcBufferOccupancy;
+        nasENbMeasure_t scheduledPRB;
+        nasENbMeasure_t totalDataVolume;
+} nasENbMeasures_t;
+
 
 //----------------------------------------------------------
 // Primitive definitions
@@ -156,8 +169,6 @@ struct NASConnEstablishInd {
  nasIMEI_t InterfaceIMEI;
 };
 
-
-
 struct NASConnEstablishConf {
  nasLocalConnectionRef_t localConnectionRef;
  nasConnectionStatus_t    status;     // can be : Accepted, Failure
@@ -170,7 +181,6 @@ struct NASConnEstablishResp {
  nasIMEI_t InterfaceIMEI;
  nasConnectionStatus_t    status;     // can be : Terminated, Aborted , Already_Connected
 };
-
 
 struct NASConnReleaseReq {
  nasLocalConnectionRef_t  localConnectionRef;
@@ -266,6 +276,19 @@ struct NASMBMSBearerEstablishConf {
  nasRBEstablishStatus_t status;     // can be : Accepted, Failure
 };
 
+//Added for Medieval demo 3 - MW
+
+struct NASENbMeasureReq {
+  nasCellID_t cell_id;
+};
+
+struct NASEnbMeasureInd {
+ nasCellID_t cell_id;
+ nasNumConnUEs_t num_UEs;
+ nasENbMeasures_t measures[MAX_MEASURE_UE];
+ nasENbMeasure_t totalNumPRBs;
+};
+
 /*****
  * UE Primitives
  *****/
@@ -308,6 +331,8 @@ struct nas_rg_dc_element {
    struct NASMBMSUENotifyReq mbms_ue_notify_req;
    struct NASMBMSUENotifyCnf mbms_ue_notify_cnf;
    struct NASMBMSBearerEstablishConf mbms_establish_cnf;  //TEMP - should be in GC-SAP upwards
+   struct NASENbMeasureReq eNBmeasurement_req;
+   struct NASEnbMeasureInd eNBmeasurement_ind;
  } nasRGDCPrimitive;
 };
 
