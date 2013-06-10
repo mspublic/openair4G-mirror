@@ -96,6 +96,7 @@ int nasrg_ASCTL_DC_send_rb_release_request(struct cx_entity *cx, struct rb_entit
 int nasrg_ASCTL_GC_send_mbms_bearer_establish_req(int mbms_ix );
 int nasrg_ASCTL_GC_send_mbms_bearer_release_req(int mbms_ix);
 int nasrg_ASCTL_DC_send_mbms_ue_notify_req(struct cx_entity *cx);
+int nasrg_ASCTL_DC_send_eNBmeasurement_req(struct cx_entity *cx);
 
 // nasrg_iocontrol.c
 void nasrg_CTL_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);

@@ -759,6 +759,41 @@ void nasrg_ASCTL_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity 
 #endif
 }
 
+//---------------------------------------------------------------------------
+// Confirm the establishment of a connection (DC channel)
+int nasrg_ASCTL_DC_send_eNBmeasurement_req(struct cx_entity *cx){
+//---------------------------------------------------------------------------
+  struct nas_rg_dc_element *p;
+  int bytes_wrote = 0;
+
+// Start debug information
+#ifdef NAS_DEBUG_DC
+  printk("nasrg_ASCTL_DC_send_eNBmeasurement_req - begin \n");
+#endif
+  if (!cx){
+     printk("nasrg_ASCTL_DC_send_eNBmeasurement_req - input parameter cx is NULL \n");
+    return NAS_ERROR_NOTCORRECTVALUE;
+  }
+// End debug information
+  p= (struct nas_rg_dc_element *)(gpriv->xbuffer);
+  p->type = ENB_MEASUREMENT_REQ;
+  p->length =  NAS_TL_SIZE + sizeof(struct NASENbMeasureReq);
+  p->nasRGDCPrimitive.eNBmeasurement_req.cell_id = cx->cellid;
+//
+  //bytes_wrote = rtf_put(cx->sap[NAS_DC_INPUT_SAPI], p, p->length);
+  bytes_wrote = nasrg_ASCTL_write(cx->sap[NAS_DC_INPUT_SAPI], (unsigned char *)p, p->length);
+
+  if (bytes_wrote==p->length){
+#ifdef NAS_DEBUG_DC
+    printk("nasrg_ASCTL_DC_send_eNBmeasurement_req: ENB_MEASUREMENT_REQ primitive sent successfully in DC-FIFO\n");
+    printk(" cell_id %u\n",p->nasRGDCPrimitive.eNBmeasurement_req.cell_id);
+#endif
+  }
+  else
+    printk("nasrg_ASCTL_DC_send_eNBmeasurement_req: Message transmission failure to DC-FIFO\n");
+  return bytes_wrote;
+}
+
 /***************************************************************************
      Reception side
  ***************************************************************************/
@@ -902,10 +937,11 @@ void nasrg_ASCTL_DC_decode_rb_establish_cnf(struct cx_entity *cx, struct nas_rg_
 // Decode DATA_TRANSFER_IND message from RRC
 void nasrg_ASCTL_DC_decode_data_transfer_ind(struct cx_entity *cx, struct nas_rg_dc_element *p, char *buffer){
 //---------------------------------------------------------------------------
-//  u8 nasrg_data[10];
+  u8 nasrg_data[10];
   unsigned int nas_length;
   char data_type;
   int bytes_read=0;
+  unsigned int peer_command;
 
 // Start debug information
 #ifdef NAS_DEBUG_DC
@@ -945,9 +981,27 @@ void nasrg_ASCTL_DC_decode_data_transfer_ind(struct cx_entity *cx, struct nas_rg
       bytes_read += rtf_get(cx->sap[NAS_DC_OUTPUT_SAPI], (gpriv->rbuffer)+ (p->length), nas_length);
       #endif
       if (data_type=='Z'){
-      // open radio bearer
-         printk("nasrg_ASCTL_DC_decode_data_transfer: Opening Default Radio Bearer\n");
-         nasrg_ASCTL_start_default_rb(cx);
+         #ifndef NAS_NETLINK
+        memcpy (&nasrg_data, (char *)(gpriv->rbuffer)+ (p->length), 10);
+        #else
+        memcpy (&nasrg_data, (char *)(&buffer[bytes_read]), 10);
+        #endif
+        peer_command = (int)nasrg_data[0];
+        printk("nasrg_ASCTL_DC_decode_data_transfer: Received peer message %d %d \n", nasrg_data[0], peer_command);
+        nasrg_TOOL_print_buffer(nasrg_data, 10);
+        if (nasrg_data[0]== NAS_CMD_OPEN_RB){
+          // open radio bearer
+          printk("nasrg_ASCTL_DC_decode_data_transfer: Opening Default Radio Bearer\n");
+          nasrg_ASCTL_start_default_rb(cx);
+        } else if (nasrg_data[0]== NAS_CMD_ENTER_SLEEP){
+          printk("nasrg_ASCTL_DC_decode_data_transfer: Entering Sleep Mode\n");
+          cx->state = NAS_CX_RELEASING;
+        } else if (nasrg_data[0]== NAS_CMD_LEAVE_SLEEP){
+          printk("nasrg_ASCTL_DC_decode_data_transfer: Leaving Sleep Mode\n");
+          cx->state = NAS_CX_DCH;
+        } else {
+          printk("\n\nnasrg_ASCTL_DC_decode_data_transfer: Unknown peer command\n");
+        }
       }else
          printk("nasrg_ASCTL_DC_decode_data_transfer: Error during reception of the message - Dropped\n");
     }
@@ -1052,6 +1106,54 @@ void nasrg_ASCTL_DC_decode_mbms_ue_notify_cnf(struct cx_entity *cx, struct nas_r
    nasrg_TOOL_print_state(cx->state);
 #endif
 }
+/*
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.cell_id = protocol_bs->rrc.rg_cell_id;
+  // next values are temp hard coded, to be replaced by real values
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.num_UEs = num_connected_UEs;
+  for (ix=0; ix<ralpriv->num_connected_UEs; ix++){
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].rlcBufferOccupancy = 100 - (30*ix);
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].scheduledPRB = 500 - (200*ix);
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].totalDataVolume = 640000 + (160000*ix);
+  }
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.totalNumPRBs = 1000;
+ 
+*/
+//---------------------------------------------------------------------------
+// Decode ENB_MEASUREMENT_IND message from RRC
+void nasrg_ASCTL_DC_decode_eNBmeasurement_ind(struct nas_rg_dc_element *p){
+//---------------------------------------------------------------------------
+  u8 i;
+// Start debug information
+#ifdef NAS_DEBUG_DC
+  printk("nasrg_ASCTL_DC_decode_eNBmeasurement_ind - begin \n");
+#endif
+  if (!p){
+     printk("nasrg_ASCTL_DC_decode_eNBmeasurement_ind - input parameter p is NULL \n");
+    return;
+  }
+// End debug information
+#ifdef NAS_DEBUG_DC_DETAIL
+   printk(" nasrg_ASCTL_DC_decode_eNBmeasurement_ind : ENB_MEASUREMENT_IND reception\n");
+   printk(" Measured Cell: %u\n", p->nasRGDCPrimitive.eNBmeasurement_ind.cell_id);
+   printk(" Number of Connected Mobiles: %u\n", p->nasRGDCPrimitive.eNBmeasurement_ind.num_UEs);
+   for (i=0; i<p->nasRGDCPrimitive.eNBmeasurement_ind.num_UEs; ++i){
+     printk(" UE[%u]:  rlcBufferOccupancy %u, scheduledPRB: %u, totalDataVolume: %u\n", i,
+         p->nasRGDCPrimitive.eNBmeasurement_ind.measures[i].rlcBufferOccupancy,
+         p->nasRGDCPrimitive.eNBmeasurement_ind.measures[i].scheduledPRB,
+         p->nasRGDCPrimitive.eNBmeasurement_ind.measures[i].totalDataVolume);
+   }
+   printk(" Total number of PRBs: %u\n", p->nasRGDCPrimitive.eNBmeasurement_ind.totalNumPRBs);
+#endif
+  // store Measures 
+   gpriv->measured_cell_id = p->nasRGDCPrimitive.eNBmeasurement_ind.cell_id;
+   gpriv->num_UEs = p->nasRGDCPrimitive.eNBmeasurement_ind.num_UEs;
+   for (i=0; i<gpriv-> num_UEs; ++i){
+     gpriv->rlcBufferOccupancy[i] = p->nasRGDCPrimitive.eNBmeasurement_ind.measures[i].rlcBufferOccupancy;
+     gpriv->scheduledPRB[i] += p->nasRGDCPrimitive.eNBmeasurement_ind.measures[i].scheduledPRB;
+     gpriv->totalDataVolume[i] += p->nasRGDCPrimitive.eNBmeasurement_ind.measures[i].totalDataVolume;
+   }
+   gpriv->totalNumPRBs += p->nasRGDCPrimitive.eNBmeasurement_ind.totalNumPRBs;
+}
 
 //---------------------------------------------------------------------------
 // Check if anything in DC FIFO and process it (RG Finite State Machine)
@@ -1149,6 +1251,7 @@ int nasrg_ASCTL_DC_receive(struct cx_entity *cx, char *buffer){
       else{
         switch(cx->state){
           case NAS_CX_DCH:
+          case NAS_CX_RELEASING:
             nasrg_ASCTL_DC_decode_data_transfer_ind(cx,p,buffer);
             break;
           default:
@@ -1176,6 +1279,14 @@ int nasrg_ASCTL_DC_receive(struct cx_entity *cx, char *buffer){
         }
       }
       break;
+    // Temp - Should be in uplink GC-SAP
+    case ENB_MEASUREMENT_IND :
+//      if (p->nasRGDCPrimitive.eNBmeasurement_ind.localConnectionRef!=cx->lcr)
+//        printk("nasrg_ASCTL_DC_receive: ENB_MEASUREMENT_IND reception, Local connection reference not correct %u\n", p->nasRGDCPrimitive.eNBmeasurement_ind.localConnectionRef);
+//      else
+        nasrg_ASCTL_DC_decode_eNBmeasurement_ind(p);
+      break;
+
     default :
       printk("nasrg_ASCTL_DC_receive: Invalid message received\n");
     }

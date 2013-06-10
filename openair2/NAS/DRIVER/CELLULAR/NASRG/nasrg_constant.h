@@ -112,6 +112,8 @@
 
 //peer-to-peer messages between NAS entities
 #define NAS_CMD_OPEN_RB 1
+#define NAS_CMD_ENTER_SLEEP 2
+#define NAS_CMD_LEAVE_SLEEP 3
 
 #define NAS_CX_RELEASE_UNDEF_CAUSE 1
 

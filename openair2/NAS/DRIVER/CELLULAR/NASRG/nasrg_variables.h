@@ -175,6 +175,13 @@ struct nas_priv{
   struct classifier_entity *mbmsclassifier[NASRG_MBMS_SVCES_MAX]; // mbms classifier
   int nmbmsclassifier;
   u32 next_mbmsclassref;
+  //Added for demo 3 - MW
+  nasCellID_t measured_cell_id;
+  u16 num_UEs;
+  u32 rlcBufferOccupancy[NAS_CX_MAX];
+  u32 scheduledPRB[NAS_CX_MAX];
+  u32 totalDataVolume[NAS_CX_MAX];
+  u32 totalNumPRBs;
 };
 
 struct ipversion {

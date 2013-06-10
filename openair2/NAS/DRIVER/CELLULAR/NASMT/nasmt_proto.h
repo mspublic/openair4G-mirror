@@ -91,6 +91,9 @@ int  nasmt_ASCTL_GC_receive(char *buffer);
 int  nasmt_ASCTL_DC_send_cx_establish_request(struct cx_entity *cx);
 int  nasmt_ASCTL_DC_send_cx_release_request(struct cx_entity *cx);
 void nasmt_ASCTL_DC_send_sig_data_request(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
+void nasmt_ASCTL_DC_send_peer_sig_data_request(struct cx_entity *cx, u8 sig_category);
+int nasmt_ASCTL_leave_sleep_mode(struct cx_entity *cx);
+int nasmt_ASCTL_enter_sleep_mode(struct cx_entity *cx);
 
 // nasmt_iocontrol.c
 void nasmt_CTL_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
