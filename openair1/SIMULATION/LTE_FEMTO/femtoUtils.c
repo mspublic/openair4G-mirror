@@ -49,13 +49,14 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
       {"p",    no_argument, 0, 'p'},
       {"r",    required_argument, 0, 'r'},
       {"p",    required_argument, 0, 'p'},
+      {"Q",    required_argument, 0, 'Q'},
       {0, 0, 0, 0}
     };
 
 
   int option_index = 0;   
 		
-  while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:fab:r:R:w:c:em:A:Dp:B:k:",long_options, &option_index)) != -1)
+  while ((c = getopt_long (argc, argv, "hs:S:T:n:xdt:y:z:I:j:N:o:g:fab:r:R:w:c:em:A:Dp:B:k:Q:",long_options, &option_index)) != -1)
     {
       //printf("%c %s\n",c,optarg);
       switch (c)
@@ -97,6 +98,9 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
         case 'S':
 	  opts->snr_max=atof(optarg);
 	  sprintf(opts->parameters,"%s  -S%f",opts->parameters,opts->snr_max);
+	  break;
+	   case 'Q':
+	  opts->ratio=atoi(optarg);
 	  break;
         case 'T':
 	  opts->snr_step=atof(optarg);

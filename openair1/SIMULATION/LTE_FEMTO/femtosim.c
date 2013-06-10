@@ -117,7 +117,7 @@ int main(int argc,char **argv)
   
   
   //****************************************************
-  if (opts.common_flag == 0) { 
+  if (opts.common_flag == 0) { 	 
     switch (opts.N_RB_DL) {
     case 6:
       if (opts.rballocset==0) 
@@ -126,9 +126,11 @@ int main(int argc,char **argv)
       num_pdcch_symbols = 4;
       break;
     case 25:
-      if (opts.rballocset==0) {   	 
-		  DLSCH_RB_ALLOC2[0] = 0x1f80;		 
-		  DLSCH_RB_ALLOC2[1] = 0x7f;}
+      if (opts.rballocset==0) {  		 
+		  DLSCH_RB_ALLOC2[0]=_allocRBs(&opts,0); 	 
+		  DLSCH_RB_ALLOC2[1]= _allocRBs(&opts,1);}
+		  //DLSCH_RB_ALLOC2[0] = 0x1f80;		 
+		  //DLSCH_RB_ALLOC2[1] = 0x7f;}	  
 		  BW = 7.68;
       break;
     case 50:
@@ -848,11 +850,99 @@ printf("num_pdcch_symbols %d , num_pdcch_symbols_2 %d=> ",num_pdcch_symbols,num_
   return num_pdcch_symbols_2;
 }
 
-double _allocRBs(options_t opts)
+u32 _allocRBs(options_t *opts,int ind)
 {
- double rho[16]={0.1686, 0.1759, 0.1845, 0.1946, 0.2062, 0.2194, 0.2344, 0.2510, 0.2692, 0.2889, 0.3098, 0.3318, 0.3543, 0.3772, 0.3998, 0.4220};
-  
-  return *rho;
+	static u32 allocRB;
+	//double rho[16]={0.1686, 0.1759, 0.1845, 0.1946, 0.2062, 0.2194, 0.2344, 0.2510, 0.2692, 0.2889, 0.3098, 0.3318, 0.3543, 0.3772, 0.3998, 0.4220};
+	switch (opts->N_RB_DL) {
+    case 6:   
+		break;
+    case 25:  
+	    switch (opts->ratio){
+	    case 1: // # of dimensions per round: 13/12
+	    if (ind==0)	{	   
+			allocRB=0x7f; 
+			opts->mcs=4;}
+			else
+			allocRB=0x1f80;
+	    break;
+	    case 2: // 12/13
+	    if (ind==0)	{
+			allocRB=0x1f80;
+			opts->mcs=5;}
+			else
+			allocRB=0x7f;
+	    break;
+	    case 3: // 10/15
+	    if (ind==0)	{
+			allocRB=0x1f00;
+			opts->mcs=6;}
+			else
+			allocRB=0xff;
+	    break;
+	    case 4: // 8/17
+	     if (ind==0)	{
+			allocRB=0x1e00;
+			opts->mcs=7;}
+			else
+			allocRB=0x1ff;
+	    break;
+	    case 5: // 6/19
+	     if (ind==0)	{
+			allocRB=0x1c00;
+			opts->mcs=11;}
+			else
+			allocRB=0x3ff;
+	    break;
+	    case 6: // 4/21
+	     if (ind==0)	{
+			allocRB=0x1800;
+			opts->mcs=14;}
+			else
+			allocRB=0x7ff;
+	    break;
+	    case 7: // 2/23
+			if (ind==0)	{
+			allocRB=0x1000;
+			opts->mcs=23;}
+			else
+			allocRB=0xfff;
+		break;
+		case 8: // 15/10
+			if (ind==0)	{
+			allocRB=0xff;
+			opts->mcs=4;}
+			else
+			allocRB=0x1f00;
+		break;
+		case 9: // 17/8
+			if (ind==0)	{
+			allocRB=0x1ff;
+			opts->mcs=3;}
+			else
+			allocRB=0x1e00;
+		break;
+		case 10: // 19/6
+			if (ind==0)	{
+			allocRB=0x3ff;
+			opts->mcs=3;}
+			else
+			allocRB=0x1c00;
+		break;
+		case 11: // 21/4
+			if (ind==0)	{
+			allocRB=0x7ff;
+			opts->mcs=2;}
+			else
+			allocRB=0x1800;
+		break;}		
+		break;
+    case 50:
+		break;
+    case 100:    
+		break;
+    }  
+  return allocRB;
 }
 
 void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_rx,u32 *NB_RB2,LTE_DL_FRAME_PARMS  *frame_parms,u8 num_pdcch_symbols)
@@ -1026,7 +1116,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		    case 25:
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 1;
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = 0;
-		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc        = DLSCH_RB_ALLOC2[0];
+		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc         = DLSCH_RB_ALLOC2[0];
+		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->mcs			   = opts.mcs;
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_5MHz_TDD_t));		      
 		      break;
 		    case 50:
@@ -1178,7 +1269,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
                 
 	      tbs = (double)dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb-1];
-		  printf("\nround: %d dlsch_enB=->nb_rb: %d\n",round,PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb);
+		  printf("\nround: %d dlsch_enB=->nb_rb: %d mcs: %d\n",round,PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb,opts.mcs);
 
 	      rate = (double)tbs/(double)coded_bits_per_codeword;
 
