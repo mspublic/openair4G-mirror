@@ -179,13 +179,17 @@ echo "OPENAIR3_DIR="$OPENAIR3_DIR
 echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
 
 echo "Bring up UE interface"
+# ** Next lines clean remaining processes
 pkill oaisim_UE
 sudo /sbin/rmmod -w nascellmt
-#make oaisim rrc_cellular=1 UE_flag=1
+#make oaisim rrc_cellular=1 UE_flag=1 NAS=1
+
+# ** Next lines start the device driver
 sudo /sbin/insmod  $OPENAIR2_DIR/NAS/DRIVER/CELLULAR/NASMT/nascellmt.ko nas_IMEI=3,5,6,0,1,4,9,1,5,0,0,0,0,0
 #sudo $OPENAIR2_DIR/NAS/DRIVER/CELLULAR/start_mt_cellular
 echo "UE interface network driver started"
 
+# ** Next lines configure the device driver
 #avoid conflict with reserved multicast addresses (224.0.0.11,224.0.0.13, 224.0.0.16)
 ## ip link set oai0 broadcast ff:ff:ff:ff:ff:ff
 ## ip route add 239.0.0.160/28 dev eth1
@@ -202,12 +206,24 @@ sleep 1
 #sudo bash_exec "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0"
 #assert "`sudo sysctl -n net.ipv4.icmp_echo_ignore_broadcasts` -eq 0" $LINENO
 
+# ** Next lines start the Access Stratum
 #nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_UE -E 1234 -u1 -b0 -M1 -p2 -l6 > /dev/null 2>&1
 echo "Starting OAI Access Stratum ..."
-sudo nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_UE -E 1 -u1 -b0 -M1 -p2 -l6 > /tmp/log_oaiUE 2>&1 &
+$OPENAIR_TARGETS/SIMU/USER/oaisim_UE -E 1 -u1 -b0 -M1 -p2 -l6 > /tmp/log_oaiUE 2>&1 &
+#$OPENAIR_TARGETS/SIMU/USER/oaisim_UE -E 1 -u1 -b0 -M1 -p2 -l6
 #sudo nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_UE -E 1 -u1 -b0 -M1 -p2 -l6 &
 #gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p2 -g1 -l3 
+
+# ** Next lines start the RAL
 wait_process_started oaisim_UE
+sleep 4
 $OPENAIR3_DIR/RAL-LTE/LTE_RAL_UE/LTE_RAL_UE
+
+# ** Next lines start the gioctl
+#wait_process_started oaisim_UE
+#sleep 7
+#$OPENAIR2_DIR/NAS/DRIVER/CELLULAR/CTL_TOOL/gioctl cx add 0 5
+#sleep 40
+#$OPENAIR2_DIR/NAS/DRIVER/CELLULAR/CTL_TOOL/gioctl cx del 0
 echo "End"
 
