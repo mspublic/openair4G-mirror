@@ -341,8 +341,10 @@ typedef struct {
 typedef struct{
   /// BW
   uint16_t num_dlactive_UEs;
-  /// total available number of PRBs
+  ///  available number of PRBs for a give SF
   uint16_t available_prbs;
+  /// total number of PRB available for the user plane
+  uint32_t total_available_prbs;
   /// aggregation 
   /// total avilable nccc : num control channel element 
   uint16_t available_ncces;
