@@ -35,7 +35,7 @@
 int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 //-----------------------------------------------------------------------------
   mem_block_t *p;
-  int i;
+  int i, ix;
 
   //protocol_bs->rrc.current_SFN = frame;
   //  if (protocol_bs->rrc.current_SFN % 50 == 0) {
@@ -64,16 +64,39 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       rrc_rg_L1_check ();
 
       // check if there is some message to transmit to NAS and do it (one at a time)
-      if ((p = protocol_bs->rrc.NASMessageToXmit) != NULL)
+      if ((p = protocol_bs->rrc.NASMessageToXmit) != NULL){
         rrc_rg_write_FIFO (p);
+      } else {
+        if ((protocol_bs->rrc.eNB_measures_flag == 1) && (protocol_bs->rrc.rg_broadcast_counter % 500 == 2)) {
+           RRC_RG_O_NAS_ENB_MEASUREMENT_IND ();
+           rrc_rg_write_FIFO (protocol_bs->rrc.NASMessageToXmit);
+        }
+      }
 
+      //#define TEST_MEDIEVAL_DEMO3
+      #ifdef TEST_MEDIEVAL_DEMO3
+      if (protocol_bs->rrc.current_SFN >= 16000){
+        for (ix=0; ix<maxUsers; ix++){
+          protocol_bs->rrc.conf_rlcBufferOccupancy[ix] = 60 - (30*ix);
+          protocol_bs->rrc.conf_scheduledPRB[ix] = 500 - (200*ix);
+          protocol_bs->rrc.conf_totalDataVolume[ix] = 640000 + (160000*ix);
+        }
+      } else if ((protocol_bs->rrc.current_SFN > 8000)&& (protocol_bs->rrc.current_SFN < 16000)){
+        for (ix=0; ix<maxUsers; ix++){
+          protocol_bs->rrc.conf_rlcBufferOccupancy[ix] = 100 - (30*ix);
+          protocol_bs->rrc.conf_scheduledPRB[ix] = 300 + (200*ix);
+          protocol_bs->rrc.conf_totalDataVolume[ix] = 480000 + (160000*ix);
+        }
+      }
+      #endif
       // Check time-out for SIB14
       // Temp - 256 = Exp time factor (8) * SIB14_Rep (32)
       if (protocol_bs->rrc.rg_broadcast_counter % (protocol_bs->rrc.rg_bch_blocks.SIB14_timeout) == 2) {
         rrc_fill_sib14 ();
         rrc_init_sib14 ();
       }
-      protocol_bs->rrc.rg_broadcast_counter++;
+	  // modulo to improve stability
+      protocol_bs->rrc.rg_broadcast_counter = (protocol_bs->rrc.rg_broadcast_counter++) % 1000000000;
 
       // Read any message in FIFOs from NAS
       rrc_rg_read_FIFO();

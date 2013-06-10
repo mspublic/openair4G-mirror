@@ -98,6 +98,17 @@ struct rrc_rg_entity {
 
   // Control Block RRM interface
   struct rrc_rg_rrm_variables rc_rrm;
-
+  //Added for Medieval demo 3 - MW
+  int eNB_measures_flag;
+  // hard-coded values for testing demo3 (set in main)
+  int conf_rlcBufferOccupancy[maxUsers];
+  int conf_scheduledPRB[maxUsers];
+  int conf_totalDataVolume[maxUsers];
+  // storage of last values measured
+  int num_connected_UEs;
+  int current_rlcBufferOccupancy[maxUsers];
+  int current_scheduledPRB[maxUsers];
+  int current_totalDataVolume[maxUsers];
+  int current_totalNumPRBs;
 };
 #endif

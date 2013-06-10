@@ -26,6 +26,8 @@
 #include "rrc_proto_mbms.h"
 
 extern rlc_info_t Rlc_info_um, Rlc_info_am_config;
+extern eNB_MAC_INST *eNB_mac_inst;
+extern u32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlcP);
 
 //-----------------------------------------------------------------------------
 /*  global variables copied from RRC LITE for logical channels */
@@ -711,5 +713,92 @@ void rrc_rg_config_LTE_default_drb (unsigned char Mod_id){
       );
     }
   }
+}
+
+/*****************************************
+ Measurement retrieval functions for ENb measures
+ *****************************************/
+/*  int conf_rlcBufferOccupancy[maxUsers];
+  int conf_scheduledPRB[maxUsers];
+  int conf_totalDataVolume[maxUsers];
+
+  int current_rlcBufferOccupancy[maxUsers];
+  int current_scheduledPRB[maxUsers];
+  int current_totalDataVolume[maxUsers];
+  int current_totalNumPRBs;
+
+  for (ix=0; ix<num_connected_UEs; ix++){
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].rlcBufferOccupancy = rrc_rg_ENbMeas_get_rlcBufferOccupancy[ix];
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].scheduledPRB = rrc_rg_ENbMeas_get_scheduledPRB[ix];
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].totalDataVolume = rrc_rg_ENbMeas_get_totalDataVolume[ix];
+  }
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.totalNumPRBs = rrc_rg_ENbMeas_get_totalNumPRBs();*/
+
+//-----------------------------------------------------------------------------
+int rrc_rg_ENbMeas_get_rlcBufferOccupancy(int UE_id){
+//-----------------------------------------------------------------------------
+  int Mod_id = 0;
+  #ifdef DEBUG_RRC_DETAILS_2
+  msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_rlcBufferOccupancy , UE_id %d\n", UE_id);
+  #endif
+  #ifdef RRC_ENABLE_REAL_ENB_MESURES
+  // Occupancy in bytes
+  //protocol_bs->rrc.current_rlcBufferOccupancy[UE_id] = rlc_um_get_buffer_occupancy(&rlc[Mod_id].m_rlc_um_array[rlc[Mod_id].m_rlc_pointer[3].rlc_index]);
+  // Occupancy in % nb total buffers
+  protocol_bs->rrc.current_rlcBufferOccupancy[UE_id] = rlc[Mod_id].m_rlc_um_array[rlc[Mod_id].m_rlc_pointer[3].rlc_index].nb_sdu / rlc[Mod_id].m_rlc_um_array[rlc[Mod_id].m_rlc_pointer[3].rlc_index].size_input_sdus_buffer;
+  return protocol_bs->rrc.current_rlcBufferOccupancy[UE_id];
+  #else
+  return protocol_bs->rrc.conf_rlcBufferOccupancy[UE_id];
+  #endif
+}
+
+//-----------------------------------------------------------------------------
+int rrc_rg_ENbMeas_get_scheduledPRB(int UE_id){
+//-----------------------------------------------------------------------------
+  int Mod_id = 0;
+  #ifdef DEBUG_RRC_DETAILS_2
+  msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_scheduledPRB , UE_id %d\n", UE_id);
+  #endif
+  #ifdef RRC_ENABLE_REAL_ENB_MESURES
+  // total available number of PRBs for a new transmission
+  //uint16_t rbs_used;
+  protocol_bs->rrc.current_scheduledPRB[UE_id] = eNB_mac_inst[Mod_id].eNB_UE_stats[UE_id].rbs_used - protocol_bs->rrc.current_scheduledPRB[UE_id];
+  return protocol_bs->rrc.current_scheduledPRB[UE_id];
+  #else
+  return protocol_bs->rrc.conf_scheduledPRB[UE_id];
+  #endif
+}
+
+//-----------------------------------------------------------------------------
+int rrc_rg_ENbMeas_get_totalDataVolume(int UE_id){
+//-----------------------------------------------------------------------------
+  int Mod_id = 0;
+  #ifdef DEBUG_RRC_DETAILS_2
+  msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_totalDataVolume , UE_id %d\n", UE_id);
+  #endif
+  #ifdef RRC_ENABLE_REAL_ENB_MESURES
+  protocol_bs->rrc.current_totalDataVolume[UE_id] = eNB_mac_inst[Mod_id].eNB_UE_stats[UE_id].num_bytes_tx[3] - protocol_bs->rrc.current_totalDataVolume[UE_id];
+  return protocol_bs->rrc.current_totalDataVolume[UE_id];
+  #else
+  return protocol_bs->rrc.conf_totalDataVolume[UE_id];
+  #endif
+}
+
+//-----------------------------------------------------------------------------
+int rrc_rg_ENbMeas_get_totalNumPRBs(void){
+//-----------------------------------------------------------------------------
+  int Mod_id = 0;
+  #ifdef DEBUG_RRC_DETAILS_2
+  msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_totalNumPRBs%d\n");
+  #endif
+  #ifdef RRC_ENABLE_REAL_ENB_MESURES
+  // total number of PRB available for the user plane
+  // uint32_t total_available_prbs;
+
+  protocol_bs->rrc.current_totalNumPRBs = eNB_mac_inst[Mod_id].eNB_stats.total_available_prbs - protocol_bs->rrc.current_totalNumPRBs;
+  return protocol_bs->rrc.current_totalNumPRBs;
+  #else
+  return 1000;
+  #endif
 }
 

@@ -44,6 +44,7 @@ rlc_info_t Rlc_info_am_config;
 void rrc_rg_init (u8 Mod_id){
 //-----------------------------------------------------------------------------
   int user;
+  int ix;
 
   #ifdef DEBUG_RRC_STATE
   printk("\n\n***********************************************\n");
@@ -77,6 +78,13 @@ void rrc_rg_init (u8 Mod_id){
   pt_rg_own_cell_id = &(protocol_bs->rrc.rg_cell_id);
 
   //rrc_rg_rrm_connected_init(); // Transferred to rrc_rg_rrm_process.c
+
+  // set hard-coded values for congestion measurement
+  for (ix=0; ix<maxUsers; ix++){
+    protocol_bs->rrc.conf_rlcBufferOccupancy[ix] = 60 - (30*ix);
+    protocol_bs->rrc.conf_scheduledPRB[ix] = 500 - (200*ix);
+    protocol_bs->rrc.conf_totalDataVolume[ix] = 640000 + (160000*ix);
+  }
 
   // Next is TEMP - Will be removed when RRM interface has dynamic MAC config
   rrc_init_mac_config();

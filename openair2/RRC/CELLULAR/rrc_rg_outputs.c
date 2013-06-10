@@ -371,3 +371,43 @@ void RRC_RG_O_NAS_DATA_IND (int UE_Id){
     msg ("[RRC][DATA-OUT] DATA_TRANSFER_IND primitive ready to send to NAS, length %d.\n", msgToBuild->prim_length);
   #endif
 }
+
+//-------------------------------------------------------------------
+void RRC_RG_O_NAS_ENB_MEASUREMENT_IND (void){
+//-------------------------------------------------------------------
+
+  int UE_Id = 0;
+  int num_connected_UEs;
+  int ix;
+  struct nas_rg_if_element *msgToBuild;
+
+  mem_block_t *p = get_free_mem_block (sizeof (struct nas_rg_if_element));
+  protocol_bs->rrc.NASMessageToXmit = p;        // Temp - will later enqueue at bottom of list
+  //Set pointer to newly allocated structure and fills it
+  msgToBuild = (struct nas_rg_if_element *) p->data;
+
+  msgToBuild->prim_length = NAS_TL_SIZE + sizeof (struct NASEnbMeasureInd);
+  msgToBuild->xmit_fifo = protocol_bs->rrc.rrc_rg_DCOut_fifo[UE_Id];
+  msgToBuild->nasRgPrimitive.dc_sap_prim.type = ENB_MEASUREMENT_IND;
+  msgToBuild->nasRgPrimitive.dc_sap_prim.length = msgToBuild->prim_length;
+
+  // comment or uncomment next lines according to test
+  #ifdef RRC_ENABLE_REAL_ENB_MESURES
+  num_connected_UEs = protocol_bs->rrc.num_connected_UEs;
+  #else
+  num_connected_UEs =2;
+  #endif
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.cell_id = protocol_bs->rrc.rg_cell_id;
+  // next values are temp hard coded, to be replaced by real values
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.num_UEs = num_connected_UEs;
+  for (ix=0; ix<num_connected_UEs; ix++){
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].rlcBufferOccupancy = rrc_rg_ENbMeas_get_rlcBufferOccupancy(ix);
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].scheduledPRB = rrc_rg_ENbMeas_get_scheduledPRB(ix);
+    msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.measures[ix].totalDataVolume = rrc_rg_ENbMeas_get_totalDataVolume(ix);
+  }
+  msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.eNBmeasurement_ind.totalNumPRBs = rrc_rg_ENbMeas_get_totalNumPRBs();
+
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC][DATA-OUT] ENB_MEASUREMENT_IND primitive ready to send to NAS, length %d.\n", msgToBuild->prim_length);
+  #endif
+}
