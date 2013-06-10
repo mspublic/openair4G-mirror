@@ -2574,6 +2574,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   // store the goloabl enb stats
   eNB_mac_inst[Mod_id].eNB_stats.num_dlactive_UEs =  granted_UEs;
   eNB_mac_inst[Mod_id].eNB_stats.available_prbs =  nb_available_rb;
+  eNB_mac_inst[Mod_id].eNB_stats.total_available_prbs +=  nb_available_rb;
   eNB_mac_inst[Mod_id].eNB_stats.available_ncces = nCCE; 
   eNB_mac_inst[Mod_id].eNB_stats.dlsch_bytes_tx=0;
   eNB_mac_inst[Mod_id].eNB_stats.dlsch_pdus_tx=0;
