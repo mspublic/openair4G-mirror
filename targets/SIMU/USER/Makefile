@@ -361,8 +361,11 @@ cleanmmeasn1:
 
 cleancell:
 	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.d
 	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.d
 	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
 
 print:
 	@echo $(cygwin)
