@@ -1294,7 +1294,8 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
   u16 nb_elements;
   //u16 **co_seq_num=malloc(MAX_NB_ELEMENTS_MAC_COBSR * sizeof(u16*));
   //u16 **co_size=malloc(MAX_NB_ELEMENTS_MAC_COBSR * sizeof(u16*));
-  
+ 
+  LOG_I(MAC,"updating cobsr\n");
   for (i=0;i<MAX_NB_ELEMENTS_MAC_COBSR;i++){
    // co_seq_num[i]=malloc(sizeof(u16)); 
    // co_size[i]=malloc(sizeof(u16));

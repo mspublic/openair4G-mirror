@@ -281,6 +281,7 @@ typedef enum {
   S_DL_NONE =0,
   S_DL_WAITING,
   S_DL_SCHEDULED, 
+  S_DL_CO_SCHEDULED, 
   S_DL_BUFFERED,  
   S_DL_NUM_STATUS
 } UE_DLSCH_STATUS;
@@ -865,7 +866,7 @@ void UpdateSBnumber(unsigned char Mod_id);
 
 void init_ue_sched_info(void);
 void add_ue_ulsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_ULSCH_STATUS status);
-void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
+void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u16 rnti, u8 subframe,UE_DLSCH_STATUS status);
 s8 find_UE_id(u8 Mod_id,u16 rnti) ;
 s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
 s8 find_active_UEs(u8 Mod_id);

@@ -778,13 +778,15 @@ u32  dlsch_decoding(short *dlsch_llr,
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
 			u8 dlsch_id,
-			u8 eNB_id) {
+			u8 eNB_id,
+			u16 *rnti) {
 
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
   u8 eNB_id2;
-  u32 ue_id;
+  s8 ue_id;
+  u8 j;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
@@ -835,7 +837,21 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    ue_id= (u32)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    ue_id= find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    *rnti = find_cornti(phy_vars_ue->dlsch_ue[(u32)eNB_id][0]->rnti,PHY_vars_eNB_g[eNB_id2]);
+    // check with cornti
+    
+    /*    if (ue_id < 0){
+      //  LOG_D(PHY,"UE index is %d nb cornti %d\n", ue_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->corntis_count);
+      for (j=0; j < phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->corntis_count;j++){
+	if ((ue_id = (u32)find_ue(phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->corntis_array[j],
+				  PHY_vars_eNB_g[eNB_id2])) >=0) {
+	  *rnti=phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->corntis_array[j];
+	  break;
+	}
+      }
+      }*/
+    
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
 
 #ifdef DEBUG_DLSCH_DECODING

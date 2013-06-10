@@ -709,6 +709,10 @@ typedef struct {
   u8 num_pdcch_symbols;
   /// Allocated CRNTI for UE
   u16 crnti;
+  /// allocated CORNTIS for UE
+  //  cornti_array_t corntis; 
+  u8 corntis_count;
+  u16 corntis_array[4]; 
   /// Total number of PDU errors (diagnostic mode)
   u32 dci_errors;          
   /// Total number of PDU received

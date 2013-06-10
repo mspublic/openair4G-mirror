@@ -454,7 +454,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
     if (eNB_flag == 1) { // search for DL traffic
       for (dst_id = 0; dst_id < NUMBER_OF_UE_MAX; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
-	if ((mac_get_rrc_status(module_id, eNB_flag, dst_id ) > 2 /*RRC_CONNECTED*/)&& (frame > 200 ) ) { 
+	if ((mac_get_rrc_status(module_id, eNB_flag, dst_id ) > 2 /*RRC_CONNECTED*/)&& (frame > 200  ) ) { 
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id+NB_eNB_INST, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
 	    rab_id = dst_id * MAX_NUM_RB + DTCH;
