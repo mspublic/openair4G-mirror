@@ -131,6 +131,8 @@ typedef struct {
 typedef struct {
   /// Flag indicating that this ULSCH has a new packet (start of new round) 
   u8 Ndi;
+  /// the request sn for the ULSCH collaborative transmission
+  u16 sn;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
@@ -325,6 +327,8 @@ typedef struct {
   u8 rar_alloc;
   /// Flag indicating that this ULSCH has new data
   u8 Ndi;
+  /// the requested sequence number for the collaborative uplink transmission  
+  u16 sn;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
@@ -571,7 +575,7 @@ typedef struct {
   /// RNTI
   u16 rnti;
   // CORNTIs list
-  cornti_array_t corntis; //TCS LOLAmesh
+  cornti_array_t corntis; 
   /// Active flag for DLSCH demodulation
   u8 active;
   /// Transmission mode

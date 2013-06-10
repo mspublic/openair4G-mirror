@@ -1020,12 +1020,15 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 #ifdef PHY_ABSTRACTION
 u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
-			u8 UE_index) {
+			u8 UE_index,
+			u16 *cornti) {
 
   u8 UE_id, eNB_id;
   u16 rnti;
+  u8 j;
   u8 harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,((subframe==9)?-1:0)+phy_vars_eNB->frame,subframe);
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
+  *cornti=0x0;
   /* navid 
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
     if (PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
@@ -1043,7 +1046,12 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNB->Mod_id]->crnti)
       break;
-
+    // we need to also configure the ulsch_eNB
+    if (rnti == find_cornti(rnti, phy_vars_eNB)) {
+      *cornti=rnti;
+      break;
+    }
+        
     LOG_I(PHY,"[PHY] EMUL eNB %d ulsch_decoding_emul : subframe ue id %d crnti %x nb ue %d\n",
 	phy_vars_eNB->Mod_id,
 	UE_id,
@@ -1056,7 +1064,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     return(1+MAX_TURBO_ITERATIONS);
   }
   else {
-    LOG_I(PHY,"found UE with rnti %x => UE_id %d\n",rnti,UE_id);
+    LOG_I(PHY,"Found UE with %s-rnti %x => UE_id %d\n",(*cornti==rnti)?"CO":"C",rnti,UE_id);
   }
   // Do abstraction here to determine if packet it in error
 

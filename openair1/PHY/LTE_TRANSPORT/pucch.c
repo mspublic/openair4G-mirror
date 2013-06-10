@@ -398,7 +398,8 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 u8 ncs1,
 			 u8 *pucch_payload,
 			 u8 sr,
-			 u8 subframe) {
+			 u8 subframe,
+			 u8 eNB_id) {
 
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_flag    = format;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_Ncs1    = ncs1;
@@ -408,7 +409,8 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
   // the value of phy_vars_ue->pucch_sel[subframe] is set by get_n1_pucch
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel      = phy_vars_ue->pucch_sel[subframe];
   
-  // LOG_I(PHY,"subframe %d emu tx pucch_sel is %d sr is %d \n", subframe, UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel, sr);
+  LOG_I(PHY,"subframe %d emu tx pucch_sel is %d sr is %d for eNB %d \n", 
+	subframe, UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel, sr, eNB_id);
   
   if (format == pucch_format1a) {
     
@@ -422,7 +424,8 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
   else if (format == pucch_format1) {
     LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame,subframe,sr);
   }
-  phy_vars_ue->sr[subframe] = sr; 
+
+    phy_vars_ue->sr[eNB_id][subframe] = sr; 
 
 }
 
@@ -939,6 +942,10 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti)
       break;
+     
+    if (rnti == find_cornti(rnti, phy_vars_eNB)) 
+      break;
+    
   }
   if (UE_id==NB_UE_INST) {
     LOG_E(PHY,"rx_pucch_emul: FATAL, didn't find UE with rnti %x\n",rnti);
@@ -946,7 +953,7 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
   }
 
   if (fmt == pucch_format1) {
-    payload[0] = PHY_vars_UE_g[UE_id]->sr[subframe];
+    payload[0] = PHY_vars_UE_g[UE_id]->sr[eNB_id][subframe];
   }
   else if (fmt == pucch_format1a) {
     payload[0] = PHY_vars_UE_g[UE_id]->pucch_payload[0];

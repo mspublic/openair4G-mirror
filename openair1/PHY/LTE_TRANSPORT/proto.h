@@ -773,7 +773,8 @@ u32 dlsch_decoding(s16 *dlsch_llr,
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
 			u8 dlsch_id,
-			u8 eNB_id);
+			u8 eNB_id,
+			u16* rnti);
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
@@ -1104,6 +1105,7 @@ s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       u16 si_rnti,
 				       u16 ra_rnti,
 				       u16 p_rnti,
+				       u16 co_rnti,
 				       u16 DL_pmi_single);
 
 s32 generate_eNB_ulsch_params_from_rar(u8 *rar_pdu,
@@ -1268,7 +1270,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
 u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
-			u8 UE_index);
+			u8 UE_index,
+			u16 *cornti);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			u8 subframe,
@@ -1380,7 +1383,8 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
 			 u8 ncs1,
 			 u8 *pucch_ack_payload,
 			 u8 sr,
-			 u8 subframe);
+			 u8 subframe,
+			 u8 eNB_id);
 
 
 s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,

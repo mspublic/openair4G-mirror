@@ -103,9 +103,9 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
   */
 
   /* CORNTIs tables initialization */
-  for (i=0;i<NB_eNB_INST;i++) {
+  for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
     //eNB_mac_inst[i].corntis.count=0;
-    for (j=0;j<NB_UE_INST;j++) {
+    for (j=0;j<NUMBER_OF_UE_MAX;j++) {
       //MAC layer structure :
       eNB_mac_inst[i].UE_template[j].corntis.count = 0;
       UE_mac_inst[j].corntis.count = 0;
@@ -113,8 +113,8 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
       //PHY layer structure
       // mac_xface->phy_config_cornti(i, 1, j, j,j);
       // mac_xface->phy_config_cornti(j,0,i,i,i); 
-      PHY_vars_eNB_g[i]->dlsch_eNB_co[j][0]->corntis.count = 0;
-      PHY_vars_UE_g[j]->dlsch_ue_co[i][0]->corntis.count = 0;
+      //  PHY_vars_eNB_g[i]->dlsch_eNB_co[j][0]->corntis.count = 0;
+      //PHY_vars_UE_g[j]->dlsch_ue_co[i][0]->corntis.count = 0;
       for (k=0; k <MAX_VLINK_PER_CH; k++ ) {
 	eNB_mac_inst[i].UE_template[j].corntis.array[k]=0;
 	eNB_mac_inst[i].UE_template[j].corntis.sn[k]=0;

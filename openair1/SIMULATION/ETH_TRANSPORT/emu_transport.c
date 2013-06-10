@@ -331,7 +331,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
    pucch_format= ue_cntl_delay[ue_id][last_slot%2].pucch_flag;// UE_transport_info[ue_id].cntl.pucch_flag;
    if ((last_slot+1) % 2  == 0 ) {
      if (pucch_format == pucch_format1) // UE_transport_info[ue_id].cntl.sr;
-       PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[ue_id][last_slot%2].sr;
+       PHY_vars_UE_g[ue_id]->sr[0][subframe] = ue_cntl_delay[ue_id][last_slot%2].sr;
      else if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
        PHY_vars_UE_g[ue_id]->pucch_payload[0] = ue_cntl_delay[ue_id][last_slot%2].pucch_payload;//UE_transport_info[ue_id].cntl.pucch_payload;
      } 
