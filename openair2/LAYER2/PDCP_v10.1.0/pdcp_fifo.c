@@ -55,6 +55,7 @@
 #endif //USER_MODE
 
 #include "../MAC/extern.h"
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
@@ -283,6 +284,7 @@ int
 #ifdef IDROMEL_NEMO
         pdcp_read_header.inst = 0;
 #endif
+
         if (pdcp_array[pdcp_read_header.inst][pdcp_read_header.rb_id].instanciated_instance) {
           LOG_D(PDCP, "[MSC_MSG][FRAME %05d][IP][MOD %02d][][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %02d][RB %02d]\n",
                 frame, pdcp_read_header.inst,  pdcp_read_header.data_size, pdcp_read_header.inst, pdcp_read_header.rb_id);
@@ -377,7 +379,7 @@ int
       len = -1;
 #endif
 
-      if (len<0) {
+      if (len < 0) {
         // nothing in pdcp NAS socket
         //LOG_I(PDCP, "[PDCP][NETLINK] Nothing in socket, length %d \n", len);
       } else {
@@ -428,8 +430,8 @@ int
 #else
         pdcp_read_header.inst = 0;
 #endif
-	      
-	      if (pdcp_array[pdcp_read_header.inst][pdcp_read_header.rb_id].instanciated_instance) {
+
+        if (pdcp_array[pdcp_read_header.inst][pdcp_read_header.rb_id].instanciated_instance) {
 #ifdef PDCP_DEBUG
           LOG_I(PDCP, "[PDCP][NETLINK][IP->PDCP] TTI %d, INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n", \
                 frame, pdcp_read_header.inst, len, nas_nlh->nlmsg_len-sizeof(struct nlmsghdr), pdcp_read_header.rb_id);
@@ -446,7 +448,10 @@ int
                         pdcp_read_header.data_size,
                         pdcp_read_payload,
                         PDCP_DATA_PDU);
-	      }
+        } else {
+            LOG_E(PDCP, "Received packet for non-instanciated instance %u with rb_id %u\n",
+                  pdcp_read_header.inst, pdcp_read_header.rb_id);
+        }
       }
     }
   } // end of while
@@ -465,7 +470,6 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
   int src_id, module_id; // src for otg
   int dst_id, rb_id; // dst for otg
   int pkt_size=0, pkt_cnt=0;
-  unsigned int ctime=0;
   u8 pdcp_mode;
   Packet_otg_elt * otg_pkt_info;
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
@@ -473,7 +477,7 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
   if (oai_emulation.info.otg_enabled ==1 ){
     module_id = (eNB_flag == 1) ?  eNB_index : /*NB_eNB_INST +*/ UE_index ;
     //rb_id    = (eNB_flag == 1) ? eNB_index * MAX_NUM_RB + DTCH : (NB_eNB_INST + UE_index -1 ) * MAX_NUM_RB + DTCH ;
-    ctime = oai_emulation.info.time_ms; // current simulation time in ms
+
     if (eNB_flag == 1) { // search for DL traffic
       //for (dst_id = NB_eNB_INST; dst_id < NB_UE_INST + NB_eNB_INST; dst_id++) {
       while ((otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[module_id]))) != NULL) {
@@ -516,6 +520,7 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
   }
 #else
   if ((otg_enabled==1) && (eNB_flag == 1)) { // generate DL traffic
+    unsigned int ctime=0;
     src_id = eNB_index;
     ctime = frame * 100;
 

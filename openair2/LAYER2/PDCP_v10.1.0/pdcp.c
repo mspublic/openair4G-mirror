@@ -43,6 +43,7 @@
 #include "pdcp_sequence_manager.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "pdcp_primitives.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -61,7 +62,6 @@ extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, u8_t,rb_id_t, mui_
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 //Added MW - RRC L2 interface
 extern void pdcp_rrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer);
-extern u8 mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
 extern char *packet_gen(int src, int dst, int ctime, int *pkt_size);
 extern int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size);
 
@@ -106,7 +106,8 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
    */
 
   if (sdu_buffer_size > MAX_IP_PACKET_SIZE) {
-    LOG_E(PDCP, "Requested SDU size (%d) is bigger than that can be handled by PDCP!\n", sdu_buffer_size);
+    LOG_E(PDCP, "Requested SDU size (%d) is bigger than that can be handled by PDCP (%u)!\n",
+          sdu_buffer_size, MAX_IP_PACKET_SIZE);
     // XXX What does following call do?
     mac_xface->macphy_exit("");
   }
@@ -306,7 +307,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
 
     if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) { // DRB
       sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer->data);
-      u8 dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
+//       u8 dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
     } else { //SRB1/2
       sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer->data);
     }
@@ -350,7 +351,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
                         eNB_flag,
                         rb_id,
                         sdu_buffer_size - pdcp_header_len - pdcp_tailer_len,
-                        &sdu_buffer->data[pdcp_header_len]);
+                        (u8*)&sdu_buffer->data[pdcp_header_len]);
       free_mem_block(sdu_buffer);
       // free_mem_block(new_sdu);
       return TRUE;
@@ -457,13 +458,13 @@ void
     unsigned char pdcp_dummy_buffer[PDCP_DUMMY_BUFFER_SIZE];
 #endif
 #endif
-    unsigned int diff, i, k, j;
-    unsigned char *otg_pkt=NULL;
-    int src_id, module_id; // src for otg
-    int dst_id, rb_id; // dst for otg
-    int service_id, session_id;
-    int pkt_size=0;
-    unsigned int ctime=0;
+//     unsigned int diff, i, k, j;
+//     unsigned char *otg_pkt=NULL;
+//     int src_id, module_id; // src for otg
+//     int dst_id, rb_id; // dst for otg
+//     int service_id, session_id;
+//     int pkt_size=0;
+//     unsigned int ctime=0;
     /*
       if ((frame % 128) == 0) {
       for (i=0; i < NB_UE_INST; i++) {
@@ -493,8 +494,6 @@ void
   // PDCP -> NAS/IP traffic: RX
   pdcp_fifo_flush_sdus(frame,eNB_flag);
 
-
-
 }
 
 BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index,
@@ -517,15 +516,15 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
   u8              srb_sn       = 5; // fixed sn for SRBs
   u8              drb_report   = 0;
   long int        cnt          = 0;
-  int i,j;
-  u8 header_compression_profile = 0;
+  u16 header_compression_profile = 0;
   u32 action                   = ACTION_ADD;
   SRB_ToAddMod_t* srb_toaddmod = NULL;
   DRB_ToAddMod_t* drb_toaddmod = NULL;
 
 #ifdef Rel10
-  MBMS_SessionInfoList_r9_t      *mbms_SessionInfoList_r9;
-  MBMS_SessionInfo_r9_t  *MBMS_SessionInfo= NULL;
+  int i,j;
+  MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9;
+  MBMS_SessionInfo_r9_t     *MBMS_SessionInfo= NULL;
 #endif
 
   LOG_D(PDCP, "[MOD_id %d]CONFIG REQ ASN1 for %s %d\n",module_id,
@@ -724,8 +723,7 @@ BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag
 
 BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index,
                            rlc_mode_t rlc_mode, u32  action, u16 lc_id,u16 mch_id, rb_id_t rb_id,
-                           u8 rb_sn, u8 rb_report,
-                           u8 header_compression_profile,
+                           u8 rb_sn, u8 rb_report, u16 header_compression_profile,
                            u8 security_mode){
   switch (action) {
   case ACTION_ADD:
@@ -823,7 +821,7 @@ BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 
     LOG_W(PDCP,"unknown action %d for the config request\n",action);
     break;
   }
-
+  return 0;
 }
 
 

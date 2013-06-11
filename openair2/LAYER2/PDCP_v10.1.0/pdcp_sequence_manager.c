@@ -204,7 +204,7 @@ BOOL pdcp_mark_current_pdu_as_received(u16 seq_num, pdcp_t* pdcp_entity)
    */
   LOG_D(PDCP, "Marking %d. bit of %d. octet of status bitmap\n", (seq_num % 8) + 1, octet_index);
   util_mark_nth_bit_of_octet(&pdcp_entity->missing_pdu_bitmap[octet_index], seq_num % 8); 
-  util_print_binary_representation("Current state of relevant octet: ", pdcp_entity->missing_pdu_bitmap[octet_index]);
+  util_print_binary_representation((u8*)"Current state of relevant octet: ", pdcp_entity->missing_pdu_bitmap[octet_index]);
 
   return TRUE;
 }
