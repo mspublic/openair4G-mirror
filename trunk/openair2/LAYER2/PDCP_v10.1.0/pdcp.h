@@ -81,8 +81,8 @@
 #include "PMCH-InfoList-r9.h"
 #endif
 
-#define TRUE 0x01
-#define FALSE 0x00
+#define FALSE (0x00)
+#define TRUE  !(FALSE)
 typedef unsigned char BOOL;
 
 public_pdcp(unsigned int Pdcp_stats_tx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
@@ -96,7 +96,7 @@ public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MA
 
 typedef struct pdcp_t {
   BOOL instanciated_instance;
-  BOOL header_compression_profile;
+  u16  header_compression_profile;
   
   u8 cipheringAlgorithm;
   u8 integrityProtAlgorithm;
@@ -257,7 +257,7 @@ public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u
 #endif
 
 
-/*! \fn BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode)
+/*! \fn BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u32  action, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u16 header_compression_profile, u8 security_mode)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  module_id         Virtualized module identifier.
 * \param[in]  frame              Frame index.
@@ -270,7 +270,7 @@ public_pdcp(BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u
 * \param[in]  security_mode      set the integrity and ciphering algs
 * \return     A status about the processing, OK or error code.
 */
-public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index, rlc_mode_t rlc_mode, u32  action, u16 lc_id, u16 mch_id, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u8 header_compression_profile, u8 security_mode);)
+public_pdcp(BOOL pdcp_config_req_asn1 (module_id_t module_id, u32 frame, u8_t eNB_flag, u16 index, rlc_mode_t rlc_mode, u32  action, u16 lc_id, u16 mch_id, rb_id_t rb_id, u8 rb_sn, u8 rb_report, u16 header_compression_profile, u8 security_mode);)
 
 /*! \fn void rrc_pdcp_config_release(module_id_t, rb_id_t)
 * \brief This functions is unused
@@ -302,6 +302,8 @@ public_pdcp(void pdcp_layer_cleanup ();)
 protected_pdcp_fifo(int pdcp_fifo_flush_sdus (u32_t,u8_t);)
 protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes (u32_t,u8_t);)
 protected_pdcp_fifo(int pdcp_fifo_read_input_sdus(u32_t,u8_t);)
+protected_pdcp_fifo(void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index, u8 eNB_index);)
+
 //-----------------------------------------------------------------------------
 
 /*

@@ -33,6 +33,8 @@
 * \date 2012
 */
 
+#include <assert.h>
+
 #include "UTIL/LOG/log.h"
 #include "pdcp_util.h"
 
@@ -130,6 +132,8 @@ BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index)
 {
   u8_t mask = 0x80;
 
+  assert(octet != NULL);
+
   /*
    * Prepare mask
    */
@@ -139,5 +143,7 @@ BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index)
    * Set relevant bit
    */
   *octet |= mask;
+
+  return TRUE;
 }
 
