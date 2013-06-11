@@ -35,7 +35,10 @@ This header file must be included */
 /**
  * Include bloc
  * */
- 
+
+#ifndef OPT_H_
+#define OPT_H_
+
 #ifndef sys_include
 #define sys_include
 #include <sys/types.h>
@@ -59,16 +62,33 @@ This header file must be included */
 #include "PHY/impl_defs_lte.h"
 #endif
 
+typedef enum trace_mode_e {
+    OPT_WIRESHARK,
+    OPT_PCAP,
+    OPT_TSHARK,
+    OPT_NONE
+} trace_mode_t;
+
+typedef enum radio_type_e {
+    RADIO_TYPE_FDD,
+    RADIO_TYPE_TDD,
+    RADIO_TYPE_MAX
+} radio_type_t;
+
+extern trace_mode_t opt_type;
 
 /**
  * function def
 */
 
-void trace_pdu(int direction, char *pdu_buffer, unsigned int pdu_buffer_size, int ueid,int rntiType, int rnti, int sysframe, int oob_event, int oob_event_value);
+void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+               int ueid, int rntiType, int rnti, uint8_t subframe,
+               int oob_event, int oob_event_value);
 
-int init_opt(int trace_mode, char *path,char* ip, char* port);
+int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p);
 
 void terminate_opt(void);
 
 //double *timing_analyzer(int index, int direction );
 
+#endif /* OPT_H_ */

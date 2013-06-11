@@ -110,9 +110,11 @@ unsigned short fill_rar(u8 Mod_id,
 
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled){
-    trace_pdu(1, dlsch_buffer, input_buffer_length, Mod_id, 2, 1,frame,0,0);
-    LOG_D(OPT,"[eNB %d][RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n", 
-	  Mod_id, frame, eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti, rarh->RAPID, input_buffer_length);
+    trace_pdu(1, dlsch_buffer, input_buffer_length, Mod_id, 2, 1,
+              eNB_mac_inst[Mod_id].subframe, 0, 0);
+    LOG_I(OPT,"[eNB %d][RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
+          Mod_id, frame, eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti,
+          rarh->RAPID, input_buffer_length);
   } 
 #endif 
   return(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti);

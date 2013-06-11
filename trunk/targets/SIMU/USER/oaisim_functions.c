@@ -1,3 +1,5 @@
+#include <execinfo.h>
+
 #include "oaisim_functions.h"
 
 #include "PHY/extern.h"
@@ -11,6 +13,7 @@
 #include "SCHED/extern.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "UTIL/OPT/opt.h"
 
 #ifdef XFORMS
 #include <forms.h>
@@ -103,7 +106,7 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:y:w:X:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:X:z:Z:", long_options, &option_index)) != -1) {
 
     switch (c) {
     case 0:
@@ -269,7 +272,20 @@ void get_simulation_options(int argc, char *argv[]) {
       break;
     case 'P':
       oai_emulation.info.opt_enabled = 1;
-      oai_emulation.info.opt_mode = atoi (optarg);
+
+      if (strcmp(optarg, "wireshark") == 0) {
+          opt_type = OPT_WIRESHARK;
+          printf("Enabling OPT for wireshark\n");
+      } else if (strcmp(optarg, "pcap") == 0) {
+          opt_type = OPT_PCAP;
+          printf("Enabling OPT for pcap\n");
+      } else {
+          printf("Unrecognized option for OPT module. -> Disabling it\n");
+          printf("Possible values are either wireshark or pcap\n");
+          opt_type = OPT_NONE;
+          oai_emulation.info.opt_enabled = 0;
+      }
+      oai_emulation.info.opt_mode = opt_type;
       break;
     case 'E':
       set_seed = 1;
@@ -333,7 +349,7 @@ void get_simulation_options(int argc, char *argv[]) {
         memcpy(&oai_emulation.info.mme_ip_address[0], optarg, ip_length > 16 ? 16 : ip_length);
       }
 #else
-      LOG_E(EMU, "You enabled MME mode without MME support...\n");
+      printf("You enabled MME mode without MME support...\n");
 #endif
       break;
     default:

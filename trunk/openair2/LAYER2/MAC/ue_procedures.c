@@ -100,7 +100,7 @@ void ue_init_mac(){
     UE_mac_inst[i].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[i].scheduling_info.periodicPHR_Timer);
     UE_mac_inst[i].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[i].scheduling_info.prohibitPHR_Timer);
     UE_mac_inst[i].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[i].scheduling_info.PathlossChange);
- 
+
     for (j=0; j < MAX_NUM_LCID; j++){
       LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
       UE_mac_inst[i].scheduling_info.Bj[j]=-1;
@@ -261,13 +261,21 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
   LOG_T(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
+
+#if defined(USER_MODE) && defined(OAI_EMU)
+  if (oai_emulation.info.opt_enabled) {
+    trace_pdu(1, sdu, sdu_len, Mod_id, 3, UE_mac_inst[Mod_id].crnti,
+              UE_mac_inst[Mod_id].subframe, 0, 0);
+  }
+#endif
+
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
 
 #ifdef DEBUG_HEADER_PARSING
   LOG_D(MAC,"[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,
 	frame,eNB_index,num_ce,num_sdu);
 #endif
-  
+
   LOG_T(MAC,"[eNB %d] First 32 bytes of DLSCH : \n");
   for (i=0;i<32;i++)
     LOG_T(MAC,"%x.",sdu[i]);
@@ -451,7 +459,6 @@ void ue_send_mch_sdu(u8 Mod_id, u32 frame, u8 *sdu, u16 sdu_len, u8 eNB_index) {
   unsigned char num_sdu, i, *payload_ptr;
   unsigned char rx_lcids[NB_RB_MAX]; 
   unsigned short rx_lengths[NB_RB_MAX];
-
 
   //  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_MCH_SDU, VCD_FUNCTION_IN);
   LOG_I(MAC,"[UE %d] Frame %d : entering ue_send_mch_sdu\n",Mod_id,frame);
@@ -1091,7 +1098,10 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
     bsr_s->Buffer_size = UE_mac_inst[Mod_id].scheduling_info.BSR[lcgid];
     LOG_D(MAC,"[UE %d] Frame %d report SHORT BSR with level %d for LCGID %d\n", 
 	  Mod_id, frame, UE_mac_inst[Mod_id].scheduling_info.BSR[lcgid],lcgid);
-  } 
+  } else {
+      bsr_s = NULL;
+      bsr_l = NULL;
+  }
 
   // build PHR and update the timers 
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)){
@@ -1179,8 +1189,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
     */
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled)
-    trace_pdu(0, ulsch_buffer, buflen, Mod_id, 3, 
-	      UE_mac_inst[Mod_id].crnti,frame,0,0);
+    trace_pdu(0, ulsch_buffer, buflen, Mod_id, 3, UE_mac_inst[Mod_id].crnti, subframe, 0, 0);
   LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n", 
 	Mod_id, frame, UE_mac_inst[Mod_id].crnti, buflen);
 #endif
@@ -1320,31 +1329,30 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
 
   // Put this in a function
   // Call PHR procedure as described in Section 5.4.6 in 36.321 
-  if (UE_mac_inst[Mod_id].PHR_state == MAC_MainConfig__phr_Config_PR_setup ){ // normal operation 
-    if (UE_mac_inst[Mod_id].PHR_reconfigured == 1){ // upon (re)configuration of the power headroom reporting functionality by upper layers 
-      UE_mac_inst[Mod_id].PHR_reporting_active =1;
+  if (UE_mac_inst[Mod_id].PHR_state == MAC_MainConfig__phr_Config_PR_setup){ // normal operation
+    if (UE_mac_inst[Mod_id].PHR_reconfigured == 1) { // upon (re)configuration of the power headroom reporting functionality by upper layers
+      UE_mac_inst[Mod_id].PHR_reporting_active = 1;
       UE_mac_inst[Mod_id].PHR_reconfigured = 0;
-    } else { 
-      //LOG_D(MAC,"PHR normal operation %d active %d \n", UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF, UE_mac_inst[Mod_id].PHR_reporting_active);
-      if ((UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF <= 0) && 
-	  ((mac_xface->get_PL(Mod_id,eNB_index) <  UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db ) || 
+    } else {
+        //LOG_D(MAC,"PHR normal operation %d active %d \n", UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF, UE_mac_inst[Mod_id].PHR_reporting_active);
+        if ((UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF <= 0) &&
+            ((mac_xface->get_PL(Mod_id,eNB_index) <  UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db) ||
 	   (UE_mac_inst[Mod_id].power_backoff_db[eNB_index] > UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db)))
-	// trigger PHR and reset the timer later when the PHR report is sent
-	UE_mac_inst[Mod_id].PHR_reporting_active =1;
+            // trigger PHR and reset the timer later when the PHR report is sent
+            UE_mac_inst[Mod_id].PHR_reporting_active = 1;
       else if (UE_mac_inst[Mod_id].PHR_reporting_active ==0 )
-	UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF--;
-     
+            UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF--;
       if (UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF <= 0 )
-	// trigger PHR and reset the timer later when the PHR report is sent
-	UE_mac_inst[Mod_id].PHR_reporting_active =1;
+            // trigger PHR and reset the timer later when the PHR report is sent
+            UE_mac_inst[Mod_id].PHR_reporting_active = 1;
       else if (UE_mac_inst[Mod_id].PHR_reporting_active == 0 )
-	UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF--; 
+            UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF--;
     }
   } else {    // release / nothing
-    UE_mac_inst[Mod_id].PHR_reporting_active =0; // release PHR
+    UE_mac_inst[Mod_id].PHR_reporting_active = 0; // release PHR
   }
   //If the UE has UL resources allocated for new transmission for this TTI here:
-
+  
   return(CONNECTION_OK);
   }
 

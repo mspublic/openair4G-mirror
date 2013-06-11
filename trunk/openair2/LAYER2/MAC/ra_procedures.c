@@ -189,12 +189,12 @@ void Msg1_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
    UE_mac_inst[Mod_id].RA_attempt_number++;
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled) {
-    trace_pdu(0, NULL, 0, Mod_id, 3, 
-	      UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex, frame, 0, UE_mac_inst[Mod_id].RA_attempt_number);
+    trace_pdu(0, NULL, 0, Mod_id, 3, UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex,
+              UE_mac_inst[Mod_id].subframe, 0, UE_mac_inst[Mod_id].RA_attempt_number);
     LOG_D(OPT,"[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n", 
 	  Mod_id, frame, 1, UE_mac_inst[Mod_id].RA_Msg3_size);
   }
-#endif	  
+#endif
 }
 
 
@@ -207,12 +207,12 @@ void Msg3_tx(u8 Mod_id,u32 frame, u8 eNB_id) {
 
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled) { // msg3
-    trace_pdu(0, &UE_mac_inst[Mod_id].CCCH_pdu.payload, UE_mac_inst[Mod_id].RA_Msg3_size, Mod_id, 3, 
-	      UE_mac_inst[Mod_id].crnti /*UE_mac_inst[Mod_id].RA_prach_resources.ra_RNTI*/,frame,0,0);
+    trace_pdu(0, &UE_mac_inst[Mod_id].CCCH_pdu.payload[0], UE_mac_inst[Mod_id].RA_Msg3_size,
+              Mod_id, 3, UE_mac_inst[Mod_id].crnti, UE_mac_inst[Mod_id].subframe, 0, 0);
     LOG_D(OPT,"[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n", 
-	  Mod_id, frame, UE_mac_inst[Mod_id].crnti /*UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[Mod_id].RA_Msg3_size);
-    }
-#endif	  
+          Mod_id, frame, UE_mac_inst[Mod_id].crnti /*UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[Mod_id].RA_Msg3_size);
+  }
+#endif
 }
 
 
@@ -255,7 +255,7 @@ PRACH_RESOURCES_t *ue_get_rach(u8 Mod_id,u32 frame, u8 eNB_index,u8 subframe){
 
 	  UE_mac_inst[Mod_id].RA_active                        = 1;
 	  UE_mac_inst[Mod_id].RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
-	  UE_mac_inst[Mod_id].RA_Msg3_size                     = Size+sizeof(SCH_SUBHEADER_SHORT);
+      UE_mac_inst[Mod_id].RA_Msg3_size                     = Size+sizeof(SCH_SUBHEADER_SHORT)+sizeof(SCH_SUBHEADER_SHORT);
 	  UE_mac_inst[Mod_id].RA_prachMaskIndex                = 0;
 	  UE_mac_inst[Mod_id].RA_prach_resources.Msg3          = UE_mac_inst[Mod_id].CCCH_pdu.payload;
 	  UE_mac_inst[Mod_id].RA_backoff_cnt                   = 0;  // add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)

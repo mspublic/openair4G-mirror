@@ -193,7 +193,10 @@ help (void) {
   printf ("-n Set the number of frames for the simulation\n");
   printf ("-O [mme ipv4 address] Enable MME mode\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
-  printf ("-P enable protocol analyzer : 0 for wireshark interface, 1: for pcap , 2 : for tshark \n");
+  printf ("-P [trace type] Enable protocol analyzer. Possible values for OPT:\n");
+  printf ("    - wireshark: Enable tracing of layers above PHY using an UDP socket\n");
+  printf ("    - pcap:      Enable tracing of layers above PHY to a pcap file\n");
+  printf ("    - tshark:    Not implemented yet\n");
   printf ("-Q Activate the MBMS service\n");
   printf ("-R [6,15,25,50,75,100] Sets N_RB_DL\n");
   printf ("-r Activates rate adaptation (DL for now)\n");
@@ -284,7 +287,7 @@ Packet_OTG_List *otg_pdcp_buffer;
 int
     main (int argc, char **argv)
 {
-  s32 i, j;
+  s32 i;
   // pointers signal buffers (s = transmit, r,r0 = receive)
 
   clock_t t;
@@ -305,7 +308,7 @@ int
   strcpy(smbv_ip,DEFAULT_SMBV_IP);
 #endif
 
-  s32 UE_id, eNB_id,ret;
+  s32 UE_id, eNB_id;
 
   // time calibration for soft realtime mode  
 
