@@ -874,56 +874,105 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 
     pi5_p=pi5tab8[iind];
     u16 decoded_bytes_interl[6144/16] __attribute__((aligned(16)));
-    for (i=0;i<(n2>>4);i++) {
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],2);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],3);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],4);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],5);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],6);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],7);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],8);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],9);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],10);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],11);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],12);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
-      tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
-      decoded_bytes_interl[i]=(u16) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
-      ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
+    if ((n2&0x7f) == 0) {  // n2 is a multiple of 128 bits
+      for (i=0;i<(n2>>4);i++) {
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],2);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],3);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],4);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],5);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],6);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],7);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],8);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],9);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],10);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],11);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],12);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
+	decoded_bytes_interl[i]=(u16) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
+	((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
+      }
     }
-
+    else {
+      for (i=0;i<(n2>>4);i++) {
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],2);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],3);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],4);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],5);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],6);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],7);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],8);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],9);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],10);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],11);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],12);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
+	tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
+	tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
+	
+	((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
+      }
+    }
     // Check if we decoded the block
     if (iteration_cnt>1) {
       start_meas(intl2_stats);
 
-      // re-order the decoded bits in theregular order 
-      // as it is presently ordered as 16 sequential columns
-      __m128i* dbytes=(__m128i*)decoded_bytes_interl;
-      __m128i shuffle=SHUFFLE16(7,6,5,4,3,2,1,0);
-      __m128i mask  __attribute__((aligned(16)));
-      int n_128=n2>>7;
-      for (i=0;i<n_128;i++) {
-        mask=_mm_set1_epi16(1);
-        __m128i tmp __attribute__((aligned(16)));
-        tmp=_mm_shuffle_epi8(dbytes[i],shuffle);
-        __m128i tmp2 __attribute__((aligned(16))) ;
+      if ((n2&0x7f) == 0) {  // n2 is a multiple of 128 bits
 
-        tmp2=_mm_and_si128(tmp,mask);
-        tmp2=_mm_cmpeq_epi16(tmp2,mask);
-        decoded_bytes[n_128*0+i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
-        
-        int j;
-        for (j=1; j<16; j++) {
-        mask=_mm_slli_epi16(mask,1);
-        tmp2=_mm_and_si128(tmp,mask);
-        tmp2=_mm_cmpeq_epi16(tmp2,mask);
-        decoded_bytes[n_128*j +i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
-        }
+	// re-order the decoded bits in theregular order 
+	// as it is presently ordered as 16 sequential columns
+	__m128i* dbytes=(__m128i*)decoded_bytes_interl;
+	__m128i shuffle=SHUFFLE16(7,6,5,4,3,2,1,0);
+	__m128i mask  __attribute__((aligned(16)));
+	int n_128=n2>>7;
+	for (i=0;i<n_128;i++) {
+	  mask=_mm_set1_epi16(1);
+	  __m128i tmp __attribute__((aligned(16)));
+	  tmp=_mm_shuffle_epi8(dbytes[i],shuffle);
+	  __m128i tmp2 __attribute__((aligned(16))) ;
+	  
+	  tmp2=_mm_and_si128(tmp,mask);
+	  tmp2=_mm_cmpeq_epi16(tmp2,mask);
+	  decoded_bytes[n_128*0+i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+	  
+	  int j;
+	  for (j=1; j<16; j++) {
+	    mask=_mm_slli_epi16(mask,1);
+	    tmp2=_mm_and_si128(tmp,mask);
+	    tmp2=_mm_cmpeq_epi16(tmp2,mask);
+	    decoded_bytes[n_128*j +i]=(u8) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+	  }
+	}
       }
-
+      else {
+	pi6_p=pi6tab8[iind];
+	for (i=0;i<(n2>>4);i++) {
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],7);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],6);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],5);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],4);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],3);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],2);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],1);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],0);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],15);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],14);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],13);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],12);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],11);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],10);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],9);
+	  tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],8);
+	  tmp=_mm_cmpgt_epi8(tmp,zeros);
+	  ((uint16_t *)decoded_bytes)[i]=(uint16_t)_mm_movemask_epi8(tmp);
+	}
+      }
       // check the CRC
       oldcrc= *((unsigned int *)(&decoded_bytes[(n>>3)-crc_len]));
       switch (crc_type) {
@@ -935,7 +984,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 	temp=((u8 *)&crc)[2];
 	((u8 *)&crc)[2] = ((u8 *)&crc)[0];
 	((u8 *)&crc)[0] = temp;
-	break;
+	break; 
       case CRC24_B:
 	oldcrc&=0x00ffffff;
 	crc = crc24b(decoded_bytes,
