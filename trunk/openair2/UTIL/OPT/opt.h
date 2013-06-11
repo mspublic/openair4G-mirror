@@ -70,8 +70,8 @@ typedef enum trace_mode_e {
 } trace_mode_t;
 
 typedef enum radio_type_e {
-    RADIO_TYPE_FDD,
-    RADIO_TYPE_TDD,
+    RADIO_TYPE_FDD = 1,
+    RADIO_TYPE_TDD = 2,
     RADIO_TYPE_MAX
 } radio_type_t;
 

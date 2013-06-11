@@ -462,7 +462,7 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
             if (g_socksd == -1) {
                 return;
             }
-            SendFrame(TDD_RADIO,
+            SendFrame(radio_type,
                       (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
                       rntiType, rnti, ueid, subframe,
                       1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
@@ -472,7 +472,7 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
             if (file_fd == NULL) {
                 return;
             }
-            pdu_context.radioType = TDD_RADIO;
+            pdu_context.radioType = radio_type;
             pdu_context.direction = (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK
                                     : DIRECTION_UPLINK;
             pdu_context.rntiType = rntiType;
