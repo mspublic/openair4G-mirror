@@ -2789,7 +2789,7 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB
     // this is the cba mcs uci for cba transmission 
     ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs     = 2; //fixme
     ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti  = rnti;
-    LOG_I(PHY,"fill uci for cba rnti %x\n", rnti);
+    LOG_I(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, 2);
     break;
   case ue_selected:
     msg("dci_tools.c: fill_CQI ue_selected CQI not supported yet!!!\n");
