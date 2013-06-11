@@ -48,6 +48,9 @@
  * SUCH DAMAGE
  */
 
+#ifndef PACKET_MAC_LTE_H_
+#define PACKET_MAC_LTE_H_
+
 /* radioType */
 #define FDD_RADIO 1
 #define TDD_RADIO 2
@@ -56,6 +59,8 @@
 #define DIRECTION_UPLINK   0
 #define DIRECTION_DOWNLINK 1
 
+/* SR: no need to declare following part: */
+#if 0
 /* rntiType */
 #define NO_RNTI  0
 #define P_RNTI   1
@@ -64,7 +69,7 @@
 #define SI_RNTI  4
 #define SPS_RNTI 5
 #define M_RNTI   6
-
+#endif
 
 typedef enum mac_lte_oob_event {
     ltemac_send_preamble,
@@ -119,7 +124,7 @@ typedef struct mac_lte_info
 
     /* UL only.  Indicates if the R10 extendedBSR-Sizes parameter is set */
     gboolean        isExtendedBSRSizes;
-    
+
     /* DL only.  Status of CRC check */
     mac_lte_crc_status   crcStatusValid;
 
@@ -165,7 +170,8 @@ typedef struct mac_lte_info
     guint16            oob_rnti[MAX_SRs];
 } mac_lte_info;
 
-
+/* SR: no need to declare following part: */
+#if 0
 typedef struct mac_lte_tap_info {
     /* Info from context */
     guint16  rnti;
@@ -191,7 +197,7 @@ typedef struct mac_lte_tap_info {
     guint16  padding_bytes;
     guint16  raw_length;
 } mac_lte_tap_info;
-
+#endif
 
 /* Accessor function to check if a frame was considered to be ReTx */
 //int is_mac_lte_frame_retx(packet_info *pinfo, guint8 direction);
@@ -275,3 +281,5 @@ typedef struct mac_lte_tap_info {
 /*gboolean dissect_mac_lte_context_fields(struct mac_lte_info  *p_mac_lte_info, tvbuff_t *tvb,
                                         gint *p_offset);
 */
+
+#endif /* PACKET_MAC_LTE_H_ */

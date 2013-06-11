@@ -391,7 +391,6 @@ void oaisim_config() {
     ocg_config_app(); // packet generator 
     //    oai_emulation.info.frame_type=1;
   }
-  
 }
 
 int olg_config() {
@@ -989,17 +988,23 @@ int ocg_config_emu(){
 	  oai_emulation.info.cli_start_enb[0],
 	  oai_emulation.info.cli_start_ue[0]);
   }
-  
+
   //bin/LOG_I(OCG, "OPT output file directory = %s\n", oai_emulation.info.output_path);
   oai_emulation.info.opt_enabled = ( oai_emulation.emulation_config.packet_trace.enabled == 0) ? oai_emulation.info.opt_enabled :  oai_emulation.emulation_config.packet_trace.enabled;
-  if (oai_emulation.info.opt_enabled == 1 ){
-    if (init_opt(oai_emulation.info.opt_mode,
-		 "pcap.dump","127.0.0.1","1234") == -1) {
+  if (oai_emulation.info.opt_enabled == 1) {
+    radio_type_t radio_type;
+
+    if (oai_emulation.info.frame_type == FDD) {
+        radio_type = RADIO_TYPE_FDD;
+    } else {
+        radio_type = RADIO_TYPE_TDD;
+    }
+    opt_type = oai_emulation.info.opt_mode;
+    if (init_opt(NULL, NULL, NULL, radio_type) == -1) {
       LOG_E(OPT,"failed to run OPT \n");
     }
   }
-  
-  return 1;  
 
+  return 1;
 }
 
