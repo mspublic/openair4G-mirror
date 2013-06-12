@@ -1350,7 +1350,7 @@ int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
     LOG_D(MAC,"[UE %d] Frame %d Subframe %d: the current CBA backoff is %d \n", Mod_id, frame, subframe,
 	  UE_mac_inst[Mod_id].cba_last_access[0] ); 
    
-    UE_mac_inst[Mod_id].cba_last_access[0]= round(uniform_rngen(1,20));
+    UE_mac_inst[Mod_id].cba_last_access[0]= round(uniform_rngen(1,30));
     LOG_D(MAC,"[UE %d] Frame %d Subframe %d: start a new CBA backoff  %d \n", Mod_id, frame, subframe,
 	  UE_mac_inst[Mod_id].cba_last_access[0] );   
         
@@ -1360,7 +1360,7 @@ int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
     if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ))   ||
 	  ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ))   ||
 	  ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 )) ) 
-	&& (UE_mac_inst[Mod_id].ul_active == 0) // check if the ul is acrtive
+	//	&& (UE_mac_inst[Mod_id].ul_active == 0) // check if the ul is acrtive
 	&& (UE_mac_inst[Mod_id].cba_last_access[0]> 0) ){
     
     UE_mac_inst[Mod_id].cba_last_access[0]-=1;

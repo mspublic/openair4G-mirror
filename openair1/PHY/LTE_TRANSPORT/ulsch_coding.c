@@ -889,6 +889,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   // msg("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
   
   UE_transport_info[phy_vars_ue->Mod_id].cntl.length_uci = ulsch->O;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.uci_format = ulsch->uci_format;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
   //msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);

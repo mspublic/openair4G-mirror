@@ -64,6 +64,7 @@ typedef struct  {
   u8 pucch_sel:1; 
   //u32 pusch_uci;     // uci information on pusch
   u8 pusch_uci[MAX_CQI_BYTES];
+  u8 uci_format;
   u8 length_uci;
   u8 pusch_ri:2;    // ri information on pusch
   u8 pusch_ack:2;   // ack/nak on pusch

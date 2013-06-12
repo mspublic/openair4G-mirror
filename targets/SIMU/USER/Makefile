@@ -195,6 +195,10 @@ ifdef XFORMS
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 endif
 
+ifdef PAD
+CFLAGS += -DPAD
+endif
+
 OAISIM_PAD_OBJS = discrete_event_generator.o
 OAISIM_PAD_OBJS += threadpool.o
 

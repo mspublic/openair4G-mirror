@@ -40,6 +40,10 @@
 #define PDCP_DEBUG 1
 //#define IDROMEL_NEMO 1
 
+#ifndef OAI_EMU
+extern int otg_enabled;
+#endif
+
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
@@ -530,7 +534,7 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
       if (mac_get_rrc_status(eNB_index, eNB_flag, dst_id ) > 2) {
         otg_pkt=packet_gen(src_id, dst_id, ctime, &pkt_size);
         if (otg_pkt != NULL){
-          rb_id = dst_id * MAX_NUM_RB + DTCH;
+          rb_id = dst_id * NB_RB_MAX + DTCH;
           pdcp_data_req(src_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO,pkt_size, otg_pkt, PDCP_DATA_PDU);
           LOG_D(OTG,"send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, rb_id, src_id, dst_id, pkt_size);
           free(otg_pkt);
