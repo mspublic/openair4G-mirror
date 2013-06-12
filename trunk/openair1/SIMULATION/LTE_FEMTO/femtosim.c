@@ -20,6 +20,7 @@
 #include "OCG_vars.h"
 #include "SCHED/defs.h"
 #include "femtoUtils.h"
+#include "UTIL/LOG/log.h"
 
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -28,6 +29,10 @@
 #ifdef XFORMS
 #include "forms.h"
 #include "../../USERSPACE_TOOLS/SCOPE/lte_scope.h"
+PHY/TOOLS/lte_phy_scope.h
+#include "UTIL/LOG/vcd_signal_dumper.h" //TVT:Navid
+
+
 void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **channel,
 	      short **channel_f, short **rx_sig, short **rx_sig_f, short *dlsch_comp, 
 	      short* dlsch_comp_i, short* dlsch_rho, short *dlsch_llr, int coded_bits_per_codeword);
@@ -81,6 +86,7 @@ int main(int argc,char **argv)
 
   //Init LOG
   logInit();
+  //vcd_signal_dumper_init();//TVT:Navid
   set_comp_log(PHY,LOG_DEBUG,LOG_LOW,1);
 
   //Parse options
@@ -150,6 +156,7 @@ int main(int argc,char **argv)
     }  
     DLSCH_RB_ALLOC2[2]=DLSCH_RB_ALLOC2[0];
     DLSCH_RB_ALLOC2[3]=DLSCH_RB_ALLOC2[1];
+    
 			  NB_RB2[0]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[0],opts.N_RB_DL);
 			  NB_RB2[1]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[1],opts.N_RB_DL);
 			  NB_RB2[2]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[2],opts.N_RB_DL);
@@ -159,6 +166,7 @@ int main(int argc,char **argv)
   else 
     NB_RB = 4;
   	  
+  	
 	 NB_RB2[0]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[0],opts.N_RB_DL);
 	 NB_RB2[1]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[1],opts.N_RB_DL);
 	 NB_RB2[2]=conv_nprb(0,(u32)DLSCH_RB_ALLOC2[2],opts.N_RB_DL);
@@ -922,6 +930,41 @@ u32 _allocRBs(options_t *opts,int ind)
 			else
 			allocRB=0x1e00;
 		break;
+		case 91: // 17/8
+			if (ind==0)	{
+			allocRB=0x1fe1;
+			opts->mcs=3;}
+			else
+			allocRB=0x1e;
+		break;
+		case 92: // 17/8
+			if (ind==0)	{
+			allocRB=0xff1;
+			opts->mcs=3;}
+			else
+			allocRB=0x100e;
+		break;
+		case 93: // 17/8
+			if (ind==0)	{
+			allocRB=0x7f9;
+			opts->mcs=3;}
+			else
+			allocRB=0x1806;
+		break;
+		case 94: // 17/8
+			if (ind==0)	{
+			allocRB=0x199f;
+			opts->mcs=3;}
+			else
+			allocRB=0x660;
+		break;
+		case 95: // 17/8
+			if (ind==0)	{
+			allocRB=0x1e1f;
+			opts->mcs=3;}
+			else
+			allocRB=0x1e0;
+		break;
 		case 10: // 19/6
 			if (ind==0)	{
 			allocRB=0x3ff;
@@ -993,8 +1036,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
   int re_allocated;
 
   //Init Pointers to 8 HARQ processes for the DLSCH
-  printf("PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS/8: %d\n",(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS));      
-  input_buffer_length = PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS/8; //bits
+  printf("PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS: %d\n",(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS));      
+  input_buffer_length = PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS/8; 
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
   memset(input_buffer,0,input_buffer_length+4);
  
@@ -1166,6 +1209,17 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		  }
 		  
 		}
+		//TVT: since we changed the dci_rballoc, we have to call this function again.
+		generate_eNB_dlsch_params_from_dci(0,						
+				     &DLSCH_alloc_pdu_1,	
+				     opts.n_rnti,
+				     format1,
+				     PHY_vars_eNB->dlsch_eNB[0],
+				     &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
+				     SI_RNTI,
+				     0,
+				     P_RNTI,
+				     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 	      }
 	      else { // set Ndi to 0 round>0
 		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 0;
@@ -1188,7 +1242,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = round&3;
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc        = DLSCH_RB_ALLOC2[round];
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_5MHz_TDD_t));
-		      printf("round: %d\n",round);
+		      //printf("round: %d\n",round);
 		      break;
 		    case 50:
 		      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 0;
@@ -1237,21 +1291,11 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		}
 	      }
 	    }
-	  //TVT: since we changed the dci_rballoc, we have to call this function again.
-		generate_eNB_dlsch_params_from_dci(0,						
-				     &DLSCH_alloc_pdu_1,	
-				     opts.n_rnti,
-				     format1,
-				     PHY_vars_eNB->dlsch_eNB[0],
-				     &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
-				     SI_RNTI,
-				     0,
-				     P_RNTI,
-				     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+	  
 				     
 				  
 //*******************************************************
-
+printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS: %d \n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);
 	      num_pdcch_symbols_2 = _generate_dci_top(num_ue_spec_dci,num_common_dci,dci_alloc,opts,num_pdcch_symbols);
 
 	      _writeTxData("1","dci", 0, 2,opts,0,0);
@@ -1270,7 +1314,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
                 
 	      tbs = (double)dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb-1];
 		  printf("\nround: %d dlsch_enB=->nb_rb: %d mcs: %d\n",round,PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb,opts.mcs);
-
+printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->MCS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs);
 	      rate = (double)tbs/(double)coded_bits_per_codeword;
 
 	      uncoded_ber_bit = (short*) malloc(2*coded_bits_per_codeword);
