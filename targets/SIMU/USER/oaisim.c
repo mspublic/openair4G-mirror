@@ -215,12 +215,12 @@ help (void) {
   printf ("-Z Reserved\n");
 }
 
-#ifndef LOG_NO_THREAD
 pthread_t log_thread;
 
 void log_thread_init() {
   //create log_list
   //log_list_init(&log_list);
+#ifndef LOG_NO_THREAD
 
   log_shutdown = 0;
 
@@ -230,13 +230,17 @@ void log_thread_init() {
 
   if (pthread_create(&log_thread, NULL, log_thread_function, (void*) NULL) != 0) {
     log_thread_finalize();
-    return NULL;
+    return;
   }
+#endif
+
 }
 
 //Call it after the last LOG call
-void log_thread_finalize() {
+int log_thread_finalize() {
   int err = 0;
+
+#ifndef LOG_NO_THREAD
 
   if(pthread_mutex_lock(&log_lock) != 0) {
     return -1;
@@ -262,8 +266,9 @@ void log_thread_finalize() {
     pthread_cond_destroy(&log_notify);
   }
   return err;
-}
 #endif 
+}
+
 
 #ifdef OPENAIR2
 int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data){
