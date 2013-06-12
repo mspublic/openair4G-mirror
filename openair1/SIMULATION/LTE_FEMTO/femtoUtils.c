@@ -10,6 +10,7 @@
 
 #include "PHY/types.h"
 #include "SIMULATION/TOOLS/defs.h"
+#include "UTIL/LOG/vcd_signal_dumper.h" //TVT:Navid
 
 #endif
 
