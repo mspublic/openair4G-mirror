@@ -52,7 +52,7 @@
   <APPLICATION_CONFIG>
     <PREDEFINED_TRAFFIC>
       <SOURCE_ID>1:9</SOURCE_ID> <!-- valid formats are: -->					
-      <APPLICATION_TYPE>scbr</APPLICATION_TYPE> 
+      <APPLICATION_TYPE>bcbr</APPLICATION_TYPE> 
       <DESTINATION_ID>0</DESTINATION_ID> <!-- valid formats are: -->
   <!--    <DURATION_ms>2000</DURATION_ms> --> <!-- start at -->
     </PREDEFINED_TRAFFIC>
