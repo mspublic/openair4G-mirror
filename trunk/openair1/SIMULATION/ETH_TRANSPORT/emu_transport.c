@@ -372,6 +372,8 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
 
      if (last_slot%2 == 1 ) {
        PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->O       = ue_cntl_delay[ue_id][last_slot%2].length_uci;
+       PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->uci_format      = ue_cntl_delay[ue_id][last_slot%2].uci_format;
+       
        memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o,
 	      ue_cntl_delay[ue_id][last_slot%2].pusch_uci,
 	      MAX_CQI_BYTES); 

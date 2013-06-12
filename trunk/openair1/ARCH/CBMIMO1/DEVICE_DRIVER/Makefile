@@ -118,6 +118,9 @@ EXTRA_CFLAGS += $(subst $(OPENAIR2_TOP), $(OPENAIR2_DIR), $(L2_incl))
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 EXTRA_CFLAGS += $(subst $(OPENAIR2_TOP), $(OPENAIR2_DIR), $(UTIL_incl))
 
+ccflags-y  += $(EXTRA_CFLAGS)
+EXTRA_CFLAGS= ""
+
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 
@@ -185,8 +188,8 @@ oai_user_exmimo:
 test:
 	echo $(openair_rf-objs)
 	echo $(obj-m)
-	echo $(CFLAGS)
-	echo $(EXTRA_CFLAGS)
+#	echo $(CFLAGS)
+	echo $(ccflags-y) #echo$(EXTRA_CFLAGS)
 
 clean:
 	rm -f $(openair_rf-objs) $(obj-m)

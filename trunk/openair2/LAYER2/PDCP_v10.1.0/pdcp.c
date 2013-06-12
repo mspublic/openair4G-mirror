@@ -62,7 +62,7 @@ extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, u8_t,rb_id_t, mui_
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 //Added MW - RRC L2 interface
 extern void pdcp_rrc_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer);
-extern char *packet_gen(int src, int dst, int ctime, int *pkt_size);
+//extern char *packet_gen(int src, int dst, int ctime, int *pkt_size);
 extern int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size);
 
 //-----------------------------------------------------------------------------

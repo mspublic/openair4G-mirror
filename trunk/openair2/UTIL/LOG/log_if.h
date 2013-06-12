@@ -67,6 +67,7 @@ extern "C" {
 //public_log_if( log_t *g_log;)
 
 public_log_if( int logInit (void);)
+public_log_if( void logRecord_mt(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
 public_log_if( void logRecord(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
 public_log_if( int set_comp_log(int component, int level, int verbosity, int interval);)
 public_log_if( int  set_log(int component, int level, int interval);)
@@ -79,6 +80,7 @@ public_log_if( int  map_str_to_int(mapping *map, const char *str);)
 public_log_if( char *map_int_to_str(mapping *map, int val);)
 public_log_if( void logClean (void); )
 public_log_if( int is_newline( char *str, int size);)
+public_log_if( void *log_thread_function(void * list);)
 
 /* @}*/
 

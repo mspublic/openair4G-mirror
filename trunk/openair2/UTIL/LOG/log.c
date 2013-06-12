@@ -65,7 +65,6 @@ static char g_buff_tmp  [MAX_LOG_ITEM];
 static char g_buff_info [MAX_LOG_INFO];
 static char g_buff_total[MAX_LOG_TOTAL];
 
-
 static int gfd;
 
 static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_ORANGE, LOG_BLUE, "", ""};	/*!< \brief Optional start-format strings for highlighting */
@@ -333,8 +332,211 @@ int logInit (void) {
 
 }
 
-//inline 
+//log record: add to a list 
 void logRecord( const char *file, const char *func,
+		int line,  int comp, int level, 
+		char *format, ...) {
+
+  va_list args;
+  LOG_params log_params;
+  int len, err;
+  //LOG_elt *log = NULL;
+
+  va_start(args, format);
+  len = vsnprintf(log_params.l_buff_info, MAX_LOG_INFO-1, format, args);
+  va_end(args);
+
+  //2 first parameters must be passed as 'const' to the thread function
+  log_params.file = file;
+  log_params.func = func;
+  log_params.line = line;
+  log_params.comp = comp;
+  log_params.level = level;
+  log_params.format = format;
+  log_params.len = len;
+
+  if(pthread_mutex_lock(&log_lock) != 0) { return; }
+
+  log_list_tail++;
+  log_list[log_list_tail - 1] = log_params;
+  if (log_list_tail >= 1000) log_list_tail = 0;
+  if (log_list_nb_elements < 1000) log_list_nb_elements++;
+  if(pthread_cond_signal(&log_notify) != 0) { return; }
+
+  if(pthread_mutex_unlock(&log_lock) != 0) { return; }
+
+  //log = malloc(sizeof(LOG_elt));
+  //log->next = NULL;
+  //log->log_params = log_params;
+  /* Add log task to queue */
+  //log_list_add_tail_eurecom(log, &log_list);
+
+}
+
+void logRecord_thread_safe(const char *file, const char *func,
+                           int line,  int comp, int level,
+                           int len, const char *params_string) {
+
+  log_component_t *c;
+
+  sprintf(g_buff_info, "%s", params_string);
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
+
+  g_buff_total[0] = '\0';
+  c = &g_log->log_component[comp];
+
+  // do not apply filtering for LOG_F
+  // only log messages which are enabled and are below the global log level and component's level threshold
+  if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
+    //  || ((mac_xface->frame % c->interval) != 0)) {
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
+    return;
+  }
+
+  // adjust syslog level for TRACE messages
+  if (g_log->syslog) {
+    if (g_log->level > LOG_DEBUG) {
+      g_log->level = LOG_DEBUG;
+    }
+  }
+
+  //if (level == LOG_TRACE)
+  //exit(-1);
+  //printf (g_buff_info);
+  //return;
+  // make sure that for log trace the extra info is only printed once, reset when the level changes
+  if ((level == LOG_FILE) ||  (c->flag == LOG_NONE)  || (level ==LOG_TRACE )){
+    strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
+  }
+  else{
+    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
+                    log_level_highlight_start[level]);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+
+    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ){
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+                    g_log->log_component[comp].name);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+
+    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ){
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+                    g_log->level2string[level]);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+
+    if (  (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s] ",
+                    func);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+
+    if (  (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
+                    file,line);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+    strncat(g_buff_total, g_buff_info, MAX_LOG_TOTAL-1);
+
+
+    if (  (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) )  {
+      len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
+                    log_level_highlight_end[level]);
+      strncat(g_buff_total, g_buff_tmp, MAX_LOG_TOTAL-1);
+    }
+
+    /* // log trace and not reach a new line with 3 bytes
+if ((level == LOG_TRACE) && (is_newline(g_buff_info,3) == 0 )){
+    bypass_log_hdr = 1;
+}
+else
+  bypass_log_hdr = 0;
+*/
+
+
+
+    //  strncat(g_buff_total, "\n", MAX_LOG_TOTAL);
+  }
+
+#ifdef USER_MODE
+  // OAI printf compatibility
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
+    printf("%s",g_buff_total);
+
+  if (g_log->syslog) {
+    syslog(g_log->level, g_buff_total);
+  }
+  if (g_log->filelog) {
+    write(gfd, g_buff_total, strlen(g_buff_total));
+  }
+  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
+    write(g_log->log_component[comp].fd, g_buff_total, strlen(g_buff_total));
+  }
+#else
+  if (len > MAX_LOG_TOTAL) {
+    rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+  }
+  if (len > 0) {
+    rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
+  }
+#endif
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
+
+}
+
+void *log_thread_function(void * list) {
+
+  LOG_params log_params;
+
+  for(;;) {
+
+    //log_elt = NULL;
+
+    /* Lock must be taken to wait on conditional variable */
+    pthread_mutex_lock(&log_lock);
+
+    /* Wait on condition variable, check for spurious wakeups.
+       When returning from pthread_cond_wait(), we own the lock. */
+
+    // sleep
+    while((log_list_nb_elements == 0) && (log_shutdown == 0)) {
+      pthread_cond_wait(&log_notify, &log_lock);
+    }
+    // exit 
+    if((log_shutdown==1) && (log_list_nb_elements == 0)) {
+      break;
+    }
+
+    /* Grab our task */
+    //log_elt = log_list_remove_head(&log_list);
+    log_params = log_list[log_list_head];
+    log_list_head++;
+    log_list_nb_elements--;
+    if (log_list_head >= 1000) log_list_head = 0;
+
+
+    /* Unlock */
+    pthread_mutex_unlock(&log_lock);
+
+    /* Get to work */
+    logRecord_thread_safe(log_params.file, 
+			  log_params.func, 
+			  log_params.line, 
+			  log_params.comp, 
+			  log_params.level, 
+			  log_params.len, 
+			  log_params.l_buff_info);
+
+    //free(log_elt);
+  }
+}
+
+
+//log record, format, and print:  executed in the main thread (mt)
+void logRecord_mt( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
@@ -364,6 +566,8 @@ void logRecord( const char *file, const char *func,
   va_start(args, format);
   len=vsnprintf(g_buff_info, MAX_LOG_INFO-1, format, args);
   va_end(args);
+
+
   //if (level == LOG_TRACE)
   //exit(-1);
   //printf (g_buff_info);

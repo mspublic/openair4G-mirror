@@ -215,6 +215,56 @@ help (void) {
   printf ("-Z Reserved\n");
 }
 
+#ifndef LOG_NO_THREAD
+pthread_t log_thread;
+
+void log_thread_init() {
+  //create log_list
+  //log_list_init(&log_list);
+
+  log_shutdown = 0;
+
+  if((pthread_mutex_init(&log_lock, NULL) != 0) || (pthread_cond_init(&log_notify, NULL) != 0)) {
+    return;
+  }
+
+  if (pthread_create(&log_thread, NULL, log_thread_function, (void*) NULL) != 0) {
+    log_thread_finalize();
+    return NULL;
+  }
+}
+
+//Call it after the last LOG call
+void log_thread_finalize() {
+  int err = 0;
+
+  if(pthread_mutex_lock(&log_lock) != 0) {
+    return -1;
+  }
+
+  log_shutdown = 1;
+
+  /* Wake up LOG thread */
+  if((pthread_cond_broadcast(&log_notify) != 0) || (pthread_mutex_unlock(&log_lock) != 0)) {
+    err = -1;
+  }
+  if(pthread_join(log_thread, NULL) != 0) {
+    err = -1;
+  }
+  if(pthread_mutex_unlock(&log_lock) != 0) {
+    err = -1;
+  }
+
+  if(!err) {
+    //log_list_free(&log_list);
+    pthread_mutex_lock(&log_lock);
+    pthread_mutex_destroy(&log_lock);
+    pthread_cond_destroy(&log_notify);
+  }
+  return err;
+}
+#endif 
+
 #ifdef OPENAIR2
 int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_Flow_Unit omv_data){
   int i,j;
@@ -361,7 +411,9 @@ int
   //Default values if not changed by the user in get_simulation_options();
   pdcp_period = 1;
   omg_period = 10;
- 
+  // start thread for log gen
+  log_thread_init();
+
   init_oai_emulation(); // to initialize everything !!!
   
   // get command-line options
@@ -910,6 +962,7 @@ int
 
   //bring oai if down
   terminate();
+  log_thread_finalize();
   logClean();
   vcd_signal_dumper_close();
   

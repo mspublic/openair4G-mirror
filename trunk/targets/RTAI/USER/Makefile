@@ -228,6 +228,8 @@ clean:
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
 
 cleanall: clean cleanasn1
 	rm -rf condtest synctest lte-softmodem
