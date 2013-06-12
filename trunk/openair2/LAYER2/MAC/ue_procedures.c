@@ -975,18 +975,19 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   dtch_header_len=(buflen > 128 ) ? 3 : 2 ; //sizeof(SCH_SUBHEADER_LONG)-1 : sizeof(SCH_SUBHEADER_SHORT);
   bsr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
   phr_header_len = 1;//sizeof(SCH_SUBHEADER_FIXED);
-  bsr_ce_len = get_bsr_len (Mod_id, buflen);
-  if (bsr_ce_len > 0 ){
-    bsr_len = bsr_ce_len + bsr_header_len;
-    LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (ce%d,hdr%d) buff_len %d\n",Mod_id, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_ce_len, bsr_header_len, buflen);
-  } else
-    bsr_len = 0;
   phr_ce_len = (UE_mac_inst[Mod_id].PHR_reporting_active == 1) ? 1 /* sizeof(POWER_HEADROOM_CMD)*/: 0;
   if (phr_ce_len > 0){
     phr_len = phr_ce_len + phr_header_len;
     LOG_D(MAC,"[UE %d] header size info: PHR len %d (ce%d,hdr%d) buff_len %d\n",Mod_id, phr_len, phr_ce_len, phr_header_len, buflen);
   }else
     phr_len=0;
+ 
+  bsr_ce_len = get_bsr_len (Mod_id, buflen-phr_len);
+  if (bsr_ce_len > 0 ){
+    bsr_len = bsr_ce_len + bsr_header_len;
+    LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (ce%d,hdr%d) buff_len %d\n",Mod_id, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_ce_len, bsr_header_len, buflen);
+  } else
+    bsr_len = 0;
   
     // check for UL bandwidth requests and add SR control element
 
@@ -1103,7 +1104,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
       bsr_l = NULL;
   }
 
-  // build PHR and update the timers 
+   // build PHR and update the timers 
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)){
     phr_p->PH = get_phr_mapping(Mod_id,eNB_index);
     phr_p->R  = 0;
@@ -1112,7 +1113,9 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
      update_phr(Mod_id);
   }else
     phr_p=NULL;
- 
+
+  LOG_T(MAC,"[UE %d] Frame %d: bsr s %p bsr_l %p, phr_p %p\n",  Mod_id,frame,bsr_s, bsr_l, phr_p);
+
   // adjust the header length 
   dcch_header_len_tmp = dcch_header_len;
   dtch_header_len_tmp = dtch_header_len;
@@ -1160,33 +1163,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   // fill remainder of DLSCH with random data
   for (j=0;j<(buflen-sdu_length_total-payload_offset);j++)
     ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
-  /*  }
-  else { // send BSR
-    // bsr.LCGID = 0x0;
-    //bsr.Buffer_size = 0x3f;
 
-    payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
-					   num_sdus,      // num sdus
-					   short_padding,            // short pading
-					   sdu_lengths,  // sdu length
-					   sdu_lcids,    // sdu lcid
-					   phr_p,  // power headroom
-					   NULL,  // crnti
-					   NULL,  // truncated bsr
-					   bsr_s,
-					   bsr_l,
-					   post_padding);
-
-    LOG_D(MAC,"[UE %d] Generate header : bufflen %d sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d,  bsr len %d, phr len %d, sdu reminder %d bytes\n",
-	  Mod_id,buflen, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],payload_offset,
-	  short_padding,post_padding, bsr_len, phr_len, buflen-sdu_length_total-payload_offset);
-    // cycle through SDUs and place in ulsch_buffer
-    memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
-    // fill remainder of DLSCH with random data
-    for (j=0;j<(buflen-sdu_length_total-payload_offset);j++)
-      ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
-  }
-    */
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled)
     trace_pdu(0, ulsch_buffer, buflen, Mod_id, 3, UE_mac_inst[Mod_id].crnti, subframe, 0, 0);
@@ -1365,49 +1342,34 @@ double uniform_rngen(int min, int max) {
 
 int use_cba_access(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index){
   
-  if ((((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1] < 21))   ||
-        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2] < 21))   ||
-        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3] < 21))) 
+  if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ))   ||
+        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ))   ||
+        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 )) ) 
 	&& (UE_mac_inst[Mod_id].ul_active == 0) // check if the ul is acrtive
 	&& (UE_mac_inst[Mod_id].cba_last_access[0] <= 0) ) { // backoff
-     LOG_D(MAC,"[UE %d] Frame %d Subframe %d: the current CBA backoff is %d \n", Mod_id, frame, subframe,
+    LOG_D(MAC,"[UE %d] Frame %d Subframe %d: the current CBA backoff is %d \n", Mod_id, frame, subframe,
 	  UE_mac_inst[Mod_id].cba_last_access[0] ); 
    
-    UE_mac_inst[Mod_id].cba_last_access[0]= round(uniform_rngen(1,60));
+    UE_mac_inst[Mod_id].cba_last_access[0]= round(uniform_rngen(1,20));
     LOG_D(MAC,"[UE %d] Frame %d Subframe %d: start a new CBA backoff  %d \n", Mod_id, frame, subframe,
 	  UE_mac_inst[Mod_id].cba_last_access[0] );   
-    UE_mac_inst[Mod_id].ul_active == 1;
-    
+        
     return 1;
   } else {
-    /*
-      UE_mac_inst[Mod_id].cba_last_access[subframe]=0;
-      UE_mac_inst[Mod_id].cba_last_access[(subframe+1)%2]=0;
-	*/
-   // if (UE_mac_inst[Mod_id].cba_last_access[0]>0)
-   
-  if ((((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1] < 21))   ||
-        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2] < 21))   ||
-        ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 ) && (UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3] < 21))) 
+    
+    if (( ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID1]> 0 ))   ||
+	  ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID2]> 0 ))   ||
+	  ((UE_mac_inst[Mod_id].scheduling_info.BSR[LCGID3]> 0 )) ) 
 	&& (UE_mac_inst[Mod_id].ul_active == 0) // check if the ul is acrtive
-	&& (UE_mac_inst[Mod_id].cba_last_access[0]> 0) )
-  {UE_mac_inst[Mod_id].cba_last_access[0]-=1;
-         LOG_D(MAC,"[UE %d] Frame %d Subframe %d: CBA backoff is decreased by one to %d \n", Mod_id, frame, subframe,
-	  UE_mac_inst[Mod_id].cba_last_access[0] ); 
+	&& (UE_mac_inst[Mod_id].cba_last_access[0]> 0) ){
+    
+    UE_mac_inst[Mod_id].cba_last_access[0]-=1;
+    LOG_D(MAC,"[UE %d] Frame %d Subframe %d: CBA backoff is decreased by one to %d \n", Mod_id, frame, subframe,
+	  UE_mac_inst[Mod_id].cba_last_access[0] );  
+    }
     return 0;
   }
-  
-    return 0;
-  }
-  /*
-  if ((UE_mac_inst[Mod_id].scheduling_info.SR_pending == 0) &&
-      (10 - UE_mac_inst[Mod_id].cba_last_access >  0)) {
-    return 0;
-  } else  {
-    UE_mac_inst[Mod_id].cba_last_access=frame*10+subframe;
-    return 1;
-  }
-  */
+      
 }
 #endif
 

@@ -442,7 +442,7 @@ if (i<NB_eNB_INST){
 	if (i<NB_eNB_INST){
 		LOG_F(OTG,"[%s] DL [eNB:%d -> UE:%d][%s] \n",traffic_type ,i, j, traffic);}
 	else
-		LOG_F(OTG,"[%s] UL [Ue:%d -> eNB:%d][%s] \n",traffic_type, i, j,traffic);
+		LOG_F(OTG,"[%s] UL [UE:%d -> eNB:%d][%s] \n",traffic_type, i, j,traffic);
 	LOG_F(OTG,"[%s] Total packets(TX)= %d \n",traffic_type, otg_info->tx_num_pkt[i][j][k]);
 	LOG_F(OTG,"[%s] Total packets(RX)= %d \n",traffic_type, otg_info->rx_num_pkt[i][j][k]);
 	LOG_F(OTG,"[%s] Total bytes(TX)= %d \n",traffic_type, otg_info->tx_num_bytes[i][j][k]);
@@ -520,7 +520,7 @@ if ((g_otg->background_stats==1)&&(otg_info->tx_num_bytes_background[i][j]>0)){
 	if (i<NB_eNB_INST){
 		LOG_F(OTG,"[%s] DL [eNB:%d -> UE:%d] \n",traffic_type ,i, j);}
 	else
-		LOG_F(OTG,"[%s] UL [Ue:%d -> eNB:%d] \n",traffic_type, i, j);
+		LOG_F(OTG,"[%s] UL [UE:%d -> eNB:%d] \n",traffic_type, i, j);
 
   	LOG_F(OTG,"[BACKGROUND] Total packets(TX)= %d \n", otg_info->tx_num_pkt_background[i][j]);
 	  LOG_F(OTG,"[BACKGROUND] Total bytes(TX)= %d \n", otg_info->tx_num_bytes_background[i][j]);

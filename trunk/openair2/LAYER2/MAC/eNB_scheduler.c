@@ -1928,7 +1928,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	}
 	else if ((ndi==1) && (mcs < 29)) {
 	  rb_table_index = 1;
-      TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
+	  TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  buffer_occupancy = ((eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID0]  == 0) &&
 			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID1]  == 0) &&
 			      (eNB_mac_inst[Mod_id].UE_template[UE_id].bsr_info[LCGID2]  == 0) &&
