@@ -201,6 +201,10 @@ endif
 
 OAISIM_PAD_OBJS = discrete_event_generator.o
 OAISIM_PAD_OBJS += threadpool.o
+#deactivate the log offloading 
+ifndef LOG_THREAD
+CFLAGS +=-DLOG_NO_THREAD
+endif
 
 ifdef PROC
 INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
