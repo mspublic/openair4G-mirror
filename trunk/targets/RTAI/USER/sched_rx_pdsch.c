@@ -59,6 +59,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #endif // CBMIMO1
 
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 RTIME time0,time1;
 
@@ -140,20 +141,22 @@ static void * rx_pdsch_thread(void *param) {
 
 
   while (!oai_exit){
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_THREAD, 0);
+    if (pthread_mutex_lock(&rx_pdsch_mutex) != 0) {
+      LOG_E(PHY,"[SCHED][RX_PDSCH] error locking mutex.\n");
+    }
+    else {
+      while (rx_pdsch_instance_cnt < 0) {
+	pthread_cond_wait(&rx_pdsch_cond,&rx_pdsch_mutex);
+      }
+      
+      if (pthread_mutex_unlock(&rx_pdsch_mutex) != 0) {	
+	LOG_E(PHY,"[SCHED][RX_PDSCH] error unlocking mutex.\n");
+      }
+    }
     
-      if (pthread_mutex_lock(&rx_pdsch_mutex) != 0) {
-          LOG_E(PHY,"[SCHED][RX_PDSCH] error locking mutex.\n");
-      }
-      else {
-          while (rx_pdsch_instance_cnt < 0) {
-              pthread_cond_wait(&rx_pdsch_cond,&rx_pdsch_mutex);
-          }
-          
-          if (pthread_mutex_unlock(&rx_pdsch_mutex) != 0) {	
-              LOG_E(PHY,"[SCHED][RX_PDSCH] error unlocking mutex.\n");
-          }
-      }
-
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_THREAD, 1);
+ 
       last_slot = rx_pdsch_slot;
       subframe = last_slot>>1;
       // Important! assumption that PDCCH procedure of next SF is not called yet

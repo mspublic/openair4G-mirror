@@ -74,12 +74,14 @@ struct vcd_module_s {
     vcd_signal_type signal_type;
     int             signal_size;
 } vcd_module_s;
-
+ 
 const char* eurecomVariablesNames[] = {
     "frame_number",
     "slot_number",
+    "daq_mbox",
+    "diff2"
 };
-
+ 
 const char* eurecomFunctionsNames[] = {
     "macxface_macphy_init",
     "macxface_macphy_exit",
@@ -106,13 +108,33 @@ const char* eurecomFunctionsNames[] = {
     "macxface_ue_get_sr",
     "lte_ue_measurement_procedures",
     "lte_ue_pdcch_procedures",
-    "lte_ue_pbcch_procedures",
+    "lte_ue_pbch_procedures",
     "phy_procedures_ue_tx",
     "phy_procedures_ue_rx",
     "phy_procedures_eNB_lte",
     "phy_procedures_UE_lte",
     "emu_transport",
     "log_record",
+    "rt_sleep",
+    "pdsch_thread",
+    "dlsch_thread0",
+    "dlsch_thread1",
+    "dlsch_thread2",
+    "dlsch_thread3",
+    "dlsch_thread4",
+    "dlsch_thread5",
+    "dlsch_thread6",
+    "dlsch_thread7",
+    "dlsch_decoding0",
+    "dlsch_decoding1",
+    "dlsch_decoding2",
+    "dlsch_decoding3",
+    "dlsch_decoding4",
+    "dlsch_decoding5",
+    "dlsch_decoding6",
+    "dlsch_decoding7",
+    "rx_pdcch",
+    "dci_decoding"
 };
 
 struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {
@@ -129,6 +151,7 @@ struct timespec     g_time_start;
 #elif defined(ENABLE_RTAI_CLOCK)
 RTIME start;
 #endif
+
 
 #if defined(ENABLE_VCD_FIFO)
 
@@ -201,10 +224,11 @@ void *vcd_dumper_thread_rt(void *args)
 }
 #endif
 
-void vcd_signal_dumper_init(void)
+void vcd_signal_dumper_init(char *filename)
 {
+
     if (ouput_vcd) {
-        char filename[] = "/data/openair_vcd_dump.vcd";
+      //        char filename[] = "/tmp/openair_vcd_dump.vcd";
 
         if ((vcd_fd = fopen(filename, "w+")) == NULL)
         {

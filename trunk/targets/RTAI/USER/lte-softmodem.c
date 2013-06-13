@@ -474,7 +474,7 @@ static void *eNB_thread(void *arg)
       else
           diff = mbox_target - mbox_current;
       
-      if (diff < (-5)) {
+      if (diff < (-6)) {
           LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
           slot++;
           if (slot==20){
@@ -680,8 +680,10 @@ static void *UE_thread(void *arg)
       else
         diff2 = mbox_target - mbox_current;
 
-      if (diff2 <(-5)) {
+      if (diff2 <(-8)) {
 	LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
+	if (frame>100)	  
+	  oai_exit=1;
 	slot++;
 	if (slot==20) {
           slot=0;
@@ -704,7 +706,12 @@ static void *UE_thread(void *arg)
         {
 	  time_in = rt_get_time_ns();
 	  //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d (%d), diff %d, time %llu\n",frame,delay_cnt,hw_slot,((volatile unsigned int *)DAQ_MBOX)[0],slot,mbox_target,diff2,time_in);
-          ret = rt_sleep_ns(diff2*DAQ_PERIOD); 
+	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,1);
+	  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DIFF, diff2);
+	  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0]));
+          ret = rt_sleep_ns(diff2*DAQ_PERIOD);
+	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,0);
+
 	  if (ret)
 	    LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
 
@@ -927,7 +934,6 @@ int main(int argc, char **argv) {
         {
 	case 'V':
           ouput_vcd = 1;
-          vcd_signal_dumper_init();
 	  break;
         case 'd':
           do_forms=1;
@@ -1041,6 +1047,13 @@ int main(int argc, char **argv) {
   // initialize the log (see log.h for details)
   logInit();
 
+  if (ouput_vcd) {
+    if (UE_flag==1)
+      vcd_signal_dumper_init("/tmp/openair_dump_UE.vcd");
+    else
+      vcd_signal_dumper_init("/tmp/openair_dump_eNB.vcd");
+  }
+
 #ifdef NAS_NETLINK
   netlink_init();
 #endif
@@ -1093,9 +1106,9 @@ int main(int argc, char **argv) {
 
   if (UE_flag==1) {
 #ifdef OPENAIR2
-    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].level = LOG_EMERG;
 #else
-    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].level = LOG_EMERG;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
     g_log->log_component[MAC].level = LOG_DEBUG;
@@ -1605,6 +1618,9 @@ int main(int argc, char **argv) {
   error_code = rtf_destroy(CHANSOUNDER_FIFO_MINOR);
   printf("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
+
+  if (ouput_vcd)
+    vcd_signal_dumper_close();
 
   return 0;
 }

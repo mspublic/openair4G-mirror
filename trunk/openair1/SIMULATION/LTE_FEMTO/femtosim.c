@@ -625,17 +625,17 @@ void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_r
   dci_alloc[num_dci].format     = format1;//TVT: E_2A_M10PRB; for format 1 instead of 1E
   }
         
-generate_eNB_dlsch_params_from_dci(0,						
-				     &DLSCH_alloc_pdu_1,	
-				     opts.n_rnti,
-				     format1,//TVT:E_2A_M10PRB,		
-				     PHY_vars_eNB->dlsch_eNB[0],
-				     &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
-				     SI_RNTI,
-				     0,
-				     P_RNTI,
-				     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
-				     
+	generate_eNB_dlsch_params_from_dci(0,						
+					   &DLSCH_alloc_pdu_1,	
+					   opts.n_rnti,
+					   format1,//TVT:E_2A_M10PRB,		
+					   PHY_vars_eNB->dlsch_eNB[0],
+					   &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
+					   SI_RNTI,
+					   0,
+					   P_RNTI,
+					   PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+	printf("1 : PHY_vars_eNB->dlsch_eNB[0]->harq_processes[0]->TBS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);
   for(i=0;i<opts.nInterf;i++)
     {
       generate_eNB_dlsch_params_from_dci(0,						
@@ -1292,7 +1292,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	      }
 	    }
 	  
-				     
+		printf("2 : PHY_vars_eNB->dlsch_eNB[0]->harq_processes[0]->TBS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);	     
 				  
 //*******************************************************
 printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS: %d \n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);
