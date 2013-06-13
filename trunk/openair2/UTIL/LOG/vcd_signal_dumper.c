@@ -51,7 +51,9 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "liblfds611.h"
+#if defined(ENABLE_VCD_FIFO)
+# include "liblfds611.h"
+#endif
 
 #include "vcd_signal_dumper.h"
 
