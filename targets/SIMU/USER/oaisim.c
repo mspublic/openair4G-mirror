@@ -425,7 +425,7 @@ int
   get_simulation_options(argc, argv); //Command-line options
 
   // Initialize VCD LOG module
-  vcd_signal_dumper_init();
+  vcd_signal_dumper_init("openair_dump.vcd");
 
   /*  pthread_t sigth;
   sigset_t sigblock;

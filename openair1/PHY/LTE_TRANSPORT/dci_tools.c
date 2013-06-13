@@ -1185,7 +1185,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	(frame_parms->tdd_config>0))
       switch(frame_parms->N_RB_DL) {
       case 6:
-	msg("DCI format0 (TDD, 1.5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (TDD, 1.5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->hopping,
@@ -1198,7 +1198,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI0_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->cqi_req);
 	break;
       case 25:
-	msg("DCI format0 (TDD1-6, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (TDD1-6, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->hopping,
@@ -1211,7 +1211,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->cqi_req);
 	break;
       case 50:
-	msg("DCI format0 (TDD1-6, 10MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (TDD1-6, 10MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->hopping,
@@ -1224,7 +1224,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI0_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->cqi_req);
 	break;
       case 100:
-	msg("DCI format0 (TDD1-6, 20MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (TDD1-6, 20MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->hopping,
@@ -1242,7 +1242,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
     else if (frame_parms->frame_type == FDD)
       switch(frame_parms->N_RB_DL) {
       case 6:
-	msg("DCI format0 (FDD, 1.5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (FDD, 1.5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_1_5MHz_FDD_t *)&dci->dci_pdu[0])->hopping,
@@ -1254,7 +1254,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI0_1_5MHz_FDD_t *)&dci->dci_pdu[0])->cqi_req);
 	break;
       case 25:
-	msg("DCI format0 (FDD, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (FDD, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_5MHz_FDD_t *)&dci->dci_pdu[0])->hopping,
@@ -1266,7 +1266,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI0_5MHz_FDD_t *)&dci->dci_pdu[0])->cqi_req);
 	break;
       case 50:
-	msg("DCI format0 (FDD, 10MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (FDD, 10MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_10MHz_FDD_t *)&dci->dci_pdu[0])->hopping,
@@ -1278,7 +1278,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI0_10MHz_FDD_t *)&dci->dci_pdu[0])->cqi_req);
 	break;
       case 100:
-	msg("DCI format0 (FDD, 20MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
+	LOG_D(PHY,"DCI format0 (FDD, 20MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu[0])[0],
 	    ((DCI0_20MHz_FDD_t *)&dci->dci_pdu[0])->hopping,
@@ -1293,7 +1293,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	break;
       }
     else
-      msg("Don't know how to handle TDD format 0 yet\n");
+      LOG_E(PHY,"Don't know how to handle TDD format 0 yet\n");
     break;
 
   case format1:
@@ -1302,7 +1302,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 
       switch(frame_parms->N_RB_DL) {
       case 6:
-	msg("DCI format1 (TDD 1.5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
+	LOG_D(PHY,"DCI format1 (TDD 1.5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_1_5MHz_TDD_t *)&dci->dci_pdu[0])->rah,
@@ -1315,7 +1315,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI1_1_5MHz_TDD_t *)&dci->dci_pdu[0])->dai);
 	break;
       case 25:
-	msg("DCI format1 (TDD 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
+	LOG_D(PHY,"DCI format1 (TDD 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->rah,
@@ -1328,7 +1328,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->dai);
 	break;
       case 50:
-	msg("DCI format1 (TDD 10 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
+	LOG_D(PHY,"DCI format1 (TDD 10 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_10MHz_TDD_t *)&dci->dci_pdu[0])->rah,
@@ -1341,7 +1341,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI1_10MHz_TDD_t *)&dci->dci_pdu[0])->dai);
 	break;
       case 100:
-	msg("DCI format1 (TDD 20 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
+	LOG_D(PHY,"DCI format1 (TDD 20 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_20MHz_TDD_t *)&dci->dci_pdu[0])->rah,
@@ -1359,7 +1359,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
     else if (frame_parms->frame_type == FDD) {
       switch(frame_parms->N_RB_DL) {
       case 6:
-	msg("DCI format1 (FDD, 1.5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
+	LOG_D(PHY,"DCI format1 (FDD, 1.5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rah,
@@ -1371,7 +1371,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI1_1_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
 	break;
       case 25:
-	msg("DCI format1 (FDD, 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
+	LOG_D(PHY,"DCI format1 (FDD, 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_5MHz_FDD_t *)&dci->dci_pdu[0])->rah,
@@ -1383,7 +1383,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI1_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
 	break;
       case 50:
-	msg("DCI format1 (FDD, 10 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
+	LOG_D(PHY,"DCI format1 (FDD, 10 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_10MHz_FDD_t *)&dci->dci_pdu[0])->rah,
@@ -1395,7 +1395,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	    ((DCI1_10MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
 	break;
       case 100:
-	msg("DCI format1 (FDD, 20 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
+	LOG_D(PHY,"DCI format1 (FDD, 20 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
 	    dci->rnti,
 	    ((uint32_t*)&dci->dci_pdu)[0],
 	    ((DCI1_20MHz_FDD_t *)&dci->dci_pdu[0])->rah,
@@ -1412,7 +1412,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
     }
 
     else 
-      msg("Don't know how to handle TDD format 0 yet\n");
+      LOG_E(PHY,"Don't know how to handle TDD format 0 yet\n");
     break;
   case format1A:  // This is DLSCH allocation for control traffic
     if ((frame_parms->frame_type == TDD) &&
@@ -1592,7 +1592,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     switch (dci_format) {
 
     case format0:   // This is an UL SACH allocation so nothing here, inform MAC
-        msg("dci_tools.c: format0 not possible\n");
+      LOG_E(PHY,"format0 not possible\n");
         return(-1);
         break;
     case format1A:
@@ -1629,7 +1629,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
             else {
                 
                 if (harq_pid>1) {
-                    msg("dci_tools.c: ERROR: Format 1A: harq_pid > 1\n");
+		  LOG_E(PHY,"Format 1A: harq_pid > 1\n");
                     return(-1);
                 }
                 
@@ -1678,7 +1678,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
             else {
                 
                 if (harq_pid>1) {
-                    msg("dci_tools.c: ERROR: Format 1A: harq_pid > 1\n");
+		  LOG_E(PHY,"Format 1A: harq_pid > 1\n");
                     return(-1);
                 }
                 
@@ -1726,7 +1726,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
             else {
                 
                 if (harq_pid>1) {
-                    msg("dci_tools.c: ERROR: Format 1A: harq_pid > 1\n");
+		  LOG_E(PHY,"Format 1A: harq_pid > 1\n");
                     return(-1);
                 }
                 
@@ -1776,7 +1776,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
             else {
                 
                 if (harq_pid>1) {
-                    msg("dci_tools.c: ERROR: Format 1A: harq_pid > 1\n");
+		  LOG_E(PHY,"Format 1A: harq_pid > 1\n");
                     return(-1);
                 }
                 
@@ -1802,17 +1802,17 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
         }
         
         if (rballoc>RIV_max) {
-            msg("dci_tools.c: ERROR: Format 1A: rb_alloc > RIV_max\n");
+	  LOG_E(PHY,"Format 1A: rb_alloc > RIV_max\n");
             return(-1);
         }
             
         if (NPRB==0) {
-            msg("dci_tools.c: ERROR: Format 1A: NPRB=0\n");
+	  LOG_E(PHY,"Format 1A: NPRB=0\n");
             return(-1);
         }
         
         if (mcs > 7) {
-            msg("dci_tools.c: ERROR: Format 1A: unlikely mcs for format 1A (%d)\n",mcs);
+	  LOG_E(PHY,"Format 1A: unlikely mcs for format 1A (%d)\n",mcs);
             return(-1);
         } 
 
@@ -1907,7 +1907,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
       break;
     }
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: Format 1: harq_pid >= 8\n");
+      LOG_E(PHY,"Format 1: harq_pid >= 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
@@ -1924,7 +1924,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     //    printf("test PDSCH NPRB %d, rah %d, rballoc %x, rballoc2 %x\n",NPRB,rah,rballoc,dlsch[0]->harq_processes[harq_pid]->rb_alloc[0]);
 
     if (NPRB==0) {
-      msg("dci_tools.c: ERROR: Format 1: NPRB=0 (rballoc %x,mcs %d, frame_type %d N_RB_DL %d)\n",rballoc,mcs,frame_parms->frame_type,frame_parms->N_RB_DL);
+      LOG_E(PHY,"Format 1: NPRB=0 (rballoc %x,mcs %d, frame_type %d N_RB_DL %d)\n",rballoc,mcs,frame_parms->frame_type,frame_parms->N_RB_DL);
       return(-1);
     }
 
@@ -1969,14 +1969,14 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     break;
 
   case format2_2A_L10PRB:
-    msg("dci_tools.c: format2_2A_L10PRB not yet implemented\n");
+    LOG_E(PHY,"format2_2A_L10PRB not yet implemented\n");
     return(-1);
     break;
   case format2_2A_M10PRB:
 
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: Format 2_2A_M10PRB: harq_pid >= 8\n");
+      LOG_E(PHY,"Format 2_2A_M10PRB: harq_pid >= 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
@@ -2060,7 +2060,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
-      msg("dci_tools.c: ERROR: Unsupported TPMI\n");
+      LOG_E(PHY,"Unsupported TPMI\n");
       return(-1);
       break;
     }
@@ -2126,7 +2126,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 
     harq_pid  = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: Format 1E_2A_M10PRB: harq_pid >= 8\n");
+      LOG_E(PHY,"Format 1E_2A_M10PRB: harq_pid >= 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
@@ -2215,7 +2215,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
-      msg("dci_tools.c: ERROR: Unsupported TPMI\n");
+      LOG_E(PHY,"Unsupported TPMI\n");
       return(-1);
       break;
     }
@@ -2280,7 +2280,7 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 
     break;
   default:
-    msg("dci_tools.c: format %d not yet implemented\n",dci_format);
+    LOG_E(PHY,"format %d not yet implemented\n",dci_format);
     return(-1);
     break;
   }
@@ -2341,7 +2341,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
 	  return(subframe-5);
 	  break;
 	default:
-	  msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	  LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
 	  //	  mac_xface->macphy_exit("");
 	  return(255);
 	  break;
@@ -2349,7 +2349,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
       break;
     case 2:
       if ((subframe!=2) && (subframe!=7)) {
-	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
 	mac_xface->macphy_exit("");
 	return(255);
       }
@@ -2357,7 +2357,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
       break;
     case 3:
       if ((subframe<2) || (subframe>4)) {
-	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
 	//	mac_xface->macphy_exit("");
 	return(255);
       }
@@ -2365,7 +2365,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
       break;
     case 4:
       if ((subframe<2) || (subframe>3)) {
-	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
 	//	mac_xface->macphy_exit("");
 	return(255);
       }
@@ -2373,14 +2373,14 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
       break;
     case 5:
       if (subframe!=2) {
-	msg("dci_tools.c: subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
 	//	mac_xface->macphy_exit("");
 	return(255);
       }
       return(subframe-2);
       break;
     default:
-      msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode %d\n",frame_parms->tdd_config);
+      LOG_E(PHY,"subframe2_harq_pid, Unsupported TDD mode %d\n",frame_parms->tdd_config);
       //      mac_xface->macphy_exit("");
       return(255);
 
@@ -2792,11 +2792,11 @@ void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB
     LOG_I(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, 2);
     break;
   case ue_selected:
-    msg("dci_tools.c: fill_CQI ue_selected CQI not supported yet!!!\n");
+    LOG_E(PHY,"fill_CQI ue_selected CQI not supported yet!!!\n");
     mac_xface->macphy_exit("");
     break;
   default:
-    msg("dci_tools.c: unsupported CQI mode (%d)!!!\n",uci_format);
+    LOG_E(PHY,"unsupported CQI mode (%d)!!!\n",uci_format);
     mac_xface->macphy_exit("");
     break;
 
@@ -2865,7 +2865,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	  pdcch_alloc2ul_subframe(frame_parms,subframe),harq_pid);
     */
     if (harq_pid == 255) {
-      msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
+      LOG_E(PHY, "frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
 	  phy_vars_ue->frame, subframe, rnti, dci_format);
       return(-1);
     }
@@ -2991,7 +2991,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     if (rballoc > RIV_max) {
-      msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, rb_alloc > RIV_max\n", 	  
+      LOG_E(PHY,"frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, rb_alloc > RIV_max\n", 	  
 	  phy_vars_ue->frame, subframe, rnti, dci_format);
       return(-1);
     }
@@ -3195,7 +3195,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	}
 	break;
       default:
-	msg("Incorrect Transmission Mode \n");
+	LOG_E(PHY,"Incorrect Transmission Mode \n");
 	break;
       }
     }
@@ -3282,7 +3282,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     return(0);
   }
   else {
-    msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",
+    LOG_E(PHY,"frame %d, subframe %d: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",
 	phy_vars_ue->frame, subframe,dci_format);
     return(-1);
   }
@@ -3447,7 +3447,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       
     rb_alloc = rballoc;
     if (rb_alloc>RIV_max) {
-      msg("dci_tools.c: ERROR: Format 0: rb_alloc > RIV_max\n");
+      LOG_E(PHY,"Format 0: rb_alloc > RIV_max\n");
       return(-1);
     }
 
@@ -3545,7 +3545,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
 	break;
       default:
-	msg("Incorrect Transmission Mode \n");
+	LOG_E(PHY,"Incorrect Transmission Mode \n");
 	break;
       }
     }
@@ -3644,7 +3644,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     return(0);
   }
   else {
-    msg("dci_tools.c: FATAL ERROR, generate_eNB_ulsch_params_from_dci, Illegal dci_format %d\n",dci_format);
+    LOG_E(PHY,"generate_eNB_ulsch_params_from_dci, Illegal dci_format %d\n",dci_format);
     return(-1);
   }
 

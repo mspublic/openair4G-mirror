@@ -126,6 +126,7 @@ ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
+OBJ += $(LOG_DIR)/vcd_signal_dumper.o
 
 all:  femtosim
 

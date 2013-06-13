@@ -59,7 +59,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #endif // CBMIMO1
 
-
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
 
@@ -139,7 +139,8 @@ static void * dlsch_thread(void *param) {
   //dlsch_cpuid[dlsch_thread_index] = cpuid;
 
   while (!oai_exit){
-    
+
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_THREAD0+dlsch_thread_index,0);
     if (pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]) != 0) {
         LOG_E(PHY,"[SCHED][DLSCH] error locking mutex.\n");
     }
@@ -153,7 +154,7 @@ static void * dlsch_thread(void *param) {
             LOG_E(PHY,"[SCHED][DLSCH] error unlocking mutex.\n");
         }
     }
-    
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_THREAD0+dlsch_thread_index,1);    
     if (oai_exit) break;
     
     LOG_I(PHY,"[SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d\n",phy_vars_ue->frame,dlsch_thread_index);
@@ -181,6 +182,7 @@ static void * dlsch_thread(void *param) {
 
         LOG_I(PHY,"[UE %d] PDSCH Calling dlsch_decoding for subframe %d, harq_pid %d, G%d\n", phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid,phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->G);
 
+	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0+dlsch_thread_index,1);
         ret = dlsch_decoding(phy_vars_ue,
                              phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
                              &phy_vars_ue->lte_frame_parms,
@@ -190,6 +192,7 @@ static void * dlsch_thread(void *param) {
                              harq_pid,
                              1, // is_crnti
 			     0);  // llr8_flag
+	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0+dlsch_thread_index,0);
 
       	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
               phy_vars_ue->Mod_id,
@@ -269,6 +272,7 @@ static void * dlsch_thread(void *param) {
             msg("[openair][SCHED][DLSCH] error unlocking mutex.\n");
         }
     }
+
   }
 
 #ifdef HARD_RT

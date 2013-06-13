@@ -9,8 +9,8 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -O1
-CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS 
+CFLAGS += -O2
+CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -D__i686__ -DENABLE_VCD_FIFO
 
 SRC = synctest.c condtest.c lte-softmodem.c
 
@@ -94,7 +94,7 @@ CFLAGS += $(L2_incl) $(UTIL_incl)
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
-CFLAGS += -DNEW_FFT
+CFLAGS += -DNEW_FFT -DLOG_NO_THREAD
 
 ifeq ($(XFORMS),1)
 CFLAGS += -DXFORMS -I/usr/include/X11
@@ -147,6 +147,10 @@ endif
 
 all: lte-softmodem
 
+$(LFDS_DIR)/bin/liblfds611.a:
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
+
+
 $(RTAI_OBJ): %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $(RTAI_CFLAGS) -o $@ $<
@@ -161,8 +165,10 @@ condtest: condtest.c
 synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
 
-lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS)
+
+lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
+
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv lte-softmodem lte-softmodem_eNB

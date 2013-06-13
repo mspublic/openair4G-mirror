@@ -364,7 +364,7 @@ u32 ulsch_encoding(u8 *a,
     }
     
     if (ulsch->harq_processes[harq_pid]->C == 0) {
-      msg("[PHY][UE] FATAL : ulsch_coding.c : null segment\n");
+      LOG_E(PHY,"null segment\n");
       return(-1);
     }
     

@@ -1,7 +1,7 @@
 CC = gcc
 MPICC = gcc #mpicc
 
-CPUFLAGS = -mmmx -msse -msse2 -msse4.1
+CPUFLAGS = -mmmx -msse -msse2 -msse4.1 -march=native
 # FORCE ssse3 for compilation of openair on User Mode Linux
 CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ; else if grep --silent User\ Mode\ Linux /proc/cpuinfo ; then echo "-mssse3" ; else echo ""; fi; fi)
 CPUFLAGS += $(shell if grep --silent sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
