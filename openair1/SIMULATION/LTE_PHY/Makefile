@@ -28,7 +28,7 @@ CFLAGS += -DLLR8
 endif
 CFLAGS += -DNEW_FFT
 
-LFLAGS = -lm -lblas -lxml2 -lrt 
+LFLAGS = -lm -lblas -lxml2 -lrt $(LFDS_DIR)/bin/liblfds611.a
 
 ifdef GPIB
 LFLAGS += -lgpib
@@ -134,6 +134,9 @@ endif
 
 all: dlsim pbchsim pdcchsim ulsim pucchsim prachsim mbmssim
 
+$(LFDS_DIR)/bin/liblfds611.a:
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
+
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
 
@@ -142,7 +145,7 @@ $(OBJ) : %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-dlsim : $(OBJ) dlsim.c
+dlsim : $(OBJ) dlsim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling dlsim.c ..."
 	@$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS)
 
@@ -154,31 +157,31 @@ framegen: $(OBJ) framegen.c
 	@echo "Compiling framegen.c"
 	@$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-pbchsim : $(OBJ) pbchsim.c
+pbchsim : $(OBJ) pbchsim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling pbchsim.c"
 	@$(CC) pbchsim.c  -o pbchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-mbmssim : $(OBJ) mbmssim.c
+mbmssim : $(OBJ) mbmssim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling mbmssim.c"
 	@$(CC) mbmssim.c  -o mbmssim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-pdcchsim : $(OBJ) pdcchsim.c
+pdcchsim : $(OBJ) pdcchsim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling pdcchsim.c"
 	@$(CC) pdcchsim.c  -o pdcchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-pucchsim : $(OBJ) pucchsim.c
+pucchsim : $(OBJ) pucchsim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling pucchsim.c"
 	@$(CC) pucchsim.c  -o pucchsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-prachsim : $(OBJ) prachsim.c
+prachsim : $(OBJ) prachsim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling prachsim.c"
 	@$(CC) prachsim.c  -o prachsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-ulsim : $(OBJ) ulsim.c #ulsim_form.c
+ulsim : $(OBJ) ulsim.c $(LFDS_DIR)/bin/liblfds611.a #ulsim_form.c
 	@echo "Compiling [ulsim.c]"
 	@$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
-syncsim : $(OBJ) syncsim.c
+syncsim : $(OBJ) syncsim.c $(LFDS_DIR)/bin/liblfds611.a
 	@echo "Compiling syncsim.c"
 	@$(CC) syncsim.c  -o syncsim $(CFLAGS) $(OBJ) $(LFLAGS) 
 
