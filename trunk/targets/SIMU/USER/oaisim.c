@@ -424,6 +424,9 @@ int
   // get command-line options
   get_simulation_options(argc, argv); //Command-line options
 
+  // Initialize VCD LOG module
+  vcd_signal_dumper_init();
+
   /*  pthread_t sigth;
   sigset_t sigblock;
   sigemptyset(&sigblock);
@@ -439,8 +442,6 @@ int
     }*/
   // configure oaisim with OCG
   oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
-  // Initialize VCD LOG module
-  vcd_signal_dumper_init();
 
 #ifdef OPENAIR2
   init_omv();
@@ -523,7 +524,7 @@ int
           PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
 
   init_time();
-  
+
   LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after init: frame_type %d,tdd_config %d\n", 

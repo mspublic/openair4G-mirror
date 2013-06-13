@@ -212,6 +212,9 @@ INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
 CFLAGS +=-DPROC
 endif
 
+CFLAGS += -DENABLE_VCD_FIFO
+# CFLAGS += -DENABLE_LOG_FIFO
+
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
 ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
@@ -275,19 +278,22 @@ $(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/
 	@echo Creating $@
 	$(AR) rcs $@ $^
 
+$(LFDS_DIR)/bin/liblfds611.a:
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
+
 oaisim_pad : $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) oaisim_pad.c
 	@echo "Compiling oaisim_pad.c ..."
 	@$(MPICC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim_pad $(CFLAGS) $(EXTRA_CFLAGS) $^ \
 	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 ifdef USE_MME
-oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(S1AP_DIR)/libs1ap.a oaisim.c
+oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(S1AP_DIR)/libs1ap.a oaisim.c $(LFDS_DIR)/bin/liblfds611.a
 else
-oaisim : $(ASN1_MSG_OBJS1) $(OBJ) oaisim.c
+oaisim : $(ASN1_MSG_OBJS1) $(OBJ) oaisim.c $(LFDS_DIR)/bin/liblfds611.a
 endif
 	@echo "Compiling oaisim.c ..."
 	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
-	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
+	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt $(LFDS_DIR)/bin/liblfds611.a
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -332,6 +338,7 @@ rrm_std_cellular:
 cleanall: clean cleanasn1 cleanmmeasn1
 
 clean:
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
 	rm -f oaisim
 	rm -f oaisim_pad
 	rm -f $(OBJ)

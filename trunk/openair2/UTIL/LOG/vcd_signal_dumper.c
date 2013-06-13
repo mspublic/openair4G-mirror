@@ -38,13 +38,20 @@
  * \warning
  */
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <error.h>
 #include <time.h>
 #include <unistd.h>
 #include <assert.h>
+
+#include "liblfds611.h"
 
 #include "vcd_signal_dumper.h"
 
@@ -113,6 +120,7 @@ struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {
 };
 
 FILE *vcd_fd = NULL;
+static inline unsigned long long int vcd_get_time(void);
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
 struct timespec     g_time_start;
@@ -120,41 +128,137 @@ struct timespec     g_time_start;
 RTIME start;
 #endif
 
+#if defined(ENABLE_VCD_FIFO)
+
+# define VCD_STACK_NB_ELEMENTS (2 * 1024 * 1024)
+
+typedef struct {
+    uint32_t log_id;
+    vcd_signal_dumper_modules module;
+    union {
+        struct {
+            vcd_signal_dump_functions function_name;
+            vcd_signal_dump_in_out    in_out;
+        } function;
+        struct {
+            vcd_signal_dump_variables variable_name;
+            unsigned long value;
+        } variable;
+    } data;
+
+    long long unsigned int time;
+} vcd_queue_user_data_t;
+
+struct lfds611_queue_state *vcd_queue = NULL;
+pthread_t vcd_dumper_thread;
+
+void *vcd_dumper_thread_rt(void *args)
+{
+    vcd_queue_user_data_t *data;
+    while(1) {
+        if (lfds611_queue_dequeue(vcd_queue, (void **) &data) == 0) {
+            /* No element -> sleep a while */
+            usleep(1);
+        } else {
+            switch (data->module) {
+                case VCD_SIGNAL_DUMPER_MODULE_VARIABLES:
+                    if (vcd_fd != NULL)
+                    {
+                        int variable_name;
+                        variable_name = (int)data->data.variable.variable_name;
+                        fprintf(vcd_fd, "#%llu\n", data->time);
+                        /* Set variable to value */
+                        fprintf(vcd_fd, "r%lu %s_r\n", data->data.variable.value,
+                                eurecomVariablesNames[variable_name]);
+                    }
+                    break;
+                case VCD_SIGNAL_DUMPER_MODULE_FUNCTIONS:
+                    if (vcd_fd != NULL)
+                    {
+                        int function_name;
+
+                        function_name = (int)data->data.function.function_name;
+                        fprintf(vcd_fd, "#%llu\n", data->time);
+
+                        /* Check if we are entering or leaving the function ( 0 = leaving, 1 = entering) */
+                        if (data->data.function.in_out == VCD_FUNCTION_IN)
+                            /* Set event to 1 */
+                            fprintf(vcd_fd, "1%s_w\n", eurecomFunctionsNames[function_name]);
+                        else
+                            fprintf(vcd_fd, "0%s_w\n", eurecomFunctionsNames[function_name]);
+                        fflush(vcd_fd);
+                    }
+                    break;
+                default:
+                    break;
+            }
+            free(data);
+        }
+    }
+    return NULL;
+}
+#endif
+
 void vcd_signal_dumper_init(void)
 {
-    char filename[] = "openair_vcd_dump.vcd";
     if (ouput_vcd) {
+        char filename[] = "/data/openair_vcd_dump.vcd";
+
         if ((vcd_fd = fopen(filename, "w+")) == NULL)
         {
             perror("vcd_signal_dumper_init: cannot open file");
             return;
         }
+
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
         clock_gettime(CLOCK_MONOTONIC, &g_time_start);
 #elif defined(ENABLE_RTAI_CLOCK)
-	start=rt_get_time_ns();
+        start=rt_get_time_ns();
 #endif
 
         vcd_signal_dumper_create_header();
+
+#if defined(ENABLE_VCD_FIFO)
+        fprintf(stderr, "[VCD] Creating new stack for inter-thread\n");
+
+        /* Creating wait-free stack between OAI and dumper thread */
+        if (lfds611_queue_new(&vcd_queue, VCD_STACK_NB_ELEMENTS) < 0) {
+            fprintf(stderr, "vcd_signal_dumper_init: Failed to create stack\n");
+            ouput_vcd = 0;
+            return;
+        }
+
+        if (pthread_create(&vcd_dumper_thread, NULL, vcd_dumper_thread_rt, NULL) < 0)
+        {
+            fprintf(stderr, "vcd_signal_dumper_init: Failed to create thread: %s\n",
+                    strerror(errno));
+            ouput_vcd = 0;
+            return;
+        }
+#endif
     }
 }
 
 void vcd_signal_dumper_close(void)
 {
     if (ouput_vcd) {
+#if defined(ENABLE_VCD_FIFO)
+        
+#else
         if (vcd_fd != NULL)
         {
             fclose(vcd_fd);
             vcd_fd = NULL;
         }
+#endif
     }
 }
 
 static inline void vcd_signal_dumper_print_time_since_start(void)
 {
-#if defined(ENABLE_USE_CPU_EXECUTION_TIME)
     if (vcd_fd != NULL)
     {
+#if defined(ENABLE_USE_CPU_EXECUTION_TIME)
         struct timespec time;
         long long unsigned int nanosecondsSinceStart;
         long long unsigned int secondsSinceStart;
@@ -166,13 +270,24 @@ static inline void vcd_signal_dumper_print_time_since_start(void)
         secondsSinceStart     = (long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec;
         /* Write time in nanoseconds */
         fprintf(vcd_fd, "#%llu\n", nanosecondsSinceStart + (secondsSinceStart * 1000000000UL));
-    }
 #elif defined(ENABLE_RTAI_CLOCK)
-    if (vcd_fd != NULL)
-    {
         /* Write time in nanoseconds */
         fprintf(vcd_fd, "#%llu\n",rt_get_time_ns()-start);
+#endif
     }
+}
+
+static inline unsigned long long int vcd_get_time(void)
+{
+#if defined(ENABLE_USE_CPU_EXECUTION_TIME)
+    struct timespec time;
+
+    clock_gettime(CLOCK_MONOTONIC, &time);
+
+    return (long long unsigned int)((time.tv_nsec - g_time_start.tv_nsec)) +
+    ((long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec) * 1000000000UL;
+#elif defined(ENABLE_RTAI_CLOCK)
+    return rt_get_time_ns() - start;
 #endif
 }
 
@@ -243,6 +358,20 @@ void vcd_signal_dumper_dump_variable_by_name(vcd_signal_dump_variables variable_
                                              unsigned long             value)
 {
     if (ouput_vcd) {
+#if defined(ENABLE_VCD_FIFO)
+        vcd_queue_user_data_t *new_data;
+
+        assert(variable_name < VCD_SIGNAL_DUMPER_VARIABLES_END);
+        assert(variable_name >= 0);
+
+        new_data = malloc(sizeof(vcd_queue_user_data_t));
+
+        new_data->module = VCD_SIGNAL_DUMPER_MODULE_VARIABLES;
+        new_data->time = vcd_get_time();
+        new_data->data.variable.variable_name = variable_name;
+        new_data->data.variable.value = value;
+        lfds611_queue_enqueue(vcd_queue, new_data);
+#else
         assert(variable_name < VCD_SIGNAL_DUMPER_VARIABLES_END);
         assert(variable_name >= 0);
 
@@ -254,6 +383,7 @@ void vcd_signal_dumper_dump_variable_by_name(vcd_signal_dump_variables variable_
             fprintf(vcd_fd, "r%lu %s_r\n", value, eurecomVariablesNames[variable_name]);
             fflush(vcd_fd);
         }
+#endif
     }
 }
 
@@ -261,6 +391,20 @@ void vcd_signal_dumper_dump_function_by_name(vcd_signal_dump_functions  function
                                              vcd_signal_dump_in_out     in_out)
 {
     if (ouput_vcd) {
+#if defined(ENABLE_VCD_FIFO)
+        vcd_queue_user_data_t *new_data;
+
+        assert(function_name < VCD_SIGNAL_DUMPER_FUNCTIONS_END);
+        assert(function_name >= 0);
+
+        new_data = malloc(sizeof(vcd_queue_user_data_t));
+
+        new_data->module = VCD_SIGNAL_DUMPER_MODULE_FUNCTIONS;
+        new_data->time = vcd_get_time();
+        new_data->data.function.function_name = function_name;
+        new_data->data.function.in_out = in_out;
+        lfds611_queue_enqueue(vcd_queue, new_data);
+#else
         assert(function_name < VCD_SIGNAL_DUMPER_FUNCTIONS_END);
         assert(function_name >= 0);
 
@@ -276,5 +420,7 @@ void vcd_signal_dumper_dump_function_by_name(vcd_signal_dump_functions  function
                 fprintf(vcd_fd, "0%s_w\n", eurecomFunctionsNames[function_name]);
             fflush(vcd_fd);
         }
+#endif
     }
 }
+
