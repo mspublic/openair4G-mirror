@@ -39,6 +39,22 @@ else
 OBJ += $(SCHED_OBJS)
 endif
 
+#ifndef rrc_cellular
+ifeq ($(rrc_cellular),0)
+rrc_cellular = 0
+rrc_cellular_eNB = 0
+rrc_cellular_UE = 0
+else
+  ifeq ($(eNB_flag),1)
+    rrc_cellular_eNB=1
+  endif
+  ifeq ($(UE_flag),1)
+    rrc_cellular_UE=1
+  endif
+endif
+
+export rrc_cellular
+
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
@@ -94,7 +110,7 @@ endif
 #CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
 CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
-CFLAGS += -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
+CFLAGS += -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
 
 #only for CBMIMO1
@@ -133,11 +149,11 @@ all: lte-softmodem
 
 $(RTAI_OBJ): %.o : %.c
 	@echo Compiling $< ...
-	@$(CC) -c $(CFLAGS) $(RTAI_CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $(RTAI_CFLAGS) -o $@ $<
 
 $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 	@echo Compiling $< ...
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
 
 condtest: condtest.c 
 	$(CC) $(CFLAGS) $(LDFLAGS) condtest.c -o condtest
@@ -146,7 +162,14 @@ synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
 
 lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
-	$(CC) $(CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS)
+
+ifeq ($(rrc_cellular_eNB),1)
+	mv lte-softmodem lte-softmodem_eNB
+endif
+ifeq ($(rrc_cellular_UE),1)
+	mv lte-softmodem lte-softmodem_UE
+endif
 
 synctest_eNB: synctest
 	cp synctest synctest_eNB
@@ -231,13 +254,25 @@ cleanasn1:
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
 
+cleancell:
+	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.d
+	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.d
+	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
+
 cleanall: clean cleanasn1
 	rm -rf condtest synctest lte-softmodem
 	rm -rf synctest_eNB synctest_UE
 
 show:
 	@echo $(CFLAGS)
+	@echo $(EXTRA_CFLAGS)
 	@echo $(OBJ) $(RTAI_OBJ)
+	@echo rrc_cellular variable is $(rrc_cellular)
+	@echo eNB_flag is $(eNB_flag)
+	@echo UE_flag is $(UE_flag)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)
