@@ -715,14 +715,14 @@ int
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
          // consider only sec id 0
-	for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+	/*	for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 	  if (abstraction_flag == 0) {
 	    do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
 			  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
 			  frame,next_slot,
 			  frame_parms);
 	  }
-	}
+	  }*/
 	for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
 	}
@@ -741,14 +741,14 @@ int
       }
       if ((direction == SF_S)) {//it must be a special subframe
         if (next_slot%2==0) {//DL part
-          for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+	  /*  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 	    if (abstraction_flag == 0) {
 	      do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
 			  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
 			  frame,next_slot,
 			  frame_parms);
 	    }
-	  }
+	    }*/
 	  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 	    do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
 	  }

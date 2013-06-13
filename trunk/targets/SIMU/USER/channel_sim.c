@@ -240,14 +240,14 @@ void do_DL_sig(double **r_re0,double **r_im0,
     /* 
        Call do_OFDM_mod from phy_procedures_eNB_TX function
     */
-    /*
+   
      for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
 		  PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
 		  ((next_slot==19) ? -1 : 0 ) + PHY_vars_eNB_g[eNB_id]->frame,next_slot,
 		  &PHY_vars_eNB_g[eNB_id]->lte_frame_parms);
     }
-    */
+   
     //for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
       // Compute RX signal for UE = UE_id
       /*
