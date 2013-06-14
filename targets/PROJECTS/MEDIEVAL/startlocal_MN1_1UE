@@ -219,15 +219,15 @@ nice --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_UE -E 1 -u1 -b0 -M1 -p2 
 #gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -E 1234  -b0 -M1 -p2 -g1 -l3 
 
 # ** Next lines start the RAL
-wait_process_started oaisim_UE
-sleep 4
-$OPENAIR3_DIR/RAL-LTE/LTE_RAL_UE/LTE_RAL_UE > /tmp/log_lteralue 2>&1 & 
-wait_process_started LTE_RAL_UE
+#wait_process_started oaisim_UE
+#sleep 4
+#$OPENAIR3_DIR/RAL-LTE/LTE_RAL_UE/LTE_RAL_UE > /tmp/log_lteralue 2>&1 & 
+#wait_process_started LTE_RAL_UE
 
 # ** Next lines start the gioctl
-#wait_process_started oaisim_UE
-#sleep 7 
-#$OPENAIR2_DIR/NAS/DRIVER/CELLULAR/CTL_TOOL/gioctl cx add 0 5  
+wait_process_started oaisim_UE
+sleep 7 
+$OPENAIR2_DIR/NAS/DRIVER/CELLULAR/CTL_TOOL/gioctl cx add 0 5  
 
 echo "End"
 
