@@ -681,11 +681,11 @@ void add_log_metric(int src, int dst, int ctime, double metric, unsigned int lab
    add_log_label(label, &start_log_latency_bg);
    break;
  case OTG_GP:
-	 add_log_label(label, &start_log_GP);
-	 break;
+   add_log_label(label, &start_log_GP);
+   break;
  case OTG_GP_BG:
-	 add_log_label(label, &start_log_GP_bg);
-	 break;
+   add_log_label(label, &start_log_GP_bg);
+   break;
  default:
    LOG_E(OTG, "File label unknown \n");
  }
@@ -694,10 +694,10 @@ void add_log_metric(int src, int dst, int ctime, double metric, unsigned int lab
   for (i=0; i<=(NB_eNB_INST + NB_UE_INST); i++){
     for (j=0; j<=(NB_eNB_INST + NB_UE_INST); j++){
     node_actif=0;
-        if ((g_otg->idt_dist[i][j][0][PE_STATE]>0) || (g_otg->application_type[i][j][0] >0))
-					node_actif=1;
-
-      if ((node_actif>0) && ((i==src) && (j==dst)))
+    if ((g_otg->idt_dist[i][j][0][PE_STATE]>0) || (g_otg->application_type[i][j][0] >0))
+      node_actif=1;
+    
+    if ((node_actif>0) && ((i==src) && (j==dst)))
           LOG_F(label,"  %f  ", metric);
       if  ((node_actif>0) && ((i!=src) || (j!=dst)))
           LOG_F(label,"  %d  ", 0);

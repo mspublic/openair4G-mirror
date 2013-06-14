@@ -1351,6 +1351,8 @@ void dl_phy_sync_success(unsigned char Mod_id,
 
 int dump_eNB_l2_stats(char *buffer, int length);
 
+double uniform_rngen(int min, int max);
+
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 

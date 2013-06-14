@@ -115,7 +115,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
   // PDCP transparent mode for MBMS traffic 
 
   if (mode == PDCP_TM) { 
-    LOG_D(PDCP, "Asking for a new mem_block of size %d\n",sdu_buffer_size);
+    LOG_D(PDCP, " [TM] Asking for a new mem_block of size %d\n",sdu_buffer_size);
     pdcp_pdu = get_free_mem_block(sdu_buffer_size);
     if (pdcp_pdu != NULL) {
       memcpy(&pdcp_pdu->data, sdu_buffer, sdu_buffer_size); 

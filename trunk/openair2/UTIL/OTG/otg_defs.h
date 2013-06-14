@@ -318,7 +318,9 @@ typedef struct {
   int application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];  /*!\brief It identify the application of the simulated traffic, could be cbr, m2m, gaming,etc*/
   int trans_proto[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
   int ip_v[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
-
+   
+  int duration[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION]; /*!\brief Duration of traffic generation or use the emuulation time instead */
+ 
   int idt_dist[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];	/*!\brief Inter Departure Time distribution */	
   int idt_min[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief Min Inter Departure Time, for uniform distrib  */
   int idt_max[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief idt, Max Inter Departure Time, for uniform distrib  */

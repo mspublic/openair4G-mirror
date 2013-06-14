@@ -492,7 +492,7 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
         rb_id = (otg_pkt_info->otg_pkt).rb_id;
         pdcp_mode = (otg_pkt_info->otg_pkt).mode;
         // generate traffic if the ue is rrc reconfigured state
-        if (mac_get_rrc_status(module_id, eNB_flag, dst_id ) > 2 /*RRC_CONNECTED*/) {
+	// if (mac_get_rrc_status(module_id, eNB_flag, dst_id ) > 2 /*RRC_CONNECTED*/) { // not needed: this test is already done in update_otg_enb
           otg_pkt = (u8*) (otg_pkt_info->otg_pkt).sdu_buffer;
           pkt_size = (otg_pkt_info->otg_pkt).sdu_buffer_size;
           if (otg_pkt != NULL) {
@@ -501,7 +501,7 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
             pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,pdcp_mode);
             free(otg_pkt);
           }
-        } //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
+	  // } //else LOG_D(OTG,"frame %d enb %d-> ue %d link not yet established state %d  \n", frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, eNB_flag, dst_id - NB_eNB_INST));
       }
     } else while ((otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[module_id]))) != NULL) {
       //otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[module_id]));
