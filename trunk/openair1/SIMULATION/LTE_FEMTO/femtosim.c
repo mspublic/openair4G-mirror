@@ -253,6 +253,7 @@ void _initDefaults(options_t *opts) {
   opts->N_RB_DL=25;
   opts->rballocset=0;
   opts->DLSCH_RB_ALLOC = 0x1fff;
+  opts->ratio=1;
 
   opts->testNumber=0;	
   sprintf(opts->interfLevels," ");
