@@ -68,6 +68,8 @@
 # include "../../S1AP/s1ap_eNB.h"
 #endif
 
+//#define XER_PRINT
+
 #ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
 #endif
@@ -548,7 +550,9 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(securityModeComplete) --->][RRC_eNB][MOD %02d][]\n",
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
+#ifdef XER_PRINT
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
+#endif
       // confirm with PDCP about the security mode for DCCH
       //rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * NB_RB_MAX) + DCCH, 0x77);
       // continue the procedure
@@ -558,7 +562,9 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(securityModeFailure) --->][RRC_eNB][MOD %02d][]\n",
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
+#ifdef XER_PRINT
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
+#endif
       // cancel the security mode in PDCP
        
       // followup with the remaining procedure
@@ -570,7 +576,9 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
       LOG_D(RRC, "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
 	    "(UECapabilityInformation) --->][RRC_eNB][MOD %02d][]\n",
 	    frame, Mod_id, DCCH, sdu_size, Mod_id);
+#ifdef XER_PRINT
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)ul_dcch_msg);
+#endif
       dec_rval = uper_decode(NULL,
 			     &asn_DEF_UE_EUTRA_Capability,
 			     (void**)&UE_EUTRA_Capability,
@@ -578,8 +586,9 @@ int rrc_eNB_decode_dcch(u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 			     ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[0]->ueCapabilityRAT_Container.size,
 			     0,
 			     0);      
+#ifdef XER_PRINT
       xer_fprint(stdout,&asn_DEF_UE_EUTRA_Capability,(void*)UE_EUTRA_Capability);
-
+#endif
       rrc_eNB_generate_defaultRRCConnectionReconfiguration(Mod_id,frame,UE_index, NULL, 0);
       break;
     case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:

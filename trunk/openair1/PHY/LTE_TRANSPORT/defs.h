@@ -563,6 +563,9 @@ typedef struct {
   uint32_t ulsch_decoding_attempts_last[3][8];
   uint32_t ulsch_round_errors_last[3][8];
   uint32_t ulsch_round_fer[3][8];
+  uint32_t sr_received;
+  uint32_t sr_total;
+
   s8 dlsch_mcs_offset;
   /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
   uint8_t dlsch_mcs1;

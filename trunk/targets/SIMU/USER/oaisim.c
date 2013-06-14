@@ -8,8 +8,6 @@
 #include <cblas.h>
 #include <execinfo.h>
 
-#include "oaisim_functions.h"
-
 #include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -41,12 +39,16 @@
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
-const char smbv_fname[] = "smbv_config_file.smbv";
+char smbv_fname[] = "smbv_config_file.smbv";
 unsigned short smbv_nframes = 4; // how many frames to configure 1,..,4
-const unsigned short config_frames[4] = {2,9,10,11};
-//const unsigned short config_frames[4] = {1};
+unsigned short config_frames[4] = {2,9,11,13};
+// unsigned short config_frames[4] = {1};
 unsigned char  smbv_frame_cnt = 0;
+u8 config_smbv = 0;
+char smbv_ip[16];
 #endif
+
+#include "oaisim_functions.h"
 
 #include "oaisim.h"
 #include "oaisim_config.h"
@@ -358,8 +360,6 @@ int
   // variables/flags which are set by user on command-line
 
 #ifdef SMBV
-  u8 config_smbv = 0;
-  char smbv_ip[16];
   strcpy(smbv_ip,DEFAULT_SMBV_IP);
 #endif
 
@@ -517,6 +517,12 @@ int
 
   }
 #endif
+
+#ifdef SMBV
+  smbv_init_config(smbv_fname, smbv_nframes);
+  smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
+#endif
+
 
   printf ("before L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("before L2 init: frame_type %d,tdd_config %d\n", 

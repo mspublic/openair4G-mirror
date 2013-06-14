@@ -21,6 +21,12 @@
 #include "../../../openair1/USERSPACE_TOOLS/SCOPE/lte_scope.h"
 #endif //XFORMS
 
+#ifdef SMBV
+extern u8 config_smbv;
+extern char smbv_ip[16];
+#endif
+
+
 //constant for OAISIM soft realtime calibration
 #define SF_DEVIATION_OFFSET_NS 100000 //= 0.1ms : should be as a number of UE
 #define SLEEP_STEP_US       100 //  = 0.01ms could be adaptive, should be as a number of UE
@@ -106,7 +112,7 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:X:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
 
     switch (c) {
     case 0:
@@ -327,9 +333,9 @@ void get_simulation_options(int argc, char *argv[]) {
       break;
     case 'W':
 #ifdef SMBV
-        config_smbv = 1;
-        if(atoi(optarg)!=0)
-            strcpy(smbv_ip,optarg);
+      config_smbv = 1;
+      if(atoi(optarg)!=0)
+	strcpy(smbv_ip,optarg);
 #endif
       break;
     case 'G' :
@@ -486,11 +492,6 @@ void init_openair1() {
 
       }
   }
-
-#ifdef SMBV
-  smbv_init_config(smbv_fname, smbv_nframes);
-  smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
-#endif
 
   printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("AFTER init: frame_type %d,tdd_config %d\n",

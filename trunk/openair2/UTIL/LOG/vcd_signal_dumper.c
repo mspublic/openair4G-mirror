@@ -115,6 +115,7 @@ const char* eurecomFunctionsNames[] = {
     "phy_procedures_UE_lte",
     "emu_transport",
     "log_record",
+    "pdcp_run"
     "rt_sleep",
     "pdsch_thread",
     "dlsch_thread0",
@@ -375,7 +376,7 @@ void vcd_signal_dumper_create_header(void)
             }
             fprintf(vcd_fd, "$end\n");
             fprintf(vcd_fd, "$enddefinitions $end\n\n");
-            fflush(vcd_fd);
+            //fflush(vcd_fd);
         }
     }
 }
@@ -407,7 +408,7 @@ void vcd_signal_dumper_dump_variable_by_name(vcd_signal_dump_variables variable_
 
             /* Set variable to value */
             fprintf(vcd_fd, "r%lu %s_r\n", value, eurecomVariablesNames[variable_name]);
-            fflush(vcd_fd);
+            //fflush(vcd_fd);
         }
 #endif
     }
@@ -444,7 +445,7 @@ void vcd_signal_dumper_dump_function_by_name(vcd_signal_dump_functions  function
                 fprintf(vcd_fd, "1%s_w\n", eurecomFunctionsNames[function_name]);
             else
                 fprintf(vcd_fd, "0%s_w\n", eurecomFunctionsNames[function_name]);
-            fflush(vcd_fd);
+            //fflush(vcd_fd);
         }
 #endif
     }

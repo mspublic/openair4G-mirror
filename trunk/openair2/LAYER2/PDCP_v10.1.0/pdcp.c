@@ -50,6 +50,7 @@
 #include "UTIL/LOG/log.h"
 #include <inttypes.h>
 #include "platform_constants.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #define PDCP_DATA_REQ_DEBUG 0
 #define PDCP_DATA_IND_DEBUG 0
@@ -465,6 +466,9 @@ void
 //     int service_id, session_id;
 //     int pkt_size=0;
 //     unsigned int ctime=0;
+
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
+
     /*
       if ((frame % 128) == 0) {
       for (i=0; i < NB_UE_INST; i++) {
@@ -494,6 +498,7 @@ void
   // PDCP -> NAS/IP traffic: RX
   pdcp_fifo_flush_sdus(frame,eNB_flag);
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_OUT);
 }
 
 BOOL rrc_pdcp_config_asn1_req (module_id_t module_id, u32_t frame, u8_t eNB_flag, u32_t index,

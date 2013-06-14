@@ -2865,7 +2865,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	  pdcch_alloc2ul_subframe(frame_parms,subframe),harq_pid);
     */
     if (harq_pid == 255) {
-      LOG_E(PHY, "frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
+      LOG_E(PHY, "frame %d, subframe %d, rnti %x, format %d: illegal harq_pid!\n",
 	  phy_vars_ue->frame, subframe, rnti, dci_format);
       return(-1);
     }
