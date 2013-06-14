@@ -183,8 +183,6 @@ echo "OPENAIR3_DIR="$OPENAIR3_DIR
 echo "OPENAIR_TARGETS="$OPENAIR_TARGETS
 
 echo "Bring up eNB interface"
-pkill LTE_RAL_ENB
-pkill oaisim_eNB
 pkill oaisim_eNB
 pkill cell_rrm
 /sbin/rmmod nascellrg
@@ -227,8 +225,8 @@ echo "Starting RRM module"
 exec $OPENAIR_TARGETS/SIMU/USER/cell_rrm  > /tmp/log_rrm 2>&1 &
 sleep 2
 echo "Starting OAI Access Stratum ..."
-nice  --adjustment=-10  $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -g1 -l6 > /tmp/log_oaiENB 2>&1 &
-#nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -g2 -l6
+#nice  --adjustment=-10  $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -g1 -l6 > /tmp/log_oaiENB 2>&1 &
+nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -g2 -l6
 #$OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -g1 -l6
 
 #sudo nice  --adjustment=-10 $OPENAIR_TARGETS/SIMU/USER/oaisim_eNB -E 1 -u0 -b1 -M0 -p2 -l6
@@ -250,8 +248,8 @@ wait_process_started oaisim_eNB
 
 
 #Activate next line to start with MIH-LTE-SAP
-sleep 4
-$OPENAIR3_DIR/RAL-LTE/LTE_RAL_ENB/LTE_RAL_ENB > /tmp/log_lteralenb 2>&1 &
+#sleep 4
+#$OPENAIR3_DIR/RAL-LTE/LTE_RAL_ENB/LTE_RAL_ENB > /tmp/log_lteralenb 2>&1 &
 
 #while true; do sleep 10000; done
 
