@@ -625,17 +625,17 @@ void _generateDCI(options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC_t *dci_alloc_r
   dci_alloc[num_dci].format     = format1;//TVT: E_2A_M10PRB; for format 1 instead of 1E
   }
         
-	generate_eNB_dlsch_params_from_dci(0,						
-					   &DLSCH_alloc_pdu_1,	
-					   opts.n_rnti,
-					   format1,//TVT:E_2A_M10PRB,		
-					   PHY_vars_eNB->dlsch_eNB[0],
-					   &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
-					   SI_RNTI,
-					   0,
-					   P_RNTI,
-					   PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
-	printf("1 : PHY_vars_eNB->dlsch_eNB[0]->harq_processes[0]->TBS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);
+generate_eNB_dlsch_params_from_dci(0,						
+				     &DLSCH_alloc_pdu_1,	
+				     opts.n_rnti,
+				     format1,//TVT:E_2A_M10PRB,		
+				     PHY_vars_eNB->dlsch_eNB[0],
+				     &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
+				     SI_RNTI,
+				     0,
+				     P_RNTI,
+				     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+				     
   for(i=0;i<opts.nInterf;i++)
     {
       generate_eNB_dlsch_params_from_dci(0,						
@@ -831,7 +831,7 @@ u8 _generate_dci_top(int num_ue_spec_dci,int num_common_dci,DCI_ALLOC_t *dci_all
 					PHY_vars_eNB->lte_eNB_common_vars.txdataF[opts.Nid_cell],
 					opts.subframe);
 //
-printf("num_pdcch_symbols %d , num_pdcch_symbols_2 %d=> ",num_pdcch_symbols,num_pdcch_symbols_2);
+//printf("num_pdcch_symbols %d , num_pdcch_symbols_2 %d=> ",num_pdcch_symbols,num_pdcch_symbols_2);
 
   if (num_pdcch_symbols_2 > num_pdcch_symbols) {
     msg("Error: given num_pdcch_symbols not big enough\n");
@@ -930,26 +930,19 @@ u32 _allocRBs(options_t *opts,int ind)
 			else
 			allocRB=0x1e00;
 		break;
-		case 91: // 17/8
+		case 12: // 3/22
 			if (ind==0)	{
-			allocRB=0x1fe1;
-			opts->mcs=3;}
+			allocRB=0x1001;
+			opts->mcs=18;}
 			else
-			allocRB=0x1e;
+			allocRB=0xffe;
 		break;
-		case 92: // 17/8
+		case 13: // 5/20
 			if (ind==0)	{
-			allocRB=0xff1;
-			opts->mcs=3;}
+			allocRB=0x1801;
+			opts->mcs=12;}
 			else
-			allocRB=0x100e;
-		break;
-		case 93: // 17/8
-			if (ind==0)	{
-			allocRB=0x7f9;
-			opts->mcs=3;}
-			else
-			allocRB=0x1806;
+			allocRB=0x7fe;
 		break;
 		case 94: // 17/8
 			if (ind==0)	{
@@ -1036,7 +1029,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
   int re_allocated;
 
   //Init Pointers to 8 HARQ processes for the DLSCH
-  printf("PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS: %d\n",(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS));      
+  //printf("PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS: %d\n",(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS));      
   input_buffer_length = PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->TBS/8; 
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
   memset(input_buffer,0,input_buffer_length+4);
@@ -1209,17 +1202,6 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		  }
 		  
 		}
-		//TVT: since we changed the dci_rballoc, we have to call this function again.
-		generate_eNB_dlsch_params_from_dci(0,						
-				     &DLSCH_alloc_pdu_1,	
-				     opts.n_rnti,
-				     format1,
-				     PHY_vars_eNB->dlsch_eNB[0],
-				     &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
-				     SI_RNTI,
-				     0,
-				     P_RNTI,
-				     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 	      }
 	      else { // set Ndi to 0 round>0
 		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 0;
@@ -1290,12 +1272,22 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		  }
 		}
 	      }
-	    }
-	  
-		printf("2 : PHY_vars_eNB->dlsch_eNB[0]->harq_processes[0]->TBS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);	     
+	    }	  
+			//TVT: since we changed the dci_rballoc, we have to call this function again.
+		generate_eNB_dlsch_params_from_dci(0,						
+				     &DLSCH_alloc_pdu_1,	
+				     opts.n_rnti,
+				     format1,
+				     PHY_vars_eNB->dlsch_eNB[0],
+				     &PHY_vars_eNB->lte_frame_parms, PHY_vars_eNB->pdsch_config_dedicated,  
+				     SI_RNTI,
+				     0,
+				     P_RNTI,
+				     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+	          
 				  
 //*******************************************************
-printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS: %d \n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);
+//printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS: %d \n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS);
 	      num_pdcch_symbols_2 = _generate_dci_top(num_ue_spec_dci,num_common_dci,dci_alloc,opts,num_pdcch_symbols);
 
 	      _writeTxData("1","dci", 0, 2,opts,0,0);
@@ -1313,8 +1305,8 @@ printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS: %d \n",PHY_vars_e
 
                 
 	      tbs = (double)dlsch_tbs25[get_I_TBS(PHY_vars_eNB->dlsch_eNB[idUser][0]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb-1];
-		  printf("\nround: %d dlsch_enB=->nb_rb: %d mcs: %d\n",round,PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb,opts.mcs);
-printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->MCS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs);
+		  //printf("\nround: %d dlsch_enB=->nb_rb: %d mcs: %d\n",round,PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb,opts.mcs);
+//printf("PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->MCS %d\n",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs);
 	      rate = (double)tbs/(double)coded_bits_per_codeword;
 
 	      uncoded_ber_bit = (short*) malloc(2*coded_bits_per_codeword);
