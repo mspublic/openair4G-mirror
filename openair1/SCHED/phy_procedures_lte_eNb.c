@@ -67,7 +67,7 @@
 
 #define NS_PER_SLOT 500000
 
-//#define PUCCH 1
+#define PUCCH 1
 
 #define PUCCH1_THRES 20
 
@@ -103,11 +103,11 @@ extern int rx_sig_fifo;
 static unsigned char I0_clear = 1;
 
 u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe) {
-  /*
-    msg("[PHY][eNB %d][SR %x] Frame %d subframe %d Checking for SR TXOp(sr_ConfigIndex %d)\n",
+  
+  LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking for SR TXOp(sr_ConfigIndex %d)\n",
     phy_vars_eNB->Mod_id,phy_vars_eNB->ulsch_eNB[UE_id]->rnti,phy_vars_eNB->frame,subframe,
     phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex);
-  */
+  
   if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex <= 4) {        // 5 ms SR period
     if ((subframe%5) == phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex)
       return(1);
@@ -2947,7 +2947,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		       &n1_pucch2,
 		       &n1_pucch3);
 
-      LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d, subframe %d Checking for PUCCH (%d,%d,%d,%d) SR %d\n",
+      LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d, subframe %d Checking for PUCCH (%d,%d,%d,%d) SR %d\n",
 	    phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[i][0]->rnti,
 	    phy_vars_eNB->frame,last_slot>>1,
 	    n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3,do_SR);
@@ -2958,6 +2958,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	// otherwise we have some PUCCH detection to do
       
 	if (do_SR == 1) {
+	  phy_vars_eNB->eNB_UE_stats[i].sr_total++;
 	
 	  if (abstraction_flag == 0)
 	    metric0 = rx_pucch(phy_vars_eNB,
@@ -2985,6 +2986,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  if (SR_payload == 1) {
 	    LOG_I(PHY,"[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",phy_vars_eNB->Mod_id,
 		  phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1);
+	    phy_vars_eNB->eNB_UE_stats[i].sr_received++;
 	    if (phy_vars_eNB->first_sr[i] == 1) { // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
 	      phy_vars_eNB->first_sr[i] = 0;
 	      phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[0]->round=0;
@@ -2993,10 +2995,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		    phy_vars_eNB->Mod_id,
 		    phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->frame,last_slot>>1);
 	    }
+#ifdef OPENAIR2
 	    mac_xface->SR_indication(phy_vars_eNB->Mod_id,
 				     phy_vars_eNB->frame,
 				     phy_vars_eNB->dlsch_eNB[i][0]->rnti,last_slot>>1);
-	    
+#endif
 	  } 
 	}// do_SR==1
 	if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
@@ -3353,6 +3356,9 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     if (phy_vars_eNB->frame >= 1000)
     mac_xface->macphy_exit("Exiting after 1000 Frames\n");
   */
+  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER, (last_slot + 1) % 20);
+  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER, phy_vars_eNB->frame);
+
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,1);
   
   if (((phy_vars_eNB->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_DL))||

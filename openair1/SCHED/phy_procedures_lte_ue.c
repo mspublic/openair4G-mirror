@@ -64,11 +64,11 @@ extern int card;
 #define DEBUG_PHY_PROC
 #define UE_TX_POWER (-10)
 
-#ifdef OPENAIR2
+//#ifdef OPENAIR2
 #ifndef PUCCH
 #define PUCCH
 #endif
-#endif
+//#endif
 
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
@@ -319,7 +319,7 @@ void process_timing_advance(u8 Mod_id,s16 timing_advance) {
 
 u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
   
-  LOG_I(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR TXOp (sr_ConfigIndex %d)\n",
+  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR TXOp (sr_ConfigIndex %d)\n",
       phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,subframe,
       phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex);
   
@@ -968,17 +968,21 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	
 	// Check for SR and do ACK/NACK accordingly
 	if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
-	  LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d Checking for SR for PUSCH from MAC\n",
+	  LOG_I(PHY,"[UE %d][SR %x] Frame %d subframe %d: got SR_TXOp, Checking for SR for PUSCH from MAC\n",
 	 	phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1);
+#ifdef OPENAIR2
 	  SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
 					    phy_vars_ue->frame,
 					    eNB_id,
 					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					    next_slot>>1); // subframe used for meas gap
+#else
+	  SR_payload = 1;
+#endif
 	 
 	  if (SR_payload>0) {
 	    generate_ul_signal = 1;
-	    LOG_D(PHY,"[UE %d][SR %x] Frame %d subframe %d got the SR for PUSCH is %d\n",
+	    LOG_I(PHY,"[UE %d][SR %x] Frame %d subframe %d got the SR for PUSCH is %d\n",
 		  phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,phy_vars_ue->frame,next_slot>>1,SR_payload);
 	  }
 	  else {
@@ -1098,7 +1102,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef EXMIMO
 			   get_tx_amp(Po_PUCCH,phy_vars_ue->tx_power_max_dBm),
 #else
-                       AMP,
+			   AMP,
 #endif
 			   next_slot>>1);	 
 	  }

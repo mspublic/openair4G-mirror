@@ -5,8 +5,8 @@ msg_many:lxrt+sem+mbx+msg:!sudo ./msg_test;sleep 1;popall:control_c
 eNB:lxrt+sem+mbx+msg:!sudo ./synctest;sleep 1;popall:control_c
 eNB_test:lxrt+sem+mbx+msg+smi:!sudo ./lte-softmodem -S -F enb2tx;sleep 1;popall:control_c
 UE:lxrt+sem+mbx+msg:!sudo ./synctest -U -d -T 108;sleep 1;popall:control_c
-#UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907598464 -F ue2;sleep 1;popall:control_c
-UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907595392 -V;sleep 1;popall:control_c
+UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907602944;sleep 1;popall:control_c
+#UE0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907595392 -F ex2_2;sleep 1;popall:control_c
 UE850:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 859498000 -F ex2_850;sleep 1;popall:control_c
 eNB850:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -d -C 859500000 -F ex2_850;sleep 1;popall:control_c
 UE0noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907593460 -F ex2_2 --no-L2-connect;sleep 1;popall:control_c
@@ -20,7 +20,7 @@ UE1noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue1 --no-L
 UE2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2;sleep 1;popall:control_c
 UE2prach:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --debug-ue-prach;sleep 1;popall:control_c
 UE2noL2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --no-L2-connect;sleep 1;popall:control_c
-eNB0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -d -V ;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -d;sleep 1;popall:control_c
 eNB1:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F ex2_2 -d;sleep 1;popall:control_c
 eNB2:lxrt+sem+mbx+msg:!sudo ./lte-softmodem -C 1907600000 -F ue2 -d;sleep 1;popall:control_c
 dot11:lxrt+sem+mbx+msg:!sudo ./dot11 -C 1907600000 -d;sleep 1;popall:control_c

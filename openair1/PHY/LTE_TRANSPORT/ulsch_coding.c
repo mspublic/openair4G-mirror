@@ -195,24 +195,24 @@ u32 ulsch_encoding(u8 *a,
   double sinr_eff;
   u16 rnti;
   if (!ulsch) {
-    msg("ulsch_coding.c: Null ulsch ptr %p\n",ulsch);
+    LOG_E(PHY,"Null ulsch ptr %p\n",ulsch);
     return(-1);
   }
 
   if (harq_pid > 7) {
-    msg("ulsch_coding.c: Illegal harq_pid %d\n",harq_pid);
+    LOG_E(PHY,"Illegal harq_pid %d\n",harq_pid);
     return(-1);
   }
     
   if (ulsch->harq_processes[harq_pid]->O_ACK > 2)
     {
-    msg("ulsch_coding.c: Illegal O_ACK %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
-    return(-1);
-  }
+      LOG_E(PHY,"Illegal O_ACK %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
+      return(-1);
+    }
 
   if (ulsch->O_RI > 1)
     {
-    msg("ulsch_coding.c: Illegal O_RI %d\n",ulsch->O_RI);
+      LOG_E(PHY,"Illegal O_RI %d\n",ulsch->O_RI);
     return(-1);
   }
 
@@ -499,7 +499,7 @@ u32 ulsch_encoding(u8 *a,
 
   //  Do CQI coding
   if ((ulsch->O>1) && (ulsch->O < 12)) {
-    msg("ulsch_coding: FATAL, short CQI sizes not supported yet\n");
+    LOG_E(PHY,"short CQI sizes not supported yet\n");
     return(-1);
   }
   else {
@@ -557,7 +557,7 @@ u32 ulsch_encoding(u8 *a,
     }
   }
   else if (ulsch->O_RI>1){
-    msg("ulsch_coding: FATAL, RI cannot be more than 1 bit yet\n");
+    LOG_E(PHY,"RI cannot be more than 1 bit yet\n");
     return(-1);
   }
   //  Do ACK coding, Section 5.2.2.6 36.213 (p.23-24 in v8.6)
@@ -647,7 +647,7 @@ u32 ulsch_encoding(u8 *a,
     }
   }
   if (ulsch->harq_processes[harq_pid]->O_ACK > 2) {
-    msg("ulsch_coding: FATAL, ACK cannot be more than 2 bits yet\n");
+    LOG_E(PHY,"ACK cannot be more than 2 bits yet\n");
     return(-1);
   }
 
@@ -820,7 +820,7 @@ u32 ulsch_encoding(u8 *a,
   stop_meas(m_stats);
 
   if (j!=(H+Q_RI)) {
-    msg("ulsch_coding.c: Error in output buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
+    LOG_E(PHY,"Error in output buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
     return(-1);
   }
 

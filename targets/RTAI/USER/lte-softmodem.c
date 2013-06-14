@@ -83,6 +83,7 @@
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
+unsigned short config_frames[4] = {2,9,11,13};
 #endif
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg.h"
@@ -149,10 +150,11 @@ u8  eNB_id=0,UE_id=0;
 u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
 
 struct timing_info_t {
-  unsigned int frame, hw_slot, last_slot, next_slot;
-  RTIME time0, time1, time2;
-  unsigned int mbox0, mbox1, mbox2, mbox_target;
-} timing_info[20];
+  //unsigned int frame, hw_slot, last_slot, next_slot;
+  RTIME time_min, time_max, time_avg, time_last, time_now;
+  //unsigned int mbox0, mbox1, mbox2, mbox_target;
+  unsigned int n_samples;
+} timing_info;
 
 extern s16* sync_corr_ue0;
 extern s16 prach_ifft[4][1024*2];
@@ -441,7 +443,7 @@ static void *eNB_thread(void *arg)
   unsigned int aa,slot_offset, slot_offset_F;
   int diff;
   int delay_cnt;
-  RTIME time_in;
+  RTIME time_in, time_diff;
   int mbox_target=0,mbox_current=0;
   int i,ret;
   int tx_offset;
@@ -456,6 +458,11 @@ static void *eNB_thread(void *arg)
 #endif
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  timing_info.time_min = 100000000ULL;
+  timing_info.time_max = 0;
+  timing_info.time_avg = 0;
+  timing_info.n_samples = 0;
 
   while (!oai_exit)
     {
@@ -524,6 +531,31 @@ static void *eNB_thread(void *arg)
           if (frame%100==0)
             LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
 	  */
+
+	  //if (PHY_vars_eNB_g[0]->frame>5) {
+	    timing_info.time_last = timing_info.time_now;
+	    timing_info.time_now = rt_get_time_ns();
+	  
+	    if (timing_info.n_samples>0) {
+	      time_diff = timing_info.time_now - timing_info.time_last;
+	      if (time_diff < timing_info.time_min) 
+		timing_info.time_min = time_diff;
+	      if (time_diff > timing_info.time_max) 
+		timing_info.time_max = time_diff;
+	      timing_info.time_avg += time_diff;
+	    }
+
+	    timing_info.n_samples++;
+	    
+	    if ((timing_info.n_samples%2000)==0) {
+	      LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d: diff=%llu, min=%llu, max=%llu, avg=%llu (n_samples %d)\n",
+		    frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,time_diff,
+		    timing_info.time_min,timing_info.time_max,timing_info.time_avg/timing_info.n_samples,timing_info.n_samples);
+	      timing_info.n_samples = 0;
+	      timing_info.time_avg = 0;
+	    }
+	    //}
+
           if (fs4_test==0)
             {
               phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
@@ -664,88 +696,80 @@ static void *UE_thread(void *arg)
       hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15; //the slot the hw is about to store
       
       if (is_synchronized) {
-      //this is the mbox counter that indicates the start of the frame
-      rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (10*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
-      //this is the mbox counter where we should be 
-      mbox_target = (((((slot+1)%20)*15+1)>>1) + rx_offset_mbox + 1)%150;
-      // round up to the next multiple of two (mbox counter from express MIMO gives only even numbers)
-      mbox_target = ((mbox_target+1)-((mbox_target-1)%2))%150;
-      //this is the mbox counter where we are
-      mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
-      //this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
-      if ((mbox_current>=120) && (mbox_target<30)) //handle the frame wrap-arround
-	diff2 = 150-mbox_current+mbox_target;
-      else if ((mbox_current<30) && (mbox_target>=120))
-	diff2 = -150+mbox_target-mbox_current;
-      else
-        diff2 = mbox_target - mbox_current;
-
-      if (diff2 <(-8)) {
-	LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
-	if (frame>100)	  
-	  oai_exit=1;
-	slot++;
-	if (slot==20) {
-          slot=0;
-	  frame++;
+	//this is the mbox counter that indicates the start of the frame
+	rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (10*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
+	//this is the mbox counter where we should be 
+	mbox_target = (((((slot+1)%20)*15+1)>>1) + rx_offset_mbox + 1)%150;
+	// round up to the next multiple of two (mbox counter from express MIMO gives only even numbers)
+	mbox_target = ((mbox_target+1)-((mbox_target-1)%2))%150;
+	//this is the mbox counter where we are
+	mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
+	//this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
+	if ((mbox_current>=120) && (mbox_target<30)) //handle the frame wrap-arround
+	  diff2 = 150-mbox_current+mbox_target;
+	else if ((mbox_current<30) && (mbox_target>=120))
+	  diff2 = -150+mbox_target-mbox_current;
+	else
+	  diff2 = mbox_target - mbox_current;
+	
+	if (diff2 <(-5)) {
+	  LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
+	  if (frame>100)	  
+	    oai_exit=1;
+	  slot++;
+	  if (slot==20) {
+	    slot=0;
+	    frame++;
+	  }
+	  continue;
 	}
-	continue;
-      }
-      if (diff2>8) 
-	LOG_D(HW,"UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
+	if (diff2>8) 
+	  LOG_D(HW,"UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
+	
+	/*
+	  if (frame%100==0)
+	  LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
+	*/
+	vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0]));
+	vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DIFF, diff2);
 
-      /*
-      if (frame%100==0)
-	LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
-      */
-      timing_info[slot].time0 = rt_get_time_ns();
-      timing_info[slot].mbox0 = ((volatile unsigned int *)DAQ_MBOX)[0];
+	delay_cnt = 0;
+	while ((diff2>0) && (!oai_exit) && (is_synchronized) )
+	  {
+	    time_in = rt_get_time_ns();
+	    //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d (%d), diff %d, time %llu\n",frame,delay_cnt,hw_slot,((volatile unsigned int *)DAQ_MBOX)[0],slot,mbox_target,diff2,time_in);
+	    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,1);
+	    ret = rt_sleep_ns(diff2*DAQ_PERIOD); 
+	    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,0);
+	    if (ret)
+	      LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
+	    
+	    hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+	    //LOG_D(HW,"eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
+	    delay_cnt++;
+	    if (delay_cnt == 30)
+	      {
+		oai_exit = 1;
+		LOG_D(HW,"UE frame %d: HW stopped ... \n",frame);
+	      }
+	    mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
+	    if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
+	      diff2 = 150-mbox_current+mbox_target;
+	    else if ((mbox_current<15) && (mbox_target>=135))
+	      diff2 = -150+mbox_target-mbox_current;
+	    else
+	      diff2 = mbox_target - mbox_current;
 
-      delay_cnt = 0;
-      while ((diff2>0) && (!oai_exit) && (is_synchronized) )
-        {
-	  time_in = rt_get_time_ns();
-	  //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d (%d), diff %d, time %llu\n",frame,delay_cnt,hw_slot,((volatile unsigned int *)DAQ_MBOX)[0],slot,mbox_target,diff2,time_in);
-	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,1);
-	  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DIFF, diff2);
-	  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0]));
-          ret = rt_sleep_ns(diff2*DAQ_PERIOD);
-	  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,0);
-
-	  if (ret)
-	    LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
-
-          hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
-          //LOG_D(HW,"eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
-          delay_cnt++;
-          if (delay_cnt == 30)
-            {
-              oai_exit = 1;
-              LOG_D(HW,"UE frame %d: HW stopped ... \n",frame);
-            }
-	  mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
-	  if ((mbox_current>=135) && (mbox_target<15)) //handle the frame wrap-arround
-	    diff2 = 150-mbox_current+mbox_target;
-	  else if ((mbox_current<15) && (mbox_target>=135))
-	    diff2 = -150+mbox_target-mbox_current;
-	  else
-	    diff2 = mbox_target - mbox_current;
-        }
-
-      timing_info[slot].time1 = rt_get_time_ns();
-      timing_info[slot].mbox1 = ((volatile unsigned int *)DAQ_MBOX)[0];
-      timing_info[slot].mbox_target = mbox_target;
+	    vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0]));
+	    vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DIFF, diff2);
+ 	  }
+	
       }
 
       last_slot = (slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=LTE_SLOTS_PER_FRAME;
       next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
-
-      timing_info[slot].frame = PHY_vars_UE_g[0]->frame;
-      timing_info[slot].hw_slot = hw_slot;
-      timing_info[slot].last_slot = last_slot;
-      timing_info[slot].next_slot = next_slot;
 
       if (is_synchronized)
         {
@@ -767,9 +791,6 @@ static void *UE_thread(void *arg)
             LOG_D(HW,"Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n",
                       frame, last_slot,in,out,diff);
 	  */
-
-	  timing_info[slot].time2 = rt_get_time_ns();
-	  timing_info[slot].mbox2 = ((volatile unsigned int *)DAQ_MBOX)[0];
 
         }
       else   // we are not yet synchronized
@@ -1106,30 +1127,36 @@ int main(int argc, char **argv) {
 
   if (UE_flag==1) {
 #ifdef OPENAIR2
-    g_log->log_component[PHY].level = LOG_EMERG;
+    g_log->log_component[PHY].level = LOG_ERR;
 #else
     g_log->log_component[PHY].level = LOG_EMERG;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_DEBUG;
+    g_log->log_component[MAC].level = LOG_ERR;
     g_log->log_component[MAC].flag  = LOG_HIGH;
-    g_log->log_component[RLC].level = LOG_INFO;
+    g_log->log_component[RLC].level = LOG_ERR;
     g_log->log_component[RLC].flag  = LOG_HIGH;
-    g_log->log_component[PDCP].level = LOG_INFO;
+    g_log->log_component[PDCP].level = LOG_ERR;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
-    g_log->log_component[RRC].level = LOG_DEBUG;
+    g_log->log_component[RRC].level = LOG_INFO;
     g_log->log_component[RRC].flag  = LOG_HIGH;
 
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
     PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
     
+#ifndef OPENAIR2
     for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
       PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
       PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+
+      PHY_vars_UE_g[0]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = UE_id;
+      PHY_vars_UE_g[0]->scheduling_request_config[i].sr_ConfigIndex = 7+(UE_id%3);
+      PHY_vars_UE_g[0]->scheduling_request_config[i].dsr_TransMax = sr_n4;
     }
+#endif
     
     compute_prach_seq(&PHY_vars_UE_g[0]->lte_frame_parms.prach_config_common,
 		      PHY_vars_UE_g[0]->lte_frame_parms.frame_type,
@@ -1193,29 +1220,37 @@ int main(int argc, char **argv) {
   }
   else { //this is eNB
 #ifdef OPENAIR2
-    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].level = LOG_ERR;
 #else
     g_log->log_component[PHY].level = LOG_INFO;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_DEBUG;
+    g_log->log_component[MAC].level = LOG_ERR;
     g_log->log_component[MAC].flag  = LOG_HIGH;
-    g_log->log_component[RLC].level = LOG_INFO;
+    g_log->log_component[RLC].level = LOG_ERR;
     g_log->log_component[RLC].flag  = LOG_HIGH;
-    g_log->log_component[PDCP].level = LOG_INFO;
+    g_log->log_component[PDCP].level = LOG_ERR;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
+    g_log->log_component[RRC].level = LOG_INFO;
+    g_log->log_component[RRC].flag  = LOG_HIGH;
 
 
     PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
     PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
     
+#ifndef OPENAIR2
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
       PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
       PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+
+      PHY_vars_eNB_g[0]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
+      PHY_vars_eNB_g[0]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
+      PHY_vars_eNB_g[0]->scheduling_request_config[i].dsr_TransMax = sr_n4;
     }
+#endif
 
     compute_prach_seq(&PHY_vars_eNB_g[0]->lte_frame_parms.prach_config_common,
 		      PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
@@ -1227,15 +1262,15 @@ int main(int argc, char **argv) {
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
     openair_daq_vars.target_ue_dl_mcs=20;
     openair_daq_vars.ue_ul_nb_rb=6;
-    openair_daq_vars.target_ue_ul_mcs=19;
+    openair_daq_vars.target_ue_ul_mcs=6;
 
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //      rxgain[i]=30;
-    rxgain[0] = 10;
-    rxgain[1] = 10;
-    rxgain[2] = 10;
-    rxgain[3] = 10;
+    rxgain[0] = 20;
+    rxgain[1] = 20;
+    rxgain[2] = 20;
+    rxgain[3] = 20;
 
 
     // set eNB to max gain

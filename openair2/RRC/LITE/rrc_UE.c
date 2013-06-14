@@ -76,6 +76,8 @@ extern UE_MAC_INST *UE_mac_inst;
 extern void *bigphys_malloc(int);
 #endif
 
+//#define XER_PRINT
+
 extern inline unsigned int taus(void);
 
 void init_SI_UE(u8 Mod_id,u8 eNB_index) {
@@ -262,7 +264,9 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 	 		 (uint8_t*)Srb_info->Rx_buffer.Payload,
 			 100,0,0);
 
+#ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_DL_CCCH_Message,(void*)dl_ccch_msg);
+#endif
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
     LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%d bytes)\n",Mod_id,dec_rval.consumed);
@@ -923,8 +927,10 @@ void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityMo
 				       buffer,
 				       100);
 
+#ifdef XER_PRINT
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
-	  
+#endif	  
+
 #ifdef USER_MODE
 	  LOG_D(RRC,"securityModeComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
@@ -984,8 +990,10 @@ void rrc_ue_process_ueCapabilityEnquiry(uint8_t Mod_id,uint32_t frame,UECapabili
 					   buffer,
 					   100);
 
+#ifdef XER_PRINT
 	  xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
-	  
+#endif	  
+
 #ifdef USER_MODE
 	  LOG_D(RRC,"UECapabilityInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
@@ -1063,7 +1071,9 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u32 frame,u8 Srb_id, u8 *Buffer,u8 eNB_index)
 	      (uint8_t*)Buffer,
 	      100,0,0);
 
+#ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
+#endif
 
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
@@ -1565,8 +1575,10 @@ int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len)
       SEQUENCE_free(&asn_DEF_MCCH_Message, (void*)mcch, 1);
       return -1;
     }
+#ifdef XER_PRINT
     xer_fprint(stdout, &asn_DEF_MCCH_Message, (void*)mcch);
-    
+#endif
+
     if (mcch->message.present == MCCH_MessageType_PR_c1) {
       LOG_D(RRC,"[UE %d] Found First MCCH_MESSAGE\n",Mod_id);
       if(mcch->message.choice.c1.present == MCCH_MessageType__c1_PR_mbsfnAreaConfiguration_r9) {

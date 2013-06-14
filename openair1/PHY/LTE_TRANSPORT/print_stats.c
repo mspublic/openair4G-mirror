@@ -371,6 +371,10 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
 	  }
 	}
 
+	len += sprintf(&buffer[len],"[eNB PROC] SR received/total: %d/%d (diff %d)\n",
+		       phy_vars_eNB->eNB_UE_stats[UE_id].sr_received,
+		       phy_vars_eNB->eNB_UE_stats[UE_id].sr_total,
+		       phy_vars_eNB->eNB_UE_stats[UE_id].sr_total-phy_vars_eNB->eNB_UE_stats[UE_id].sr_received);
 	len += sprintf(&buffer[len],"[eNB PROC] ULSCH FER per round (%d, %d, %d, %d) : (%d, %d, %d, %d) : (%d, %d, %d, %d)  \n",
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[0][0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[0][1],
