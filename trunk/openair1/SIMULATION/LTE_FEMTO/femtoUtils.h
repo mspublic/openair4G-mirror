@@ -39,7 +39,7 @@ typedef struct {
     int nInterf;
     ///Array with interference  level in dB 
     double *dbInterf;
-    int *probabilityInterf;
+    double *probabilityInterf;
     char interfLevels[150];
     char interfProbability[150];
     
@@ -95,6 +95,7 @@ typedef struct {
 	u8 	 p_b;	
 	s8 d_offset;
 	int ratio;
+	int prob_flag;
 	
 	char power[50];
 
@@ -117,7 +118,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv);
 void _printOptions(options_t *opts);
 /// Interference Levels are recivend in form  num,num,num this function parse the string and fill dbInterf array 
 void _parseInterferenceLevels(options_t *opts, char *interfLevels,int nInterf);
-void _parseInterferenceProbability(options_t *opts, char *interfLevels,int nInterf,int prob_flag);
+void _parseInterferenceProbability(options_t *opts, char *interfLevels,int nInterf);
 
 
 void _parsePower(options_t *opts);

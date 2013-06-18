@@ -18,7 +18,7 @@
 void _parseOptions(options_t *opts, int argc, char ** argv) {
   char c;
   char aux[100];
-  int prob_flag=0;
+  //int prob_flag=0;
     
   static struct option long_options[] =
     {                             
@@ -178,7 +178,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	  sprintf(aux,"%s",optarg);
 	  strcpy(opts->interfProbability,aux);
 	  sprintf(opts->parameters,"%s  -k%s", opts->parameters,opts->interfProbability);
-	  prob_flag=1;
+	  opts->prob_flag=1;
 	  break;
         case 'N':
 	  opts->Nid_cell = atoi(optarg);
@@ -294,7 +294,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
 	  printf("-e    Enable verification of DCI\n"); 
 	  printf("-A    Indicates  number of interfering  to estimate, by default does not estimate the channel from the interfering\n"); 
 	  printf("-R    Number of rounds\n"); 
-	  printf("-k    Probability of each interferer list (0-100)  separeted by ',' \n");
+	  printf("-k    Probability of each interferer list (0-1)  separeted by ',' \n");
 	  printf("-f    Use fixed data and channel\n");
 	  printf("-B    Number of PRBs depending on the bandwidth\n");
 	  exit (-1);
@@ -308,7 +308,7 @@ void _parseOptions(options_t *opts, int argc, char ** argv) {
   if (opts->nInterf>0)
     {
       _parseInterferenceLevels(opts,opts->interfLevels,opts->nInterf);        
-      _parseInterferenceProbability(opts,opts->interfProbability,opts->nInterf,prob_flag);
+      _parseInterferenceProbability(opts,opts->interfProbability,opts->nInterf);
     }
 
 }
@@ -347,7 +347,7 @@ void _printOptions(options_t *opts)
 
 
 
-void _parseInterferenceProbability(options_t *opts, char *interfProbability,int nInterf,int prob_flag)
+void _parseInterferenceProbability(options_t *opts, char *interfProbability,int nInterf)
 {
   int i;
   char * pch;
@@ -355,15 +355,15 @@ void _parseInterferenceProbability(options_t *opts, char *interfProbability,int 
   opts->probabilityInterf=(double*)malloc(sizeof(double)*nInterf);
   for (i=0; i<nInterf; i++)
     {        
-      opts->probabilityInterf[i]=100;
+      opts->probabilityInterf[i]=1.0;
     }
-  if(prob_flag)
+  if(opts->prob_flag)
     {
       pch = strtok (interfProbability,",");
       i=0;
       while (pch != NULL)
 	{
-	  opts->probabilityInterf[i]=atoi(pch);
+	  opts->probabilityInterf[i]=atof(pch);
 	  i++;
 	  pch = strtok (NULL,",");
 	}
@@ -493,12 +493,12 @@ void _makeOutputDir(options_t *opts)
 
   opts->outputFile =fopen(auxFile,"w");
     
-  sprintf(auxFile,"OuputBlerRound_%d.m",opts->testNumber);
+  sprintf(auxFile,"OutputBlerRound_%d.m",opts->testNumber);
     
   opts->outputBler =fopen(auxFile,"w");
   fprintf( opts->outputBler,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
     
-  sprintf(auxFile,"OuputBER_%d.m",opts->testNumber);
+  sprintf(auxFile,"OutputBER_%d.m",opts->testNumber);
   opts->outputBer =fopen(auxFile,"w");
     
   sprintf(auxFile,"Throughput_%d.m",opts->testNumber);
