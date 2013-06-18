@@ -1,15 +1,18 @@
 #ifndef __PHY_PROCEDURES_EMOS_H__
 #define __PHY_PROCEDURES_EMOS_H__
 
-#ifdef NO_RTAI
-typedef long long unsigned int RTIME;
+/*
+#ifndef RTAI
+typedef u64 RTIME;
 #else
+*/
+#ifdef RTAI
 #include <rtai.h>
 #include <rtai_fifos.h>
 #endif
+
 //#include "PHY/TOOLS/defs.h"
 #include "PHY/defs.h"
-
 #define CHANSOUNDER_FIFO_SIZE 10485760 // 10 Mbytes FIFO
 //#define CHANSOUNDER_FIFO_SIZE 20971520  // 20 Mbytes FIFO
 #define CHANSOUNDER_FIFO_MINOR 4               // minor of the FIFO device - this is /dev/rtf3
@@ -28,7 +31,7 @@ typedef long long unsigned int RTIME;
 
 struct fifo_dump_emos_struct_UE {
   // RX
-  RTIME            timestamp;              //! Timestamp of the receiver
+  u64              timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
   unsigned int     frame_rx;               //! Framenumber of the RX 
   UE_MODE_t        UE_mode;
@@ -67,7 +70,7 @@ typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;
 
 struct fifo_dump_emos_struct_eNB {
   // TX
-  RTIME            timestamp;              //! Timestamp of the receiver
+  u64              timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX
   unsigned char    mimo_mode;              /// Transmission mode
   // RX

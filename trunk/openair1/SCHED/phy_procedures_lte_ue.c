@@ -1520,7 +1520,7 @@ void phy_procedures_emos_UE_RX(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) 
     emos_dump_UE.total_TBS_last = phy_vars_ue->total_TBS_last[eNB_id];
     emos_dump_UE.bitrate = phy_vars_ue->bitrate[eNB_id];
     emos_dump_UE.total_received_bits = phy_vars_ue->total_received_bits[eNB_id];
-    emos_dump_UE.pmi_saved = phy_vars_ue->dlsch_ue[eNB_id][0]->pmi_alloc;
+    emos_dump_UE.pmi_saved = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[1]->pmi_alloc;
     emos_dump_UE.mcs = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[1]->mcs;
     emos_dump_UE.use_ia_receiver = openair_daq_vars.use_ia_receiver;
 
