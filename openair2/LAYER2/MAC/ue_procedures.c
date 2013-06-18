@@ -56,6 +56,7 @@
 #endif
 
 #define DEBUG_HEADER_PARSING 1
+#define ENABLE_MAC_PAYLOAD_DEBUG
 
 /*
 #ifndef USER_MODE
@@ -276,11 +277,13 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 	frame,eNB_index,num_ce,num_sdu);
 #endif
 
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
   LOG_T(MAC,"[eNB %d] First 32 bytes of DLSCH : \n");
   for (i=0;i<32;i++)
     LOG_T(MAC,"%x.",sdu[i]);
   LOG_T(MAC,"\n");  
-  
+#endif
+
   for (i=0;i<num_ce;i++) {
     //    printf("ce %d : %d\n",i,rx_ces[i]);
       switch (rx_ces[i]) {
@@ -332,11 +335,12 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",Mod_id,frame, eNB_index, rx_lengths[i]);
       
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       int j;
       for (j=0;j<rx_lengths[i];j++)
-	LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
+        LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
       LOG_T(MAC,"\n");
-      
+#endif
       mac_rrc_data_ind(Mod_id,
 		       frame,
 		       CCCH,
@@ -369,12 +373,14 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     }
     else if (rx_lcids[i] == DTCH) {
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", Mod_id, frame,rx_lcids[i], eNB_index,rx_lengths[i]);
-     
+
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       int j;
       for (j=0;j<rx_lengths[i];j++)
-	LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
+        LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
       LOG_T(MAC,"\n");
-      
+#endif
+
       mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 		       frame,
 		       0,

@@ -63,7 +63,7 @@ double cqi_snr[16] = {-8, -7, -6.08, -5.252, -3.956, -2.604, -1.107, 0.87, 2.599
 double snr_tm6=0;
 
 
-
+#define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 //#define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
@@ -580,12 +580,14 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
    
     if ((rx_lcids[i] == DCCH)||(rx_lcids[i] == DCCH1)) {
       //      if(eNB_mac_inst[Mod_id].Dcch_lchan[UE_id].Active==1){
-      
+
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sdu));
       for (j=0;j<32;j++)
-	LOG_T(MAC,"%x ",payload_ptr[j]);
+        LOG_T(MAC,"%x ",payload_ptr[j]);
       LOG_T(MAC,"\n");
-      
+#endif
+
       //  This check is just to make sure we didn't get a bogus SDU length, to be removed ...
       if (rx_lengths[i]<CCCH_PAYLOAD_SIZE_MAX) {
 	LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d \n",
@@ -604,11 +606,14 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
       //      }
     } else if (rx_lcids[i] >= DTCH) {
       //      if(eNB_mac_inst[Mod_id].Dcch_lchan[UE_id].Active==1){
+
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sdu));
       for (j=0;j<32;j++)
-	LOG_T(MAC,"%x ",payload_ptr[j]);
+        LOG_T(MAC,"%x ",payload_ptr[j]);
       LOG_T(MAC,"\n"); 
-      
+#endif
+
       LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
 	    Mod_id,frame, rx_lengths[i], UE_id,rx_lcids[i]);
       if ((rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) &&  (rx_lengths[i] > 0) ) {   // MAX SIZE OF transport block
