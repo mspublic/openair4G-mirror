@@ -786,14 +786,18 @@ void _applyInterference(options_t opts,data_t data,double sigma2,double iqim,int
 	    {		
 	//prob_flag=1 means that interference is active with a probability of opts->probabilityInterf[i]
 		  if(opts.prob_flag){	
+			 // printf("\n interf probability: %f",opts.probabilityInterf[j]);
 		  		if(opts.probabilityInterf[j]>((double)rand() / (double)RAND_MAX) ){
+					//printf("aplica interf \n");
 					data.r_re[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_re[j][aa][i]);				
 					data.r_im[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_im[j][aa][i]);}
 		    }
 		  else{
+			  //printf("caso anterior \n");
 				data.r_re[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_re[j][aa][i]);				
 				data.r_im[aa][i] += (pow(10.0,.05*opts.dbInterf[j])*data.ir_im[j][aa][i]);
 			  }  
+			  //printf("no aplica interf \n");	
 	    }
         }
     }
