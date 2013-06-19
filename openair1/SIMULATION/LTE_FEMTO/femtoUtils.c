@@ -335,7 +335,7 @@ void _printOptions(options_t *opts)
 
   for (i=0; i<opts->nInterf; i++)
     {
-      printf("\n\tInterference n%d:%f (%d\%)",i+1,opts->dbInterf[i],opts->probabilityInterf[i]);
+      printf("\n\tInterference n%d:%f (%f)",i+1,opts->dbInterf[i],opts->probabilityInterf[i]);
     }
  
 
