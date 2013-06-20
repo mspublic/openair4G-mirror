@@ -49,6 +49,7 @@ void rrc_rg_mbms_NAS_ServStart_rx(void){
     p_rg_mbms->mbms_num_active_service ++;
     #endif	
     //Get RB Information from RRM...
+    p_rg_mbms->ptm_requested_action = E_ADD_RB;
     RRC_RG_MBMS_O_GET_RB_INFORMATION(E_ADD_RB);
   }
 #endif
@@ -71,10 +72,14 @@ void rrc_rg_mbms_NAS_ServStop_rx(void){
 
   //Update the content for Notification and Unmodif message, set the flags if having changes
   index = rrc_mbms_service_id_find(p_rg_mbms->buff_mod_numService, &p_rg_mbms->buff_mod_serviceIdentity, p_rg_mbms->nas_serviceId);
+  #ifdef DEBUG_RRC_MBMS
+  msg("[RRC-RG][MBMS][IF] index returned %d for Modif services\n", index);
+  #endif
   p_rg_mbms->flags.modifiedServicesInformation |= rrc_rg_mbms_addModifService(index, p_rg_mbms->nas_serviceId, Mod_releasePTM_RB);
 
   if (index < 0){  //If the service didn't exist in modif --> we may have to delete from unmodif services
     index = rrc_mbms_service_id_find(p_rg_mbms->umod_numService, &p_rg_mbms->umod_serviceIdentity, p_rg_mbms->nas_serviceId);
+    msg("[RRC-RG][MBMS][IF] index returned %d for Unmodif services\n", index);
     if (index >= 0) p_rg_mbms->flags.unmodifiedServicesInformation |= rrc_rg_mbms_deleteUnmodifService(index);
   }
 
@@ -83,6 +88,7 @@ void rrc_rg_mbms_NAS_ServStop_rx(void){
     // decrement the number of active services in the RG (TEMP Max =1)
     p_rg_mbms->mbms_num_active_service --;
     //Get RB Information from RRM...
+    p_rg_mbms->ptm_requested_action = E_REL_RB;
     RRC_RG_MBMS_O_GET_RB_INFORMATION(E_REL_RB);
   }
 #endif

@@ -177,10 +177,6 @@ int rrc_ue_receive_from_srb_rlc (char* sduP, u8 ch_idP, unsigned int Sdu_size){
   int UE_Id;
   int sdu_offset=0;
 
-  #ifdef DEBUG_RRC_DETAILS
-  msg ("\n[RRC-UE-FRONTEND] Begin rrc_ue_receive_from_srb_rlc, lchannel %d\n", ch_idP);
-  rrc_print_buffer ((char*)&sduP[0], Sdu_size);
-  #endif
   // get UE_Id
   rb_id = ch_idP;
   srb_id = rb_id % NB_RB_MAX;
@@ -188,12 +184,20 @@ int rrc_ue_receive_from_srb_rlc (char* sduP, u8 ch_idP, unsigned int Sdu_size){
   // get RRC_CELL srb_id
   srb_id = sduP[0];
 
+  #ifdef DEBUG_RRC_DETAILS
+  #ifndef DEBUG_RRC_MBMS
+  if (srb_id != RRC_MCCH_ID)
+  #endif
+    msg ("\n[RRC-UE-FRONTEND] Begin rrc_ue_receive_from_srb_rlc, lchannel %d, srb %d for UE %d\n", ch_idP, srb_id, UE_Id);
+    //rrc_print_buffer ((char*)&sduP[0], Sdu_size);
+  #endif
 
   switch (srb_id){
     case RRC_SRB0_ID: //CCCH
     case RRC_SRB1_ID: //DCCH-UM
     case RRC_SRB2_ID: //DCCH-AM
     case RRC_SRB3_ID: //DCCH-AM - NAS
+    case RRC_MCCH_ID: //MCCH
       rrc_ue_srb_rx ((char*)&sduP[1], srb_id, UE_Id);
       break;
     default:

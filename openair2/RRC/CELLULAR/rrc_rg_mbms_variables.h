@@ -142,6 +142,7 @@ typedef struct rrc_rg_mbms_variables {
   mbms_bool  ptm_config_requested;
   mbms_bool  ptm_config_updating;
   u32        ptm_config_transaction_id;
+  int ptm_requested_action;
 
 } rrc_rg_mbms_variables;
 

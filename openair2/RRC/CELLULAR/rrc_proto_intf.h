@@ -116,6 +116,7 @@ void CPHY_config_req (void *config, int activation_time, int userP);
 #ifdef NODE_RG
 extern void *rrc_rg_srb0_rx (void *unusedP, mem_block_t * sduP);
 extern void  rrc_rg_mcch_tx (u8 * dataP, u16 lengthP);
+extern int rrc_rg_srb_rx (char* sduP, int srb_id,  int UE_Id);
 #endif
 
 #ifdef NODE_MT

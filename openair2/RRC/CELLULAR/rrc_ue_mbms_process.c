@@ -111,8 +111,9 @@ void rrc_ue_mbms_scheduling_check(void){
 void rrc_ue_mbms_modif_services_print(void){
 //-----------------------------------------------------------------------------
   int i;
+  msg("[RRC-UE][MBMS] MBMS Modified Services: \n");
   for (i = 0; i< p_ue_mbms->mod_numService; i++){
-    msg("\t\t service id = %d, required action = ", p_ue_mbms->mod_serviceIdentity[i]);
+    msg("[RRC-UE][MBMS]\t\t service id = %d, required action = ", p_ue_mbms->mod_serviceIdentity[i]);
     switch (p_ue_mbms->mod_requiredUEAction[i]){
       case Mod_none: msg("None\n"); break;
       case Mod_acquirePTM_RBInfo: msg("Acquire PTM RB Info\n"); break;
@@ -133,7 +134,7 @@ void rrc_ue_mbms_status_services_print(void){
   //Print the list of MBMS broadcasted services
   msg("[RRC-UE][MBMS] MBMS Started Services: \n");
   for (i = 0; i< maxMBMSServices; i++){
-    msg("\t\t service id = %d, activated = ", i+1);
+    msg("[RRC-UE][MBMS]\t\t service id = %d, activated = ", i+1);
     switch (p_ue_mbms->act_activated[i]){
       case TRUE  : msg("YES\n"); break;
       case FALSE : msg("NO\n"); break;

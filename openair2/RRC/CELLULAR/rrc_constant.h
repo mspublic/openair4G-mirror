@@ -55,28 +55,28 @@
 /* **** */
 /* ** FLAGS DEFINED FOR MBMS DEFINITION ** */
 /* **** */
-//#define ALLOW_MBMS_ACCESS_INFO
-
 // !!Activate or deactivate the MBMS Protocol!!
 //#define ALLOW_MBMS_PROTOCOL
 
 //#define MBMS_TEST_MODE	//Used in stand-alone mode (MBMS standalone simulator)
 #define MBMS_INTEGRATION_MODE	//Used in platform mode - simulation or realtime mode
 
+//#define ALLOW_MBMS_ACCESS_INFO
+
 /* *** Debug flags for MBMS *** */
 #define DEBUG_RRC_MBMS_BASIC      //basic level of trace for MBMS operation
 //#define DEBUG_RRC_MBMS            //1st level of trace for MBMS operation
 //#define DEBUG_RRC_MBMS_DETAIL   //2nd level of trace for MBMS operation
-#define DEBUG_UE_MBMS_FSM       //??
-#define DEBUG_UE_MBMS_FSM_TEST  //??
-#define DEBUG_RRC_MBMS_MSG_CONTENT  // content fo received/sent message buffer
+#define DEBUG_UE_MBMS_FSM       //traces for UE FSM internals
+#define DEBUG_UE_MBMS_FSM_TEST  //full traces of MBMS FSM
+#define DEBUG_RRC_MBMS_MSG_CONTENT  // content for received/sent message buffer
 #define DEBUG_RRC_MBMS_SFN  // MBMS frame counter
 #define DEBUG_RRC_MBMS_STATUS  // current status of services in UE
 
 #ifdef MBMS_INTEGRATION_MODE
 #undef MBMS_TEST_MODE
 #endif
-/* ***End Debug flags*** */
+/* ***End MBMS Debug flags*** */
 
 /* **** */
 /* ** RRC INTERNAL VALUES ** */

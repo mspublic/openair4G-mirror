@@ -62,23 +62,6 @@ int rrc_broadcast_tx (char *buffer){
   return maxSI;
 }
 
-
-// //-----------------------------------------------------------------------------
-// // RHODOS26 version
-// void rrc_rg_mcch_tx (u8 * dataP, u16 lengthP){
-// //-----------------------------------------------------------------------------
-//   mem_block_t *sdu;
-// 
-//   sdu = get_free_mem_block (lengthP + sizeof (struct rlc_um_data_req_alloc));
-//   if ((sdu)) {
-//     memset (sdu->data, 0, sizeof (struct rlc_um_data_req_alloc));
-//     memcpy (&sdu->data[sizeof (struct rlc_um_data_req_alloc)], dataP, lengthP);
-//     ((struct rlc_um_data_req *) (sdu->data))->data_size = lengthP;
-//     // TEMP - Removed for OpenAir To be updated
-//     //rlc_um_data_req (&protocol_bs->rlc_mcch_mbms, sdu);
-//   }
-// }
-
 //-----------------------------------------------------------------------------
 void rrc_rg_mcch_tx (u8 * dataP, u16 lengthP){
 //-----------------------------------------------------------------------------
@@ -87,8 +70,8 @@ void rrc_rg_mcch_tx (u8 * dataP, u16 lengthP){
   //TEMP - UE_Id hard coded because MCCH is actually a common channel
   if (lengthP > 0) {
     retcode = rrc_rg_send_to_srb_rlc (UE_Id, RRC_MCCH_ID, dataP, lengthP);
-    #ifdef DEBUG_RRC_STATE
-      msg ("[RRC_RG][FSM-OUT] Message %s sent on MCCH, ret code= %d.\n", dataP, retcode);
+    #ifdef DEBUG_RRC_MBMS
+      msg ("[RRC-RG][MBMS][FSM-OUT] Message %s sent on MCCH, ret code= %d.\n", dataP, retcode);
     #endif
   }
 }
@@ -104,8 +87,8 @@ int rrc_rg_srb_rx (char* sduP, int srb_id,  int UE_Id){
   //srb_id = rb_id % maxRB;
   //UE_Id = (rb_id - srb_id) / maxRB;
 
-  #ifdef DEBUG_RRC_DETAILS
-  msg ("[RRC][SRB-RG] LCHAN%d for UE %d RX in frame %d\n", srb_id, UE_Id, protocol_bs->rrc.current_SFN);
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC][SRB-RG] SRB%d for UE %d RX in frame %d\n", srb_id, UE_Id, protocol_bs->rrc.current_SFN);
   #endif
 
     #ifdef DEBUG_RRC_STATE

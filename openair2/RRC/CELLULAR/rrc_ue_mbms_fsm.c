@@ -185,7 +185,7 @@ void rrc_ue_mbms_fsm(void){
     case ACQUI_START:
       stateAcquisition = ACQUI_I_ACQUISITION;
       #ifdef DEBUG_UE_MBMS_FSM
-              msg("[RRC-UE][MBMS][FSM] transition: START to I_ACQUISITION\n");
+      msg("[RRC-UE][MBMS][FSM] transition: START to I_ACQUISITION\n");
       #endif
       rrc_ue_mbms_fsm(); //Propagation
       break;
@@ -193,7 +193,7 @@ void rrc_ue_mbms_fsm(void){
       if (I_CONTROLING_CELL_CHANGED || I_ACTIVATED_SERVICE_CHANGED ||
       I_RETURN_FROM_LOSS_COVERAGE || I_SELECTING_CELL_MBMS){
         #ifdef DEBUG_UE_MBMS_FSM
-                msg("[RRC-UE][MBMS][FSM] transition: I_ACQUISITION to WAIT_MBMS_MSG\n");
+        msg("[RRC-UE][MBMS][FSM] transition: I_ACQUISITION to WAIT_MBMS_MSG\n");
         #endif
         stateAcquisition = ACQUI_WAIT_MBMS_MSG;			
         I_MODIF_PERIOD_ENDED = FALSE;
@@ -228,8 +228,8 @@ void rrc_ue_mbms_fsm(void){
       }			
       //End of modification period?
       if (I_MODIF_PERIOD_ENDED){
-        //This is an adaptation for DAIDALOS, we don't return to the initial state as specififed in TS 25.331
-        //Be cause, at this moment, the primitive NAS for UE is not specified yet
+        //This is an adaptation for OAI, we don't return to the initial state as specififed in TS 25.331
+        //Because, at this moment, the primitive NAS for UE is not specified yet
         #if 0
           if (modifServInfoReceived){
             #ifdef DEBUG_UE_MBMS_FSM

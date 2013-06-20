@@ -29,6 +29,7 @@
 #include "rrc_proto_intf.h"
 #include "rrc_proto_bch.h"
 #include "rrc_proto_mbms.h"
+#include "rrc_proto_rrm.h"
 //-----------------------------------------------------------------------------
 // For FIFOS interface
 #ifdef USER_MODE
@@ -73,14 +74,11 @@ void rrc_rg_rrm_sap_init (void){
 }
 #endif
 
-
-
-
 //-----------------------------------------------------------------------------
 int rrc_rrm_main_proc (void){
 //-----------------------------------------------------------------------------
   int bytes_read =0;
-  int tx_id;
+ // int tx_id;
   rpc_message  rpc_mess;
   connection_request cr;
   int count = 0;
@@ -144,35 +142,3 @@ int rrc_rrm_main_proc (void){
   return protocol_bs->rrc.rc_rrm.connected_to_rrm;
 }
 
-//-----------------------------------------------------------------------------
-void rrc_rg_rrm_connected_init (void){
-//-----------------------------------------------------------------------------
-  //int  i;
-
-  //struct rrc_rrm_measure_ctl rrm_control;
-
-  msg ("\n[RRC-RRM-INTF] begin rrc_rg_rrm_connected_init\n");
-
-  rrc_rg_fsm_init ();
-  rrc_mt_list_init ();
-  rrc_rg_init_bch ();
-  rrc_init_blocks (); //prepares SIBs for broadcast
-  //Initialise MBMS
-  rrc_rg_mbms_init();
-
-  //rrc_rg_init_mac (0);
-
-  // temp - establish srb1-srb2
-  //rrc_rg_config_LTE_srb1_srb2(0);
-
-/*  rrm_config_indication = 0;
-  // Set IBTS values to default:  will be replaced by RRC using BCH
-
-  for (i = 0; i < JRRM_SLOTS_PER_FRAME; i++)
-    rrm_config->outer_loop_vars.IBTS[i] = -107;
-
-  rrm_config->outer_loop_vars.PRACH_CNST = 3;
-  rrm_config->outer_loop_vars.DPCH_CNST = 3;
-  rrm_config->prach.RG_RX_GAIN = 19 + 100;
-  // - rrm_config->outer_loop_vars.IBTS[1] -    rrm_config->outer_loop_vars.PRACH_CNST;*/
-}

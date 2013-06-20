@@ -33,7 +33,7 @@ void rrc_ue_mcch_decode (char * sduP, int offset){
   MCCH_Message * mcch_msg;
   int  status = SUCCESS;
   #ifdef DEBUG_RRC_MBMS_DETAIL
-  msg ("\n[RRC_UE][DECODE]Decoding from MCCH -- start of message: \n");
+  msg ("\n[RRC_UE][MBMS][DECODE]Decoding from MCCH -- start of message: \n");
   rrc_print_buffer (&sduP[offset], 15);
   #endif
   mcch_msg = (MCCH_Message *)&sduP[offset];
@@ -62,7 +62,7 @@ void rrc_ue_mcch_decode (char * sduP, int offset){
   status = rrc_ue_mbms_MCCH_decode(mcch_msg);
 
   if (status!=SUCCESS)
-    msg("\n[RRC_UE][DECODE]Message from MCCH could not be decoded. %d \n", mcch_msg->message.type);
+    msg("\n[RRC-UE][MBMS][DECODE]Message from MCCH could not be decoded. %d \n", mcch_msg->message.type);
 }
 
 /**

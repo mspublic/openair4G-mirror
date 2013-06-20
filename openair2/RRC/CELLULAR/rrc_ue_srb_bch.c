@@ -129,7 +129,8 @@ int rrc_ue_srb_rx (char* sduP, int srb_id,  int UE_Id){
   //UE_Id = (rb_id - srb_id) / maxRB;
 
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC][SRB-UE] LCHAN%d for UE %d RX in frame %d\n", srb_id, UE_Id, protocol_ms->rrc.current_SFN);
+  if (srb_id != RRC_MCCH_ID)
+    msg ("[RRC][SRB-UE] SRB%d for UE %d RX in frame %d\n", srb_id, UE_Id, protocol_ms->rrc.current_SFN);
   //msg ("[RRC][SRB-UE] RB %d, SRB%d received [SRB5=MCCH], UE_Id %d\n", rb_id, srb_id, UE_Id);
   //msg ("[RRC-SRB-UE] [UE-DUMMIES] frame received: %s\n", (char*)&sduP[sdu_offset]);
   #endif
