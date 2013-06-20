@@ -120,11 +120,42 @@ def execute(oai, user, pw, logfile):
     else:
         log.ok(case, test, name, conf, '', logfile)
         
+    oai.send('cd $OPENAIR1_DIR;')     
+    oai.send('cd SIMULATION/LTE_PHY;')   
+
+    try:
+        test = '04'
+        name = 'Compile oai.rel8.phy.dlsim.make' 
+        conf = 'make dlsim'
+        diag = 'check the compilation errors for dlsim in $OPENAIR1_DIR/SIMULATION/LTE_PHY'
+        oai.send('make clean;')
+        oai.send('rm -f ./dlsim.rel8;')
+        oai.send_expect_false('make dlsim -j4;', makerr1,  1500)
+        oai.send('cp ./dlsim ./dlsim.rel8;')
+    except log.err, e:
+        log.fail(case, test, name, conf, e.value, diag, logfile)
+    else:
+        log.ok(case, test, name, conf, '', logfile)
+
+    try:
+        test = '05'
+        name = 'Compile oai.rel8.phy.ulsim.make' 
+        conf = 'make ulsim'
+        diag = 'check the compilation errors for dlsim in $OPENAIR1_DIR/SIMULATION/LTE_PHY'
+        oai.send('make clean;')
+        oai.send('rm -f ./ulsim.rel8;')
+        oai.send_expect_false('make ulsim -j4;', makerr1,  1500)
+        oai.send('cp ./ulsim ./ulsim.rel8;')
+    except log.err, e:
+        log.fail(case, test, name, conf, e.value, diag, logfile)
+    else:
+        log.ok(case, test, name, conf, '', logfile)
+    
     oai.send('cd $OPENAIR_TARGETS;')     
     oai.send('cd SIMU/USER;')   
     
     try:
-        test = '04'
+        test = '06'
         name = 'Compile oai.rel10.make' 
         conf = 'make Rel10=1'
         diag = 'check the compilation errors for Rel10'
@@ -138,3 +169,4 @@ def execute(oai, user, pw, logfile):
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
         log.ok(case, test, name, conf, '', logfile)
+
