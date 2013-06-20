@@ -47,6 +47,9 @@ s16 get_hundred_times_delta_IF(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 harq_pid) {
   u32 Nre = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Nsymb_initial *
             phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb*12;
 
+  if (Nre==0)
+    return(0);
+
   u32 MPR = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->sumKr / Nre;  
   // Note: MPR is the effective spectral efficiency of the PUSCH
 

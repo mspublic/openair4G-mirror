@@ -268,11 +268,9 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode) {
   LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",phy_vars_ue->Mod_id,phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] );
 #endif
   
-  /*
   if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
       (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
     phy_adjust_gain(phy_vars_ue,0);
-  */
 
   // SSS detection
  

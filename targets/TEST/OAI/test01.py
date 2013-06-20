@@ -101,7 +101,7 @@ log.set_debug_level(debug)
 
 oai.kill(user, pw)   
 # start te test cases 
-case01.execute(oai, user, pw, logfile)
+# case01.execute(oai, user, pw, logfile)
 case02.execute(oai, user, pw, logfile)
 
 oai.kill(user, pw) 

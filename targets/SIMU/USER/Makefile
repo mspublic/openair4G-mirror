@@ -89,10 +89,6 @@ endif
 ifdef JF
 CFLAGS += -DJUMBO_FRAME
 endif
-ifdef LS
-CFLAGS += -DLARGE_SCALE
-endif
-
 # ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
 # make cleanasn1
 #make all Rel10=1
@@ -163,7 +159,8 @@ include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/S1AP/Makefile.inc
 include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
 
-LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
+#LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
+#LOG_OBJS +=  $(LOG_DIR)/log.o
 
 CFLAGS += -DENB_MODE
 S1AP_BUILT_OBJS=

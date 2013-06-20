@@ -1,21 +1,18 @@
 dual_tx=0;
 card=0;
 limeparms;
-active_rf = [0 1 0 0];
+chan_sel = zeros(1,4);
+chan_sel(ch) = 1;
+%chan_sel = [1 0 1 0];
 %rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*[1 1 1 1];
-rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*active_rf;
-rf_mode = rf_mode+((DMAMODE_RX)*[0 1 0 0]);
-%freq_rx = 2540000000*[1 1 1 1];
-%freq_rx = 1907600000*[1 1 1 0];
-freq_rx = 1912600000*active_rf; %+ 2540000000*[0 1 0 0]; % + 859500000*[0 0 1 0];
+rf_mode = (RXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM+DMAMODE_RX)*chan_sel;
+freq_rx = 1907591325*[1 1 1 1];
 %freq_rx = 1912600000*[1 1 1 1];
 %freq_rx = 859500000*[1 1 1 1];
-freq_tx = freq_rx; %+1.92e6;
-%freq_tx = 2660000000*[1 1 1 1];
+freq_tx = freq_rx;
 tx_gain = 0*[1 1 1 1];
-rx_gain = 30*[1 1 1 1];
-rf_local= [8254744   8255063   8257340   8257340]; %rf_local*[1 1 1 1];
-%rf_local= [8254212   8256991   8257340   8257340]; %exmimo2 850mhz
+rx_gain = 20*[1 1 1 1];
+rf_local= rf_local*[1 1 1 1];
 rf_rxdc = rf_rxdc*[1 1 1 1];
 %rf_vcocal=rf_vcocal_859*[1 1 1 1];
 rf_vcocal=rf_vcocal_19G*[1 1 1 1];
@@ -39,12 +36,15 @@ power_dBm = -95;
 
 
 s=oarf_get_frame(card);
-f = (7.68*(0:length(s(:,1))-1)/(length(s(:,1))))-3.84;
-spec0 = 20*log10(abs(fftshift(fft(s(:,1)))));
-spec1 = 20*log10(abs(fftshift(fft(s(:,2)))));
+f = (7.68*(0:length(s(:,1))-1)/(length(s(:,ch))))-3.84;
+spec0 = 20*log10(abs(fftshift(fft(s(:,ch)))));
+%spec1 = 20*log10(abs(fftshift(fft(s(:,4)))));
 
 clf
-plot(f',spec0,'r',f',spec1,'b')
+plot(f',spec0,'r');
+%hold on
+%plot(f',spec1,'b');
+%hold off
 axis([-3.84,3.84,40,160]);
 %gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF'); %  activate output 
 legend('Antenna Port 0','Antenna Port 1');

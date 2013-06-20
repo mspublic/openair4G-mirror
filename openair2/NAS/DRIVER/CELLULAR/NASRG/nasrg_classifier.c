@@ -661,9 +661,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
   }
 //***
   #ifdef NAS_DEBUG_SEND
-  printk("nasrg_CLASS_send - Received IP packet to transmit, length %d\n", skb->len);
-  #endif
-  #ifdef NAS_DEBUG_SEND_DETAIL
+  printk("nasrg_CLASS_send - Received IP packet to transmit, length %d", skb->len);
   if ((skb->data) != NULL){
     if (skb->len<150)
      nasrg_TOOL_print_buffer(skb->data,skb->len);
@@ -684,7 +682,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
   // Get mobile connexion entity, protocol and dscp from IP packet
   switch (ntohs(skb->protocol)) {
     case ETH_P_IPV6:
-      #ifdef NAS_DEBUG_CLASS_DETAIL
+      #ifdef NAS_DEBUG_CLASS
       printk("nasrg_CLASS_send : skb->protocol : IPv6 \n");
       #endif
       version = NAS_VERSION_6;
@@ -692,7 +690,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
       protocolh = nasrg_TOOL_get_protocol6(ipv6_hdr(skb), &protocol);
       dscp      = nasrg_TOOL_get_dscp6 (ipv6_hdr(skb));
       cx        = nasrg_CLASS_cx6 (skb, dscp, &addr_type, &cx_index, &mbms_ix);
-      #ifdef NAS_DEBUG_CLASS_DETAIL
+      #ifdef NAS_DEBUG_CLASS
       printk("nasrg_CLASS_send - ETH_P_IPV6 skb %p dscp %d gpriv %p cx_index %p \n",skb, dscp, gpriv, &cx_index);
       #endif
       // find in default DSCP a valid classification
@@ -700,7 +698,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
         switch (addr_type) {
           case NAS_IPV6_ADDR_MC_SIGNALLING:
           case NAS_IPV6_ADDR_UNICAST:
-            #ifdef NAS_DEBUG_CLASS_DETAIL
+            #ifdef NAS_DEBUG_CLASS
             printk("nasrg_CLASS_send - case NAS_IPV6_ADDR_MC_SIGNALLING | NAS_IPV6_ADDR_UNICAST\n");
             #endif //NAS_DEBUG_CLASS
             for (i=0; i<NAS_CX_MAX; i++){
@@ -712,7 +710,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
                   // Modified MW to let everything go (pb with signalling)
                   masked6_addr.s6_addr32[0] = 0x00000000;
                   masked6_addr.s6_addr32[1] = 0x00000000;
-                  #ifdef NAS_DEBUG_CLASS_DETAIL
+                  #ifdef NAS_DEBUG_CLASS
                   printk("nasrg_CLASS_send - cx %d : DSCP NAS_DSCP_DEFAULT %X:%X:%X:%X:%X:%X:%X:%X\n",i, NIP6ADDR(&(pclassifier->daddr.ipv6)));
                   #endif //NAS_DEBUG_CLASS
 
@@ -749,7 +747,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
             sp = gpriv->mbmsclassifier[mbms_ix];
             if (sp!= NULL){
               classref=sp->classref;
-              #ifdef NAS_DEBUG_CLASS_DETAIL
+              #ifdef NAS_DEBUG_SEND_DETAIL
               printk("nasrg_CLASS_send: classifier found for multicast service %d \n", mbms_ix);
               #endif
             }else{
@@ -835,7 +833,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
       break;
 
     case ETH_P_IP:
-      #ifdef NAS_DEBUG_CLASS_DETAIL
+      #ifdef NAS_DEBUG_CLASS
       printk("nasrg_CLASS_send : skb->protocol : IPv4 \n");
       #endif
       version   = NAS_VERSION_4;
@@ -855,7 +853,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
                 if ((pclassifier->version == NAS_VERSION_4) || (pclassifier->version == NAS_VERSION_DEFAULT)) {
                   // ok found default classifier for this packet
                   nasrg_create_mask_ipv4_addr(&masked_addr, pclassifier->dplen);
-                  #ifdef NAS_DEBUG_CLASS_DETAIL
+                  #ifdef NAS_DEBUG_CLASS
                   printk("nasrg_CLASS_send : MASK = %d.%d.%d.%d\n", NIPADDR(masked_addr.s_addr));
                   #endif
                   if (IN_ARE_ADDR_MASKED_EQUAL(&pclassifier->daddr.ipv4, &ip_hdr(skb)->daddr, &masked_addr.s_addr)) {
@@ -900,7 +898,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
       version = 0;
       return;
   }
-  #ifdef NAS_DEBUG_CLASS_DETAIL
+  #ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasrg_CLASS_send: [before if (cx != NULL)]\n");
   #endif
 
@@ -926,19 +924,16 @@ void nasrg_CLASS_send(struct sk_buff *skb){
       sp = gpriv->mbmsclassifier[mbms_ix];
       if (sp!= NULL){
         classref=sp->classref;
-        #ifdef NAS_DEBUG_CLASS
-        printk("nasrg_CLASS_send: classifier found for multicast index %d, service %d\n", mbms_ix, gpriv->mbms_rb[mbms_ix].cnxid);
+        #ifdef NAS_DEBUG_SEND_DETAIL
+        printk("nasrg_CLASS_send: classifier found for multicast service %d \n", mbms_ix);
         #endif
       }else{
         // Temp MEDIEVAL : use default classifier
         sp = cx->sclassifier[NAS_DSCP_DEFAULT];
         if (sp!= NULL){
         classref=sp->classref;
-        #ifdef NAS_DEBUG_CLASS
+        #ifdef NAS_DEBUG_SEND_DETAIL
         printk("nasrg_CLASS_send: classifier for multicast service %d replaced by default %d\n", mbms_ix, classref);
-        #endif
-        #ifdef NAS_AUTO_MBMS
-        nasrg_ASCTL_start_default_mbms_service();
         #endif
         } else {
         printk("nasrg_CLASS_send: No corresponding multicast bearer, so the message is dropped\n");
@@ -946,11 +941,11 @@ void nasrg_CLASS_send(struct sk_buff *skb){
         }
       }
     }else{
-     #ifdef NAS_DEBUG_CLASS_DETAIL
+     #ifdef NAS_DEBUG_CLASS
       printk("nasrg_CLASS_send: DSCP %d version %d: looking for classifier entry\n",dscp, version);
       #endif
       for (pclassifier=cx->sclassifier[dscp]; pclassifier!=NULL; pclassifier=pclassifier->next) {
-        #ifdef NAS_DEBUG_CLASS_DETAIL
+        #ifdef NAS_DEBUG_CLASS
         printk("nasrg_CLASS_send: DSCP %d p->classref=%d,p->protocol=%d,p->version=%d\n",dscp,pclassifier->classref,pclassifier->protocol,pclassifier->version);
         #endif
         // normal rule checks that network protocol version matches
@@ -958,7 +953,7 @@ void nasrg_CLASS_send(struct sk_buff *skb){
             //printk("nasrg_CLASS_send: IP version are equals\n");
             sp=pclassifier;
             classref=sp->classref;
-            #ifdef NAS_DEBUG_CLASS_DETAIL
+            #ifdef NAS_DEBUG_SEND_DETAIL
             printk("nasrg_CLASS_send: classifier found for dscp %u \n", dscp);
             #endif
             break;
@@ -1009,8 +1004,6 @@ void nasrg_CLASS_send(struct sk_buff *skb){
   if (no_connection == 1) {
     printk("nasrg_CLASS_send: no corresponding connection, so the message is dropped\n");
   }
-  #endif
-  #ifdef NAS_DEBUG_CLASS_DETAIL
   printk("nasrg_CLASS_send: end\n");
   #endif
 }

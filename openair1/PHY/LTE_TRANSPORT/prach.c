@@ -50,6 +50,7 @@
 //#include "prach.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 //#define PRACH_DEBUG 1
 
@@ -514,7 +515,7 @@ s32 generate_prach(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe, u16 Nf) {
   // now generate PRACH signal
 #ifdef PRACH_DEBUG
   if (NCS>0)
-    printf("Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d, N_ZC/NCS %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
+    LOG_D(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, NCS %d (NCS_config %d, N_ZC/NCS %d) n_ra_prb %d: Preamble_offset %d, Preamble_shift %d\n",
 	   rootSequenceIndex,preamble_index,NCS,Ncs_config,N_ZC/NCS,n_ra_prb,
 	   preamble_offset,preamble_shift);
 #endif
@@ -1127,7 +1128,9 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u16 *preamble_energy_list, 
 	preamble_delay_list[preamble_index]   = (i*fft_size)>>log2_ifft_size;          
       } 
     }
-    //    LOG_D(PHY,"[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,preamble_shift, NCS2,NCS,Ncp);
+#ifdef PRACH_DEBUG
+    LOG_D(PHY,"[RAPROC] Preamble %d => %d dB, %d (shift %d (%d), NCS2 %d(%d), Ncp %d)\n",preamble_index,preamble_energy_list[preamble_index],preamble_delay_list[preamble_index],preamble_shift2,preamble_shift, NCS2,NCS,Ncp);
+#endif
     //  exit(-1);
   }// preamble_index
 }
@@ -1175,13 +1178,20 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
   u16 n_shift_ra,n_shift_ra_bar, d_start,n_group_ra,numshift;
   u8 not_found;
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);
+
 #ifdef PRACH_DEBUG
-  LOG_I(PHY,"compute_prach_seq: NCS_config %d\n",prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig);
+  LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach_fmt %d\n",prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig, prach_fmt);
 #endif
 
-  N_ZC = (prach_fmt < 4) ? 839 : 139;
+  if (prach_fmt>=4) {
+    LOG_E(PHY, "PRACH sequence is only precomputed for prach_fmt<4 (have %d)\n");
+    mac_xface->macphy_exit("");
+  }
 
-  init_prach_tables(N_ZC);
+  N_ZC = (prach_fmt < 4) ? 839 : 139;
+  //init_prach_tables(N_ZC); //moved to phy_init_lte_ue/eNB, since it takes to long in real-time
+
   (prach_fmt < 4) ? (prach_root_sequence_map = prach_root_sequence_map0_3) : (prach_root_sequence_map = prach_root_sequence_map4);    
 
 
@@ -1268,5 +1278,6 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
         //        printf("X_u[%d][%d] (%d)(%d)(%d) : %d,%d\n",i,k,u*inv_u*k*(1+(inv_u*k)),u*inv_u*k*(1+(inv_u*k))/2,(u*inv_u*k*(1+(inv_u*k))/2)%N_ZC,((s16*)&X_u[i][k])[0],((s16*)&X_u[i][k])[1]);
     }
   }
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_OUT);
 
 }

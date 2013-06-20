@@ -106,22 +106,21 @@ int rrc_rg_send_to_srb_rlc (int UE_id, int rb_id, char * data_buffer, int data_l
   //int srb1 =1;
 
   #ifdef RRC_DEBUG_DETAILS
-  msg ("\n[RRC-RG-FRONTEND] Send Data to RLC, srb %d\n",rb_id);
+  msg ("\n[RRC-RG-FRONTEND] Send  Data to RLC, srb %d\n",rb_id);
   #endif
   // OpenAirInterface, as of 02/01/2013, requires passing all the RRC CELL srb through the DCCH
   // Multiplexing is performed by adding the srb_id as first byte of data buffer
-  if (rb_id != RRC_BCCH_ID){
-      if (rb_id != RRC_MCCH_ID){
-        #ifdef DEBUG_RRC_STATE
-        msg ("[RRC-RG-FRONTEND] Send Data to RLC, srb %d\n",rb_id);
-        #endif
-      }
+  if ((rb_id != RRC_BCCH_ID)&& (rb_id != RRC_MCCH_ID)){
       memset(tx_data,0,500);
       tx_data[0] = rb_id;
       memcpy ((char*)&tx_data[1],data_buffer, data_length);
       data_length = data_length +1;
   }
-  //rrc_print_buffer (tx_data, data_length);  
+  //rrc_print_buffer (tx_data, data_length);
+/* RRC LITE
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer,1);
+*/
 
   switch (rb_id){
     case RRC_BCCH_ID: //BCCH
@@ -132,36 +131,19 @@ int rrc_rg_send_to_srb_rlc (int UE_id, int rb_id, char * data_buffer, int data_l
     case RRC_SRB0_ID: //CCCH
     case RRC_SRB1_ID: //DCCH-UM
       //result = rrc_rlc_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_NO,data_length,tx_data);
-      if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_NO,data_length,tx_data,1))
-        result = 1;
+     if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_NO,data_length,tx_data,1))
+      result = 1;
       break;
     case RRC_SRB2_ID: //DCCH-AM
-      if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_YES,data_length,tx_data,1))
-        result = 1;
-      break;
     case RRC_SRB3_ID: //DCCH-AM - NAS
-     /*
-     if (protocol_bs->rrc.rg_rb_asn1.SRB2_active == 1){
-          if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH+1,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_NO,data_length,tx_data,1))
-            result = 1;
-      } else {
-          if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_YES,data_length,tx_data,1))
-            result = 1;
-      }*/
-      if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_YES,data_length,tx_data,1))
-        result = 1;
+     if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_YES,data_length,tx_data,1))
+      result = 1;
       break;
-    #ifdef ALLOW_MBMS_PROTOCOL
-    case RRC_MCCH_ID: //MCCH -- sent to srb2 (modified for UM in asn1_msg.c)
-      /*
-      if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_NO,data_length,tx_data,1))
-        result = 1;*/
-      if (pdcp_data_req(Mod_id,protocol_bs->rrc.current_SFN, eNB_flag,(UE_id*NB_RB_MAX)+DCCH+1,protocol_bs->rrc.next_MUI++,RRC_RLC_CONFIRM_NO,data_length,tx_data,1))
-          result = 1;
+    case RRC_MCCH_ID: //MCCH
+      msg ("\n[RRC-RG-FRONTEND] TEMP - Unable to send data to RLC, Channel srb %d (MCCH) not supported\n",rb_id);
       break;
-    #endif
     default:
-      msg ("\n[RRC-RG-FRONTEND] ERROR - Unable to send data to PDCP/RLC, Channel srb %d not supported\n",rb_id);
+       msg ("\n[RRC-RG-FRONTEND] ERROR - Unable to send data to RLC, Channel srb %d not supported\n",rb_id);
   }
   if (result !=1)
        msg ("\n[RRC-RG-FRONTEND] ERROR - RLC returned an error code %d\n", result);
@@ -495,7 +477,12 @@ void rrc_rg_config_LTE_srb2 (unsigned char Mod_id){
   int srb2 = 2;
 
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC-RG-FRONTEND] rrc_rg_config_LTE_srb2 - SRB2_logicalChannelConfig\n");
+  msg ("\n[RRC-RG-FRONTEND] rrc_rg_config_LTE_srb2\n");
+  #endif
+
+
+  #ifdef DEBUG_RRC_STATE
+  msg ("[RRC-RG-FRONTEND] SRB2_logicalChannelConfig\n");
   #endif
   // get the parameters values SRB2_logicalChannelConfig
   // Default value set as global variable
@@ -529,7 +516,7 @@ void rrc_rg_config_LTE_srb2 (unsigned char Mod_id){
        );
 
 
-  msg("[eNB %d] CALLING PDCP + RLC CONFIG SRB2 (rbid %d) for UE %d\n", Mod_id,srb2,UE_index);
+  msg("[eNB %d] CALLING RLC CONFIG SRB2 (rbid %d) for UE %d\n", Mod_id,srb2,UE_index);
 /*  rrc_pdcp_config_req (Mod_id, protocol_bs->rrc.current_SFN, eNB_flag, ACTION_ADD, srb2);
   rrc_rlc_config_req(Mod_id,protocol_bs->rrc.current_SFN,eNB_flag,ACTION_ADD,srb2,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);*/
   rrc_pdcp_config_asn1_req(Mod_id,protocol_bs->rrc.current_SFN,eNB_flag,UE_index,
@@ -549,11 +536,6 @@ void rrc_rg_config_LTE_srb2 (unsigned char Mod_id){
       ,(MBMS_SessionInfoList_r9_t *)NULL
       #endif
       );
- protocol_bs->rrc.rg_rb_asn1.SRB2_active = 1;
-  // TEMP Next lines have been transferred from rrc_rg_rrm_connected_init  
-  // because MCCH is using srb2
-  //Initialise MBMS
- rrc_rg_mbms_init();
 
 }
 
@@ -755,10 +737,7 @@ void rrc_rg_config_LTE_default_drb (unsigned char Mod_id){
 //-----------------------------------------------------------------------------
 int rrc_rg_ENbMeas_get_rlcBufferOccupancy(int UE_id){
 //-----------------------------------------------------------------------------
-  #ifdef RRC_ENABLE_REAL_ENB_MESURES
   int Mod_id = 0;
-  #endif
-
   #ifdef DEBUG_RRC_DETAILS_2
   msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_rlcBufferOccupancy , UE_id %d\n", UE_id);
   #endif
@@ -776,10 +755,7 @@ int rrc_rg_ENbMeas_get_rlcBufferOccupancy(int UE_id){
 //-----------------------------------------------------------------------------
 int rrc_rg_ENbMeas_get_scheduledPRB(int UE_id){
 //-----------------------------------------------------------------------------
-  #ifdef RRC_ENABLE_REAL_ENB_MESURES
   int Mod_id = 0;
-  #endif
-
   #ifdef DEBUG_RRC_DETAILS_2
   msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_scheduledPRB , UE_id %d\n", UE_id);
   #endif
@@ -796,10 +772,7 @@ int rrc_rg_ENbMeas_get_scheduledPRB(int UE_id){
 //-----------------------------------------------------------------------------
 int rrc_rg_ENbMeas_get_totalDataVolume(int UE_id){
 //-----------------------------------------------------------------------------
-  #ifdef RRC_ENABLE_REAL_ENB_MESURES
   int Mod_id = 0;
-  #endif
-
   #ifdef DEBUG_RRC_DETAILS_2
   msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_totalDataVolume , UE_id %d\n", UE_id);
   #endif
@@ -814,10 +787,7 @@ int rrc_rg_ENbMeas_get_totalDataVolume(int UE_id){
 //-----------------------------------------------------------------------------
 int rrc_rg_ENbMeas_get_totalNumPRBs(void){
 //-----------------------------------------------------------------------------
-  #ifdef RRC_ENABLE_REAL_ENB_MESURES
   int Mod_id = 0;
-  #endif
-
   #ifdef DEBUG_RRC_DETAILS_2
   msg ("\n[RRC-RG-FRONTEND] rrc_rg_ENbMeas_get_totalNumPRBs%d\n");
   #endif

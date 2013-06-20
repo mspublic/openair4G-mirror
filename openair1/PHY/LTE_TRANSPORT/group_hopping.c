@@ -39,7 +39,7 @@
 */
 #include "PHY/defs.h"
 
-#define DEBUG_GROUPHOP 1
+//#define DEBUG_GROUPHOP 1
 
 void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms) {
 

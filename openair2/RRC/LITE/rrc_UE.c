@@ -42,6 +42,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 //#include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "RRCConnectionReconfiguration.h"
@@ -253,6 +254,8 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
   asn_dec_rval_t dec_rval;
   int i,rval=0;
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
+
   //memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
 
   //  LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",Mod_id,Srb_info->Rx_buffer.payload_size,
@@ -270,6 +273,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
     LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%d bytes)\n",Mod_id,dec_rval.consumed);
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
     return -1;
   }
 
@@ -327,6 +331,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, u32 frame, SRB_INFO *Srb_info, u8 eNB_index){
     }
   }
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
   return rval;
 }
 
@@ -403,7 +408,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,
     ip_addr_offset3 = 0;
     ip_addr_offset4 = 8;
 #    endif
-#    ifndef OAI_NW_DRIVER_TYPE_ETHERNET
+#    if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO)
     LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", Mod_id, ip_addr_offset3+Mod_id,
 	  ip_addr_offset3+Mod_id+1,ip_addr_offset4+Mod_id+1);
     oip_ifup=nas_config(ip_addr_offset3+Mod_id,   // interface_id
@@ -1141,10 +1146,6 @@ int siPeriod_int[7] = {80,160,320,640,1280,2560,5120};
 
 int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_len) {
 
-  //  printf("Mod_id=%d, frame=%d, eNB_index=%d, sdu_len=%d, SI_period=%d, SI_WindowSize=%d\n",Mod_id,frame,eNB_index,Sdu_len,
-  //	 UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod,
-  //	 UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize);
-
   //BCCH_DL_SCH_Message_t bcch_message;
   BCCH_DL_SCH_Message_t *bcch_message=NULL;//_ptr=&bcch_message;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
@@ -1153,9 +1154,13 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   uint32_t si_window;//, sib1_decoded=0, si_decoded=0;
   int i;
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN);
+
+
   if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
       (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1)) {
     // Avoid decoding to prevent memory bloating
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT);
     return 0;
   } 
   else {
@@ -1176,6 +1181,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
       LOG_E(RRC,"[UE %d] Failed to decode BCCH_DLSCH_MESSAGE (%d bits)\n",Mod_id,dec_rval.consumed);
       //free the memory
       SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 1);
+      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT);
       return -1;
     }
     //  xer_fprint(stdout,  &asn_DEF_BCCH_DL_SCH_Message, (void*)&bcch_message);
@@ -1190,6 +1196,8 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 		   sizeof(SystemInformationBlockType1_t));
 	    LOG_D(RRC,"[UE %d] Decoding First SIB1\n",Mod_id);
 	    decode_SIB1(Mod_id,eNB_index);
+	    //mac_xface->macphy_exit("after decode_SIB1");
+
 	  }
 	}
 	break;
@@ -1203,6 +1211,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 		   sizeof(SystemInformation_t));
 	    LOG_D(RRC,"[UE %d] Decoding SI for frame %d, si_window %d\n",Mod_id,frame,si_window);
 	    decode_SI(Mod_id,frame,eNB_index,si_window);
+	    //mac_xface->macphy_exit("after decode_SI");
 	    
 	    //	  }
 	}
@@ -1215,6 +1224,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
   /*  if ((UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status == 1) &&
       (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1) && (frame >= Mod_id * 20 + 10))
       SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);*/
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT);
 }
 
 
@@ -1223,25 +1233,26 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_IN);
 
   LOG_D(RRC,"[UE %d] : Dumping SIB 1\n",Mod_id);
 
   //  xer_fprint(stdout,&asn_DEF_SystemInformationBlockType1, (void*)*sib1);
 
-  LOG_T(RRC,"cellAccessRelatedInfo.cellIdentity : %x.%x.%x.%x\n",
+  LOG_D(RRC,"cellAccessRelatedInfo.cellIdentity : %x.%x.%x.%x\n",
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[0],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[1],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[2],
       (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3]);
 
-  LOG_T(RRC,"cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
-  LOG_T(RRC,"freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
-  LOG_T(RRC,"siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
+  LOG_D(RRC,"cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
+  LOG_D(RRC,"freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
+  LOG_D(RRC,"siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
   if ((*sib1)->schedulingInfoList.list.count>0) {
     for (i=0;i<(*sib1)->schedulingInfoList.list.count;i++) {
-      LOG_T(RRC,"siSchedulingInfoPeriod[%d]          : %s\n",i,SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity]);
+      LOG_D(RRC,"siSchedulingInfoPeriod[%d]          : %s\n",i,SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[i]->si_Periodicity]);
       if ((*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.count>0)
-	LOG_T(RRC,"siSchedulingInfoSIBType[%d]         : %s\n",i,SIBType[(int)(*(*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0])]);
+	LOG_D(RRC,"siSchedulingInfoSIBType[%d]         : %s\n",i,SIBType[(int)(*(*sib1)->schedulingInfoList.list.array[i]->sib_MappingInfo.list.array[0])]);
       else {
 	LOG_W(RRC,"mapping list %d is null\n",i);
       }
@@ -1252,14 +1263,16 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
    return -1;
   }
 
-  if ((*sib1)->tdd_Config)
-    LOG_T(RRC,"TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment,(int)(*sib1)->tdd_Config->specialSubframePatterns);
-
+  if ((*sib1)->tdd_Config) {
+    LOG_D(RRC,"TDD subframe assignment            : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment);
+    LOG_D(RRC,"S-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->specialSubframePatterns);
+  }
 
   UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod     = siPeriod_int[(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity];
   UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize = siWindowLength_int[(*sib1)->si_WindowLength];
   LOG_D(RRC, "[MSC_MSG][FRAME unknown][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SIB1 params eNB %d) --->][MAC_UE][MOD %02d][]\n",
              Mod_id, eNB_index, Mod_id);
+
   rrc_mac_config_req(Mod_id,0,0,eNB_index,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
 		     (struct PhysicalConfigDedicated *)NULL,
@@ -1289,6 +1302,7 @@ int decode_SIB1(u8 Mod_id,u8 eNB_index) {
 		     );
 
   UE_rrc_inst[Mod_id].Info[eNB_index].SIB1Status = 1;
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_OUT);
   return 0;
 
 }
@@ -1400,12 +1414,8 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
   int i;
   struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *typeandinfo;
 
-  /*
-  LOG_D(RRC,"[UE %d] Frame %d : Dumping SI from window %d (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,si_window,dec_rval.consumed);
-  for (i=0;i<30;i++)
-    LOG_D(RRC,"%x.",UE_rrc_inst[Mod_id].SI[eNB_index][i]);
-  LOG_D(RRC,"\n");
-  */
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI  , VCD_FUNCTION_IN);
+
   // Dump contents
   if ((*si)->criticalExtensions.present==SystemInformation__criticalExtensions_PR_systemInformation_r8) {
     LOG_D(RRC,"(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count %d\n",
@@ -1417,7 +1427,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
   }
 
   for (i=0;i<(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count;i++) {
-    printf("SI count %d\n",i);
+    LOG_D(RRC,"SI count %d\n",i);
     typeandinfo=(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[i];
 
     switch(typeandinfo->present) {
@@ -1550,6 +1560,7 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 
   }
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI  , VCD_FUNCTION_OUT);
   return 0;
 }
 
