@@ -47,6 +47,7 @@
 //#define NAS_DEBUG_RECEIVE
 #define NAS_DEBUG_RECEIVE_BASIC
 #define NAS_DEBUG_CLASS
+//#define NAS_DEBUG_CLASS_DETAIL
 #define NAS_DEBUG_GC
 //#define NAS_DEBUG_DC_MEASURE
 //#define NAS_DEBUG_TIMER
@@ -60,6 +61,7 @@
 // Other flags
 #define DEMO_3GSM
 //#define NODE_RG
+//#define NAS_AUTO_MBMS
 
 // Begin default RAB
 // Parameters for the default RAB started after network attachment (needs DEMO_3GSM defined)

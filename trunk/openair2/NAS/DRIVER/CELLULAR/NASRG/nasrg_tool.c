@@ -293,7 +293,7 @@ void nasrg_TOOL_print_buffer(unsigned char * buffer,int length) {
     return;
   }
 // End debug information
-   printk("\nBuffer content: ");
+   printk("Buffer content: ");
   for (i=0;i<length;i++)
    printk("-%hx-",buffer[i]);
    printk(",\t length %d\n", length);

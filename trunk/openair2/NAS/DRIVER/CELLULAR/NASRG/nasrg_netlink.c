@@ -136,6 +136,7 @@ int nasrg_netlink_init(void){
                                     THIS_MODULE);
   if (!nas_nl_sk) {
     printk("nasrg_netlink_init - netlink_kernel_create failed for PDCP socket\n");
+    // TEMP printk("nasrg_netlink_init - netlink_kernel_create failed for PDCP socket %d\n", errno);
     return(-1);
   }
 
@@ -207,7 +208,9 @@ int nasrg_netlink_send(unsigned char *data_buffer, unsigned int data_length, int
   if (destination== NASNL_DEST_PDCP){
     #ifdef NETLINK_DEBUG
     printk("nasrg_netlink_send - Sending to PDCP - nl_skb %p, nl_sk %p, nlh %p, nlh->nlmsg_len %d\n", nl_skb, nas_nl_sk, nlh, nlh->nlmsg_len);
+    #ifdef NAS_DEBUG_SEND_DETAIL
     nasrg_TOOL_print_buffer(NLMSG_DATA(nlh),48);
+    #endif
     #endif //DEBUG_NETLINK
     status = netlink_unicast(nas_nl_sk, nl_skb, NL_DEST_PID, MSG_DONTWAIT);
   }else{
@@ -222,9 +225,9 @@ int nasrg_netlink_send(unsigned char *data_buffer, unsigned int data_length, int
     printk("nasrg_netlink_send - SEND status is %d\n",status);
     return(0);
   } else {
-#ifdef NETLINK_DEBUG
+    #ifdef NETLINK_DEBUG
     printk("nasrg_netlink_send - SEND status is %d, data_length %d\n",status, data_length);
-#endif
+    #endif
     return data_length;
   }
 }

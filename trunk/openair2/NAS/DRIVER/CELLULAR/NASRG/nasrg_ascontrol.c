@@ -242,6 +242,54 @@ void nasrg_ASCTL_start_mbmsclassifier(int mbms_ix,struct rb_entity *mbms_rb){
 }
 
 //---------------------------------------------------------------------------
+//Notifies automatically UE on default MBMS service
+void nasrg_ASCTL_start_default_ue_notification(struct cx_entity *cx){
+//---------------------------------------------------------------------------
+#ifdef NAS_DEBUG_DC
+  printk("nasrg_ASCTL_start_default_ue_notification - begin \n");
+#endif
+  if (!cx){
+     printk("\nERROR nasrg_ASCTL_start_default_ue_notification - input parameter is NULL \n");
+    return;
+  }
+// End debug information
+  // set value for default MBMS service
+  cx->requested_joined_services[0] = (NAS_CX_MAX*NAS_RB_MAX_NUM) +1;
+  nasrg_ASCTL_DC_send_mbms_ue_notify_req(cx);
+}
+
+//---------------------------------------------------------------------------
+//Notifies automatically UE on default MBMS service
+void nasrg_ASCTL_start_default_mbms_service(void){
+//---------------------------------------------------------------------------
+  int mbms_ix=0; // should allocate index based on Service_id /cnxid / MC IP address
+#ifdef NAS_DEBUG_DC
+  printk("nasrg_ASCTL_start_default_mbms_service - begin \n");
+#endif
+  // Establish MBMS bearer if not already done
+  if ((gpriv->mbms_rb[mbms_ix].state != NAS_CX_DCH)&&(gpriv->mbms_rb[mbms_ix].state != NAS_RB_ESTABLISHING)){
+    gpriv->mbms_rb[mbms_ix].cnxid = (NAS_CX_MAX*NAS_RB_MAX_NUM) +1;
+    gpriv->mbms_rb[mbms_ix].serviceId = (NAS_CX_MAX*NAS_RB_MAX_NUM) +1;
+    gpriv->mbms_rb[mbms_ix].sessionId = NASRG_TEMP_MBMS_SESSION_ID; //Temp hard coded
+    gpriv->mbms_rb[mbms_ix].mbms_rbId = NASRG_DEFAULTRAB_RBID;
+    gpriv->mbms_rb[mbms_ix].sapi = NAS_DC_INPUT_SAPI;
+    #ifdef NAS_DEBUG_MBMS_PROT
+    gpriv->mbms_rb[mbms_ix].sapi = NAS_DRB_INPUT_SAPI; //Only one RT-FIFO is used
+    #endif
+    gpriv->mbms_rb[mbms_ix].qos = 20; //from first version of MBMS traces
+    gpriv->mbms_rb[mbms_ix].dscp = 0; //maybe 7
+    gpriv->mbms_rb[mbms_ix].duration = NASRG_TEMP_MBMS_DURATION; //Temp hard coded
+    //memcpy ((char *)&(gpriv->mbms_rb[mbms_ix].mcast_address),(char *)&(msgreq->mcast_group), 16);
+    gpriv->mbms_rb[mbms_ix].mcast_address[0] = 0xFF;
+    gpriv->mbms_rb[mbms_ix].mcast_address[1] = 0x0E;
+    nasrg_ASCTL_GC_send_mbms_bearer_establish_req(mbms_ix);
+  } else {
+    #ifdef NAS_DEBUG_DC
+    printk("nasrg_ASCTL_start_default_mbms_service - skipped, mbms_rb.state = %d \n", gpriv->mbms_rb[mbms_ix].state);
+    #endif
+  }
+}
+//---------------------------------------------------------------------------
 void nasrg_ASCTL_timer(unsigned long data){
 //---------------------------------------------------------------------------
   u8 cxi;
@@ -1033,18 +1081,18 @@ void nasrg_ASCTL_DC_decode_mbms_bearer_establish_cnf(struct nas_rg_dc_element *p
   rb_id = p->nasRGDCPrimitive.mbms_establish_cnf.rbId;
   mbms_ix = 0;  // A revoir - find using cnxid...
   if (rb_id == gpriv->mbms_rb[mbms_ix].mbms_rbId){
-    switch (p->nasRGDCPrimitive.rb_establish_conf.status){
+    switch (p->nasRGDCPrimitive.mbms_establish_cnf.status){
       case ACCEPTED:
         gpriv->mbms_rb[mbms_ix].state = NAS_CX_DCH;
         gpriv->mbms_rb[mbms_ix].rab_id = gpriv->mbms_rb[mbms_ix].mbms_rbId;
         nasrg_ASCTL_start_mbmsclassifier(mbms_ix,&(gpriv->mbms_rb[mbms_ix]));
         break;
       case FAILURE:
-        printk("nasrg_ASCTL_DC_decode_mbms_bearer_establish: RB_ESTABLISH_CNF rejected\n");
+        printk("nasrg_ASCTL_DC_decode_mbms_bearer_establish: MBMS_BEARER_ESTABLISH_CNF rejected\n");
         gpriv->mbms_rb[mbms_ix].state = NAS_CX_CONNECTING_FAILURE; //supprimer l'entree
         break;
       default:
-        printk("nasrg_ASCTL_DC_decode_mbms_bearer_establish: RB_ESTABLISH_CNF reception, invalid status\n");
+        printk("nasrg_ASCTL_DC_decode_mbms_bearer_establish: MBMS_BEARER_ESTABLISH_CNF reception, invalid status\n");
     }
   }else
      printk(" nasrg_ASCTL_DC_decode_mbms_bearer_establish: invalid RB_Id %d\n", rb_id);
@@ -1099,10 +1147,10 @@ void nasrg_ASCTL_DC_decode_mbms_ue_notify_cnf(struct cx_entity *cx, struct nas_r
    printk(" nasrg_ASCTL_DC_decode_mbms_ue_notify: MBMS_UE_NOTIFY_CNF reception\n");
    printk(" Primitive length %u\n",p->length);
    printk(" Local Connection reference %u\n",p->nasRGDCPrimitive.mbms_ue_notify_cnf.localConnectionRef);
-  printk(" MBMS Status: %d\n", p->nasRGDCPrimitive.mbms_ue_notify_cnf.mbmsStatus);
-  printk(" UE services currently joined \n");
-  for (i = 0; i<NASRG_MBMS_SVCES_MAX; i++)
-    printk ("%d * ", cx->joined_services[i]);
+   printk(" MBMS Status: %d\n", p->nasRGDCPrimitive.mbms_ue_notify_cnf.mbmsStatus);
+   printk(" UE services currently joined \n");
+   for (i = 0; i<NASRG_MBMS_SVCES_MAX; i++)
+      printk ("%d * ", cx->joined_services[i]);
    nasrg_TOOL_print_state(cx->state);
 #endif
 }
@@ -1239,6 +1287,9 @@ int nasrg_ASCTL_DC_receive(struct cx_entity *cx, char *buffer){
         switch(cx->state){
           case NAS_CX_DCH:
             nasrg_ASCTL_DC_decode_rb_establish_cnf(cx,p);
+            #ifdef NAS_AUTO_MBMS
+            nasrg_ASCTL_start_default_ue_notification(cx);
+            #endif
             break;
           default:
             printk("nasrg_ASCTL_DC_receive: RB_ESTABLISH_CNF reception, invalid state %u\n", cx->state);
@@ -1273,6 +1324,8 @@ int nasrg_ASCTL_DC_receive(struct cx_entity *cx, char *buffer){
         switch(cx->state){
           case NAS_CX_DCH:
             nasrg_ASCTL_DC_decode_mbms_ue_notify_cnf(cx,p);
+            /* //Temp
+            nasrg_ASCTL_start_default_mbms_service();*/
             break;
           default:
             printk("nasrg_ASCTL_DC_receive: MBMS_UE_NOTIFY_CNF reception, invalid state %u\n", cx->state);
