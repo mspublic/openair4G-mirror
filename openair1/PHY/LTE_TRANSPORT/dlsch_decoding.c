@@ -58,7 +58,7 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 	if (dlsch->harq_processes[i]->c) {
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
-	    free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 768);
+	    free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
 	}
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
 	  if (dlsch->harq_processes[i]->d[r])
@@ -70,11 +70,27 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
   }
 }
 
-LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t abstraction_flag) {
+LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag) {
 
   LTE_UE_DLSCH_t *dlsch;
   uint8_t exit_flag = 0,i,r;
-
+  
+  unsigned char bw_scaling =1;
+  
+  switch (N_RB_DL){
+  case 6: 
+    bw_scaling =16;
+    break;
+  case 25:
+    bw_scaling =4;
+    break;
+  case 50: 
+    bw_scaling =2;
+    break;
+  default:
+    bw_scaling =1;
+    break;
+  }
   dlsch = (LTE_UE_DLSCH_t *)malloc16(sizeof(LTE_UE_DLSCH_t));
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
@@ -85,12 +101,12 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_ite
       //      msg("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
-	dlsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+	dlsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
 	if (abstraction_flag == 0) {
 	  if (!dlsch->harq_processes[i]->b)
 	    exit_flag=3;
-	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	    dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 768);	
+	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling;r++) {
+	    dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 3+ 768);	
 	    if (!dlsch->harq_processes[i]->c[r])
 	      exit_flag=2;
 	    dlsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
@@ -104,7 +120,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_ite
     if (exit_flag==0)
       return(dlsch);
   }
-  msg("new_ue_dlsch: exit_flag = %d\n",exit_flag);
+  msg("new_ue_dlsch with size %d: exit_flag = %d\n",sizeof(LTE_DL_UE_HARQ_t), exit_flag);
   free_ue_dlsch(dlsch);
 
   return(NULL);

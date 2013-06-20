@@ -38,12 +38,14 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   LOG_I(PHY,"init eNB: Nid_cell %d\n", frame_parms->Nid_cell);
   LOG_I(PHY,"init eNB: frame_type %d,tdd_config %d\n", frame_parms->frame_type,frame_parms->tdd_config);
+  LOG_I(PHY,"init eNB: number of ue max %d number of enb max %d number of harq pid max %d\n", 
+	NUMBER_OF_UE_MAX, NUMBER_OF_eNB_MAX, NUMBER_OF_HARQ_PID_MAX);
 
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     for (j=0;j<2;j++) {
-      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
+      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,frame_parms->N_RB_DL,abstraction_flag);
       if (!PHY_vars_eNB->dlsch_eNB[i][j]) {
-	LOG_E(PHY,"Can't get eNB dlsch structures\n");
+	LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
 	exit(-1);
       }
       else {
@@ -51,13 +53,13 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	PHY_vars_eNB->dlsch_eNB[i][j]->rnti=0;
       }
     }
-    PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(8,MAX_TURBO_ITERATIONS,abstraction_flag);
+    PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS, frame_parms->N_RB_UL, abstraction_flag);
     if (!PHY_vars_eNB->ulsch_eNB[1+i]) {
       LOG_E(PHY,"Can't get eNB ulsch structures\n");
       exit(-1);
     }
 
-    PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,0);
+    PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,frame_parms->N_RB_DL, 0);
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
@@ -66,15 +68,15 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   }
   
   // ULSCH for RA
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,MAX_TURBO_ITERATIONS,abstraction_flag);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS, frame_parms->N_RB_UL, abstraction_flag);
   if (!PHY_vars_eNB->ulsch_eNB[0]) {
     LOG_E(PHY,"Can't get eNB ulsch structures\n");
     exit(-1);
   }
   
-  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,frame_parms->N_RB_DL, abstraction_flag);
   LOG_D(PHY,"eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
-  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,frame_parms->N_RB_DL, abstraction_flag);
   LOG_D(PHY,"eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
   
   PHY_vars_eNB->rx_total_gain_eNB_dB=140;
@@ -108,31 +110,31 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
   phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
   for (i=0;i<NUMBER_OF_CONNECTED_eNB_MAX;i++) {
     for (j=0;j<2;j++) {
-      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,abstraction_flag);
+      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
       if (!PHY_vars_UE->dlsch_ue[i][j]) {
 	LOG_E(PHY,"Can't get ue dlsch structures\n");
 	exit(-1);
       }
       else
-	LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch_ue[i][j]);//navid
+	LOG_D(PHY,"dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch_ue[i][j]);
     }
 
     
     
-    PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(8,abstraction_flag);
+    PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(NUMBER_OF_HARQ_PID_MAX,frame_parms->N_RB_UL, abstraction_flag);
     if (!PHY_vars_UE->ulsch_ue[i]) {
       LOG_E(PHY,"Can't get ue ulsch structures\n");
       exit(-1);
       }
     
-    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,abstraction_flag);
-    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,abstraction_flag);
+    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
         
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
   PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
-  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS_MBSFN,0);
+  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL,0);
 
   return (PHY_vars_UE);
 }

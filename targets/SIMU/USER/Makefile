@@ -89,6 +89,10 @@ endif
 ifdef JF
 CFLAGS += -DJUMBO_FRAME
 endif
+ifdef LS
+CFLAGS += -DLARGE_SCALE
+endif
+
 # ln -sf EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn
 # make cleanasn1
 #make all Rel10=1

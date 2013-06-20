@@ -143,21 +143,30 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active){
   LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
+    if (UE_mac_inst == NULL) {
+      LOG_C(MAC,"[MAIN] Can't ALLOCATE %d Bytes for %d UE_MAC_INST with size %d \n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,sizeof(UE_MAC_INST));
+      mac_xface->macphy_exit("[MAC][MAIN] not enough memory for UEs \n");
+    }
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
     ue_init_mac();
   }
-  else
+  else 
     UE_mac_inst = NULL;
+  
   LOG_I(MAC,"[MAIN] Init function start:Nb_eNB_INST=%d\n",NB_eNB_INST);
   if (NB_eNB_INST>0) {
     eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
+    if (eNB_mac_inst == NULL){
+      LOG_D(MAC,"[MAIN] can't ALLOCATE %d Bytes for %d eNB_MAC_INST with size %d \n",NB_eNB_INST*sizeof(eNB_MAC_INST),NB_eNB_INST,sizeof(eNB_MAC_INST));
+      mac_xface->macphy_exit("[MAC][MAIN] not enough memory for eNB \n");
+    }
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
     bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
   }
   else
     eNB_mac_inst = NULL;
-
+  
   for(Mod_id=0;Mod_id<NB_eNB_INST;Mod_id++){
 
 #ifdef PHY_EMUL

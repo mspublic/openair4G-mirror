@@ -89,7 +89,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
 	    msg("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
 #endif
 	    if (dlsch->harq_processes[i]->c[r]) 
-	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));
+	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
 	  }
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
@@ -100,10 +100,26 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstraction_flag) {
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, u8 abstraction_flag) {
 
   LTE_eNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
+  unsigned char bw_scaling =1;
+  
+  switch (N_RB_DL){
+  case 6: 
+    bw_scaling =16;
+    break;
+  case 25:
+    bw_scaling =4;
+    break;
+  case 50: 
+    bw_scaling =2;
+    break;
+  default:
+    bw_scaling =1;
+    break;
+  }
   
   dlsch = (LTE_eNB_DLSCH_t *)malloc16(sizeof(LTE_eNB_DLSCH_t));
   if (dlsch) {
@@ -115,17 +131,19 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
 
     for (i=0;i<Mdlharq;i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
-      //printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
+      printf("Required mem size %d (bw scaling %d), dlsch->harq_processes[%d] %p\n",
+	     MAX_DLSCH_PAYLOAD_BYTES/bw_scaling,bw_scaling, i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
           bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
-          dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+          dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
           if (!dlsch->harq_processes[i]->b) {
               msg("Can't get b\n");
               exit_flag=1;
           }
 	if (abstraction_flag==0) {
-	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
+	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling;r++) {
+	    // account for filler in first segment and CRCs for multiple segment case
+	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+ 768);  
 	    if (!dlsch->harq_processes[i]->c[r]) {
 	      msg("Can't get c\n");
 	      exit_flag=2;
