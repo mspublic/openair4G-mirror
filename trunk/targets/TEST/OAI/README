@@ -4,9 +4,12 @@ Obj.#	Case#	Test#	Description
 01			pre-commit test case
 01	01		Build OAI 
 01	01	00	Check Makefiles and 
-01	01	01	Build Rel 8 	
-01	01	02	Build Rel8 + network device driver(nasmesh_fix)	
-01	01	03	Build Rel10
+01	01	01	Build oaisim Rel8 	
+01	01	02	Build oaisim Rel8 + network device driver(nasmesh_fix)	
+01	01	03	Build lte-softmode Rel8 	
+01	01	04	Build dlsim  Rel8 	
+01	01	05	Build ulsim  Rel8 	
+01	01	06	Build oaisim Rel10
 
 01	02		Run OAI, and check the operation
 01	02	00	Run OAI Rel8, and search for segmentation fault or exit

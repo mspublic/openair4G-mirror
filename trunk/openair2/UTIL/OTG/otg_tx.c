@@ -656,7 +656,7 @@ for (i=0; i<2; i++){ // src //maxServiceCount
 	    g_otg_multicast->size_min[i][j][k]= 20;
 	    g_otg_multicast->size_max[i][j][k]= 100;
 
-	    g_otg_multicast->duration[i][j][k] = 1000; // when the packet will be generated 
+	    g_otg_multicast->duration[i][j][k] = 1000; // the packet will be generated after duration 
 	    header_size_gen_multicast(i,j,k);
 	    break;
        default :

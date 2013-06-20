@@ -791,7 +791,7 @@ int main(int argc, char **argv) {
   for (k=0;k<n_users;k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0;i<2;i++) {
-      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(1,8,0);
+      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(1,8,N_RB_DL, 0);
       
       if (!PHY_vars_eNB->dlsch_eNB[k][i]) {
 	printf("Can't get eNB dlsch structures\n");
@@ -803,7 +803,7 @@ int main(int argc, char **argv) {
   }
 
   for (i=0;i<2;i++) {
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,N_RB_DL,0);
     if (!PHY_vars_UE->dlsch_ue[0][i]) {
       printf("Can't get ue dlsch structures\n");
       exit(-1);
