@@ -61,9 +61,10 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag);
     @returns Pointer to DLSCH to be removed
     @param Kmimo Kmimo factor from 36-212/36-213
     @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
+    @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
 */
-LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t abstraction_flag);
+LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 /** \fn free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
     \brief This function frees memory allocated for a particular DLSCH at UE
@@ -71,17 +72,17 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t abstraction
 */
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 
-LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t abstraction_flag);
+LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
-LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t abstraction_flag);
+LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
 void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
-LTE_UE_ULSCH_t *new_ue_ulsch(uint8_t Mdlharq,uint8_t abstraction_flag);
+LTE_UE_ULSCH_t *new_ue_ulsch(uint8_t Mdlharq, unsigned char N_RB_UL, uint8_t abstraction_flag);
 
 
 

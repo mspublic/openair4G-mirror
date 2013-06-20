@@ -94,7 +94,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch) {
 	    msg("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
 #endif
 	    if (ulsch->harq_processes[i]->c[r]) 
-	      free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+(MAX_ULSCH_PAYLOAD_BYTES));
+	      free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
 	  }
 	}
 	free16(ulsch->harq_processes[i],sizeof(LTE_UL_UE_HARQ_t));
@@ -105,11 +105,26 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch) {
   
 }
 
-LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
+LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,unsigned char N_RB_UL, u8 abstraction_flag) {
 
   LTE_UE_ULSCH_t *ulsch;
   unsigned char exit_flag = 0,i,j,r;
+  unsigned char bw_scaling =1;
   
+  switch (N_RB_UL){
+  case 6: 
+    bw_scaling =16;
+    break;
+  case 25:
+    bw_scaling =4;
+    break;
+  case 50: 
+    bw_scaling =2;
+    break;
+  default:
+    bw_scaling =1;
+    break;
+  }
   ulsch = (LTE_UE_ULSCH_t *)malloc16(sizeof(LTE_UE_ULSCH_t));
   if (ulsch) {
 
@@ -118,14 +133,14 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
       ulsch->harq_processes[i] = (LTE_UL_UE_HARQ_t *)malloc16(sizeof(LTE_UL_UE_HARQ_t));
       //      printf("ulsch->harq_processes[%d] %p\n",i,ulsch->harq_processes[i]);
       if (ulsch->harq_processes[i]) {
-	ulsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_ULSCH_PAYLOAD_BYTES);
+	ulsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
 	if (!ulsch->harq_processes[i]->b) {
 	  msg("Can't get b\n");
 	  exit_flag=1;
 	}
 	if (abstraction_flag==0) {
 	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
-	    ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_ULSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
+	    ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+768);  // account for filler in first segment and CRCs for multiple segment case
 	    if (!ulsch->harq_processes[i]->c[r]) {
 	      msg("Can't get c\n");
 	      exit_flag=2;

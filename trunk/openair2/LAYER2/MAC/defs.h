@@ -703,7 +703,7 @@ typedef struct{
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
-  DLSCH_PDU DLSCH_pdu[NUMBER_OF_UE_MAX][2];
+  //DLSCH_PDU DLSCH_pdu[NUMBER_OF_UE_MAX][2];
   /// number of attempt for rach
   u8 RA_attempt_number;
   /// Random-access procedure flag

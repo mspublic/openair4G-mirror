@@ -23,10 +23,22 @@
 #else
 #    define MAX_IP_PACKET_SIZE         1500
 #endif
-#    define MAX_MODULES                NB_MODULES_MAX
-#    define MAX_RG                     2
+// overwrite the previous deinitions 
+#ifdef LARGE_SCALE 
+#    define NB_MODULES_MAX 128
+#    define NB_NODE_MAX    128
+#endif
 
+#    define MAX_MODULES                NB_MODULES_MAX
+
+#ifdef LARGE_SCALE 
+#    define MAX_MOBILES_PER_RG         32
+#    define MAX_RG                     2
+#else 
 #    define MAX_MOBILES_PER_RG         16
+#    define MAX_RG                     2
+#endif
+
 #    define MAX_MANAGED_RG_PER_MOBILE  2
 
 #    define NB_RB_MAX  11

@@ -88,11 +88,27 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   }
 }
 
-LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t abstraction_flag) {
+LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag) {
 
   LTE_eNB_ULSCH_t *ulsch;
   uint8_t exit_flag = 0,i,r;
-
+  unsigned char bw_scaling =1;
+  
+  switch (N_RB_UL){
+  case 6: 
+    bw_scaling =16;
+    break;
+  case 25:
+    bw_scaling =4;
+    break;
+  case 50: 
+    bw_scaling =2;
+    break;
+  default:
+    bw_scaling =1;
+    break;
+  }
+  
   ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     ulsch->Mdlharq = Mdlharq;
@@ -102,12 +118,12 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint
       //      msg("new_ue_ulsch: Harq process %d\n",i);
       ulsch->harq_processes[i] = (LTE_UL_eNB_HARQ_t *)malloc16(sizeof(LTE_UL_eNB_HARQ_t));
       if (ulsch->harq_processes[i]) {
-	ulsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_ULSCH_PAYLOAD_BYTES);
+	ulsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
 	if (!ulsch->harq_processes[i]->b)
 	  exit_flag=3;
 	if (abstraction_flag==0) {
-	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
-	    ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 768);	
+	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS/bw_scaling;r++) {
+	    ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 3+768);	
 	    if (!ulsch->harq_processes[i]->c[r])
 	      exit_flag=2;
 	    ulsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
