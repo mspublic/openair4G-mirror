@@ -2068,6 +2068,7 @@ uint8_t do_RRCConnReconf_defaultCELL(uint8_t Mod_id,
   SRB2_config2->rlc_Config   = SRB2_rlc_config;
 
   SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
+  /* Used for standard srb2
   SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
   SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms15;
   SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_p8;
@@ -2075,6 +2076,11 @@ uint8_t do_RRCConnReconf_defaultCELL(uint8_t Mod_id,
   SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t32;
   SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms50;
   SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms10;
+  */
+  SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_um_Bi_Directional;
+  SRB2_rlc_config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength   = SN_FieldLength_size10;
+  SRB2_rlc_config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength   = SN_FieldLength_size10;
+  SRB2_rlc_config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC.t_Reordering     = T_Reordering_ms5;
 
 
   SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
