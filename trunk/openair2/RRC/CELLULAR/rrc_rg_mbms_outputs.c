@@ -186,7 +186,7 @@ void RRC_RG_MBMS_O_SEND_MSCH(char* pmsg, int msglen){
 //-------------------------------------------------------------------
   #ifdef MBMS_INTEGRATION_MODE
     #ifdef DEBUG_RRC_STATE
-    msg("MSCH Channel is not available, ignore the message\n");
+    msg("[RRC-RG][MBMS] MSCH Channel is not available, ignore the message\n");
     #endif
   #endif
 
@@ -220,13 +220,13 @@ void RRC_RG_MBMS_O_UE_NOTIFY_CNF(void){
   msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.mbms_ue_notify_cnf.localConnectionRef = protocol_bs->rrc.Mobile_List[p_rg_mbms->nas_ueID].local_connection_ref;
   msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.mbms_ue_notify_cnf.mbmsStatus = ACCEPTED; //Temp - hard coded	
   #ifdef DEBUG_RRC_STATE
-  msg("[RRC][MBMS] MBMS_UE_NOTIFY_CNF primitive sent to NAS, length %d.\n", msgToBuild->prim_length);
+  msg("[RRC-RG][MBMS] MBMS_UE_NOTIFY_CNF primitive sent to NAS, length %d.\n", msgToBuild->prim_length);
   #endif
 
   #endif
 
   #ifdef MBMS_TEST_MODE	
-   msg("[RRC][MBMS] MBMS_UE_NOTIFY_CNF primitive sent to NAS.\n");
+   msg("[RRC-RG][MBMS] MBMS_UE_NOTIFY_CNF primitive sent to NAS.\n");
   #endif
 }
 
@@ -252,7 +252,7 @@ void RRC_RG_O_O_NAS_MBMS_RB_ESTAB_CNF (void){
   msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.mbms_establish_cnf.sapId = p_rg_mbms->nas_sapId;
   msgToBuild->nasRgPrimitive.dc_sap_prim.nasRGDCPrimitive.mbms_establish_cnf.status = p_rg_mbms->nas_status;
   #ifdef DEBUG_RRC_STATE
-  msg ("[RRC_RG][FSM-OUT] MBMS_BEARER_ESTABLISH_CNF primitive sent to NAS, for mobile %d.\n", UE_Id);
+  msg ("[RRC-RG][MBMS][FSM-OUT] MBMS_BEARER_ESTABLISH_CNF primitive sent to NAS, for mobile %d.\n", UE_Id);
   #endif
 #endif
 }

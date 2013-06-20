@@ -107,5 +107,32 @@ void rrc_rg_init (u8 Mod_id){
   printk("[RRC CELL][RG-INIT] Init RG function completed\n");
   printk("***********************************************\n\n\n");
 
- }
+}
+
+//-----------------------------------------------------------------------------
+// This funstion sompletes the init once the RRC is connected to the RRM
+void rrc_rg_rrm_connected_init (void){
+//-----------------------------------------------------------------------------
+  //int  i;
+
+  //struct rrc_rrm_measure_ctl rrm_control;
+
+  msg ("\n[RRC-RRM-INTF] begin rrc_rg_rrm_connected_init\n");
+
+  rrc_rg_fsm_init ();
+  rrc_mt_list_init ();
+  rrc_rg_init_bch ();
+  rrc_init_blocks (); //prepares SIBs for broadcast
+
+  /* TEMP Next lines have been transferred to rrc_rg_config_LTE_srb2 in L2_frontend 
+  // because MCCH is using srb2
+  //Initialise MBMS
+  rrc_rg_mbms_init();
+  */
+
+  //rrc_rg_init_mac (0);
+
+/*  rrm_config_indication = 0; */
+}
+
 

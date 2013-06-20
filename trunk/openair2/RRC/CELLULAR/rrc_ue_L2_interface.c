@@ -93,7 +93,7 @@ s8 rrc_L2_mac_data_ind_rx (u8 Mod_id, u16 Srb_id, char *Sdu, u16 Sdu_len, u8 eNB
 //-----------------------------------------------------------------------------
 void rrc_L2_rlc_data_ind_rx (unsigned char Mod_id, unsigned int Srb_id, unsigned int Sdu_size,unsigned char *Buffer){
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RRC_DETAILS
+#ifdef DEBUG_RRC_DETAILS_2
   msg ("\n[RRC][L2_INTF] rrc_L2_rlc_data_ind_rx - begin\n");
 #endif
   //rrc_ue_test_rlc_intf_rcve (Buffer, Srb_id);
@@ -103,7 +103,7 @@ void rrc_L2_rlc_data_ind_rx (unsigned char Mod_id, unsigned int Srb_id, unsigned
 //-----------------------------------------------------------------------------
 void rrc_L2_rlc_confirm_ind_rx (unsigned char Mod_id, unsigned int Srb_id, unsigned int mui){
 //-----------------------------------------------------------------------------
-#ifdef DEBUG_RRC_DETAILS
+#ifdef DEBUG_RRC_DETAILS_2
   msg ("\n[RRC][L2_INTF] rrc_L2_rlc_confirm_ind_rx - begin\n");
 #endif
  //void* rrc_srb_confirm (u32 muiP, u8 rb_idP, u8 statusP);

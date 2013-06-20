@@ -60,7 +60,10 @@ void rrc_config_indication (int transaction_Id, int return_code){
        msg("[RRC_RG][MBMS] compress & copy from  rrm_config->mt_config  to curr_l12Config_data, size %d\n", protocol_bs->rrc.mbms.curr_l12Config_lgth);
        rrc_compress_config ((char *) &(rrm_config->mt_config[UE_Id]), &(protocol_bs->rrc.mbms.curr_l12Config_data), &(protocol_bs->rrc.mbms.curr_l12Config_lgth));
        protocol_bs->rrc.mbms.nas_status = ACCEPTED;
-       RRC_RG_O_O_NAS_MBMS_RB_ESTAB_CNF ();
+       if (p_rg_mbms->ptm_requested_action == E_ADD_RB ){
+          RRC_RG_O_O_NAS_MBMS_RB_ESTAB_CNF (); // send response only if activate
+          p_rg_mbms->ptm_requested_action = 0;
+       }
     }
   }else{
     #ifdef DEBUG_RRC_STATE

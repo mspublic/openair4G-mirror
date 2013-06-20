@@ -22,10 +22,10 @@
 //#include "rrc_messages.h"
 //-----------------------------------------------------------------------------
 #include "rrc_proto_int.h"
-//#include "rrc_proto_fsm.h"
 //#include "rrc_proto_intf.h"
 #include "rrc_proto_bch.h"
 #include "rrc_proto_mbms.h"
+#include "rrc_proto_rrm.h"
 
 //#include "umts_timer_proto_extern.h"
 
@@ -35,7 +35,10 @@
 int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
 //-----------------------------------------------------------------------------
   mem_block_t *p;
-  int i, ix;
+  int i;
+  #ifdef TEST_MEDIEVAL_DEMO3
+  int ix;
+  #endif
 
   //protocol_bs->rrc.current_SFN = frame;
   //  if (protocol_bs->rrc.current_SFN % 50 == 0) {
@@ -56,7 +59,8 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       #ifdef DEBUG_RRC_MBMS_SFN
         //msg("[RRC][DEBUG_RRC_MBMS_SFN] 1 - ACTIVITY   frame %d\n",Mac_rlc_xface->frame);
       #endif
-      rrc_rg_mbms_scheduling_check();
+      if (p_rg_mbms) // only if MBMS initialized
+         rrc_rg_mbms_scheduling_check();
       //rrc_rg_mbms_scenario_check();
       #endif
 
@@ -125,9 +129,11 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
         rrc_rg_sync_measures (protocol_bs->rrc.current_SFN);
       //
       #ifdef ALLOW_MBMS_PROTOCOL
+      if (p_rg_mbms){ // only if MBMS initialized
         rrc_rg_mbms_MCCH_tx();
         // ATTENTION: This must be the last line of RRC process
         rrc_rg_mbms_end_modification_period_check();
+      }
       #endif
 
       //TEST RLC communication
@@ -142,7 +148,8 @@ int rrc_rg_main_scheduler(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
       #ifdef USER_MODE
         fflush(stdout);
       #endif
-      return 0;
+
   }
+  return 0;
 }
 

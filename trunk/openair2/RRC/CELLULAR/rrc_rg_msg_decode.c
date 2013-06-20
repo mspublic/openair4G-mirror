@@ -150,6 +150,9 @@ void rrc_rg_srb2_decode (int UE_Id, char * sduP, int length){
         status = rrc_rg_msg_rbsetupcompl (UE_Id, ul_dcch_msg);
         if (status == SUCCESS)
           rrc_rg_config_LTE_default_drb(0);
+          #ifdef ALLOW_MBMS_PROTOCOL
+          rrc_rg_config_LTE_srb2(0);
+          #endif
           rrc_rg_fsm_control (UE_Id, UE_RB_SU_CMP);
         break;
       case UL_DCCH_radioBearerSetupFailure:
@@ -475,29 +478,29 @@ int rrc_rg_read_GC_FIFO (u8 *buffer, int count){
       #ifdef ALLOW_MBMS_PROTOCOL
       case MBMS_BEARER_ESTABLISH_REQ:
         // Temp : Only one service and one bearer at a time
+        #ifdef DEBUG_RRC_STATE
+        rrc_print_buffer((char *)buffer,100);
+        msg("[RRC_RG][MBMS] MBMS_BEARER_ESTABLISH_REQ primitive length: %d\n",(int)(p->length));
+        msg("[RRC_RG][MBMS] Service Id: %d\n", p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId);
+        msg("[RRC_RG][MBMS] Session Id: %d \n",p->nasRGGCPrimitive.mbms_establish_req.mbms_sessionId);
+        msg("[RRC_RG][MBMS] RB Id: %d \n",p->nasRGGCPrimitive.mbms_establish_req.mbms_rbId);
+        msg("[RRC_RG][MBMS] QoS Class: %d\n",p->nasRGGCPrimitive.mbms_establish_req.mbms_QoSclass);
+        msg("[RRC_RG][MBMS] Sap Id: %d\n",p->nasRGGCPrimitive.mbms_establish_req.mbms_sapId);
+        msg("[RRC_RG][MBMS] Duration: %d\n",p->nasRGGCPrimitive.mbms_establish_req.mbms_duration);
+        #endif
         if (p_rg_mbms->mbms_num_active_service == 0){
             //Copy all received information into the control block.
-            p_rg_mbms->nas_serviceId 	= p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId;
-            p_rg_mbms->nas_sessionId 	= p->nasRGGCPrimitive.mbms_establish_req.mbms_sessionId;
-            p_rg_mbms->nas_rbId 		= p->nasRGGCPrimitive.mbms_establish_req.mbms_rbId;
-            p_rg_mbms->nas_QoSclass 	= p->nasRGGCPrimitive.mbms_establish_req.mbms_QoSclass;
-            p_rg_mbms->nas_sapId 		= p->nasRGGCPrimitive.mbms_establish_req.mbms_sapId;
-            p_rg_mbms->nas_duration	= p->nasRGGCPrimitive.mbms_establish_req.mbms_duration;
-            #ifdef DEBUG_RRC_STATE
-            rrc_print_buffer((char *)rcve_buffer,100);
-            msg("[RRC_RG][MBMS] MBMS_BEARER_ESTABLISH_REQ primitive length: %d\n",(int)(p->length));
-            msg("[RRC_RG][MBMS] Service Id: %d\n", p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId);
-            msg("[RRC_RG][MBMS] Session Id: %d \n",p->nasRGGCPrimitive.mbms_establish_req.mbms_sessionId);
-            msg("[RRC_RG][MBMS] RB Id: %d \n",p->nasRGGCPrimitive.mbms_establish_req.mbms_rbId);
-            msg("[RRC_RG][MBMS] QoS Class: %d\n",p->nasRGGCPrimitive.mbms_establish_req.mbms_QoSclass);
-            msg("[RRC_RG][MBMS] Sap Id: %d\n",p->nasRGGCPrimitive.mbms_establish_req.mbms_sapId);
-            msg("[RRC_RG][MBMS] Duration: %d\n",p->nasRGGCPrimitive.mbms_establish_req.mbms_duration);
-            #endif
+            p_rg_mbms->nas_serviceId = p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId;
+            p_rg_mbms->nas_sessionId = p->nasRGGCPrimitive.mbms_establish_req.mbms_sessionId;
+            p_rg_mbms->nas_rbId = p->nasRGGCPrimitive.mbms_establish_req.mbms_rbId;
+            p_rg_mbms->nas_QoSclass = p->nasRGGCPrimitive.mbms_establish_req.mbms_QoSclass;
+            p_rg_mbms->nas_sapId = p->nasRGGCPrimitive.mbms_establish_req.mbms_sapId;
+            p_rg_mbms->nas_duration = p->nasRGGCPrimitive.mbms_establish_req.mbms_duration;
             // rrc_rg_mbms_NAS_ServStart_rx((MBMS_ServiceIdentity*) &p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId);
             rrc_rg_mbms_NAS_ServStart_rx();
         }else{
             // No specific action is planned - Only log an error message
-            msg("[RRC_RG][MBMS]\n\n ERROR - Service Id: %d cannot be activated. Already one Service active.\n\n", p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId);
+            msg("\n[RRC_RG][MBMS] ERROR - Service Id: %d cannot be activated. Already one Service active.\n\n", p->nasRGGCPrimitive.mbms_establish_req.mbms_serviceId);
             p_rg_mbms->nas_status = FAILURE;
             RRC_RG_O_O_NAS_MBMS_RB_ESTAB_CNF ();
         }
@@ -508,7 +511,7 @@ int rrc_rg_read_GC_FIFO (u8 *buffer, int count){
         p_rg_mbms->nas_sessionId = p->nasRGGCPrimitive.mbms_release_req.mbms_sessionId;
         p_rg_mbms->nas_rbId      = p->nasRGGCPrimitive.mbms_release_req.mbms_rbId;
         #ifdef DEBUG_RRC_STATE
-        rrc_print_buffer((char *)rcve_buffer,100);
+        rrc_print_buffer((char *)buffer,100);
         msg("[RRC_RG][MBMS] MBMS_BEARER_RELEASE_REQ primitive length: %d\n",(int)(p->length));
         msg("[RRC_RG][MBMS] Service Id: %d\n", p->nasRGGCPrimitive.mbms_release_req.mbms_serviceId);
         msg("[RRC_RG][MBMS] Session Id: %d \n",p->nasRGGCPrimitive.mbms_release_req.mbms_sessionId);

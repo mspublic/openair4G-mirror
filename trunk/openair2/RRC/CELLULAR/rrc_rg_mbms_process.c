@@ -570,7 +570,7 @@ mbms_bool rrc_rg_mbms_addModifService(int index, o3 serviceID, u8 requiredAction
   mbms_bool result = FALSE;
   if ( (result = (index < 0) && (p_rg_mbms->buff_mod_numService< maxMBMSservModif))){
     #ifdef DEBUG_RRC_MBMS_BASIC
-     msg("[RRC-RG][MBMS] Add the service %d to the list of Modified Services.\n", serviceID);
+     msg("[RRC-RG][MBMS] Add the service %d to the list of Modified Services. (index %d)\n", serviceID, index);
     #endif				
     //Service ID
     memcpy(&p_rg_mbms->buff_mod_serviceIdentity[p_rg_mbms->buff_mod_numService], &serviceID, sizeof(o3));
@@ -580,6 +580,9 @@ mbms_bool rrc_rg_mbms_addModifService(int index, o3 serviceID, u8 requiredAction
     p_rg_mbms->buff_mod_numService++;		
   }else
     if ((result = (index >= 0))){ //exist --> modified the value of required ue action.
+    #ifdef DEBUG_RRC_MBMS_BASIC
+     msg("[RRC-RG][MBMS] Mark the service %d to the list of Modified Services-- removed. (index %d)\n", serviceID, index);
+    #endif				
       p_rg_mbms->buff_mod_requiredUEAction[index] = requiredAction;	
       p_rg_mbms->buff_mod_changed[index] = TRUE;
     }	
@@ -683,7 +686,7 @@ void rrc_rg_mbms_modif_services_print(void){
 //-----------------------------------------------------------------------------
   int i;
   for (i = 0; i< p_rg_mbms->mod_numService; i++){
-    msg("\t\t service id = %d", p_rg_mbms->mod_serviceIdentity[i]);
+    msg("\t\t[RRC-RG][MBMS] service id = %d", p_rg_mbms->mod_serviceIdentity[i]);
     msg(", required action = ");			
     switch (p_rg_mbms->mod_requiredUEAction[i]){
       case Mod_none: msg("None\n"); break;
@@ -702,7 +705,7 @@ void rrc_rg_mbms_unmodif_services_print(void){
 //-----------------------------------------------------------------------------
   int i;
   for (i = 0; i< p_rg_mbms->umod_numService; i++){
-    msg("\t\t service id = %d", p_rg_mbms->umod_serviceIdentity[i]);
+    msg("\t\t[RRC-RG][MBMS] service id = %d", p_rg_mbms->umod_serviceIdentity[i]);
     msg(", required action = ");			
     switch (p_rg_mbms->umod_requiredUEAction[i]){
       case UMod_none: msg("None\n"); break;
