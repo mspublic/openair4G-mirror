@@ -211,6 +211,8 @@ void nasrg_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct cla
 #ifdef NAS_DEBUG_SEND
   printk("nasrg_COMMON_QOS_send #1 :");
   printk("lcr %u, rab_id %u, rab_id %u\n", cx->lcr, (gc->rb)->rab_id, gc->rab_id);
+#endif
+#ifdef NAS_DEBUG_SEND_DETAIL
   nasrg_TOOL_print_classifier(gc);
 #endif
   pdcph.data_size  = skb->len;
@@ -220,11 +222,15 @@ void nasrg_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct cla
 
 #ifdef NAS_NETLINK
   bytes_wrote = nasrg_netlink_send((unsigned char *)&pdcph,NAS_PDCPH_SIZE, NASNL_DEST_PDCP);
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasrg_COMMON_QOS_send - Wrote %d bytes (header for %d byte skb) to PDCP via netlink\n", bytes_wrote,skb->len);
+#endif
 #else
   //bytes_wrote = rtf_put(gpriv->sap[(gc->rb)->sapi], &pdcph, NAS_PDCPH_SIZE);
   bytes_wrote = rtf_put(NAS2PDCP_FIFO, &pdcph, NAS_PDCPH_SIZE);
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasrg_COMMON_QOS_send - Wrote %d bytes (header for %d byte skb) to PDCP fifo\n", bytes_wrote,skb->len);
+#endif
 #endif //NAS_NETLINK
 
   if (bytes_wrote != NAS_PDCPH_SIZE){
@@ -234,7 +240,7 @@ void nasrg_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct cla
     return;
   }
 
-#ifdef NAS_DEBUG_SEND
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasrg_COMMON_QOS_send #2 :");
   printk("Header bytes written : %d\n", bytes_wrote);
 #endif
@@ -258,7 +264,7 @@ void nasrg_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct cla
 #endif
   gpriv->stats.tx_bytes   += skb->len;
   gpriv->stats.tx_packets ++;
-#ifdef NAS_DEBUG_SEND
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasrg_COMMON_QOS_send - end \n");
 #endif
 }
