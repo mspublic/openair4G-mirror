@@ -44,6 +44,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -525,6 +526,8 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
   int ii,j;
   for(ii=0; ii<NB_RB_MAX; ii++) rx_lengths[ii] = 0;
   
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU,1);
+
   eNB_mac_inst[Mod_id].eNB_UE_stats[UE_id].total_pdu_bytes_rx+=sdu_len;
   eNB_mac_inst[Mod_id].eNB_UE_stats[UE_id].total_num_pdus_rx+=1;
 
@@ -609,6 +612,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_T(MAC,"offset: %d\n",(unsigned char)((unsigned char*)payload_ptr-sdu));
+     
       for (j=0;j<32;j++)
         LOG_T(MAC,"%x ",payload_ptr[j]);
       LOG_T(MAC,"\n"); 
@@ -636,6 +640,7 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
     payload_ptr+=rx_lengths[i];
   }
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU,0);
 
 }
 
@@ -1034,7 +1039,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 #endif
 
     if (mac_xface->lte_frame_parms->frame_type == TDD) {
-      LOG_I(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
+      LOG_D(MAC,"[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for SI %d bytes (mcs %d, rb 3, TBS %d)\n",
 	    frame,
 	    bcch_sdu_length,
 	    BCCH_alloc_pdu.mcs,
@@ -1315,7 +1320,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
       
        header_len_mcch = 2; 
       if (mac_xface->lte_frame_parms->frame_type == TDD) {
-	LOG_I(MAC,"[eNB %d] Frame %d : Scheduling MCCH->MCH (TDD) for MCCH message %d bytes (mcs %d )\n", 
+	LOG_D(MAC,"[eNB %d] Frame %d : Scheduling MCCH->MCH (TDD) for MCCH message %d bytes (mcs %d )\n", 
 	      Mod_id,
 	      frame,
 	      mcch_sdu_length,
@@ -1864,7 +1869,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
   u32 cqi_req,cshift,ndi,mcs,rballoc;
  
   for (UE_id=0;UE_id<granted_UEs && (*nCCE_available > (1<<aggregation));UE_id++) {
-    if ((((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (frame%10==0)))// && ((UE_id%2)==(sched_subframe%2)))
+    if ((((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (frame%10==0)))
     //if (((UE_id%2)==(sched_subframe%2)))
     { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
@@ -2401,11 +2406,11 @@ void fill_DLSCH_dci(unsigned char Mod_id,u32 frame, unsigned char subframe,u32 R
       case 1:
 
       case 2:
-		printf("[USER-PLANE DEFAULT DRB] Adding UE spec DCI for %d PRBS (%x) => ",nb_rb,rballoc);
+	LOG_D(MAC,"[USER-PLANE DEFAULT DRB] Adding UE spec DCI for %d PRBS (%x) => ",nb_rb,rballoc);
 	if (mac_xface->lte_frame_parms->frame_type == TDD) {
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
-	  	printf("[USER-PLANE DEFAULT DRB] %x\n",((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
+	  LOG_D(MAC,"[USER-PLANE DEFAULT DRB] %x\n",((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
 	  add_ue_spec_dci(DCI_pdu,
 			  DLSCH_dci,
 			  rnti,
@@ -2615,7 +2620,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     nb_available_rb = pre_nb_available_rbs[UE_id];
 
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
-      LOG_W(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
+      LOG_D(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
 	    UE_id, nb_rb_used0, nb_available_rb, nCCE, aggregation);
       //if(mac_xface->get_transmission_mode(Mod_id,rnti)==5) 
 	continue; //to next user (there might be rbs availiable for other UEs in TM5
@@ -2730,7 +2735,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
 	eNB_UE_stats->dlsch_mcs1 = 22;//28
 	break;
       default:
-	printf("Invalid CQI");
+	LOG_E(MAC,"Invalid CQI");
 	exit(-1);
       }
     }
@@ -2806,7 +2811,7 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
     if (round > 0) {
       if (mac_xface->lte_frame_parms->frame_type == TDD) {
 	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI++;
-	printf("DAI update: subframe %d: UE %d, DAI %d\n",subframe,next_ue,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
+	LOG_D(MAC,"DAI update: subframe %d: UE %d, DAI %d\n",subframe,next_ue,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
 	
 	update_ul_dci(Mod_id,rnti,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
       }
@@ -3487,6 +3492,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,1);
+
   // clear DCI and BCCH contents before scheduling
   DCI_pdu->Num_common_dci  = 0;
   DCI_pdu->Num_ue_spec_dci = 0;
@@ -3500,9 +3507,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   eNB_mac_inst[Mod_id].subframe = subframe;
 
   //if (subframe%5 == 0)
-
-  //pdcp_run(frame, 1, 0, Mod_id);
-
+#ifdef EXMIMO 
+  pdcp_run(frame, 1, 0, Mod_id);
+#endif
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, 0);
 #endif
@@ -3789,4 +3796,6 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   DCI_pdu->nCCE = nCCE;
   LOG_D(MAC,"frame %d, subframe %d nCCE %d\n",frame,subframe,nCCE);
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,0);
 }

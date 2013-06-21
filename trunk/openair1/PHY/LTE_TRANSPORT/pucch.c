@@ -825,105 +825,114 @@ s32 rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     stat_re=0;
     stat_im=0;
 
-    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      for (re=0;re<12;re++) {
-	chest_re=0;
-	chest_im=0;
-	cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
-	
-	// channel estimate for first slot
-	for (l=2;l<(nsymb>>1)-2;l++) {
-	  off=(re<<1) + (24*l);
-	  chest_re += ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
-	  chest_im += ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	}
-#ifdef DEBUG_PUCCH_RX
-	LOG_D(PHY,"[eNB] PUCCH subframe %d l %d re %d chest1 => (%d,%d)\n",subframe,l,re,
-	    chest_re,chest_im);
-#endif	    
-	for (l=0;l<2;l++) {
-	  off=(re<<1) + (24*l);
-	  tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
-	  tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	  stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
-	  stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
-	  off+=2;
-#ifdef DEBUG_PUCCH_RX
-	  LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-	      rxcomp[aa][off],rxcomp[aa][1+off],
-	      cfo[l<<1],cfo[1+(l<<1)],
-	      stat_re,stat_im);
-#endif	    
-	}
-	for (l=(nsymb>>1)-2;l<(nsymb>>1);l++) {
-	  off=(re<<1) + (24*l);
-	  tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
-	  tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	  stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
-	  stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
-	  off+=2;
-#ifdef DEBUG_PUCCH_RX
-	  LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-	      rxcomp[aa][off],rxcomp[aa][1+off],
-	      cfo[l<<1],cfo[1+(l<<1)],
-	      stat_re,stat_im);
-#endif	    
-	}	
+    if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
 
-	chest_re=0;
-	chest_im=0;
-	// channel estimate for second slot
-	for (l=2;l<(nsymb>>1)-2;l++) {
-	  off=(re<<1) + (24*l) + (nsymb>>1)*24;
-	  chest_re += ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
-	  chest_im += ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	}
+
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	for (re=0;re<12;re++) {
+	  chest_re=0;
+	  chest_im=0;
+	  cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
+	  
+	  // channel estimate for first slot
+	  for (l=2;l<(nsymb>>1)-2;l++) {
+	    off=(re<<1) + (24*l);
+	    chest_re += ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
+	    chest_im += ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
+	  }
 #ifdef DEBUG_PUCCH_RX
-	LOG_D(PHY,"[eNB] PUCCH subframe %d l %d re %d chest2 => (%d,%d)\n",subframe,l,re,
-	      chest_re,chest_im);
+	  LOG_D(PHY,"[eNB] PUCCH subframe %d l %d re %d chest1 => (%d,%d)\n",subframe,l,re,
+		chest_re,chest_im);
 #endif	    
-	for (l=0;l<2;l++) {
-	  off=(re<<1) + (24*l) + (nsymb>>1)*24;
-	  tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
-	  tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	  stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
-	  stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
-	  off+=2;
+	  for (l=0;l<2;l++) {
+	    off=(re<<1) + (24*l);
+	    tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
+	    tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
+	    stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
+	    stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
+	    off+=2;
 #ifdef DEBUG_PUCCH_RX
-	  LOG_D(PHY,"[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-	      rxcomp[aa][off],rxcomp[aa][1+off],
-	      cfo[l<<1],cfo[1+(l<<1)],
-	      stat_re,stat_im);
+	    LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
+		  rxcomp[aa][off],rxcomp[aa][1+off],
+		  cfo[l<<1],cfo[1+(l<<1)],
+		  stat_re,stat_im);
 #endif	    
-	}
-	for (l=(nsymb>>1)-2;l<(nsymb>>1)-1;l++) {
-	  off=(re<<1) + (24*l) + (nsymb>>1)*24;
-	  tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
-	  tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
-	  stat_re += ((tmp_re*chest_re)>>9) + ((tmp_im*chest_im)>>9);
-	  stat_im += ((tmp_re*chest_im)>>9) - ((tmp_im*chest_re)>>9);
-	  off+=2;
+	  }
+	  for (l=(nsymb>>1)-2;l<(nsymb>>1);l++) {
+	    off=(re<<1) + (24*l);
+	    tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
+	    tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
+	    stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
+	    stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
+	    off+=2;
 #ifdef DEBUG_PUCCH_RX
-	  LOG_D(PHY,"[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-	      rxcomp[aa][off],rxcomp[aa][1+off],
-	      cfo[l<<1],cfo[1+(l<<1)],
-	      stat_re,stat_im);
+	    LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
+		  rxcomp[aa][off],rxcomp[aa][1+off],
+		  cfo[l<<1],cfo[1+(l<<1)],
+		  stat_re,stat_im);
+#endif	    
+	  }	
+	  
+	  chest_re=0;
+	  chest_im=0;
+	  // channel estimate for second slot
+	  for (l=2;l<(nsymb>>1)-2;l++) {
+	    off=(re<<1) + (24*l) + (nsymb>>1)*24;
+	    chest_re += ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
+	    chest_im += ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
+	  }
+#ifdef DEBUG_PUCCH_RX
+	  LOG_D(PHY,"[eNB] PUCCH subframe %d l %d re %d chest2 => (%d,%d)\n",subframe,l,re,
+		chest_re,chest_im);
+#endif	    
+	  for (l=0;l<2;l++) {
+	    off=(re<<1) + (24*l) + (nsymb>>1)*24;
+	    tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
+	    tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
+	    stat_re += ((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15);
+	    stat_im += ((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15);
+	    off+=2;
+#ifdef DEBUG_PUCCH_RX
+	    LOG_D(PHY,"[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
+		  rxcomp[aa][off],rxcomp[aa][1+off],
+		  cfo[l<<1],cfo[1+(l<<1)],
+		  stat_re,stat_im);
+#endif	    
+	  }
+	  for (l=(nsymb>>1)-2;l<(nsymb>>1)-1;l++) {
+	    off=(re<<1) + (24*l) + (nsymb>>1)*24;
+	    tmp_re = ((rxcomp[aa][off]*(s32)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(s32)cfo[1+(l<<1)])>>15);
+	    tmp_im = ((rxcomp[aa][off]*(s32)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(s32)cfo[(l<<1)])>>15);
+	    stat_re += ((tmp_re*chest_re)>>9) + ((tmp_im*chest_im)>>9);
+	    stat_im += ((tmp_re*chest_im)>>9) - ((tmp_im*chest_re)>>9);
+	    off+=2;
+#ifdef DEBUG_PUCCH_RX
+	    LOG_D(PHY,"[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
+		  rxcomp[aa][off],rxcomp[aa][1+off],
+		  cfo[l<<1],cfo[1+(l<<1)],
+		  stat_re,stat_im);
 #endif	
-	}
-
+	  }
+	  
 #ifdef DEBUG_PUCCH_RX
-	LOG_D(PHY,"aa%d re %d : stat %d,%d\n",aa,re,stat_re,stat_im);
+	  LOG_D(PHY,"aa%d re %d : stat %d,%d\n",aa,re,stat_re,stat_im);
 #endif
-
-      } //re 
-    } // aa
-    
+	  
+	} //re 
+      } // aa
+      
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"stat %d,%d\n",stat_re,stat_im);
+      LOG_I(PHY,"stat %d,%d\n",stat_re,stat_im);
 #endif    
-    *payload = (stat_re<0) ? 1 : 0;
-    if (fmt==pucch_format1b) 
-      *(1+payload) = (stat_im<0) ? 1 : 0;
+      *payload = (stat_re<0) ? 1 : 0;
+      if (fmt==pucch_format1b) 
+	*(1+payload) = (stat_im<0) ? 1 : 0;
+    }
+    else {  // insufficient energy on PUCCH so NAK
+      *payload = 0;
+      if (fmt==pucch_format1b) 
+	*(1+payload) = 0;
+    }
   }
   else {
     LOG_E(PHY,"[eNB] PUCCH fmt2/2a/2b not supported\n");

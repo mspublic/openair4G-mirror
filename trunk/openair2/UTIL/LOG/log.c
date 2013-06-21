@@ -48,16 +48,17 @@
 #include "log_vars.h"
 #include "vcd_signal_dumper.h"
 
-#ifdef USER_MODE
 //#include "UTIL/OCG/OCG.h"
 //#include "UTIL/OCG/OCG_extern.h"
+#ifdef USER_MODE
 #include <string.h>
-
-#else
+#endif
+#ifdef RTAI
+#include <rtai.h>
+#include <rtai_fifos.h>
 #    define FIFO_PRINTF_MAX_STRING_SIZE   1000
 #    define FIFO_PRINTF_NO              62
 #    define FIFO_PRINTF_SIZE            65536
-
 #endif
 
 // made static and not local to logRecord() for performance reasons
@@ -296,7 +297,7 @@ int logInit (void) {
     g_log->level  = LOG_TRACE;
     g_log->flag   = LOG_LOW;
     
-#ifdef USER_MODE  
+#ifndef RTAI
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
   g_log->config.facility       = LOG_LOCAL7;
@@ -320,7 +321,6 @@ int logInit (void) {
 #else
   g_log->syslog = 0; 
   g_log->filelog   = 0;
-  printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
 
@@ -461,11 +461,21 @@ else
     //  strncat(g_buff_total, "\n", MAX_LOG_TOTAL);
   }
 
-#ifdef USER_MODE
   // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) {
+#ifdef RTAI
+    if (len > MAX_LOG_TOTAL) {
+      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+    }
+    if (len > 0) {
+      rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
+    }
+#else
     printf("%s",g_buff_total);
+#endif
+  }
 
+#ifndef RTAI
   if (g_log->syslog) {
     syslog(g_log->level, g_buff_total);
   }
@@ -475,14 +485,8 @@ else
   if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
     write(g_log->log_component[comp].fd, g_buff_total, strlen(g_buff_total));
   }
-#else
-  if (len > MAX_LOG_TOTAL) {
-    rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-  }
-  if (len > 0) {
-    rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
-  }
 #endif
+
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
 
 }
@@ -540,9 +544,6 @@ void logRecord_mt( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
-
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
-
   int len, i;
   va_list args;
   log_component_t *c;
@@ -554,9 +555,9 @@ void logRecord_mt( const char *file, const char *func,
   // only log messages which are enabled and are below the global log level and component's level threshold
   if ( (level != LOG_FILE) && ( (c->level > g_log->level) || (level > c->level) || (level > g_log->level)) ){
     //  || ((mac_xface->frame % c->interval) != 0)) { 
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
     return;
    }
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,1);
    // adjust syslog level for TRACE messages
    if (g_log->syslog) {
      if (g_log->level > LOG_DEBUG) { 
@@ -626,13 +627,22 @@ void logRecord_mt( const char *file, const char *func,
 
  
   //  strncat(g_buff_total, "\n", MAX_LOG_TOTAL);
-}
+  }
 
-#ifdef USER_MODE
   // OAI printf compatibility 
   if ((g_log->onlinelog == 1) && (level != LOG_FILE)) 
+#ifdef RTAI
+  if (len > MAX_LOG_TOTAL) {
+    rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+  }
+  if (len > 0) {
+   rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
+  }
+#else
     printf("%s",g_buff_total);
+#endif
 
+#ifndef RTAI
   if (g_log->syslog) {
     syslog(g_log->level, g_buff_total);
   } 
@@ -642,14 +652,8 @@ void logRecord_mt( const char *file, const char *func,
   if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
       write(g_log->log_component[comp].fd, g_buff_total, strlen(g_buff_total));
   }
-#else
-  if (len > MAX_LOG_TOTAL) {
-    rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-  }
-  if (len > 0) {
-   rtf_put (FIFO_PRINTF_NO, g_buff_total, len);
-  }
 #endif
+
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,0);
 
 }
@@ -763,7 +767,7 @@ int is_newline( char *str, int size){
 }
 void logClean (void) {
   int i;
-#ifndef USER_MODE
+#ifdef RTAI
   rtf_destroy (FIFO_PRINTF_NO);
 #else
   if (g_log->syslog) {

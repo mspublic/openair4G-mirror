@@ -353,7 +353,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   (*sib1)->systemInfoValueTag=0;
   //  (*sib1).nonCriticalExtension = calloc(1,sizeof(*(*sib1).nonCriticalExtension));
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
@@ -521,7 +521,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf10240;
 
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
@@ -863,7 +863,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
@@ -1072,7 +1072,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit=T_PollRetransmit_ms15;
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU=PollPDU_p8;
   SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte=PollByte_kB1000;
-  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold=UL_AM_RLC__maxRetxThreshold_t32;
+  SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold=UL_AM_RLC__maxRetxThreshold_t16;
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering=T_Reordering_ms50;
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms10;
 
@@ -1313,7 +1313,7 @@ uint8_t do_SecurityModeCommand(uint8_t Mod_id,
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm=SecurityAlgorithmConfig__integrityProtAlgorithm_spare1;
 
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
@@ -1356,7 +1356,7 @@ uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
 		   &rat);
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
@@ -1460,8 +1460,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    100);
-
+#ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
+#endif
   //#ifdef USER_MODE
   LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   // for (i=0;i<30;i++)
@@ -1562,7 +1563,7 @@ uint8_t do_MBSFNAreaConfig(LTE_DL_FRAME_PARMS *frame_parms,
  */ 
   ASN_SEQUENCE_ADD(&(*mbsfnAreaConfiguration)->pmch_InfoList_r9.list,pmch_Info_1);
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_MCCH_Message,(void*)mcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_MCCH_Message,
@@ -1784,7 +1785,9 @@ OAI_UECapability_t *fill_ue_capability() {
   // UE_EUTRA_Capability->interRAT_Parameters     // null
   
   UECapability.UE_EUTRA_Capability = UE_EUTRA_Capability;
+#ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_UE_EUTRA_Capability,(void *)UE_EUTRA_Capability);
+#endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_UE_EUTRA_Capability,
 				   (void*)UE_EUTRA_Capability,
 				   &UECapability.sdu[0],
@@ -1968,7 +1971,7 @@ uint8_t do_SIB2_cell(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *b
   ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,
 		   sib2_part);
 
-#ifdef USER_MODE
+#ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
@@ -2411,8 +2414,9 @@ uint8_t do_RRCConnReconf_defaultCELL(uint8_t Mod_id,
 				   buffer,
 				   100);
   
-
+#ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
+#endif
   LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 
   //FREEMEM(SRB_list);

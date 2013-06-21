@@ -334,13 +334,13 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
     if (rx_lcids[i] == CCCH) {
 
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",Mod_id,frame, eNB_index, rx_lengths[i]);
-      
+    
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       int j;
       for (j=0;j<rx_lengths[i];j++)
         LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
       LOG_T(MAC,"\n");
-#endif
+#endif      
       mac_rrc_data_ind(Mod_id,
 		       frame,
 		       CCCH,
@@ -1208,8 +1208,9 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   //if (subframe%5 == 0)
-
-  //pdcp_run(frame, 0, Mod_id, eNB_index);
+#ifdef EXMIMO
+  pdcp_run(frame, 0, Mod_id, eNB_index);
+#endif 
   UE_mac_inst[Mod_id].frame = frame;
   UE_mac_inst[Mod_id].subframe = subframe;
 

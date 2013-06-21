@@ -24,7 +24,7 @@ TIMER_OBJ +=  $(TIMER_DIR)/umts_timer.o
 MEM_OBJ +=  $(MEM_DIR)/mem_block.o
 
 LOG_OBJS =  $(LOG_DIR)/log.o
-#LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
+LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
 
 OCG_OBJS  =  $(OCG_DIR)/OCG.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_create_dir.o

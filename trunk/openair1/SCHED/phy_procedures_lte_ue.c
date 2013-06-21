@@ -800,14 +800,14 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    }
 	    */
 	  }
-#ifdef DEBUG_PHY_PROC
+	  //#ifdef DEBUG_PHY_PROC
 	  //#ifdef DEBUG_ULSCH
 	  LOG_I(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
-	    printf("%x.",ulsch_input_buffer[i]);
-	  printf("\n");
+	    LOG_T(PHY,"%x.",ulsch_input_buffer[i]);
+	  LOG_T(PHY,"\n");
 	  //#endif
-#endif
+	  //#endif
 #else //OPENAIR2
       // the following lines were necessary for the calibration in CROWN
       /*
@@ -2991,10 +2991,12 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  phy_vars_ue->dlsch_mch_errors[0]++;
 	  LOG_D(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error, not passing to L2 (TBS %d, iter %d,G %d)\n",phy_vars_ue->Mod_id,((last_slot>>1)==9?-1:0)+phy_vars_ue->frame,last_slot>>1,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->TBS>>3,phy_vars_ue->dlsch_ue_MCH[0]->max_turbo_iterations,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G);
 	  dump_mch(phy_vars_ue,0,phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G,(last_slot>>1));
-	  
+#ifdef DEBUG_DLSCH	  
 	  for (i=0;i<phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->TBS>>3;i++){
-	    printf("%2x.",phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->c[0][i]);
+	    LOG_T(PHY,"%2x.",phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->c[0][i]);
 	  }
+	  LOG_T(PHY,"\n");
+#endif 
 	  if ((last_slot>>1)==9) exit(-1);
 	}
 	else {

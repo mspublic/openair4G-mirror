@@ -69,7 +69,7 @@
 
 #define PUCCH 1
 
-#define PUCCH1_THRES 20
+#define PUCCH1_THRES 25
 
 extern inline unsigned int taus(void);
 extern int exit_openair;
@@ -915,6 +915,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // there is at least one allocation for PDCCH
   u8 smbv_alloc_cnt = 1;
 #endif
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,1);
+
 #ifdef OPENAIR2
   // Get scheduling info for next subframe during odd slot of previous subframe (next_slot is even)
   if (next_slot%2 == 0) 
@@ -1883,7 +1886,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     phy_procedures_emos_eNB_TX(next_slot, phy_vars_eNB);
 #endif
   }
- 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,0);
 }
 
 void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,u8 last_slot,u8 UE_id, u8 harq_pid) {
@@ -2309,7 +2312,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   memset(&preamble_energy_list[0],0,64*sizeof(u16));
   memset(&preamble_delay_list[0],0,64*sizeof(u16));
   if (abstraction_flag == 0) {
-    LOG_D(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
+    LOG_I(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
           phy_vars_eNB->frame,subframe,dB_fixed(signal_energy(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],512)) - phy_vars_eNB->rx_total_gain_eNB_dB);        
 
     //    LOG_I(PHY,"[eNB %d][RAPROC] PRACH: rootSequenceIndex %d, prach_ConfigIndex %d, zeroCorrelationZoneConfig %d, highSpeedFlag %d, prach_FreqOffset %d\n",phy_vars_eNB->Mod_id,phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex,phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex, phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag,phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset);
@@ -2407,6 +2410,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   u16 rnti=0;
   u8 access_mode;
   int num_active_cba_groups;
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
 
   if (abstraction_flag == 0) {
     remove_7_5_kHz(phy_vars_eNB,last_slot);
@@ -2704,7 +2709,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_ACK = 0;
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round++;
 
-	//	printf("[UE][PUSCH %d] Increasing to round %d\n",harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round);
+	LOG_D(PHY,"[UE][PUSCH %d] Increasing to round %d\n",harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round);
 
 	//	phy_vars_eNB->ulsch_eNB[i]->o_ACK[0] = 0;
 	//	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1] = 0;
@@ -2715,7 +2720,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  dump_ulsch(phy_vars_eNB, last_slot>>1, i);
 	  #endif
 	*/
-
 
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 	  LOG_D(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
@@ -2758,16 +2762,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		phy_vars_eNB->ulsch_eNB[i]->Mdlharq,
 		phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],
 		phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
-	  /*	  
+	  	  
 	  LOG_I(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
-	    printf("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->c[0][j]);
-	  printf("\n");	  
-
-	  dump_ulsch(phy_vars_eNB, last_slot>>1, i);
-	  exit(-1);
-	  */
+	    LOG_T(PHY,"%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->c[0][j]);
+	  LOG_T(PHY,"\n");	  
+	  
+	  //dump_ulsch(phy_vars_eNB, last_slot>>1, i);
+	  	  
 	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round== phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
 	    LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mdlharq %d reached\n",
 		  phy_vars_eNB->Mod_id,harq_pid,
@@ -2778,6 +2781,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active=0;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid]++;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]++;
+	    mac_xface->macphy_exit("");
 	  }
 	
 	  // If we've dropped the UE, go back to PRACH mode for this UE
@@ -3346,6 +3350,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef EMOS
   phy_procedures_emos_eNB_RX(last_slot,phy_vars_eNB);
 #endif
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,0);
    
 }
 
