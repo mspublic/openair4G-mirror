@@ -47,7 +47,7 @@ fi
 
 echo "start the emulation with 1eNB and" $1 "UE"
 echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u" $1 ">/dev/null"
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 > /dev/null 
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1 -P wireshark > /dev/null 
 
 
 echo "End"

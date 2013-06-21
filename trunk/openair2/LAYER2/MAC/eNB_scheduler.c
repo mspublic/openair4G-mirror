@@ -593,11 +593,11 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
 
       //  This check is just to make sure we didn't get a bogus SDU length, to be removed ...
       if (rx_lengths[i]<CCCH_PAYLOAD_SIZE_MAX) {
-	LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d \n",
-	      Mod_id,frame, rx_lengths[i], UE_id);
+	LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d on LCID %d(%d) \n",
+	      Mod_id,frame, rx_lengths[i], UE_id, rx_lcids[i], rx_lcids[i]+(UE_id*NB_RB_MAX));
 
 	mac_rlc_data_ind(Mod_id,frame,1,RLC_MBMS_NO,
-			 rx_lcids[i]+(UE_id)*NB_RB_MAX,
+			 rx_lcids[i]+(UE_id*NB_RB_MAX),
 			 (char *)payload_ptr,
 			 rx_lengths[i],
 			 1,
@@ -618,11 +618,12 @@ void rx_sdu(u8 Mod_id,u32 frame,u16 rnti,u8 *sdu, u16 sdu_len) {
       LOG_T(MAC,"\n"); 
 #endif
 
-      LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
-	    Mod_id,frame, rx_lengths[i], UE_id,rx_lcids[i]);
+      LOG_D(MAC,"[eNB %d] Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d (%d)\n",
+	    Mod_id,frame, rx_lengths[i], UE_id,rx_lcids[i],rx_lcids[i]+(UE_id*NB_RB_MAX));
+
       if ((rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) &&  (rx_lengths[i] > 0) ) {   // MAX SIZE OF transport block
 	mac_rlc_data_ind(Mod_id,frame,1,RLC_MBMS_NO,
-			 DTCH+(UE_id)*NB_RB_MAX,
+			 DTCH+(UE_id*NB_RB_MAX),
 			 (char *)payload_ptr,
 			 rx_lengths[i],
 			 1,
@@ -2109,7 +2110,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	*nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
 	//msg("[MAC][eNB %d][ULSCH Scheduler] Frame %d, subframe %d: Generated ULSCH DCI for next UE_id %d, format 0\n", Mod_id,frame,subframe,next_ue);
 
-	break; // leave loop after first UE is schedule (avoids m
+	//break; // leave loop after first UE is schedule (avoids m
       } // UE_is_to_be_scheduled
     } // UE is in PUSCH
   } // loop over UE_id

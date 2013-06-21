@@ -985,7 +985,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
   DRB_config = CALLOC(1,sizeof(*DRB_config));
 
   //DRB_config->drb_Identity = (DRB_Identity_t) 1; //allowed values 1..32
-  DRB_config->drb_Identity = (DRB_Identity_t) (UE_index+1); //allowed values 1..32
+  // NN: this is the 1st DRB for this ue, so set it to 1
+  DRB_config->drb_Identity = (DRB_Identity_t) 1; // (UE_index+1); //allowed values 1..32
   DRB_config->logicalChannelIdentity = CALLOC(1,sizeof(long));
   *(DRB_config->logicalChannelIdentity) = (long) 3;
   DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));

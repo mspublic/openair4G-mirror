@@ -12,7 +12,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-//#define DEBUG_MAC_INTERFACE
+#define DEBUG_MAC_INTERFACE
 
 // tb_size_t in bytes
 //-----------------------------------------------------------------------------
@@ -84,6 +84,11 @@ tbs_size_t mac_rlc_data_req     (module_id_t module_idP, u32_t frame, u8_t MBMS_
 //-----------------------------------------------------------------------------
     struct mac_data_req    data_request;
     rb_id_t                rb_id;
+#ifdef DEBUG_MAC_INTERFACE
+    LOG_D(RLC, "\n[RLC] Inst %d(%d): MAC_RLC_DATA_REQ channel %d (%d) MAX RB %d, Num_tb %d\n",
+	    module_idP,MAX_MODULES,  channel_idP, RLC_MAX_LC, RLC_MAX_RB);
+    
+#endif // DEBUG_MAC_INTERFACE
 
     if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
         if ((channel_idP >= 0) && (channel_idP < RLC_MAX_LC)) {
@@ -131,7 +136,8 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
     rb_id_t                rb_id;
 #ifdef DEBUG_MAC_INTERFACE
     if (num_tbP) {
-        LOG_D(RLC, "\n[RLC] Inst %d: MAC_RLC_DATA_IND on RB %d, Num_tb %d\n",module_idP,rb_idP,num_tbP);
+      LOG_D(RLC, "\n[RLC] Inst %d(%d): MAC_RLC_DATA_IND on channel %d (%d), rb max %d, Num_tb %d\n",
+	    module_idP,MAX_MODULES,  channel_idP, RLC_MAX_LC, RLC_MAX_RB, num_tbP);
     }
 #endif // DEBUG_MAC_INTERFACE
 
@@ -150,7 +156,7 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
 
                     case RLC_AM:
 #ifdef DEBUG_MAC_INTERFACE
-                        LOG_D(RLC, "MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_id].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index].module_id);
+		      LOG_D(RLC, "MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_id].rlc_index, rb_id, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index].module_id);
 #endif
 
                         rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_id].rlc_index], frame, eNB_flag, data_ind);
@@ -177,13 +183,13 @@ void mac_rlc_data_ind     (module_id_t module_idP,  u32_t frame, u8_t eNB_flag, 
 
                 }
             } else {
-                LOG_E(RLC, "%s() : radio bearer id out of bounds :%d\n", __FUNCTION__, rb_id);
+                LOG_E(RLC, "%s() : radio bearer id out of bounds : rb is %d\n", __FUNCTION__, rb_id);
             }
         } else {
-            LOG_E(RLC, "%s() : parameter channel_id out of bounds :%d\n", __FUNCTION__, channel_idP);
+            LOG_E(RLC, "%s() : parameter channel_id out of bounds : channel is %d\n", __FUNCTION__, channel_idP);
         }
     } else {
-        LOG_E(RLC, "%s() : parameter module_id out of bounds :%d\n", __FUNCTION__, module_idP);
+        LOG_E(RLC, "%s() : parameter module_id out of bounds : module id is %d\n", __FUNCTION__, module_idP);
     }
 }
 //-----------------------------------------------------------------------------
