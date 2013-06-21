@@ -41,19 +41,15 @@
 #include <stdlib.h>
 #include <sched.h>
 
-#include <rtai_lxrt.h>
-#include <rtai_sem.h>
-#include <rtai_msg.h>
+#include "rt_wrapper.h"
 
-/*#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif */
+#include <sys/mman.h>
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+
+#include "SCHED/defs.h"
 
 #include "MAC_INTERFACE/extern.h"
 
@@ -63,7 +59,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #endif // CBMIMO1
 
-
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
 
@@ -74,6 +70,7 @@ pthread_cond_t dlsch_cond[8];
 
 pthread_t dlsch_threads[8];
 pthread_attr_t attr_dlsch_threads;
+unsigned char dlsch_thread_indices[8];
 
 // activity indicators for harq_pid's
 int dlsch_instance_cnt[8];
@@ -97,32 +94,38 @@ extern int current_dlsch_cqi;
 static void * dlsch_thread(void *param) {
 
   //unsigned long cpuid;
-  unsigned int dlsch_thread_index = 0; //*((int *)param);
+  unsigned char dlsch_thread_index = *((unsigned char *)param);
   unsigned int ret;
   u8 harq_pid;
 
   RTIME time_in,time_out;
+#ifdef RTAI
   RT_TASK *task;
+  char task_name[8];
+#endif
 
   int eNB_id = 0, UE_id = 0;
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[UE_id];
 
   if ((dlsch_thread_index <0) || (dlsch_thread_index>7)) {
-    LOG_E(PHY,"[SCHED][DLSCH] Illegal dlsch_thread_index %d!!!!\n",dlsch_thread_index);
+      LOG_E(PHY,"[SCHED][DLSCH] Illegal dlsch_thread_index %d (%p)!!!!\n",dlsch_thread_index,param);
     return 0;
   }
 
-  task = rt_task_init_schmod(nam2num("DLSCH_THREAD"), 0, 0, 0, SCHED_FIFO, 0xF);
+#ifdef RTAI
+  sprintf(task_name,"DLSCH%d",dlsch_thread_index);
+  task = rt_task_init_schmod(nam2num(task_name), 0, 0, 0, SCHED_FIFO, 0xF);
 
   if (task==NULL) {
-    LOG_E(PHY,"[SCHED][DLSCH] Problem starting dlsch_thread_index %d!!!!\n",dlsch_thread_index);
-    return 0;
+      LOG_E(PHY,"[SCHED][DLSCH] Problem starting dlsch_thread_index %d (%s)!!!!\n",dlsch_thread_index,task_name);
+      return 0;
   }
   else {
-    LOG_I(PHY,"[SCHED][DLSCH] dlsch_thread for process %d started with id %p\n",
-	  dlsch_thread_index,
-	  task);
+      LOG_I(PHY,"[SCHED][DLSCH] dlsch_thread for process %d started with id %p\n",
+            dlsch_thread_index,
+            task);
   }
+#endif
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -136,62 +139,75 @@ static void * dlsch_thread(void *param) {
   //dlsch_cpuid[dlsch_thread_index] = cpuid;
 
   while (!oai_exit){
-    
+
+//    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_THREAD0+dlsch_thread_index,0);
     if (pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]) != 0) {
-      LOG_E(PHY,"[SCHED][DLSCH] error locking mutex.\n");
+        LOG_E(PHY,"[SCHED][DLSCH] error locking mutex.\n");
     }
     else {
-
-      while (dlsch_instance_cnt[dlsch_thread_index] < 0) {
-	pthread_cond_wait(&dlsch_cond[dlsch_thread_index],&dlsch_mutex[dlsch_thread_index]);
-      }
-
-      if (pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]) != 0) {	
-	LOG_E(PHY,"[SCHED][DLSCH] error unlocking mutex.\n");
-      }
+        
+        while (dlsch_instance_cnt[dlsch_thread_index] < 0) {
+            pthread_cond_wait(&dlsch_cond[dlsch_thread_index],&dlsch_mutex[dlsch_thread_index]);
+        }
+        
+        if (pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]) != 0) {	
+            LOG_E(PHY,"[SCHED][DLSCH] error unlocking mutex.\n");
+        }
     }
-
+//    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_THREAD0+dlsch_thread_index,1);    
     if (oai_exit) break;
+    
+    LOG_I(PHY,"[SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d\n",phy_vars_ue->frame,dlsch_thread_index);
 
-    LOG_D(PHY,"[SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d\n",phy_vars_ue->frame,dlsch_thread_index);
-
-    time_in = rt_get_time();
-
+    time_in = rt_get_time_ns();
+    
     if (phy_vars_ue->frame < phy_vars_ue->dlsch_errors[eNB_id]) {
-      phy_vars_ue->dlsch_errors[eNB_id]=0;
-      phy_vars_ue->dlsch_received[eNB_id] = 0;
+        phy_vars_ue->dlsch_errors[eNB_id]=0;
+        phy_vars_ue->dlsch_received[eNB_id] = 0;
     }
+
+    harq_pid = dlsch_thread_index;
 
     if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
-      harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
 
-      dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
-			 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			 phy_vars_ue->dlsch_ue[0][0],
-			 get_G(&phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
-			       phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
-			       get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
-			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			       dlsch_subframe[dlsch_thread_index]),
-			 phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
-			 0,
-			 dlsch_subframe[dlsch_thread_index]<<1);
-      LOG_D(PHY,"[UE %d] Calling dlsch_decoding for subframe %d, harq_pid %d\n",
-	    phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid);
-      ret = dlsch_decoding(phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
-			   &phy_vars_ue->lte_frame_parms,
-			   phy_vars_ue->dlsch_ue[eNB_id][0],
-			   dlsch_subframe[dlsch_thread_index],
-			   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-			   1);
+      //      rt_printk("[SCHED][DLSCH] Frame %d, slot %d, start %llu, end %llu, proc time: %llu ns\n",phy_vars_ue->frame,last_slot,time0,time1,(time1-time0));
+     
+        dlsch_unscrambling(phy_vars_ue->lte_frame_parms[eNB_id],
+                           0,
+                           phy_vars_ue->dlsch_ue[eNB_id][0],
+                           phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->G,
+                           phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+                           0,
+                           dlsch_subframe[dlsch_thread_index]<<1);
+
+        LOG_I(PHY,"[UE %d] PDSCH Calling dlsch_decoding for subframe %d, harq_pid %d, G%d\n", phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index], harq_pid,phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->G);
+
+//	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0+dlsch_thread_index,1);
+        ret = dlsch_decoding(phy_vars_ue,
+                             phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->llr[0],
+                             &phy_vars_ue->lte_frame_parms,
+                             phy_vars_ue->dlsch_ue[eNB_id][0],
+                             phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
+                             dlsch_subframe[dlsch_thread_index],
+                             harq_pid,
+                             1, // is_crnti
+			     0);  // llr8_flag
+//	vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0+dlsch_thread_index,0);
+
+      	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
+              phy_vars_ue->Mod_id,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,harq_pid,
+              phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],ret,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
+              phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS); 
       
 
-      if (ret == (1+MAX_TURBO_ITERATIONS)) {
-	phy_vars_ue->dlsch_errors[eNB_id]++;
+        if (ret == (1+MAX_TURBO_ITERATIONS)) {
+            phy_vars_ue->dlsch_errors[eNB_id]++;
 	
 #ifdef DEBUG_PHY
-	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d)\n",
+	LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d)\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	      harq_pid,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
@@ -199,7 +215,7 @@ static void * dlsch_thread(void *param) {
 #endif
       }
       else {
-	LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d)\n",
+	LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: Received DLSCH (rv %d,mcs %d)\n",
 	      phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	      harq_pid,phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
@@ -207,13 +223,13 @@ static void * dlsch_thread(void *param) {
 	
 #ifdef OPENAIR2
 	mac_xface->ue_send_sdu(phy_vars_ue->Mod_id,
-			       phy_vars_ue->frame,
-			       phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
-			       phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS>>3,
-			       eNB_id);
+                           phy_vars_ue->frame,
+                           phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->b,
+                           phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS>>3,
+                           eNB_id);
 #endif
-	phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS + phy_vars_ue->total_TBS[eNB_id];
-	phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_received_bits[eNB_id] + phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS;
+	phy_vars_ue->total_TBS[eNB_id] =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS + phy_vars_ue->total_TBS[eNB_id];
+	phy_vars_ue->total_received_bits[eNB_id] = phy_vars_ue->total_received_bits[eNB_id] + phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS;
       }
     }
     
@@ -225,15 +241,10 @@ static void * dlsch_thread(void *param) {
       
     }
 
-    if(phy_vars_ue->frame % 10 == 0){
-      phy_vars_ue->bitrate[eNB_id] = (phy_vars_ue->total_TBS[eNB_id] - phy_vars_ue->total_TBS_last[eNB_id])*10;
-      phy_vars_ue->total_TBS_last[eNB_id] = phy_vars_ue->total_TBS[eNB_id];
-    }
-    
-    time_out = rt_get_time();
+    time_out = rt_get_time_ns();
 
 #ifdef DEBUG_PHY
-    LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
+    LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
 	  phy_vars_ue->Mod_id,
 	  phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,harq_pid,
 	  phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],ret,
@@ -241,7 +252,7 @@ static void * dlsch_thread(void *param) {
 	  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 	  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
     if (phy_vars_ue->frame%100==0) {
-      LOG_I(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
+      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
 	    phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
 	    phy_vars_ue->frame,dlsch_subframe[dlsch_thread_index],
 	    phy_vars_ue->dlsch_errors[eNB_id],
@@ -252,15 +263,16 @@ static void * dlsch_thread(void *param) {
 #endif 
     
     if (pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]) != 0) {
-      msg("[openair][SCHED][DLSCH] error locking mutex.\n");
+        msg("[openair][SCHED][DLSCH] error locking mutex.\n");
     }
     else {
-      dlsch_instance_cnt[dlsch_thread_index]--;
-      
-      if (pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]) != 0) {	
-	msg("[openair][SCHED][DLSCH] error unlocking mutex.\n");
-      }
+        dlsch_instance_cnt[dlsch_thread_index]--;
+        
+        if (pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]) != 0) {	
+            msg("[openair][SCHED][DLSCH] error unlocking mutex.\n");
+        }
     }
+
   }
 
 #ifdef HARD_RT
@@ -274,62 +286,60 @@ static void * dlsch_thread(void *param) {
 
 int init_dlsch_threads(void) {
   
-  int error_code;
-  struct sched_param p;
-  int dlsch_thread_index;
-
-  // later loop on all harq_pids, do 0 for now
-  dlsch_thread_index=0;
-
-  pthread_mutex_init(&dlsch_mutex[dlsch_thread_index],NULL);
-  
-  pthread_cond_init(&dlsch_cond[dlsch_thread_index],NULL);
-
-  pthread_attr_init (&attr_dlsch_threads);
-  pthread_attr_setstacksize(&attr_dlsch_threads,OPENAIR_THREAD_STACK_SIZE);
-  
-  //attr_dlsch_threads.priority = 1;
-
-  p.sched_priority = OPENAIR_THREAD_PRIORITY;
-  pthread_attr_setschedparam  (&attr_dlsch_threads, &p);
+    int error_code;
+    struct sched_param p;
+    unsigned char dlsch_thread_index;
+    
+    pthread_attr_init (&attr_dlsch_threads);
+    pthread_attr_setstacksize(&attr_dlsch_threads,OPENAIR_THREAD_STACK_SIZE);
+    //attr_dlsch_threads.priority = 1;
+    
+    p.sched_priority = OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&attr_dlsch_threads, &p);
 #ifndef RTAI_ISNT_POSIX
-  pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
+    pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
 #endif
+    
+    for(dlsch_thread_index=0;dlsch_thread_index<8;dlsch_thread_index++) {
 
-  dlsch_instance_cnt[dlsch_thread_index] = -1;
-  rt_printk("[openair][SCHED][DLSCH][INIT] Allocating DLSCH thread for dlsch_thread_index %d\n",dlsch_thread_index);
-  error_code = pthread_create(&dlsch_threads[dlsch_thread_index],
-  			      &attr_dlsch_threads,
-  			      dlsch_thread,
-  			      (void *)&dlsch_thread_index);
+        pthread_mutex_init(&dlsch_mutex[dlsch_thread_index],NULL);
+        pthread_cond_init(&dlsch_cond[dlsch_thread_index],NULL);
 
-  if (error_code!= 0) {
-    rt_printk("[openair][SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",dlsch_thread_index,error_code);
-    return(error_code);
-  }
-  else {
-    rt_printk("[openair][SCHED][DLSCH][INIT] Allocate dlsch_thread %d successful\n",dlsch_thread_index);
+        dlsch_instance_cnt[dlsch_thread_index] = -1;
+        dlsch_thread_indices[dlsch_thread_index] = dlsch_thread_index;
+        rt_printk("[openair][SCHED][DLSCH][INIT] Allocating DLSCH thread for dlsch_thread_index %d (%p)\n",dlsch_thread_index,&dlsch_thread_indices[dlsch_thread_index]);
+        error_code = pthread_create(&dlsch_threads[dlsch_thread_index],
+                                    &attr_dlsch_threads,
+                                    dlsch_thread,
+                                    (void *)&dlsch_thread_indices[dlsch_thread_index]);
+      
+        if (error_code!= 0) {
+            rt_printk("[openair][SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",dlsch_thread_index,error_code);
+            return(error_code);
+        }
+        else {
+            rt_printk("[openair][SCHED][DLSCH][INIT] Allocate dlsch_thread %d successful\n",dlsch_thread_index);
+        }
+    }   
     return(0);
-  }
-   
 }
 
 void cleanup_dlsch_threads(void) {
 
-  int dlsch_thread_index = 0;
+  unsigned char dlsch_thread_index;
 
-  // later loop on all harq_pid's
-
-  //  pthread_exit(&dlsch_threads[dlsch_thread_index]);
-  rt_printk("[openair][SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",dlsch_thread_index);
-
-  dlsch_instance_cnt[dlsch_thread_index] = 0;
-  if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0)
-    rt_printk("[openair][SCHED][DLSCH] ERROR pthread_cond_signal\n");
-  else
-    rt_printk("[openair][SCHED][DLSCH] Signalled dlsch_thread %d to exit\n",dlsch_thread_index);
+  for(dlsch_thread_index=0;dlsch_thread_index<8;dlsch_thread_index++) {
+      //  pthread_exit(&dlsch_threads[dlsch_thread_index]);
+      rt_printk("[openair][SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",dlsch_thread_index);
+      
+      dlsch_instance_cnt[dlsch_thread_index] = 0;
+      if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0)
+          rt_printk("[openair][SCHED][DLSCH] ERROR pthread_cond_signal\n");
+      else
+          rt_printk("[openair][SCHED][DLSCH] Signalled dlsch_thread %d to exit\n",dlsch_thread_index);
     
-  rt_printk("[openair][SCHED][DLSCH] Exiting ...\n");
-  pthread_cond_destroy(&dlsch_cond[dlsch_thread_index]);
-  pthread_mutex_destroy(&dlsch_mutex[dlsch_thread_index]);
+      rt_printk("[openair][SCHED][DLSCH] Exiting ...\n");
+      pthread_cond_destroy(&dlsch_cond[dlsch_thread_index]);
+      pthread_mutex_destroy(&dlsch_mutex[dlsch_thread_index]);
+  }
 }
