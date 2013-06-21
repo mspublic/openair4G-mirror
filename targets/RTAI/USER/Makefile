@@ -9,7 +9,7 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -O2
+CFLAGS += -O
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
 
 SRC = synctest.c condtest.c lte-softmodem.c
@@ -60,7 +60,11 @@ include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 
+ifeq ($(RTAI),1)
+LOG_OBJS=
 RTAI_OBJ+=$(LOG_DIR)/vcd_signal_dumper.o
+RTAI_OBJ+=$(LOG_DIR)/log.o
+endif
 
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
@@ -170,9 +174,10 @@ synctest_UE: synctest
 	cp synctest synctest_UE
 
 drivers:
+	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
+	cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make clean && make
 	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
 	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make 
-	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
 
 run: condtest
 	rtai-load condtest --verbose
@@ -188,6 +193,9 @@ run_UE:
 
 run_UE0:
 	rtai-load UE0 --verbose
+
+run_UE0_smbv:
+	rtai-load UE0_smbv --verbose
 
 run_UE850:
 	rtai-load UE850 --verbose

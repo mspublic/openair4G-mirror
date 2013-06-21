@@ -34,9 +34,9 @@ Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis
 #include "UTIL/LOG/log.h"
 extern void pdcp_data_ind (module_id_t module_idP, u32_t frame, u8_t eNB_flag, u8_t MBMS_flag, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP, u8 is_data_plane);
 
-#define DEBUG_RLC_PDCP_INTERFACE
+//#define DEBUG_RLC_PDCP_INTERFACE
 
-#define DEBUG_RLC_DATA_REQ 1
+//#define DEBUG_RLC_DATA_REQ 1
 
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, unsigned long sizeP)

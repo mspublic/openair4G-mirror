@@ -135,21 +135,21 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,unsigned char N_RB_UL, u8 abs
       if (ulsch->harq_processes[i]) {
 	ulsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
 	if (!ulsch->harq_processes[i]->b) {
-	  msg("Can't get b\n");
+	  LOG_E(PHY,"Can't get b\n");
 	  exit_flag=1;
 	}
 	if (abstraction_flag==0) {
 	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
 	    ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+768);  // account for filler in first segment and CRCs for multiple segment case
 	    if (!ulsch->harq_processes[i]->c[r]) {
-	      msg("Can't get c\n");
+	      LOG_E(PHY,"Can't get c\n");
 	      exit_flag=2;
 	    }
 	  }
 	}
 	ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
       }	else {
-	msg("Can't get harq_p %d\n",i);
+	LOG_E(PHY,"Can't get harq_p %d\n",i);
 	exit_flag=3;
       }
     }
@@ -164,7 +164,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,unsigned char N_RB_UL, u8 abs
     else if (abstraction_flag==1)
       return(ulsch);
   }
-  msg("new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
+  LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
   return(NULL);
   
@@ -242,7 +242,8 @@ u32 ulsch_encoding(u8 *a,
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
-    dlsch[0]->harq_processes[harq_pid]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
+    if (dlsch[0])
+	dlsch[0]->harq_processes[harq_pid]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
   }
 
   if (ulsch->O<=32) {
@@ -334,7 +335,7 @@ u32 ulsch_encoding(u8 *a,
 	else if (Kr_bytes <= 768)
 	  iind = 123 + ((Kr_bytes-256)>>3);
 	else {
-	  msg("ulsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
+	  LOG_E(PHY,"ulsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
 	  return(-1);
 	}
 	
@@ -458,7 +459,7 @@ u32 ulsch_encoding(u8 *a,
     G = G - Q_RI - Q_CQI;
     
     if ((int)G < 0) {
-      msg("[PHY] FATAL: ulsch_coding.c G < 0 (%d) : Q_RI %d, Q_CQI %d, O %d, betaCQI_times8 %d)\n",G,Q_RI,Q_CQI,ulsch->O,ulsch->beta_offset_cqi_times8);
+      LOG_E(PHY,"FATAL: ulsch_coding.c G < 0 (%d) : Q_RI %d, Q_CQI %d, O %d, betaCQI_times8 %d)\n",G,Q_RI,Q_CQI,ulsch->O,ulsch->beta_offset_cqi_times8);
       
       return(-1);
     }

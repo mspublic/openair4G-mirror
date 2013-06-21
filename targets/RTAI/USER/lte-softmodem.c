@@ -198,15 +198,18 @@ void signal_handler(int sig)
   void *array[10];
   size_t size;
 
-  oai_exit=1;
-
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 10);
-
-  // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, 2);
-  exit(-1);
+  if (sig==SIGSEGV) {
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+    
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, 2);
+    exit(-1);
+  }
+  else {
+    oai_exit=1;
+  }
 }
 
 void exit_fun(const char* s)
@@ -217,17 +220,9 @@ void exit_fun(const char* s)
   printf("Exiting: %s\n",s);
 
   oai_exit=1;
-  rt_sleep_ns(FRAME_PERIOD);
+  //rt_sleep_ns(FRAME_PERIOD);
 
-  // cleanup
-#ifdef RTAI
-  stop_rt_timer();
-#endif
-
-  openair0_stop(card);
-  openair0_close();
-
-  exit (-1);
+  //exit (-1);
 }
 
 #ifdef XFORMS
@@ -487,6 +482,8 @@ static void *eNB_thread(void *arg)
       if (diff < (-6)) {
           LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
           slot++;
+	  if (frame>0)	  
+	    oai_exit=1;
           if (slot==20){
               slot=0;
               frame++;
@@ -549,7 +546,7 @@ static void *eNB_thread(void *arg)
 	    }
 
 	    timing_info.n_samples++;
-	    
+	    /*
 	    if ((timing_info.n_samples%2000)==0) {
 	      LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d: diff=%llu, min=%llu, max=%llu, avg=%llu (n_samples %d)\n",
 		    frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,time_diff,
@@ -557,6 +554,7 @@ static void *eNB_thread(void *arg)
 	      timing_info.n_samples = 0;
 	      timing_info.time_avg = 0;
 	    }
+	    */
 	    //}
 
           if (fs4_test==0)
@@ -717,7 +715,7 @@ static void *UE_thread(void *arg)
 	
 	if (diff2 <(-5)) {
 	  LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
-	  if (frame>100)	  
+	  if (frame>0)	  
 	    oai_exit=1;
 	  slot++;
 	  if (slot==20) {
@@ -1084,6 +1082,7 @@ int main(int argc, char **argv) {
 
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
+  signal(SIGINT, signal_handler);
 
 #ifndef RTAI
   check_clock();
@@ -1130,16 +1129,16 @@ int main(int argc, char **argv) {
 
   if (UE_flag==1) {
 #ifdef OPENAIR2
-    g_log->log_component[PHY].level = LOG_ERR;
+    g_log->log_component[PHY].level = LOG_INFO;
 #else
-    g_log->log_component[PHY].level = LOG_EMERG;
+    g_log->log_component[PHY].level = LOG_INFO;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_ERR;
+    g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag  = LOG_HIGH;
-    g_log->log_component[RLC].level = LOG_ERR;
+    g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag  = LOG_HIGH;
-    g_log->log_component[PDCP].level = LOG_ERR;
+    g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
@@ -1223,16 +1222,17 @@ int main(int argc, char **argv) {
   }
   else { //this is eNB
 #ifdef OPENAIR2
-    g_log->log_component[PHY].level = LOG_ERR;
+    g_log->log_component[PHY].level = LOG_INFO;
 #else
     g_log->log_component[PHY].level = LOG_INFO;
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
-    g_log->log_component[MAC].level = LOG_ERR;
+
+    g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag  = LOG_HIGH;
-    g_log->log_component[RLC].level = LOG_ERR;
+    g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag  = LOG_HIGH;
-    g_log->log_component[PDCP].level = LOG_ERR;
+    g_log->log_component[PDCP].level = LOG_INFO;
     g_log->log_component[PDCP].flag  = LOG_HIGH;
     g_log->log_component[OTG].level = LOG_INFO;
     g_log->log_component[OTG].flag  = LOG_HIGH;
@@ -1265,7 +1265,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
     openair_daq_vars.target_ue_dl_mcs=20;
     openair_daq_vars.ue_ul_nb_rb=6;
-    openair_daq_vars.target_ue_ul_mcs=6;
+    openair_daq_vars.target_ue_ul_mcs=9;
 
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
@@ -1591,13 +1591,12 @@ int main(int argc, char **argv) {
 
 
   // wait for end of program
-  printf("TYPE <ENTER> TO TERMINATE\n");
-  getchar();
+  printf("TYPE <CTRL-C> TO TERMINATE\n");
+  //getchar();
+  while (oai_exit==0)
+    rt_sleep_ns(FRAME_PERIOD);
 
   // stop threads
-  oai_exit=1;
-  rt_sleep_ns(FRAME_PERIOD);
-
 #ifdef XFORMS
   printf("waiting for XFORMS thread\n");
   if (do_forms==1)
@@ -1663,6 +1662,8 @@ int main(int argc, char **argv) {
 
   if (ouput_vcd)
     vcd_signal_dumper_close();
+
+  logClean();
 
   return 0;
 }

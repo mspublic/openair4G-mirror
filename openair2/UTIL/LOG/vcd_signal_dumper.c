@@ -100,6 +100,8 @@ const char* eurecomFunctionsNames[] = {
     "macxface_phy_config_dedicated_eNB",
     "macxface_out_of_sync_ind",
     "macxface_ue_decode_si",
+    "macxface_ue_decode_ccch",
+    "macxface_ue_decode_bcch",
     "macxface_ue_send_sdu",
     "macxface_ue_get_sdu",
     "macxface_ue_get_rach",
@@ -109,13 +111,15 @@ const char* eurecomFunctionsNames[] = {
     "lte_ue_measurement_procedures",
     "lte_ue_pdcch_procedures",
     "lte_ue_pbch_procedures",
+    "phy_procedures_eNb_tx",
+    "phy_procedures_eNb_rx",
     "phy_procedures_ue_tx",
     "phy_procedures_ue_rx",
     "phy_procedures_eNB_lte",
     "phy_procedures_UE_lte",
     "emu_transport",
     "log_record",
-    "pdcp_run"
+    "pdcp_run",
     "rt_sleep",
     "pdsch_thread",
     "dlsch_thread0",
@@ -135,7 +139,14 @@ const char* eurecomFunctionsNames[] = {
     "dlsch_decoding6",
     "dlsch_decoding7",
     "rx_pdcch",
-    "dci_decoding"
+    "dci_decoding",
+    "rrc_mac_config_req",
+    "rrc_ue_decode_sib1",
+    "rrc_ue_decode_si",
+    "phy_ue_config_sib2",
+    "phy_ue_compute_prach",
+    "phy_enb_ulsch_decoding",
+    "test"
 };
 
 struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {

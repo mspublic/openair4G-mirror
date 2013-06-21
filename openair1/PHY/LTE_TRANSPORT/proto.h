@@ -1686,6 +1686,8 @@ void compute_prach_seq(PRACH_CONFIG_COMMON *prach_config_common,
 		       lte_frame_type_t frame_type,
 		       uint32_t X_u[64][839]);
 
+void init_prach_tables(int N_ZC);
+
 /*!
   \brief Return the status of MBSFN in this frame/subframe
   @param frame Frame index
