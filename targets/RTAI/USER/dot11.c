@@ -27,6 +27,18 @@
 
 *******************************************************************************/
 
+<<<<<<< .mine
+/*! \file dot11.c
+* \brief main program to control HW and scheduling for openairITS dot11 MODEM
+* \author R. Knopp, F. Kaltenberger
+* \date 2012
+* \version 0.1
+* \company Eurecom
+* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \note
+* \warning
+*/
+=======
 /*! \file dot11.c
  * \brief main program to control HW and scheduling for openairITS dot11 MODEM
  * \author R. Knopp, F. Kaltenberger
@@ -37,6 +49,7 @@
  * \note
  * \warning
  */
+>>>>>>> .r3153
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -68,13 +81,37 @@
 #include "SCHED/vars.h"
 
 
+<<<<<<< .mine
+#include "phy/DOT11/defs.h"
+#include "phy/DOT11/commonvars.h"
+#include <malloc.h>
+=======
 #include "phy/DOT11/defs.h"
 #include "phy/DOT11/commonvars.h"
 #include "PHY/TOOLS/defs.h"
+>>>>>>> .r3153
 
+<<<<<<< .mine
+=======
 #include <malloc.h>
+>>>>>>> .r3153
+
+<<<<<<< .mine
+#include "UTIL/LOG/log.h"
+=======
+>>>>>>> .r3153
+
+<<<<<<< .mine
+#define FRAME_LENGTH_SAMPLES_MAX 100000
+
+uint16_t rev64[64];
+
+int generate_test_tx=0;
 
 
+
+
+=======
 #include "UTIL/LOG/log.h"
 #include "ieee80211p-netlinkapi.h"
 
@@ -87,6 +124,7 @@ int generate_test_tx=0;
 
 
 
+>>>>>>> .r3153
 #define FRAME_PERIOD 100000000ULL
 #define DAQ_PERIOD 66666ULL
 
@@ -99,6 +137,9 @@ enum nl80211_band {
   NL80211_BAND_0_8GHZ,
 };
 
+<<<<<<< .mine
+
+=======
 enum ieee80211_band {
   IEEE80211_BAND_2GHZ = NL80211_BAND_2GHZ,
   IEEE80211_BAND_5GHZ = NL80211_BAND_5GHZ,
@@ -115,6 +156,7 @@ struct ieee80211p_rx_status {
 }; /* struct ieee80211p_rx_status */
 
 
+>>>>>>> .r3153
 //static CND *cond;
 
 static int thread1;
@@ -164,12 +206,75 @@ TX_RX_VARS dummy_tx_rx_vars;
 unsigned int bigphys_top;
 unsigned int mem_base;
 
+<<<<<<< .mine
 uint32_t *txdata[2],*rxdata[2];
 
 uint8_t *data_ind = NULL;
 
+extern int dot11_netlink_init();
+extern void *rx_thread(void *);
+extern void *tx_thread(void *);
+
+
+void dot11_init() {
+
+
+
+  set_taus_seed(0);
+
+  // Basic initializations
+  init_fft(64,6,rev64);
+  init_interleavers();
+  ccodedot11_init();
+  ccodedot11_init_inv();
+  phy_generate_viterbi_tables();
+
+  init_crc32();
+
+}
+=======
+uint32_t *txdata[2],*rxdata[2];
+>>>>>>> .r3153
+
+<<<<<<< .mine
+void generate_test_tx_signal() {
+=======
+uint8_t *data_ind = NULL;
+>>>>>>> .r3153
+
+<<<<<<< .mine
+  TX_VECTOR_t tx_vector;
+  int i;
+
+  if (data_ind == NULL) {
+    data_ind = (uint8_t*)malloc(4095+2+1);
+    data_ind[0] = 0;
+    data_ind[1] = 0;
+  }
+
+
+  tx_vector.rate=1;
+  tx_vector.sdu_length=512;
+  tx_vector.service=0;
+
+  for (i=0;i<tx_vector.sdu_length;i++)
+    data_ind[i+2] = taus();  // randomize packet
+  data_ind[tx_vector.sdu_length+2+4]=0;  // Tail byte
+
+
+  printf("Generating signal at %p\n",txdata[0]);
+  phy_tx_start(&tx_vector,txdata[0],0,data_ind);
+
+}
+
+void signal_handler(int sig)
+{
+  void *array[10];
+  size_t size;
+=======
 CHANNEL_STATUS_t dot11_state = IDLE;
 extern int Ndbps[8];
+>>>>>>> .r3153
 
 extern int32_t rxDATA_F_comp_aggreg3[48*1024];
 extern int32_t rxDATA_F_comp_aggreg2[48*1024];
@@ -295,6 +400,8 @@ static void *rx_thread(void *arg) {
 	    else {
 	      memset((void*)&data_ind_rx[10],0,rxv->sdu_length+4+2+1+16);
 
+<<<<<<< .mine
+=======
 	      if (data_detection(rxv,&data_ind_rx[10],
 				 (uint32_t*)rxdata[0],
 				 76800,rx_offset,log2_maxh,NULL)) {
@@ -539,6 +646,7 @@ int generate_tx_signal(int tx_offset) {
     data_ind[i+2] = rxsdu[i];  
   data_ind[tx_vector.sdu_length+2+4]=0;  // Tail byte
 
+>>>>>>> .r3153
 
   //  printf("Generating signal at %p\n",txdata[0]);
   return(phy_tx_start(&tx_vector,txdata[0],tx_offset,FRAME_LENGTH_SAMPLES,data_ind));
@@ -601,6 +709,7 @@ static void *dot11_thread(void *arg)
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
 #ifdef HARD_RT
+<<<<<<< .mine
   rt_printk("Started dot11 thread (id %p)\n",task);
 
 
@@ -609,7 +718,54 @@ static void *dot11_thread(void *arg)
 
   printf("Started dot11 thread (id %p)\n",task);
 #endif
+=======
+  rt_printk("Started dot11 thread (id %p)\n",task);
+>>>>>>> .r3153
 
+<<<<<<< .mine
+  while (!oai_exit) {
+      //      rt_printk("eNB: slot %d\n",slot);
+=======
+>>>>>>> .r3153
+
+<<<<<<< .mine
+=======
+  rt_make_hard_real_time();
+#else
+>>>>>>> .r3153
+
+  printf("Started dot11 thread (id %p)\n",task);
+
+
+<<<<<<< .mine
+      if (frame>5)
+        {
+          if ((frame%100)==0)
+#ifdef HARD_RT
+            rt_printk("slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n", slot, hw_slot,next_slot,DAQ_MBOX[0]);
+#else
+	  printf("frame %d slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n", frame,slot, hw_slot,next_slot,DAQ_MBOX[0]);
+#endif
+          if (fs4_test==0) {
+	    if ((next_slot == 0) && (generate_test_tx==1) && ((frame%100)==0)) {
+	      printf("Generating tx_signal in frame %d ...",frame);
+	      generate_test_tx_signal();
+	      printf("done\n");
+
+	    }
+	    else {  // Check for normal TX packet
+	      /*for (i=0;i<3840;i++) {
+		((uint32_t *)txdata[0] + (3840*next_slot))[i] = 0x00010001;
+		}*/
+	    }
+	  }
+
+
+        }
+
+
+
+=======
   while (!oai_exit) {
     //      rt_printk("eNB: slot %d\n",slot);
 
@@ -628,10 +784,18 @@ static void *dot11_thread(void *arg)
  
     if (diff < (-5)) {
       printf("[dot11_thread] Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff);
+>>>>>>> .r3153
       slot++;
       if (slot==20)
+<<<<<<< .mine
+        slot=0;
+      //slot++;
+      if ((slot%20)==0)
+        frame++;
+=======
 	slot=0;
       continue;
+>>>>>>> .r3153
     }
     if (diff>8) 
       printf("[dot11_thread] eNB Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff);
@@ -664,6 +828,10 @@ static void *dot11_thread(void *arg)
       last_slot+=20;
     next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
 
+<<<<<<< .mine
+
+
+=======
     if (frame>5)
       {
 	if ((frame%100)==0)
@@ -713,6 +881,7 @@ static void *dot11_thread(void *arg)
 
 
 
+>>>>>>> .r3153
 int main(int argc, char **argv) {
 
   RT_TASK *task;
@@ -731,9 +900,17 @@ int main(int argc, char **argv) {
 
   u32 rf_vcocal[4]   = {2340,2340,2340,2340};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
+<<<<<<< .mine
+  u32 rxgain[4]={20,20,20,20};
+=======
+>>>>>>> .r3153
+
+<<<<<<< .mine
+
+=======
 
 
-
+>>>>>>> .r3153
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
   u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
@@ -751,7 +928,10 @@ int main(int argc, char **argv) {
   FILE *rxg_fd=NULL;
   FILE *rflo_fd=NULL;
 
+<<<<<<< .mine
+=======
 
+>>>>>>> .r3153
   const struct option long_options[] = {
     {"calib-rx", required_argument, NULL, 256},
     {"calib-rx-med", required_argument, NULL, 257},
@@ -858,6 +1038,9 @@ int main(int argc, char **argv) {
       frame_parms->carrier_freq[i] = carrier_freq[i];
       frame_parms->carrier_freqtx[i] = carrier_freq[i];
 
+<<<<<<< .mine
+      frame_parms->rxgain[i]       = rxgain[i];
+=======
       frame_parms->rxgain[i]       = rxgain[i];
 
       frame_parms->rflocal[i]      = rf_local[i];
@@ -865,6 +1048,7 @@ int main(int argc, char **argv) {
       frame_parms->rxdc[i]         = rf_rxdc[i];
       frame_parms->rfmode[i] = rf_mode_max[i];
 
+>>>>>>> .r3153
     }
 
   printf("Freq %d,%d,%d,%d, Gain %d,%d,%d,%d, RFmode %d, RXDC %d, RF_local %d, rf_vcocal %d\n",
@@ -889,7 +1073,35 @@ int main(int argc, char **argv) {
   printf("Setting up buffers for Antenna port 1\n");
   setup_dot11_buffers(&(rxdata[1]),&(txdata[1]),1);
 
+<<<<<<< .mine
+  printf("Initializing dot11 DSP functions\n");
+  dot11_init();
+  dot11_netlink_fd = dot11_netlink_init();
+=======
+>>>>>>> .r3153
 
+<<<<<<< .mine
+  for (j=0; j<76800; j+=4)
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+      {
+	amp = 0x8000;
+	//	((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+1] = 0;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+3] = amp-1;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+5] = 0;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+7] = amp;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j] = amp-1;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+2] = 0;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+4] = amp;
+	//((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+6] = 0;
+      }
+  sleep(1);
+  printf("Calling openair_GET_PCI_INTERFACE %x\n",openair_GET_PCI_INTERFACE);
+  ioctl(openair_fd,openair_GET_PCI_INTERFACE,&pci_interface_ptr_kern);
+  if (pci_interface_ptr_kern == 0) {
+    printf("null pci_interface_ptr, exiting\n");
+    exit(-1);
+  }
+=======
   for (j=0; j<76800; j+=4)
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
       {
@@ -917,11 +1129,18 @@ int main(int argc, char **argv) {
   printf("Initializing dot11 DSP functions\n");
   dot11_init();
   dot11_netlink_fd = netlink_init();
+>>>>>>> .r3153
+  exmimo_pci_interface = (exmimo_pci_interface_t*) (pci_interface_ptr_kern-bigphys_top+mem_base);
+  printf("pci_interface_ptr_kern = %p, exmimo_pci_interface = %p\n", (void*) pci_interface_ptr_kern, exmimo_pci_interface);
+  DAQ_MBOX = (unsigned int *)(0xc0000000+exmimo_pci_interface->rf.mbox-bigphys_top+mem_base);
 
+<<<<<<< .mine
+=======
   printf("dot11_netlink_fd %d\n",dot11_netlink_fd);
 
 
 
+>>>>>>> .r3153
   // make main thread LXRT soft realtime
   printf("Starting LXRT ...");
   task = rt_task_init_schmod(nam2num("MYTASK"), 9, 0, 0, SCHED_FIFO, 0xF);
@@ -931,21 +1150,68 @@ int main(int argc, char **argv) {
   //rt_set_oneshot_mode();
   rt_set_periodic_mode();
   start_rt_timer(0);
+<<<<<<< .mine
+  printf(" done\n");
+=======
   printf(" done\n");
 
-  rt_sleep(nano2count(FRAME_PERIOD));
+>>>>>>> .r3153
+<<<<<<< .mine
+  //now = rt_get_time() + 10*PERIOD;
+  //rt_task_make_periodic(task, now, PERIOD);
 
+  // initialize the instance cnt before starting the thread
+  //  instance_cnt_ptr_user = &instance_cnt;
+
+
+
+  // signal the driver to set up for user-space operation
+  // this will initialize the semaphore and the task pointers in the kernel
+  // further we receive back the pointer to the shared instance counter which is used to signal if the thread is busy or not. This pointer needs to be mapped to user space.
+  /*
+  ioctl(openair_fd,openair_START_LXRT,&instance_cnt_ptr_kern);
+  instance_cnt_ptr_user = (int*) (instance_cnt_ptr_kern -bigphys_top+mem_base);
+  *instance_cnt_ptr_user = -1;
+  printf("instance_cnt_ptr_kern %p, instance_cnt_ptr_user %p, *instance_cnt_ptr_user %d\n", (void*) instance_cnt_ptr_kern, (void*) instance_cnt_ptr_user,*instance_cnt_ptr_user);
+  */
+
+=======
+>>>>>>> .r3153
+
+<<<<<<< .mine
+
+
+  rt_sleep(nano2count(FRAME_PERIOD));
+=======
+>>>>>>> .r3153
   // this starts the DMA transfers
+<<<<<<< .mine
+=======
   ioctl(openair_fd,openair_START_TX_SIG,NULL);
   //ioctl(openair_fd,openair_GET_BUFFER,NULL);
+>>>>>>> .r3153
 
+<<<<<<< .mine
+  ioctl(openair_fd,openair_START_TX_SIG,NULL);
+
+
+=======
+>>>>>>> .r3153
   rt_sleep(nano2count(10*FRAME_PERIOD));
 
 
+<<<<<<< .mine
+  thread1 = rt_thread_create(dot11_thread, NULL, 100000000);
+=======
   //thread1 = rt_thread_create(dot11_thread, NULL, 100000000);
+>>>>>>> .r3153
 
 
+<<<<<<< .mine
+  printf("thread created\n");
+=======
   thread1 = rt_thread_create(rx_thread, &dot11_netlink_fd, 10000000);
+>>>>>>> .r3153
 
   thread2 = rt_thread_create(tx_thread, &dot11_netlink_fd, 10000000);
 

@@ -71,10 +71,16 @@
 
 #include "../../SIMU/USER/init_lte.h"
 
+#ifdef EMOS
+#include "SCHED/phy_procedures_emos.h"
+#endif
+
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
+#ifndef CELLULAR
 #include "RRC/LITE/vars.h"
+#endif
 #include "PHY_INTERFACE/vars.h"
 #endif
 
@@ -141,10 +147,15 @@ extern s16 prach_ifft[4][1024*2];
 
 runmode_t mode;
 int rx_input_level_dBm;
-int otg_enabled = 1;
+int otg_enabled = 0;
 
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
+
+LTE_DL_FRAME_PARMS *frame_parms;
+#ifdef EXMIMO
+  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
+#endif
 
 void signal_handler(int sig)
 {
@@ -187,12 +198,30 @@ void exit_fun(const char* s)
 void ia_receiver_on_off( FL_OBJECT *button, long arg) {
 
   if (fl_get_button(button)) {
-    fl_set_object_label(button, "IA Receiver ON");
-    openair_daq_vars.use_ia_receiver = 1;
+    if (UE_flag==1) {
+      fl_set_object_label(button, "IA Receiver ON");
+      openair_daq_vars.use_ia_receiver = 1;
+      fl_set_object_color(button, FL_GREEN, FL_GREEN);
+      //    LOG_I(PHY,"Pressed the button: IA receiver ON\n");
+    }
+    else {
+      fl_set_object_label(button, "DL traffic ON");
+      fl_set_object_color(button, FL_GREEN, FL_GREEN);
+      otg_enabled = 1;
+    }
   }
   else {
-    fl_set_object_label(button, "IA Receiver OFF");
-    openair_daq_vars.use_ia_receiver = 0;
+    if (UE_flag==1) {
+      fl_set_object_label(button, "IA Receiver OFF");
+      openair_daq_vars.use_ia_receiver = 0;
+      fl_set_object_color(button, FL_RED, FL_RED);
+      //    LOG_I(PHY,"Pressed the button: IA receiver OFF\n");
+    }
+    else {
+      fl_set_object_label(button, "DL traffic OFF");
+      fl_set_object_color(button, FL_RED, FL_RED);
+      otg_enabled = 0;
+    }
   }
 }
 
@@ -210,6 +239,9 @@ void do_forms2(FD_lte_scope *form,
                s16 *dlsch_llr,
                s16 *pbch_comp,
                s8 *pbch_llr,
+	       u32 *avg_tput,
+	       u32 *avg_tput_time,
+	       u16 tput_window,
                s16 coded_bits_per_codeword,
 	       s16 *sync_corr,
 	       s16 sync_corr_len)
@@ -224,21 +256,15 @@ void do_forms2(FD_lte_scope *form,
   sig_time[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
   sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
   time2[FRAME_LENGTH_COMPLEX_SAMPLES],
-  I[25*12*11*4], Q[25*12*11*4],
+    I[25*12*11*4], Q[25*12*11*4],tput[tput_window],tput_time[tput_window],
   *llr,*llr_time;
   int ind;
-  float avg, cum_avg;
+  float avg, cum_avg,tput_max=0;
   int nb_tx_ant = (UE_flag==1 ? frame_parms->nb_antennas_tx_eNB : 1);
   int nb_ce_symb = (UE_flag==1 ? 1 : frame_parms->symbols_per_tti); 
 		 
-  if (UE_flag==0) 
-    fl_hide_object(form->ia_receiver_button);
-  else 
-    fl_show_object(form->ia_receiver_button);
-
   llr = malloc(coded_bits_per_codeword*sizeof(float));
   llr_time = malloc(coded_bits_per_codeword*sizeof(float));
-
 
   // Channel frequency response
   if ((channel_f != NULL) && (channel_f[0] != NULL))
@@ -423,7 +449,21 @@ void do_forms2(FD_lte_scope *form,
       //fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
       //fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
     }
- fl_check_forms();
+
+  // Throughput
+  if (avg_tput!=NULL) {
+      for (i=0; i<tput_window; i++) {
+	tput[i] = (float) avg_tput[i];
+	tput_time[i] = (float) avg_tput_time[i];
+	if (tput[i] > tput_max) {
+	  tput_max = tput[i];
+	}
+      } 
+      fl_set_xyplot_data(form->tput,tput_time,tput,tput_window,"","","");
+      fl_set_xyplot_ybounds(form->tput,0,tput_max);
+  }
+
+  fl_check_forms();
 
   free(llr);
   free(llr_time);
@@ -436,6 +476,15 @@ void *scope_thread(void *arg)
   char stats_buffer[16384];
   //FILE *UE_stats, *eNB_stats;
   int len=0;
+  u16 tput_window = 100;
+  unsigned int avg_tput_eNB[tput_window];
+  unsigned int avg_tput_UE[tput_window];
+  unsigned int tput_time_UE[tput_window];
+  unsigned int tput_time_eNB[tput_window];
+  memset((void*) avg_tput_UE,0,sizeof(unsigned int)*tput_window);
+  memset((void*) avg_tput_eNB,0,sizeof(unsigned int)*tput_window);
+  memset((void*) tput_time_UE,0,sizeof(unsigned int)*tput_window);
+  memset((void*) tput_time_eNB,0,sizeof(unsigned int)*tput_window);
 
   /*
   if (UE_flag==1) 
@@ -447,6 +496,22 @@ void *scope_thread(void *arg)
   while (!oai_exit)
     {
       if (UE_flag==1) {
+	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0, mode,rx_input_level_dBm);
+	fl_set_object_label(form_stats->stats_text, stats_buffer);
+	//rewind (UE_stats);
+	//fwrite (stats_buffer, 1, len, UE_stats);
+	/*
+	if (PHY_vars_UE_g[0]->frame<tput_window) {
+	  avg_tput_UE[PHY_vars_UE_g[0]->frame] = PHY_vars_UE_g[0]->bitrate[0]/1000;
+	  tput_time_UE[PHY_vars_UE_g[0]->frame] = PHY_vars_UE_g[0]->frame;
+	} 
+	else {
+	*/
+	  memcpy((void*)avg_tput_UE,(void*)&avg_tput_UE[1],(tput_window-1)*sizeof(unsigned int));
+	  memcpy((void*)tput_time_UE,(void*)&tput_time_UE[1],(tput_window-1)*sizeof(unsigned int));
+	  avg_tput_UE[tput_window-1] = PHY_vars_UE_g[0]->bitrate[0]/1000;
+	  tput_time_UE[tput_window-1] = PHY_vars_UE_g[0]->frame;
+
         do_forms2(form_dl,
                   &(PHY_vars_UE_g[0]->lte_frame_parms),
                   PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
@@ -461,6 +526,9 @@ void *scope_thread(void *arg)
                   (s16*)PHY_vars_UE_g[0]->lte_ue_pdsch_vars[0]->llr[0],
                   (s16*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
                   (s8*)PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,
+		  avg_tput_UE,
+		  tput_time_UE,
+		  tput_window,
 		  15000,
 		  /*get_G(&PHY_vars_UE_g[0]->lte_frame_parms,
 			PHY_vars_UE_g[0]->dlsch_ue[0][0]->nb_rb,
@@ -469,12 +537,25 @@ void *scope_thread(void *arg)
 			PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->num_pdcch_symbols,7),*/
 		  sync_corr_ue0,
 		  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10);
-	len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0, mode,rx_input_level_dBm);
-	fl_set_object_label(form_stats->stats_text, stats_buffer);
-	//rewind (UE_stats);
-	//fwrite (stats_buffer, 1, len, UE_stats);
       }
       else {
+	len = dump_eNB_stats (PHY_vars_eNB_g[0], stats_buffer, 0);
+	fl_set_object_label(form_stats->stats_text, stats_buffer);
+	//rewind (eNB_stats);
+	//fwrite (stats_buffer, 1, len, eNB_stats);
+
+	/*
+	if (PHY_vars_eNB_g[0]->frame<tput_window) {
+	  avg_tput_eNB[PHY_vars_UE_g[0]->frame] = PHY_vars_UE_g[0]->bitrate[0]/1000;
+	  tput_time_UE[PHY_vars_UE_g[0]->frame] = PHY_vars_UE_g[0]->frame;
+	} 
+	else {
+	*/
+	  memcpy((void*)avg_tput_eNB,(void*)&avg_tput_eNB[1],(tput_window-1)*sizeof(unsigned int));
+	  memcpy((void*)tput_time_eNB,(void*)&tput_time_eNB[1],(tput_window-1)*sizeof(unsigned int));
+	  avg_tput_eNB[tput_window-1] = PHY_vars_eNB_g[0]->total_dlsch_bitrate/1000;
+	  tput_time_eNB[tput_window-1] = PHY_vars_eNB_g[0]->frame;
+	
 	for (i=0;i<1024;i++) 
 	  prach_corr[i] = ((s32)prach_ifft[0][i<<2]*prach_ifft[0][i<<2]+
 			   (s32)prach_ifft[0][1+(i<<2)]*prach_ifft[0][1+(i<<2)]) >> 15;
@@ -492,15 +573,13 @@ void *scope_thread(void *arg)
                   (s16*)PHY_vars_eNB_g[0]->lte_eNB_pusch_vars[0]->llr,
                   NULL,
                   NULL,
+		  avg_tput_eNB,
+		  tput_time_eNB,
+		  tput_window,
 		  PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->nb_rb*12*get_Qm(PHY_vars_eNB_g[0]->ulsch_eNB[0]->harq_processes[0]->mcs)*PHY_vars_eNB_g[0]->ulsch_eNB[0]->Nsymb_pusch,
                   prach_corr,
                   1024);
 
-
-	len = dump_eNB_stats (PHY_vars_eNB_g[0], stats_buffer, 0);
-	fl_set_object_label(form_stats->stats_text, stats_buffer);
-	//rewind (eNB_stats);
-	//fwrite (stats_buffer, 1, len, eNB_stats);
 
       }
       //printf("doing forms\n");
@@ -760,6 +839,8 @@ static void *UE_thread(void *arg)
   int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
   static int first_run=1;
+  int carrier_freq_offset = 0; //-7500;
+  int i;
 
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -769,6 +850,16 @@ static void *UE_thread(void *arg)
 #ifdef HARD_RT
   rt_make_hard_real_time();
 #endif
+  
+  if (mode == rx_calib_ue) {
+    carrier_freq_offset = -7500;
+    for (i=0; i<4; i++) {
+      frame_parms->carrier_freq[i] = carrier_freq[i]+carrier_freq_offset;
+      frame_parms->carrier_freqtx[i] = carrier_freq[i]+carrier_freq_offset;
+    }
+    ioctl(openair_fd,openair_DUMP_CONFIG,frame_parms);	      
+    //    dump_frame_parms(frame_parms);
+  }
 
   while (!oai_exit)
     {
@@ -923,8 +1014,7 @@ static void *UE_thread(void *arg)
           rt_sleep(nano2count(FRAME_PERIOD));
           //	  rt_printk("fun0: slot %d: doing sync\n",slot);
 
-          if (initial_sync(PHY_vars_UE_g[0],mode)==0)
-            {
+          if (initial_sync(PHY_vars_UE_g[0],mode)==0) {
               /*
               lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
                    PHY_vars_UE_g[0],
@@ -938,12 +1028,34 @@ static void *UE_thread(void *arg)
               memset(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[aa],0,
                  PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int));
               */
-              is_synchronized = 1;
-              ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
-
-              hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
-              rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
-            }
+	      if (mode == rx_calib_ue) {
+		oai_exit=1;
+	      }
+	      else {
+		is_synchronized = 1;
+		ioctl(openair_fd,openair_START_TX_SIG,NULL); //start the DMA transfers
+		
+		hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
+		rt_printk("Got synch: hw_slot_offset %d\n",hw_slot_offset);
+	      }
+	  }
+	  else {
+	    carrier_freq_offset += 100;
+	    if (carrier_freq_offset > 7500) {
+	      LOG_I(PHY,"[initial_sync] No cell synchronization found, abondoning\n");
+	      oai_exit = 1;
+	    }
+	    else {
+	      LOG_I(PHY,"[initial_sync] trying carrier off %d Hz\n",carrier_freq_offset);
+	      for (i=0; i<4; i++) {
+		frame_parms->carrier_freq[i] = carrier_freq[i]+carrier_freq_offset;
+		frame_parms->carrier_freqtx[i] = carrier_freq[i]+carrier_freq_offset;
+	      }
+	      ioctl(openair_fd,openair_DUMP_CONFIG,frame_parms);	      
+	      //	      dump_frame_parms(frame_parms);
+	      
+	    }
+	  }
 
 #endif
         }
@@ -987,9 +1099,8 @@ int main(int argc, char **argv) {
   RT_TASK *task;
   int i,j,aa;
 
-  LTE_DL_FRAME_PARMS *frame_parms;
+
 #ifdef EXMIMO
-  u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
   u32 rf_mode_max[4]     = {55759,55759,55759,55759};
   u32 rf_mode_med[4]     = {39375,39375,39375,39375};
   u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
@@ -1006,7 +1117,7 @@ int main(int argc, char **argv) {
 
   u8  eNB_id=0,UE_id=0;
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1174,7 +1285,7 @@ int main(int argc, char **argv) {
   frame_parms->nushift            = 0;
   frame_parms->nb_antennas_tx_eNB = 2; //initial value overwritten by initial sync later
   frame_parms->nb_antennas_tx     = (UE_flag==0) ? 2 : 1;
-  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 2 : 1;
+  frame_parms->nb_antennas_rx     = (UE_flag==0) ? 1 : 1;
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
   frame_parms->frame_type         = 1;
 #ifdef CBMIMO1
@@ -1182,7 +1293,7 @@ int main(int argc, char **argv) {
     frame_parms->tdd_config         = 255;
   else
 #endif
-    frame_parms->tdd_config         = 3;
+  frame_parms->tdd_config         = 3;
   frame_parms->tdd_config_S       = 0;
   frame_parms->phich_config_common.phich_resource = oneSixth;
   frame_parms->phich_config_common.phich_duration = normal;
@@ -1247,7 +1358,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
     
     openair_daq_vars.manual_timing_advance = 0;
-    openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
+    //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
     openair_daq_vars.use_ia_receiver = 0;
 
@@ -1321,9 +1432,9 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=5;
+    openair_daq_vars.target_ue_dl_mcs=16;
     openair_daq_vars.ue_ul_nb_rb=10;
-    openair_daq_vars.target_ue_ul_mcs=5;
+    openair_daq_vars.target_ue_ul_mcs=4;
 
     // if AGC is off, the following values will be used
     for (i=0;i<4;i++) 
@@ -1355,7 +1466,8 @@ int main(int argc, char **argv) {
   mac_xface = malloc(sizeof(MAC_xface));
   
 #ifdef OPENAIR2
-  l2_init(frame_parms);
+  int eMBMS_active=0;
+  l2_init(frame_parms,eMBMS_active);
   if (UE_flag == 1)
     mac_xface->dl_phy_sync_success (0, 0, 0, 1);
   else
@@ -1366,20 +1478,21 @@ int main(int argc, char **argv) {
   mac_xface->macphy_exit = &exit_fun;
 
 #ifdef OPENAIR2
-  if (otg_enabled) {
-    init_all_otg();
+  //if (otg_enabled) {
+    init_all_otg(0);
     g_otg->seed = 0;
     init_seeds(g_otg->seed);
     g_otg->num_nodes = 2;
     for (i=0; i<g_otg->num_nodes; i++){
       for (j=0; j<g_otg->num_nodes; j++){ 
+	g_otg->application_idx[i][j] = 1;
 	//g_otg->packet_gen_type=SUBSTRACT_STRING;
-	g_otg->aggregation_level[i][j]=1;
-	g_otg->application_type[i][j] = SCBR;
+	g_otg->aggregation_level[i][j][0]=1;
+	g_otg->application_type[i][j][0] = BCBR; //MCBR, BCBR
       }
     }
     init_predef_traffic();
-  }
+    //}
 #endif
 
   // start up the hardware
@@ -1532,6 +1645,29 @@ int main(int argc, char **argv) {
 	sprintf (title, "LTE UL SCOPE eNB");
       fl_show_form (form_dl->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
       fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+      if (UE_flag==0) {
+	//fl_hide_object(form->ia_receiver_button);
+	if (otg_enabled) {
+	  fl_set_button(form_dl->ia_receiver_button,1);
+	  fl_set_object_label(form_dl->ia_receiver_button,"DL traffic ON");
+	}
+	else {
+	  fl_set_button(form_dl->ia_receiver_button,0);
+	  fl_set_object_label(form_dl->ia_receiver_button,"DL traffic OFF");
+	}
+      }
+      else {
+	//fl_show_object(form->ia_receiver_button);
+	if (openair_daq_vars.use_ia_receiver) {
+	  fl_set_button(form_dl->ia_receiver_button,1);
+	  fl_set_object_label(form_dl->ia_receiver_button, "IA Receiver ON");
+	}
+	else {
+	  fl_set_button(form_dl->ia_receiver_button,0);
+	  fl_set_object_label(form_dl->ia_receiver_button, "IA Receiver OFF");
+	}
+      }
+
       thread2 = pthread_create(&thread2, NULL, scope_thread, NULL);
     }
 #endif
@@ -1543,6 +1679,8 @@ int main(int argc, char **argv) {
   if (UE_flag == 1) {
     thread1 = rt_thread_create(UE_thread, NULL, 100000000);
 #ifdef DLSCH_THREAD
+    //init_rx_pdsch_threads();
+    rt_sleep(nano2count(FRAME_PERIOD/10));
     init_dlsch_threads();
 #endif
   }
@@ -1563,6 +1701,17 @@ int main(int argc, char **argv) {
   printf("TYPE <ENTER> TO TERMINATE\n");
   getchar();
 
+#ifdef XFORMS
+  if (do_forms==1)
+    {
+      //pthread_join?
+      fl_hide_form(form_stats->stats_form);
+      fl_free_form(form_stats->stats_form);
+      fl_hide_form(form_dl->lte_scope);
+      fl_free_form(form_dl->lte_scope);
+    }
+#endif
+
   // stop threads
   oai_exit=1;
   rt_sleep(nano2count(FRAME_PERIOD));
@@ -1571,6 +1720,7 @@ int main(int argc, char **argv) {
   if (UE_flag == 1) {
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
+    //cleanup_rx_pdsch_threads();
 #endif
   }
   else {
@@ -1589,17 +1739,6 @@ int main(int argc, char **argv) {
   printf("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
 
-
-#ifdef XFORMS
-  if (do_forms==1)
-    {
-      //pthread_join?
-      fl_hide_form(form_stats->stats_form);
-      fl_free_form(form_stats->stats_form);
-      fl_hide_form(form_dl->lte_scope);
-      fl_free_form(form_dl->lte_scope);
-    }
-#endif
 
   return 0;
 }
