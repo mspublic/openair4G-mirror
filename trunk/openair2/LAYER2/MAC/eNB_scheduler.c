@@ -1869,44 +1869,44 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
   u32 cqi_req,cshift,ndi,mcs,rballoc;
  
   for (UE_id=0;UE_id<granted_UEs && (*nCCE_available > (1<<aggregation));UE_id++) {
-    if ((((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (frame%10==0)))
-    //if (((UE_id%2)==(sched_subframe%2)))
-    { // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
 
-      // find next ue to schedule
-      //    msg("[MAC][eNB] subframe %d: checking UE_id %d\n",subframe,UE_id);
-      next_ue = UE_id;//schedule_next_ulue(Mod_id,UE_id,subframe);
-      //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
-      rnti = find_UE_RNTI(Mod_id,next_ue); // radio network temp id is obtained
-      // indicate that UL is active for this UE
+    //    msg("[MAC][eNB] subframe %d: checking UE_id %d\n",subframe,UE_id);
+    next_ue = UE_id;     // find next ue to schedule
+    //    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
+    rnti = find_UE_RNTI(Mod_id,next_ue); // radio network temp id is obtained
+    //    msg("[MAC][eNB] subframe %d: rnti %x\n",subframe,rnti);
 
-      LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE %d (SR %d)\n",
-	    Mod_id,rnti,frame,subframe,UE_id,
-	    eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
+    if (rnti==0) // if so, go to next UE
+      continue;
 
-      eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0; //// why =0 ???
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    if (eNB_UE_stats==NULL)
+      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
-      if (rnti==0) // if so, go to next UE
-	continue;
-      //    msg("[MAC][eNB] subframe %d: rnti %x\n",subframe,rnti);
-      aggregation = process_ue_cqi(Mod_id,next_ue); // =2 by default!! // what is the msc for this enb (mod_id) and ue (next_ue)
-      //    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
+    LOG_D(MAC,"[eNB %d] Scheduler Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (rnti %x,mode %s), format 0\n",Mod_id,frame,subframe,*nCCE,next_ue,Mod_id, rnti,mode_string[eNB_UE_stats->mode]);
 
-      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-      if (eNB_UE_stats==NULL)
-	mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+    if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
+      // Get candidate harq_pid from PHY
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1); 
+      //	printf("Got harq_pid %d, round %d, next_ue %d\n",harq_pid,round,next_ue);
 
-      LOG_D(MAC,"[eNB %d] Scheduler Frame %d, subframe %d, nCCE %d: Checking ULSCH next UE_id %d mode id %d (rnti %x,mode %s), format 0\n",Mod_id,frame,subframe,*nCCE,next_ue,Mod_id, rnti,mode_string[eNB_UE_stats->mode]);
+      if ((((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (round>0) || (frame%10==0))) {
+	// if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames 
+	
+	//if (((UE_id%2)==(sched_subframe%2)))
+	//this condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes.
+	
+	LOG_D(MAC,"[eNB %d][PUSCH %x] Frame %d subframe %d Scheduling UE %d (SR %d)\n",
+	      Mod_id,rnti,frame,subframe,UE_id,
+	      eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR);
+    
+	// reset the scheduling request
+	eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR = 0;
 
-      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
-
-	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1); // where is this function ???
-	//	printf("Got harq_pid %d, round %d, next_ue %d\n",harq_pid,round,next_ue);
-
+	aggregation = process_ue_cqi(Mod_id,next_ue); // =2 by default!! 
+	//    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
 
 	status = mac_get_rrc_status(Mod_id,1,next_ue);
-
 
 	if (status < RRC_CONNECTED) 
 	  cqi_req = 0;
@@ -1923,10 +1923,11 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 
 	// choose this later based on Power Headroom
 	if (ndi == 1) {// set mcs for first round
-	  mcs     = openair_daq_vars.target_ue_ul_mcs;
+	  mcs = openair_daq_vars.target_ue_ul_mcs;
 	}
-	else  // increment RV
-	  mcs = round + 28; 
+	else { // increment RV
+	  mcs = (round&3) + 28; 
+	}
 
 	LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
 
@@ -1965,27 +1966,28 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 		  rb_table_index,TBS);
 	    */
 	    rb_table_index++;
-        TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
+	    TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  }
 
 	  if (rb_table[rb_table_index]>(mac_xface->lte_frame_parms->N_RB_UL-1-*first_rb)) {
 	    rb_table_index--;
-        TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
+	    TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  }
 	  //rb_table_index = 8;
-/*
-	  LOG_D(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+	  
+	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
-		first_rb,rb_table[rb_table_index],
-        rb_table_index,mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]));
-*/
+		*first_rb,rb_table[rb_table_index],
+		rb_table_index,mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]));
+	  
 	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 					  *first_rb,
 					  rb_table[rb_table_index]);//openair_daq_vars.ue_ul_nb_rb);
 
 	  *first_rb+=rb_table[rb_table_index];  // increment for next UE allocation
-	  buffer_occupancy -= mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
+	  eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid] = rb_table[rb_table_index]; //store for possible retransmission
 
+	  buffer_occupancy -= mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  i = bytes_to_bsr_index((s32)buffer_occupancy);
 
 	  // Adjust BSR entries for LCGIDs
@@ -2026,6 +2028,20 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	  }
 	  
 
+	} // ndi==1 
+	else { //we schedule a retransmission
+	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE retransmission (mcs %d, first rb %d, nb_rb %d, TBS %d)\n",
+		Mod_id,UE_id,rnti,frame,subframe,mcs,
+		*first_rb,eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid],
+		mac_xface->get_TBS_UL(mcs,eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid]));
+	  
+	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+					  *first_rb,
+					  eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid]);
+
+	  *first_rb+=eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid];  // increment for next UE allocation
+	}
+
 	// Cyclic shift for DM RS
 	if(cooperation_flag == 2) {
 	  if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
@@ -2035,8 +2051,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	}
 	else
 	  cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
-
-
+	  
 	if (mac_xface->lte_frame_parms->frame_type == TDD) {
 	  ULSCH_dci_tdd16 = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
 
@@ -2095,9 +2110,8 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	//msg("[MAC][eNB %d][ULSCH Scheduler] Frame %d, subframe %d: Generated ULSCH DCI for next UE_id %d, format 0\n", Mod_id,frame,subframe,next_ue);
 
 	break; // leave loop after first UE is schedule (avoids m
-	} // ndi==1 (else we let the PHY/phich handle it)
-      } // UE is in PUSCH
-    } // UE_is_to_be_scheduled
+      } // UE_is_to_be_scheduled
+    } // UE is in PUSCH
   } // loop over UE_id
 }
 

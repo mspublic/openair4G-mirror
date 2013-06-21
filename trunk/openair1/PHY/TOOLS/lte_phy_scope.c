@@ -421,6 +421,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     unsigned char harq_pid = 0;
     if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
         harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
+	if (harq_pid>=8)
+	  return;
         mcs = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs;    
         // Button 0
         if(!phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off) {
