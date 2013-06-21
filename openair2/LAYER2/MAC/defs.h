@@ -476,8 +476,11 @@ typedef struct{
   /// DCI buffer for DLSCH
   u8 DLSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];
 
-  /// Number of Allocated RBs after scheduling (priod to frequency allocation)
+  /// Number of Allocated RBs for DL after scheduling (prior to frequency allocation)
   u16 nb_rb[8];
+
+  /// Number of Allocated RBs for UL after scheduling (prior to frequency allocation)
+  u16 nb_rb_ul[8];
 
   /// DCI buffer for ULSCH
   u8 ULSCH_DCI[8][(MAX_DCI_SIZE_BITS>>3)+1];

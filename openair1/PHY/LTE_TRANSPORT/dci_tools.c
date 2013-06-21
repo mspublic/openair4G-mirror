@@ -3217,11 +3217,15 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
     */
     /*
-    if (frame_parms->frame_type == TDD)
-      ulsch->harq_processes[harq_pid]->O_ACK                                 = (dai+1)&3;
+    if (frame_parms->frame_type == TDD) 
+      // 2bits if together with SR
+      // 1 bit if ACK only?
+      // check dai business
+      ulsch->harq_processes[harq_pid]->O_ACK                                 = 1; //(dai+1)&3;
     else 
     */  ulsch->harq_processes[harq_pid]->O_ACK                                 = 1;
     
+
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
     ulsch->beta_offset_harqack_times8            = beta_ack[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index];//16;
@@ -3556,8 +3560,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->uci_format                            = HLC_subband_cqi_nopmi;
     }
 
-    
-    ulsch->harq_processes[harq_pid]->O_ACK                                 = 1;// (dai+1)&3;
+    // check this (see comment in generate_ue_ulsch_params_from_dci)
+    ulsch->harq_processes[harq_pid]->O_ACK                                 = 1; //(dai+1)&3;
 
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
