@@ -419,10 +419,11 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
         return RLC_OP_STATUS_BAD_PARAMETER;
     }
 
-    if (rlc[module_idP].m_lcid2rbid[chan_idP] != -1) {
-          LOG_E(RLC,"Error in RLC config channel ID already configured %d\n",chan_idP);
-          exit -1;
-          return RLC_OP_STATUS_BAD_PARAMETER;
+    if (rlc[module_idP].m_lcid2rbid[chan_idP] != -1) { 
+      LOG_E(RLC,"Error in RLC config channel ID already configured %d(module_id %d, state %d)\n",
+	    chan_idP, module_idP, rlc[module_idP].m_lcid2rbid[chan_idP]);
+      exit -1;
+      return RLC_OP_STATUS_BAD_PARAMETER;
     }
     for (index = 0; index < index_max; index++) {
         switch (rlc_modeP) {
@@ -434,7 +435,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
                     rlc[module_idP].m_lcid2rbid[chan_idP]            = rb_idP;
-                    LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d][LCH Id %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, chan_idP, index);
+                    LOG_I(RLC, "[RLC_RRC][MOD ID %d][RB %d][LCH Id %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, chan_idP, index);
                     LOG_D(RLC,  "[MSC_NEW][FRAME %05d][RLC_AM][MOD %02d][RB %02d]\n", frameP, module_idP,rb_idP);
                     return RLC_OP_STATUS_OK;
                 } else {
@@ -448,7 +449,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
                     rlc[module_idP].m_lcid2rbid[chan_idP]            = rb_idP;
-                    LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d][LCH Id %d] ADD RB TM INDEX IS %d\n", module_idP, rb_idP, chan_idP, index);
+                    LOG_I(RLC, "[RLC_RRC][MOD ID %d][RB %d][LCH Id %d] ADD RB TM INDEX IS %d\n", module_idP, rb_idP, chan_idP, index);
                     LOG_D(RLC, "[MSC_NEW][FRAME %05d][RLC_TM][MOD %02d][RB %02d]\n", frameP, module_idP, rb_idP);
                     return RLC_OP_STATUS_OK;
                 } else {
@@ -462,7 +463,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, u32_t frameP, rb_id_t
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
                     rlc[module_idP].m_lcid2rbid[chan_idP]            = rb_idP;
-                    LOG_D(RLC, "[RLC_RRC][MOD ID %d][RB %d][LCH Id %d] ADD RB UM INDEX IS %d  RLC_MODE %d\n", module_idP, rb_idP, index, chan_idP, rlc_modeP);
+                    LOG_I(RLC, "[RLC_RRC][MOD ID %d][RB %d][LCH Id %d] ADD RB UM INDEX IS %d  RLC_MODE %d\n", module_idP, rb_idP, index, chan_idP, rlc_modeP);
                     LOG_D(RLC, "[MSC_NEW][FRAME %05d][RLC_UM][MOD %02d][RB %02d]\n", frameP, module_idP, rb_idP);
                     return RLC_OP_STATUS_OK;
                 } else {

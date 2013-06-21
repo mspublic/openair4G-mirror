@@ -11,12 +11,20 @@
 
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
+
 #ifdef USER_MODE
+#ifdef LARGE_SCALE 
+#    define NB_MODULES_MAX 128
+#    define NB_NODE_MAX    128
+#else
 #    define NB_MODULES_MAX 32
+#    define NB_NODE_MAX    32
+#endif 
 #else
 #    define NB_MODULES_MAX 1
+#    define NB_NODE_MAX    1
 #endif //PHY_EMUL
-#    define NB_NODE_MAX    64
+
 
 #ifdef JUMBO_FRAME
 #    define MAX_IP_PACKET_SIZE         9000
@@ -24,15 +32,11 @@
 #    define MAX_IP_PACKET_SIZE         1500
 #endif
 // overwrite the previous deinitions 
-#ifdef LARGE_SCALE 
-#    define NB_MODULES_MAX 128
-#    define NB_NODE_MAX    128
-#endif
 
 #    define MAX_MODULES                NB_MODULES_MAX
 
 #ifdef LARGE_SCALE 
-#    define MAX_MOBILES_PER_RG         32
+#    define MAX_MOBILES_PER_RG         128
 #    define MAX_RG                     2
 #else 
 #    define MAX_MOBILES_PER_RG         16

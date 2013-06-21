@@ -314,21 +314,23 @@ typedef struct {
 } TX_RX_VARS;
 
 /// Measurement Variables
-#define NUMBER_OF_CONNECTED_eNB_MAX 3
+
 #define NUMBER_OF_SUBBANDS 7
 #define NUMBER_OF_HARQ_PID_MAX 8
 
 #if defined(CBMIMO1) || defined(EXMIMO)
 #define NUMBER_OF_eNB_MAX 1
 #define NUMBER_OF_UE_MAX 2
+#define NUMBER_OF_CONNECTED_eNB_MAX 3
 #else
 #ifdef LARGE_SCALE
 #define NUMBER_OF_eNB_MAX 2
-#define NUMBER_OF_UE_MAX 32
+#define NUMBER_OF_UE_MAX 128
 #define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
 #else 
 #define NUMBER_OF_eNB_MAX 7
 #define NUMBER_OF_UE_MAX 16
+#define NUMBER_OF_CONNECTED_eNB_MAX 3
 #endif 
 #endif
 
