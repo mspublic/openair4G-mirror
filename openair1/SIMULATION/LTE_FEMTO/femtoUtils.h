@@ -46,8 +46,10 @@ typedef struct {
     u16 Nid_cell;
     u16 tdd_config;
     u8 oversampling;
-    SCM_t channel_model;    
+    SCM_t channel_model;  
+    SCM_t channel_modeli;   
     int awgn_flag;
+    int awgn_flagi;
     int nsymb;
     int num_layers;
     u16 n_rnti;

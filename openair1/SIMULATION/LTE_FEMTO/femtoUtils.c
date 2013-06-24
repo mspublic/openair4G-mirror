@@ -329,7 +329,9 @@ void _printOptions(options_t *opts)
   printf("\nNid_cell:\t\t%d",opts->Nid_cell);
   printf("\noversampling:\t\t%d",opts->oversampling);
   printf("\nchannel_model:\t\t%d",opts->channel_model);
+  printf("\nchannel_modeli:\t\t%d",opts->channel_modeli);
   printf("\nawgn_flag:\t\t%d",opts->awgn_flag);
+  printf("\nawgn_flagi:\t\t%d",opts->awgn_flagi);
   printf("\nnInterf:\t\t%d",opts->nInterf);
   printf("\nxx:%p",(void *)opts->outputFile);
 

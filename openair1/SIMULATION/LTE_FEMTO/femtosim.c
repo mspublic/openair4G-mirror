@@ -231,8 +231,10 @@ void _initDefaults(options_t *opts) {
   opts->Nid_cell=0;
   opts->oversampling=1;			
   opts->channel_model=Rayleigh1;
+  opts->channel_modeli=Rayleigh1;
   opts->dbInterf=NULL;
   opts->awgn_flag=0;
+  opts->awgn_flagi=0;
   opts->common_flag=0;
   opts->TPC=0;
     
@@ -432,7 +434,7 @@ void _generatesRandomChannel(options_t opts) {
 		
       interf_eNB2UE[i]=new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
 					    PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-					    opts.channel_model,BW,0,0,0);
+					    opts.channel_modeli,BW,0,0,0);
 		
       if (interf_eNB2UE[i]==NULL)
 	{
@@ -2134,7 +2136,7 @@ void _fillPerfectChannelDescription(options_t opts,u8 l)
       freq_channel(interf_eNB2UE[j],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
 		
 		
-    }				printf("PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b %d",PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b);
+    }	printf("PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b %d",PHY_vars_UE->dlsch_ue[0][0]->sqrt_rho_b);
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
     {
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
@@ -2153,10 +2155,17 @@ void _fillPerfectChannelDescription(options_t opts,u8 l)
 					
 		  if(opts.nInterf>0) //Max num interferer 
 		    {
-		      if(j==opts.Nid_cell) continue;						
-		      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(interf_eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2)*pow(10.0,.05*opts.dbInterf[0]);											
-		      ((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(interf_eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2)*pow(10.0,.05*opts.dbInterf[0]) ;
-		    }
+			  if(opts.awgn_flagi==0){
+				if(j==opts.Nid_cell) continue;						
+				((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(interf_eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP/2)*pow(10.0,.05*opts.dbInterf[0]);											
+				((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(interf_eNB2UE[0]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP/2)*pow(10.0,.05*opts.dbInterf[0]) ;
+				}
+				else{
+					if(j==opts.Nid_cell) continue;					
+					((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)((AMP/2)*(pow(10.0,.05*opts.dbInterf[0])));
+					((s16 *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[1][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;													 
+				}
+			}
 		}
 	      else{						
 					
