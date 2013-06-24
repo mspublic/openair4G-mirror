@@ -325,7 +325,7 @@ typedef struct {
 #else
 #ifdef LARGE_SCALE
 #define NUMBER_OF_eNB_MAX 2
-#define NUMBER_OF_UE_MAX 128
+#define NUMBER_OF_UE_MAX 120
 #define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
 #else 
 #define NUMBER_OF_eNB_MAX 7
