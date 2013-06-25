@@ -63,7 +63,7 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
   if (ethernet_flag == 0)
     return;
   
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT,1);
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT, VCD_FUNCTION_IN);
 
   if ((frame_type == 1) &&  (direction == SF_S)){
     if (next_slot%2==0)
@@ -82,7 +82,7 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
     }
     
   }
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT,0);
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT, VCD_FUNCTION_OUT);
 }
 
 
