@@ -5,10 +5,13 @@
 * \version 1.0 
 * \company Eurecom
 * \email: navid.nikaein@eurecom.fr
-*/ 
+*/
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -17,11 +20,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <assert.h>
-#include <string.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <pthread.h>
+
 #include <sys/socket.h>
 #include <sys/select.h>
 //#include "openair_defs.h"
@@ -43,14 +45,15 @@
 
 #ifdef USER_MODE
 //#include <rtai.h>
-#define msg printf
+# define msg printf
+# include "UTIL/LOG/log.h"
 #endif //USER_MODE
 //#include "extern.h"
 extern unsigned short Master_id;
 
 #define MULTICAST_LINK_NUM_GROUPS 4
 
-char           *multicast_group_list[MULTICAST_LINK_NUM_GROUPS] = { 
+char *multicast_group_list[MULTICAST_LINK_NUM_GROUPS] = {
   "239.0.0.161\0",
   "239.0.0.162\0",
   "239.0.0.163\0",
@@ -241,18 +244,23 @@ multicast_link_main_loop (void *param)
    highsock = -1;
    while (1) {
     multicast_link_build_select_list ();
-    timeout.tv_sec = 0;
+    /* [24/06/13] SR: Set the timeout to one second ->
+     * avoid infinite loop if no data to read.
+     */
+    timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
     readsocks = select (highsock + 1, &socks, (fd_set *) 0, (fd_set *) 0, &timeout);
     if (readsocks < 0) {
-      //      msg ("multicast_link_main_loop: select failed with ERROR %s (readsocks %d)\n",strerror(readsocks),readsocks);
-      //      exit (EXIT_FAILURE);
-    }
-    if(readsocks>0) {
+      LOG_E(EMU, "Multicast select failed (%d:%s)\n", errno, strerror(errno));
+      // exit();  
+    } else if (readsocks > 0) {
       //msg("calling multicast link read\n");
       multicast_link_read ();
       // usleep(1);
+    } else {
+      /* Timeout */
+      LOG_I(EMU, "Multicast select time-out\n");
     }
   }
 #ifdef USER_MODE
