@@ -1075,7 +1075,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       rach_ConfigCommon = &UE_mac_inst[Mod_id].scheduling_info[eNB_index].radioResourceConfigCommon->rach_ConfigCommon;
     else {
       LOG_D(MAC, "[UE %d][eNB %d] FATAL: radioResourceConfigCommon is NULL!!!\n", Mod_id, eNB_index);
-      mac_xface->macphy_exit("");
+      //mac_xface->macphy_exit("");
       return(RRC_OK); 
     }
     UE_mac_inst[Mod_id].RA_contention_resolution_cnt++;

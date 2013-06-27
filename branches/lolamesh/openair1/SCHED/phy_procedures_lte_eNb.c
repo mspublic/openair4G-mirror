@@ -381,7 +381,7 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,
 	    phy_vars_eNB->frame,next_slot>>1);
 	
 	generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-		     4*AMP,
+		     AMP,
 		     &phy_vars_eNB->lte_frame_parms,
 		     2,
 		     next_slot);
@@ -731,7 +731,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       	// First half of PSS/SSS (FDD)
       	if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
 					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-								 4*AMP,
+								 AMP,
 								 &phy_vars_eNB->lte_frame_parms,
 								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 								 next_slot);
@@ -850,7 +850,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
 				if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
 					//	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
-					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],4*AMP,&phy_vars_eNB->lte_frame_parms,2,next_slot);
+					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],AMP,&phy_vars_eNB->lte_frame_parms,2,next_slot);
 				}//end if (phy_vars_eNB->lte_frame_parms.frame_type == 1)
 
       }//end if (abstraction_flag==0)
@@ -864,7 +864,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
        
 				if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
 					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-								 4*AMP,
+								 AMP,
 								 &phy_vars_eNB->lte_frame_parms,
 								 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 								 next_slot);
@@ -906,7 +906,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
 					//	    printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
 					generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-								 4*AMP,
+								 AMP,
 								 &phy_vars_eNB->lte_frame_parms,
 								 2,
 								 next_slot);
@@ -1936,7 +1936,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
   memset(&preamble_energy_list[0],0,64*sizeof(u16));
   memset(&preamble_delay_list[0],0,64*sizeof(u16));
  
- 	if (abstraction_flag == 0) {
+  if (abstraction_flag == 0) {
     LOG_D(PHY,"[eNB %d][RAPROC] Frame %d, Subframe %d : PRACH RX Signal Power : %d dBm\n",phy_vars_eNB->Mod_id,
 	  phy_vars_eNB->frame,subframe,
 	  dB_fixed(signal_energy(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
@@ -1986,7 +1986,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,u8 subframe,u8 abstraction_flag
       preamble_energy_list[preamble_max],
       preamble_delay_list[preamble_max]);
   */
-  if (preamble_energy_list[preamble_max] > 60) {
+  if (preamble_energy_list[preamble_max] > 70) {
     UE_id = find_next_ue_index(phy_vars_eNB);
     if (UE_id>=0) {
 

@@ -38,7 +38,7 @@
 * \warning
 */
 
-#define DEBUG_MRPSCH
+//#define DEBUG_MRPSCH
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
