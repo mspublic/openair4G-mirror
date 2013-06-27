@@ -107,6 +107,8 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
     //eNB_mac_inst[i].corntis.count=0;
     for (j=0;j<NUMBER_OF_UE_MAX;j++) {
       //MAC layer structure :
+		if(i > 2)
+			continue;
       eNB_mac_inst[i].UE_template[j].corntis.count = 0;
       UE_mac_inst[j].corntis.count = 0;
       

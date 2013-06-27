@@ -1380,6 +1380,10 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   u16 frame_tx;
   static u8 first_run = 1;
 
+  if(eNB_id > 0)
+    if(phy_vars_ue->UE_mode[eNB_id-1] != PUSCH)
+      return;
+
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCCH_PROCEDURES, VCD_FUNCTION_IN);
 
   for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
@@ -1582,6 +1586,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
     rx_phich(phy_vars_ue,
 	       last_slot>>1,eNB_id);
     }
+    attached_eNB_id = phy_vars_ue->lte_ue_common_vars[eNB_id]->eNb_id;
   }
 #ifdef PHY_ABSTRACTION
   else {
@@ -2461,10 +2466,10 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
           vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 	  return -1;
 	}
-	/*
+	
 #ifdef DEBUG_PHY_PROC
-	debug_LOG_D(PHY,"[UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot==0)?9 : (last_slot>>1)));
-	#endif*/
+	LOG_D(PHY,"[UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot==0)?9 : (last_slot>>1)));
+#endif
 
 	if (abstraction_flag==0) {
 	    dlsch_unscrambling(phy_vars_ue->lte_frame_parms[eNB_id],

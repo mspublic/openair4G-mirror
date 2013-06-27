@@ -978,7 +978,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   // check if we're expecting a PHICH in this subframe
   //  msg("[PHY][UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe);
   if (ulsch->harq_processes[harq_pid]->status == ACTIVE) {
-    LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe);
+    //LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame,subframe);
     Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
     if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
       Ngroup_PHICH++;
@@ -1221,6 +1221,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
 #endif
   if (HI16>0) {   //NACK
     if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
+      if(0)
       LOG_I(PHY,"[UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received NAK (%d) nseq %d, ngroup %d\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
@@ -1245,6 +1246,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     }
     else {
       //#ifdef DEBUG_PHICH
+      if(0)
       LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
@@ -1263,6 +1265,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
   }
   else {    //ACK
     if (phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] == 1) {
+      if(0)
       LOG_I(PHY,"[UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
@@ -1272,6 +1275,7 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     }
     else {
       //#ifdef PHICH_DEBUG
+      if(0)
       LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
 	  phy_vars_ue->Mod_id,harq_pid,
 	  phy_vars_ue->frame,
@@ -1321,8 +1325,8 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
       
       if (ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active == 1) {
 
-      LOG_D(PHY,"[eNB][PUSCH %x/%d] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
-	  ulsch_eNB[UE_id]->rnti,harq_pid,phy_vars_eNB->frame,subframe,pusch_subframe,pusch_frame,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active);
+      //LOG_D(PHY,"[eNB][PUSCH %x/%d] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
+	  //ulsch_eNB[UE_id]->rnti,harq_pid,phy_vars_eNB->frame,subframe,pusch_subframe,pusch_frame,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active);
       
 	ngroup_PHICH = (ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb + 
 			ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS)%Ngroup_PHICH;
