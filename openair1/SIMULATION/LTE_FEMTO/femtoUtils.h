@@ -54,7 +54,7 @@ typedef struct {
     int num_layers;
     u16 n_rnti;
     ///Modulation and code scheme
-    u8 mcs;				    
+    u8 mcs,mcs2;				    
 
 
     u8 pilot1,pilot2,pilot3;
@@ -171,3 +171,4 @@ void _writeTxData(char *num,char *desc, int init, int numframes,options_t opts, 
 
 
 #endif
+

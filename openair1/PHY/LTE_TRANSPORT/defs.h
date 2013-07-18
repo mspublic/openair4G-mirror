@@ -465,6 +465,8 @@ typedef struct {
 typedef struct {
   /// Flag indicating that this DLSCH has a new transport block
   uint8_t Ndi;
+  /// Modulation order of the first HARQ round
+  uint8_t first_Qm;
   /// DLSCH status flag indicating 
   SCH_status_t status;
   /// Transport block size
@@ -523,6 +525,8 @@ typedef struct {
 typedef struct {
   /// UL RSSI per receive antenna
   s32 UL_rssi[NB_ANTENNAS_RX];
+  /// UL wide band SINR in dB : currently not set
+  s32 UL_WB_SINR;
   /// DL Wideband CQI index (2 TBs)
   uint8_t DL_cqi[2];
   /// DL Subband CQI index (from HLC feedback)
@@ -683,3 +687,4 @@ typedef struct {
 
 /**@}*/
 #endif
+
