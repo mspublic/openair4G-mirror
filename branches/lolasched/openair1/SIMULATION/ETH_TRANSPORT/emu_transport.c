@@ -18,17 +18,46 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
+#include "pgm_link.h"
+
 extern unsigned int Master_list_rx;
 
 extern unsigned char NB_INST;
 //#define DEBUG_CONTROL 1
 //#define DEBUG_EMU   1
 
+#if defined(ENABLE_PGM_TRANSPORT)
+extern unsigned int pgm_would_block;
+#endif
+
 void emu_transport_sync(void)
 {
     LOG_D(EMU, "Entering EMU transport SYNC is primary master %d\n",
           oai_emulation.info.is_primary_master);
 
+#if defined(ENABLE_PGM_TRANSPORT)
+    if (oai_emulation.info.is_primary_master == 0) {
+        bypass_tx_data(WAIT_SM_TRANSPORT,0,0);
+        // just wait to recieve the  master 0 msg
+        Master_list_rx = oai_emulation.info.master_list - 1;
+        bypass_rx_data(0,0,0,1);
+    } else {
+        bypass_rx_data(0,0,0,0);
+        bypass_tx_data(WAIT_PM_TRANSPORT,0,0);
+    }
+
+    if (oai_emulation.info.master_list != 0) {
+        bypass_tx_data(SYNC_TRANSPORT,0,0);
+        bypass_rx_data(0,0,0,0);
+
+        // i received the sync from all secondary masters
+        if (emu_rx_status == SYNCED_TRANSPORT) {
+            emu_tx_status = SYNCED_TRANSPORT;
+        }
+
+        LOG_D(EMU,"TX secondary master SYNC_TRANSPORT state \n");
+    }
+#else
     if (oai_emulation.info.is_primary_master == 0) {
 retry:
         bypass_tx_data(WAIT_SM_TRANSPORT,0,0);
@@ -58,6 +87,8 @@ retry2:
 
         LOG_D(EMU,"TX secondary master SYNC_TRANSPORT state \n");
     }
+#endif
+
     LOG_D(EMU, "Leaving EMU transport SYNC is primary master %d\n",
           oai_emulation.info.is_primary_master);
 }
@@ -75,23 +106,26 @@ void emu_transport(unsigned int frame, unsigned int last_slot,
         VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT, VCD_FUNCTION_IN);
 
     if ((frame_type == 1) &&  (direction == SF_S)) {
-        if (next_slot%2==0) {
-            emu_transport_DL(frame, last_slot,next_slot);
+        if ((next_slot % 2) == 0) {
+            emu_transport_DL(frame, last_slot, next_slot);
         } else {
             emu_transport_UL(frame, last_slot , next_slot);
         }
         //DL
     } else {
-        if (next_slot%2 == 0 )
-            if ( ((frame_type == 1) &&  (direction == SF_DL )) || (frame_type == 0) ) {
-                emu_transport_DL(frame, last_slot,next_slot);
+        if ((next_slot % 2) == 0) {
+            if (((frame_type == 1) && (direction == SF_DL )) || (frame_type == 0) ) {
+                emu_transport_DL(frame, last_slot, next_slot);
             }
-        // UL
-        if ( ((frame_type == 1) &&  (direction == SF_UL)) || (frame_type == 0) ) {
-            emu_transport_UL(frame, last_slot , next_slot);
         }
-
+        // UL
+        if (((frame_type == 1) && (direction == SF_UL)) || (frame_type == 0) ) {
+            emu_transport_UL(frame, last_slot, next_slot);
+        }
     }
+#if defined(ENABLE_PGM_TRANSPORT)
+    pgm_would_block = 0;
+#endif
     vcd_signal_dumper_dump_function_by_name(
         VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT, VCD_FUNCTION_OUT);
 }
@@ -102,26 +136,25 @@ void emu_transport_DL(unsigned int frame, unsigned int last_slot,
 {
     LOG_D(EMU, "Entering EMU transport DL, is primary master %d\n",
           oai_emulation.info.is_primary_master);
-    if (oai_emulation.info.is_primary_master==0) {
-        //  bypass_rx_data(last_slot);
-        if (oai_emulation.info.nb_enb_local>0) { // send in DL if
-            bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
+
+    if (oai_emulation.info.is_primary_master == 0) {
+        if (oai_emulation.info.nb_enb_local > 0) { // send in DL if
+            bypass_tx_data(ENB_TRANSPORT, frame, next_slot);
             bypass_rx_data(frame, last_slot, next_slot, 1);
         } else {
             bypass_tx_data(WAIT_SM_TRANSPORT,frame,next_slot);
             bypass_rx_data(frame, last_slot, next_slot, 0);
         }
-    } else { // I am the master
-        // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-
+    } else { // PM
         if (oai_emulation.info.nb_enb_local>0) { // send in DL if
-            bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
-            bypass_rx_data(frame,last_slot, next_slot, 1);
+            bypass_rx_data(frame, last_slot, next_slot, 1);
+            bypass_tx_data(ENB_TRANSPORT, frame, next_slot);
         } else {
-            bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
-            bypass_rx_data(frame,last_slot, next_slot, 0);
+            bypass_rx_data(frame, last_slot, next_slot, 0);
+            bypass_tx_data(WAIT_SM_TRANSPORT,frame,next_slot);
         }
     }
+
     LOG_D(EMU, "Leaving EMU transport DL, is primary master %d\n",
           oai_emulation.info.is_primary_master);
 }
@@ -131,25 +164,25 @@ void emu_transport_UL(unsigned int frame, unsigned int last_slot,
 {
     LOG_D(EMU, "Entering EMU transport UL, is primary master %d\n",
           oai_emulation.info.is_primary_master);
-    if (oai_emulation.info.is_primary_master==0) {
-        // bypass_rx_data(last_slot, next_slot);
-        if (oai_emulation.info.nb_ue_local>0) {
+
+    if (oai_emulation.info.is_primary_master == 0) {
+        if (oai_emulation.info.nb_ue_local > 0) {
             bypass_tx_data(UE_TRANSPORT, frame, next_slot);
-            bypass_rx_data(frame,last_slot, next_slot, 1);
+            bypass_rx_data(frame, last_slot, next_slot, 1);
         } else {
             bypass_tx_data(WAIT_SM_TRANSPORT, frame, next_slot);
             bypass_rx_data(frame,last_slot, next_slot, 0);
         }
     } else {
-        // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-        if (oai_emulation.info.nb_ue_local>0) {
-            bypass_tx_data(UE_TRANSPORT,frame, next_slot);
-            bypass_rx_data(frame,last_slot, next_slot, 1);
+        if (oai_emulation.info.nb_ue_local > 0) {
+            bypass_rx_data(frame, last_slot, next_slot, 1);
+            bypass_tx_data(UE_TRANSPORT, frame, next_slot);
         } else {
-            bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
             bypass_rx_data(frame,last_slot, next_slot, 0);
+            bypass_tx_data(WAIT_SM_TRANSPORT, frame, next_slot);
         }
     }
+
     LOG_D(EMU, "Leaving EMU transport UL, is primary master %d\n",
           oai_emulation.info.is_primary_master);
 }
@@ -211,6 +244,7 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot)
     LTE_eNB_DLSCH_t *dlsch_eNB;
     unsigned short ue_id;
     u8 nb_total_dci;
+    int i;
 
 #ifdef DEBUG_EMU
     LOG_D(EMU, " pbch fill phy eNB %d vars for slot %d fault %d\n",
@@ -245,8 +279,8 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot)
     if (nb_total_dci >0) {
 
         memcpy(PHY_vars_eNB_g[enb_id]->dci_alloc[(next_slot>>1)&1],
-               &eNB_transport_info[enb_id].dci_alloc,
-               (nb_total_dci)* sizeof(DCI_ALLOC_t));
+	           eNB_transport_info[enb_id].dci_alloc,
+               (nb_total_dci) * sizeof(DCI_ALLOC_t));
 
         n_dci_dl=0;
         // fill dlsch_eNB structure from DCI
@@ -272,7 +306,6 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot)
 #endif
                         break;
                     case 1: //RA:
-
                         memcpy(PHY_vars_eNB_g[enb_id]->dlsch_eNB_ra->harq_processes[0]->b,
                                &eNB_transport_info[enb_id].transport_blocks[payload_offset],
                                eNB_transport_info[enb_id].tbs[n_dci_dl]);
@@ -292,7 +325,6 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot)
                               " enb_id %d ue id is %d rnti is %x dci index %d, harq_pid %d tbs %d \n",
                               enb_id, ue_id, eNB_transport_info[enb_id].dci_alloc[n_dci_dl].rnti,
                               n_dci_dl, harq_pid, eNB_transport_info[enb_id].tbs[n_dci_dl]);
-                        int i;
                         for (i=0; i<eNB_transport_info[enb_id].tbs[n_dci_dl]; i++) {
                             LOG_T(EMU, "%x.",
                                   (unsigned char) eNB_transport_info[enb_id].transport_blocks[payload_offset+i]);
@@ -338,9 +370,8 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot)
     //  u8 ue_transport_info_index[NUMBER_OF_eNB_MAX];
     u8 subframe = (last_slot+1)>>1;
 
-    memcpy (&ue_cntl_delay[ue_id][(last_slot+1)%2],
-            &UE_transport_info[ue_id].cntl,
-            sizeof(UE_cntl));
+    memcpy(&ue_cntl_delay[ue_id][(last_slot+1)%2], &UE_transport_info[ue_id].cntl,
+           sizeof(UE_cntl));
 
 #ifdef DEBUG_EMU
     LOG_D(EMU,
@@ -369,13 +400,13 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot)
 
     pucch_format=
         ue_cntl_delay[ue_id][last_slot%2].pucch_flag;// UE_transport_info[ue_id].cntl.pucch_flag;
-    if ((last_slot+1) % 2  == 0 ) {
+    if ((last_slot + 1) % 2 == 0) {
         if (pucch_format == pucch_format1) { // UE_transport_info[ue_id].cntl.sr;
             PHY_vars_UE_g[ue_id]->sr[subframe] = ue_cntl_delay[ue_id][last_slot%2].sr;
-        } else if ((pucch_format == pucch_format1a)
-                   || (pucch_format == pucch_format1b )) {
-            PHY_vars_UE_g[ue_id]->pucch_payload[0] =
-                ue_cntl_delay[ue_id][last_slot%2].pucch_payload;//UE_transport_info[ue_id].cntl.pucch_payload;
+        } else if ((pucch_format == pucch_format1a) ||
+                   (pucch_format == pucch_format1b)) {
+            PHY_vars_UE_g[ue_id]->pucch_payload[0] = ue_cntl_delay[ue_id][last_slot%2].pucch_payload;
+                //UE_transport_info[ue_id].cntl.pucch_payload;
         }
         PHY_vars_UE_g[ue_id]->pucch_sel[subframe] =
             ue_cntl_delay[ue_id][last_slot%2].pucch_sel;
@@ -384,7 +415,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot)
     LOG_D(EMU,"subframe %d trying to copy the payload from num eNB %d to UE %d \n",
           subframe, UE_transport_info[ue_id].num_eNB, ue_id);
 #endif
-    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++) {
+    for (n_enb = 0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++) {
 #ifdef DEBUG_EMU
         /*     LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x harq pid is %d \n",
           ue_id, UE_transport_info[ue_id].rnti[n_enb],
@@ -411,10 +442,10 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot)
             (ue_cntl_delay[ue_id][last_slot%2].pusch_ack>>1) & 0x1;
         //*(u32 *)ulsch->o                        = ue_cntl_delay[ue_id][last_slot%2].pusch_uci;
 
-        if (last_slot%2 == 1 ) {
+        if ((last_slot % 2) == 1) {
             PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->O =
                 ue_cntl_delay[ue_id][last_slot%2].length_uci;
-            PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->uci_format      =
+            PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->uci_format =
                 ue_cntl_delay[ue_id][last_slot%2].uci_format;
 
             memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->o,

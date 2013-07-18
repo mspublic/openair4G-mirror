@@ -123,6 +123,9 @@ mapping otg_distribution_names[] =
     {"gamma", 8},
     {"cauchy",9}, 
     {"log_normal",10},
+    {"tarma",11},
+    {"video",12},
+    {"background_dist",13},
     {NULL, -1}
 };
 
@@ -411,19 +414,21 @@ int olg_config() {
   set_glog(oai_emulation.info.g_log_level, oai_emulation.info.g_log_verbosity ); //g_glog
   // component, log level, log interval
   for (comp = PHY; comp < MAX_LOG_COMPONENTS ; comp++)
-    set_comp_log(comp,  
-		 oai_emulation.info.g_log_level, 
-		 oai_emulation.info.g_log_verbosity, 
+    set_comp_log(comp,
+		 oai_emulation.info.g_log_level,
+		 oai_emulation.info.g_log_verbosity,
 		 oai_emulation.emulation_config.log_emu.interval);
+/*
   // if perf eval then reset the otg log level
-  set_comp_log(PHY,  LOG_NONE, 0x15,1);
-  set_comp_log(EMU,  LOG_NONE, 0x15,1);
+  /*  set_comp_log(PHY,  LOG_NONE, 0x15,1);
+  set_comp_log(EMU,  LOG_FULL, 0x15,1);
   set_comp_log(OCG,  LOG_NONE, 0x15,1);
   set_comp_log(OCM,  LOG_NONE, 0x15,1);
   set_comp_log(OTG,  LOG_NONE, 0x15,1);
   set_comp_log(MAC,  LOG_NONE, 0x15,1);
   set_comp_log(OMG,  LOG_NONE, 0x15,1);
-  set_comp_log(OPT,  LOG_ERR, 0x15,1);
+  set_comp_log(OPT,  LOG_ERR, 0x15,1); */
+  
 /*
   set_log(OCG,  LOG_DEBUG, 1);  
   set_log(EMU,  LOG_INFO,  20);
@@ -815,7 +820,7 @@ int ocg_config_app(){
 	      g_otg->holding_time_off_pe[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_off_pe[customized_traffic_config_index];	
 	      g_otg->holding_time_pe_off[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]]=oai_emulation.application_config.customized_traffic.holding_time_pe_off[customized_traffic_config_index];
 			  
-	      LOG_I(OTG,"customized:: OCG_config_OTG: (1) FORMAT (%d:%d) source = %d, dest = %d, Application = %d, background %d\n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]],  g_otg->background[source_id_index][destination_id_index]);
+	      LOG_I(OTG,"customized:: OCG_config_OTG: (1) FORMAT (%d:%d) source = %d, dest = %d, Application = %d, state %d, background %d IDT DIST %d \n", sid_start, sid_end, source_id_index, destination_id_index, g_otg->application_type[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]], state,  g_otg->background[source_id_index][destination_id_index],  g_otg->idt_dist[source_id_index][destination_id_index][g_otg->application_idx[source_id_index][destination_id_index]][state]);
 g_otg->application_idx[source_id_index][destination_id_index]+=1;
 	    }
 	  }
@@ -985,7 +990,8 @@ int ocg_config_emu(){
     LOG_I(OCG, "number of frames in emulation is set to infinity\n");
   
   oai_emulation.info.seed = (oai_emulation.emulation_config.seed.value == 0) ? oai_emulation.info.seed : oai_emulation.emulation_config.seed.value;
-  
+  LOG_I (OCG,"The seed value is set to %d \n", oai_emulation.info.seed );
+
   if (oai_emulation.info.cli_enabled == 1){
     if (cli_server_init(cli_server_recv) < 0) {
       LOG_E(EMU,"cli server init failed \n");

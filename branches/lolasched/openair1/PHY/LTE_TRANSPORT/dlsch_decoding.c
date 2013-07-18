@@ -144,6 +144,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   uint32_t G;
   uint32_t ret,offset;
   u16 iind;
+ uint8_t llr_clear=0;
   //  uint8_t dummy_channel_output[(3*8*block_length)+12];
   short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0;
@@ -279,7 +280,15 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 	   harq_process->nb_rb,
 	   harq_process->Nl);
 #endif    
-
+// compute llr_clear
+if (harq_process->Ndi==0){
+	if (harq_process->first_Qm==6 && get_Qm(harq_process->mcs)==2)
+	 llr_clear=1;
+	 else
+	 llr_clear=0;
+ }
+ else
+	llr_clear=1;
 
     if (lte_rate_matching_turbo_rx(harq_process->RTC[r],
 				   G,
@@ -291,7 +300,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 				   dlsch->Mdlharq,
 				   dlsch->Kmimo,
 				   harq_process->rvidx,
-				   harq_process->Ndi,
+				   llr_clear,// harq_process->Ndi,  			  
 				   get_Qm(harq_process->mcs),
 				   harq_process->Nl,
 				   r,

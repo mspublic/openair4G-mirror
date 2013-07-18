@@ -65,6 +65,7 @@ unsigned char NB_INST=0;
 #endif
 
 int flag_LA=0;
+int flag_lolasched=0; //TVT: flag to indicate the use of the lola scheduler
 int flagMag;
 //extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 //extern  double ABS_SINR_eff_BLER_table[MCS_COUNT][9][9];

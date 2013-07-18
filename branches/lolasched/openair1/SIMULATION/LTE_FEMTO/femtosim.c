@@ -889,72 +889,81 @@ u32 _allocRBs(options_t *opts,int ind)
 	    if (ind==0)	{	   
 			allocRB=0x7f; 
 			opts->mcs=4;}
-			else
+			else{
 			allocRB=0x1f80;
+			opts->mcs2=opts->mcs;}
 	    break;
 	    case 2: // 12/13
 	    if (ind==0)	{
 			allocRB=0x1f80;
 			opts->mcs=5;}
-			else
+			else{
 			allocRB=0x7f;
+			opts->mcs2=opts->mcs;}
 	    break;
 	    case 3: // 10/15
 	    if (ind==0)	{
 			allocRB=0x1f00;
 			opts->mcs=6;}
-			else
+			else{
 			allocRB=0xff;
+			opts->mcs2=opts->mcs;}
 	    break;
 	    case 4: // 8/17
 	     if (ind==0)	{
 			allocRB=0x1e00;
 			opts->mcs=7;}
-			else
+			else{
 			allocRB=0x1ff;
+			opts->mcs2=opts->mcs;}
 	    break;
 	    case 5: // 6/19
 	     if (ind==0)	{
 			allocRB=0x1c00;
 			opts->mcs=11;}
-			else
+			else{
 			allocRB=0x3ff;
+			opts->mcs2=opts->mcs;}
 	    break;
 	    case 6: // 4/21
 	     if (ind==0)	{
 			allocRB=0x1800;
 			opts->mcs=14;}
-			else
+			else{
 			allocRB=0x7ff;
+			opts->mcs2=opts->mcs;}
 	    break;
 	    case 7: // 2/23
 			if (ind==0)	{
 			allocRB=0x1000;
 			opts->mcs=23;}
-			else
+			else{
 			allocRB=0xfff;
+			opts->mcs2=opts->mcs;}
 		break;
 		case 8: // 15/10
 			if (ind==0)	{
 			allocRB=0xff;
 			opts->mcs=4;}
-			else
+			else{
 			allocRB=0x1f00;
+			opts->mcs2=opts->mcs;}
 		break;
 		case 9: // 17/8
 			if (ind==0)	{
 			allocRB=0x1ff;
 			opts->mcs=3;}
-			else
+			else{
 			allocRB=0x1e00;
+			opts->mcs2=opts->mcs;}
 		break;
 		case 91: // 2/23 force the 2nd round with QPSK
 			if (ind==0)	{
 			allocRB=0x1000;
-			opts->mcs=4;}
+			opts->mcs=23;}
 			else{
 			allocRB=0xfff;
-			opts->mcs=2;}
+			opts->mcs2=29;}
 		break;
 		case 92: // 6/19 force the 2nd round with QPSK
 			if (ind==0)	{
@@ -962,7 +971,7 @@ u32 _allocRBs(options_t *opts,int ind)
 			opts->mcs=11;}
 			else{
 			allocRB=0x3ff;
-			opts->mcs=2;}
+			opts->mcs2=29;}
 		break;
 		case 93: // 4/21 force the 2nd round with QPSK
 			if (ind==0)	{
@@ -970,21 +979,23 @@ u32 _allocRBs(options_t *opts,int ind)
 			opts->mcs=14;}
 			else{
 			allocRB=0x7ff;
-			opts->mcs=2;}
+			opts->mcs2=29;}
 		break;
 		case 10: // 19/6
 			if (ind==0)	{
 			allocRB=0x3ff;
 			opts->mcs=3;}
-			else
+			else{
 			allocRB=0x1c00;
+			opts->mcs2=opts->mcs;}
 		break;
 		case 11: // 21/4
 			if (ind==0)	{
 			allocRB=0x7ff;
 			opts->mcs=2;}
-			else
+			else{
 			allocRB=0x1800;
+			opts->mcs2=opts->mcs;}
 		break;
 		default:
 			allocRB = 0x1fff;
@@ -1155,7 +1166,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 	      
 	      if (round == 0) {   // First round, set Ndi to 1 and rv to floor(round
 		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 1;
-		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round&3;
+		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round&3;		
 		if (PHY_vars_eNB->lte_frame_parms.frame_type == TDD) {
 		  
 		  switch (opts.transmission_mode) {
@@ -1189,6 +1200,8 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		    }
 		    break;		
 		  }
+		   PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->first_Qm = get_Qm(opts.mcs);
+		 
 		}
 		else { // FDD TVT:not our case
 		  switch (opts.transmission_mode) {
@@ -1242,6 +1255,7 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->ndi             = 0;
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rv              = round&3;
 		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->rballoc        = DLSCH_RB_ALLOC2[round];
+		      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1)->mcs			   = opts.mcs2;
 		      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu_1,sizeof(DCI1_5MHz_TDD_t));
 		      //printf("round: %d\n",round);
 		      break;
@@ -1311,10 +1325,12 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 
 	      _writeTxData("1","dci", 0, 2,opts,0,0);
                 
-	      /*****Sending******/
-
+	      /*****Sending******/ //TVT:force it to use QPSK in the 2nd round
+		 if (round==0)
 	      i_mod=get_Qm(opts.mcs); //Compute Q (modulation order) based on I_MCS.
-				
+		 else
+		  i_mod=get_Qm(opts.mcs2); 
+		  
 	      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
 					      PHY_vars_eNB->dlsch_eNB[idUser][0]->nb_rb,
 					      PHY_vars_eNB->dlsch_eNB[idUser][0]->rb_alloc,
@@ -1515,8 +1531,10 @@ void _makeSimulation(data_t data,options_t opts,DCI_ALLOC_t *dci_alloc,DCI_ALLOC
 		printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(data.r_re,data.r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 		printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(data.r_re,data.r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 	      }
-
-	      i_mod = get_Qm(opts.mcs);
+		  if (round==0)
+			i_mod = get_Qm(opts.mcs);
+		  else
+			i_mod = get_Qm(opts.mcs2);
 
 	      /*********Reciver **************/
 	      //TODO: Optimize and clean code
@@ -2411,3 +2429,4 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
 
 }
 #endif
+

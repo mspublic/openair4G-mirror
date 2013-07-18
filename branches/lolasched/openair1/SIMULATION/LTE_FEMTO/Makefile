@@ -108,6 +108,8 @@ include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
+#LOG_OBJS += $(LOG_DIR)/vcd_signal_dumper.o
+
 CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) $(UTIL_incl)
 # EXTRA_CFLAGS = 
 
@@ -126,7 +128,6 @@ ifdef XFORMS
 OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
 endif
 
-OBJ += $(LOG_DIR)/vcd_signal_dumper.o
 
 all:  femtosim
 
@@ -156,5 +157,6 @@ cleanall : clean
 #showflags :
 	#@echo $(CFLAGS)
 	#@echo $(LFLAGS)
+
 
 

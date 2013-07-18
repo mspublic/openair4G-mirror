@@ -30,6 +30,7 @@ int otg_times = 0;
 int if_times = 0;
 int for_times = 0;
 
+
 u16 Nid_cell = 0; //needed by init_lte_vars
 int nb_antennas_rx=2; // //
 u8 target_dl_mcs = 0;
@@ -98,7 +99,7 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:L:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
 
     switch (c) {
     case 0:
@@ -116,7 +117,10 @@ void get_simulation_options(int argc, char *argv[]) {
       break;
     case 'L':                   // set FDD
       flag_LA = atoi(optarg);
-      break;
+      break;/*
+      case 'L':                   //TVT: flag=1 --> use lolasched
+      flag_lolasched = atoi(optarg);
+      break;*/
     case 'F':                   // set FDD
       printf("Setting Frame to FDD\n");
       oai_emulation.info.frame_type = 0;
@@ -248,8 +252,7 @@ void get_simulation_options(int argc, char *argv[]) {
       oai_emulation.info.multicast_group = atoi (optarg);
       break;
     case 'D':
-      oai_emulation.info.multicast_ifname = malloc (strlen(optarg) + 1);
-        strcpy(oai_emulation.info.multicast_ifname, optarg);
+      oai_emulation.info.multicast_ifname = strdup(optarg);
       break;
     case 'B':
       oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = optarg;

@@ -15,6 +15,8 @@
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 
+#include "SIMULATION/ETH_TRANSPORT/proto.h"
+
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
@@ -267,8 +269,9 @@ int log_thread_finalize() {
     pthread_mutex_destroy(&log_lock);
     pthread_cond_destroy(&log_notify);
   }
+#endif
+
   return err;
-#endif 
 }
 
 
@@ -486,6 +489,8 @@ int
   LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
         oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
   
+  set_seed = oai_emulation.emulation_config.seed.value;
+  
   init_seed(set_seed);
 
   init_openair1();
@@ -633,6 +638,7 @@ int
           pdcp_run(frame, 1, 0, eNB_id);//PHY_vars_eNB_g[eNB_id]->Mod_id
 
           //PHY_vars_eNB_g[eNB_id]->frame = frame;
+          //TVT: Inside is the scheduler
           phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 
 #ifdef PRINT_STATS
