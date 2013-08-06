@@ -361,11 +361,15 @@ unsigned char process_ue_cqi (unsigned char Mod_id, unsigned char UE_id) {
   return aggregation;
 }
 
-void _lolasched_alloc(LTE_eNB_UE_stats* eNB_UE_stats ,u16* nb_available_rb , unsigned char round, unsigned char* rballoc_sub_UE[NUMBER_OF_UE_MAX][N_RBGS_MAX],int N_RBGS){
+void _lolasched_alloc(unsigned char UE_id,LTE_eNB_UE_stats* eNB_UE_stats ,u16* nb_available_rb , unsigned char round, unsigned char rballoc_sub_UE[NUMBER_OF_UE_MAX][N_RBGS_MAX],int N_RBGS){
 
   u16 min_rb_unit, nb_available_rb1=0;
-  double rho,rbs;
-  int aux=0,j=0;
+  double rho;
+  int aux=0,j=0,i;  
+  
+    for(i=0;i<N_RBGS;i++)
+		rballoc_sub_UE[UE_id][i] = 0;
+  
   switch (mac_xface->lte_frame_parms->N_RB_DL) {
   case 6:
     min_rb_unit=1;
@@ -383,30 +387,51 @@ void _lolasched_alloc(LTE_eNB_UE_stats* eNB_UE_stats ,u16* nb_available_rb , uns
     min_rb_unit=2;
     break;
   }	
+  printf("mac_xface->lte_frame_parms->N_RB_DL: %d, min_rb_unit: %d \n",mac_xface->lte_frame_parms->N_RB_DL,min_rb_unit);
   //TVT: choose the mcs and rho depending on the cqi (construct the proper table)
 	// I assume that i have snr_1 for SNR clean and snr_2 for SNR dirty, that will give me rho[snr_1][snr_2]
-	eNB_UE_stats->dlsch_mcs1 = 4;
-	rho=0.5;
+	eNB_UE_stats->dlsch_mcs1 = 14;
+	printf("eNB_UE_stats->dlsch_mcs1 = %d\n", eNB_UE_stats->dlsch_mcs1);
+	rho=0.16;
+	
 	//TVT: I have to allocate the sub_bands as in the pre_processor: rballoc_sub_UE[next_ue][j]
-	if(round==0){
-		nb_available_rb=floor((mac_xface->lte_frame_parms->N_RB_DL)*rho);		
-		nb_available_rb1=nb_available_rb;
+	switch(round)
+	{
+		case 0://ceil
+		nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);			
+		break;
+		case 1:
+		nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
+		nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
+		break;
+		case 2:
+		nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
+		break;
+		case 3:
+		nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);
+		nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
+		break;
 	}
-	else
-		nb_available_rb=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
-	rbs=double(nb_available_rb);
+	printf("round: %d , UE_id: %u, nb_available_rb: %d \n",round, UE_id,nb_available_rb[UE_id]);
 	if ((mac_xface->lte_frame_parms->N_RB_DL == 25) || (mac_xface->lte_frame_parms->N_RB_DL == 50)){
-		if (rbs % 2){ //it is odd, then fill the last PRBG
-			rballoc_sub_UE[0][N_RBGS-1]=1;
+		if (nb_available_rb[UE_id] % 2){ //TVT: it is odd, then fill the last PRBG
+			rballoc_sub_UE[UE_id][N_RBGS-1]=1;
 			aux+=min_rb_unit-1;
 		}
 	}
-	while(aux < nb_available_rb){//TVT: ongoing				
-	rballoc_sub_UE[0][j] = 1;
+	if (round==1 || round==3)
+		j=N_RBGS-2;
+	while(aux < nb_available_rb[UE_id]){//TVT: allocate the rest of the PRBGs				
+	rballoc_sub_UE[UE_id][j] = 1;	
 	aux+=min_rb_unit;
-	j++;
+	if (round==1 || round==3)
+		j--;
+		else 
+		j++;
 	}
-	
+	for(i=0;i<N_RBGS;i++)
+		printf("UE_id: %u , rballoc_sub_UE: %u \n",UE_id,rballoc_sub_UE[UE_id][i]);
+		
 }
 
 
@@ -3410,10 +3435,15 @@ void schedule_ue_spec(unsigned char Mod_id,
 				pre_nb_available_rbs,
 				mac_xface->lte_frame_parms->N_RBGS,
 				&rballoc_sub_UE[0][0]);
-  else
+  else{
 		//call my function with my new table
-		_lolasched_alloc(eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
-																						
+		for (UE_id=0;UE_id<granted_UEs;UE_id++) {   
+			rnti = find_UE_RNTI(Mod_id,UE_id);
+			//rnti = find_UE_RNTI(Mod_id,0);
+			eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+			_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
+		}	
+	}																			
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
    
@@ -3434,8 +3464,17 @@ void schedule_ue_spec(unsigned char Mod_id,
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
-	//TVT: Here  nb_available_rb gets the value from the pre_processor
+
+/*	//TVT: Here  nb_available_rb gets the value from the pre_processor
+	if(flag_lolasched){
+	//call my function with my new table
+		rnti = find_UE_RNTI(Mod_id,UE_id);
+		eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+		_lolasched_alloc(eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
+
+}*/
     nb_available_rb = pre_nb_available_rbs[UE_id];
+    printf("UE_id: %d, nb_available_rb after pre: %d \n",UE_id,nb_available_rb);
 
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
       LOG_D(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
@@ -3620,7 +3659,7 @@ void schedule_ue_spec(unsigned char Mod_id,
       // get freq_allocation
       //TVT: Here it gives the previous nb_rb, in my case there is a new number of rbs, so i call my function
       if(flag_lolasched){
-		_lolasched_alloc(eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
+		_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
 	}
       else   
 		nb_rb = eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid];
