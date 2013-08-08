@@ -188,7 +188,7 @@ double compute_sinr(channel_desc_t *desc,
 }
 
 u8 pbch_polynomial_degree;
-double a[7];
+double pbch_awgn_polynomial[7];
 
 void load_pbch_desc(FILE *pbch_file_fd) {
 
@@ -205,26 +205,27 @@ void load_pbch_desc(FILE *pbch_file_fd) {
 
   for (i=0;i<=pbch_polynomial_degree;i++) {
     fscanf(pbch_file_fd,"%s",dummy);
-    a[i] = strtod(dummy,NULL);
-    printf("%f ",a[i]);
+    pbch_awgn_polynomial[i] = strtod(dummy,NULL);
+    printf("%f ",pbch_awgn_polynomial[i]);
   }
   printf("\n");
+
 } 
 
 double pbch_bler(double sinr) {
 
   int i;
-  double log10_bler=a[pbch_polynomial_degree];
+  double log10_bler=pbch_awgn_polynomial[pbch_polynomial_degree];
   double sinrpow=sinr;
   //  printf("log10bler %f\n",log10_bler);
   if (sinr<-7.9)
-    return(1.0);
+    return((double)1.0);
   else if (sinr>=0.0)
-    return(1e-4);
+    return((double)0.0001);
 
   for (i=1;i<=pbch_polynomial_degree;i++) {
     //    printf("sinrpow %f\n",sinrpow);
-    log10_bler += (a[pbch_polynomial_degree-i]*sinrpow);
+    log10_bler += (pbch_awgn_polynomial[pbch_polynomial_degree-i]*sinrpow);
     sinrpow *= sinr;
     //    printf("log10bler %f\n",log10_bler);
   }

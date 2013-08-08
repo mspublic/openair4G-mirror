@@ -6,7 +6,7 @@ echo "make sure that you have compiled the code with GPROF=1 and installed gprof
 echo "set up params"
 
 n_frames=4000
-abstraction=1
+abstraction=0
 traffic_load=2
 ue="1"
 #ping="64 128 256 512 1024 1400"
@@ -21,7 +21,7 @@ if [ $traffic_load = 1 ]; then
     option2="-T1"
 fi;
 if [ $traffic_load = 2 ]; then 
-    option2="-c8"
+    option2="-c41"
 fi;
 if [ $traffic_load = 3 ]; then 
     option2="-T3"

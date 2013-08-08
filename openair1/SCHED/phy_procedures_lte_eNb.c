@@ -917,6 +917,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,1);
+  start_meas(&phy_vars_eNB->phy_proc_tx);
 
 #ifdef OPENAIR2
   // Get scheduling info for next subframe during odd slot of previous subframe (next_slot is even)
@@ -1887,6 +1888,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
   }
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,0);
+  stop_meas(&phy_vars_eNB->phy_proc_tx);
+
 }
 
 void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,u8 last_slot,u8 UE_id, u8 harq_pid) {
@@ -2412,6 +2415,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   int num_active_cba_groups;
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
+  start_meas(&phy_vars_eNB->phy_proc_rx);
 
   if (abstraction_flag == 0) {
     remove_7_5_kHz(phy_vars_eNB,last_slot);
@@ -2944,7 +2948,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		       &n1_pucch2,
 		       &n1_pucch3);
 
-      LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d, subframe %d Checking for PUCCH (%d,%d,%d,%d) SR %d\n",
+      LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d, subframe %d Checking for PUCCH (%d,%d,%d,%d) SR %d\n",
 	    phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[i][0]->rnti,
 	    phy_vars_eNB->frame,last_slot>>1,
 	    n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3,do_SR);
@@ -3345,6 +3349,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,0);
+  stop_meas(&phy_vars_eNB->phy_proc_rx);
    
 }
 
@@ -3359,6 +3364,8 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
   vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER, phy_vars_eNB->frame);
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,1);
+
+  start_meas(&phy_vars_eNB->phy_proc);
   
   if (((phy_vars_eNB->lte_frame_parms.frame_type == 1)&&(subframe_select(&phy_vars_eNB->lte_frame_parms,next_slot>>1)==SF_DL))||
       (phy_vars_eNB->lte_frame_parms.frame_type == 0)){
@@ -3393,5 +3400,6 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
   if (next_slot == 19)
     phy_vars_eNB->frame++;
 
+  stop_meas(&phy_vars_eNB->phy_proc);
 }
 

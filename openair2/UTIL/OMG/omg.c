@@ -186,7 +186,7 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
     switch (mobility_type) {
    case STATIC:
      Vector = (Node_list)Node_Vector[STATIC];
-     LOG_I(OMG,"static vector %p is \n",Vector);
+     LOG_D(OMG,"static vector %p is \n",Vector);
      break; 
    case RWP:
       get_rwp_positions_updated(cur_time);

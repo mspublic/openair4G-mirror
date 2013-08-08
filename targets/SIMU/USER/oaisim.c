@@ -144,6 +144,9 @@ extern LTE_DL_FRAME_PARMS *frame_parms;
 int otg_enabled;
 #endif
 
+time_stats_t dl_chan_stats;
+time_stats_t ul_chan_stats;
+
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = {
   {"custom", custom},
@@ -392,8 +395,10 @@ int
   char UE_stats_filename[255];
   char UE_stats_th_filename[255];
   char eNB_stats_th_filename[255];
- #endif
+#endif
 
+  char pbch_file_path[512];
+  FILE *pbch_file_fd;
 
   //time_t t0,t1;
   //clock_t start, stop;
@@ -575,7 +580,7 @@ int
 
     oai_emulation.info.frame = frame; 
     //oai_emulation.info.time_ms += 1;  
-    oai_emulation.info.time_s += 0.1; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
+    oai_emulation.info.time_s += 0.01; // emu time in s, each frame lasts for 10 ms 
     // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
     if ( (oai_emulation.info.n_frames_flag == 0) || (oai_emulation.info.n_frames >= 0xffff) ){ 
       frame %=(oai_emulation.info.n_frames-1);
@@ -694,7 +699,71 @@ int
               exit(-1);
             }
             if ((frame>0) && (last_slot == (LTE_SLOTS_PER_FRAME-2))) {
-              initial_sync(PHY_vars_UE_g[UE_id],normal_txrx);
+              if (initial_sync(PHY_vars_UE_g[UE_id],normal_txrx)==0) {
+		// init time stats here (including channel)
+		reset_meas(&dl_chan_stats);
+		reset_meas(&ul_chan_stats);
+
+		  reset_meas(&PHY_vars_UE_g[UE_id]->phy_proc);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->phy_proc_rx);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->phy_proc_tx);
+
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ofdm_demod_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_channel_estimation_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_freq_offset_estimation_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->rx_dft_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_decoding_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_turbo_decoding_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_deinterleaving_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_rate_unmatching_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_init_stats);    
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_alpha_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_beta_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_gamma_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_ext_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl1_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl2_stats);
+
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ofdm_mod_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_modulation_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_encoding_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_interleaving_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_rate_matching_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_turbo_encoding_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_segmentation_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_multiplexing_stats);
+
+		for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_rx);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_tx);
+
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_encoding_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_interleaving_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_rate_matching_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_turbo_encoding_stats);
+
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_demod_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_decoding_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_turbo_decoding_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_deinterleaving_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demultiplexing_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_rate_unmatching_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_init_stats);    
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_alpha_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_beta_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_gamma_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_ext_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl1_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl2_stats);
+		}
+	      }
+
               
               /*
               write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -722,7 +791,7 @@ int
 	    fflush(UE_stats[UE_id]);
 	  }
 #endif
-        }
+	  }
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
          // consider only sec id 0
@@ -734,21 +803,16 @@ int
 			  frame_parms);
 	  }
 	  }*/
+	start_meas(&dl_chan_stats);
 	for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
 	}
+	stop_meas(&dl_chan_stats);
       }
       if ((direction  == SF_UL)|| (frame_parms->frame_type==0)){//if ((subframe<2) || (subframe>4))
-          do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
-	  /*   
-	       int ccc;
-	       fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
-	       for(ccc = 0 ; ccc<301; ccc++)
-	       {
-	       fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
-	       }
-                fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
-	*/   
+	start_meas(&ul_chan_stats);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
+	stop_meas(&ul_chan_stats);
       }
       if ((direction == SF_S)) {//it must be a special subframe
         if (next_slot%2==0) {//DL part
@@ -760,9 +824,11 @@ int
 			  frame_parms);
 	    }
 	    }*/
+	  start_meas(&dl_chan_stats);
 	  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 	    do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,UE_id);
 	  }
+	  stop_meas(&dl_chan_stats);
           /*
             for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
             for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -771,41 +837,36 @@ int
           */
         }
         else {// UL part
+	  start_meas(&ul_chan_stats);
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,enb_data,ue_data,next_slot,abstraction_flag,frame_parms,frame);
-	          
-	  /*        int ccc;
-            fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
-            for(ccc = 0 ; ccc<301; ccc++)
-            {
-              fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
-            }
-            fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
-          }
-    */    }
-	}
-        if ((last_slot == 1) && (frame == 0)
-          && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
-
-          write_output ("dlchan0.m", "dlch0",
-                        &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
-                        (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
-          write_output ("dlchan1.m", "dlch1",
-                        &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
-                        (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
-          write_output ("dlchan2.m", "dlch2",
-                        &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
-                        (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
-          write_output ("pbch_rxF_comp0.m", "pbch_comp0",
-                        PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
-          write_output ("pbch_rxF_llr.m", "pbch_llr",
-                        PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
+	  stop_meas(&ul_chan_stats);
         }
-        /*
-         if ((last_slot==1) && (frame==1)) {
-         write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
-         write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
-         }
-       */
+      }
+      
+      if ((last_slot == 1) && (frame == 9)
+          && (abstraction_flag == 0)) { // && (oai_emulation.info.n_frames == 1)) {
+
+        write_output ("dlchan0.m", "dlch0",
+                      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
+                      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+        write_output ("dlchan1.m", "dlch1",
+                      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
+                      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+        write_output ("dlchan2.m", "dlch2",
+                      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
+                      (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
+        write_output ("pbch_rxF_comp0.m", "pbch_comp0",
+                      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
+        write_output ("pbch_rxF_llr.m", "pbch_llr",
+                      PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
+      }
+      
+      if ((abstraction_flag==0) && (last_slot==1) && (frame==9)) {
+	 write_output("UErxsigF.m","rxsF",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],PHY_vars_UE_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
+         write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE_g[0]->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE_g[0]->lte_frame_parms.Ncp*2)+14),1,1);
+         //write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE_g[0]->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
+      }
+	 
 
         if (next_slot %2 == 0){
           clock_gettime (CLOCK_REALTIME, &time_spec);
@@ -832,21 +893,31 @@ int
         } // end if next_slot%2
       }// if Channel_Flag==0
 
-    }                          //end of slot
+     if ((abstraction_flag==0) && (frame==1) && (next_slot==2)) {
+       write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+       if (PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx_eNB>1)
+	 write_output("eNBtxsigF1.m","txsF1",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+     }
+    }//end of slot
     
+
     if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)
 #ifdef PROC
       &&(Channel_Flag==0)
 #endif
       ){
-      write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      sprintf(fname,"UEtxsig%d.m",frame);
+      sprintf(vname,"txs%d",frame);
+      write_output(fname,vname, PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       sprintf(fname,"eNBtxsig%d.m",frame);
       sprintf(vname,"txs%d",frame);
       write_output(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
-
-      write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      sprintf(fname,"UErxsig%d.m",frame);
+      sprintf(vname,"rxs%d",frame);
+      write_output(fname,vname, PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      sprintf(fname,"eNBrxsig%d.m",frame);
+      sprintf(vname,"rxs%d",frame);
+      write_output(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     } 
 
 #ifdef XFORMS
@@ -895,6 +966,72 @@ int
   //Perform KPI measurements
   if (oai_emulation.info.otg_enabled==1)
     kpi_gen();
+
+  //print timing measurements
+  print_meas(&dl_chan_stats,"dl_chan_stats");
+  print_meas(&ul_chan_stats,"ul_chan_stats");
+
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++) {
+    print_meas(&PHY_vars_UE_g[UE_id]->phy_proc,"[UE][phy_proc]");
+    print_meas(&PHY_vars_UE_g[UE_id]->phy_proc_rx,"[UE][phy_proc_rx]");
+    print_meas(&PHY_vars_UE_g[UE_id]->phy_proc_tx,"[UE][phy_proc_tx]");
+
+    print_meas(&PHY_vars_UE_g[UE_id]->ofdm_demod_stats,"[UE][ofdm_demod]");
+    print_meas(&PHY_vars_UE_g[UE_id]->dlsch_channel_estimation_stats,"[UE][channel_est]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_freq_offset_estimation_stats,"[UE][freq_offset]");
+      print_meas(&PHY_vars_UE_g[UE_id]->rx_dft_stats,"[UE][rx_dft]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_decoding_stats,"[UE][decoding]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_turbo_decoding_stats,"[UE][turbo_decoding]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_deinterleaving_stats,"[UE][deinterleaving]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_rate_unmatching_stats,"[UE][rate_unmatching]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_init_stats,"[UE][tc_init]");    
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_alpha_stats,"[UE][tc_alpha]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_beta_stats,"[UE][tc_beta]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_gamma_stats,"[UE][tc_gamma]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_ext_stats,"[UE][tc_ext]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl1_stats,"[UE][tc_intl1]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl2_stats,"[UE][tc_intl2]");
+
+      print_meas(&PHY_vars_UE_g[UE_id]->ofdm_mod_stats,"[UE][ofdm_mod]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_modulation_stats,"[UE][modulation]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_encoding_stats,"[UE][encoding]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_interleaving_stats,"[UE][interleaving]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_rate_matching_stats,"[UE][rate_matching]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_turbo_encoding_stats,"[UE][turbo_encoding]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_segmentation_stats,"[UE][segmentation]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_multiplexing_stats,"[UE][multiplexing]");
+  }
+
+  for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
+      print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc,"[eNB][phy_proc]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_rx,"[eNB][phy_proc_rx]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_tx,"[eNB][phy_proc_tx]");
+
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats,"[eNB][ofdm_mod]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats,"[eNB][modulation]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_encoding_stats,"[eNB][encoding]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_interleaving_stats,"[eNB][interleaving]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_rate_matching_stats,"[eNB][rate_matching]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_turbo_encoding_stats,"[eNB][turbo_encoding]");
+
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_demod_stats,"[eNB][ofdm_demod]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats,"[eNB][channel_est]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats,"[eNB][freq_offset]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats,"[eNB][rx_dft]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_decoding_stats,"[eNB][decoding]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_turbo_decoding_stats,"[eNB][turbo_decoding]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_deinterleaving_stats,"[eNB][deinterleaving]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demultiplexing_stats,"[eNB][demultiplexing]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_rate_unmatching_stats,"[eNB][rate_unmatching]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_init_stats,"[eNB][tc_init]");    
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_alpha_stats,"[eNB][tc_alpha]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_beta_stats,"[eNB][tc_beta]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_gamma_stats,"[eNB][tc_gamma]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_ext_stats,"[eNB][tc_ext]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl1_stats,"[eNB][tc_intl1]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl2_stats,"[eNB][tc_intl2]");
+  }
+
 
   // relase all rx state
   if (ethernet_flag == 1) {

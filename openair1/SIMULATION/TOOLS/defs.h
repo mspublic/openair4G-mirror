@@ -207,6 +207,7 @@ void multipath_channel(channel_desc_t *desc,
 		       double **rx_sig_im,
 		       u32 length,
 		       u8 keep_channel);
+
 /*
 \fn double compute_pbch_sinr(channel_desc_t *desc,
                              channel_desc_t *desc_i1, 
@@ -239,6 +240,9 @@ double compute_sinr(channel_desc_t *desc,
 			 u16 nb_rb);
 
 double pbch_bler(double sinr);
+
+void load_pbch_desc(FILE *pbch_file_fd);
+
 /**@}*/
 
 /**

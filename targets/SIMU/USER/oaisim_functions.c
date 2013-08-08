@@ -43,7 +43,7 @@ double snr_step=1.0;
 u8 ue_connection_test=0;
 double forgetting_factor=0.0;
 u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-u8 target_ul_mcs = 2;
+u8 target_ul_mcs = 12;
 LTE_DL_FRAME_PARMS *frame_parms;
 int map1,map2;
 double **ShaF= NULL;
@@ -86,6 +86,10 @@ extern channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 extern mapping small_scale_names[];
 extern pdcp_mbms_t pdcp_mbms_array[MAX_MODULES][16*29];
 extern int eMBMS_active;
+
+extern time_stats_t dl_chan_stats;
+extern time_stats_t ul_chan_stats;
+
 
 extern void help (void);
 
@@ -513,6 +517,7 @@ void init_openair1() {
 
     LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0] );
   }
+
 }
 
 void init_openair2() {

@@ -59,7 +59,7 @@
       <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
       <IDT_MIN_ms>10</IDT_MIN_ms>
       <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
-      <SIZE_MIN_byte>1500</SIZE_MIN_byte>
+      <SIZE_MIN_byte>5000</SIZE_MIN_byte>
     </CUSTOMIZED_TRAFFIC>  
 
     <!--UL-->
@@ -74,7 +74,7 @@
  </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>1000</EMULATION_TIME_ms> 
     
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>

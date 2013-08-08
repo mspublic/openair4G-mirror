@@ -268,6 +268,79 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
   return(0);
 }
 
+/*
+int lte_dl_dummy_data(PHY_VARS_eNB *phy_vars_eNB,
+		      mod_sym_t *output,
+		      short amp,
+		      unsigned char Ns,
+		      unsigned char l,
+		      unsigned char p) {
+
+  unsigned char nu,m; //mprime,mprime_dword,mprime_qpsk_symb;
+  unsigned short k,a;
+  mod_sym_t qpsk[4];
+
+#ifdef IFFT_FPGA
+  // new mod table
+  qpsk[0] = 1;
+  qpsk[1] = 3;
+  qpsk[2] = 2;
+  qpsk[3] = 4;
+#else
+  a = (amp*ONE_OVER_SQRT2_Q15)>>15;
+  ((short *)&qpsk[0])[0] = a;
+  ((short *)&qpsk[0])[1] = a;
+  // new mod table
+  ((short *)&qpsk[1])[0] = -a;
+  ((short *)&qpsk[1])[1] = a;
+  ((short *)&qpsk[2])[0] = a;
+  ((short *)&qpsk[2])[1] = -a;
+  ((short *)&qpsk[3])[0] = -a;
+  ((short *)&qpsk[3])[1] = -a;
+#endif
+
+  if ((p==0) && (l==0) )
+    nu = 0;
+  else if ((p==0) && (l>0))
+    nu = 3;
+  else if ((p==1) && (l==0))
+    nu = 3;
+  else if ((p==1) && (l>0))
+    nu = 0;
+  else {
+    msg("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
+    return(-1);
+  }
+
+  k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
+  if (k > 5)
+    k -=6;
+
+#ifdef IFFT_FPGA
+  k+=phy_vars_eNB->lte_frame_parms.N_RB_DL*6;
+#else  
+  k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
+#endif
+  for (m=0;m<phy_vars_eNB->lte_frame_parms.N_RB_DL*12;m++) {
+
+    output[k] = qpsk[taus()&3];
+
+    k++;
+#ifdef IFFT_FPGA
+    if (k >= phy_vars_eNB->lte_frame_parms.N_RB_DL*12) {
+      k-=phy_vars_eNB->lte_frame_parms.N_RB_DL*12;
+    }
+#else
+    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
+      k++;  // skip DC carrier
+      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
+    }
+#endif
+    //    printf("** k %d\n",k);
+  }
+  return(0);
+}
+*/
 
 #ifdef LTE_DL_CELL_SPEC_MAIN
 

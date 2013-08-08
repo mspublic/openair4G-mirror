@@ -50,6 +50,8 @@
 #include "extern.h"
 #include "PHY/extern.h"
 
+#include "SIMULATION/TOOLS/defs.h"
+
 #ifndef __SSE3__
 extern __m128i zero;
 #define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
@@ -58,7 +60,7 @@ extern __m128i zero;
   
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
-//#define INTERFERENCE_MITIGATION 1
+#define INTERFERENCE_MITIGATION 1
 
 #ifdef OPENAIR2
 #include "PHY_INTERFACE/defs.h"
@@ -898,16 +900,24 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 		 u8 eNB_id,
 		 u8 pbch_phase) {
 
-  u8 pbch_error=0;
+  double bler=0;
+  double sinr=0;
+  u16 nb_rb = phy_vars_ue->lte_frame_parms.N_RB_DL;
+  s16 f;
+  
+  // compute effective sinr
+  for (f=(nb_rb*6-3*12);f<(nb_rb*6+3*12);f++) {
+    if (f!=0) //skip DC
+      sinr += pow(10, 0.1*(phy_vars_ue->sinr_dB[f]));
+  }
+  sinr = 10*log10(sinr/(6*12));
 
-  LOG_D(PHY,"EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
+  bler = pbch_bler(sinr);
+
+  LOG_D(PHY,"EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d, sinr %f dB, bler %f\n",eNB_id,pbch_phase,sinr,bler);
 
   if (pbch_phase == (phy_vars_ue->frame % 4)) {
-
-    // abtract pbch error here
-    // pbch_error = pbch_abstraction();
-
-    if (pbch_error == 0) {
+    if (uniformrandom() >= bler) {
       memcpy(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output,PHY_vars_eNB_g[eNB_id]->pbch_pdu,PBCH_PDU_SIZE);    
       return(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx_eNB);
     }

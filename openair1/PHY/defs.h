@@ -283,6 +283,10 @@ typedef struct
   unsigned int total_transmitted_bits;
   unsigned int total_system_throughput;
  
+  time_stats_t phy_proc;
+  time_stats_t phy_proc_tx;
+  time_stats_t phy_proc_rx;
+
   time_stats_t ofdm_mod_stats;
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
@@ -451,6 +455,10 @@ typedef struct
 
   /// Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  time_stats_t phy_proc;
+  time_stats_t phy_proc_tx;
+  time_stats_t phy_proc_rx;
 
   time_stats_t ofdm_mod_stats;
   time_stats_t ulsch_encoding_stats;
