@@ -286,6 +286,7 @@ typedef struct
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
+  time_stats_t rx_prach;
 
   time_stats_t ofdm_mod_stats;
   time_stats_t dlsch_encoding_stats;

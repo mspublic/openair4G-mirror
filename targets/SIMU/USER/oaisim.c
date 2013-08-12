@@ -737,6 +737,7 @@ int
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_rx);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_tx);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_prach);
 
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats);
@@ -1006,6 +1007,8 @@ int
       print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc,"[eNB][phy_proc]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_rx,"[eNB][phy_proc_rx]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_tx,"[eNB][phy_proc_tx]");
+
+      print_meas(&PHY_vars_eNB_g[eNB_id]->rx_prach,"[eNB][rx_prach]");
 
       print_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats,"[eNB][ofdm_mod]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats,"[eNB][modulation]");
