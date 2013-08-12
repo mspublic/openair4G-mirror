@@ -102,7 +102,7 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
 
     switch (c) {
     case 0:
@@ -609,7 +609,7 @@ void init_ocm() {
                                                    forgetting_factor,
                                                    0,
                                                    0);
-      random_channel(eNB2UE[eNB_id][UE_id]);
+      random_channel(eNB2UE[eNB_id][UE_id],abstraction_flag);
       LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
             map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
 
@@ -621,7 +621,7 @@ void init_ocm() {
                                                    0,
                                                    0);
 
-      random_channel(UE2eNB[UE_id][eNB_id]);
+      random_channel(UE2eNB[UE_id][eNB_id],abstraction_flag);
     }
   }
 

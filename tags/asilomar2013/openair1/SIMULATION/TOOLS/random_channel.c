@@ -715,7 +715,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 }
 
 
-int random_channel(channel_desc_t *desc) {
+int random_channel(channel_desc_t *desc, u8 abstraction_flag) {
 		    
   double s;
   int i,k,l,aarx,aatx;
@@ -818,6 +818,7 @@ int random_channel(channel_desc_t *desc) {
 
   //memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
   
+  if (abstraction_flag==0) {
   for (aarx=0;aarx<desc->nb_rx;aarx++) {
     for (aatx=0;aatx<desc->nb_tx;aatx++) {
       if (desc->channel_length == 1) {
@@ -848,6 +849,7 @@ int random_channel(channel_desc_t *desc) {
       } //channel_length
     } //aatx
   } //aarx
+  }
 
   if (desc->first_run==1)
     desc->first_run = 0;
