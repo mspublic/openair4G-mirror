@@ -8,7 +8,7 @@
 //#define DEBUG_CH
 u8 multipath_channel_nosigconv(channel_desc_t *desc){
   
-       random_channel(desc);
+  random_channel(desc,0);
        return(1);
 }
 
@@ -38,7 +38,7 @@ void multipath_channel(channel_desc_t *desc,
     if (keep_channel) {
       // do nothing - keep channel
     } else {
-      random_channel(desc);
+      random_channel(desc,0);
     }
 
 #ifdef DEBUG_CH
@@ -129,7 +129,7 @@ void multipath_channel(channel_desc_t *desc,
     if (keep_channel) {
       // do nothing - keep channel
     } else {
-      random_channel(desc);
+      random_channel(desc,0);
     }
 
 #ifdef DEBUG_CH

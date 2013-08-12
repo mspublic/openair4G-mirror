@@ -142,7 +142,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
 
       // calculate the random channel from each eNB
       for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-        random_channel(eNB2UE[eNB_id][UE_id]);
+        random_channel(eNB2UE[eNB_id][UE_id],abstraction_flag);
         /*
 	for (i=0;i<eNB2UE[eNB_id][UE_id]->nb_taps;i++)
 	  printf("eNB2UE[%d][%d]->a[0][%d] = (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->a[0][i].x,eNB2UE[eNB_id][UE_id]->a[0][i].y);
@@ -435,7 +435,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
     {
       for (UE_id=0;UE_id<NB_UE_INST;UE_id++) 
       {
-        random_channel(UE2eNB[UE_id][eNB_id]);
+        random_channel(UE2eNB[UE_id][eNB_id],abstraction_flag);
         freq_channel(UE2eNB[UE_id][eNB_id], frame_parms->N_RB_UL,frame_parms->N_RB_UL*12+1);
       }
     }
@@ -493,7 +493,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
  if (abstraction_flag!=0) {
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-	random_channel(UE2eNB[UE_id][eNB_id]);
+	random_channel(UE2eNB[UE_id][eNB_id],abstraction_flag);
 	freq_channel(UE2eNB[UE_id][eNB_id], frame_parms->N_RB_UL,2);
       }
     }

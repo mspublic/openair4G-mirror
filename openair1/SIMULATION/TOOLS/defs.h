@@ -180,7 +180,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model. 
 \param desc Pointer to the channel descriptor
 */
-int random_channel(channel_desc_t *desc);
+int random_channel(channel_desc_t *desc, u8 abstraction_flag);
 
 /**\fn void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 
