@@ -546,13 +546,11 @@ void init_ocm() {
   s32 UE_id, eNB_id;
   /* Added for PHY abstraction */
   if (abstraction_flag) {
-    if (0) { //the values of beta and awgn tables are hard coded in PHY/vars.h
     get_beta_map();
 #ifdef PHY_ABSTRACTION_UL
     get_beta_map_up();
 #endif
     get_MIESM_param();
-  }
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -624,12 +622,6 @@ void init_ocm() {
       random_channel(UE2eNB[UE_id][eNB_id],abstraction_flag);
     }
   }
-
-  // Not needed anymore, done automatically in init_freq_channel upon first call to the function
-
-  // if (abstraction_flag==1)
-  //    init_freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);
-  freq_channel(eNB2UE[0][0],PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL*12+1);
 }
 
 void init_otg_pdcp_buffer() {

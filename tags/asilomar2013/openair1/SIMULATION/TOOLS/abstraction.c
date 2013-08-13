@@ -69,7 +69,8 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
     init_freq_channel(desc,nb_rb,n_samples);
     freq_channel_init=1;
   }
-    
+   
+  start_meas(&desc->interp_freq);
   for (f=-n_samples/2;f<n_samples/2;f++) {
 	clut = cos_lut[n_samples/2+f];
         slut = sin_lut[n_samples/2+f];
@@ -88,6 +89,7 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 	}
       }
   }
+  stop_meas(&desc->interp_freq);
 }
 
 double compute_pbch_sinr(channel_desc_t *desc,

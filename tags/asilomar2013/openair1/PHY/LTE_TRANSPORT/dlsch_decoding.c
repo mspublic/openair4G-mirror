@@ -479,7 +479,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   //printf("sinr_eff1 = %f\n",sinr_eff);
   sinr_eff =  -beta2_dlsch[TM][mcs]*log((sinr_eff)/(12*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
-  LOG_I(OCM,"sinr_eff2 = %f\n",sinr_eff);
+  LOG_D(OCM,"sinr_eff = %f\n",sinr_eff);
 
   // table lookup
   sinr_eff *= 10;
@@ -488,7 +488,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   //   sinr_eff += 1;
   // }
   sinr_eff /= 10;
-  msg("Imran sinr_eff after rounding = %f\n",sinr_eff);
+  LOG_D(OCM,"sinr_eff after rounding = %f\n",sinr_eff);
  for (index = 0; index < table_length[mcs]; index++) {
     if(index == 0) {
       if (sinr_eff < sinr_bler_map[mcs][0][index]) {
@@ -589,7 +589,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 	    }	  
 
  sinr_eff = sinr_eff + 10*log10(beta2_dlsch_MI[TM][mcs]); 
- printf("SINR_Eff = %e\n",sinr_eff);
+ LOG_D(OCM,"SINR_Eff = %e\n",sinr_eff);
 
  sinr_eff *= 10;
   sinr_eff = floor(sinr_eff);
@@ -597,7 +597,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   //   sinr_eff += 1;
   // }
   sinr_eff /= 10;
-  msg("sinr_eff after rounding = %f\n",sinr_eff);
+  LOG_D(OCM,"sinr_eff after rounding = %f\n",sinr_eff);
 
   for (index = 0; index < table_length[mcs]; index++) {
     if(index == 0) {
@@ -617,11 +617,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
    if (uniformrandom() < bler) {
-    msg("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(0);
   }
   else {
-    msg("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(1);
   }
 #endif

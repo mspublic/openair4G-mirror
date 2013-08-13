@@ -16,6 +16,8 @@ OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -fno-strict-aliasing -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+OTHER_CFLAGS = -O2 #this will be used for all objects except PHY, since those are already heavily optimized and some compilers mess them up
+
 
 # Check if GCC version is greater or equal to 4.4
 GCCVERSIONGTEQ44 := $(shell expr `gcc -dumpversion | cut -f1,2 -d. --output-delimiter=""` \>= 44)
@@ -196,7 +198,6 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 #L2_OBJS =
-#EXTRA_CFLAGS =
 
 OAISIM_OBJS = channel_sim.o
 OAISIM_OBJS += init_lte.o
@@ -238,7 +239,7 @@ CFLAGS += `pkg-config --cflags openpgm-5.1` -DENABLE_PGM_TRANSPORT
 PGM_LDFLAGS = `pkg-config --libs openpgm-5.1`
 endif
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
+OBJ = $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
 ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
 endif
@@ -279,6 +280,16 @@ ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
 
 $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $(OTHER_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) $(OTHER_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
+	@mv -f $*.d $*.d.tmp
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
+
+$(PHY_OBJS) : %.o : %.c
+	@echo Compiling $<
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
 	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
 	@mv -f $*.d $*.d.tmp
@@ -312,9 +323,9 @@ oaisim_pad : $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) oaisim_pad.c
 	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
 ifdef USE_MME
-oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(S1AP_DIR)/libs1ap.a oaisim.c $(LFDS_DIR)/bin/liblfds611.a
+oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(PHY_OBJS) $(S1AP_DIR)/libs1ap.a oaisim.c $(LFDS_DIR)/bin/liblfds611.a
 else
-oaisim : $(ASN1_MSG_OBJS1) $(OBJ) oaisim.c $(LFDS_DIR)/bin/liblfds611.a
+oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(PHY_OBJS) oaisim.c $(LFDS_DIR)/bin/liblfds611.a
 endif
 	@echo "Compiling oaisim.c ..."
 	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
@@ -327,9 +338,9 @@ ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
 
-oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
+oaisimCROWN : $(OBJ) $(PHY_OBJS) $(ASN1_MSG_OBJS1) oaisimCROWN.c
 	@echo "Compiling oaisimCROWN.c ..."
-	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(PHY_OBJS)  $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
 
 test_nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
@@ -367,12 +378,13 @@ clean:
 	rm -f oaisim
 	rm -f oaisim_pad
 	rm -f $(OBJ)
+	rm -f $(PHY_OBJS)
 	rm -f $(S1AP_BUILT_OBJS)
 	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
 	rm -f *.o
 	rm -f *.exe*
 	rm -f $(ASN1_MSG_INC)/asn1_msg.o
-	rm -f  $(OBJ:.o=.d) $(ASN1_MSG_OBJS1:.o=.d)
+	rm -f $(PHY_OBJS:.o=.d) $(OBJ:.o=.d) $(ASN1_MSG_OBJS1:.o=.d)
 
 cleanl1:
 	rm -f oaisim
@@ -410,6 +422,7 @@ cleancell:
 print:
 #	@echo $(cygwin)
 	@echo $(OBJ)
+	@echo $(PHY_OBJS)
 	@echo $(OCG_FLAG)
 	@echo "CFLAGS are "      $(CFLAGS)
 	@echo "EXTRA_CFLAGS are" $(EXTRA_CFLAGS)
