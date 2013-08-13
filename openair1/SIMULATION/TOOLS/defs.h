@@ -64,6 +64,11 @@ typedef struct {
   double ip;
   /// number of paths taken by transmit signal
   u16 nb_paths;
+  /// timing measurements
+  time_stats_t random_channel;
+  time_stats_t interp_time;
+  time_stats_t interp_freq;
+  time_stats_t convolution;
 } channel_desc_t;
 
 typedef struct {
@@ -164,7 +169,7 @@ typedef enum {
 \param random_aoa If set to 1, AoA of ricean component is randomized
 */
 
-channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB,u8 random_aoa);
+//channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB,u8 random_aoa);
 
 channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				     u8 nb_rx, 

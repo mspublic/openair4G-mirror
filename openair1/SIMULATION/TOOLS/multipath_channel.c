@@ -41,6 +41,8 @@ void multipath_channel(channel_desc_t *desc,
       random_channel(desc,0);
     }
 
+    start_meas(&desc->convolution);
+
 #ifdef DEBUG_CH
   for (l = 0;l<(int)desc->channel_length;l++) {
     printf("%p (%f,%f) ",desc->ch[0],desc->ch[0][l].x,desc->ch[0][l].y);
@@ -104,6 +106,9 @@ void multipath_channel(channel_desc_t *desc,
       
     } // ii
   } // i
+
+  stop_meas(&desc->convolution);
+
 }
 
 #else

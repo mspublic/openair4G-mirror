@@ -762,6 +762,16 @@ int
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_ext_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl1_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl2_stats);
+
+		  reset_meas(&eNB2UE[eNB_id][UE_id]->random_channel);
+		  reset_meas(&eNB2UE[eNB_id][UE_id]->interp_time);
+		  reset_meas(&eNB2UE[eNB_id][UE_id]->interp_freq);
+		  reset_meas(&eNB2UE[eNB_id][UE_id]->convolution);
+		  reset_meas(&UE2eNB[UE_id][eNB_id]->random_channel);
+		  reset_meas(&UE2eNB[UE_id][eNB_id]->interp_time);
+		  reset_meas(&UE2eNB[UE_id][eNB_id]->interp_freq);
+		  reset_meas(&UE2eNB[UE_id][eNB_id]->convolution);
+
 		}
 	      }
 
@@ -971,6 +981,20 @@ int
   //print timing measurements
   print_meas(&dl_chan_stats,"dl_chan_stats");
   print_meas(&ul_chan_stats,"ul_chan_stats");
+
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++) {
+    for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
+      print_meas(&eNB2UE[eNB_id][UE_id]->random_channel,"[DL][random_channel]");
+      print_meas(&eNB2UE[eNB_id][UE_id]->interp_time,"[DL][interp_time]");
+      print_meas(&eNB2UE[eNB_id][UE_id]->interp_freq,"[DL][interp_freq]");
+      print_meas(&eNB2UE[eNB_id][UE_id]->convolution,"[DL][convolution]");
+
+      print_meas(&UE2eNB[UE_id][eNB_id]->random_channel,"[UL][random_channel]");
+      print_meas(&UE2eNB[UE_id][eNB_id]->interp_time,"[UL][interp_time]");
+      print_meas(&UE2eNB[UE_id][eNB_id]->interp_freq,"[UL][interp_freq]");
+      print_meas(&UE2eNB[UE_id][eNB_id]->convolution,"[UL][convolution]");
+    }
+  }
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++) {
     print_meas(&PHY_vars_UE_g[UE_id]->phy_proc,"[UE][phy_proc]");

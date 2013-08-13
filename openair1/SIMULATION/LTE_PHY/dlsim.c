@@ -1657,9 +1657,9 @@ int main(int argc, char **argv) {
 	    //	    printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
 	    if(abstx==1)
 	      if(round==0 && hold_channel==0){
-		random_channel(eNB2UE[1]);
-		random_channel(eNB2UE[2]);
-		random_channel(eNB2UE[3]);		
+		random_channel(eNB2UE[1],0);
+		random_channel(eNB2UE[2],0);
+		random_channel(eNB2UE[3],0);		
 	      }
 	  }
 	
