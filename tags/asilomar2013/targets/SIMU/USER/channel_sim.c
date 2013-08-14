@@ -214,19 +214,20 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	    }
 	}
 
+      /*
       if(PHY_vars_UE_g[UE_id]->transmission_mode[att_eNB_id]>=5)
 	{
-	  /*	  lte_ue_measurements(PHY_vars_UE_g[UE_id],
+	  lte_ue_measurements(PHY_vars_UE_g[UE_id],
 			      ((next_slot-1)>>1)*frame_parms->samples_per_tti,
 			      1,
 			      abstraction_flag);
-	  */		      
 	  PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[0][0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE_g[UE_id]->PHY_measurements,0);
 	  //  printf("pmi_alloc in channel sim: %d",PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[0][0]->pmi_alloc);
-	}
-
-      // calculate the SNR for the attached eNB
-      init_snr(eNB2UE[att_eNB_id][UE_id], enb_data[att_eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id]->sinr_dB, &PHY_vars_UE_g[UE_id]->N0, PHY_vars_UE_g[UE_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id]->dlsch_eNB[UE_id][0]->pmi_alloc,PHY_vars_eNB_g[att_eNB_id]->mu_mimo_mode[UE_id].dl_pow_off);
+        }
+      */		      
+      
+      // calculate the SNR for the attached eNB (this assumes eNB always uses PMI stored in eNB_UE_stats; to be improved)
+      init_snr(eNB2UE[att_eNB_id][UE_id], enb_data[att_eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id]->sinr_dB, &PHY_vars_UE_g[UE_id]->N0, PHY_vars_UE_g[UE_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id]->eNB_UE_stats[UE_id].DL_pmi_single,PHY_vars_eNB_g[att_eNB_id]->mu_mimo_mode[UE_id].dl_pow_off);
 
       // calculate sinr here
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {

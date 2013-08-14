@@ -709,13 +709,16 @@ int
 		  reset_meas(&PHY_vars_UE_g[UE_id]->phy_proc_tx);
 
 		  reset_meas(&PHY_vars_UE_g[UE_id]->ofdm_demod_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->rx_dft_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_channel_estimation_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_freq_offset_estimation_stats);
-		  reset_meas(&PHY_vars_UE_g[UE_id]->rx_dft_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_decoding_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_rate_unmatching_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_turbo_decoding_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_deinterleaving_stats);
-		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_rate_unmatching_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_llr_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_unscrambling_stats);
+
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_init_stats);    
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_alpha_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_beta_stats);
@@ -724,13 +727,15 @@ int
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl1_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl2_stats);
 
+		  reset_meas(&PHY_vars_UE_g[UE_id]->tx_prach);
+
 		  reset_meas(&PHY_vars_UE_g[UE_id]->ofdm_mod_stats);
-		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_modulation_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_encoding_stats);
-		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_interleaving_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_modulation_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_segmentation_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_rate_matching_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_turbo_encoding_stats);
-		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_segmentation_stats);
+		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_interleaving_stats);
 		  reset_meas(&PHY_vars_UE_g[UE_id]->ulsch_multiplexing_stats);
 
 		for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
@@ -740,21 +745,24 @@ int
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_prach);
 
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats);
-		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_encoding_stats);
-		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_interleaving_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_scrambling_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_rate_matching_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_turbo_encoding_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_interleaving_stats);
 
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_demod_stats);
-		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats);
-		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats);
-		  reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats);
+		  //reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats);
+		  //reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats);
+		  //reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_decoding_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demodulation_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_rate_unmatching_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_turbo_decoding_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_deinterleaving_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demultiplexing_stats);
-		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_rate_unmatching_stats);
+		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_llr_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_init_stats);    
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_alpha_stats);
 		  reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_beta_stats);
@@ -1002,29 +1010,31 @@ int
     print_meas(&PHY_vars_UE_g[UE_id]->phy_proc_tx,"[UE][phy_proc_tx]");
 
     print_meas(&PHY_vars_UE_g[UE_id]->ofdm_demod_stats,"[UE][ofdm_demod]");
-    print_meas(&PHY_vars_UE_g[UE_id]->dlsch_channel_estimation_stats,"[UE][channel_est]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_freq_offset_estimation_stats,"[UE][freq_offset]");
-      print_meas(&PHY_vars_UE_g[UE_id]->rx_dft_stats,"[UE][rx_dft]");
+    print_meas(&PHY_vars_UE_g[UE_id]->rx_dft_stats,"[UE][|_rx_dft]");
+    print_meas(&PHY_vars_UE_g[UE_id]->dlsch_channel_estimation_stats,"[UE][|_channel_est]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_freq_offset_estimation_stats,"[UE][|_freq_offset]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_llr_stats,"[UE][llr]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_unscrambling_stats,"[UE][unscrambling]");
       print_meas(&PHY_vars_UE_g[UE_id]->dlsch_decoding_stats,"[UE][decoding]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_turbo_decoding_stats,"[UE][turbo_decoding]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_deinterleaving_stats,"[UE][deinterleaving]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_rate_unmatching_stats,"[UE][rate_unmatching]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_init_stats,"[UE][tc_init]");    
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_alpha_stats,"[UE][tc_alpha]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_beta_stats,"[UE][tc_beta]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_gamma_stats,"[UE][tc_gamma]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_ext_stats,"[UE][tc_ext]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl1_stats,"[UE][tc_intl1]");
-      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl2_stats,"[UE][tc_intl2]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_rate_unmatching_stats,"[UE][|_rate_unmatching]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_deinterleaving_stats,"[UE][|_deinterleaving]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_turbo_decoding_stats,"[UE][|_turbo_decoding]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_init_stats,"[UE][ |_tc_init]");    
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_alpha_stats,"[UE][ |_tc_alpha]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_beta_stats,"[UE][ |_tc_beta]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_gamma_stats,"[UE][ |_tc_gamma]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_ext_stats,"[UE][ |_tc_ext]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl1_stats,"[UE][ |_tc_intl1]");
+      print_meas(&PHY_vars_UE_g[UE_id]->dlsch_tc_intl2_stats,"[UE][ |_tc_intl2]");
 
       print_meas(&PHY_vars_UE_g[UE_id]->ofdm_mod_stats,"[UE][ofdm_mod]");
       print_meas(&PHY_vars_UE_g[UE_id]->ulsch_modulation_stats,"[UE][modulation]");
       print_meas(&PHY_vars_UE_g[UE_id]->ulsch_encoding_stats,"[UE][encoding]");
-      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_interleaving_stats,"[UE][interleaving]");
-      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_rate_matching_stats,"[UE][rate_matching]");
-      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_turbo_encoding_stats,"[UE][turbo_encoding]");
-      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_segmentation_stats,"[UE][segmentation]");
-      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_multiplexing_stats,"[UE][multiplexing]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_segmentation_stats,"[UE][|_segmentation]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_rate_matching_stats,"[UE][|_rate_matching]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_turbo_encoding_stats,"[UE][|_turbo_encoding]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_interleaving_stats,"[UE][|_interleaving]");
+      print_meas(&PHY_vars_UE_g[UE_id]->ulsch_multiplexing_stats,"[UE][|_multiplexing]");
   }
 
   for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
@@ -1036,27 +1046,29 @@ int
 
       print_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats,"[eNB][ofdm_mod]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats,"[eNB][modulation]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_scrambling_stats,"[eNB][scrambling]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_encoding_stats,"[eNB][encoding]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_interleaving_stats,"[eNB][interleaving]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_rate_matching_stats,"[eNB][rate_matching]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_turbo_encoding_stats,"[eNB][turbo_encoding]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_interleaving_stats,"[eNB][|_interleaving]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_rate_matching_stats,"[eNB][|_rate_matching]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_turbo_encoding_stats,"[eNB][|_turbo_encoding]");
 
       print_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_demod_stats,"[eNB][ofdm_demod]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats,"[eNB][channel_est]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats,"[eNB][freq_offset]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats,"[eNB][rx_dft]");
+      //print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats,"[eNB][channel_est]");
+      //print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats,"[eNB][freq_offset]");
+      //print_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats,"[eNB][rx_dft]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demodulation_stats,"[eNB][demodulation]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_decoding_stats,"[eNB][decoding]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_turbo_decoding_stats,"[eNB][turbo_decoding]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_deinterleaving_stats,"[eNB][deinterleaving]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demultiplexing_stats,"[eNB][demultiplexing]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_rate_unmatching_stats,"[eNB][rate_unmatching]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_init_stats,"[eNB][tc_init]");    
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_alpha_stats,"[eNB][tc_alpha]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_beta_stats,"[eNB][tc_beta]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_gamma_stats,"[eNB][tc_gamma]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_ext_stats,"[eNB][tc_ext]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl1_stats,"[eNB][tc_intl1]");
-      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl2_stats,"[eNB][tc_intl2]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_deinterleaving_stats,"[eNB][|_deinterleaving]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_demultiplexing_stats,"[eNB][|_demultiplexing]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_rate_unmatching_stats,"[eNB][|_rate_unmatching]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_turbo_decoding_stats,"[eNB][|_turbo_decoding]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_init_stats,"[eNB][ |_tc_init]");    
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_alpha_stats,"[eNB][ |_tc_alpha]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_beta_stats,"[eNB][ |_tc_beta]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_gamma_stats,"[eNB][ |_tc_gamma]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_ext_stats,"[eNB][ |_tc_ext]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl1_stats,"[eNB][ |_tc_intl1]");
+      print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl2_stats,"[eNB][ |_tc_intl2]");
   }
 
 
