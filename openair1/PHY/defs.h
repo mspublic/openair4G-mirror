@@ -291,14 +291,15 @@ typedef struct
   time_stats_t ofdm_mod_stats;
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
+  time_stats_t dlsch_scrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_turbo_encoding_stats;
   time_stats_t dlsch_interleaving_stats;
 
   time_stats_t ofdm_demod_stats;
-  time_stats_t rx_dft_stats;
-  time_stats_t ulsch_channel_estimation_stats;
-  time_stats_t ulsch_freq_offset_estimation_stats;
+  //time_stats_t rx_dft_stats;
+  //time_stats_t ulsch_channel_estimation_stats;
+  //time_stats_t ulsch_freq_offset_estimation_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_demodulation_stats;
   time_stats_t ulsch_rate_unmatching_stats;
@@ -475,11 +476,11 @@ typedef struct
   time_stats_t dlsch_channel_estimation_stats;
   time_stats_t dlsch_freq_offset_estimation_stats;
   time_stats_t dlsch_decoding_stats;
-  time_stats_t dlsch_demodulation_stats;
   time_stats_t dlsch_rate_unmatching_stats;
   time_stats_t dlsch_turbo_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
   time_stats_t dlsch_llr_stats;
+  time_stats_t dlsch_unscrambling_stats;
   time_stats_t dlsch_tc_init_stats;
   time_stats_t dlsch_tc_alpha_stats;
   time_stats_t dlsch_tc_beta_stats;
@@ -487,6 +488,7 @@ typedef struct
   time_stats_t dlsch_tc_ext_stats;
   time_stats_t dlsch_tc_intl1_stats;
   time_stats_t dlsch_tc_intl2_stats;
+  time_stats_t tx_prach;
 } PHY_VARS_UE;
 
 

@@ -1572,6 +1572,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 	if (abstraction_flag == 0) {
 
+	  start_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	  dlsch_encoding(DLSCH_pdu,
 			 &phy_vars_eNB->lte_frame_parms,
 			 num_pdcch_symbols,
@@ -1580,7 +1581,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			 &phy_vars_eNB->dlsch_rate_matching_stats,
 			 &phy_vars_eNB->dlsch_turbo_encoding_stats,
 			 &phy_vars_eNB->dlsch_interleaving_stats);
+	  stop_meas(&phy_vars_eNB->dlsch_encoding_stats);  
 	
+	  start_meas(&phy_vars_eNB->dlsch_scrambling_stats);	      
 	  dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,
 			   0,
 			   phy_vars_eNB->dlsch_eNB_SI,
@@ -1591,7 +1594,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				 num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 			   0,
 			   next_slot);      
+	  stop_meas(&phy_vars_eNB->dlsch_scrambling_stats);	      
 	
+	  start_meas(&phy_vars_eNB->dlsch_modulation_stats);	      
 	  for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	    re_allocated = dlsch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
 					    AMP,
@@ -1599,12 +1604,15 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					    &phy_vars_eNB->lte_frame_parms,
 					    num_pdcch_symbols,
 					    phy_vars_eNB->dlsch_eNB_SI);
+	  stop_meas(&phy_vars_eNB->dlsch_modulation_stats);	      
 	} 
 #ifdef PHY_ABSTRACTION
 	else {
+	  start_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	  dlsch_encoding_emul(phy_vars_eNB,
 			      DLSCH_pdu,
 			      phy_vars_eNB->dlsch_eNB_SI);
+	  stop_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	}
 #endif
 	phy_vars_eNB->dlsch_eNB_SI->active = 0;
@@ -1804,6 +1812,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  if (abstraction_flag==0) {
 
 	    // 36-212
+	    start_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	    dlsch_encoding(DLSCH_pdu,
 			   &phy_vars_eNB->lte_frame_parms,
 			   num_pdcch_symbols,
@@ -1812,7 +1821,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			   &phy_vars_eNB->dlsch_rate_matching_stats,
 			   &phy_vars_eNB->dlsch_turbo_encoding_stats,
 			   &phy_vars_eNB->dlsch_interleaving_stats);
+	    stop_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	    // 36-211
+	    start_meas(&phy_vars_eNB->dlsch_scrambling_stats);	      
 	    dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,
 			     0,
 			     phy_vars_eNB->dlsch_eNB[(u8)UE_id][0],
@@ -1823,6 +1834,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				   num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 			     0,
 			     next_slot);      
+	    stop_meas(&phy_vars_eNB->dlsch_scrambling_stats);	      
+	    start_meas(&phy_vars_eNB->dlsch_modulation_stats);	      
 	    for (sect_id=0;sect_id<number_of_cards;sect_id++) {
 	    
 	      /*          if ((phy_vars_eNB->transmission_mode[(u8)UE_id] == 5) &&
@@ -1840,12 +1853,15 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 					      num_pdcch_symbols,
 					      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]);
 	    }
+	    stop_meas(&phy_vars_eNB->dlsch_modulation_stats);	      
 	  }
 #ifdef PHY_ABSTRACTION
 	  else {
+	    start_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	    dlsch_encoding_emul(phy_vars_eNB,
 				DLSCH_pdu,
 				phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]);
+	    stop_meas(&phy_vars_eNB->dlsch_encoding_stats);	      
 	  }
 #endif
 	  phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->active = 0;
@@ -2431,8 +2447,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   }
   //#endif
   if (abstraction_flag == 0) {
+    start_meas(&phy_vars_eNB->ofdm_demod_stats);	      	      	  
     for (l=0;l<phy_vars_eNB->lte_frame_parms.symbols_per_tti/2;l++) {
-      
       for (sect_id=0;sect_id<number_of_cards;sect_id++) {
 	slot_fep_ul(&phy_vars_eNB->lte_frame_parms,
 		    &phy_vars_eNB->lte_eNB_common_vars,
@@ -2447,6 +2463,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		    );
       }
     }
+    stop_meas(&phy_vars_eNB->ofdm_demod_stats);	      	      	  
   }
   sect_id = 0;
 
@@ -2609,6 +2626,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    nPRS,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->O_ACK);
 #endif
+      start_meas(&phy_vars_eNB->ulsch_demodulation_stats);	      	      	  
       if (abstraction_flag==0) {
 	rx_ulsch(phy_vars_eNB,
 		 last_slot>>1,
@@ -2625,10 +2643,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		      i);
       }
 #endif
+      stop_meas(&phy_vars_eNB->ulsch_demodulation_stats);	      	      	  
+
 
       for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
 	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
 
+      start_meas(&phy_vars_eNB->ulsch_decoding_stats);
       if (abstraction_flag == 0) {
 	ret = ulsch_decoding(phy_vars_eNB,
 			     i,
@@ -2645,6 +2666,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				  &rnti);
       }
 #endif
+      stop_meas(&phy_vars_eNB->ulsch_decoding_stats);
 
 #ifdef DEBUG_PHY_PROC
       LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
