@@ -367,8 +367,8 @@ void _lolasched_alloc(unsigned char UE_id,LTE_eNB_UE_stats* eNB_UE_stats ,u16* n
   double rho;
   int aux=0,j=0,i;  
   
-    for(i=0;i<N_RBGS;i++)
-		rballoc_sub_UE[UE_id][i] = 0;
+  for(i=0;i<N_RBGS;i++)
+    rballoc_sub_UE[UE_id][i] = 0;
   
   switch (mac_xface->lte_frame_parms->N_RB_DL) {
   case 6:
@@ -387,50 +387,50 @@ void _lolasched_alloc(unsigned char UE_id,LTE_eNB_UE_stats* eNB_UE_stats ,u16* n
     min_rb_unit=2;
     break;
   }	
-  printf("mac_xface->lte_frame_parms->N_RB_DL: %d, min_rb_unit: %d \n",mac_xface->lte_frame_parms->N_RB_DL,min_rb_unit);
+  LOG_D(MAC,"mac_xface->lte_frame_parms->N_RB_DL: %d, min_rb_unit: %d \n",mac_xface->lte_frame_parms->N_RB_DL,min_rb_unit);
   //TVT: choose the mcs and rho depending on the cqi (construct the proper table)
-	// I assume that i have snr_1 for SNR clean and snr_2 for SNR dirty, that will give me rho[snr_1][snr_2]
-	eNB_UE_stats->dlsch_mcs1 = 14;
-	printf("eNB_UE_stats->dlsch_mcs1 = %d\n", eNB_UE_stats->dlsch_mcs1);
-	rho=0.16;
+  // I assume that i have snr_1 for SNR clean and snr_2 for SNR dirty, that will give me rho[snr_1][snr_2]
+  eNB_UE_stats->dlsch_mcs1 = 14;
+  LOG_D(MAC,"eNB_UE_stats->dlsch_mcs1 = %d\n", eNB_UE_stats->dlsch_mcs1);
+  rho=0.16;
 	
-	//TVT: I have to allocate the sub_bands as in the pre_processor: rballoc_sub_UE[next_ue][j]
-	switch(round)
-	{
-		case 0://ceil
-		nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);			
-		break;
-		case 1:
-		nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
-		nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
-		break;
-		case 2:
-		nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
-		break;
-		case 3:
-		nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);
-		nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
-		break;
-	}
-	printf("round: %d , UE_id: %u, nb_available_rb: %d \n",round, UE_id,nb_available_rb[UE_id]);
-	if ((mac_xface->lte_frame_parms->N_RB_DL == 25) || (mac_xface->lte_frame_parms->N_RB_DL == 50)){
-		if (nb_available_rb[UE_id] % 2){ //TVT: it is odd, then fill the last PRBG
-			rballoc_sub_UE[UE_id][N_RBGS-1]=1;
-			aux+=min_rb_unit-1;
-		}
-	}
-	if (round==1 || round==3)
-		j=N_RBGS-2;
-	while(aux < nb_available_rb[UE_id]){//TVT: allocate the rest of the PRBGs				
-	rballoc_sub_UE[UE_id][j] = 1;	
-	aux+=min_rb_unit;
-	if (round==1 || round==3)
-		j--;
-		else 
-		j++;
-	}
-	for(i=0;i<N_RBGS;i++)
-		printf("UE_id: %u , rballoc_sub_UE: %u \n",UE_id,rballoc_sub_UE[UE_id][i]);
+  //TVT: I have to allocate the sub_bands as in the pre_processor: rballoc_sub_UE[next_ue][j]
+  switch(round)
+    {
+    case 0://ceil
+      nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);			
+      break;
+    case 1:
+      nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
+      nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
+      break;
+    case 2:
+      nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
+      break;
+    case 3:
+      nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);
+      nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
+      break;
+    }
+  printf("round: %d , UE_id: %u, nb_available_rb: %d \n",round, UE_id,nb_available_rb[UE_id]);
+  if ((mac_xface->lte_frame_parms->N_RB_DL == 25) || (mac_xface->lte_frame_parms->N_RB_DL == 50)){
+    if (nb_available_rb[UE_id] % 2){ //TVT: it is odd, then fill the last PRBG
+      rballoc_sub_UE[UE_id][N_RBGS-1]=1;
+      aux+=min_rb_unit-1;
+    }
+  }
+  if (round==1 || round==3)
+    j=N_RBGS-2;
+  while(aux < nb_available_rb[UE_id]){//TVT: allocate the rest of the PRBGs				
+    rballoc_sub_UE[UE_id][j] = 1;	
+    aux+=min_rb_unit;
+    if (round==1 || round==3)
+      j--;
+    else 
+      j++;
+  }
+  for(i=0;i<N_RBGS;i++)
+    printf("UE_id: %u , rballoc_sub_UE: %u \n",UE_id,rballoc_sub_UE[UE_id][i]);
 		
 }
 
@@ -1876,8 +1876,8 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 #if defined(USER_MODE) && defined(OAI_EMU)
 	  if (oai_emulation.info.opt_enabled){
 	    trace_pdu(1, (char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)UE_id][0].payload[0],
-                  rrc_sdu_length, UE_id, 3, find_UE_RNTI(Mod_id, UE_id),
-                  eNB_mac_inst[Mod_id].subframe,0,0);
+		      rrc_sdu_length, UE_id, 3, find_UE_RNTI(Mod_id, UE_id),
+		      eNB_mac_inst[Mod_id].subframe,0,0);
 	    LOG_D(OPT,"[eNB %d][DLSCH] Frame %d trace pdu for rnti %x with size %d\n",
 		  Mod_id, frame, find_UE_RNTI(Mod_id,UE_id), rrc_sdu_length);
 	  }
@@ -2566,20 +2566,20 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
     if(rballoc[check] == 1){
       rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBGS-1)-check));
       switch (mac_xface->lte_frame_parms->N_RB_DL) {
-	case 6:
+      case 6:
+	nb_rb--;
+      case 25:
+	if ((check == mac_xface->lte_frame_parms->N_RBGS-1))
 	  nb_rb--;
-	case 25:
-	  if ((check == mac_xface->lte_frame_parms->N_RBGS-1))
-	    nb_rb--;
-	  else
-	    nb_rb-=2;
-	  break;
-	case 50:
-	  if ((check == mac_xface->lte_frame_parms->N_RBGS-1))
-	    nb_rb-=2;
-	  else
-	    nb_rb-=3;
-	  break;
+	else
+	  nb_rb-=2;
+	break;
+      case 50:
+	if ((check == mac_xface->lte_frame_parms->N_RBGS-1))
+	  nb_rb-=2;
+	else
+	  nb_rb-=3;
+	break;
       case 100:
 	nb_rb-=4;
 	break;
@@ -3425,25 +3425,26 @@ void schedule_ue_spec(unsigned char Mod_id,
   eNB_mac_inst[Mod_id].eNB_stats.dlsch_bytes_tx=0;
   eNB_mac_inst[Mod_id].eNB_stats.dlsch_pdus_tx=0;
 
-//TVT: if in my case, i will have my own pre_processor
-/// CALLING Pre_Processor for downlink scheduling (Returns estimation of RBs required by each UE and the allocation on sub-band)
+  //TVT: if in my case, i will have my own pre_processor
+  /// CALLING Pre_Processor for downlink scheduling (Returns estimation of RBs required by each UE and the allocation on sub-band)
   if(!flag_lolasched)
-	  dlsch_scheduler_pre_processor(Mod_id,
-				frame,
-				subframe,
-				dl_pow_off,
-				pre_nb_available_rbs,
-				mac_xface->lte_frame_parms->N_RBGS,
-				&rballoc_sub_UE[0][0]);
+    dlsch_scheduler_pre_processor(Mod_id,
+				  frame,
+				  subframe,
+				  dl_pow_off,
+				  pre_nb_available_rbs,
+				  mac_xface->lte_frame_parms->N_RBGS,
+				  &rballoc_sub_UE[0][0]);
   else{
-		//call my function with my new table
-		for (UE_id=0;UE_id<granted_UEs;UE_id++) {   
-			rnti = find_UE_RNTI(Mod_id,UE_id);
-			//rnti = find_UE_RNTI(Mod_id,0);
-			eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-			_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
-		}	
-	}																			
+    //call my function with my new table
+    for (UE_id=0;UE_id<granted_UEs;UE_id++) {   
+      rnti = find_UE_RNTI(Mod_id,UE_id);
+      //rnti = find_UE_RNTI(Mod_id,0);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+      // round is zero here always!!!!
+      _lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
+    }	
+  }																			
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
    
@@ -3465,14 +3466,14 @@ void schedule_ue_spec(unsigned char Mod_id,
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
 
-/*	//TVT: Here  nb_available_rb gets the value from the pre_processor
+    /*	//TVT: Here  nb_available_rb gets the value from the pre_processor
 	if(flag_lolasched){
 	//call my function with my new table
-		rnti = find_UE_RNTI(Mod_id,UE_id);
-		eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-		_lolasched_alloc(eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
+	rnti = find_UE_RNTI(Mod_id,UE_id);
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	_lolasched_alloc(eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
 
-}*/
+	}*/
     nb_available_rb = pre_nb_available_rbs[UE_id];
     printf("UE_id: %d, nb_available_rb after pre: %d \n",UE_id,nb_available_rb);
 
@@ -3541,92 +3542,92 @@ void schedule_ue_spec(unsigned char Mod_id,
     //printf("CQI %d\n",eNB_UE_stats->DL_cqi[0]);
     //TVT: if no lolasched, otherwise mcs1 is already filled in my function
     if(!flag_lolasched){
-		if (flag_LA==0){
+      if (flag_LA==0){
      
-		switch(eNB_UE_stats->DL_cqi[0]) {
-		case 0:
-		eNB_UE_stats->dlsch_mcs1 = 0;
-		break;
-		case 1:
-		eNB_UE_stats->dlsch_mcs1 = 0;
-		break;
-		case 2:
-		eNB_UE_stats->dlsch_mcs1 = 0;
-		break;	
-		case 3:
-		eNB_UE_stats->dlsch_mcs1 = 2;
-		break;
-		case 4:
-		eNB_UE_stats->dlsch_mcs1 = 4;
-		break;
-		case 5:
-		eNB_UE_stats->dlsch_mcs1 = 6;
-		break;
-		case 6:
-		eNB_UE_stats->dlsch_mcs1 = 8;
-		break;
-		case 7:
-		eNB_UE_stats->dlsch_mcs1 = 11;
-		break;
-		case 8:
-		eNB_UE_stats->dlsch_mcs1 = 13;
-		break;
-		case 9:
-		eNB_UE_stats->dlsch_mcs1 = 16;
-		break;
-		case 10:
-		eNB_UE_stats->dlsch_mcs1 = 18;
-		break;
-		case 11:
-		eNB_UE_stats->dlsch_mcs1 = 20;
-		break;
-		case 12:
-		eNB_UE_stats->dlsch_mcs1 = 22;
-		break;
-		case 13:
-		eNB_UE_stats->dlsch_mcs1 = 22;//25
-		break;
-		case 14:
-		eNB_UE_stats->dlsch_mcs1 = 22;//27
-		break;
-		case 15:
-		eNB_UE_stats->dlsch_mcs1 = 22;//28
-		break;
-		default:
-		LOG_E(MAC,"Invalid CQI");
-		exit(-1);
-		}
-		}
-		else {
-		// begin CQI to MCS mapping
-		if(mac_xface->get_transmission_mode(Mod_id,rnti)==1)
-		eNB_UE_stats->dlsch_mcs1 = cqi_mcs[0][eNB_UE_stats->DL_cqi[0]];
-		else
-		if(mac_xface->get_transmission_mode(Mod_id,rnti)==2)
-		eNB_UE_stats->dlsch_mcs1 = cqi_mcs[1][eNB_UE_stats->DL_cqi[0]];
-		else
-		if(mac_xface->get_transmission_mode(Mod_id,rnti)==6 || mac_xface->get_transmission_mode(Mod_id,rnti)==5)
-			eNB_UE_stats->dlsch_mcs1 = cqi_mcs[2][eNB_UE_stats->DL_cqi[0]];
-		// end CQI Mapping 
-		// if MUMIMO is enabled with two UEs then adjust the CQI and MCS mapping
-		if(mac_xface->get_transmission_mode(Mod_id,rnti)==5 && dl_pow_off[UE_id]==0){
-		snr_tm6 = cqi_snr[eNB_UE_stats->DL_cqi[0]];
-		if (snr_tm6<snr_mcs[0])
-		eNB_UE_stats->dlsch_mcs1 = 0;
-		else 
-		if(snr_tm6>snr_mcs[27])
-			eNB_UE_stats->dlsch_mcs1 = 27;
-		else
-			for (i=0;i<27;i++){
-			if(snr_tm6 > snr_mcs[i] && snr_tm6 < snr_mcs[i+1])
-			eNB_UE_stats->dlsch_mcs1 = i;
-			}
-		}
-		}
-        // for TM5, limit the MCS to 16QAM  
-		if(eNB_UE_stats->dlsch_mcs1>22)
-		eNB_UE_stats->dlsch_mcs1=22;
-	}//!flag_lolasched
+	switch(eNB_UE_stats->DL_cqi[0]) {
+	case 0:
+	  eNB_UE_stats->dlsch_mcs1 = 0;
+	  break;
+	case 1:
+	  eNB_UE_stats->dlsch_mcs1 = 0;
+	  break;
+	case 2:
+	  eNB_UE_stats->dlsch_mcs1 = 0;
+	  break;	
+	case 3:
+	  eNB_UE_stats->dlsch_mcs1 = 2;
+	  break;
+	case 4:
+	  eNB_UE_stats->dlsch_mcs1 = 4;
+	  break;
+	case 5:
+	  eNB_UE_stats->dlsch_mcs1 = 6;
+	  break;
+	case 6:
+	  eNB_UE_stats->dlsch_mcs1 = 8;
+	  break;
+	case 7:
+	  eNB_UE_stats->dlsch_mcs1 = 11;
+	  break;
+	case 8:
+	  eNB_UE_stats->dlsch_mcs1 = 13;
+	  break;
+	case 9:
+	  eNB_UE_stats->dlsch_mcs1 = 16;
+	  break;
+	case 10:
+	  eNB_UE_stats->dlsch_mcs1 = 18;
+	  break;
+	case 11:
+	  eNB_UE_stats->dlsch_mcs1 = 20;
+	  break;
+	case 12:
+	  eNB_UE_stats->dlsch_mcs1 = 22;
+	  break;
+	case 13:
+	  eNB_UE_stats->dlsch_mcs1 = 22;//25
+	  break;
+	case 14:
+	  eNB_UE_stats->dlsch_mcs1 = 22;//27
+	  break;
+	case 15:
+	  eNB_UE_stats->dlsch_mcs1 = 22;//28
+	  break;
+	default:
+	  LOG_E(MAC,"Invalid CQI");
+	  exit(-1);
+	}
+      }
+      else {
+	// begin CQI to MCS mapping
+	if(mac_xface->get_transmission_mode(Mod_id,rnti)==1)
+	  eNB_UE_stats->dlsch_mcs1 = cqi_mcs[0][eNB_UE_stats->DL_cqi[0]];
+	else
+	  if(mac_xface->get_transmission_mode(Mod_id,rnti)==2)
+	    eNB_UE_stats->dlsch_mcs1 = cqi_mcs[1][eNB_UE_stats->DL_cqi[0]];
+	  else
+	    if(mac_xface->get_transmission_mode(Mod_id,rnti)==6 || mac_xface->get_transmission_mode(Mod_id,rnti)==5)
+	      eNB_UE_stats->dlsch_mcs1 = cqi_mcs[2][eNB_UE_stats->DL_cqi[0]];
+	// end CQI Mapping 
+	// if MUMIMO is enabled with two UEs then adjust the CQI and MCS mapping
+	if(mac_xface->get_transmission_mode(Mod_id,rnti)==5 && dl_pow_off[UE_id]==0){
+	  snr_tm6 = cqi_snr[eNB_UE_stats->DL_cqi[0]];
+	  if (snr_tm6<snr_mcs[0])
+	    eNB_UE_stats->dlsch_mcs1 = 0;
+	  else 
+	    if(snr_tm6>snr_mcs[27])
+	      eNB_UE_stats->dlsch_mcs1 = 27;
+	    else
+	      for (i=0;i<27;i++){
+		if(snr_tm6 > snr_mcs[i] && snr_tm6 < snr_mcs[i+1])
+		  eNB_UE_stats->dlsch_mcs1 = i;
+	      }
+	}
+      }
+      // for TM5, limit the MCS to 16QAM  
+      if(eNB_UE_stats->dlsch_mcs1>22)
+	eNB_UE_stats->dlsch_mcs1=22;
+    }//!flag_lolasched
     
 
     // for EXMIMO, limit the MCS to 16QAM as well
@@ -3659,11 +3660,15 @@ void schedule_ue_spec(unsigned char Mod_id,
       // get freq_allocation
       //TVT: Here it gives the previous nb_rb, in my case there is a new number of rbs, so i call my function
       if(flag_lolasched){
-		_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
-	}
+	_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
+	// this has to be fixed, later _lola_sched_alloc must handle the case of retransmissions with adapted PRBs, like in the normal preprocessor but with adapted PRBs
+	nb_rb = pre_nb_available_rbs[UE_id]; 
+	nb_available_rb = nb_rb;
+      }
       else   
-		nb_rb = eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid];
-      
+	nb_rb = eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid];
+
+      LOG_D(MAC,"[eNB %d] Retransmission : harq_pid %d, round %d : nb_rb %d (nb_available_rb %d)\n",Mod_id,harq_pid,round,nb_rb,nb_available_rb);      
       if (nb_rb <= nb_available_rb) {
 	
 	if(nb_rb == pre_nb_available_rbs[next_ue]){
@@ -3822,7 +3827,7 @@ void schedule_ue_spec(unsigned char Mod_id,
       }
     }
     else {  // This is a potentially new SDU opportunity
-	  //TVT: for round 0
+      //TVT: for round 0
       // calculate mcs
 
       rlc_status.bytes_in_buffer = 0;
@@ -3933,7 +3938,7 @@ void schedule_ue_spec(unsigned char Mod_id,
 	
 
 
-    //TVT: this mcs will be used later.. will have the correct one anyway
+	//TVT: this mcs will be used later.. will have the correct one anyway
 	mcs = eNB_UE_stats->dlsch_mcs1;
 	if (mcs==0) nb_rb = 4;   // don't let the TBS get too small
 	else nb_rb=min_rb_unit;
@@ -3950,8 +3955,8 @@ void schedule_ue_spec(unsigned char Mod_id,
 	  }
 	  TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rb);
 	}
-//TVT: nb_rb has the actual number of PRBs, or in case it is large, it has the max=nb_available_rb=pre_nb..
-//TVT: but we need to allocate sub_bands, how? just by rballoc_subband=1?
+	//TVT: nb_rb has the actual number of PRBs, or in case it is large, it has the max=nb_available_rb=pre_nb..
+	//TVT: but we need to allocate sub_bands, how? just by rballoc_subband=1?
 	if(nb_rb == pre_nb_available_rbs[next_ue])//TVT: if it is the max then just alloc subbands
 	  for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++) // for indicating the rballoc for each sub-band
 	    eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_subband[harq_pid][j] = rballoc_sub_UE[next_ue][j];
@@ -4048,11 +4053,11 @@ void schedule_ue_spec(unsigned char Mod_id,
 	//eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
 
 #if defined(USER_MODE) && defined(OAI_EMU)
-    /* Tracing of PDU is done on UE side */
+	/* Tracing of PDU is done on UE side */
 	if (oai_emulation.info.opt_enabled)
 	  trace_pdu(1, (char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],
-                TBS, Mod_id, 3, find_UE_RNTI(Mod_id,next_ue),
-                eNB_mac_inst[Mod_id].subframe,0,0);
+		    TBS, Mod_id, 3, find_UE_RNTI(Mod_id,next_ue),
+		    eNB_mac_inst[Mod_id].subframe,0,0);
 	LOG_D(OPT,"[eNB %d][DLSCH] Frame %d  rnti %x  with size %d\n", 
 	      Mod_id, frame, find_UE_RNTI(Mod_id,next_ue), TBS);
 #endif
