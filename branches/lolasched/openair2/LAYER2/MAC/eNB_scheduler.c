@@ -3442,6 +3442,7 @@ void schedule_ue_spec(unsigned char Mod_id,
       //rnti = find_UE_RNTI(Mod_id,0);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
       // round is zero here always!!!!
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
       _lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
     }	
   }																			
@@ -3660,10 +3661,10 @@ void schedule_ue_spec(unsigned char Mod_id,
       // get freq_allocation
       //TVT: Here it gives the previous nb_rb, in my case there is a new number of rbs, so i call my function
       if(flag_lolasched){
-	_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
+	//_lolasched_alloc(UE_id,eNB_UE_stats,pre_nb_available_rbs,round,&rballoc_sub_UE[0][0],mac_xface->lte_frame_parms->N_RBGS);
 	// this has to be fixed, later _lola_sched_alloc must handle the case of retransmissions with adapted PRBs, like in the normal preprocessor but with adapted PRBs
 	nb_rb = pre_nb_available_rbs[UE_id]; 
-	nb_available_rb = nb_rb;
+	//nb_available_rb = nb_rb;
       }
       else   
 	nb_rb = eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid];
@@ -3696,6 +3697,7 @@ void schedule_ue_spec(unsigned char Mod_id,
 	aggregation = process_ue_cqi(Mod_id,next_ue);
 	nCCE-=(1<<aggregation); // adjust the remaining nCCE
 	*nCCE_used += (1<<aggregation);
+	eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid]=nb_rb;
 
 
 	PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[next_ue].pre_nb_available_rbs = nb_rb;
@@ -3730,7 +3732,7 @@ void schedule_ue_spec(unsigned char Mod_id,
 	      ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi      = 0;
 	      ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	      ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv       = round&3;
-	      ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	      ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;	     
 	      LOG_D(MAC,"[eNB %d] Retransmission : harq_pid %d, round %d, dai %d, mcs %d\n",Mod_id,harq_pid,round,(eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1),((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs);
 	    }
 	    else {
