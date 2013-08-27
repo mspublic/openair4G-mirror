@@ -1,4 +1,11 @@
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <signal.h>
 #include <execinfo.h>
+#include <time.h>
+
+#include <sys/timerfd.h>
 
 #include "oaisim_functions.h"
 
@@ -106,7 +113,7 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
 
     switch (c) {
     case 0:
@@ -350,6 +357,9 @@ void get_simulation_options(int argc, char *argv[]) {
 #else
       printf("You enabled MME mode without MME support...\n");
 #endif
+      break;
+    case 'o':
+      oai_emulation.info.slot_isr = 1;
       break;
     default:
       help ();
@@ -820,24 +830,24 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 #endif
 }
 
-void update_otg_UE(int module_id, unsigned int ctime) {
+void update_otg_UE(int UE_id, unsigned int ctime) {
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ) {
-    int dst_id, src_id;
-    int eNB_index = 0; //See how phy_procedures_UE_lte is called: 3rd parameter from the right = 0
+    int dst_id, src_id; //dst_id = eNB_index
+    int module_id = UE_id+NB_eNB_INST;
 
     src_id = module_id;
-    dst_id = eNB_index;
 
-    if (mac_get_rrc_status(module_id, 0/*eNB_flag*/, eNB_index ) > 2 /*RRC_CONNECTED*/) {
+    for (dst_id=0;dst_id<NUMBER_OF_eNB_MAX;dst_id++) {
+    if (mac_get_rrc_status(UE_id, 0/*eNB_flag*/, dst_id ) > 2 /*RRC_CONNECTED*/) {
       Packet_otg_elt *otg_pkt = malloc (sizeof(Packet_otg_elt));
       // Manage to add this packet to the tail of your list
       (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(src_id, dst_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
 
       if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-        (otg_pkt->otg_pkt).rb_id = eNB_index * NB_RB_MAX + DTCH;
+        (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH;
         (otg_pkt->otg_pkt).module_id = module_id;
-        //(otg_pkt->otg_pkt).dst_id = dst_id;
+        (otg_pkt->otg_pkt).dst_id = dst_id;
         //Adding the packet to the OTG-PDCP buffer
         (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
         pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
@@ -846,8 +856,52 @@ void update_otg_UE(int module_id, unsigned int ctime) {
         otg_pkt=NULL;
       }
     }
+    }
   }
 #endif
+}
+
+int init_slot_isr(void)
+{
+    if (oai_emulation.info.slot_isr) {
+        struct itimerspec its;
+
+        int sfd;
+
+        sfd = timerfd_create(CLOCK_REALTIME, 0);
+        if (sfd == -1) {
+            LOG_E(EMU, "Failed in timerfd_create (%d:%s)\n", errno, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+        /* Start the timer */
+        its.it_value.tv_sec = 0;
+        its.it_value.tv_nsec = 500 * 1000;
+        its.it_interval.tv_sec = its.it_value.tv_sec;
+        its.it_interval.tv_nsec = its.it_value.tv_nsec;
+
+        if (timerfd_settime(sfd, TFD_TIMER_ABSTIME, &its, NULL) == -1) {
+            LOG_E(EMU, "Failed in timer_settime (%d:%s)\n", errno, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+        oai_emulation.info.slot_sfd = sfd;
+    }
+}
+
+void wait_for_slot_isr(void)
+{
+    uint64_t exp;
+    ssize_t res;
+
+    if (oai_emulation.info.slot_sfd > 0) {
+        res = read(oai_emulation.info.slot_sfd, &exp, sizeof(exp));
+
+        if ((res < 0) || (res != sizeof(exp))) {
+            LOG_E(EMU, "Failed in read (%d:%s)\n", errno, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 void exit_fun(const char* s)

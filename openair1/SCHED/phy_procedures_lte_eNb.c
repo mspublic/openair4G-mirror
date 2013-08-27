@@ -69,7 +69,7 @@
 
 #define PUCCH 1
 
-#define PUCCH1_THRES 25
+#define PUCCH1_THRES 15
 
 extern inline unsigned int taus(void);
 extern int exit_openair;
@@ -1777,6 +1777,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 						 phy_vars_eNB->frame,
 						 phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti,
 						 0);
+	    phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_MAC += phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->TBS;
 #else
 	    DLSCH_pdu = DLSCH_pdu_tmp;
 	    for (i=0;i<input_buffer_length;i++)
@@ -2126,9 +2127,10 @@ void process_HARQ_feedback(u8 UE_id,
 
 	    ue_stats->total_TBS = ue_stats->total_TBS + 
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
+	    /*
 	    ue_stats->total_transmitted_bits = ue_stats->total_transmitted_bits +
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
-	  
+	    */
 	  }
 	  
 	  // Do fine-grain rate-adaptation for DLSCH 
