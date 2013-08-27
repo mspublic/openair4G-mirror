@@ -89,7 +89,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	       (short *)&ue_common_vars->rxdata[aa][0],
 	       frame_parms->ofdm_symbol_size*sizeof(int));
 #ifndef NEW_FFT
-	fft((short *)&ue_common_vars->rxdata[aa][(sample_offset +
+      fft((short *)&ue_common_vars->rxdata[aa][(sample_offset +
 						slot_offset +
 						nb_prefix_samples0 + 
 						subframe_offset -
@@ -101,10 +101,10 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	  frame_parms->log2_symbol_size>>1,
 	  0);
 #else
-	start_meas(&phy_vars_ue->rx_dft_stats);
-	dft((int16_t *)&ue_common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
-	    (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
-	stop_meas(&phy_vars_ue->rx_dft_stats);
+      start_meas(&phy_vars_ue->rx_dft_stats);
+      dft((int16_t *)&ue_common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+	  (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+      stop_meas(&phy_vars_ue->rx_dft_stats);
 #endif
       
     }

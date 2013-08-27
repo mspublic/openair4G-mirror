@@ -2590,7 +2590,7 @@ uint16_t quantize_wideband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id) {
 // -4   => 1   => 0
 // -4.5 => 0   => 0
  
-uint8_t sinr2cqi(int sinr,uint8_t trans_mode) {
+uint8_t sinr2cqi(double sinr,uint8_t trans_mode) {
   // int flag_LA=0;
   if(flag_LA==0){
   // Ideal Channel Estimation
@@ -2751,13 +2751,13 @@ uint32_t fill_subband_cqi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mo
 
 void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint16_t rnti, uint8_t trans_mode, double sinr_eff) {
   
-  //  msg("[PHY][UE] Filling CQI for eNB %d, meas->wideband_cqi_tot[%d] %d\n",
-  //      eNB_id,eNB_id,meas->wideband_cqi_tot[eNB_id]);
   double sinr_tmp;
   if(flag_LA==1)
     sinr_tmp = sinr_eff;
   else
-    sinr_tmp = meas->wideband_cqi_avg[eNB_id];
+    sinr_tmp = (double) meas->wideband_cqi_avg[eNB_id];
+
+  LOG_I(PHY,"Filling CQI %f for eNB %d\n",sinr_tmp,eNB_id);
 
   switch (uci_format) {
   case wideband_cqi_rank1_2A:

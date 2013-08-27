@@ -1060,8 +1060,6 @@ int
       print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_rx,"[eNB][phy_proc_rx]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->phy_proc_tx,"[eNB][phy_proc_tx]");
 
-      print_meas(&PHY_vars_eNB_g[eNB_id]->rx_prach,"[eNB][rx_prach]");
-
       print_meas(&PHY_vars_eNB_g[eNB_id]->ofdm_mod_stats,"[eNB][ofdm_mod]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_modulation_stats,"[eNB][modulation]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->dlsch_scrambling_stats,"[eNB][scrambling]");
@@ -1087,6 +1085,8 @@ int
       print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_ext_stats,"[eNB][ |_tc_ext]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl1_stats,"[eNB][ |_tc_intl1]");
       print_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_tc_intl2_stats,"[eNB][ |_tc_intl2]");
+
+      print_meas(&PHY_vars_eNB_g[eNB_id]->rx_prach,"[eNB][rx_prach]");
   }
 
 
