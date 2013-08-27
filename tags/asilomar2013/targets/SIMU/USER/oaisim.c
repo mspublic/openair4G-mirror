@@ -572,6 +572,8 @@ int
     sinr_dB=-20;
   }
 
+  init_slot_isr();
+
   t = clock();
 
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
@@ -625,6 +627,8 @@ int
     update_ocm();
 
     for (slot=0 ; slot<20 ; slot++) {
+
+      wait_for_slot_isr();
 
       last_slot = (slot - 1)%20;
       if (last_slot <0)
@@ -702,7 +706,7 @@ int
               PHY_vars_UE_g[UE_id]->frame = frame;
 
               //Application
-              update_otg_UE(UE_id + NB_eNB_INST, oai_emulation.info.time_ms);
+              update_otg_UE(UE_id, oai_emulation.info.time_ms);
 
               //Access layer
               pdcp_run(frame, 0, UE_id, 0);
