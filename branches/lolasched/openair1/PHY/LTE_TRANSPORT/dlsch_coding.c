@@ -229,7 +229,9 @@ int dlsch_encoding(unsigned char *a,
 
   G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,frame,subframe);
 
-   
+  dlsch->total_used_DL_REs += (G/mod_order);
+  dlsch->total_used_DL_REs_per_round[dlsch->harq_processes[harq_pid]->round]+=(G/mod_order);
+ 
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
 
     /*

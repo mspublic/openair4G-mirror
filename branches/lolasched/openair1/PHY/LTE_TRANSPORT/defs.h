@@ -227,7 +227,7 @@ typedef struct {
   /// Pointers to 8 HARQ processes for the DLSCH
   LTE_DL_eNB_HARQ_t *harq_processes[8];     
   /// Number of soft channel bits
-  uint32_t G;
+  //uint32_t G;
   /// Layer index for this dlsch (0,1)
   uint8_t layer_index;          
   /// Codebook index for this dlsch (0,1,2,3)
@@ -583,6 +583,15 @@ typedef struct {
   unsigned int dlsch_bitrate;
   //
   unsigned int total_transmitted_bits;
+
+  /// Counter for accumulated DL resource-elements (overall)
+  unsigned int total_used_DL_REs;
+  /// Counter for accumulated DL resource-elements (per HARQ round)
+  unsigned int total_used_DL_REs_per_round[8];
+  /// Counter for accumulated UL resource-elements (per HARQ round)
+  unsigned int total_used_UL_REs;
+  /// Counter for accumulated UL resource-elements (per HARQ round)
+  unsigned int total_used_UL_REs_per_round[8];
 } LTE_eNB_UE_stats;
 
 typedef struct {
