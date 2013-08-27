@@ -888,6 +888,7 @@ int QPSK2[4]={AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),((
 void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag) {
   u8 *pbch_pdu=&phy_vars_eNB->pbch_pdu[0];
   //  unsigned int nb_dci_ue_spec = 0, nb_dci_common = 0;
+  uint32_t G,mod_order;
   u16 input_buffer_length, re_allocated=0;
   u32 sect_id = 0,i,aa;
   u8 harq_pid;
@@ -1802,7 +1803,19 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  }
 	  if (abstraction_flag==0) {
 
+	    mod_order = get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs);
+
+	    G = get_G(&phy_vars_eNB->lte_frame_parms,
+		      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
+		      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rb_alloc,
+		      get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
+		      num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1);
+
+	    phy_vars_eNB->eNB_UE_stats[(u32)UE_id].total_used_DL_REs[harq_pid] += (G/mod_order);
+	    phy_vars_eNB->eNB_UE_stats[(u32)UE_id].total_used_DL_REs_per_round[harq_pid][phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->round]+=(G/mod_order);
+ 
 	    // 36-212
+
 	    dlsch_encoding(DLSCH_pdu,
 			   &phy_vars_eNB->lte_frame_parms,
 			   num_pdcch_symbols,
@@ -1815,11 +1828,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,
 			     0,
 			     phy_vars_eNB->dlsch_eNB[(u8)UE_id][0],
-			     get_G(&phy_vars_eNB->lte_frame_parms,
-				   phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
-				   phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rb_alloc,
-				   get_Qm(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
-				   num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
+			     G,
 			     0,
 			     next_slot);      
 	    for (sect_id=0;sect_id<number_of_cards;sect_id++) {
@@ -2109,7 +2118,7 @@ void process_HARQ_feedback(u8 UE_id,
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
 	    ue_stats->total_transmitted_bits = ue_stats->total_transmitted_bits +
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
-	  
+	    ue_stats->total_DL_TBS_per_harq_pid[dl_harq_pid[m]]+=phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
 	  }
 	  
 	  // Do fine-grain rate-adaptation for DLSCH 

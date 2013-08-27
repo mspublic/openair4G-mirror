@@ -584,14 +584,16 @@ typedef struct {
   //
   unsigned int total_transmitted_bits;
 
+  /// Counter for accumulated bits (per harq pid)
+  int total_DL_TBS_per_harq_pid[8];
   /// Counter for accumulated DL resource-elements (overall)
-  unsigned int total_used_DL_REs;
+  unsigned int total_used_DL_REs[8];
   /// Counter for accumulated DL resource-elements (per HARQ round)
-  unsigned int total_used_DL_REs_per_round[8];
+  unsigned int total_used_DL_REs_per_round[8][8];
   /// Counter for accumulated UL resource-elements (per HARQ round)
-  unsigned int total_used_UL_REs;
+  unsigned int total_used_UL_REs[8];
   /// Counter for accumulated UL resource-elements (per HARQ round)
-  unsigned int total_used_UL_REs_per_round[8];
+  unsigned int total_used_UL_REs_per_round[8][8];
 } LTE_eNB_UE_stats;
 
 typedef struct {
