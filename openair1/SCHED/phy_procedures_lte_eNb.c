@@ -1761,7 +1761,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 	  phy_vars_eNB->eNB_UE_stats[(u8)UE_id].dlsch_sliding_cnt++;
 	  if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->harq_processes[harq_pid]->Ndi == 1) {
-
+		
 	    phy_vars_eNB->eNB_UE_stats[(u32)UE_id].dlsch_trials[0]++;
 	  
 #ifdef OPENAIR2
@@ -1792,6 +1792,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    LOG_T(PHY,"\n");
 #endif
 #endif
+
 	  }
 	  else {
 	    phy_vars_eNB->eNB_UE_stats[(u32)UE_id].dlsch_trials[phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->round]++;	
@@ -2108,7 +2109,16 @@ void process_HARQ_feedback(u8 UE_id,
 		  dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
 #endif
 	    ue_stats->dlsch_ACK[dlsch_harq_proc->round]++;
-
+		//print the spectral efficiency
+		LOG_D(PHY, "[eNB %d] Frame %d, subframe %d, total_used_REs: %d,total_used_REs_per_round 0: %d, 1: %d, total_TBS_per_harq_pid: %d spec_eff: %f\n",
+			  phy_vars_eNB->Mod_id, phy_vars_eNB->frame, subframe,
+			  //phy_vars_eNB->eNB_UE_stats or ue_stats?
+			  phy_vars_eNB->eNB_UE_stats[(u32) UE_id].total_used_DL_REs[dl_harq_pid[m]],
+			  phy_vars_eNB->eNB_UE_stats[(u32) UE_id].total_used_DL_REs_per_round[dl_harq_pid[m]][0],
+			  phy_vars_eNB->eNB_UE_stats[(u32) UE_id].total_used_DL_REs_per_round[dl_harq_pid[m]][1],
+			  ue_stats->total_DL_TBS_per_harq_pid[dl_harq_pid[m]],
+			  (double)ue_stats->total_DL_TBS_per_harq_pid[dl_harq_pid[m]]/phy_vars_eNB->eNB_UE_stats[(u32) UE_id].total_used_DL_REs[dl_harq_pid[m]]);
+	
 	    // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
 	    dlsch_harq_proc->round  = 0;
 	    dlsch_harq_proc->status = SCH_IDLE; 
@@ -2119,6 +2129,7 @@ void process_HARQ_feedback(u8 UE_id,
 	    ue_stats->total_transmitted_bits = ue_stats->total_transmitted_bits +
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
 	    ue_stats->total_DL_TBS_per_harq_pid[dl_harq_pid[m]]+=phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[dl_harq_pid[m]]->TBS;
+	  
 	  }
 	  
 	  // Do fine-grain rate-adaptation for DLSCH 
@@ -2764,7 +2775,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],
 		phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
 	  	  
-	  LOG_I(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",phy_vars_eNB->frame,last_slot>>1,
+	  LOG_I(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:\n",
+		phy_vars_eNB->frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
 	    LOG_T(PHY,"%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->c[0][j]);
@@ -2772,8 +2784,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  
 	  //dump_ulsch(phy_vars_eNB, last_slot>>1, i);
 	  	  
-	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round== phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
-	    LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mdlharq %d reached\n",
+	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round == phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
+	    LOG_N(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mdlharq %d reached\n",
 		  phy_vars_eNB->Mod_id,harq_pid,
 		  phy_vars_eNB->frame,last_slot>>1, i,
 		  phy_vars_eNB->ulsch_eNB[i]->Mdlharq);
@@ -2782,7 +2794,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active=0;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid]++;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]++;
-	    mac_xface->macphy_exit("");
+	    mac_xface->macphy_exit("phy_procedures_lte_eNB: RX");
 	  }
 	
 	  // If we've dropped the UE, go back to PRACH mode for this UE
