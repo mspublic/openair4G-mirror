@@ -397,22 +397,21 @@ void _lolasched_alloc(unsigned char UE_id,LTE_eNB_UE_stats* eNB_UE_stats ,u16* n
   //TVT: I have to allocate the sub_bands as in the pre_processor: rballoc_sub_UE[next_ue][j]
   switch(round)
     {
-    case 0://ceil
+    case 0:
+    case 2:
+    case 4:
+    case 6:
       nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);			
       break;
     case 1:
+    case 3:
+    case 5:
+    case 7:
       nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
       nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
       break;
-    case 2:
-      nb_available_rb[UE_id]=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);	
-      break;
-    case 3:
-      nb_available_rb1=ceil((mac_xface->lte_frame_parms->N_RB_DL)*rho);
-      nb_available_rb[UE_id]=(mac_xface->lte_frame_parms->N_RB_DL)-nb_available_rb1;
-      break;
     }
-  printf("round: %d , UE_id: %u, nb_available_rb: %d \n",round, UE_id,nb_available_rb[UE_id]);
+  LOG_D(MAC,"round: %d , UE_id: %u, nb_available_rb: %d \n",round, UE_id,nb_available_rb[UE_id]);
   if ((mac_xface->lte_frame_parms->N_RB_DL == 25) || (mac_xface->lte_frame_parms->N_RB_DL == 50)){
     if (nb_available_rb[UE_id] % 2){ //TVT: it is odd, then fill the last PRBG
       rballoc_sub_UE[UE_id][N_RBGS-1]=1;
@@ -430,7 +429,7 @@ void _lolasched_alloc(unsigned char UE_id,LTE_eNB_UE_stats* eNB_UE_stats ,u16* n
       j++;
   }
   for(i=0;i<N_RBGS;i++)
-    printf("UE_id: %u , rballoc_sub_UE: %u \n",UE_id,rballoc_sub_UE[UE_id][i]);
+	LOG_D(MAC,"UE_id: %u , rballoc_sub_UE: %u \n",UE_id,rballoc_sub_UE[UE_id][i]);
 		
 }
 
@@ -3467,16 +3466,8 @@ void schedule_ue_spec(unsigned char Mod_id,
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
 
-    /*	//TVT: Here  nb_available_rb gets the value from the pre_processor
-	if(flag_lolasched){
-	//call my function with my new table
-	rnti = find_UE_RNTI(Mod_id,UE_id);
-	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-	_lolasched_alloc(eNB_UE_stats,pre_nb_available_rbs,round,rballoc_sub_UE,mac_xface->lte_frame_parms->N_RBGS);
-
-	}*/
     nb_available_rb = pre_nb_available_rbs[UE_id];
-    printf("UE_id: %d, nb_available_rb after pre: %d \n",UE_id,nb_available_rb);
+    LOG_D(MAC,"UE_id: %d, nb_available_rb after pre: %d \n",UE_id,nb_available_rb);
 
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
       LOG_D(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
