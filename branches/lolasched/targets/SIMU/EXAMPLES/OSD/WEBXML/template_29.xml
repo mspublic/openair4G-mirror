@@ -40,14 +40,14 @@
 	  <NUMBER_OF_NODES>1</NUMBER_OF_NODES> <!-- num UE -->
 	</RANDOM_UE_DISTRIBUTION>
 	<UE_MOBILITY_TYPE>STATIC</UE_MOBILITY_TYPE>
-	<UE_MOVING_DYNAMICS>
+<!--	<UE_MOVING_DYNAMICS>
 	  <MIN_SPEED_mps>0.1</MIN_SPEED_mps>
 	  <MAX_SPEED_mps>20</MAX_SPEED_mps>
 	  <MIN_SLEEP_ms>0.1</MIN_SLEEP_ms>
 	  <MAX_SLEEP_ms>5.0</MAX_SLEEP_ms>
 	  <MIN_JOURNEY_TIME_ms>0.1</MIN_JOURNEY_TIME_ms>
 	  <MAX_JOURNEY_TIME_ms>10</MAX_JOURNEY_TIME_ms>
-	</UE_MOVING_DYNAMICS>
+	</UE_MOVING_DYNAMICS> -->
       </UE_MOBILITY>
       <eNB_MOBILITY>
 	<eNB_INITIAL_DISTRIBUTION>random</eNB_INITIAL_DISTRIBUTION>
@@ -62,17 +62,23 @@
  
   <APPLICATION_CONFIG>
     <!-- DL --> 
-    <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>0</SOURCE_ID> 
-      <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> 
-      <DESTINATION_ID>1</DESTINATION_ID> 
-    </PREDEFINED_TRAFFIC>
+    <CUSTOMIZED_TRAFFIC>  	
+      <SOURCE_ID>0</SOURCE_ID>		
+      <DESTINATION_ID>1</DESTINATION_ID>
+      <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <IDT_MIN_ms>10</IDT_MIN_ms>
+      <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <SIZE_MIN_byte>125</SIZE_MIN_byte>
+    </CUSTOMIZED_TRAFFIC>
     <!-- UL --> 
-    <PREDEFINED_TRAFFIC>
-      <SOURCE_ID>1</SOURCE_ID> 
-      <APPLICATION_TYPE>mcbr</APPLICATION_TYPE> 
-      <DESTINATION_ID>0</DESTINATION_ID> 
-    </PREDEFINED_TRAFFIC>
+    <CUSTOMIZED_TRAFFIC>  	
+      <SOURCE_ID>1</SOURCE_ID>		
+      <DESTINATION_ID>0</DESTINATION_ID>
+      <IDT_DIST>fixed</IDT_DIST>  <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <IDT_MIN_ms>10</IDT_MIN_ms>
+      <SIZE_DIST>fixed</SIZE_DIST> <!-- option: no_customized_traffic, uniform, gaussian, exponential, poisson, fixed, weibull, pareto, gamma, cauchy, log_normal -->
+      <SIZE_MIN_byte>125</SIZE_MIN_byte>
+   </CUSTOMIZED_TRAFFIC>  
   
   </APPLICATION_CONFIG>
   

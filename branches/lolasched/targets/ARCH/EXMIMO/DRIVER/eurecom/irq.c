@@ -35,7 +35,7 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
     unsigned int irqval;
     unsigned int irqcmd = EXMIMO_NOP;
     unsigned long card_id; // = (unsigned long) cookie;
-    unsigned int pcie_control = PCIE_CONTROL1;
+    unsigned int pcie_control = PCIE_CONTROL2;
 
     // check interrupt status register
     //pci_read_config_word(pdev[0],6 , &irqval);
@@ -46,9 +46,9 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
             break;
 
     if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY)
-        pcie_control = PCIE_CONTROL1;
-    else if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS)
-        pcie_control = PCIE_CONTROL2;
+      pcie_control = PCIE_CONTROL1;
+    else
+      pcie_control = PCIE_CONTROL2;
 
     //printk("irq hndl called: card_id=%i, irqval=%i\n", card_id, irqval);
 
@@ -60,30 +60,34 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
     //printk("IRQ handler: ctrl0: %08x, ctrl1: %08x, ctrl2: %08x, status: %08x\n", irqval, ioread32(bar[card_id]+PCIE_CONTROL1), ioread32(bar[card_id]+PCIE_CONTROL2), ioread32(bar[card_id]+PCIE_STATUS));
     
     if ( (irqval & 0x80) == 0 )  {  // CTRL0.bit7 is no set -> IRQ is not from ExMIMO i.e. not for us 
-        if ( irqcmd != EXMIMO_NOP ) {
-            static int hide_warning=0;
-            if (hide_warning == 0) {
-                printk("EXMIMO: Warning: unclear source of IRQ: CTL0.bit7 not set, but cmd!=EXMIMO_NOP. Will now execute irqcmd (card %lu, cmd 0x%X). Will hide all future warnings!\n", card_id, irqcmd);
-                hide_warning = 1;
+        if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS){
+          if (irqcmd != EXMIMO_NOP && irqcmd != EXMIMO_CONTROL2_COOKIE) {          
+            if (irqcmd == GET_FRAME_DONE)
+            {
+              get_frame_done = 1;
             }
+            openair_tasklet.data = card_id; 
+            tasklet_schedule(&openair_tasklet);
+            openair_bh_cnt++;
+            return IRQ_HANDLED;
+          }
+          else
+          {
+            return IRQ_NONE;
+          }
         }
         else
-            return IRQ_NONE;
+          return IRQ_NONE;
     }
-    if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY) {
-        // clear PCIE interrupt bit (bit 7 of register 0x0)
-        if ( (irqval&0x80) != 0)
-            iowrite32(irqval&0xffffff7f,bar[card_id]+PCIE_CONTROL0);
+    else
+    {
+    if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY){
+    // clear PCIE interrupt (bit 7 of register 0x0)
+    iowrite32(irqval&0xffffff7f,bar[card_id]+PCIE_CONTROL0);
     }
-
     if (irqcmd == GET_FRAME_DONE)
     {
         get_frame_done = 1;
-    }
-    else if (irqcmd == PCI_PRINTK)
-    {
-        // TODO: copy printk_buffer into FIFO to allow several consecutive printks and ACK pcie_printk
-        //iowrite32(EXMIMO_NOP, bar[card_id]+pcie_control);
     }
     
     openair_tasklet.data = card_id;
@@ -91,20 +95,21 @@ irqreturn_t openair_irq_handler(int irq, void *cookie)
     openair_bh_cnt++;
 
     return IRQ_HANDLED;
+    }
 }
 
 void openair_do_tasklet (unsigned long card_id)
 {
     int save_irq_cnt = openair_bh_cnt;
     unsigned int irqcmd;
-    unsigned int pcie_control = PCIE_CONTROL1;
+    unsigned int pcie_control = PCIE_CONTROL2;
     openair_bh_cnt = 0;
     
     if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_LEGACY)
-        pcie_control = PCIE_CONTROL1;
-    else if (exmimo_pci_kvirt[card_id].exmimo_id_ptr->board_swrev == BOARD_SWREV_CMDREGISTERS)
-        pcie_control = PCIE_CONTROL2;
-        
+      pcie_control = PCIE_CONTROL1;
+    else
+      pcie_control = PCIE_CONTROL2;
+
     irqcmd = ioread32(bar[card_id]+pcie_control);
     
     if (save_irq_cnt > 1)
@@ -143,7 +148,7 @@ void pcie_printk(int card_id)
     //printk("In pci_fifo_printk : buffer %p, len %d: \n",buffer,len);
     printk("[LEON card%d]: ", card_id);
 
-    if (len<256)
+    if (len<1024)
     {
         if ( (len&3) >0 )
             off=1;
