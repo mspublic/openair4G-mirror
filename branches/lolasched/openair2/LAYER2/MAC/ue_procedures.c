@@ -35,25 +35,34 @@
 
 */
 
+#ifdef EXMIMO
+#include <pthread.h>
+#endif
+
 #include "extern.h"
 #include "defs.h"
 #ifdef PHY_EMUL
-#include "SIMULATION/PHY_EMULATION/impl_defs.h"
+# include "SIMULATION/PHY_EMULATION/impl_defs.h"
 #else
-#include "SCHED/defs.h"
-#include "PHY/impl_defs_top.h"
+# include "SCHED/defs.h"
+# include "PHY/impl_defs_top.h"
 #endif
 #include "PHY_INTERFACE/defs.h"
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
+
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LITE/extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
+
 #ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
+# include "SIMULATION/simulation_defs.h"
 #endif
+#include "pdcp.h"
 
 #define DEBUG_HEADER_PARSING 1
 #define ENABLE_MAC_PAYLOAD_DEBUG
@@ -398,7 +407,6 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 
 void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
 
-  int i;
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
 
   LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d,len %d)\n",Mod_id,frame,BCCH,len);
@@ -958,21 +966,24 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   POWER_HEADROOM_CMD phr;
   POWER_HEADROOM_CMD *phr_p=&phr;
   unsigned short short_padding=0, post_padding=0;
-  int lcid,lcgid;
+  int lcgid;
   int j; // used for padding
   // Compute header length
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_IN);
 
-#ifdef CBA  
+#ifdef CBA
   if (*access_mode==CBA_ACCESS){
-    LOG_D(MAC,"[UE %d] frame %d subframe %d try CBA transmission\n", Mod_id, frame, subframe);
+    LOG_D(MAC,"[UE %d] frame %d subframe %d try CBA transmission\n",
+          Mod_id, frame, subframe);
  //if (UE_mac_inst[Mod_id].scheduling_info.LCID_status[DTCH] == LCID_EMPTY) 
     if (use_cba_access(Mod_id,frame,subframe,eNB_index)==0){
       *access_mode=POSTPONED_ACCESS;
+      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
       return;
     }
-    LOG_D(MAC,"[UE %d] frame %d subframe %d CBA transmission oppurtunity, tbs %d\n", Mod_id, frame, subframe,buflen);
+    LOG_D(MAC,"[UE %d] frame %d subframe %d CBA transmission oppurtunity, tbs %d\n",
+          Mod_id, frame, subframe,buflen);
   }
 #endif
   dcch_header_len=2;//sizeof(SCH_SUBHEADER_SHORT);
@@ -984,14 +995,16 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   phr_ce_len = (UE_mac_inst[Mod_id].PHR_reporting_active == 1) ? 1 /* sizeof(POWER_HEADROOM_CMD)*/: 0;
   if (phr_ce_len > 0){
     phr_len = phr_ce_len + phr_header_len;
-    LOG_D(MAC,"[UE %d] header size info: PHR len %d (ce%d,hdr%d) buff_len %d\n",Mod_id, phr_len, phr_ce_len, phr_header_len, buflen);
+    LOG_D(MAC,"[UE %d] header size info: PHR len %d (ce%d,hdr%d) buff_len %d\n",
+          Mod_id, phr_len, phr_ce_len, phr_header_len, buflen);
   }else
     phr_len=0;
  
   bsr_ce_len = get_bsr_len (Mod_id, buflen-phr_len);
   if (bsr_ce_len > 0 ){
     bsr_len = bsr_ce_len + bsr_header_len;
-    LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (ce%d,hdr%d) buff_len %d\n",Mod_id, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_ce_len, bsr_header_len, buflen);
+    LOG_D(MAC,"[UE %d] header size info: dcch %d, dcch1 %d, dtch %d, bsr (ce%d,hdr%d) buff_len %d\n",
+          Mod_id, dcch_header_len,dcch1_header_len,dtch_header_len, bsr_ce_len, bsr_header_len, buflen);
   } else
     bsr_len = 0;
   
@@ -1005,8 +1018,9 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,RLC_MBMS_NO,
 				    DCCH,
 				    (buflen-dcch_header_len-bsr_len-phr_len));
-    LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
-	  Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dcch_header_len);
+    LOG_D(MAC, "[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to "
+          "send (Transport Block size %d, mac header len %d)\n",
+          Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dcch_header_len);
 
     sdu_lengths[0] += mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,RLC_MBMS_NO,
 				       DCCH,
@@ -1031,8 +1045,9 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
 				    DCCH1,
 				    (buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-sdu_length_total));
 
-    LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH1 -> ULSCH, RRC message has %d bytes to send (Transport Block size %d, mac header len %d)\n",
-	  Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dcch1_header_len);
+    LOG_D(MAC,"[UE %d] Frame %d : UL-DCCH1 -> ULSCH, RRC message has %d bytes to"
+          " send (Transport Block size %d, mac header len %d)\n",
+          Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dcch1_header_len);
 
     sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,RLC_MBMS_NO,
 					     DCCH1,
@@ -1065,7 +1080,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
 				    buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total);
 
     LOG_D(MAC,"[UE %d] Frame %d : UL-DTCH -> ULSCH, %d bytes to send (Transport Block size %d, mac header len %d, BSR byte[DTCH] %d)\n",
-	  Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dtch_header_len,UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH]);
+          Mod_id,frame, rlc_status.bytes_in_buffer,buflen,dtch_header_len,
+          UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[DTCH]);
 
     sdu_lengths[num_sdus] = mac_rlc_data_req(Mod_id+NB_eNB_INST,frame,RLC_MBMS_NO,
 					     DTCH,
@@ -1132,6 +1148,7 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 subframe, u8 eNB_index,u8 *ulsch_buffer,u
   
   if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) == buflen) {
     *access_mode=CANCELED_ACCESS;
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
     return;
   } else if ((buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total) <= 2) {
     short_padding = buflen-bsr_len-phr_len-dcch_header_len-dcch1_header_len-dtch_header_len-sdu_length_total;
@@ -1209,7 +1226,27 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   //if (subframe%5 == 0)
 #ifdef EXMIMO
-  pdcp_run(frame, 0, Mod_id, eNB_index);
+  //pdcp_run(frame, 0, Mod_id, eNB_index);
+  
+  if (pthread_mutex_lock (&pdcp_mutex) != 0) {
+    LOG_E(PDCP,"Cannot lock mutex\n");
+    //return(-1);
+  }
+  else {
+    pdcp_instance_cnt++;
+    pthread_mutex_unlock(&pdcp_mutex);
+        
+    if (pdcp_instance_cnt == 0) {
+      if (pthread_cond_signal(&pdcp_cond) != 0) {
+	LOG_E(PDCP,"pthread_cond_signal unsuccessfull\n");
+	//return(-1);
+      }
+    }
+    else {
+      LOG_W(PDCP,"PDCP thread busy!!! inst_cnt=%d\n",pdcp_instance_cnt);
+    }
+  }
+  
 #endif 
   UE_mac_inst[Mod_id].frame = frame;
   UE_mac_inst[Mod_id].subframe = subframe;
