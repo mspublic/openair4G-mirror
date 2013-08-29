@@ -55,8 +55,8 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
-
-#include "LAYER2/MAC/pre_processor.c"
+//#include "LAYER2/MAC/pre_processor.c"
+#include "pdcp.h"
 
 double snr_mcs[28]={-4.1130, -3.3830, -2.8420, -2.0480, -1.3230, -0.6120, 0.1080, 0.977, 1.7230, 2.7550, 3.1960, 3.8080, 4.6870, 5.6840, 6.6550, 7.7570, 8.3730, 9.3040, 9.5990, 10.9020, 11.7220, 12.5950, 13.4390, 14.8790, 15.8800, 16.4800, 17.8690, 18.7690};
 int cqi_mcs[3][16] = {{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 27},{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 27},{0, 0, 0, 2, 4, 6, 8, 11, 13, 15, 18, 19, 22, 24, 26, 27}};
@@ -1121,7 +1121,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
 
 #if defined(USER_MODE) && defined(OAI_EMU)
     if (oai_emulation.info.opt_enabled)
-      trace_pdu(1, (char *)&eNB_mac_inst[Mod_id].BCCH_pdu.payload[0], bcch_sdu_length,
+      trace_pdu(1, &eNB_mac_inst[Mod_id].BCCH_pdu.payload[0], bcch_sdu_length,
                 0xffff, 4, 0xffff, eNB_mac_inst[Mod_id].subframe, 0, 0);
     LOG_D(OPT,"[eNB %d][BCH] Frame %d trace pdu for rnti %x with size %d\n", 
           Mod_id, frame, 0xffff, bcch_sdu_length);
@@ -1874,7 +1874,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 
 #if defined(USER_MODE) && defined(OAI_EMU)
 	  if (oai_emulation.info.opt_enabled){
-	    trace_pdu(1, (char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)UE_id][0].payload[0],
+	    trace_pdu(1, (uint8_t *)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)UE_id][0].payload[0],
 		      rrc_sdu_length, UE_id, 3, find_UE_RNTI(Mod_id, UE_id),
 		      eNB_mac_inst[Mod_id].subframe,0,0);
 	    LOG_D(OPT,"[eNB %d][DLSCH] Frame %d trace pdu for rnti %x with size %d\n",
@@ -2195,7 +2195,10 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	  mcs = openair_daq_vars.target_ue_ul_mcs;
 	}
 	else { // increment RV
-	  mcs = (round&3) + 28; 
+	  if ((round&3)==0)
+	    mcs = openair_daq_vars.target_ue_ul_mcs; // same as inital transmission
+	  else
+	    mcs = (round&3) + 28; //not correct for round==4! 
 	}
 
 	LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
@@ -2244,10 +2247,11 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	  }
 	  //rb_table_index = 8;
 	  
-	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d)\n",
+	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
 		*first_rb,rb_table[rb_table_index],
-		rb_table_index,mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]));
+		rb_table_index,mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]), 
+		harq_pid);
 	  
 	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 					  *first_rb,
@@ -2299,10 +2303,11 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 
 	} // ndi==1 
 	else { //we schedule a retransmission
-	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE retransmission (mcs %d, first rb %d, nb_rb %d, TBS %d)\n",
+	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE retransmission (mcs %d, first rb %d, nb_rb %d, TBS %d, harq_pid %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
 		*first_rb,eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid],
-		mac_xface->get_TBS_UL(mcs,eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid]));
+		mac_xface->get_TBS_UL(mcs,eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb_ul[harq_pid]),
+		harq_pid);
 	  
 	  rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 					  *first_rb,
@@ -2561,7 +2566,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
   LOG_D(MAC,"*****Check1RBALLOC****: %d%d%d%d (nb_rb %d,N_RBGS %d)\n",
 	rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->lte_frame_parms->N_RBGS);
   while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBGS)){
-    printf("rballoc[%d] %d\n",check,rballoc[check]);
+    //printf("rballoc[%d] %d\n",check,rballoc[check]);
     if(rballoc[check] == 1){
       rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBGS-1)-check));
       switch (mac_xface->lte_frame_parms->N_RB_DL) {
@@ -2584,7 +2589,7 @@ u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
 	break;
       }
     }
-    printf("rb_alloc %x\n",rballoc_dci);
+    //printf("rb_alloc %x\n",rballoc_dci);
     check = check+1;
     //    check1 = check1+2;
   }
@@ -3356,7 +3361,7 @@ void schedule_ue_spec(unsigned char Mod_id,
   u16 i=0,ii=0,tpmi0=1;
   u8 dl_pow_off[NUMBER_OF_UE_MAX];
   unsigned char rballoc_sub_UE[NUMBER_OF_UE_MAX][N_RBGS_MAX];
-  unsigned char rballoc_sub[N_RBGS_MAX];
+//   unsigned char rballoc_sub[N_RBGS_MAX];
   u16 pre_nb_available_rbs[NUMBER_OF_UE_MAX];
   int mcs;
   //u8 number_of_subbands=13;
@@ -3398,7 +3403,7 @@ void schedule_ue_spec(unsigned char Mod_id,
     pre_nb_available_rbs[i] = 0;
     dl_pow_off[i] = 2;
     for(j=0;j<mac_xface->lte_frame_parms->N_RBGS;j++){
-      rballoc_sub[j] = 0;
+//       rballoc_sub[j] = 0;
       rballoc_sub_UE[i][j] = 0;
     }
   }
@@ -4046,9 +4051,9 @@ void schedule_ue_spec(unsigned char Mod_id,
 	//eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
 
 #if defined(USER_MODE) && defined(OAI_EMU)
-	/* Tracing of PDU is done on UE side */
+        /* Tracing of PDU is done on UE side */
 	if (oai_emulation.info.opt_enabled)
-	  trace_pdu(1, (char*)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],
+            trace_pdu(1, (uint8_t *)eNB_mac_inst[Mod_id].DLSCH_pdu[(unsigned char)next_ue][0].payload[0],
 		    TBS, Mod_id, 3, find_UE_RNTI(Mod_id,next_ue),
 		    eNB_mac_inst[Mod_id].subframe,0,0);
 	LOG_D(OPT,"[eNB %d][DLSCH] Frame %d  rnti %x  with size %d\n", 
@@ -4294,7 +4299,27 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   //if (subframe%5 == 0)
 #ifdef EXMIMO 
-  pdcp_run(frame, 1, 0, Mod_id);
+  //pdcp_run(frame, 1, 0, Mod_id);
+ 
+  if (pthread_mutex_lock (&pdcp_mutex) != 0) {
+    LOG_E(PDCP,"Cannot lock mutex\n");
+    //return(-1);
+  }
+  else {
+    pdcp_instance_cnt++;
+    pthread_mutex_unlock(&pdcp_mutex);
+        
+    if (pdcp_instance_cnt == 0) {
+      if (pthread_cond_signal(&pdcp_cond) != 0) {
+	LOG_E(PDCP,"pthread_cond_signal unsuccessfull\n");
+	//return(-1);
+      }
+    }
+    else {
+      LOG_W(PDCP,"PDCP thread busy!!! inst_cnt=%d\n",pdcp_instance_cnt);
+    }
+  }
+  
 #endif
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, 0);
