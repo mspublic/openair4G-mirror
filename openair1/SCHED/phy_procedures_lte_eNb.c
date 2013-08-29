@@ -2794,7 +2794,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active=0;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid]++;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]++;
-	    mac_xface->macphy_exit("phy_procedures_lte_eNB: RX");
+	    //	    mac_xface->macphy_exit("phy_procedures_lte_eNB: RX");
 	  }
 	
 	  // If we've dropped the UE, go back to PRACH mode for this UE
