@@ -390,9 +390,9 @@ void _lolasched_alloc(unsigned char UE_id,LTE_eNB_UE_stats* eNB_UE_stats ,u16* n
   LOG_D(MAC,"mac_xface->lte_frame_parms->N_RB_DL: %d, min_rb_unit: %d \n",mac_xface->lte_frame_parms->N_RB_DL,min_rb_unit);
   //TVT: choose the mcs and rho depending on the cqi (construct the proper table)
   // I assume that i have snr_1 for SNR clean and snr_2 for SNR dirty, that will give me rho[snr_1][snr_2]
-  eNB_UE_stats->dlsch_mcs1 = 14;
+  eNB_UE_stats->dlsch_mcs1 = 4;
   LOG_D(MAC,"eNB_UE_stats->dlsch_mcs1 = %d\n", eNB_UE_stats->dlsch_mcs1);
-  rho=0.16;
+  rho=0.6;
 	
   //TVT: I have to allocate the sub_bands as in the pre_processor: rballoc_sub_UE[next_ue][j]
   switch(round)
