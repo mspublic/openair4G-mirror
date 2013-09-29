@@ -31,14 +31,7 @@
 #ifdef JUMBO_FRAME
 #    define MAX_IP_PACKET_SIZE         9000
 #else
-# if defined(OAI_NW_DRIVER_TYPE_ETHERNET)
-/* SR: When using ethernet network driver the packet size is 1512 :
- * 1500 bytes IP packet + 12 bytes ethernet header
- */
-#   define MAX_IP_PACKET_SIZE          1512
-# else
-#   define MAX_IP_PACKET_SIZE          1500 // 3000
-# endif
+#    define MAX_IP_PACKET_SIZE         1500
 #endif
 // overwrite the previous deinitions
 

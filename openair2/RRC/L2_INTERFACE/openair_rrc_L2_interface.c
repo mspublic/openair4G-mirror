@@ -1,40 +1,9 @@
-/*******************************************************************************
+/*________________________openair_rrc_L2_interface.c________________________
 
-  Eurecom OpenAirInterface 2
-  Copyright(c) 1999 - 2010 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
-/*! \file l2_interface.c
-* \brief layer 2 interface 
-* \author Raymond Knopp and Navid Nikaein 
-* \date 2011
-* \version 1.0 
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr 
-*/ 
+ Authors : Hicham Anouar
+ Company : EURECOM
+ Emails  : anouar@eurecom.fr
+________________________________________________________________*/
 
 #ifdef USER_MODE
 #include <fcntl.h>
@@ -87,20 +56,22 @@
 #include "openair_rrc_L2_interface.h"
  
 /********************************************************************************************************************/
-s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index, u8 mbsfn_sync_area){
+s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
   return(rrc_L2_data_req_rx(Mod_id,Srb_id,Nb_tb,Buffer,eNB_index));
 #else 
-  return(mac_rrc_lite_data_req(Mod_id,frame,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index,mbsfn_sync_area));
+  return(mac_rrc_lite_data_req(Mod_id,frame,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index));
 #endif //CELLULAR
 }   
    
-s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index,u8 mbsfn_sync_area){ 
+/********************************************************************************************************************/
+s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
+/********************************************************************************************************************/
 #ifdef CELLULAR
   return(rrc_L2_mac_data_ind_rx(Mod_id, Srb_id, Sdu, Sdu_len, eNB_index));
 #else 
-  return(mac_rrc_lite_data_ind(Mod_id,frame,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index,mbsfn_sync_area));
+  return(mac_rrc_lite_data_ind(Mod_id,frame,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index));
 #endif //CELLULAR
 }
 
@@ -182,7 +153,7 @@ char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
 #ifdef CELLULAR
   return (rrc_L2_ue_init(Mod_id,eNB_index));
 #else 
-  return openair_rrc_lite_ue_init(Mod_id, eNB_index);
+  openair_rrc_lite_ue_init(Mod_id, eNB_index);
 #endif //CELLULAR
 }
 
@@ -192,6 +163,6 @@ char openair_rrc_eNB_init(u8 Mod_id){
 #ifdef CELLULAR
  return( rrc_L2_eNB_init(Mod_id));
 #else 
-  return openair_rrc_lite_eNB_init(Mod_id);
+  openair_rrc_lite_eNB_init(Mod_id);
 #endif //CELLULAR
 }

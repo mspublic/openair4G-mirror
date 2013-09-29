@@ -31,7 +31,6 @@
 * \author Raymond Knopp, Navid Nikaein
 * \date 2011
 * \version 0.5
-* \email navid.nikaein@eurecom.fr
 * @ingroup _mac
 
 */
@@ -87,8 +86,8 @@
 
 
 #define MCCH 4 // MCCH
-#define MTCH 1 // MTCH
 
+#define MTCH 5 // MTCH
 #ifdef Rel10
 
 // Mask for identifying subframe for MBMS 
@@ -108,7 +107,7 @@
 #define MAX_PMCH_perMBSFN 15
 
 #define MCCH_PAYLOAD_SIZE_MAX 128
-//#define MCH_PAYLOAD_SIZE_MAX 16384// this value is using in case mcs and TBS index are high
+#define MCH_PAYLOAD_SIZE_MAX 1024
 #endif
 
 #ifdef USER_MODE
@@ -297,10 +296,6 @@ typedef struct {
   s8 payload[SCH_PAYLOAD_SIZE_MAX];         
   u16 Pdu_size;
   uint8_t mcs;
-  uint8_t sync_area;
-  uint8_t msi_active;
-  uint8_t mcch_active;
-  uint8_t mtch_active;  
 } __attribute__ ((__packed__)) MCH_PDU;
 
 /*! \brief Uplink SCH PDU Structure
@@ -611,27 +606,21 @@ typedef struct{
   u8 bcch_active;
   /// MBSFN SubframeConfig
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
-  /// number of subframe allocation pattern available for MBSFN sync area 
-  u8 num_sf_allocation_pattern;
 #ifdef Rel10 
   /// MBMS Flag
   u8 MBMS_flag;
   /// Outgoing MCCH pdu for PHY
   MCCH_PDU MCCH_pdu;
   /// MCCH active flag
-  u8 msi_active;
-  /// MCCH active flag
   u8 mcch_active;
-  /// MTCH active flag
-  u8 mtch_active;
-  /// number of active MBSFN area 
-  u8 num_active_mbsfn_area;
   /// MBSFN Area Info
   struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+
   /// PMCH Config
   struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
   /// MBMS session info list
   struct MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
+
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
 #endif
@@ -776,11 +765,8 @@ typedef struct{
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
   /// MBSFN_Subframe Configuration
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
-  /// number of subframe allocation pattern available for MBSFN sync area 
-  u8 num_sf_allocation_pattern;
+
 #ifdef Rel10
- /// number of active MBSFN area 
-  u8 num_active_mbsfn_area;
   /// MBSFN Area Info
   struct  MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
   /// PMCH Config
@@ -903,20 +889,6 @@ void schedule_SI(u8 Mod_id,u32 frame,u8 *nprb,unsigned int *nCCE);
 */
 int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe);
 
-/** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
-@param Mod_id Instance ID of eNB
-@param mbsfn_sync_area index of mbsfn sync area
-@param[out] index of sf pattern 
-*/
-s8 get_mbsfn_sf_alloction (unsigned char Mod_id, u8 mbsfn_sync_area);
-
-/** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
-@param Mod_id Instance ID of eNB
-@param mbsfn_sync_area index of mbsfn sync area
-@param eNB_index index of eNB
-@param[out] index of sf pattern 
-*/
-s8 ue_get_mbsfn_sf_alloction (unsigned char Mod_id, u8 mbsfn_sync_area, unsigned char eNB_index);
 
 /** \brief top ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
@@ -987,7 +959,7 @@ s8 get_deltaP_rampup(u8 Mod_id);
 
 void chbch_phy_sync_success(u8 Mod_id,u32 frame,u8 CH_index);
 
-void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 free_eNB_index);
+void mrbch_phy_sync_failure(u8 Mod_id, u32 frame,u8 Free_ch_index);
 
 int mac_top_init(int eMBMS_active, u8 cba_group_active);
 
@@ -1164,7 +1136,7 @@ u32 ue_get_SR(u8 Mod_id, u32 frame, u8 eNB_id,u16 rnti,u8 subframe);
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
-void mac_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index);
+void out_of_sync_ind(u8 Mod_id, u32 frame, u16);
 
 void ue_decode_si(u8 Mod_id, u32 frame, u8 CH_index, void *pdu, u16 len);
 
@@ -1179,19 +1151,15 @@ void ue_send_sdu(u8 Mod_id, u32 frame, u8 *sdu,u16 sdu_len,u8 CH_index);
 @param sdu Pointer to transport block
 @param sdu_len Length of transport block
 @param eNB_index Index of attached eNB
-@param sync_area the index of MBSFN sync area
 */
-void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index,u8 sync_area) ;
+void ue_send_mch_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) ;
 
 /*\brief Function to check if UE PHY needs to decode MCH for MAC.
 @param Mod_id Index of protocol instance
 @param frame Index of frame
 @param subframe Index of subframe
-@param eNB_index index of eNB for this MCH
-@param[out] sync_area return the sync area
-@param[out] mcch_active flag indicating whether this MCCH is active in this SF
 */
-int ue_query_mch(uint8_t Mod_id,uint32_t frame,uint32_t subframe, uint8_t eNB_index, uint8_t *sync_area, uint8_t *mcch_active);
+int ue_query_mch(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 
 #endif
 

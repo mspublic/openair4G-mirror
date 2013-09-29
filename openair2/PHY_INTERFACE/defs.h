@@ -57,11 +57,11 @@
 typedef struct
   {
     /// Pointer function that initializes L2
-    int (*macphy_init)(int eMBMS_active, u8 CBA_enabled);
+    void (*macphy_init)(int eMBMS_active, u8 CBA_enabled);
 
     /// Pointer function that stops the low-level scheduler due an exit condition        
-    void (*macphy_exit)(const char *);
-
+    void (*macphy_exit)(const char *);          
+    
     // eNB functions
     /// Invoke dlsch/ulsch scheduling procedure for new subframe
     void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u32 frame, u8 subframe);//, int calibration_flag);
@@ -88,7 +88,7 @@ typedef struct
     void (*rx_sdu)(u8 Mod_id,u32 frame,u16 rnti, u8 *sdu,u16 sdu_len);
 
     /// Indicate failure to synch to external source
-    void (*mrbch_phy_sync_failure) (u8 Mod_id,u32 frame, u8 free_eNB_index);
+    void (*mrbch_phy_sync_failure) (u8 Mod_id,u32 frame, u8 Free_ch_index);
 
     /// Indicate Scheduling Request from UE
     void (*SR_indication)(u8 Mod_id,u32 frame,u16 rnti,u8 subframe);
@@ -126,8 +126,8 @@ typedef struct
 
     // UE functions
 
-    /// Indicate loss of synchronization of PBCH for this eNB to MAC layer
-    void (*out_of_sync_ind)(u8 Mod_id,u32 frame,u16 eNB_index);
+    /// Indicate loss of synchronization of PBCH
+    void (*out_of_sync_ind)(u8 Mod_id,u32 frame,u16);
 
     ///  Send a received SI sdu
     void (*ue_decode_si)(u8 Mod_id,u32 frame, u8 CH_index, void *pdu, u16 len);
@@ -137,11 +137,11 @@ typedef struct
 
 #ifdef Rel10
     /// Send a received MCH sdu to MAC
-    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index,u8 sync_area);
+    void (*ue_send_mch_sdu)(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 CH_index);
 
     /// Function to check if UE PHY needs to decode MCH for MAC
-    /// get the sync area id, and teturn MCS value if need to decode, otherwise -1
-    int (*ue_query_mch)(uint8_t Mod_id,uint32_t frame,uint32_t subframe,uint8_t eNB_index,uint8_t *sync_area, uint8_t *mcch_active);
+    /// Return MCS value if need to decode, otherwise -1
+    int (*ue_query_mch)(uint8_t Mod_id,uint32_t frame,uint32_t subframe);
 #endif
 
   /// Retrieve ULSCH sdu from MAC
@@ -219,13 +219,13 @@ typedef struct
     u16 (*get_nCCE_max)(u8 Mod_id);
 
     /// Function to retrieve number of PRB in an rb_alloc
-    u32 (*get_nb_rb)(u8 ra_header, u32 rb_alloc, int n_rb_dl);
+    u16 (*get_nb_rb)(u8 ra_header,u32 rb_alloc);
 
     /// Function to retrieve transmission mode for UE
     u8 (*get_transmission_mode)(u16 Mod_id,u16 rnti);
 
     /// Function to retrieve rb_alloc bitmap from dci rballoc field and VRB type
-    u32 (*get_rballoc)(u8 vrb_type, u16 rb_alloc_dci);
+    u32 (*get_rballoc)(u8 vrb_type,u8 rb_alloc_dci);
 
     /// Function for UE MAC to retrieve current PHY connectivity mode (PRACH,RA_RESPONSE,PUSCH)
     UE_MODE_t (*get_ue_mode)(u8 Mod_id,u8 eNB_index);

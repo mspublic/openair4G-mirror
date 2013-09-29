@@ -28,6 +28,8 @@ RRM_VARS *rrm_config;
 
 rrc_rg_mbms_variables * volatile p_rg_mbms; /** pointer reference to protocol_bs->rrc.mbms */
 
+
+
 int rrc_release_all_ressources;
-int rrc_ethernet_id;
+
 #endif

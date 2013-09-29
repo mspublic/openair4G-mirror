@@ -29,7 +29,7 @@
 
 /*! \file l2_interface.c
 * \brief layer 2 interface 
-* \author Raymond Knopp and Navid Nikaein 
+* \author Raymond Knopp 
 * \date 2011
 * \version 1.0 
 * \company Eurecom
@@ -53,9 +53,10 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
-#define DEBUG_RRC
+//#define DEBUG_RRC
 
 u32 mui=0;
+//---------------------------------------------------------------------------------------------//
 
 s8 mac_rrc_lite_data_req( u8 Mod_id,
 			  u32 frame,
@@ -63,15 +64,16 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 			  u8 Nb_tb,
 			  char *Buffer,
 			  u8 eNB_flag,
-			  u8 eNB_index,
-			  u8 mbsfn_sync_area){
+			  u8 eNB_index){
+  //------------------------------------------------------------------------------------------------------------------//
+
 
   SRB_INFO *Srb_info;
   u8 Sdu_size=0;
 
 #ifdef DEBUG_RRC
   int i;
-  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
+  LOG_T(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
 #endif
 
   if( eNB_flag == 1){
@@ -132,24 +134,21 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
 
 #ifdef Rel10
     if((Srb_id & RAB_OFFSET) == MCCH){
-      if(eNB_rrc_inst[Mod_id].MCCH_MESS[mbsfn_sync_area].Active==0) return 0; // this parameter is set in function init_mcch in rrc_eNB.c                                                                              
-      // this part not needed as it is done in init_mcch 
-      /*     if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area] == 255) {
+      if(eNB_rrc_inst[Mod_id].MCCH_MESS.Active==0) return 0; // this parameter is set in function init_mcch in rrc_eNB.c                                                                              
+      if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE == 255) {
 	LOG_E(RRC,"[eNB %d] MAC Request for MCCH MESSAGE and MCCH MESSAGE is not initialized\n",Mod_id);
 	mac_xface->macphy_exit("");
-	}*/
-      memcpy(&Buffer[0],
-	     eNB_rrc_inst[Mod_id].MCCH_MESSAGE[mbsfn_sync_area],
-	     eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+      }
+      memcpy(&Buffer[0],eNB_rrc_inst[Mod_id].MCCH_MESSAGE,eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
       
 #ifdef DEBUG_RRC
       LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_id,frame);
-      for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area];i++)
+      for (i=0;i<eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE;i++)
 	LOG_T(RRC,"%x.",Buffer[i]);
       LOG_T(RRC,"\n");
 #endif
       
-      return (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+      return (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE);
       //      }
       //else
       //return(0);
@@ -178,16 +177,26 @@ s8 mac_rrc_lite_data_req( u8 Mod_id,
   return(0);
 }
 
-s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_len,u8 eNB_flag,u8 eNB_index,u8 mbsfn_sync_area){
+//--------------------------------------------------------------------------------------------//
+s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_len,u8 eNB_flag,u8 eNB_index ){
+  //------------------------------------------------------------------------------------------//
 
   SRB_INFO *Srb_info;
   int si_window;
 
+#ifdef DEBUG_RRC
+  if (Srb_id == BCCH)
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index);
+  else
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index);
+#endif
+
   if(eNB_flag == 0){
 
+    //LOG_D(RRC,"[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
+
     if(Srb_id == BCCH){
-      
-      LOG_T(RRC,"[UE %d] Received SDU for BCCH on SRB %d from eNB %d\n",Mod_id,Srb_id,eNB_index);
+
       decode_BCCH_DLSCH_Message(Mod_id,frame,eNB_index,Sdu,Sdu_len);
       /*
       if ((frame %2) == 0) {
@@ -236,7 +245,6 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[eNB_index];
       
       if (Sdu_len>0) {
-	LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %d from eNB %d\n",Mod_id,Srb_id & RAB_OFFSET,eNB_index);
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.payload_size = Sdu_len;
 	rrc_ue_decode_ccch(Mod_id,frame,Srb_info,eNB_index);
@@ -245,19 +253,16 @@ s8 mac_rrc_lite_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, char *Sdu, u16 Sdu_le
       
 #ifdef Rel10
     if ((Srb_id & RAB_OFFSET) == MCCH) {
-      LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
-	    Mod_id,frame, mbsfn_sync_area, Srb_id & RAB_OFFSET,eNB_index);
-      decode_MCCH_Message(Mod_id, frame, eNB_index, Sdu, Sdu_len,mbsfn_sync_area);
+
+       decode_MCCH_Message(Mod_id, frame, eNB_index, Sdu, Sdu_len);
     }
 #endif // Rel10
 
   }
 
   else{  // This is an eNB
-    LOG_T(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",Mod_id,Srb_info->Srb_id);
-    
     Srb_info = &eNB_rrc_inst[Mod_id].Srb0;
-    //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
+    //    msg("\n***********************************INST %d Srb_info %p, Srb_id=%d**********************************\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     memcpy(Srb_info->Rx_buffer.Payload,Sdu,6);
     rrc_eNB_decode_ccch(Mod_id,frame,Srb_info);
  }
@@ -271,16 +276,15 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 //-------------------------------------------------------------------------------------------//
 }
 
-// this function is Not USED anymore
+//------------------------------------------------------------------------------------------------------------------//
 void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag,u32 Srb_id, u32 sdu_size,u8 *Buffer){
+    //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/NB_RB_MAX;
   u8 DCCH_index = Srb_id % NB_RB_MAX;
 
-  LOG_N(RRC,"[%s %d] Frame %d: received a DCCH %d message on SRB %d with Size %d (Deprecated function)\n",
-	(eNB_flag == 1)? "eNB": "UE", 
-	(eNB_flag == 1)? Mod_id : UE_index, 
-	frame, DCCH_index,Srb_id-1,sdu_size);
+  LOG_D(RRC,"[SRB %d]RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",
+	Srb_id-1, DCCH_index,UE_index,sdu_size);
   if (eNB_flag ==1)
     rrc_eNB_decode_dcch(Mod_id,frame,DCCH_index,UE_index,Buffer,sdu_size);
   else
@@ -294,13 +298,15 @@ void rrc_lite_in_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index) {
   if (UE_rrc_inst[Mod_id].Info[eNB_index].T310_active==1)
     UE_rrc_inst[Mod_id].Info[eNB_index].N311_cnt++;
 }
+/*-------------------------------------------------------------------------------------------*/
 void rrc_lite_out_of_sync_ind(u8  Mod_id, u32 frame, u16 eNB_index){
+/*-------------------------------------------------------------------------------------------*/
+
 
 //  rlc_info_t rlc_infoP;
 //  rlc_infoP.rlc_mode=RLC_UM;
 
-  LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 %d, N310 %d, N311 %d)\n ",
-	Mod_id,frame,eNB_index,
+  LOG_D(RRC,"[UE %d] Frame %d OUT OF SYNC FROM CH %d (T310 %d, N310 %d, N311 %d)\n ",Mod_id,frame,eNB_index,
 	UE_rrc_inst[Mod_id].Info[eNB_index].T310_cnt,
 	UE_rrc_inst[Mod_id].Info[eNB_index].N310_cnt,
 	UE_rrc_inst[Mod_id].Info[eNB_index].N311_cnt);
@@ -320,5 +326,4 @@ int mac_get_rrc_lite_status(u8 Mod_id,u8 eNB_flag,u8 index){
 int mac_ue_ccch_success_ind(u8 Mod_id, u8 eNB_index) {
   // reset the tx buffer to indicate RRC that ccch was successfully transmitted (for example if contention resolution succeeds)
   UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size=0;
-  return 0;
 }

@@ -1,11 +1,4 @@
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <signal.h>
 #include <execinfo.h>
-#include <time.h>
-
-#include <sys/timerfd.h>
 
 #include "oaisim_functions.h"
 
@@ -15,17 +8,12 @@
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp_primitives.h"
 #include "RRC/LITE/extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "PHY_INTERFACE/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "SCHED/extern.h"
-#include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "UTIL/OTG/otg_config.h"
-
-#include "cor_SF_sim.h"
 
 #ifdef SMBV
 extern u8 config_smbv;
@@ -74,7 +62,7 @@ int td, td_avg, sleep_time_us;
 // omv related info
 //pid_t omv_pid;
 char full_name[200];
-extern int pfd[2]; // fd for omv : fixme: this could be a local var
+int pfd[2]; // fd for omv : fixme: this could be a local var
 char fdstr[10];
 char frames[10];
 char num_enb[10];
@@ -97,7 +85,7 @@ extern channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
 extern mapping small_scale_names[];
 extern pdcp_mbms_t pdcp_mbms_array[MAX_MODULES][16*29];
-//extern int eMBMS_active;
+extern int eMBMS_active;
 
 extern void help (void);
 
@@ -110,7 +98,8 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:j:k:L:l:m:M:n:N:oO:p:P:Q:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:l:m:M:n:N:O:p:P:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
+
     switch (c) {
     case 0:
       if (! strcmp(long_options[option_index].name, "pdcp_period")) {
@@ -140,9 +129,7 @@ void get_simulation_options(int argc, char *argv[]) {
       }
       break;
     case 'Q':
-      //eMBMS_active=1;
-      // 0 : not used (default), 1: eMBMS and RRC enabled, 2: eMBMS relaying and RRC enabled, 3: eMBMS enabled, RRC disabled, 4: eMBMS relaying enabled, RRC disabled 
-      oai_emulation.info.eMBMS_active_state = atoi (optarg); 
+      eMBMS_active=1;
       break;
     case 'R':
       oai_emulation.info.N_RB_DL = atoi (optarg);
@@ -195,10 +182,6 @@ void get_simulation_options(int argc, char *argv[]) {
       sinr_dB = atoi (optarg);
       set_sinr = 1;
       oai_emulation.info.ocm_enabled=0;
-      break;
-    case 'j' :
-      // number of relay nodes: currently only applicable to eMBMS
-      oai_emulation.info.nb_rn_local = atoi (optarg);
       break;
     case 'J':
       ue_connection_test=1;
@@ -360,9 +343,6 @@ void get_simulation_options(int argc, char *argv[]) {
       printf("You enabled MME mode without MME support...\n");
 #endif
       break;
-    case 'o':
-      oai_emulation.info.slot_isr = 1;
-      break;
     default:
       help ();
       exit (-1);
@@ -376,20 +356,16 @@ void check_and_adjust_params() {
   s32 ret;
   int i,j;
 
-  if (oai_emulation.info.nb_ue_local  + oai_emulation.info.nb_rn_local > NUMBER_OF_UE_MAX) {
-    LOG_E(EMU,"Enter fewer than %d UEs/RNs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
-    exit(EXIT_FAILURE);
+  if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
+    LOG_E(EMU,"Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
+    exit (-1);
   }
 
-  if (oai_emulation.info.nb_enb_local + oai_emulation.info.nb_rn_local > NUMBER_OF_eNB_MAX) {
-    LOG_E(EMU,"Enter fewer than %d eNBs/RNs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
-    exit(EXIT_FAILURE);
+  if (oai_emulation.info.nb_enb_local > NUMBER_OF_eNB_MAX) {
+    LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
+    exit (-1);
   }
- 
-  if (oai_emulation.info.nb_rn_local > NUMBER_OF_RN_MAX) {
-    LOG_E(EMU,"Enter fewer than %d RNs for the moment or change the NUMBER_OF_RN_MAX\n", NUMBER_OF_RN_MAX);
-    exit(EXIT_FAILURE);
-  }
+
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
@@ -401,16 +377,15 @@ void check_and_adjust_params() {
 
   // setup netdevice interface (netlink socket)
   LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
-  ret = netlink_init();
+  ret = netlink_init ();
   if (ret < 0)
     LOG_E(EMU,"[INIT] Netlink not available, careful ...\n");
 
-  
+
   if (ethernet_flag == 1) {
-    oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_rn_local;
-    oai_emulation.info.master[oai_emulation.info.master_id].nb_enb = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_rn_local;
-    if (oai_emulation.info.nb_rn_local>0)
-      LOG_N(EMU,"Ethernet emulation is not yet tested with the relay nodes\n");
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_enb = oai_emulation.info.nb_enb_local;
+
     if (!oai_emulation.info.master_id)
       oai_emulation.info.is_primary_master = 1;
     j = 1;
@@ -429,30 +404,9 @@ void check_and_adjust_params() {
     }
   } // ethernet flag
 
-  // 
+
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
-  NB_RN_INST = oai_emulation.info.nb_rn_local + oai_emulation.info.nb_rn_remote;
-
-  if (NB_RN_INST > 0 ) {
-    LOG_N(EMU,"Total number of RN %d (local %d, remote %d) mobility (the same as eNB) %s  \n", NB_RN_INST,oai_emulation.info.nb_rn_local,oai_emulation.info.nb_rn_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
-    
-    LOG_N(EMU,"Adjust the number of eNB inst (%d->%d) and UE inst (%d->%d)\n ", 
-	  NB_eNB_INST, NB_eNB_INST+NB_RN_INST,
-	  NB_UE_INST, NB_UE_INST+NB_RN_INST);
-    NB_eNB_INST+=NB_RN_INST;
-    NB_UE_INST+=NB_RN_INST;
-  }
-  LOG_I(EMU,"Total number of UE %d (local %d, remote %d, relay %d) mobility %s \n", 
-	NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, 
-	NB_RN_INST,
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
-  
-  LOG_I(EMU,"Total number of eNB %d (local %d, remote %d, relay %d) mobility %s \n", 
-	NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, 
-	NB_RN_INST,
-	oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
-
 }
 
 void init_omv() {
@@ -468,9 +422,9 @@ void init_omv() {
     case -1 :
       perror("fork failed \n");
       break;
-      case 0 : // child is going to be the omv, it is the reader 
-      if(close(pfd[1]) == -1 ) // we close the write desc.
-      perror("close on write\n" );
+    case 0 : /* child is going to be the omv, it is the reader */
+      if(close(pfd[1]) == -1 ) /* we close the write desc. */
+        perror("close on write\n" );
       sprintf(fdstr, "%d", pfd[0] );
       sprintf(num_enb, "%d", NB_eNB_INST);
       sprintf(num_ue, "%d", NB_UE_INST);
@@ -481,12 +435,12 @@ void init_omv() {
       sprintf(nb_antenna, "%d", 4);
       sprintf(frame_type, "%s", (oai_emulation.info.frame_type == 0) ? "FDD" : "TDD");
       sprintf(tdd_config, "%d", oai_emulation.info.tdd_config);
-// execl is used to launch the visualisor 
+      /* execl is used to launch the visualisor */
       execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, nb_antenna, frame_type, tdd_config,NULL );
       perror( "error in execl the OMV" );
     }
     //parent
-if(close( pfd[0] ) == -1 ) // we close the write desc. 
+    if(close( pfd[0] ) == -1 ) /* we close the write desc. */
       perror("close on read\n" );
   }
 }
@@ -508,7 +462,7 @@ void init_openair1() {
   s32 UE_id, eNB_id;
 
   // change the nb_connected_eNB
-  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag,nb_antennas_rx, oai_emulation.info.eMBMS_active_state);
+  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag,nb_antennas_rx);
 
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
       for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
@@ -565,7 +519,7 @@ void init_openair2() {
 #ifdef OPENAIR2
   s32 i;
   s32 UE_id;
-  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,oai_emulation.info.eMBMS_active_state, oai_emulation.info.cba_group_active);
+  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,eMBMS_active, oai_emulation.info.cba_group_active);
   printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
   printf ("after L2 init: frame_type %d,tdd_config %d\n",
           PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
@@ -586,15 +540,14 @@ void init_openair2() {
 void init_ocm() {
   s32 UE_id, eNB_id;
   /* Added for PHY abstraction */
-  LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n", oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
-
- if (abstraction_flag) {
-    
+  if (abstraction_flag) {
+    if (0) { //the values of beta and awgn tables are hard coded in PHY/vars.h
     get_beta_map();
 #ifdef PHY_ABSTRACTION_UL
     get_beta_map_up();
 #endif
     get_MIESM_param();
+  }
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -728,21 +681,16 @@ void update_ocm() {
   if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
     //LOG_D(OMG," extracting position of eNb...\n");
     extract_position(enb_node_list, enb_data, NB_eNB_INST);
-    //extract_position_fixed_enb(enb_data, NB_eNB_INST,frame);
     //LOG_D(OMG," extracting position of UE...\n");
     //      if (oai_emulation.info.omg_model_ue == TRACE)
     extract_position(ue_node_list, ue_data, NB_UE_INST);
-        
-    /* if (frame % 50 == 0)
-      LOG_N(OCM,"Path loss for TTI %d : \n", frame); 
-    */
+
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
       for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
         calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
         //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
         UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	//    if (frame % 50 == 0)
-	LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+        LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
               eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
               eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
       }
@@ -762,7 +710,7 @@ void update_ocm() {
           eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
           UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
         }
-	LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+        LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
               PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
         //      printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
       }
@@ -774,7 +722,7 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ) {
 
-    int dst_id, app_id;
+    int dst_id;
     Packet_otg_elt *otg_pkt;
     
 
@@ -782,99 +730,58 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
       for_times += 1;
       // generate traffic if the ue is rrc reconfigured state
       if (mac_get_rrc_status(module_id, 1/*eNB_flag*/, dst_id) > 2 /*RRC_CONNECTED*/ ) {
-        
-	for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++){
-	  otg_pkt = malloc (sizeof(Packet_otg_elt));
-	  if_times += 1;
-	  
-	  (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(module_id, dst_id + NB_eNB_INST, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
-	  
-	  if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-	    otg_times += 1;
-	    (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH; // app could be binded to a given DRB
-	    (otg_pkt->otg_pkt).module_id = module_id;
-	    (otg_pkt->otg_pkt).dst_id = dst_id;
-	    (otg_pkt->otg_pkt).is_ue = 0;
-	    (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
-	    //Adding the packet to the OTG-PDCP buffer
-	    pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-	    LOG_I(EMU, "[eNB %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d for app id %d \n", 
-		  (otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id, app_id);
-	  } else {
-	    //LOG_I(EMU, "OTG returns null \n");
-	    free(otg_pkt);
-	    otg_pkt=NULL;
-	  }
-	}
-	//LOG_T(EMU,"[eNB %d] UE mod id %d is not connected\n", module_id, dst_id);
-	//LOG_I(EMU,"HEAD of otg_pdcp_buffer[%d] is %p\n", module_id, pkt_list_get_head(&(otg_pdcp_buffer[module_id])));
-	
+        otg_pkt = malloc (sizeof(Packet_otg_elt));
+        if_times += 1;
+
+        (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(module_id, dst_id + NB_eNB_INST, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+
+        if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+          otg_times += 1;
+          (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH;
+          (otg_pkt->otg_pkt).module_id = module_id;
+          (otg_pkt->otg_pkt).dst_id = dst_id;
+          (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
+          //Adding the packet to the OTG-PDCP buffer
+          pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
+          LOG_I(EMU, "[eNB %d] ADD pkt to OTG buffer for dst %d on rb_id %d\n", (otg_pkt->otg_pkt).module_id, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
+        } else {
+          //LOG_I(EMU, "OTG returns null \n");
+          free(otg_pkt);
+          otg_pkt=NULL;
+        }
       }
+      LOG_T(EMU,"[eNB %d] UE mod id %d is not connected\n", module_id, dst_id);
+      //LOG_I(EMU,"HEAD of otg_pdcp_buffer[%d] is %p\n", module_id, pkt_list_get_head(&(otg_pdcp_buffer[module_id])));
     }
 
 #ifdef Rel10
     int service_id, session_id, rb_id;
-    // MBSM multicast traffic 
-    // if (frame >= 50) {// only generate when UE can receive MTCH (need to control this value)
-      for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
-	for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
-	  //   LOG_I(OTG,"DUY:frame %d, pdcp_mbms_array[module_id][rb_id].instanciated_instance is %d\n",frame,pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance);
-	  if (pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance == module_id + 1){ // this service/session is configured
-	    
-	    otg_pkt = malloc (sizeof(Packet_otg_elt));
-	    // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d, rb_id %d)\n", service_id, session_id, service_id*maxSessionPerPMCH + session_id);
-	    rb_id = pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].rb_id;
-	    (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen_multicast(module_id, session_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
-	    if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-	      (otg_pkt->otg_pkt).rb_id = rb_id;
-	      (otg_pkt->otg_pkt).module_id = module_id;
-	      (otg_pkt->otg_pkt).dst_id = session_id;
-	      (otg_pkt->otg_pkt).is_ue = 0;
-	      //Adding the packet to the OTG-PDCP buffer
-	      (otg_pkt->otg_pkt).mode = PDCP_TM;
-	      pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-	      LOG_I(EMU, "[eNB %d] ADD packet (%p) multicast to OTG buffer for dst %d on rb_id %d\n", 
-		    (otg_pkt->otg_pkt).module_id, otg_pkt, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
-	    } else {
-	      //LOG_I(EMU, "OTG returns null \n");
-	      free(otg_pkt);
-	      otg_pkt=NULL;
-	    }
-
-
-	    // old version	    
-	   /*	    // MBSM multicast traffic 
-#ifdef Rel10
-	    if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
-	      for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
-		for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
-		  //   LOG_I(OTG,"DUY:frame %d, pdcp_mbms_array[module_id][rb_id].instanciated_instance is %d\n",frame,pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance);
-		  if ((pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance== module_id + 1) && (eNB_flag == 1)){ // this service/session is configured
-		    // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
-		    // Duy add
-		    LOG_I(OTG, "frame %d, multicast packet gen for (service/mch %d, session/lcid %d, rb_id %d)\n",frame, service_id, session_id,service_id*maxSessionPerPMCH + session_id);
-		    // end Duy add
-		    rb_id = pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].rb_id;
-		    otg_pkt=(u8*) packet_gen_multicast(module_id, session_id, ctime, &pkt_size);
-		    if (otg_pkt != NULL) {
-		      LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_id, rb_id, module_id, session_id, pkt_size);
-		      pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
-		      free(otg_pkt);
-		    }
-		  }
-		}
-	      }
-	    } // end multicast traffic
-#endif 		    
-      	    */
-
-
-	  }
-	}
+    // MBSM multicast traffic
+    for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
+      for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
+        if (pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance== module_id + 1){ // this service/session is configured
+          otg_pkt = malloc (sizeof(Packet_otg_elt));
+          // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
+          rb_id = pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].rb_id;
+          (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen_multicast(module_id, session_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+          if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+            (otg_pkt->otg_pkt).rb_id = rb_id;
+            (otg_pkt->otg_pkt).module_id = module_id;
+            //(otg_pkt->otg_pkt).dst_id = session_id;
+            //Adding the packet to the OTG-PDCP buffer
+            (otg_pkt->otg_pkt).mode = PDCP_TM;
+            pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
+            LOG_I(EMU, "[eNB %d] ADD pkt to OTG buffer for dst %d on rb_id %d\n", (otg_pkt->otg_pkt).module_id, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
+          } else {
+            //LOG_I(EMU, "OTG returns null \n");
+            free(otg_pkt);
+            otg_pkt=NULL;
+          }
+        }
       }
-      //    } // end multicast traffic
-#endif 	
-    
+    }
+#endif
+
     //LOG_I(EMU, "[eNB %d] update OTG nb_elts = %d \n", module_id, otg_pdcp_buffer[module_id].nb_elements);
 
     //free(otg_pkt);
@@ -891,8 +798,7 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
           rb_id = dst_id * NB_RB_MAX + DTCH;
           (otg_pkt->otg_pkt).rb_id = rb_id;
           (otg_pkt->otg_pkt).module_id = module_id;
-	  (otg_pkt->otg_pkt).is_ue = 0;
-	  (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
+          (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
           //Adding the packet to the OTG-PDCP buffer
           pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
           LOG_I(EMU, "[eNB %d] ADD pkt to OTG buffer for dst %d on rb_id %d\n", (otg_pkt->otg_pkt).module_id, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
@@ -913,82 +819,34 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 #endif
 }
 
-void update_otg_UE(int UE_id, unsigned int ctime) {
-#if defined(USER_MODE) && defined(OAI_EMU)
+void update_otg_UE(int module_id, unsigned int ctime) {
+  #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ) {
-    int dst_id, src_id; //dst_id = eNB_index
-    int module_id = UE_id+NB_eNB_INST;
+    int dst_id, src_id;
+    int eNB_index = 0; //See how phy_procedures_UE_lte is called: 3rd parameter from the right = 0
 
     src_id = module_id;
+    dst_id = eNB_index;
 
-    for (dst_id=0;dst_id<NUMBER_OF_eNB_MAX;dst_id++) {
-      if (mac_get_rrc_status(UE_id, 0/*eNB_flag*/, dst_id ) > 2 /*RRC_CONNECTED*/) {
-	Packet_otg_elt *otg_pkt = malloc (sizeof(Packet_otg_elt));
-	// Manage to add this packet to the tail of your list
-	(otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(src_id, dst_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+    if (mac_get_rrc_status(module_id, 0/*eNB_flag*/, eNB_index ) > 2 /*RRC_CONNECTED*/) {
+      Packet_otg_elt *otg_pkt = malloc (sizeof(Packet_otg_elt));
+      // Manage to add this packet to the tail of your list
+      (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(src_id, dst_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
 
-	if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-	  (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH;
-	  (otg_pkt->otg_pkt).module_id = module_id;
-	  (otg_pkt->otg_pkt).dst_id = dst_id;
-	  (otg_pkt->otg_pkt).is_ue = 1;
-	  //Adding the packet to the OTG-PDCP buffer
-	  (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
-	  pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-	  LOG_I(EMU, "[UE %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d \n", 
-		(otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
-	} else {
-	  free(otg_pkt);
-	  otg_pkt=NULL;
-	}
+      if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+        (otg_pkt->otg_pkt).rb_id = eNB_index * NB_RB_MAX + DTCH;
+        (otg_pkt->otg_pkt).module_id = module_id;
+        //(otg_pkt->otg_pkt).dst_id = dst_id;
+        //Adding the packet to the OTG-PDCP buffer
+        (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
+        pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
+      } else {
+        free(otg_pkt);
+        otg_pkt=NULL;
       }
     }
   }
 #endif
-}
-
-int init_slot_isr(void)
-{
-    if (oai_emulation.info.slot_isr) {
-        struct itimerspec its;
-
-        int sfd;
-
-        sfd = timerfd_create(CLOCK_REALTIME, 0);
-        if (sfd == -1) {
-            LOG_E(EMU, "Failed in timerfd_create (%d:%s)\n", errno, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        /* Start the timer */
-        its.it_value.tv_sec = 0;
-        its.it_value.tv_nsec = 500 * 1000;
-        its.it_interval.tv_sec = its.it_value.tv_sec;
-        its.it_interval.tv_nsec = its.it_value.tv_nsec;
-
-        if (timerfd_settime(sfd, TFD_TIMER_ABSTIME, &its, NULL) == -1) {
-            LOG_E(EMU, "Failed in timer_settime (%d:%s)\n", errno, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        oai_emulation.info.slot_sfd = sfd;
-    }
-    return 0;
-}
-
-void wait_for_slot_isr(void)
-{
-    uint64_t exp;
-    ssize_t res;
-
-    if (oai_emulation.info.slot_sfd > 0) {
-        res = read(oai_emulation.info.slot_sfd, &exp, sizeof(exp));
-
-        if ((res < 0) || (res != sizeof(exp))) {
-            LOG_E(EMU, "Failed in read (%d:%s)\n", errno, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-    }
 }
 
 void exit_fun(const char* s)
