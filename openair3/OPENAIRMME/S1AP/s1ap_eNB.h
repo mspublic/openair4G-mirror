@@ -125,6 +125,8 @@ enum s1ap_eNB_state_s{
     S1AP_ENB_STATE_MAX         = S1AP_ENB_STATE_CONNECTED,
 } s1ap_eNB_state_t;
 
+int s1ap_eNB_new_data_request(uint8_t eNB_id, uint8_t ue_id, uint8_t *buffer, uint32_t length);
+
 int s1ap_eNB_init(const char *mme_ip_address, const uint8_t eNB_id);
 
 struct s1ap_eNB_description_s* s1ap_eNB_add_new(void);

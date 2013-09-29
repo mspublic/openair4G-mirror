@@ -9,10 +9,12 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -O
+CFLAGS += -O2
+# Debug
+#CFLAGS += -O0 -g -ggdb
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
 
-SRC = synctest.c condtest.c lte-softmodem.c
+SRC = lte-enb.c
 
 ifndef RTAI
 RTAI=1
@@ -20,9 +22,9 @@ endif
 
 ifeq ($(RTAI),1)
 CFLAGS += -DENABLE_RTAI_CLOCK
-RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o 
+RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-enb.o rt_wrapper.o 
 else
-OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o
+OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-enb.o rt_wrapper.o
 CFLAGS += -DENABLE_USE_CPU_EXECUTION_TIME
 endif
 
@@ -101,7 +103,7 @@ endif
 #CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
 CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
-CFLAGS += -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
+CFLAGS += -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
 
 #only for CBMIMO1
@@ -114,6 +116,10 @@ CFLAGS += -DEXMIMO
 #CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=45 #this is for ExpressMIMO 2
 endif
 
+ifndef HARD_RT
+HARD_RT=1
+endif
+
 ifeq ($(HARD_RT),1)
 CFLAGS += -DHARD_RT
 endif
@@ -122,6 +128,10 @@ ifeq ($(EMOS),1)
 CFLAGS += -DEMOS -DEMOS_CHANNEL
 LDFLAGS += -lgps
 endif
+
+#ifndef NAS
+#NAS=1
+#endif
 
 ifeq ($(NAS),1)
 CFLAGS += -DNAS_NETLINK -DLINUX
@@ -136,7 +146,32 @@ else
 LDFLAGS += -lrt
 endif
 
-all: lte-softmodem
+ifndef USE_MME
+  USE_MME=R8
+endif
+
+ifdef USE_MME
+  include $(OPENAIR2_DIR)/S1AP/Makefile.inc
+  include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
+  CFLAGS += -DENABLE_USE_MME
+  LDFLAGS += -lsctp
+  CFLAGS_S1AP += -DENB_MODE -DENABLE_USE_MME -DEMIT_ASN_DEBUG=1 -DUSER_MODE
+  S1AP_BUILT_OBJS += $(S1AP_OBJS) $(addprefix $(OPENAIR2_DIR)/S1AP/MESSAGES/, $(S1AP_ASN_MODULE_SOURCES))
+  S1AP_BUILT_OBJS += $(OPENAIR3_DIR)/OPENAIRMME/SCTP/sctp_primitives_client.o
+endif
+
+
+ASN1RELDIR=R9.8
+ifeq ($(USE_MME), R8)
+  ASN1RELDIR=R8.10
+else
+  CFLAGS_S1AP += -DUPDATE_RELEASE_9
+endif
+S1AP_DIR=$(OPENAIR2_DIR)/S1AP
+ASN1MESSAGESDIR=$(S1AP_DIR)/MESSAGES
+ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
+
+all: lte-enb
 
 $(LFDS_DIR)/bin/liblfds611.a:
 	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
@@ -150,104 +185,36 @@ $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
 
-condtest: condtest.c 
-	$(CC) $(CFLAGS) $(LDFLAGS) condtest.c -o condtest
+$(S1AP_BUILT_OBJS): %.o : %.c
+	@echo Compiling $<
+	@$(CC) -Wall -c $(CFLAGS_S1AP) $(S1AP_Incl) $(UTIL_incl) -o $@ $<
 
-synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o synctest
+$(ASN1MESSAGESDIR)/s1ap_ieregen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU-Contents.asn $(ASN1DIR)/asn1tostruct.py
+	echo Timestamp > $@
+	(cd $(ASN1DIR) && python $(ASN1DIR)/asn1tostruct.py -f$<)
 
+$(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-CommonDataTypes.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-Constants.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-IEs.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU.asn
+	echo Timestamp > $@
+	(cd $(ASN1MESSAGESDIR) && asn1c -gen-PER -fnative-types -fskeletons-copy $^)
 
-lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
+$(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp $(S1AP_BUILT_OBJS)
+	@echo Creating $@
+	$(AR) rcs $@ $^
 
+$(LFDS_DIR)/bin/liblfds611.a:
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
 
-ifeq ($(rrc_cellular_eNB),1)
-	mv lte-softmodem lte-softmodem_eNB
+ifdef USE_MME
+  lte-enb: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(S1AP_DIR)/libs1ap.a $(LFDS_DIR)/bin/liblfds611.a
+else
+  lte-enb: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
 endif
-ifeq ($(rrc_cellular_UE),1)
-	mv lte-softmodem lte-softmodem_UE
-endif
-
-synctest_eNB: synctest
-	cp synctest synctest_eNB
-
-synctest_UE: synctest
-	cp synctest synctest_UE
-
-drivers:
-	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
-	cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make clean && make
-	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
-	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make 
-
-run: condtest
-	rtai-load condtest --verbose
-
-run_eNB_test: 
-	rtai-load eNB_test --verbose
-
-run_eNB: 
-	rtai-load eNB --verbose
-
-run_UE: 
-	rtai-load UE --verbose
-
-run_UE0:
-	rtai-load UE0 --verbose
-
-run_UE0_smbv:
-	rtai-load UE0_smbv --verbose
-
-run_UE850:
-	rtai-load UE850 --verbose
-
-run_eNB850:
-	rtai-load eNB850 --verbose
-
-run_UE0prach:
-	rtai-load UE0prach --verbose
-
-run_UE1prach:
-	rtai-load UE1prach --verbose
-
-run_UE2prach:
-	rtai-load UE2prach --verbose
-
-run_UE0noL2:
-	rtai-load UE0noL2 -- verbose
-
-run_UE1noL2: 
-	rtai-load UE1noL2 --verbose
-
-run_UE2noL2: 
-	rtai-load UE2noL2 --verbose
-
-run_UE0calib:
-	rtai-load UE0calib --verbose
-
-run_UE0calibmed:
-	rtai-load UE0calibmed --verbose
-
-run_UE0calibbyp:
-	rtai-load UE0calibbyp --verbose
-
-run_UE1: 
-	rtai-load UE1 --verbose
-
-run_UE2: 
-	rtai-load UE2 --verbose
-
-run_eNB0:
-	rtai-load eNB0 --verbose
-
-run_eNB1:
-	rtai-load eNB1 --verbose
-
-run_eNB2:
-	rtai-load eNB2 --verbose
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-enb  $(S1AP_DIR)/libs1ap.a $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
 
 clean:
 	rm -rf $(OBJ) $(RTAI_OBJ)
+	rm -f $(S1AP_BUILT_OBJS)
+	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
 
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
@@ -256,14 +223,6 @@ cleanasn1:
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
-
-cleancell:
-	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
-	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.d
-	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.o
-	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.d
-	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
-	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
 
 cleanall: clean cleanasn1
 	rm -rf condtest synctest lte-softmodem

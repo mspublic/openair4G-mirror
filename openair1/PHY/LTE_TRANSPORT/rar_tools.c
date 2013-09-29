@@ -151,7 +151,6 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
   msg("ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
   msg("ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
   msg("ulsch ra (eNB): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
   msg("ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
   msg("ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);

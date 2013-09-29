@@ -560,8 +560,8 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
   case format1A:  // This is DLSCH allocation for control traffic
 
  
-
-    dlsch[0]->subframe_tx[subframe] = 1;
+    // commented, broadcast downlink don't need feedback
+    //dlsch[0]->subframe_tx[subframe] = 1;
 
     switch (frame_parms->N_RB_DL) {
     case 6:
@@ -846,7 +846,6 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
       return(-1);
     }
 
-    // msg("DCI: Setting subframe_tx for subframe %d\n",subframe);
     dlsch[0]->subframe_tx[subframe] = 1;
 
     conv_rballoc(rah,
@@ -874,7 +873,8 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 
     dlsch[0]->active = 1;
 
-    if (dlsch[0]->harq_processes[harq_pid]->Ndi == 1) {
+    //if (dlsch[0]->harq_processes[harq_pid]->Ndi == 1) {
+    if (dlsch[0]->harq_processes[harq_pid]->round == 0) {
       dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
       //            printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
       // MCS and TBS don't change across HARQ rounds
@@ -1154,7 +1154,8 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
     break;
   }
 #ifdef DEBUG_DCI
-  if (dlsch0) {
+  if ((dlsch0)&&(dci_format == format1)) {
+
     msg("dlsch0 eNB: rnti     %x\n",dlsch0->rnti);
     msg("dlsch0 eNB: NBRB     %d\n",dlsch0->nb_rb);
     msg("dlsch0 eNB: rballoc  %x\n",dlsch0->rb_alloc[0]);
@@ -3235,7 +3236,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->srs_active                              = use_srs;
     ulsch->bundling = 1-AckNackFBMode;
 
-    if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+    //if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+    if (ulsch->harq_processes[harq_pid]->round == 0) {
       if ((rnti >= cba_rnti) && (rnti < p_rnti))
 		ulsch->harq_processes[harq_pid]->status = CBA_ACTIVE;
       else 
@@ -3597,7 +3599,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
 
 
-    if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+    //if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+    if (ulsch->harq_processes[harq_pid]->round == 0) {
       if ((rnti >= cba_rnti) && (rnti < p_rnti))
 		ulsch->harq_processes[harq_pid]->status = CBA_ACTIVE;
       else 
@@ -3636,7 +3639,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     //ulsch->n_DMRS2 = cshift;
 
 #ifdef DEBUG_DCI
-    msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    msg("ulsch (eNB): round         %d\n",ulsch->harq_processes[harq_pid]->round);
+    msg("ulsch (eNB): NPRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (eNB): first_rb      %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("ulsch (eNB): harq_pid      %d\n",harq_pid);
     msg("ulsch (eNB): Ndi           %d\n",ulsch->harq_processes[harq_pid]->Ndi);

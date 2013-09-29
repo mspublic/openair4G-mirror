@@ -51,16 +51,16 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   if (l<0 || l>=7-frame_parms->Ncp) {
-    msg("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
+    msg("slot_fep_ul: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);
   }
   if (Ns<0 || Ns>=20) {
-    msg("slot_fep: Ns must be between 0 and 19\n");
+    msg("slot_fep_ul: Ns must be between 0 and 19\n");
     return(-1);
   }
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: Ns %d offset %d, symbol %d, nb_prefix_samples %d\n",Ns,slot_offset,symbol, nb_prefix_samples);
+  msg("slot_fep_ul: Ns %d offset %d, symbol %d, nb_prefix_samples %d\n",Ns,slot_offset,symbol, nb_prefix_samples);
 #endif
 
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {

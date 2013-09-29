@@ -138,6 +138,7 @@ exmimo_id_t     *p_exmimo_id;
 volatile unsigned int *DAQ_MBOX;
 
 int oai_exit = 0;
+int oai_flag = 0;
 
 //int time_offset[4] = {-138,-138,-138,-138};
 //int time_offset[4] = {-145,-145,-145,-145};
@@ -147,8 +148,10 @@ int fs4_test=0;
 char UE_flag=0;
 u8  eNB_id=0,UE_id=0;
 
-u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
+//u32 carrier_freq[4]= {1907600000,1907600000,1907600000,1907600000};
 
+//u32 carrier_freq[4]= {2140e6,1907600000,1907600000,1907600000};
+u32 carrier_freq[4]= {2590e6-4000,2590e6,1907600000,1907600000};
 struct timing_info_t {
   //unsigned int frame, hw_slot, last_slot, next_slot;
   RTIME time_min, time_max, time_avg, time_last, time_now;
@@ -170,6 +173,8 @@ int otg_enabled;
 int number_of_cards = 1;
 
 int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
+
+//int mbox_bounds[10] = {15, 30, 45, 60, 75, 90, 105, 120, 135, 0}; // mbox boundaries of subframes
 
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
@@ -434,20 +439,24 @@ static void *eNB_thread(void *arg)
 {
 #ifdef RTAI
   RT_TASK *task;
+  SEM *sem;
 #endif
-  unsigned char slot=0,last_slot, next_slot;
-  int hw_slot,frame=0;
+  unsigned char last_slot, next_slot;
+  int subframe = 0, hw_subframe;
+  int frame=0;
   unsigned int msg1;
   unsigned int aa,slot_offset, slot_offset_F;
   int diff;
   int delay_cnt;
   RTIME time_in, time_diff;
+  RTIME period;
   int mbox_target=0,mbox_current=0;
   int i,ret;
   int tx_offset;
 
 #ifdef RTAI
   task = rt_task_init_schmod(nam2num("TASK0"), 0, 0, 0, SCHED_FIFO, 0xF);
+  rt_receive(0, (unsigned long*)((void*)&sem));
   LOG_D(HW,"Started eNB thread (id %p)\n",task);
 #endif
 
@@ -464,11 +473,11 @@ static void *eNB_thread(void *arg)
 
   while (!oai_exit)
     {
-      hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
+      hw_subframe = ((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)/15;
       //LOG_D(HW,"eNB frame %d, time %llu: slot %d, hw_slot %d (mbox %d)\n",frame,rt_get_time_ns(),slot,hw_slot,((unsigned int *)DAQ_MBOX)[0]);
       //this is the mbox counter where we should be 
-      //mbox_target = ((((slot+1)%20)*15+1)>>1)%150;
-      mbox_target = mbox_bounds[slot];
+      
+      mbox_target = mbox_bounds[subframe];
       //this is the mbox counter where we are
       mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
       //this is the time we need to sleep in order to synchronize with the hw (in multiples of DAQ_PERIOD)
@@ -479,18 +488,19 @@ static void *eNB_thread(void *arg)
       else
           diff = mbox_target - mbox_current;
       
-      if (diff < (-6)) {
-          LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
-          slot++;
-	  if (frame>0)	  
-	    oai_exit=1;
-          if (slot==20){
-              slot=0;
-              frame++;
-          }
-          continue;
+      if (diff < -15) {
+      
+        LOG_D(HW,"time %4d.%3d.%3d: Frame %d, missed subframe, proceeding with next one (subframe %d, hw_subframe %d, diff %d)\n",frame, rt_get_time_ns(), subframe, hw_subframe, diff);
+        slot++;
+        //if (frame>0)	  
+        //  oai_exit=1;
+        if (slot==20){
+            slot=0;
+            frame++;
+        }
+        continue;
       }
-      if (diff>8) 
+      if (diff > 15) 
           LOG_D(HW,"eNB Frame %d, time %llu: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, mbox_current, mbox_target, diff);
 
       delay_cnt = 0;
@@ -522,7 +532,7 @@ static void *eNB_thread(void *arg)
       last_slot = (slot)%LTE_SLOTS_PER_FRAME;
       if (last_slot <0)
         last_slot+=20;
-      next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
+      next_slot = (slot+4)%LTE_SLOTS_PER_FRAME;
 
       //PHY_vars_eNB_g[0]->frame = frame;
       if (frame>5)
@@ -532,7 +542,9 @@ static void *eNB_thread(void *arg)
             LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
 	  */
 
-	  //if (PHY_vars_eNB_g[0]->frame>5) {
+          /* 
+	  if (PHY_vars_eNB_g[0]->frame>5) {
+          
 	    timing_info.time_last = timing_info.time_now;
 	    timing_info.time_now = rt_get_time_ns();
 	  
@@ -546,16 +558,19 @@ static void *eNB_thread(void *arg)
 	    }
 
 	    timing_info.n_samples++;
-	    /*
+	    
 	    if ((timing_info.n_samples%2000)==0) {
 	      LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d: diff=%llu, min=%llu, max=%llu, avg=%llu (n_samples %d)\n",
 		    frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,time_diff,
 		    timing_info.time_min,timing_info.time_max,timing_info.time_avg/timing_info.n_samples,timing_info.n_samples);
 	      timing_info.n_samples = 0;
+              timing_info.time_min = 100000000ULL;
+              timing_info.time_max = 0;
 	      timing_info.time_avg = 0;
 	    }
-	    */
-	    //}
+	    
+	    }
+            */
 
           if (fs4_test==0)
             {
@@ -629,6 +644,10 @@ static void *eNB_thread(void *arg)
       LOG_D(HW,"fun0: doing very hard work\n");
       */
 
+      if (oai_flag == 2)
+        exit(-1);
+      if (oai_flag == 1)
+        oai_flag = 2;
       slot++;
       if (slot==20) {
         slot=0;
@@ -644,6 +663,7 @@ static void *eNB_thread(void *arg)
 
   // clean task
 #ifdef RTAI
+  rt_sem_signal(mutex);
   rt_task_delete(task);
 #endif
   LOG_D(HW,"Task deleted. returning\n");
@@ -896,8 +916,8 @@ int main(int argc, char **argv) {
   u32 rf_mode_med[4]     = {39375,39375,39375,39375};
   u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
   */
-  u32 my_rf_mode = RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX;
-  u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM;
+  u32 my_rf_mode = RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAByp + RFBBNORM + DMAMODE_RX + DMAMODE_TX;
+  u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAByp + RFBBNORM;
   u32 rf_mode[4]     = {my_rf_mode,0,0,0};
   u32 rf_local[4]    = {8255000,8255000,8255000,8255000}; // UE zepto
     //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
@@ -906,8 +926,8 @@ int main(int argc, char **argv) {
   u32 rf_vcocal[4]   = {910,910,910,910};
   u32 rf_vcocal_850[4] = {2015, 2015, 2015, 2015};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
-  u32 rxgain[4]      = {20,20,20,20};
-  u32 txgain[4]      = {25,25,25,25};
+  u32 rxgain[4]      = {0,20,20,20};
+  u32 txgain[4]      = {5,25,25,25};
 
   u16 Nid_cell = 0;
   u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
@@ -1201,7 +1221,7 @@ int main(int argc, char **argv) {
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //    rxgain[i] = 20;
-    rxgain[0] = 20;
+    rxgain[0] = 0;
     rxgain[1] = 20;
     rxgain[2] = 20;
     rxgain[3] = 20;
@@ -1251,7 +1271,7 @@ int main(int argc, char **argv) {
 #endif
     g_log->log_component[PHY].flag  = LOG_HIGH;
 
-    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].level = LOG_DEBUG;
     g_log->log_component[MAC].flag  = LOG_HIGH;
     g_log->log_component[RLC].level = LOG_INFO;
     g_log->log_component[RLC].flag  = LOG_HIGH;
@@ -1293,7 +1313,7 @@ int main(int argc, char **argv) {
     // if AGC is off, the following values will be used
     //    for (i=0;i<4;i++) 
     //      rxgain[i]=30;
-    rxgain[0] = 20;
+    rxgain[0] = 10;
     rxgain[1] = 20;
     rxgain[2] = 20;
     rxgain[3] = 20;
@@ -1331,7 +1351,7 @@ int main(int argc, char **argv) {
   if (p_exmimo_id->board_swrev>=BOARD_SWREV_CNTL2)
     p_exmimo_config->framing.eNB_flag   = 0; 
   else 
-    p_exmimo_config->framing.eNB_flag   = !UE_flag;
+    p_exmimo_config->framing.eNB_flag   = 0;!UE_flag;
   p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
   p_exmimo_config->framing.resampling_factor = 2;
  
@@ -1346,9 +1366,9 @@ int main(int argc, char **argv) {
     carrier_freq[ant] = 0; //this turns off all other LIMEs
   }
 
-  for (ant = 0; ant<4; ant++) { 
+  for (ant = 0; ant<1; ant++) { 
     p_exmimo_config->rf.do_autocal[ant] = 1;
-    p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];
+    p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];//-190e6;
     p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
     p_exmimo_config->rf.rx_gain[ant][0] = rxgain[ant];
     p_exmimo_config->rf.tx_gain[ant][0] = txgain[ant];
@@ -1390,6 +1410,7 @@ int main(int argc, char **argv) {
 
 #ifdef OPENAIR2
   //if (otg_enabled) {
+  /*
     init_all_otg(0);
     g_otg->seed = 0;
     init_seeds(g_otg->seed);
@@ -1403,6 +1424,7 @@ int main(int argc, char **argv) {
       }
     }
     init_predef_traffic();
+    */
     //  }
 #endif
 
@@ -1507,8 +1529,8 @@ int main(int argc, char **argv) {
   task = rt_task_init_schmod(nam2num("MYTASK"), 9, 0, 0, SCHED_FIFO, 0xF);
 
   // start realtime timer and scheduler
-  //rt_set_oneshot_mode();
-  rt_set_periodic_mode();
+  rt_set_oneshot_mode();
+  //rt_set_periodic_mode();
   start_rt_timer(0);
 
   //now = rt_get_time() + 10*PERIOD;
@@ -1516,7 +1538,7 @@ int main(int argc, char **argv) {
 
   printf("Init mutex\n");
   //mutex = rt_get_adr(nam2num("MUTEX"));
-  mutex = rt_sem_init(nam2num("MUTEX"), 1);
+  mutex = rt_sem_init(nam2num("MUTEX"), 0);
   if (mutex==0)
     {
       printf("Error init mutex\n");
@@ -1617,6 +1639,8 @@ int main(int argc, char **argv) {
   else {
 #ifdef RTAI
     thread0 = rt_thread_create(eNB_thread, NULL, 100000000);
+    rt_sleep_ns(FRAME_PERIOD*10);
+    rt_send(rt_get_adr(nam2num("TASK0")), (unsigned long)mutex);
 #else
     error_code = pthread_create(&thread0, &attr_dlsch_threads, eNB_thread, NULL);
     if (error_code!= 0) {
@@ -1637,8 +1661,10 @@ int main(int argc, char **argv) {
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-  while (oai_exit==0)
-    rt_sleep_ns(FRAME_PERIOD);
+  //while (oai_exit==0)
+  //  rt_sleep_ns(FRAME_PERIOD);
+  
+  rt_sem_wait(mutex);
 
   // stop threads
 #ifdef XFORMS
@@ -1689,7 +1715,9 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef RTAI
+  rt_sem_delete(mutex);
   stop_rt_timer();
+  rt_task_delete(task);
 #endif
 
   printf("stopping card\n");
@@ -1782,23 +1810,27 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
-        phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (s32*) openair0_exmimo_pci[card].adc_head[i+carrier];
+        phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = ((s32*) openair0_exmimo_pci[card].adc_head[i+carrier]) - 156; // N_TA offset for TDD
         
+        /*
         printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
         for (j=0;j<16;j++) {
             printf("rxbuffer %d: %x\n",j,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j]);
             phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j] = 16-j;
         }
+        */
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
         phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
-
+        
+        /*
         printf("txdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
         for (j=0;j<16;j++) {
             printf("txbuffer %d: %x\n",j,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i][j]);
             phy_vars_eNB->lte_eNB_common_vars.txdata[0][i][j] = 16-j;
 	}
+        */
     }
   }
 }

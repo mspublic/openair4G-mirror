@@ -91,17 +91,19 @@ unsigned short fill_rar(u8 Mod_id,
   */
   rar[4] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti>>8); 
   rar[5] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti&0xff);
+  eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset = 0;
+  //eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset /= 16;
   rar[0] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset>>(2+4)); // 7 MSBs of timing advance + divide by 4
   rar[1] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance + divide by 4
   rballoc = mac_xface->computeRIV(N_RB_UL,1,1); // first PRB only for UL Grant
   rar[1] |= (rballoc>>7)&7; // Hopping = 0 (bit 3), 3 MSBs of rballoc
   rar[2] = ((uint8_t)(rballoc&0xff))<<1; // 7 LSBs of rballoc
   mcs = 10;
-  TPC = 4;
+  TPC = 3;
   ULdelay = 0;
   cqireq = 0;
-  rar[2] |= ((mcs&0xf)>>3);  // mcs 10
-  rar[3] = (((mcs&0xff)<<5)) | ((TPC&7)<<2) | ((ULdelay&1)<<1) | (cqireq&1); 
+  rar[2] |= ((mcs&0x8)>>3);  // mcs 10
+  rar[3] = (((mcs&0x7)<<5)) | ((TPC&7)<<2) | ((ULdelay&1)<<1) | (cqireq&1); 
 
   LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for CRNTI %x,preamble %d/%d\n",Mod_id,frame,
 	*(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],

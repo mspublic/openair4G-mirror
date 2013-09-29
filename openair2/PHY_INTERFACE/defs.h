@@ -213,7 +213,7 @@ typedef struct
     u16 (*get_TBS_UL)(u8 mcs, u16 nb_rb);
 
     /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
-    int (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
+    int (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 *Ndi, u8 ul_flag);
 
     /// Function to retrieve number of CCE
     u16 (*get_nCCE_max)(u8 Mod_id);

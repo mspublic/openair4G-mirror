@@ -37,9 +37,13 @@
 
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "sctp_primitives_client.h"
-// #include "s1ap_common.h"
+#include "s1ap_common.h"
+#include "s1ap_eNB_encoder.h"
+#include "s1ap_eNB_decoder.h"
+#include "s1ap_eNB_handlers.h"
 #include "s1ap_eNB.h"
 #include "s1ap_ies_defs.h"
 
@@ -165,7 +169,8 @@ int s1ap_sctp_connected_callback(void *args, uint32_t assocId, uint32_t instream
         return -1;
     }
     /* Waiting for the response from MME */
-    while ((volatile)(eNB_ref->state) & S1AP_ENB_STATE_WAITING) {
+    while (/*(volatile)*/(eNB_ref->state) & S1AP_ENB_STATE_WAITING) {
+      usleep(1);
     }
     return 0;
 }
@@ -173,6 +178,8 @@ int s1ap_sctp_connected_callback(void *args, uint32_t assocId, uint32_t instream
 /* Function called every time we received something on SCTP */
 int s1ap_sctp_recv_callback(uint32_t assocId, uint32_t stream, uint8_t *buffer, uint32_t length) {
     s1ap_message message;
+
+    memset(&message, 0, sizeof(s1ap_message));
 
     if (s1ap_eNB_decode_pdu(&message, buffer, length) < 0)
         return -1;
@@ -236,7 +243,7 @@ int s1ap_eNB_new_data_request(uint8_t eNB_id, uint8_t ue_id, uint8_t *buffer, ui
 int s1ap_eNB_init(const char *mme_ip_address, const uint8_t eNB_id) {
     uint8_t args = eNB_id;
     if (sctp_connect_to_remote_host(
-        mme_ip_address, 36412, &args,
+        mme_ip_address, 36412, 18, &args,
         s1ap_sctp_connected_callback,
         s1ap_sctp_recv_callback) < 0)
     {

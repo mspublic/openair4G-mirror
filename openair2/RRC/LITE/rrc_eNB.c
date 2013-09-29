@@ -66,9 +66,14 @@
 
 #if defined(ENABLE_USE_MME)
 #include "../../S1AP/s1ap_eNB.h"
+extern char *mme_ip;
 #endif
 
 //#define XER_PRINT
+
+#define RRC_MSG_PRINT
+extern int oai_flag;
+
 
 #ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
@@ -432,10 +437,12 @@ openair_rrc_lite_eNB_init (u8 Mod_id)
 
 #if defined(ENABLE_USE_MME)
   /* Connect eNB to MME */
-  if (oai_emulation.info.mme_enabled > 0)
+  //if (oai_emulation.info.mme_enabled > 0)
     {
-      if (s1ap_eNB_init (oai_emulation.info.mme_ip_address, Mod_id) < 0)
+      if (s1ap_eNB_init (mme_ip, Mod_id) < 0) // TODO: MME IP address
         {
+          LOG_E(RRC, "[eNB %d], connect to MME failed\n", Mod_id);
+          msg("Connect to MME failed, existing\n");
           mac_xface->macphy_exit ("");
           return -1;
         }
@@ -590,11 +597,17 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
         {
 
         case UL_DCCH_MessageType__c1_PR_NOTHING:        /* No components present */
+          LOG_I(RRC,
+              "[eNB %d] Frame %d: Received PR_NOTHING on UL-DCCH-Message\n",
+              Mod_id, frame);
           break;
         case UL_DCCH_MessageType__c1_PR_csfbParametersRequestCDMA2000:
+          LOG_I(RRC,
+              "[eNB %d] Frame %d: Received PR_csfbParametersRequestCDMA2000 on UL-DCCH-Message\n",
+              Mod_id, frame);
           break;
         case UL_DCCH_MessageType__c1_PR_measurementReport:
-          LOG_D (RRC,
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND "
                  "%d bytes (measurementReport) --->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, DCCH, sdu_size, Mod_id);
@@ -606,10 +619,19 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
                                              measResults);
           break;
         case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
-          LOG_D (RRC,
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, DCCH, sdu_size, Mod_id);
+
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcConnectionReconfigurationComplete
+          msg("RRC Connection Reconfiguration Complete\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
           if (ul_dcch_msg->message.choice.c1.choice.
               rrcConnectionReconfigurationComplete.criticalExtensions.
               present ==
@@ -627,18 +649,36 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
                                                                     choice.
                                                                     rrcConnectionReconfigurationComplete_r8);
               eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
-              LOG_I (RRC, "[eNB %d] UE %d State = RRC_RECONFIGURED \n",
-                     Mod_id, UE_index);
+              LOG_I (RRC, "[eNB %d] UE %d State = RRC_RECONFIGURED\n",
+                  Mod_id, UE_index);
             }
           break;
         case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
-          LOG_D (RRC,
+          
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcConnectionReestablishmentComplete
+          msg("RRC Connection Reestablishment Complete\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(rrcConnectionReestablishmentComplete) --->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, DCCH, sdu_size, Mod_id);
           break;
         case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
-          LOG_D (RRC,
+
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcConnectionSetupComplete
+          msg("RRC Connection SetupComplete\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(RRCConnectionSetupComplete) --->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, DCCH, sdu_size, Mod_id);
@@ -665,34 +705,54 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
                   eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
                   LOG_I (RRC, "[eNB %d] UE %d State = RRC_CONNECTED \n",
                          Mod_id, UE_index);
-                  LOG_D (RRC,
+                  LOG_I (RRC,
                          "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\n"
                          "Now CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
                          frame, Mod_id, UE_index, Mod_id);
+                  
                 }
             }
           break;
         case UL_DCCH_MessageType__c1_PR_securityModeComplete:
+
           LOG_I (RRC,
-                 "[eNB %d] Frame %d received securityModeComplete on UL-DCCH %d from UE %d\n",
-                 Mod_id, frame, DCCH, UE_index);
-          LOG_D (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(securityModeComplete) --->][RRC_eNB][MOD %02d][]\n", frame,
                  Mod_id, DCCH, sdu_size, Mod_id);
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcSecurityModeComplete
+          msg("RRC Security Mode Complete\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
+
 #ifdef XER_PRINT
           xer_fprint (stdout, &asn_DEF_UL_DCCH_Message, (void *) ul_dcch_msg);
 #endif
           // confirm with PDCP about the security mode for DCCH
           //rrc_pdcp_config_req (Mod_id, frame, 1,ACTION_SET_SECURITY_MODE, (UE_index * NB_RB_MAX) + DCCH, 0x77);
           // continue the procedure
-          rrc_eNB_generate_UECapabilityEnquiry (Mod_id, frame, UE_index);
+          //rrc_eNB_generate_UECapabilityEnquiry (Mod_id, frame, UE_index);
+          rrc_eNB_generate_defaultRRCConnectionReconfiguration (Mod_id, frame,
+                                                                UE_index,
+                                                                NULL, 0);
           break;
         case UL_DCCH_MessageType__c1_PR_securityModeFailure:
-          LOG_D (RRC,
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(securityModeFailure) --->][RRC_eNB][MOD %02d][]\n", frame,
                  Mod_id, DCCH, sdu_size, Mod_id);
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcSecurityModeFailure
+          msg("RRC Security Mode Failure\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
+
 #ifdef XER_PRINT
           xer_fprint (stdout, &asn_DEF_UL_DCCH_Message, (void *) ul_dcch_msg);
 #endif
@@ -702,10 +762,19 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
           rrc_eNB_generate_UECapabilityEnquiry (Mod_id, frame, UE_index);
           break;
         case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
+
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcUECapabilityInformation
+          msg("RRC UECapablility Information\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
           LOG_I (RRC,
                  "[eNB %d] Frame %d received ueCapabilityInformation on UL-DCCH %d from UE %d\n",
                  Mod_id, frame, DCCH, UE_index);
-          LOG_D (RRC,
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(UECapabilityInformation) --->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, DCCH, sdu_size, Mod_id);
@@ -737,9 +806,21 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
         case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
           break;
         case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+          LOG_I (RRC,
+                 "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
+                 "(ULInformationTransfer) --->][RRC_eNB][MOD %02d][]\n",
+                 frame, Mod_id, DCCH, sdu_size, Mod_id);
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcULInformationTransfer
+          msg("RRC UL Information Transfer\n");
+          for (i = 0; i < sdu_size; i++)
+            msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
+          msg("\n");
+          ////////////////////////////////////////
+#endif
 #if defined(ENABLE_USE_MME)
           {
-            if (oai_emulation.info.mme_enabled == 1)
+            //if (oai_emulation.info.mme_enabled == 1)
               {
                 ULInformationTransfer_t *ulInformationTransfer;
                 ulInformationTransfer =
@@ -861,9 +942,18 @@ rrc_eNB_decode_ccch (u8 Mod_id, u32 frame, SRB_INFO * Srb_info)
           break;
 
         case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
-          LOG_D (RRC,
+          LOG_I (RRC,
                  "[MSC_MSG][FRAME %05d][MAC_eNB][MOD %02d][][--- MAC_DATA_IND  (rrcConnectionRequest on SRB0) -->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, Mod_id);
+
+#ifdef RRC_MSG_PRINT
+          //TODO: Debug rrcConnectionRequest
+          msg("RRC Connection Request\n");
+          for (i = 0; i < Srb_info->Rx_buffer.payload_size; i++)
+            msg("%02x ", ((uint8_t*)Srb_info->Rx_buffer.Payload)[i]);
+          msg("\n");
+          //////////////////////////////////
+#endif
 
           rrcConnectionRequest =
             &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.
@@ -999,29 +1089,45 @@ rrc_eNB_process_RRCConnectionSetupComplete (u8 Mod_id,
 
   // Forward message to S1AP layer
 #if defined(ENABLE_USE_MME)
-  if (oai_emulation.info.mme_enabled == 1)
+  //if (oai_emulation.info.mme_enabled == 1)
     s1ap_eNB_new_data_request (Mod_id, UE_index,
                                rrcConnectionSetupComplete->dedicatedInfoNAS.
                                buf,
                                rrcConnectionSetupComplete->dedicatedInfoNAS.
                                size);
-  else
+  //else
 #endif
-
-    rrc_eNB_generate_SecurityModeCommand (Mod_id, frame, UE_index);
+  //rrc_eNB_generate_SecurityModeCommand (Mod_id, frame, UE_index);
   //rrc_eNB_generate_UECapabilityEnquiry(Mod_id,frame,UE_index);
 }
 
 mui_t rrc_eNB_mui = 0;
 
 void
+rrc_eNB_ind_reconfiguration(u8 Mod_id, u16 UE_index, u8 *nas_pdu, u32 nas_length)
+{
+  eNB_rrc_inst[Mod_id].Info.nas_pdu[UE_index] = nas_pdu;
+  eNB_rrc_inst[Mod_id].Info.nas_length[UE_index] = nas_length;
+  rrc_eNB_generate_SecurityModeCommand(Mod_id, 0, UE_index);
+}
+void
 rrc_eNB_generate_SecurityModeCommand (u8 Mod_id, u32 frame, u16 UE_index)
 {
 
   uint8_t buffer[100];
   uint8_t size;
+  int i;
 
   size = do_SecurityModeCommand (Mod_id, buffer, UE_index, 0);
+
+#ifdef RRC_MSG_PRINT
+  //TODO: Debug rrcSecurityModeComplete
+  msg("RRC Security Mode Command\n");
+  for (i = 0; i < size; i++)
+    msg("%02x ", ((uint8_t*)buffer)[i]);
+  msg("\n");
+  ////////////////////////////////////////
+#endif
 
   LOG_I (RRC,
          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d, UE id %d)\n",
@@ -1029,16 +1135,54 @@ rrc_eNB_generate_SecurityModeCommand (u8 Mod_id, u32 frame, u16 UE_index)
 
 
   LOG_D (RRC,
-         "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (securityModeCommand to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
+
          frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id,
          (UE_index * NB_RB_MAX) + DCCH);
   //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
   pdcp_data_req (Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH,
                  rrc_eNB_mui++, 0, size, (char *) buffer, 1);
 
+  //oai_flag = 1;
+
 }
 
 
+void
+rrc_eNB_generate_DLInformationTransfer (u8 Mod_id, u16 UE_index, void *nas_buf, int nas_size)
+{
+
+  uint8_t buffer[100];
+  uint8_t size;
+  int frame = 0;
+  int i;
+
+  size = do_DLInformationTransfer (buffer, nas_buf, nas_size);
+
+#ifdef RRC_MSG_PRINT
+  //TODO: Debug rrcDLInformationTransfer
+  msg("RRC DL Information Transfer\n");
+  for (i = 0; i < size; i++)
+    msg("%02x ", ((uint8_t*)buffer)[i]);
+  msg("\n");
+  ////////////////////////////////////////
+#endif
+
+  LOG_I (RRC,
+         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate DLInformationTransfer (bytes %d, UE id %d)\n",
+         Mod_id, frame, size, UE_index);
+
+
+  LOG_D (RRC,
+         "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (DLInformationTransfer to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
+         frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id,
+         (UE_index * NB_RB_MAX) + DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req (Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH,
+                 rrc_eNB_mui++, 0, size, (char *) buffer, 1);
+
+  //oai_flag = 1;
+
+}
 void
 rrc_eNB_generate_UECapabilityEnquiry (u8 Mod_id, u32 frame, u16 UE_index)
 {
@@ -1070,14 +1214,12 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
                                                       u32 nas_length)
 {
 
-
-  u8 buffer[100];
+  u8 buffer[200];
   u8 size;
   int i;
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
   eNB_RRC_INST *rrc_inst = &eNB_rrc_inst[Mod_id];
-
 
   struct PhysicalConfigDedicated **physicalConfigDedicated =
     &rrc_inst->physicalConfigDedicated[UE_index];
@@ -1213,6 +1355,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
   /// DRB
   DRB_config = CALLOC (1, sizeof (*DRB_config));
 
+  DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
+  *(DRB_config->eps_BearerIdentity) = (long)5;
   //DRB_config->drb_Identity = (DRB_Identity_t) 1; //allowed values 1..32
   // NN: this is the 1st DRB for this ue, so set it to 1
   DRB_config->drb_Identity = (DRB_Identity_t) 1;        // (UE_index+1); //allowed values 1..32
@@ -1230,7 +1374,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
 
   DRB_pdcp_config = CALLOC (1, sizeof (*DRB_pdcp_config));
   DRB_config->pdcp_Config = DRB_pdcp_config;
-  DRB_pdcp_config->discardTimer = NULL;
+  DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
+  *(DRB_pdcp_config->discardTimer) = PDCP_Config__discardTimer_infinity;
   DRB_pdcp_config->rlc_AM = NULL;
   PDCP_rlc_UM = CALLOC (1, sizeof (*PDCP_rlc_UM));
   DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
@@ -1531,13 +1676,36 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure=rsrp;
 
    */
-  memset (buffer, 0, 100);
+  memset (buffer, 0, 200);
+
+  if (nas_pdu == NULL) 
+  {
+    nas_pdu = eNB_rrc_inst[Mod_id].Info.nas_pdu[UE_index];
+    nas_length = eNB_rrc_inst[Mod_id].Info.nas_length[UE_index];
+  }
+  //size = do_RRCConnectionReconfiguration (Mod_id, buffer, UE_index, 0,  //Transaction_id,
+  //                                        SRB_configList2, *DRB_configList, NULL,       // DRB2_list,
+  //                                        NULL, //*sps_Config,
+  //                                        physicalConfigDedicated[UE_index], MeasObj_list, ReportConfig_list, NULL,     //*QuantityConfig,
+  //                                        MeasId_list, mac_MainConfig, NULL, cba_RNTI, nas_pdu, nas_length);    //*measGapConfig);
+
+
 
   size = do_RRCConnectionReconfiguration (Mod_id, buffer, UE_index, 0,  //Transaction_id,
-                                          SRB_configList2, *DRB_configList, NULL,       // DRB2_list,
+                                          NULL/*SRB_configList2*/, *DRB_configList, NULL,       // DRB2_list,
                                           NULL, //*sps_Config,
-                                          physicalConfigDedicated[UE_index], MeasObj_list, ReportConfig_list, NULL,     //*QuantityConfig,
-                                          MeasId_list, mac_MainConfig, NULL, cba_RNTI, nas_pdu, nas_length);    //*measGapConfig);
+                                          physicalConfigDedicated[UE_index], NULL, NULL, NULL,     //*QuantityConfig,
+                                          NULL, mac_MainConfig, NULL, cba_RNTI, nas_pdu, nas_length);    //*measGapConfig);
+
+
+#ifdef RRC_MSG_PRINT
+  //TODO: Debug rrcConnectionReconfiguration
+  msg("RRC Connection Reconfiguration\n");
+  for (i = 0; i < size; i++)
+    msg("%02x ", ((uint8_t*)buffer)[i]);
+  msg("\n");
+  ////////////////////////////////////////
+#endif
 
   LOG_I (RRC,
          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
@@ -1550,6 +1718,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
   //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
   pdcp_data_req (Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH,
                  rrc_eNB_mui++, 0, size, (char *) buffer, 1);
+
+  // dump this DL frame
+  //oai_flag =1;
 
 }
 
@@ -1813,7 +1984,14 @@ rrc_eNB_generate_RRCConnectionSetup (u8 Mod_id, u32 frame, u16 UE_index)
                            SRB_configList,
                            &eNB_rrc_inst[Mod_id].
                            physicalConfigDedicated[UE_index]);
-
+#ifdef RRC_MSG_PRINT
+  //TODO: Debug RRC Connection Setup
+  msg("RRC Connection Setup\n");
+  for (cnt = 0; cnt < eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size; cnt++)
+    msg("%02x ", ((uint8_t*)eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.Payload)[cnt]);
+  msg("\n");
+  //////////////////////////////////
+#endif
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
 
   if (*SRB_configList != NULL)
@@ -1881,6 +2059,7 @@ rrc_eNB_generate_RRCConnectionSetup (u8 Mod_id, u32 frame, u16 UE_index)
          Mod_id, frame, eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size,
          UE_index);
 
+  //oai_flag = 1;
 }
 
 /*

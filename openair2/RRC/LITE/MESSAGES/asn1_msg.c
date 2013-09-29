@@ -288,14 +288,28 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 
   PLMN_identity_info.plmn_Identity.mnc.list.size=0;
   PLMN_identity_info.plmn_Identity.mnc.list.count=0;
-  dummy_mnc[0]=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[0]);
-  dummy_mnc[1]=1;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[1]);
+  dummy_mnc[0]=1;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[0]);
+  dummy_mnc[1]=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[1]);
   //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
   PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
 
   ASN_SEQUENCE_ADD(&(*sib1)->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
 
 
+  asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;
+
+  dummy_mcc[0]=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy_mcc[0]);
+  dummy_mcc[1]=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy_mcc[1]);
+  dummy_mcc[2]=1;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy_mcc[2]);
+
+  PLMN_identity_info.plmn_Identity.mnc.list.size=0;
+  PLMN_identity_info.plmn_Identity.mnc.list.count=0;
+  dummy_mnc[0]=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[0]);
+  dummy_mnc[1]=1;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[1]);
+  //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
+  PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
+
+  ASN_SEQUENCE_ADD(&(*sib1)->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
   // 16 bits
   (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf = MALLOC(2);
   (*sib1)->cellAccessRelatedInfo.trackingAreaCode.buf[0]=0x00;
@@ -305,7 +319,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 
   // 28 bits
   (*sib1)->cellAccessRelatedInfo.cellIdentity.buf = MALLOC(8);
-  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3]=0x10;
+  (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[3]=0x00;
   (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[2]=0x00;
   (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[1]=0x00;
   (*sib1)->cellAccessRelatedInfo.cellIdentity.buf[0]=0x00;
@@ -322,7 +336,10 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   (*sib1)->cellSelectionInfo.q_RxLevMin=-65;
   (*sib1)->cellSelectionInfo.q_RxLevMinOffset=NULL;
 
-  (*sib1)->freqBandIndicator = 38;
+  if (frame_parms->frame_type == FDD)
+    (*sib1)->freqBandIndicator = 1;  // FDD works on band1
+  else
+    (*sib1)->freqBandIndicator = 38; // TDD works on band38
 
   schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
 
@@ -618,13 +635,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep=RACH_ConfigCommon__powerRampingParameters__powerRampingStep_dB2;
 
 #ifdef EXMIMO
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_100;
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_90;
 #else
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_108;
 #endif
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
 
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf4;
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf10;
 
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer=RACH_ConfigCommon__ra_SupervisionInfo__mac_ContentionResolutionTimer_sf48;
 
@@ -646,7 +663,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex = 0;//3;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag = 0;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig = 1;//12;
-  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 2;
+  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 0;
 
   // PDSCH-Config
 #ifdef EXMIMO
@@ -748,9 +765,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #else // no MBMS transmission
     (*sib2)->mbsfn_SubframeConfigList = NULL;
 #endif
-    
-  (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf5120;
-
+  (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf10240;
   /// (*SIB3)
 #ifdef Rel10
   (*sib3)->s_IntraSearch_v920=NULL;
@@ -988,6 +1003,39 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
 
 }
 
+uint8_t do_DLInformationTransfer(uint8_t *buffer, void *nas_buf, int nas_size)
+{
+  asn_enc_rval_t enc_rval;
+  DL_DCCH_Message_t dl_dcch_msg;
+  
+  DLInformationTransfer_t *dlInformationTransfer; 
+  DLInformationTransfer_r8_IEs_t *dlInformationTransferR8;
+
+  memset((void*)&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+
+  dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
+  dlInformationTransfer                 = &dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer;
+
+  dlInformationTransfer->rrc_TransactionIdentifier            = 0x0; //TODO:????
+  dlInformationTransfer->criticalExtensions.present           = DLInformationTransfer__criticalExtensions_PR_c1;
+  dlInformationTransfer->criticalExtensions.choice.c1.present = DLInformationTransfer__criticalExtensions__c1_PR_dlInformationTransfer_r8;
+  
+  dlInformationTransferR8 = &dlInformationTransfer->criticalExtensions.choice.c1.choice.dlInformationTransfer_r8; 
+  dlInformationTransferR8->dedicatedInfoType.present  = DLInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS;
+  memset(&dlInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS, 0, sizeof(OCTET_STRING_t));
+  OCTET_STRING_fromBuf(&dlInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS, nas_buf, nas_size);
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+                                  (void*)&dl_dcch_msg,
+                                  buffer, 
+                                  100);
+
+  LOG_D(RRC, "DLInformationTransfer Encoded %d bits (%d bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+
+  return ((enc_rval.encoded+7)/8);
+}
+
 uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 
 
@@ -1121,12 +1169,13 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //	      PDSCH_ConfigDedicated__p_a_dB0);
-  physicalConfigDedicated2->pdsch_ConfigDedicated->p_a=   PDSCH_ConfigDedicated__p_a_dB0;
+  physicalConfigDedicated2->pdsch_ConfigDedicated->p_a = PDSCH_ConfigDedicated__p_a_dB0;
 
   // PUCCH
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.present=PUCCH_ConfigDedicated__ackNackRepetition_PR_release;
   physicalConfigDedicated2->pucch_ConfigDedicated->ackNackRepetition.choice.release=0;
-  physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode=NULL;//PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
+  physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode= NULL;//CALLOC(1,sizeof(long));
+  //*(physicalConfigDedicated2->pucch_ConfigDedicated->tdd_AckNackFeedbackMode) = PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing;
 
   // Pusch_config_dedicated
   physicalConfigDedicated2->pusch_ConfigDedicated->betaOffset_ACK_Index = 0; // 2.00
@@ -1309,7 +1358,7 @@ uint8_t do_SecurityModeCommand(uint8_t Mod_id,
  
  dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.present = SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
  // the two following information could be based on the mod_id
- dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm=SecurityAlgorithmConfig__cipheringAlgorithm_spare1;
+ dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm=SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
   dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm=SecurityAlgorithmConfig__integrityProtAlgorithm_spare1;
 
 
@@ -1420,7 +1469,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList = DRB_list;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = NULL;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = NULL;
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = physicalConfigDedicated;
 #ifdef CBA
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->cba_RNTI_vlola= cba_rnti;
 #endif 
@@ -1435,6 +1484,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig=NULL;
   }
 
+  if (MeasId_list) {
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
   memset((void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig,
          0, sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig));
@@ -1442,6 +1492,10 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;  
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList       = MeasId_list;  
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList   = MeasObj_list;  
+  } 
+  else {
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig = NULL;
+  }
 
 
   // Note: RK, I'm not sure this is ok, we have to use ASN_SEQ_ADD
@@ -1449,17 +1503,26 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   if ((nas_pdu == NULL) || (nas_length == 0)) {
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = (DedicatedInfoNAS_t*)NULL;
   } else {
-      DedicatedInfoNAS_t *dedicatedInfoNAS;
-      dedicatedInfoNAS = &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList;
-      dedicatedInfoNAS->buf = nas_pdu;
-      dedicatedInfoNAS->size = nas_length;
+      DedicatedInfoNAS_t *dedicatedInfoNAS = CALLOC(1, sizeof(DedicatedInfoNAS_t));
+      memset(dedicatedInfoNAS, 0, sizeof(OCTET_STRING_t));
+      
+      OCTET_STRING_fromBuf(dedicatedInfoNAS, nas_pdu, nas_length);
+
+      rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = CALLOC(1, 
+          sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList));
+      ASN_SEQUENCE_ADD(&rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList->list, dedicatedInfoNAS);
+
+      //DedicatedInfoNAS_t *dedicatedInfoNAS;
+      //dedicatedInfoNAS = &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList;
+      //dedicatedInfoNAS->buf = nas_pdu;
+      //dedicatedInfoNAS->size = nas_length;
   }
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
                                    (void*)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   200);
 #ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
 #endif
@@ -1858,7 +1921,7 @@ uint8_t do_SIB2_cell(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *b
 #endif
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
 
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf4;
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf10;
 
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer=RACH_ConfigCommon__ra_SupervisionInfo__mac_ContentionResolutionTimer_sf48;
 
