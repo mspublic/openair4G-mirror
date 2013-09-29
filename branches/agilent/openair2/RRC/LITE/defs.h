@@ -140,6 +140,8 @@ typedef struct{
 
 typedef struct{
   u8 Status[NUMBER_OF_UE_MAX];
+  u8 *nas_pdu[NUMBER_OF_UE_MAX];
+  u32 nas_length[NUMBER_OF_UE_MAX];
   u8 Nb_ue;
   //unsigned short UE_index_list[NUMBER_OF_UE_MAX];
   //L2_ID UE_list[NUMBER_OF_UE_MAX];

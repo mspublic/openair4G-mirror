@@ -27,7 +27,7 @@ int n_users = 1;
 u8 mcs = 0;
 u32 DLSCH_RB_ALLOC = 0x1000;
 
-u8 BCCH_alloc_pdu[8];
+u8 BCCH_alloc[8];
 uint64_t DLSCH_alloc_pdu_1[2];
 
 void eNB_scheduler(u8 Mod_id, u8 cooperation_flag, u8 frame, u8 subframe) {
@@ -69,14 +69,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
           ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
             
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 0, 4);
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 0, 4);
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
           break;
@@ -92,14 +92,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
           ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
           
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 18, 4);
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 18, 4);
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_5MHz_TDD_1_6_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_5MHz_TDD_1_6_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
           break;
@@ -115,14 +115,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
           ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 30, 4);
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 30, 4);
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_10MHz_TDD_1_6_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_10MHz_TDD_1_6_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
           break;
@@ -138,14 +138,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
           ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 70, 4);
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 70, 4);
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_20MHz_TDD_1_6_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_20MHz_TDD_1_6_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
           break;
@@ -164,14 +164,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
           ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 0, 4);
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 0, 4);
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_1_5MHz_FDD_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
           break;
@@ -186,14 +186,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
           ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 18, 4);
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 18, 4);
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_5MHz_FDD_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_5MHz_FDD_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_5MHz_FDD_t);
           break;
@@ -208,14 +208,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
           ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 30, 4);
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 30, 4);
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_10MHz_FDD_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_10MHz_FDD_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_10MHz_FDD_t);
           break;
@@ -230,14 +230,14 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
           ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
           ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->type                 = 1;
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->vrb_type             = 0;
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 70, 4);
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->ndi                  = 1;
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->rv                   = 0;
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->mcs                  = 2;
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->harq_pid             = 0;
-          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc_pdu[0])->TPC                  = 1;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->type                 = 1;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->vrb_type             = 0;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->rballoc              = computeRIV(PHY_vars_eNB_g[0]->lte_frame_parms.N_RB_DL, 70, 4);
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->ndi                  = 1;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->rv                   = 0;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->mcs                  = 2;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->harq_pid             = 0;
+          ((DCI1A_20MHz_FDD_t*)&BCCH_alloc[0])->TPC                  = 1;
           BCCH_pdu_size_bits  = sizeof_DCI1A_20MHz_FDD_t;
           BCCH_pdu_size_bytes = sizeof(DCI1A_20MHz_FDD_t);
           break;
@@ -250,13 +250,13 @@ DCI_PDU *get_dci(u8 Mod_id, u8 frame, u8 subframe) {
       break;
     }
     // add common dci
-    DCI_pdu.dci_alloc[0].dci_length = BCCH_pdu_size_bits;
-    DCI_pdu.dci_alloc[0].L          = 2;
-    DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
-    DCI_pdu.dci_alloc[0].format     = format1A;
-    DCI_pdu.dci_alloc[0].ra_flag    = 0;
-    memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &BCCH_alloc_pdu[0], BCCH_pdu_size_bytes);
-    DCI_pdu.Num_common_dci++;
+    //DCI_pdu.dci_alloc[0].dci_length = BCCH_pdu_size_bits;
+    //DCI_pdu.dci_alloc[0].L          = 2;
+    //DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
+    //DCI_pdu.dci_alloc[0].format     = format1A;
+    //DCI_pdu.dci_alloc[0].ra_flag    = 0;
+    //memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &BCCH_alloc[0], BCCH_pdu_size_bytes);
+    //DCI_pdu.Num_common_dci++;
 
     // add ue specific dci
     DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].dci_length = dci_length;
@@ -344,7 +344,7 @@ void lte_param_init(  unsigned char transmission_mode,
     mac_xface->get_dlsch_sdu = get_DLSCH_pdu;
 
     randominit(0);
-    set_taus_seed(0);
+    //set_taus_seed(0);
 
     lte_frame_parms = &(PHY_vars_eNB_g[0]->lte_frame_parms);
 
@@ -377,7 +377,7 @@ void lte_param_init(  unsigned char transmission_mode,
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
-        PHY_vars_eNB_g[0]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,0);
+        PHY_vars_eNB_g[0]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,N_RB_DL,0);
         if (!PHY_vars_eNB_g[0]->dlsch_eNB[i][j]) {
           LOG_E(PHY,"Can't get eNb dlsch structures\n");
           exit(-1);
@@ -388,7 +388,8 @@ void lte_param_init(  unsigned char transmission_mode,
         }
       }
       
-      PHY_vars_eNB_g[0]->ulsch_eNB[1+i] = new_eNB_ulsch(8,0);
+      PHY_vars_eNB_g[0]->ulsch_eNB[1+i] = new_eNB_ulsch(8,4,N_RB_DL,0);
+
       if (!PHY_vars_eNB_g[0]->ulsch_eNB[1+i]) {
         LOG_E(PHY,"Can't get eNb ulsch structures\n");
         exit(-1);
@@ -398,15 +399,15 @@ void lte_param_init(  unsigned char transmission_mode,
 
     // ULSCH for RA
     
-    PHY_vars_eNB_g[0]->ulsch_eNB[0] = new_eNB_ulsch(8,0);
+    PHY_vars_eNB_g[0]->ulsch_eNB[0] = new_eNB_ulsch(8,4,N_RB_DL,0);
     if (!PHY_vars_eNB_g[0]->ulsch_eNB[0]) {
       LOG_E(PHY,"Can't get eNb ulsch structures\n");
       exit(-1);
     }
 
-    PHY_vars_eNB_g[0]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,0);
+    PHY_vars_eNB_g[0]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,N_RB_DL,0);
     LOG_D(PHY,"[eNB %d] : SI %p\n",0,PHY_vars_eNB_g[0]->dlsch_eNB_SI);
-    PHY_vars_eNB_g[0]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,0);
+    PHY_vars_eNB_g[0]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,N_RB_DL,0);
     LOG_D(PHY,"[eNB %d] : RA %p\n",0,PHY_vars_eNB_g[0]->dlsch_eNB_ra);
     PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB=150;
 
@@ -525,7 +526,7 @@ int main(int argc, char **argv) {
     num_pdcch_symbols = 3;
     break;
   case 25:
-    DLSCH_RB_ALLOC = 0x1F00;
+    DLSCH_RB_ALLOC = 0x1FFF;
     BW = 7.68;
     break;
   case 50:

@@ -278,6 +278,8 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active){
 	  break;
 	}
       }
+      memset(&RA_alloc_pdu, 0, size_bytes1);
+      memset(&DLSCH_alloc_pdu1A,0,size_bytes2);
       memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,size_bytes1);
       memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,size_bytes2);
       RA_template[j].RA_dci_size_bytes1 = size_bytes1;

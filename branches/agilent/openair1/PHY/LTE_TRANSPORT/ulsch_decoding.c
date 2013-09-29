@@ -287,7 +287,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       subframe);
 #endif  
 
-  if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+  //if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+  if (ulsch->harq_processes[harq_pid]->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
     ulsch->harq_processes[harq_pid]->B = A+24;
     lte_segmentation(NULL,
@@ -358,7 +359,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
 
   //  Q_ACK = Qprime * Q_m;
-  Qprime_ACK = Qprime;
+  Qprime_ACK = Qprime;//* Q_m;
 #ifdef DEBUG_ULSCH_DECODING
   LOG_D(PHY,"ulsch_decoding.c: Qprime_ACK %d, Msc_initial %d, Nsymb_initial %d, sumKr %d\n",
       Qprime_ACK,ulsch->harq_processes[harq_pid]->Msc_initial,ulsch->harq_processes[harq_pid]->Nsymb_initial,sumKr);

@@ -488,13 +488,13 @@ void
       }
     */
 
-  pdcp_fifo_read_input_sdus_from_otg(frame, eNB_flag, UE_index, eNB_index);
+  //pdcp_fifo_read_input_sdus_from_otg(frame, eNB_flag, UE_index, eNB_index);
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
   pdcp_fifo_read_input_sdus(frame,eNB_flag);
 
   // NAS -> PDCP traffic
-  pdcp_fifo_read_input_sdus(frame,eNB_flag);
+  //pdcp_fifo_read_input_sdus(frame,eNB_flag);
 
   // PDCP -> NAS/IP traffic: RX
   pdcp_fifo_flush_sdus(frame,eNB_flag);

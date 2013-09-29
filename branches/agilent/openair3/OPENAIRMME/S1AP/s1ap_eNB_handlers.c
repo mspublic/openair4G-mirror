@@ -32,6 +32,7 @@
 #include "s1ap_ies_defs.h"
 #include "s1ap_eNB.h"
 #include "s1ap_eNB_handlers.h"
+#include "s1ap_eNB_encoder.h"
 
 //Forward declaration
 struct s1ap_message_s;
@@ -193,32 +194,49 @@ int s1ap_eNB_handle_initial_context_setup(uint32_t assocId, uint32_t stream, str
     memcpy((void*)&ue_ref->security_key, (void*)initialContextSetupRequest_p->securityKey.buf, 32);
 #if defined(ENB_MODE)
     //TODO: init E-RAB configuration procedure
-//     for (i = 0; i < initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.list.count; i++) {
-//         uint8_t *nas_pdu = NULL;
-//         uint32_t nas_length = 0;
-//         NAS_PDU_t *nas_PDU;
-//         E_RABToBeSetupItemBearerSUReqIEs_t e_RABToBeSetupItemBearerSUReqIEs;
-// 
-//         s1ap_decode_e_rabtobesetupitembearersureqies(&e_RABToBeSetupItemBearerSUReqIEs,
-//                                                      initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.list.array[i]);
-// 
-//         nas_PDU = &e_RABToBeSetupItemBearerSUReqIEs.e_RABToBeSetupItemBearerSUReq.nAS_PDU;
-// 
-//         if (nas_PDU != NULL) {
-//             nas_pdu = nas_PDU->buf;
-//             nas_length = nas_PDU->size;
-//         }
-//         rrc_eNB_generate_RRCConnectionReconfiguration(ue_ref->eNB->eNB_id, 0, ue_ref->eNB_UE_s1ap_id, nas_pdu, nas_length);
-//     }
+    ue_ref->nb_of_e_rabs = initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.e_RABToBeSetupItemCtxtSUReq.count;
+
+    
+    for (i = 0; i < initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.e_RABToBeSetupItemCtxtSUReq.count; i++) {
+      uint8_t *nas_pdu = NULL;
+      uint32_t nas_length = 0;
+      NAS_PDU_t *nas_PDU;
+      struct s1ap_ue_e_rab_description_s *ue_e_rab = malloc(sizeof(struct s1ap_ue_e_rab_description_s));
+      if (ue_e_rab == NULL)
+        return -1;
+      E_RABToBeSetupItemCtxtSUReq_t *e_RABToBeSetupItemCtxtSUReq_p;
+
+      e_RABToBeSetupItemCtxtSUReq_p = initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.e_RABToBeSetupItemCtxtSUReq.array[i];
+
+      ue_e_rab->e_rab_id = e_RABToBeSetupItemCtxtSUReq_p->e_RAB_ID;
+      memcpy(ue_e_rab->gtp_teid, e_RABToBeSetupItemCtxtSUReq_p->gTP_TEID.buf, 4);
+      // TODO: only copy IPv4
+      ue_e_rab->ip_addr.ip_addr_present = S1AP_ADDR_IPV4;
+      memcpy(ue_e_rab->ip_addr.ipv4_addr, e_RABToBeSetupItemCtxtSUReq_p->transportLayerAddress.buf, 4);
+      if ((nas_PDU = e_RABToBeSetupItemCtxtSUReq_p->nAS_PDU) != NULL) {
+        nas_pdu = nas_PDU->buf;
+        nas_length = nas_PDU->size;
+      }
+
+      if (ue_ref->e_rab_list_head == NULL )
+        ue_ref->e_rab_list_head = ue_e_rab;
+      else
+        ue_ref->e_rab_list_head->next_e_rab = ue_e_rab;
+
+      S1AP_DEBUG("nas buf %p, len %d\n", nas_pdu, nas_length);
+      rrc_eNB_ind_reconfiguration(ue_ref->eNB->eNB_id, ue_ref->eNB_UE_s1ap_id, nas_pdu, nas_length);
+    }
+
 #endif
     //TODO: forward E-RAB param to RRC
-    return 0;
+    //TODO: generate initial context setup response
+    return s1ap_eNB_generate_initial_setup_resp(ue_ref);
 }
 
 int s1ap_eNB_handle_downlink_nas_transport(uint32_t assocId, uint32_t stream, struct s1ap_message_s *message) {
 
     DownlinkNASTransportIEs_t *downlinkNASTransport_p;
-    struct s1ap_eNB_description_s* eNB_ref;
+    struct s1ap_eNB_UE_description_s *ue_ref;
 
     downlinkNASTransport_p = &message->msg.downlinkNASTransportIEs;
 
@@ -229,5 +247,13 @@ int s1ap_eNB_handle_downlink_nas_transport(uint32_t assocId, uint32_t stream, st
     }
 
     //Forward to RRC
+    if ((ue_ref = s1ap_get_ue_assoc_id_eNB_ue_s1ap_id(assocId, downlinkNASTransport_p->eNB_UE_S1AP_ID)) == NULL) {
+      S1AP_ERROR("[SCTP %d] No UE context known for eNB UE S1AP ID %d\n",
+          assocId, (int)downlinkNASTransport_p->eNB_UE_S1AP_ID);
+    }
+
+#if defined(ENB_MODE)
+    rrc_eNB_generate_DLInformationTransfer (ue_ref->eNB->eNB_id, ue_ref->eNB_UE_s1ap_id, downlinkNASTransport_p->nas_pdu.buf, downlinkNASTransport_p->nas_pdu.size);
+#endif
     return 0;
 }

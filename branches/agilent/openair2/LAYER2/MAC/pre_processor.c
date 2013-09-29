@@ -296,7 +296,7 @@ void sort_UEs (unsigned char Mod_id,
     
     eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
     
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti1,subframe,&harq_pid1,&round1,0);
+    mac_xface->get_ue_active_harq_pid(Mod_id,rnti1,subframe,&harq_pid1,&round1,NULL,0);
     
     
     for(ii=i+1;ii<granted_UEs;ii++){
@@ -309,7 +309,7 @@ void sort_UEs (unsigned char Mod_id,
       
       eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,rnti2);
       
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,NULL,0);
       
       if(round2 > round1){ 
 	UE_id_sorted[i] = next_ue2;
@@ -407,7 +407,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
     rnti = find_UE_RNTI(Mod_id,i);
     if(rnti == 0)
       continue;
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,NULL,0);
     if(round>0)
       nb_rbs_required[i] = eNB_mac_inst[Mod_id].UE_template[i].nb_rb[harq_pid];
     //nb_rbs_required_remaining[i] = nb_rbs_required[i];
@@ -448,7 +448,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       rnti = find_UE_RNTI(Mod_id,next_ue);
       if(rnti == 0)
 	continue;
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,NULL,0);
 
       if ((mac_get_rrc_status(Mod_id,1,next_ue) < RRC_RECONFIGURED) && (round >0)) {
 
@@ -490,7 +490,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       rnti = find_UE_RNTI(Mod_id,next_ue);
       if(rnti == 0)
 	continue;
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,NULL,0);
 
       if ((mac_get_rrc_status(Mod_id,1,next_ue) >= RRC_RECONFIGURED) && (round > 0)) {
 
@@ -531,7 +531,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       rnti = find_UE_RNTI(Mod_id,next_ue);
       if(rnti == 0)
 	continue;
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,NULL,0);
 
       if ((mac_get_rrc_status(Mod_id,1,next_ue) < RRC_RECONFIGURED) && (round == 0)) {
 
@@ -578,7 +578,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 
       eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
 
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti1,subframe,&harq_pid1,&round1,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti1,subframe,&harq_pid1,&round1,NULL,0);
 
       if ((mac_get_rrc_status(Mod_id,1,next_ue1) >= RRC_RECONFIGURED) && (round1==0) && (mac_xface->get_transmission_mode(Mod_id,rnti1)==5) && (dl_pow_off[next_ue1] != 1)) {
 
@@ -595,7 +595,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
 		continue;
 
 	      eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,rnti2);
-	      mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
+	      mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,NULL,0);
 	      
 	      if ((mac_get_rrc_status(Mod_id,1,next_ue2) >= RRC_RECONFIGURED) && (round2==0) && (mac_xface->get_transmission_mode(Mod_id,rnti2)==5) && (dl_pow_off[next_ue2] != 1)) {
 
@@ -652,7 +652,7 @@ void dlsch_scheduler_pre_processor (unsigned char Mod_id,
       if (rnti == 0)
 	continue;
     
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,NULL,0);
     
       if ((mac_get_rrc_status(Mod_id,1,next_ue) >= RRC_RECONFIGURED) && (round==0)) {
 

@@ -61,7 +61,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
   lte_frame_parms->tdd_config = 1;
-  lte_frame_parms->frame_type = 1;
+  lte_frame_parms->frame_type = 0;
   init_frame_parms(lte_frame_parms,osf);
   
   //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
   //  double prach_sinr;
   u8 osf=1,N_RB_DL=25;
   u32 prach_errors=0;
-  u8 subframe=3;
+  u8 subframe=1;
   u16 preamble_energy_list[64],preamble_tx=99,preamble_delay_list[64];
   u16 preamble_max,preamble_energy_max;
   PRACH_RESOURCES_t prach_resources;
@@ -499,7 +499,7 @@ int main(int argc, char **argv) {
 	    printf("****** preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 	  else
 	    printf("preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
-	write_output("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+	write_output("prach0.m","p0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
 	write_output("prachF0.m","prachF0", &PHY_vars_eNB->lte_eNB_prach_vars.prachF[0],24576,1,1);
 	write_output("rxsig0.m","rxs0", 
 		     &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],

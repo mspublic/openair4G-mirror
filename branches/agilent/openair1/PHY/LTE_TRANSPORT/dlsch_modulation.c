@@ -772,7 +772,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   
   amp_rho_a = (int16_t)(((int32_t)amp*dlsch->sqrt_rho_a)>>13);
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch->sqrt_rho_b)>>13);
-
+  //msg("amp_rho_a %d, amp_rho_b %d\n", amp_rho_a, amp_rho_b);
   if (mod_order == 4)
     for (i=0;i<4;i++) {
       qam16_table_a[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);

@@ -31,6 +31,8 @@
 #ifndef S1AP_ENB_ENCODER_H_
 #define S1AP_ENB_ENCODER_H_
 
+#include "s1ap_ies_defs.h"
+
 int s1ap_eNB_generate_s1_setup_request(struct s1ap_eNB_description_s* eNB_ref);
 
 int s1ap_eNB_generate_initial_ue_message(struct s1ap_eNB_UE_description_s *ue_ref,
@@ -53,4 +55,5 @@ int s1ap_eNB_generate_uplink_nas_transport(struct s1ap_eNB_UE_description_s *ue_
                                            uint8_t                          *nas_pdu,
                                            uint32_t                          nas_len);
 
+int s1ap_eNB_generate_initial_setup_resp(struct s1ap_eNB_UE_description_s *ue_ref); 
 #endif /* S1AP_ENB_ENCODER_H_ */

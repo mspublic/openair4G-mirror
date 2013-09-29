@@ -30,17 +30,26 @@ else
  fi
 fi
 
-sudo rmmod nasmesh
-sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko
 
-if [ "$1" = "eNB" ]; then 
-     echo "bring up oai0 interface for enb"
-     sudo ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
-     $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.9 -r 3
-else
-    if [ "$1" = "UE" ]; then 
-	echo "bring up oai0 interface for UE"
-	sudo ifconfig oai0 10.0.1.9 netmask 255.255.255.0 broadcast 10.0.1.255
-	$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.9 -t 10.0.1.1 -r 3
-    fi
-fi  
+# load rtai modules
+MODULES_HOME=/usr/realtime/modules
+insmod $MODULES_HOME/rtai_hal.ko
+insmod $MODULES_HOME/rtai_lxrt.ko
+insmod $MODULES_HOME/rtai_fifos.ko
+insmod $MODULES_HOME/rtai_sem.ko
+insmod $MODULES_HOME/rtai_msg.ko
+
+#sudo rmmod nasmesh
+#sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko
+#
+#if [ "$1" = "eNB" ]; then 
+#     echo "bring up oai0 interface for enb"
+#     sudo ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
+#     $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.9 -r 3
+#else
+#    if [ "$1" = "UE" ]; then 
+#	echo "bring up oai0 interface for UE"
+#	sudo ifconfig oai0 10.0.1.9 netmask 255.255.255.0 broadcast 10.0.1.255
+#	$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.9 -t 10.0.1.1 -r 3
+#    fi
+#fi  

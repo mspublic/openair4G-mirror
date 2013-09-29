@@ -58,7 +58,8 @@ int pdcp_instance_cnt;
 
 static void *pdcp_thread_main(void* param) {
 
-  u8 eNB_flag = *((u8*)param);
+  //u8 eNB_flag = *((u8*)param);
+  u8 eNB_flag = 1;
 
   while (!oai_exit) {
 

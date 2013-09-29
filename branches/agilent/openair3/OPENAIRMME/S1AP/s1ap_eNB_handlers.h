@@ -33,6 +33,8 @@
 #ifndef S1AP_ENB_HANDLERS_H_
 #define S1AP_ENB_HANDLERS_H_
 
+int s1ap_eNB_handle_message(uint32_t assocId, uint32_t stream, struct s1ap_message_s *message);
+
 int s1ap_eNB_handle_s1_setup_response(uint32_t assocId, uint32_t stream, struct s1ap_message_s *message);
 
 int s1ap_eNB_handle_s1_setup_failure(uint32_t assocId, uint32_t stream, struct s1ap_message_s *message);
