@@ -4,7 +4,7 @@ MPICC = gcc #mpicc
 CPUFLAGS = -mmmx -msse -msse2 -msse4.1 -march=native
 # FORCE ssse3 for compilation of openair on User Mode Linux
 CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ; else if grep --silent User\ Mode\ Linux /proc/cpuinfo ; then echo "-mssse3" ; else echo ""; fi; fi)
-CPUFLAGS += $(shell if grep --silent sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
+CPUFLAGS += $(shell if grep --silent -w sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
 linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
 NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc -l)
@@ -74,7 +74,7 @@ ifeq ($(ENABLE_DB), 1)
 CFLAGS +=-I/usr/include/mysql -L/usr/lib/mysql -DENABLE_DB_STATS
 DB_LDFLAGS = -lmysqlclient
 endif 
-endif 
+endif
 
 ifdef PRINT_STATS
 CFLAGS += -DPRINT_STATS
@@ -162,6 +162,25 @@ CFLAGS += -DENABLE_FXP -DOAI_EMU -DENABLE_USE_CPU_EXECUTION_TIME #-DXER_PRINT
 
 ifneq ($(USE_MME), R8)
 UPDATE_RELEASE_9=1
+endif
+
+ifdef SECU
+NETTLE_FOUND = $(shell if pkg-config --exists nettle; then echo "1" ; else echo "0"; fi)
+OPENSSL_FOUND = $(shell if pkg-config --exists openssl; then echo "1" ; else echo "0"; fi)
+
+ifeq ($(NETTLE_FOUND), 0)
+@echo "Nettle library >= 2.5 is not installed on your system, continuing with security disabled"
+SECU=0
+else
+ifeq ($(OPENSSL_FOUND), 0)
+@echo "openssl library is not installed on your system, continuing with security disabled"
+SECU=0
+else
+CFLAGS += -DENABLE_SECURITY
+OSA_LDFLAGS += `pkg-config --libs nettle`
+OSA_LDFLAGS += `pkg-config --libs openssl`
+endif
+endif
 endif
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -329,7 +348,8 @@ oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(PHY_OBJS) oaisim.c $(LFDS_DIR)/bin/liblfds61
 endif
 	@echo "Compiling oaisim.c ..."
 	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
-	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt $(LFDS_DIR)/bin/liblfds611.a $(PGM_LDFLAGS) $(DB_LDFLAGS) 
+	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt \
+	$(LFDS_DIR)/bin/liblfds611.a $(PGM_LDFLAGS) $(DB_LDFLAGS) $(OSA_LDFLAGS)
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -371,10 +391,12 @@ rrm_std_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make cell_rrm CELL_RRM=1 CELLULAR=1 NO_RRM=1)
 
 
-cleanall: clean cleanasn1 cleanmmeasn1
+cleanall: clean cleanasn1 cleanmmeasn1 cleanlfds
+
+cleanalmostall: clean
+	rm -f $(ASN1_MSG_OBJS1)
 
 clean:
-	$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
 	rm -f oaisim
 	rm -f oaisim_pad
 	rm -f $(OBJ)
@@ -419,6 +441,9 @@ cleancell:
 	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
 	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
 
+cleanlfds:
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
+
 print:
 #	@echo $(cygwin)
 	@echo $(OBJ)
@@ -427,7 +452,7 @@ print:
 	@echo "CFLAGS are "      $(CFLAGS)
 	@echo "EXTRA_CFLAGS are" $(EXTRA_CFLAGS)
 
-	@echo "IS_REL8 is "      $(IS_REL10)
+	@echo "IS_REL10 is "      $(IS_REL10)
 	@echo "IS_REL8 is "      $(IS_REL8)
 	@echo "ENABLE_DB is "    $(ENABLE_DB)
 

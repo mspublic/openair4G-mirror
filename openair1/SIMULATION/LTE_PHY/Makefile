@@ -189,7 +189,7 @@ clean :
 	rm -f *.o
 
 cleanall : clean
-	rm -f dlsim pbchsim pdcchsim ulsim pucchsim 
+	rm -f dlsim pbchsim pdcchsim ulsim pucchsim mbmssim prachsim 
 	rm -f *.exe*
 
 showflags :

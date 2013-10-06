@@ -6,8 +6,8 @@ active_rf = [1 1 1 1];
 rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM)*active_rf;
 rf_mode = rf_mode+(DMAMODE_RX*active_rf);
 %freq_rx = 2540000000*[1 1 1 1];
-%freq_rx = 1907600000*[1 1 1 0];
-freq_rx = 1912600000*active_rf; %+ 2540000000*[0 1 0 0]; % + 859500000*[0 0 1 0];
+freq_rx = 1907600000*active_rf;
+%freq_rx = 1912600000*active_rf; %+ 2540000000*[0 1 0 0]; % + 859500000*[0 0 1 0];
 %freq_rx = 1912600000*[1 1 1 1];
 %freq_rx = 859500000*[1 1 1 1];
 freq_tx = freq_rx; %+1.92e6;
@@ -43,10 +43,12 @@ s=oarf_get_frame(card);
 f = (7.68*(0:length(s(:,1))-1)/(length(s(:,1))))-3.84;
 spec0 = 20*log10(abs(fftshift(fft(s(:,1)))));
 spec1 = 20*log10(abs(fftshift(fft(s(:,2)))));
+spec2 = 20*log10(abs(fftshift(fft(s(:,3)))));
+spec3 = 20*log10(abs(fftshift(fft(s(:,4)))));
 
 clf
-plot(f',spec0,'r',f',spec1,'b')
+plot(f',spec0,'r',f',spec1,'b',f',spec2,'g',f',spec3,'m')
 axis([-3.84,3.84,40,160]);
 %gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF'); %  activate output 
-legend('Antenna Port 0','Antenna Port 1');
+legend('Antenna Port 0','Antenna Port 1','Antenna Port 2','Antenna Port 3');
 grid

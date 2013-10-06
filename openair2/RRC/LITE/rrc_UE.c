@@ -68,6 +68,11 @@
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #endif
+
+#if defined(ENABLE_SECURITY)
+# include "UTIL/OSA/osa_defs.h"
+#endif
+
 #ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
 #endif
@@ -105,14 +110,35 @@ void init_SI_UE(u8 Mod_id,u8 eNB_index) {
 
 #ifdef Rel10
 void init_MCCH_UE(u8 Mod_id, u8 eNB_index) {
-
+  int i;
   UE_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[eNB_index] = 0;
   UE_rrc_inst[Mod_id].MCCH_MESSAGE[eNB_index] = (u8 *)malloc16(32);
   UE_rrc_inst[Mod_id].mcch_message[eNB_index] = (MBSFNAreaConfiguration_r9_t *)malloc16(sizeof(MBSFNAreaConfiguration_r9_t));
-  UE_rrc_inst[Mod_id].Info[eNB_index].MCCH_MESSAGEStatus = 0;
-  
-  }
+  for (i=0; i<8;i++) // MAX MBSFN Area
+    UE_rrc_inst[Mod_id].Info[eNB_index].MCCHStatus[i] = 0;
+
+}
 #endif
+
+static
+void openair_rrc_lite_ue_init_security(u8 Mod_id)
+{
+#if defined(ENABLE_SECURITY)
+    uint8_t *kRRCenc;
+    uint8_t *kRRCint;
+    char ascii_buffer[65];
+    uint8_t i;
+
+    memset(UE_rrc_inst[Mod_id].kenb, Mod_id, 32);
+
+    for (i = 0; i < 32; i++) {
+        sprintf(&ascii_buffer[2 * i], "%02X", UE_rrc_inst[Mod_id].kenb[i]);
+    }
+
+    LOG_T(RRC, "[OSA][UE %02d] kenb    = %s\n",
+            Mod_id, ascii_buffer);
+#endif
+}
 
 /*------------------------------------------------------------------------------*/
 char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
@@ -129,6 +155,15 @@ char openair_rrc_lite_ue_init(u8 Mod_id, unsigned char eNB_index){
   UE_rrc_inst[Mod_id].Srb0[eNB_index].Active=0;
   UE_rrc_inst[Mod_id].Srb1[eNB_index].Active=0;
   UE_rrc_inst[Mod_id].Srb2[eNB_index].Active=0;
+
+  UE_rrc_inst[Mod_id].ciphering_algorithm = SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
+#ifdef Rel10
+  UE_rrc_inst[Mod_id].integrity_algorithm = SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920;
+#else
+  UE_rrc_inst[Mod_id].integrity_algorithm = SecurityAlgorithmConfig__integrityProtAlgorithm_reserved;
+#endif
+
+  openair_rrc_lite_ue_init_security(Mod_id);
 
   init_SI_UE(Mod_id,eNB_index);
   LOG_D(RRC,"[UE %d] INIT: phy_sync_2_ch_ind\n", Mod_id);
@@ -156,7 +191,7 @@ void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u32 frame, u8 eNB_index){
   /*------------------------------------------------------------------------------*/
 
   u8 i=0,rv[6];
-
+  
   if(UE_rrc_inst[Mod_id].Srb0[eNB_index].Tx_buffer.payload_size ==0){
 
     // Get RRCConnectionRequest, fill random for now
@@ -652,12 +687,26 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
   // Establish SRBs if present
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
+    uint8_t *kRRCenc = NULL;
+    uint8_t *kRRCint = NULL;
+
+#if defined(ENABLE_SECURITY)
+    derive_key_rrc_enc(UE_rrc_inst[Mod_id].ciphering_algorithm,
+                       UE_rrc_inst[Mod_id].kenb, &kRRCenc);
+    derive_key_rrc_int(UE_rrc_inst[Mod_id].integrity_algorithm,
+                       UE_rrc_inst[Mod_id].kenb, &kRRCint);
+#endif
 
 // Refresh SRBs
     rrc_pdcp_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,eNB_index,
-			    radioResourceConfigDedicated->srb_ToAddModList,
-			    (DRB_ToAddModList_t*)NULL,
-			    (DRB_ToReleaseList_t*)NULL
+                             radioResourceConfigDedicated->srb_ToAddModList,
+                             (DRB_ToAddModList_t*)NULL,
+                             (DRB_ToReleaseList_t*)NULL,
+                             UE_rrc_inst[Mod_id].ciphering_algorithm |
+                             (UE_rrc_inst[Mod_id].integrity_algorithm << 4),
+                             kRRCenc,
+                             kRRCint,
+                             NULL
 #ifdef Rel10
 			    ,(MBMS_SessionInfoList_r9_t *)NULL
 #endif
@@ -790,12 +839,23 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u32 frame, u8 eNB_ind
 
   // Establish DRBs if present
   if (radioResourceConfigDedicated->drb_ToAddModList) {
+    uint8_t *kUPenc;
+
+#if defined(ENABLE_SECURITY)
+    derive_key_up_enc(UE_rrc_inst[Mod_id].integrity_algorithm,
+                      UE_rrc_inst[Mod_id].kenb, &kUPenc);
+#endif
 
     // Refresh DRBs
     rrc_pdcp_config_asn1_req(NB_eNB_INST+Mod_id,frame,0,eNB_index,
-			    (SRB_ToAddModList_t*)NULL,
-			    radioResourceConfigDedicated->drb_ToAddModList,
-			    (DRB_ToReleaseList_t*)NULL
+                             (SRB_ToAddModList_t*)NULL,
+                             radioResourceConfigDedicated->drb_ToAddModList,
+                             (DRB_ToReleaseList_t*)NULL,
+                             UE_rrc_inst[Mod_id].ciphering_algorithm |
+                             (UE_rrc_inst[Mod_id].integrity_algorithm << 4),
+                             NULL,
+                             NULL,
+                             kUPenc
 #ifdef Rel10
 			    ,(MBMS_SessionInfoList_r9_t *)NULL
 #endif
@@ -907,7 +967,11 @@ void rrc_ue_process_securityModeCommand(uint8_t Mod_id,uint32_t frame,SecurityMo
     break;
   }
   LOG_D(RRC,"[UE %d] security mode is %x \n",Mod_id, securityMode);
-  
+
+  /* Store the parameters received */
+  UE_rrc_inst[Mod_id].ciphering_algorithm = securityModeCommand->criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm;
+  UE_rrc_inst[Mod_id].integrity_algorithm = securityModeCommand->criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm;
+
   memset((void *)&ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
   //memset((void *)&SecurityModeCommand,0,sizeof(SecurityModeCommand_t));
 
@@ -1035,8 +1099,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id, u32 frame,
       if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
 	LOG_I(RRC,"Radio Resource Configuration is present\n");
 	rrc_ue_process_radioResourceConfigDedicated(Mod_id,frame,eNB_index,
-						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-
+                                                    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
       }
     } // c1 present
   } // critical extensions present
@@ -1219,6 +1282,7 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
 	}
 	break;
       case BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
+      default:
 	break;
       }
     }
@@ -1227,6 +1291,8 @@ int decode_BCCH_DLSCH_Message(u8 Mod_id,u32 frame,u8 eNB_index,u8 *Sdu,u8 Sdu_le
       (UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus == 1) && (frame >= Mod_id * 20 + 10))
       SEQUENCE_free(&asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message, 0);*/
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT);
+
+  return 0;
 }
 
 
@@ -1385,10 +1451,10 @@ void dump_sib2(SystemInformationBlockType2_t *sib2) {
   LOG_D(RRC,"ue_TimersAndConstants.n311 : %ld\n", sib2->ue_TimersAndConstants.n311);
 
   LOG_D(RRC,"freqInfo.additionalSpectrumEmission : %ld\n",sib2->freqInfo.additionalSpectrumEmission);
-  LOG_D(RRC,"freqInfo.ul_CarrierFreq : %d\n",(int)sib2->freqInfo.ul_CarrierFreq);
-  LOG_D(RRC,"freqInfo.ul_Bandwidth : %d\n",(int)sib2->freqInfo.ul_Bandwidth);
-  LOG_D(RRC,"mbsfn_SubframeConfigList : %d\n",(int)sib2->mbsfn_SubframeConfigList);
-  LOG_D(RRC,"timeAlignmentTimerCommon : %ld\n",sib2->timeAlignmentTimerCommon);
+  LOG_D(RRC,"freqInfo.ul_CarrierFreq : %p\n", sib2->freqInfo.ul_CarrierFreq);
+  LOG_D(RRC,"freqInfo.ul_Bandwidth : %p\n", sib2->freqInfo.ul_Bandwidth);
+  LOG_D(RRC,"mbsfn_SubframeConfigList : %p\n", sib2->mbsfn_SubframeConfigList);
+  LOG_D(RRC,"timeAlignmentTimerCommon : %ld\n", sib2->timeAlignmentTimerCommon);
 
 
 
@@ -1468,7 +1534,11 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 			 );
       UE_rrc_inst[Mod_id].Info[eNB_index].SIStatus = 1;
       // After SI is received, prepare RRCConnectionRequest
-      rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
+#ifdef Rel10
+      if (UE_rrc_inst[Mod_id].MBMS_flag < 3) // see -Q option
+#endif
+	rrc_ue_generate_RRCConnectionRequest(Mod_id,frame,eNB_index);
+      LOG_I(RRC, "not sending connection request\n");
 
       if (UE_rrc_inst[Mod_id].Info[eNB_index].State == RRC_IDLE) {
 	LOG_I(RRC,"[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n",Mod_id);
@@ -1567,13 +1637,15 @@ int decode_SI(u8 Mod_id,u32 frame,u8 eNB_index,u8 si_window) {
 }
 
 #ifdef Rel10
-int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len) {
+int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len,u8 mbsfn_sync_area) {
   
   MCCH_Message_t *mcch=NULL;
   MBSFNAreaConfiguration_r9_t **mcch_message=&UE_rrc_inst[Mod_id].mcch_message[eNB_index];
   asn_dec_rval_t dec_rval;
   
-  if (UE_rrc_inst[Mod_id].Info[eNB_index].MCCH_MESSAGEStatus == 1) {
+  if (UE_rrc_inst[Mod_id].Info[eNB_index].MCCHStatus[mbsfn_sync_area] == 1) {
+    LOG_D(RRC,"[UE %d] Frame %d: MCCH MESSAGE for MBSFN sync area %d has been already received!\n",
+	  Mod_id, frame, mbsfn_sync_area);
     return 0; // avoid decoding to prevent memory bloating
   }
   else {
@@ -1593,15 +1665,15 @@ int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len)
 #endif
 
     if (mcch->message.present == MCCH_MessageType_PR_c1) {
-      LOG_D(RRC,"[UE %d] Found First MCCH_MESSAGE\n",Mod_id);
+      LOG_D(RRC,"[UE %d] Found mcch message \n",Mod_id);
       if(mcch->message.choice.c1.present == MCCH_MessageType__c1_PR_mbsfnAreaConfiguration_r9) {
 	/*	
 	memcpy((void*)*mcch_message,
 	       (void*)&mcch->message.choice.c1.choice.mbsfnAreaConfiguration_r9,
 	       sizeof(MBSFNAreaConfiguration_r9_t)); */
 	*mcch_message = &mcch->message.choice.c1.choice.mbsfnAreaConfiguration_r9;
-	LOG_D(RRC,"[UE %d] Found MBSFNAreaConfiguration\n",Mod_id);
-	decode_MBSFNAreaConfiguration(Mod_id,eNB_index);
+	LOG_I(RRC,"[UE %d] Frame %d : Found MBSFNAreaConfiguration from eNB %d \n",Mod_id, frame, eNB_index);
+	decode_MBSFNAreaConfiguration(Mod_id,eNB_index,frame, mbsfn_sync_area);
 
       }
     }
@@ -1609,8 +1681,9 @@ int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len)
   return 0;
 }
 
-void decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index) {
-  LOG_D(RRC,"[UE %d] Number of MCH(s) in this MBSFN Area is %d\n", Mod_id, UE_rrc_inst[Mod_id].mcch_message[eNB_index]->pmch_InfoList_r9.list.count);
+void decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index, u32 frame,u8 mbsfn_sync_area) {
+  LOG_D(RRC,"[UE %d] Frame %d : Number of MCH(s) in the MBSFN Sync Area %d  is %d\n", 
+	Mod_id, frame, mbsfn_sync_area, UE_rrc_inst[Mod_id].mcch_message[eNB_index]->pmch_InfoList_r9.list.count);
   //  store to MAC/PHY necessary parameters for receiving MTCHs
   rrc_mac_config_req(Mod_id,0,0,eNB_index,
 		     (RadioResourceConfigCommonSIB_t *)NULL,
@@ -1640,9 +1713,34 @@ void decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index) {
 #endif
 		     );
 
-  UE_rrc_inst[Mod_id].Info[eNB_index].MCCH_MESSAGEStatus = 1;
-
-  // Config Radio Bearer for MBMS user data (similar way to configure for eNB side in init_MBMS function)							       
+  UE_rrc_inst[Mod_id].Info[eNB_index].MCCHStatus[mbsfn_sync_area] = 1;
+  
+  // Config Radio Bearer for MBMS user data (similar way to configure for eNB side in init_MBMS function)
+  rrc_pdcp_config_asn1_req(NB_eNB_INST+Mod_id,frame,
+			   0,// eNB_flag
+			   eNB_index,// 0,// index
+			   NULL, // SRB_ToAddModList
+			   NULL, // DRB_ToAddModList
+			   (DRB_ToReleaseList_t*)NULL,
+			   0, // security mode
+			   NULL, // key rrc encryption
+			   NULL, // key rrc integrity
+			   NULL // key encryption
+#ifdef Rel10
+			   ,
+			   &(UE_rrc_inst[Mod_id].mcch_message[eNB_index]->pmch_InfoList_r9)
+#endif
+			   );
+    
+  rrc_rlc_config_asn1_req(NB_eNB_INST+Mod_id, frame, 
+			  0,// eNB_flag
+			  0,
+			  NULL,// SRB_ToAddModList
+			  NULL,// DRB_ToAddModList
+			  NULL,// DRB_ToReleaseList
+			  &(UE_rrc_inst[Mod_id].mcch_message[eNB_index]->pmch_InfoList_r9));
+  // */
+  
 }
 
 #endif // rel10

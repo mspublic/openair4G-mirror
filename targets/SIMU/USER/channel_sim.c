@@ -59,7 +59,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame,u16 next_slot
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
    if (is_pmch_subframe(frame,next_slot>>1,frame_parms)) {
       if ((next_slot%2)==0) {
-	printf("MBSFN eNB sim: Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset); 
+	LOG_D(OCM,"Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset); 
 	PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
 		     &txdata[aa][slot_offset],         // output
 		     frame_parms->log2_symbol_size,                // log2_fft_size
@@ -79,7 +79,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame,u16 next_slot
 		       frame_parms->rev,           // bit-reversal permutation
 		       CYCLIC_PREFIX);
 	else {
-	  printf("MBSFN eNB sim: Frame %d, subframe %d: Doing PDCCH modulation\n",frame,next_slot>>1); 
+	  LOG_D(OCM,"Frame %d, subframe %d: Doing PDCCH modulation\n",frame,next_slot>>1); 
 	  normal_prefix_mod(&txdataF[aa][slot_offset_F],
 			    &txdata[aa][slot_offset],
 			    2,
@@ -154,10 +154,10 @@ void do_DL_sig(double **r_re0,double **r_im0,
 
       // find out which eNB the UE is attached to
       for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-        if (find_ue(PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])>=0) {
+        if (find_ue(PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti,PHY_vars_eNB_g[eNB_id])>=0) {
           // UE with UE_id is connected to eNb with eNB_id
           att_eNB_id=eNB_id;
-          LOG_D(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+          LOG_D(OCM,"A: UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
         }
       }
 
@@ -167,7 +167,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
           if (min_path_loss<eNB2UE[eNB_id][UE_id]->path_loss_dB) {
             min_path_loss = eNB2UE[eNB_id][UE_id]->path_loss_dB;
             att_eNB_id=eNB_id;
-            LOG_D(OCM,"UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
+            LOG_D(OCM,"B: UE attached to eNB (UE%d->eNB%d)\n",UE_id,eNB_id);
           }
         }
       }

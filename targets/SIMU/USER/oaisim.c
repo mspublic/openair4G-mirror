@@ -107,7 +107,7 @@ char smbv_ip[16];
 //u8 NB_INST = 2;
 //#endif //OPENAIR2
 u32 frame=0;
-int eMBMS_active = 0;
+//int eMBMS_active = 0;
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -209,7 +209,7 @@ help (void) {
   printf ("    - wireshark: Enable tracing of layers above PHY using an UDP socket\n");
   printf ("    - pcap:      Enable tracing of layers above PHY to a pcap file\n");
   printf ("    - tshark:    Not implemented yet\n");
-  printf ("-Q Activate the MBMS service\n");
+  printf ("-Q Activate and set the MBMS service: 0 : not used (default eMBMS disabled), 1: eMBMS and RRC Connection enabled, 2: eMBMS relaying and RRC Connection enabled, 3: eMBMS enabled, RRC Connection disabled, 4: eMBMS relaying enabled, RRC Connection disabled\n");
   printf ("-R [6,15,25,50,75,100] Sets N_RB_DL\n");
   printf ("-r Activates rate adaptation (DL for now)\n");
   printf ("-s snr_dB set a fixed (average) SNR, this deactivates the openair channel model generator (OCM)\n");
@@ -337,7 +337,7 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
       }
     }
   }
-
+  LOG_E(OMG,"pfd %d \n", pfd);
   if( write( pfd, &omv_data, sizeof(struct Data_Flow_Unit) ) == -1 )
     perror( "write omv failed" );
   return 1;
@@ -351,15 +351,15 @@ void omv_end (int pfd, Data_Flow_Unit omv_data) {
 #endif 
 
 Packet_OTG_List *otg_pdcp_buffer;
+#ifdef OPENAIR2
+  int pfd[2]; // fd for omv : fixme: this could be a local var
+#endif   
 
-int
-    main (int argc, char **argv)
-{
+int main (int argc, char **argv) {
+
   s32 i;
   // pointers signal buffers (s = transmit, r,r0 = receive)
-
   clock_t t;
-
 
   // Framing variables
   s32 slot, last_slot, next_slot;
@@ -374,15 +374,14 @@ int
   strcpy(smbv_ip,DEFAULT_SMBV_IP);
 #endif
 
-  s32 UE_id, eNB_id;
-
+  s32 UE_id=0, eNB_id=0, RN_id=0;
+  
+  relaying_type_t r_type=no_relay; // no relaying 
   // time calibration for soft realtime mode  
 
   lte_subframe_t direction;
 
-#ifdef OPENAIR2
-  int pfd[2]; // fd for omv : fixme: this could be a local var
-#endif   
+
 
   char fname[64],vname[64];
   // u8 awgn_flag = 0;
@@ -439,8 +438,8 @@ int
 
   //Default values if not changed by the user in get_simulation_options();
   pdcp_period = 1;
-  omg_period = 10;
-  // start thread for log gen
+  omg_period = 1; 
+    // start thread for log gen
   log_thread_init();
 
   init_oai_emulation(); // to initialize everything !!!
@@ -467,14 +466,20 @@ int
   // configure oaisim with OCG
   oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
 
+  if (ue_connection_test == 1) {
+    snr_direction = -snr_step;
+    snr_dB=20;
+    sinr_dB=-20;
+ }
+
 #ifdef OPENAIR2
   init_omv();
-#endif
-
-  check_and_adjust_params(); //Before this call, NB_UE_INST and NB_eNB_INST are not set correctly
-
-  init_otg_pdcp_buffer();
-
+ #endif
+  //Before this call, NB_UE_INST and NB_eNB_INST are not set correctly
+  
+  check_and_adjust_params(); 
+   
+ 
 #ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
@@ -506,13 +511,10 @@ int
 #endif 
 
 #endif
-
-  LOG_I(EMU,"total number of UE %d (local %d, remote %d) mobility %s \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
-  LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) mobility %s \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
-  LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
-        oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
   
   set_seed = oai_emulation.emulation_config.seed.value;
+  
+  init_otg_pdcp_buffer();
   
   init_seed(set_seed);
 
@@ -551,30 +553,14 @@ int
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
 #endif
 
-
-  printf ("before L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
-  printf ("before L2 init: frame_type %d,tdd_config %d\n", 
-          PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-          PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
-
   init_time();
 
-  LOG_I(EMU,">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
-  printf ("after init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
-  printf ("after init: frame_type %d,tdd_config %d\n", 
-          PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
-          PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
-
-
-  if (ue_connection_test == 1) {
-    snr_direction = -snr_step;
-    snr_dB=20;
-    sinr_dB=-20;
-  }
-
   init_slot_isr();
-
+  
   t = clock();
+
+  LOG_N(EMU,"\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+  
 
   for (frame=0; frame<oai_emulation.info.n_frames; frame++) {
     /*
@@ -638,6 +624,7 @@ int
       oai_emulation.info.time_ms = frame * 10 + (slot>>1) ;
       
       direction = subframe_select(frame_parms,next_slot>>1);
+
 #ifdef PROC      
       if(Channel_Flag==1)
         Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
@@ -663,9 +650,10 @@ int
 
           //IP/OTG to PDCP and PDCP to IP operation
           pdcp_run(frame, 1, 0, eNB_id);//PHY_vars_eNB_g[eNB_id]->Mod_id
-
-          //PHY_vars_eNB_g[eNB_id]->frame = frame;
-          phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
+	  
+	  // PHY_vars_eNB_g[eNB_id]->frame = frame;
+          phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag, 
+				  no_relay,NULL);
 
 #ifdef PRINT_STATS
       	if(last_slot==9 && frame%10==0)
@@ -695,8 +683,11 @@ int
 
         for (UE_id = oai_emulation.info.first_ue_local;
              (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1);
-             UE_id++)
+             UE_id++){
           if (frame >= (UE_id * 20)) {    // activate UE only after 20*UE_id frames so that different UEs turn on separately
+	    
+	    LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
+		  UE_id, frame, slot, next_slot >> 1,last_slot>>1);
 
           LOG_D(EMU,"PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
                 UE_id, frame, slot, next_slot >> 1,last_slot>>1);
@@ -711,7 +702,7 @@ int
               //Access layer
               pdcp_run(frame, 0, UE_id, 0);
 
-              phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx);
+              phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx,no_relay,NULL);
               ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id]->tx_power_dBm;
             }
           }
@@ -822,17 +813,60 @@ int
             }
           }
 #ifdef PRINT_STATS
-       	  if(last_slot==2 && frame%10==0)
-	  if (UE_stats_th[UE_id])
-	    fprintf(UE_stats_th[UE_id],"%d %d\n",frame, PHY_vars_UE_g[UE_id]->bitrate[0]/1000);
-	  if (UE_stats[UE_id]) {
-	    len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
-	    rewind (UE_stats[UE_id]);
-	    fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-	    fflush(UE_stats[UE_id]);
-	  }
+	    if(last_slot==2 && frame%10==0)
+	      if (UE_stats_th[UE_id])
+		fprintf(UE_stats_th[UE_id],"%d %d\n",frame, PHY_vars_UE_g[UE_id]->bitrate[0]/1000);
+	    if (UE_stats[UE_id]) {
+	      len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0, normal_txrx, 0);
+	      rewind (UE_stats[UE_id]);
+	      fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
+	      fflush(UE_stats[UE_id]);
+	    }
 #endif
 	  }
+	}
+#ifdef Rel10
+	for (RN_id=oai_emulation.info.first_rn_local;
+             RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
+	     RN_id++) {
+	  // UE id and eNB id of the RN
+	  UE_id= oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local + RN_id; // NB_UE_INST + RN_id
+	  eNB_id= oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local + RN_id; // NB_eNB_INST + RN_id
+	  // currently only works in FDD
+	  if (oai_emulation.info.eMBMS_active_state == 4){
+	    r_type = multicast_relay;
+	    //LOG_I(EMU,"Activating the multicast relaying\n");
+	  }else {
+	    LOG_E(EMU,"Not supported eMBMS option when relaying is enabled %d\n", r_type);
+	    exit(-1);
+	  }
+	  PHY_vars_RN_g[RN_id]->frame = frame;
+	  if ( oai_emulation.info.frame_type  == 0) {
+	    // RN == UE
+	    if (frame>0) {
+	      if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
+		LOG_D(EMU,"[RN %d] PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
+		      RN_id, UE_id, frame, slot, next_slot >> 1,last_slot>>1);
+		PHY_vars_UE_g[UE_id]->frame = frame;
+		phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx, 
+				       r_type, PHY_vars_RN_g[RN_id]);
+	      } else if (last_slot == (LTE_SLOTS_PER_FRAME-2)) {
+		initial_sync(PHY_vars_UE_g[UE_id],normal_txrx);
+	      }
+	    }
+	    // RN == eNB
+	    LOG_D(EMU,"[RN %d] PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
+	    	  RN_id, eNB_id, frame, slot, next_slot >> 1,last_slot>>1);
+	    phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag, 
+				    r_type, PHY_vars_RN_g[RN_id]);
+	  }
+	  else{
+	    LOG_E(EMU,"TDD is not supported for multicast relaying %d\n", r_type);
+	    exit(-1);
+	  }
+	}
+#endif
+      
       emu_transport (frame, last_slot, next_slot,direction, oai_emulation.info.frame_type, ethernet_flag);
       if ((direction  == SF_DL)|| (frame_parms->frame_type==0)){
          // consider only sec id 0

@@ -50,6 +50,12 @@ mapping omg_model_names[] =
 mapping otg_multicast_app_type_names[] = {
   {"no_predefined_multicast_traffic", 0},
   {"mscbr", 1},
+  {"mmcbr", 2},
+  {"mbcbr", 3},
+  {"msvbr", 4},
+  {"mmvbr", 5},
+  {"mbvbr", 6},
+  {"mvideo_vbr_4mbps", 7},
   {NULL, -1}
 }  ;
 
@@ -150,8 +156,8 @@ void init_oai_emulation() {
   int i;
   
 	oai_emulation.environment_system_config.fading.large_scale.selected_option = "free_space";
-	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_exponent = 2.0;
-	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_0_dB = -50;
+	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_exponent = 3.00;
+	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_0_dB = -100;
 	oai_emulation.environment_system_config.fading.small_scale.selected_option = "AWGN";
 	oai_emulation.environment_system_config.fading.ricean_8tap.rice_factor_dB = 0;
 	oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m = 0;
@@ -163,14 +169,14 @@ void init_oai_emulation() {
 	oai_emulation.environment_system_config.antenna.eNB_antenna.alpha_rad[2] = 0;
 	oai_emulation.environment_system_config.antenna.eNB_antenna.alpha_rad[3] = 0;
 	oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_gain_dBi = 0;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.tx_power_dBm = 43;
+	oai_emulation.environment_system_config.antenna.eNB_antenna.tx_power_dBm = 15;
 	oai_emulation.environment_system_config.antenna.eNB_antenna.rx_noise_level_dB = 0;
 	oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_orientation_degree[1] = 0;
 	oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_orientation_degree[2] = 0;
 	oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_orientation_degree[3] = 0;
 	oai_emulation.environment_system_config.antenna.UE_antenna.antenna_gain_dBi = 0;
 	oai_emulation.environment_system_config.antenna.UE_antenna.tx_power_dBm = 20;
-	oai_emulation.environment_system_config.antenna.UE_antenna.rx_noise_level_dB = 0;
+	oai_emulation.environment_system_config.antenna.UE_antenna.rx_noise_level_dB = 0; // noise figure 
 	oai_emulation.environment_system_config.wall_penetration_loss_dB = 5;
 	oai_emulation.environment_system_config.system_bandwidth_MB = 7.68;
 	oai_emulation.environment_system_config.system_frequency_GHz = 1.9;
@@ -300,11 +306,14 @@ void init_oai_emulation() {
   oai_emulation.info.master_list=0;
   oai_emulation.info.nb_ue_remote=0;
   oai_emulation.info.nb_enb_remote=0;
+  oai_emulation.info.nb_rn_remote=0;
   oai_emulation.info.first_ue_local=0;
   oai_emulation.info.first_enb_local=0;
+  oai_emulation.info.first_rn_local=0;
   oai_emulation.info.master_id=0;
   oai_emulation.info.nb_ue_local= 1;//default 1 UE 
   oai_emulation.info.nb_enb_local= 1;//default 1 eNB
+  oai_emulation.info.nb_rn_local= 0;//default 0 RN : currently only applicable for eMBMS
   oai_emulation.info.ethernet_flag=0;
   oai_emulation.info.ocm_enabled=1;// flag ?
   oai_emulation.info.ocg_enabled=0;// flag c
@@ -315,10 +324,11 @@ void init_oai_emulation() {
   oai_emulation.info.omv_enabled =0; // v flag 
   oai_emulation.info.vcd_enabled=0;
   oai_emulation.info.cba_group_active=0;
+  oai_emulation.info.eMBMS_active_state=0;
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
+  oai_emulation.info.omg_model_rn=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
-  oai_emulation.info.otg_enabled=0;// T flag with arg
   oai_emulation.info.otg_bg_traffic_enabled = 0; // G flag 
   oai_emulation.info.frame = 0; // frame counter of emulation 
   oai_emulation.info.time_s = 0; // time of emulation  
@@ -486,7 +496,7 @@ int ocg_config_topo() {
 
 	// init OMG for eNBs	
 	if ((oai_emulation.info.omg_model_enb = map_str_to_int(omg_model_names, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option))== -1)
-	  oai_emulation.info.omg_model_ue = STATIC; 
+	  oai_emulation.info.omg_model_enb = STATIC; 
 	LOG_I(OMG,"eNB mobility model is (%s, %d)\n", 
 	      oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option,
 	      oai_emulation.info.omg_model_enb);
@@ -502,14 +512,15 @@ int ocg_config_topo() {
 	}
 
 	omg_param_list.mobility_type = oai_emulation.info.omg_model_enb; 
-	omg_param_list.nodes_type = eNB;  //eNB
-	omg_param_list.nodes = oai_emulation.info.nb_enb_local;
+	omg_param_list.nodes_type = eNB;  //eNB or eNB + RN 
+	omg_param_list.nodes = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_rn_local;
  	omg_param_list.seed = oai_emulation.info.seed; // specific seed for enb and ue to avoid node overlapping
 
 	// at this moment, we use the above moving dynamics for mobile eNB
 	if (omg_param_list.nodes >0 ) 
 	  init_mobility_generator(omg_param_list);
 
+	
 	// init OMG for UE
 	// input of OMG: STATIC: 0, RWP: 1, RWALK 2, or TRACE 3, or SUMO
 	if ((oai_emulation.info.omg_model_ue = map_str_to_int(omg_model_names, oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option))== -1)
@@ -519,7 +530,7 @@ int ocg_config_topo() {
 	      oai_emulation.info.omg_model_ue);
 	omg_param_list.mobility_type    = oai_emulation.info.omg_model_ue; 
 	omg_param_list.nodes_type = UE;//UE
-	omg_param_list.nodes = oai_emulation.info.nb_ue_local;
+	omg_param_list.nodes = oai_emulation.info.nb_ue_local+ oai_emulation.info.nb_rn_local;
 	omg_param_list.seed = oai_emulation.info.seed + oai_emulation.info.nb_ue_local; //fixme: specific seed for enb and ue to avoid node overlapping
 
 	omg_param_list.min_speed = (oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed_mps == 0) ? 0.1 : oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed_mps;
@@ -951,7 +962,9 @@ g_otg->application_idx[source_id_index][destination_id_index]+=1;
 	
       }   
     }
-  } else { // OCG not used, but -T option is used, so config here
+  }
+  //if ( oai_emulation.info.otg_enabled==1){ // OCG not used, but -T option is used, so config here
+  else {
     LOG_I(OTG,"configure OTG through options %s\n", oai_emulation.info.otg_traffic);
     for (i=0; i<g_otg->num_nodes; i++){
       for (j=0; j<g_otg->num_nodes; j++){ 
@@ -974,7 +987,7 @@ g_otg->application_idx[source_id_index][destination_id_index]+=1;
       }
     }
     init_predef_multicast_traffic();
-    LOG_I(OTG,"initilizae multicast traffic \n");
+    LOG_I(OTG,"initilizae multicast traffic %s\n",oai_emulation.info.otg_traffic);
     
   }
   return 1;
