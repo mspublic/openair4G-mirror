@@ -2,11 +2,13 @@
 # % Organisation: Eurecom (and Linkoping University)
 # % E-mail: mirsad.cirkic@liu.se
 
+addpath('/homes/kaltenbe/Devel/openair/openair4G/trunk/targets/ARCH/EXMIMO/USERSPACE/OCTAVE');
+
 clear
 paramsinitialized=false;
 limeparms;
 rxgain=0;
-txgain=5;
+txgain=10;
 eNB_flag = 0;
 card = 0;
 Ntrx=4;
@@ -20,7 +22,6 @@ if(active_rfA*active_rfB'!=0) error("The A and B transceive chains must be ortho
 %fc  = 2660000000;
 fc  = 1912600000; %1907600000;
 %fc = 859.5e6;
-
 
 autocal_mode=active_rf;
 %rf_mode=(RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1) * active_rf;
@@ -41,10 +42,13 @@ rf_rxdc = rf_rxdc*active_rf;
 
 freq_rx = fc*active_rf; 
 freq_tx = freq_rx; %+1.92e6;
-tx_gain = txgain*active_rf;
+tx_gain = txgain.*active_rf;
 rx_gain = rxgain*active_rf;
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal_mode);
 autocal_mode=0*active_rf; % Autocalibration is only needed the first time we conf. exmimo
 amp = pow2(14)-1;
 n_bit = 16;
+
+chanest_full = 1;
+
 paramsinitialized=true;
