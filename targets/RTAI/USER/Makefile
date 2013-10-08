@@ -21,7 +21,7 @@ RTAI=1
 endif
 
 ifeq ($(RTAI),1)
-CFLAGS += -DENABLE_RTAI_CLOCK
+CFLAGS += -DENABLE_RTAI_CLOCK -DRTAI
 RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-enb.o rt_wrapper.o 
 else
 OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-enb.o rt_wrapper.o
@@ -129,16 +129,17 @@ CFLAGS += -DEMOS -DEMOS_CHANNEL
 LDFLAGS += -lgps
 endif
 
-#ifndef NAS
-#NAS=1
-#endif
+ifndef NAS
+NAS=1
+endif
 
 ifeq ($(NAS),1)
 CFLAGS += -DNAS_NETLINK -DLINUX
 OBJ += $(NAS_OBJS)
 endif
 
-RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags) -DRTAI
+RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
+CFLAGS += -I/usr/realtime/include -DRTAI
 LDFLAGS += -lpthread -lm -lforms
 ifeq ($(RTAI),1)
 LDFLAGS += $(shell rtai-config --lxrt-ldflags) 
@@ -153,7 +154,7 @@ endif
 ifdef USE_MME
   include $(OPENAIR2_DIR)/S1AP/Makefile.inc
   include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
-  CFLAGS += -DENABLE_USE_MME
+  CFLAGS += -DENABLE_USE_MME -DENB_MODE
   LDFLAGS += -lsctp
   CFLAGS_S1AP += -DENB_MODE -DENABLE_USE_MME -DEMIT_ASN_DEBUG=1 -DUSER_MODE
   S1AP_BUILT_OBJS += $(S1AP_OBJS) $(addprefix $(OPENAIR2_DIR)/S1AP/MESSAGES/, $(S1AP_ASN_MODULE_SOURCES))
@@ -210,6 +211,19 @@ else
   lte-enb: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
 endif
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-enb  $(S1AP_DIR)/libs1ap.a $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
+
+
+
+nasmesh:
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
+	(cd $(OPENAIR2_DIR) && $(MAKE) nasmesh_netlink.ko)
+	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
+rb_tool:
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
+
+nasmesh_install:
+	(sudo rmmod nasmesh)
+	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 
 clean:
 	rm -rf $(OBJ) $(RTAI_OBJ)
