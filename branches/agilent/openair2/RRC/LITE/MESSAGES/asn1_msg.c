@@ -535,7 +535,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
   *((*sib2)->freqInfo.ul_CarrierFreq) = 38050;
   *((*sib2)->freqInfo.ul_Bandwidth) = SystemInformationBlockType2__freqInfo__ul_Bandwidth_n50;
   (*sib2)->mbsfn_SubframeConfigList = NULL;
-  (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf10240;
+  (*sib2)->timeAlignmentTimerCommon= TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf10240;
 
 
 #ifdef XER_PRINT

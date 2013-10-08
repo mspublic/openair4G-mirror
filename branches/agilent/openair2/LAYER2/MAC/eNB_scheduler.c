@@ -3455,7 +3455,9 @@ void schedule_ue_spec(unsigned char Mod_id,
     //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
 
-    nb_available_rb = pre_nb_available_rbs[UE_id];
+    //nb_available_rb = pre_nb_available_rbs[UE_id];
+    //TODO: fixed scheduling 
+    nb_available_rb = 25;
 
     if ((nb_available_rb == 0) || (nCCE < (1<<aggregation))) {
       LOG_D(MAC,"UE %d: nb_availiable_rb exhausted (nb_rb_used %d, nb_available_rb %d, nCCE %d, aggregation %d)\n",
@@ -4281,8 +4283,12 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   //if (subframe%5 == 0)
 #ifdef EXMIMO 
   // TODO: pthread_mutex_lock operation make RT uncerntainty
+#ifdef RTAI
+  rt_sem_signal(pdcp_sem);
+#else
   pdcp_run(frame, 1, 0, Mod_id);
- 
+#endif
+
   //if (pthread_mutex_lock (&pdcp_mutex) != 0) {
   //  LOG_E(PDCP,"Cannot lock mutex\n");
   //  //return(-1);

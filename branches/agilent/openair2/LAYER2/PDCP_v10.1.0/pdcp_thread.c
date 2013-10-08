@@ -50,19 +50,32 @@
 
 extern int oai_exit;
 
+#ifdef RTAI
+static int pdcp_thread;
+SEM *pdcp_sem;
+#else
 pthread_t pdcp_thread;
 pthread_attr_t pdcp_thread_attr;
 pthread_mutex_t pdcp_mutex;
 pthread_cond_t pdcp_cond;
+#endif
+
 int pdcp_instance_cnt;
 
 static void *pdcp_thread_main(void* param) {
 
+#ifdef RTAI
+  RT_TASK *task;
+  task = rt_task_init_schmod(nam2num("TASK_PDCP"), 0, 0, 0, SCHED_FIFO, 0xF);
+#endif
   //u8 eNB_flag = *((u8*)param);
   u8 eNB_flag = 1;
 
   while (!oai_exit) {
 
+#ifdef RTAI
+    rt_sem_wait(pdcp_sem);
+#else
     if (pthread_mutex_lock(&pdcp_mutex) != 0) {
         LOG_E(PDCP,"Error locking mutex.\n");
     }
@@ -74,7 +87,7 @@ static void *pdcp_thread_main(void* param) {
             LOG_E(PDCP,"Error unlocking mutex.\n");
         }
     }
-
+#endif
     if (oai_exit) break;
 
     if (eNB_flag) {
@@ -86,7 +99,8 @@ static void *pdcp_thread_main(void* param) {
       //LOG_I(PDCP,"Calling pdcp_run (UE) for frame %d\n",PHY_vars_UE_g[0]->frame);
     }
 
-
+#ifdef RTAI
+#else
     if (pthread_mutex_lock(&pdcp_mutex) != 0) {
       LOG_E(PDCP,"Error locking mutex.\n");
     }
@@ -96,7 +110,13 @@ static void *pdcp_thread_main(void* param) {
 	  LOG_E(PDCP,"Error unlocking mutex.\n");
         }
     }
+#endif
   }
+
+  LOG_I(PDCP, "PDCP thread existing\n");
+#ifdef RTAI
+  rt_task_delete(task);
+#endif
   return(NULL);
 }
 
@@ -107,6 +127,18 @@ int init_pdcp_thread(u8 eNB_flag) {
     int error_code;
     struct sched_param p;
 
+#ifdef RTAI
+    
+    LOG_I(PDCP,"Allocate PDCP thread successful\n");
+    pdcp_thread = rt_thread_create(pdcp_thread_main, NULL, 10000);
+    pdcp_sem = rt_sem_init(nam2num("PDCP_SEM"), 1);
+    if (pdcp_sem == 0){
+      LOG_I(PDCP,"Could not allocate PDCP thread, error %d\n",error_code);
+    }
+    else {
+      LOG_I(PDCP,"Allocating PDCP thread\n");
+    }
+#else
     pthread_attr_init (&pdcp_thread_attr);
     pthread_attr_setstacksize(&pdcp_thread_attr,OPENAIR_THREAD_STACK_SIZE);
     //attr_dlsch_threads.priority = 1;
@@ -133,7 +165,7 @@ int init_pdcp_thread(u8 eNB_flag) {
     else {
       LOG_I(PDCP,"Allocate PDCP thread successful\n");
     }
-       
+#endif  
     return(0);
 }
 
@@ -142,6 +174,11 @@ void cleanup_pdcp_thread(void) {
 
   LOG_I(PDCP,"Scheduling PDCP thread to exit\n");
   
+#ifdef RTAI
+  rt_sem_signal(pdcp_sem);
+  rt_thread_join(pdcp_thread);
+  rt_sem_delete(pdcp_sem);
+#else
   pdcp_instance_cnt = 0;
   if (pthread_cond_signal(&pdcp_cond) != 0)
     LOG_I(PDCP,"ERROR pthread_cond_signal\n");
@@ -152,4 +189,5 @@ void cleanup_pdcp_thread(void) {
   LOG_I(PDCP,"PDCP thread exited\n");
   pthread_cond_destroy(&pdcp_cond);
   pthread_mutex_destroy(&pdcp_mutex);
+#endif
 }
