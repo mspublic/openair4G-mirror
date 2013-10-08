@@ -69,7 +69,7 @@
 
 
 //#define OAI_DRV_DEBUG_SEND
-//#define OAI_DRV_DEBUG_RECEIVE
+#define OAI_DRV_DEBUG_RECEIVE
 void oai_nw_drv_common_class_wireless2ip(u16 dlen,
                         void *pdcp_sdu,
                         int inst,
@@ -113,7 +113,7 @@ void oai_nw_drv_common_class_wireless2ip(u16 dlen,
 
 
     #ifdef OAI_DRV_DEBUG_RECEIVE
-    printk("[OAI_IP_DRV][%s] Receiving packet @%p of size %d from PDCP \n",__FUNCTION__, skb->data, skb->len);
+    printk("[OAI_IP_DRV][%s] Receiving packet @%p of size %d hard_header_len = %d from PDCP \n",__FUNCTION__, skb->data, skb->len, hard_header_len);
 
     for (i=0;i<skb->len;i++)
         printk("%2x ",((unsigned char *)(skb->data))[i]);
@@ -128,6 +128,7 @@ void oai_nw_drv_common_class_wireless2ip(u16 dlen,
 
     ipv = (struct ipversion *)skb_network_header(skb);
 
+    ipv->version = 4;
     switch (ipv->version) {
 
         case 6:

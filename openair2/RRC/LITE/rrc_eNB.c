@@ -623,13 +623,13 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
                  "[MSC_MSG][FRAME %05d][RLC][MOD %02d][RB %02d][--- RLC_DATA_IND %d bytes "
                  "(RRCConnectionReconfigurationComplete) --->][RRC_eNB][MOD %02d][]\n",
                  frame, Mod_id, DCCH, sdu_size, Mod_id);
-
 #ifdef RRC_MSG_PRINT
           //TODO: Debug rrcConnectionReconfigurationComplete
           msg("RRC Connection Reconfiguration Complete\n");
           for (i = 0; i < sdu_size; i++)
             msg("%02x ", ((uint8_t*)Rx_sdu)[i]);
           msg("\n");
+          //break;
           ////////////////////////////////////////
 #endif
           if (ul_dcch_msg->message.choice.c1.choice.
@@ -648,7 +648,7 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
                                                                     criticalExtensions.
                                                                     choice.
                                                                     rrcConnectionReconfigurationComplete_r8);
-              eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
+              //eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
               LOG_I (RRC, "[eNB %d] UE %d State = RRC_RECONFIGURED\n",
                   Mod_id, UE_index);
             }
@@ -1345,8 +1345,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
 
   SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters =
     SRB2_ul_SpecificParameters;
-  ASN_SEQUENCE_ADD (&SRB_configList->list, SRB2_config);
-  ASN_SEQUENCE_ADD (&SRB_configList2->list, SRB2_config);
+  //TODO: SRB2 has not configured yet
+  //ASN_SEQUENCE_ADD (&SRB_configList->list, SRB2_config);
+  //ASN_SEQUENCE_ADD (&SRB_configList2->list, SRB2_config);
 
   // Configure DRB
 
@@ -1406,6 +1407,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
   mac_MainConfig = CALLOC (1, sizeof (*mac_MainConfig));
   eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index] = mac_MainConfig;
 
+  mac_MainConfig->timeAlignmentTimerDedicated = TimeAlignmentTimer_infinity;
   mac_MainConfig->ul_SCH_Config =
     CALLOC (1, sizeof (*mac_MainConfig->ul_SCH_Config));
 
@@ -1694,7 +1696,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
   size = do_RRCConnectionReconfiguration (Mod_id, buffer, UE_index, 0,  //Transaction_id,
                                           NULL/*SRB_configList2*/, *DRB_configList, NULL,       // DRB2_list,
                                           NULL, //*sps_Config,
-                                          physicalConfigDedicated[UE_index], NULL, NULL, NULL,     //*QuantityConfig,
+                                          NULL/*physicalConfigDedicated[UE_index]*/, NULL, NULL, NULL,     //*QuantityConfig,
                                           NULL, mac_MainConfig, NULL, cba_RNTI, nas_pdu, nas_length);    //*measGapConfig);
 
 
@@ -1792,6 +1794,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
     eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
 
   // Refresh SRBs/DRBs
+  
   rrc_pdcp_config_asn1_req (Mod_id, frame, 1, UE_index,
                             SRB_configList,
                             DRB_configList, (DRB_ToReleaseList_t *) NULL
@@ -1799,7 +1802,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
                             , (PMCH_InfoList_r9_t *) NULL
 #endif
     );
+    
   // Refresh SRBs/DRBs
+  
   rrc_rlc_config_asn1_req (Mod_id, frame, 1, UE_index,
                            SRB_configList,
                            DRB_configList, (DRB_ToReleaseList_t *) NULL
@@ -1807,10 +1812,11 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
                            , (MBMS_SessionInfoList_r9_t *) NULL
 #endif
     );
+    
 
 
   // Loop through DRBs and establish if necessary
-
+#if 1
   if (DRB_configList != NULL)
     {
       for (i = 0; i < DRB_configList->list.count; i++)
@@ -1842,21 +1848,24 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
 
 #ifdef NAS_NETLINK
                   // can mean also IPV6 since ether -> ipv6 autoconf
-#if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO)
+//#if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO)
+#if 1
                   LOG_I (OIP,
                          "[eNB %d] trying to bring up the OAI interface oai%d\n",
                          Mod_id, Mod_id);
+                  
                   oip_ifup = nas_config (Mod_id,        // interface index
                                          Mod_id + 1,    // thrid octet
                                          Mod_id + 1);   // fourth octet
-
+                  
+                  oip_ifup = 0;
                   if (oip_ifup == 0)
                     {           // interface is up --> send a config the DRB
 #ifdef OAI_EMU
                       oai_emulation.info.oai_ifup[Mod_id] = 1;
                       dest_ip_offset = NB_eNB_INST;
 #else
-                      dest_ip_offset = 8;
+                      dest_ip_offset = 1;
 #endif
                       LOG_I (OIP,
                              "[eNB %d] Config the oai%d to send/receive pkt on DRB %d to/from the protocol stack\n",
@@ -1864,13 +1873,14 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
                              (UE_index * NB_RB_MAX) +
                              *DRB_configList->list.array[i]->
                              logicalChannelIdentity);
+                      
                       rb_conf_ipv4 (0,  //add
                                     UE_index,   //cx
                                     Mod_id,     //inst
                                     (UE_index * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity, 0, //dscp
                                     ipv4_address (Mod_id + 1, Mod_id + 1),      //saddr
                                     ipv4_address (Mod_id + 1, dest_ip_offset + UE_index + 1));  //daddr
-
+                      
                       LOG_D (RRC, "[eNB %d] State = Attached (UE %d)\n",
                              Mod_id, UE_index);
                     }
@@ -1961,6 +1971,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
             }
         }
     }
+#endif //0
 }
 
 
