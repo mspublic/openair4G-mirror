@@ -49,7 +49,6 @@
 #define OPENAIR_THREAD_PRIORITY        255
 
 extern int oai_exit;
-extern char UE_flag;
 
 pthread_t pdcp_thread;
 pthread_attr_t pdcp_thread_attr;
@@ -57,14 +56,9 @@ pthread_mutex_t pdcp_mutex;
 pthread_cond_t pdcp_cond;
 int pdcp_instance_cnt;
 
-static void *pdcp_thread_main(void* param);
-
 static void *pdcp_thread_main(void* param) {
 
-  //u8 eNB_flag = *((u8*)param);
-  u8 eNB_flag = !UE_flag;
-
-  LOG_I(PDCP,"This is pdcp_thread eNB_flag = %d\n",eNB_flag);
+  u8 eNB_flag = *((u8*)param);
 
   while (!oai_exit) {
 
@@ -84,11 +78,11 @@ static void *pdcp_thread_main(void* param) {
 
     if (eNB_flag) {
       pdcp_run(PHY_vars_eNB_g[0]->frame, eNB_flag, PHY_vars_eNB_g[0]->Mod_id, 0);
-      LOG_D(PDCP,"Calling pdcp_run (eNB) for frame %d\n",PHY_vars_eNB_g[0]->frame);
+      //LOG_I(PDCP,"Calling pdcp_run (eNB) for frame %d\n",PHY_vars_eNB_g[0]->frame);
     }
     else  {
       pdcp_run(PHY_vars_UE_g[0]->frame, eNB_flag, 0, PHY_vars_UE_g[0]->Mod_id);
-      LOG_D(PDCP,"Calling pdcp_run (UE) for frame %d\n",PHY_vars_UE_g[0]->frame);
+      //LOG_I(PDCP,"Calling pdcp_run (UE) for frame %d\n",PHY_vars_UE_g[0]->frame);
     }
 
 
@@ -107,7 +101,7 @@ static void *pdcp_thread_main(void* param) {
 
 
 
-int init_pdcp_thread(void) {
+int init_pdcp_thread(u8 eNB_flag) {
 
     int error_code;
     struct sched_param p;
@@ -129,7 +123,7 @@ int init_pdcp_thread(void) {
     error_code = pthread_create(&pdcp_thread,
 				&pdcp_thread_attr,
 				pdcp_thread_main,
-				(void*)NULL);
+				(void*)(&eNB_flag));
       
     if (error_code!= 0) {
       LOG_I(PDCP,"Could not allocate PDCP thread, error %d\n",error_code);

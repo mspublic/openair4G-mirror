@@ -62,11 +62,7 @@ typedef enum {
   NO_PREDEFINED_MULTICAST_TRAFFIC =0,
   MSCBR,
   MMCBR,
-  MBCBR,
-  MSVBR,
-  MMVBR,
-  MBVBR,
-  MVIDEO_VBR_4MBPS
+  MBCBR
 }Multicast_Application;
 
 /**
@@ -333,6 +329,7 @@ typedef struct {
   int size_min[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION];	/*!\brief Min Payload size, for uniform distrib  */
   int size_max[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][MAX_NUM_APPLICATION]; 	/*!\brief payload, Max Inter Departure Time, for uniform distrib  */
  
+
 }otg_multicast_t;
 
 
@@ -480,15 +477,7 @@ typedef struct {
 
   float radio_access_delay[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX];
  
-  double tx_throughput[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX];
-  double rx_goodput[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX]; 	/*!< \brief  Rx goodput: (size of received data)/ctime*/
-  float rx_loss_rate[NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_SERVICE_MAX]; 	/*!< \brief  Rx Loss Rate: ratio, unit: bytes*/  
-
   unsigned int rx_total_bytes_dl;
- 
-  /*TARMA parameteres*/
-  tarmaStream_t *mtarma_stream[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
-  tarmaVideo_t *mtarma_video[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX][MAX_NUM_APPLICATION];
  
 }otg_multicast_info_t;
 

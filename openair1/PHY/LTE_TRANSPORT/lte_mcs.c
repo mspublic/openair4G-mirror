@@ -48,7 +48,13 @@ unsigned char get_Qm(unsigned char I_MCS) {
     return(2);
   else if (I_MCS < 17)
     return(4);
-  else
+  else if (I_MCS < 29)
+    return(6);
+  else if (I_MCS == 29)
+    return(2);
+  else if (I_MCS == 30)
+    return(4);
+  else if (I_MCS == 31)
     return(6);
     
 }

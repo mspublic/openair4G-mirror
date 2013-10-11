@@ -120,7 +120,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_ite
     if (exit_flag==0)
       return(dlsch);
   }
-  msg("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(LTE_DL_UE_HARQ_t), exit_flag);
+  msg("new_ue_dlsch with size %d: exit_flag = %d\n",sizeof(LTE_DL_UE_HARQ_t), exit_flag);
   free_ue_dlsch(dlsch);
 
   return(NULL);
@@ -144,6 +144,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   uint32_t G;
   uint32_t ret,offset;
   u16 iind;
+  uint8_t llr_clear=0;
   //  uint8_t dummy_channel_output[(3*8*block_length)+12];
   short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0;
@@ -272,7 +273,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 							       (r==0) ? harq_process->F : 0);
 
 #ifdef DEBUG_DLSCH_DECODING    
-    msg("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
+    msg("HARQ_PID %d Rate Unmatching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
 	harq_pid,r, G,
 	   Kr*3,
 	   get_Qm(harq_process->mcs),
@@ -280,7 +281,17 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 	   harq_process->Nl);
 #endif    
 
-
+// compute llr_clear
+if (harq_process->Ndi==0){
+	if (harq_process->first_Qm==6 && get_Qm(harq_process->mcs)==2)
+	 llr_clear=0;//1 to clear the llr
+	 else
+	 llr_clear=0;
+ }
+ else
+	llr_clear=1;
+	
+	 
     if (lte_rate_matching_turbo_rx(harq_process->RTC[r],
 				   G,
 				   harq_process->w[r],
@@ -291,7 +302,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 				   dlsch->Mdlharq,
 				   dlsch->Kmimo,
 				   harq_process->rvidx,
-				   harq_process->Ndi,
+				   llr_clear,// harq_process->Ndi,  
 				   get_Qm(harq_process->mcs),
 				   harq_process->Nl,
 				   r,
@@ -693,7 +704,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     LOG_T(PHY,"\n current harq pid is %d ue id %d \n", harq_pid, ue_id);
 #endif
 
-    if (dlsch_abstraction_MIESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs,PHY_vars_eNB_g[eNB_id]->mu_mimo_mode[ue_id].dl_pow_off) == 1) {
+    if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs,PHY_vars_eNB_g[eNB_id]->mu_mimo_mode[ue_id].dl_pow_off) == 1) {
       // reset HARQ 
       dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
       dlsch_ue->harq_processes[harq_pid]->round  = 0;

@@ -123,7 +123,7 @@ typedef struct{
   u8 SIB1Status;
   u8 SIStatus;
 #ifdef Rel10
-  u8 MCCHStatus[8]; // MAX_MBSFN_AREA
+  u8 MCCH_MESSAGEStatus;
 #endif
   u8 SIwindowsize;
   u16 SIperiod;
@@ -214,12 +214,11 @@ typedef struct{
 #ifdef Rel10
   SystemInformationBlockType13_r9_t *sib13;
   uint8_t                           MBMS_flag;
-  uint8_t                           num_mbsfn_sync_area;
-  uint8_t                           **MCCH_MESSAGE; //  MAX_MBSFN_AREA
-  uint8_t                           sizeof_MCCH_MESSAGE[8];// MAX_MBSFN_AREA
+  uint8_t                           *MCCH_MESSAGE;
+  uint8_t                           sizeof_MCCH_MESSAGE;
   MCCH_Message_t            mcch;
   MBSFNAreaConfiguration_r9_t       *mcch_message;  
-  SRB_INFO                          MCCH_MESS[8];// MAX_MBSFN_AREA
+  SRB_INFO                       MCCH_MESS;
 #endif 
 #ifdef CBA
   uint8_t                        num_active_cba_groups;
@@ -241,15 +240,6 @@ typedef struct{
   SRB_INFO                          Srb0;
   SRB_INFO_TABLE_ENTRY              Srb1[NUMBER_OF_UE_MAX+1];
   SRB_INFO_TABLE_ENTRY              Srb2[NUMBER_OF_UE_MAX+1];
-
-#if defined(ENABLE_SECURITY)
-  /* KeNB as derived from KASME received from EPC */
-  uint8_t kenb[NUMBER_OF_UE_MAX][32];
-#endif
-
-  /* Used integrity/ciphering algorithms */
-  e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm[NUMBER_OF_UE_MAX];
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm[NUMBER_OF_UE_MAX];
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255
@@ -284,9 +274,7 @@ typedef struct{
   SystemInformationBlockType9_t *sib9[NB_CNX_UE];
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
-
 #ifdef Rel10
-  uint8_t                           MBMS_flag;
   u8 *MCCH_MESSAGE[NB_CNX_UE];
   u8 sizeof_MCCH_MESSAGE[NB_CNX_UE];
   u8 MCCH_MESSAGEStatus[NB_CNX_UE];
@@ -310,15 +298,6 @@ typedef struct{
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
   MeasGapConfig_t                 *measGapConfig[NB_CNX_UE];
-
-#if defined(ENABLE_SECURITY)
-  /* KeNB as computed from parameters within USIM card */
-  uint8_t kenb[32];
-#endif
-
-  /* Used integrity/ciphering algorithms */
-  e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 }UE_RRC_INST;
 
 //main.c
@@ -461,14 +440,11 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(u8 Mod_id, u32 frame, 
 
 
 //L2_interface.c
-s8 mac_rrc_lite_data_req( u8 Mod_id, u32 frame, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag, u8 eNB_index, u8 mbsfn_sync_area);
-s8 mac_rrc_lite_data_ind( u8 Mod_id,  u32 frame, unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 eNB_index, u8 mbsfn_sync_area);
+s8 mac_rrc_lite_data_req( u8 Mod_id, u32 frame, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
+s8 mac_rrc_lite_data_ind( u8 Mod_id,  u32 frame, unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
 void mac_sync_ind( u8 Mod_id, u8 status);
 void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_lite_out_of_sync_ind(u8 Mod_id, u32 frame, unsigned short eNB_index);
-
-int decode_MCCH_Message(u8 Mod_id, u32 frame, u8 eNB_index, u8 *Sdu, u8 Sdu_len,u8 mbsfn_sync_area);
-void decode_MBSFNAreaConfiguration(u8 Mod_id, u8 eNB_index, u32 frame,u8 mbsfn_sync_area);
 
 int decode_SIB1(u8 Mod_id,u8 CH_index);
 

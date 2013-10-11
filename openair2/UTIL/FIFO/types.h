@@ -32,13 +32,12 @@ typedef struct Signal_buffers { // (s = transmit, r,r0 = receive)
 /*!\brief  sybframe type : DL, UL, SF, */
 
 typedef struct Packet_otg {
-  unsigned int sdu_buffer_size;
-  unsigned char *sdu_buffer;
-  int module_id;
-  int rb_id;
-  int dst_id;
-  u8 is_ue;
-  u8 mode;
+    unsigned int sdu_buffer_size;
+    unsigned char *sdu_buffer;
+    int module_id;
+    int rb_id;
+    int dst_id;
+    u8 mode;
 } Packet_otg;
 
 typedef struct Event {
@@ -69,12 +68,12 @@ typedef struct Packet_otg_elt {
 } Packet_otg_elt;
 
 typedef struct Job_element {
-  struct Job_element *next;
+  struct Job_elt *next;
   Job job;
 } Job_elt;
 
 typedef struct Event_element {
-  struct Event_element *next;
-  struct Event_element *previous;
+  struct Event_elt *next;
+  struct Event_elt *previous;
   Event event;
 } Event_elt;

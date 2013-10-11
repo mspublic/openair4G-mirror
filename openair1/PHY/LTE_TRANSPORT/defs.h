@@ -465,6 +465,8 @@ typedef struct {
 typedef struct {
   /// Flag indicating that this DLSCH has a new transport block
   uint8_t Ndi;
+  /// Modulation order of the first HARQ round
+  uint8_t first_Qm;
   /// DLSCH status flag indicating 
   SCH_status_t status;
   /// Transport block size
@@ -571,15 +573,14 @@ typedef struct {
   uint8_t dlsch_mcs1;
   /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
   uint8_t dlsch_mcs2;
-  /// Total bits received from MAC on PDSCH
-  int total_TBS_MAC;
-  /// Total bits acknowledged on PDSCH
+  //  SRS_param_t SRS_parameters;
   int total_TBS;
-  /// Total bits acknowledged on PDSCH (last interval)
+  //
   int total_TBS_last;
-  /// Bitrate on the PDSCH
+  //
   unsigned int dlsch_bitrate;
-  //  unsigned int total_transmitted_bits;
+  //
+  unsigned int total_transmitted_bits;
 } LTE_eNB_UE_stats;
 
 typedef struct {
@@ -614,8 +615,6 @@ typedef struct {
   uint32_t cqi_alloc1;
   /// Current subband CQI2 allocation
   uint32_t cqi_alloc2;
-  /// saved subband PMI allocation from last PUSCH/PUCCH report
-  uint16_t pmi_alloc;
   /// HARQ-ACKs
   harq_status_t harq_ack[10];
   /// Pointers to up to 8 HARQ processes

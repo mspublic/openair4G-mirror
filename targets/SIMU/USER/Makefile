@@ -72,7 +72,7 @@ ifeq ($(ENABLE_DB), 1)
 CFLAGS +=-I/usr/include/mysql -L/usr/lib/mysql -DENABLE_DB_STATS
 DB_LDFLAGS = -lmysqlclient
 endif 
-endif
+endif 
 
 ifdef PRINT_STATS
 CFLAGS += -DPRINT_STATS
@@ -162,25 +162,6 @@ ifneq ($(USE_MME), R8)
 UPDATE_RELEASE_9=1
 endif
 
-ifdef SECU
-NETTLE_FOUND = $(shell if pkg-config --exists nettle; then echo "1" ; else echo "0"; fi)
-OPENSSL_FOUND = $(shell if pkg-config --exists openssl; then echo "1" ; else echo "0"; fi)
-
-ifeq ($(NETTLE_FOUND), 0)
-@echo "Nettle library >= 2.5 is not installed on your system, continuing with security disabled"
-SECU=0
-else
-ifeq ($(OPENSSL_FOUND), 0)
-@echo "openssl library is not installed on your system, continuing with security disabled"
-SECU=0
-else
-CFLAGS += -DENABLE_SECURITY
-OSA_LDFLAGS += `pkg-config --libs nettle`
-OSA_LDFLAGS += `pkg-config --libs openssl`
-endif
-endif
-endif
-
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
@@ -247,7 +228,6 @@ endif
 
 CFLAGS += -DENABLE_VCD_FIFO
 CFLAGS += -DENABLE_NEW_MULTICAST
-CFLAGS += -DENABLE_PDCP_NETLINK_FIFO
 # CFLAGS += -DENABLE_LOG_FIFO
 
 # Check if libpgm is installed and use it if found instead of the unreliable
@@ -338,8 +318,7 @@ oaisim : $(ASN1_MSG_OBJS1) $(OBJ) oaisim.c $(LFDS_DIR)/bin/liblfds611.a
 endif
 	@echo "Compiling oaisim.c ..."
 	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
-	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt \
-	$(LFDS_DIR)/bin/liblfds611.a $(PGM_LDFLAGS) $(DB_LDFLAGS) $(OSA_LDFLAGS)
+	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt $(LFDS_DIR)/bin/liblfds611.a $(PGM_LDFLAGS) $(DB_LDFLAGS) 
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB

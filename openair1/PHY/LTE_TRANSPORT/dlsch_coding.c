@@ -45,7 +45,6 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_DLSCH_CODING 
 //#define DEBUG_DLSCH_FREE 1
@@ -169,8 +168,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
       return(dlsch);
     }
   }
-  LOG_D(PHY, "new_eNB_dlsch exit flag %d, size of  %ld\n",
-        exit_flag, sizeof(LTE_eNB_DLSCH_t));
+  msg("new_eNB_dlsch exit flag %d, size of  %d\n",exit_flag, sizeof(LTE_eNB_DLSCH_t));
   free_eNB_dlsch(dlsch);
   return(NULL);
   
@@ -224,8 +222,6 @@ int dlsch_encoding(unsigned char *a,
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
-
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
   // printf("Encoder: A: %d\n",A);
@@ -357,8 +353,6 @@ int dlsch_encoding(unsigned char *a,
       write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);
 #endif
   }
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
-
   return(0);
 }
 
@@ -394,3 +388,4 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   
 }
 #endif
+

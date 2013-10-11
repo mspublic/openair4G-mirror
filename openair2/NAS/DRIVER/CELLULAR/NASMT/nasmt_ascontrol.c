@@ -673,7 +673,6 @@ void nasmt_ASCTL_DC_decode_sig_data_ind(struct cx_entity *cx, struct nas_ue_dc_e
 void nasmt_ASCTL_DC_decode_rb_establish_ind(struct cx_entity *cx, struct nas_ue_dc_element *p){
 //---------------------------------------------------------------------------
    struct rb_entity *rb;
-   int hard_coded_rbId = 3;
 
 // Start debug information
 #ifdef NAS_DEBUG_DC
@@ -688,10 +687,7 @@ void nasmt_ASCTL_DC_decode_rb_establish_ind(struct cx_entity *cx, struct nas_ue_
     return;
   }
 // End debug information
-   // TEMP -MW - 26/9/13- Overwrite the rb_id sent by RRC
-   p->nasUEDCPrimitive.rb_establish_ind.rbId = hard_coded_rbId;
-   // TEMP -MW - 26/9/13- Rest should be kept unchanged 
-   rb=nasmt_COMMON_search_rb(cx, p->nasUEDCPrimitive.rb_establish_ind.rbId);
+   rb=nasmt_COMMON_search_rb(cx, p->nasUEDCPrimitive.rb_release_ind.rbId);
      if (rb==NULL){
        rb=nasmt_COMMON_add_rb(cx, p->nasUEDCPrimitive.rb_establish_ind.rbId, p->nasUEDCPrimitive.rb_establish_ind.QoSclass);
        rb->state=NAS_RB_DCH;
@@ -719,7 +715,6 @@ void nasmt_ASCTL_DC_decode_rb_release_ind(struct cx_entity *cx, struct nas_ue_dc
 //---------------------------------------------------------------------------
   struct rb_entity *rb;
   u8 dscp;
-  int hard_coded_rbId = 3;
 
 // Start debug information
 #ifdef NAS_DEBUG_DC
@@ -730,9 +725,7 @@ void nasmt_ASCTL_DC_decode_rb_release_ind(struct cx_entity *cx, struct nas_ue_dc
     return;
   }
 // End debug information
-   // TEMP -MW - 26/9/13- Overwrite the rb_id sent by RRC
-   p->nasUEDCPrimitive.rb_release_ind.rbId = hard_coded_rbId;
-   // TEMP -MW - 26/9/13- Rest should be kept unchanged 
+
    rb=nasmt_COMMON_search_rb(cx, p->nasUEDCPrimitive.rb_release_ind.rbId);
    if (rb!=NULL){
 #ifdef NAS_DEBUG_DC

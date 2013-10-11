@@ -64,10 +64,6 @@
 #include "OCG_extern.h"
 #endif
 
-#if defined(ENABLE_SECURITY)
-# include "UTIL/OSA/osa_defs.h"
-#endif
-
 #if defined(ENABLE_USE_MME)
 #include "../../S1AP/s1ap_eNB.h"
 #endif
@@ -85,11 +81,11 @@ extern void *bigphys_malloc (int);
 
 extern inline unsigned int taus (void);
 void
-init_SI (u8 Mod_id) {
+init_SI (u8 Mod_id)
+{
 
   u8 SIwindowsize = 1;
   u16 SIperiod = 8;
-  int i;
   /*
      uint32_t mib=0;
      int i;
@@ -170,7 +166,8 @@ init_SI (u8 Mod_id) {
     mac_xface->macphy_exit ("");
 
   eNB_rrc_inst[Mod_id].SIB23 = (u8 *) malloc16 (64);
-  if (eNB_rrc_inst[Mod_id].SIB23)    {
+  if (eNB_rrc_inst[Mod_id].SIB23)
+    {
 
       eNB_rrc_inst[Mod_id].sizeof_SIB23 = do_SIB23 (Mod_id,
                                                     mac_xface->
@@ -184,8 +181,10 @@ init_SI (u8 Mod_id) {
                                                     &eNB_rrc_inst[Mod_id].sib3
 #ifdef Rel10
                                                     ,
-                                                    &eNB_rrc_inst[Mod_id].sib13,
-                                                    eNB_rrc_inst[Mod_id].MBMS_flag
+                                                    &eNB_rrc_inst[Mod_id].
+                                                    sib13,
+                                                    eNB_rrc_inst[Mod_id].
+                                                    MBMS_flag
 #endif
         );
       /*
@@ -232,37 +231,34 @@ init_SI (u8 Mod_id) {
 
 
 #ifdef Rel10
-      if (eNB_rrc_inst[Mod_id].MBMS_flag > 0) {
-	
-        for (i=0; 
-	     i< eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.count;
-	     i++){
-	  // SIB 2
+      if (eNB_rrc_inst[Mod_id].MBMS_flag == 1)
+        {
+
           //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.count);
-           LOG_D (RRC, "[eNB %d] SIB13 contents for MBSFN subframe allocation %d/%d(partial)\n", 
-		  Mod_id,i,eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.count);
-	   LOG_D (RRC, "[eNB %d] mbsfn_Subframe_pattern is  = %x\n", Mod_id,
-                 eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]>>0);
-          LOG_D (RRC, "[eNB %d] radioframe_allocation_period  = %ld (just index number, not the real value)\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod);        // need to display the real value, using array of char (like in dumping SIB2)
+          LOG_D (RRC, "[eNB %d] mbsfn_Subframe_pattern is  = %ld\n", Mod_id,
+                 eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.
+                 array[0]->subframeAllocation.choice.oneFrame.buf[0]);
+          LOG_D (RRC, "[eNB %d] radioframe_allocation_period  = %ld (just index number, not the real value)\n", Mod_id, eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.array[0]->radioframeAllocationPeriod);        // need to display the real value, using array of char (like in dumping SIB2)
           LOG_D (RRC, "[eNB %d] radioframe_allocation_offset  = %ld\n",
                  Mod_id,
-                 eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
-	}
+                 eNB_rrc_inst[Mod_id].sib2->mbsfn_SubframeConfigList->list.
+                 array[0]->radioframeAllocationOffset);
           //   SIB13
-        for (i=0; 
-	     i<  eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.count;
-	     i++){
-	  LOG_D (RRC,"[eNB %d] SIB13 contents for MBSFN sync area %d/2 (partial)\n", 
-		 Mod_id, i,
-                 eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.count);
-	  LOG_D (RRC,"[eNB %d] MCCH Repetition Period: %d (just index number, not real value)\n",
+          LOG_D (RRC, "[eNB %d] SIB13 contents (partial)\n", Mod_id);
+          LOG_D (RRC, "[eNB %d] Number of MBSFN Area:  %ld\n", Mod_id,
+                 eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.
+                 count);
+          LOG_D (RRC, "[eNB %d] MCCH Info of first MBSFN Area(partial)\n",
+                 Mod_id);
+          LOG_D (RRC,
+                 "[eNB %d] MCCH Repetition Period: %d (just index number, not real value)\n",
                  Mod_id,
-                 eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+                 eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.
+                 array[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
           LOG_D (RRC, "[eNB %d] MCCH Offset: %d\n", Mod_id,
-                 eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
-       
-	}
-      }
+                 eNB_rrc_inst[Mod_id].sib13->mbsfn_AreaInfoList_r9.list.
+                 array[0]->mcch_Config_r9.mcch_Offset_r9);
+        }
 #endif
 
       LOG_D (RRC,
@@ -308,56 +304,53 @@ init_SI (u8 Mod_id) {
 
 #ifdef Rel10
 void
-init_MCCH (u8 Mod_id) {
+init_MCCH (u8 Mod_id)
+{
 
-  int sync_area=0;
   // initialize RRC_eNB_INST MCCH entry
-  eNB_rrc_inst[Mod_id].MCCH_MESSAGE=malloc(eNB_rrc_inst[Mod_id].num_mbsfn_sync_area*sizeof(uint32_t*));
-  for (sync_area = 0;
-       sync_area < eNB_rrc_inst[Mod_id].num_mbsfn_sync_area;
-       sync_area++){ 
-  
-    eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[sync_area] = 0;
-    eNB_rrc_inst[Mod_id].MCCH_MESSAGE[sync_area] = (u8 *) malloc16 (32);
-    
-    if (eNB_rrc_inst[Mod_id].MCCH_MESSAGE[sync_area] == NULL) {
-      LOG_E(RRC,"[eNB %d][MAIN] init_MCCH: FATAL, no memory for MCCH MESSAGE allocated \n", Mod_id);
-      mac_xface->macphy_exit("[RRC][init_MCCH] not enough memory\n");
-    } else {
-      eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig (mac_xface->lte_frame_parms,
-										sync_area,
-										(uint8_t *) eNB_rrc_inst[Mod_id].MCCH_MESSAGE[sync_area],
-										&eNB_rrc_inst[Mod_id].mcch,
-										&eNB_rrc_inst[Mod_id].mcch_message);
+  eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE = 0;
+  eNB_rrc_inst[Mod_id].MCCH_MESSAGE = (u8 *) malloc16 (32);
+  if (eNB_rrc_inst[Mod_id].MCCH_MESSAGE)
+    {
+      eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE =
+        do_MBSFNAreaConfig (mac_xface->lte_frame_parms,
+                            (uint8_t *) eNB_rrc_inst[Mod_id].MCCH_MESSAGE,
+                            &eNB_rrc_inst[Mod_id].mcch,
+                            &eNB_rrc_inst[Mod_id].mcch_message);
 
-      LOG_I(RRC,"mcch message pointer %p for sync area %d \n", eNB_rrc_inst[Mod_id].MCCH_MESSAGE[sync_area],sync_area);
-      LOG_D (RRC, "[eNB %d] MCCH_MESSAGE  contents for Sync Area %d (partial)\n", Mod_id,sync_area);
+      LOG_D (RRC, "[eNB %d] MCCH_MESSAGE  contents (partial)\n", Mod_id);
       LOG_D (RRC, "[eNB %d] CommonSF_AllocPeriod_r9 %d\n", Mod_id,
              eNB_rrc_inst[Mod_id].mcch_message->commonSF_AllocPeriod_r9);
       LOG_D (RRC,
              "[eNB %d] CommonSF_Alloc_r9.list.count (number of MBSFN Subframe Pattern) %d\n",
              Mod_id,
              eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.count);
-      LOG_D (RRC, "[eNB %d] MBSFN Subframe Pattern: %02x (in hex)\n",
+      LOG_D (RRC, "[eNB %d] First MBSFN Subframe Pattern: %02x (in hex)\n",
              Mod_id,
              eNB_rrc_inst[Mod_id].mcch_message->commonSF_Alloc_r9.list.
              array[0]->subframeAllocation.choice.oneFrame.buf[0]);
 
 
-      if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[sync_area] == 255)
-	mac_xface->macphy_exit ("");
-      else 
-	eNB_rrc_inst[Mod_id].MCCH_MESS[sync_area].Active = 1;
     }
-  }
+  else
+    {
+      LOG_E (RRC,
+             "[eNB] init_MCCH: FATAL, no memory for MCCH MESSAGE allocated\n");
+      mac_xface->macphy_exit ("");
+    }
+
+  if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE == 255)
+    mac_xface->macphy_exit ("");
+
   //Set the eNB_rrc_inst[Mod_id].MCCH_MESS.Active to 1 (allow to  transfer MCCH message RRC->MAC in function mac_rrc_data_req)
- 
+  eNB_rrc_inst[Mod_id].MCCH_MESS.Active = 1;
 
   // ??Configure MCCH logical channel
   // call mac_config_req with appropriate structure from ASN.1 description
 
+  //LOG_I(RRC, "DUY: lcid before entering rrc_mac_config_req is %02d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
   //  LOG_I(RRC, "DUY: serviceID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
-  //  LOG_I(RRC, "DUY: session ID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
+  //LOG_I(RRC, "DUY: session ID is %d\n",eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
   rrc_mac_config_req (Mod_id, 1, 0, 0,
                       (RadioResourceConfigCommonSIB_t *) NULL,
                       (struct PhysicalConfigDedicated *) NULL,
@@ -374,7 +367,9 @@ init_MCCH (u8 Mod_id) {
                       ,
                       0,
                       (MBSFN_AreaInfoList_r9_t *) NULL,
-                      (PMCH_InfoList_r9_t *) & (eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
+                      (PMCH_InfoList_r9_t *) & (eNB_rrc_inst[Mod_id].
+                                                mcch_message->
+                                                pmch_InfoList_r9)
 #endif
 #ifdef CBA
                       , 0, 0
@@ -386,58 +381,40 @@ init_MCCH (u8 Mod_id) {
 }
 
 void
-init_MBMS (u8 Mod_id, u32 frame) {
-  // init the configuration for MTCH 
+init_MBMS (u8 Mod_id, u32 frame)
+{                               // init the configuration for MTCH 
+  //  int j,i, num_mch;
+  if (eNB_rrc_inst[Mod_id].MBMS_flag == 1)
+    {
 
-  if (eNB_rrc_inst[Mod_id].MBMS_flag > 0) {
-
-    LOG_D(RRC,"[eNB %d] Frame %d : Radio Bearer config request for MBMS\n", Mod_id, frame); //check the lcid
+      //  LOG_I(RRC,"[eNB %d] Frame %d : Configuring Radio Bearer for MBMS service in MCH[%d]\n", Mod_id, frame,i); //check the lcid
       // Configuring PDCP and RLC for MBMS Radio Bearer
 
-      rrc_pdcp_config_asn1_req (Mod_id, frame, 1, 0, 
-				NULL,      // SRB_ToAddModList
+      rrc_pdcp_config_asn1_req (Mod_id, frame, 1, 0, NULL,      // SRB_ToAddModList
                                 NULL,   // DRB_ToAddModList
-                                (DRB_ToReleaseList_t *) NULL,
-				0, // security mode
-				NULL, // key rrc encryption
-				NULL, // key rrc integrity
-				NULL // key encryption
+                                (DRB_ToReleaseList_t *) NULL
 #ifdef Rel10
                                 ,
-                                &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
+                                &(eNB_rrc_inst[Mod_id].mcch_message->
+                                  pmch_InfoList_r9)
 #endif
-			     );
-    
-    rrc_rlc_config_asn1_req(Mod_id, frame, 1, 0,
-			    NULL,// SRB_ToAddModList
-			    NULL,// DRB_ToAddModList
-			    NULL,// DRB_ToReleaseList
-			    &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9));
-    
-    //rrc_mac_config_req();
-    
-  }  
-  
-}
+        );
 
-#endif
+      rrc_rlc_config_asn1_req (Mod_id, frame, 1, 0, NULL,       // SRB_ToAddModList
+                               NULL,    // DRB_ToAddModList
+                               NULL,    // DRB_ToReleaseList
+                               &(eNB_rrc_inst[Mod_id].mcch_message->
+                                 pmch_InfoList_r9));
 
-static
-void rrc_lite_eNB_init_security(u8 Mod_id, u8 UE_index)
-{
-#if defined(ENABLE_SECURITY)
-    char ascii_buffer[65];
-    uint8_t i;
 
-    memset(eNB_rrc_inst[Mod_id].kenb[UE_index], UE_index, 32);
+      //rrc_mac_config_req();
+      // use the same as of DTCH for the moment,need to check the flag for mXch 
 
-    for (i = 0; i < 32; i++) {
-        sprintf(&ascii_buffer[2 * i], "%02X", eNB_rrc_inst[Mod_id].kenb[UE_index][i]);
     }
 
-    LOG_T(RRC, "[OSA][MOD %02d][UE %02d] kenb    = %s\n", Mod_id, UE_index, ascii_buffer);
-#endif
 }
+
+#endif
 
 /*------------------------------------------------------------------------------*/
 char
@@ -452,13 +429,6 @@ openair_rrc_lite_eNB_init (u8 Mod_id)
 
   for (j = 0; j < NUMBER_OF_UE_MAX; j++)
     eNB_rrc_inst[Mod_id].Info.Status[j] = RRC_IDLE;     //CH_READY;
-
-  /* Init security parameters */
-  for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
-    eNB_rrc_inst[Mod_id].ciphering_algorithm[j] = SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
-    eNB_rrc_inst[Mod_id].integrity_algorithm[j] = SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
-    rrc_lite_eNB_init_security(Mod_id, j);
-  }
 
 #if defined(ENABLE_USE_MME)
   /* Connect eNB to MME */
@@ -488,7 +458,7 @@ openair_rrc_lite_eNB_init (u8 Mod_id)
   LOG_I (RRC, "Checking release \n");
 #ifdef Rel10
 
-  // Thishas to come from some top-level configuration
+  // This has to come from some top-level configuration
   printf ("Rel10 RRC detected, MBMS flag %d\n",
           eNB_rrc_inst[Mod_id].MBMS_flag);
 
@@ -513,29 +483,13 @@ openair_rrc_lite_eNB_init (u8 Mod_id)
   init_SI (Mod_id);
 
 #ifdef Rel10
-  switch (eNB_rrc_inst[Mod_id].MBMS_flag) {
-  case 1:
-  case 2:
-  case 3:
-    LOG_I(RRC,"[eNB %d] Configuring 1 MBSFN sync area\n", Mod_id);
-    eNB_rrc_inst[Mod_id].num_mbsfn_sync_area=1;
-    break;
-  case 4: 
-    LOG_I(RRC,"[eNB %d] Configuring 2 MBSFN sync area\n", Mod_id);
-    eNB_rrc_inst[Mod_id].num_mbsfn_sync_area=2;
-    break;
-  default:
-    eNB_rrc_inst[Mod_id].num_mbsfn_sync_area=0;
-    break;
-  }
-  // if we are here the eNB_rrc_inst[Mod_id].MBMS_flag > 0,
-  /// MCCH INIT
-  if (eNB_rrc_inst[Mod_id].MBMS_flag > 0 ) {
-    init_MCCH (Mod_id);
-    /// MTCH data bearer init
-    init_MBMS (Mod_id, 0);
-  }
-  
+  if (eNB_rrc_inst[Mod_id].MBMS_flag == 1)
+    {
+      /// MCCH INIT
+      init_MCCH (Mod_id);
+      /// MTCH data bearer init
+      init_MBMS (Mod_id, 0);
+    }
 #endif
 
 #ifdef NO_RRM                   //init ch SRB0, SRB1 & BDTCH
@@ -981,11 +935,7 @@ rrc_eNB_decode_ccch (u8 Mod_id, u32 frame, SRB_INFO * Srb_info)
                                         eNB_rrc_inst[Mod_id].
                                         SRB_configList[UE_index],
                                         (DRB_ToAddModList_t *) NULL,
-                                        (DRB_ToReleaseList_t *) NULL,
-                                        0xff,
-                                        NULL,
-                                        NULL,
-                                        NULL
+                                        (DRB_ToReleaseList_t *) NULL
 #ifdef Rel10
                                         , (PMCH_InfoList_r9_t *) NULL
 #endif
@@ -1071,9 +1021,7 @@ rrc_eNB_generate_SecurityModeCommand (u8 Mod_id, u32 frame, u16 UE_index)
   uint8_t buffer[100];
   uint8_t size;
 
-  size = do_SecurityModeCommand (Mod_id, buffer, UE_index, 0,
-                                 eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
-                                 eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index]);
+  size = do_SecurityModeCommand (Mod_id, buffer, UE_index, 0);
 
   LOG_I (RRC,
          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d, UE id %d)\n",
@@ -1667,38 +1615,15 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
   int oip_ifup = 0;
   int dest_ip_offset = 0;
 #endif
-
-  uint8_t *kRRCenc = NULL;
-  uint8_t *kRRCint = NULL;
-  uint8_t *kUPenc  = NULL;
-
   DRB_ToAddModList_t *DRB_configList =
     eNB_rrc_inst[Mod_id].DRB_configList[UE_index];
   SRB_ToAddModList_t *SRB_configList =
     eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
 
-#if defined(ENABLE_SECURITY)
-  /* Derive the keys from kenb */
-  if (DRB_configList != NULL) {
-    derive_key_up_enc(eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
-                      eNB_rrc_inst[Mod_id].kenb[UE_index], &kUPenc);
-  }
-
-  derive_key_rrc_enc(eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
-                     eNB_rrc_inst[Mod_id].kenb[UE_index], &kRRCenc);
-  derive_key_rrc_int(eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index],
-                     eNB_rrc_inst[Mod_id].kenb[UE_index], &kRRCint);
-#endif
-
   // Refresh SRBs/DRBs
   rrc_pdcp_config_asn1_req (Mod_id, frame, 1, UE_index,
                             SRB_configList,
-                            DRB_configList, (DRB_ToReleaseList_t *) NULL,
-                            eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index] |
-                            (eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index] << 4),
-                            kRRCenc,
-                            kRRCint,
-                            kUPenc
+                            DRB_configList, (DRB_ToReleaseList_t *) NULL
 #ifdef Rel10
                             , (PMCH_InfoList_r9_t *) NULL
 #endif

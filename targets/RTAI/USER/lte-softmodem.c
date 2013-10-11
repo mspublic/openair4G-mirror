@@ -122,9 +122,8 @@ pthread_attr_t attr_dlsch_threads;
 struct sched_param sched_param_dlsch;
 #endif
 
-pthread_t  thread2; //xforms
-pthread_t  thread3; //emos
-
+pthread_t  thread2;
+pthread_t  thread3;
 /*
 static int instance_cnt=-1; //0 means worker is busy, -1 means its free
 int instance_cnt_ptr_kern,*instance_cnt_ptr_user;
@@ -232,12 +231,6 @@ void *scope_thread(void *arg) {
     char stats_buffer[16384];
     //FILE *UE_stats, *eNB_stats;
     int len=0;
-    struct sched_param sched_param;
-
-    sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1; 
-    sched_setscheduler(0, SCHED_FIFO,&sched_param);
-
-    printf("Scope thread has priority %d\n",sched_param.sched_priority);
     
     /*
       if (UE_flag==1) 
@@ -305,13 +298,6 @@ void *emos_thread (void *arg)
 
   struct gps_data_t *gps_data = NULL;
   struct gps_fix_t dummy_gps_data;
-
-  struct sched_param sched_param;
-  
-  sched_param.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; 
-  sched_setscheduler(0, SCHED_FIFO,&sched_param);
-  
-  printf("EMOS thread has priority %d\n",sched_param.sched_priority);
  
   timer = time(NULL);
   now = localtime(&timer);
@@ -334,8 +320,6 @@ void *emos_thread (void *arg)
       printf("[EMOS] Error sending command to GPS\n");
       //exit(-1);
     }
-  else 
-    printf("[EMOS] Opened GPS, gps_data=%p\n");
   
   if (UE_flag==0)
     channel_buffer_size = sizeof(fifo_dump_emos_eNB);
@@ -381,7 +365,7 @@ void *emos_thread (void *arg)
 	continue;
 
       /*
-      if (UE_flag==0)
+      if (eNB_flag==1)
 	printf("eNB: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_eNB*)fifo2file_ptr)->frame_tx,bytes);
       else
 	printf("UE: count %d, frame %d, read: %d bytes from the fifo\n",counter, ((fifo_dump_emos_UE*)fifo2file_ptr)->frame_rx,bytes);
@@ -495,17 +479,16 @@ static void *eNB_thread(void *arg)
       else
           diff = mbox_target - mbox_current;
       
-      if (((slot%2==0) && (diff < (-14))) || ((slot%2==1) && (diff < (-7)))) {
-	// at the eNB, even slots have double as much time since most of the processing is done here and almost nothing in odd slots
-	LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
-	slot++;
-	if (frame>0)	  
-	  oai_exit=1;
-	if (slot==20){
-	  slot=0;
-	  frame++;
-	}
-	continue;
+      if (diff < (-6)) {
+          LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
+          slot++;
+	  if (frame>0)	  
+	    oai_exit=1;
+          if (slot==20){
+              slot=0;
+              frame++;
+          }
+          continue;
       }
       if (diff>8) 
           LOG_D(HW,"eNB Frame %d, time %llu: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, mbox_current, mbox_target, diff);
@@ -576,7 +559,7 @@ static void *eNB_thread(void *arg)
 
           if (fs4_test==0)
             {
-              phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0, 0,NULL);
+              phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0);
 #ifndef IFFT_FPGA
               slot_offset_F = (next_slot)*
                               (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
@@ -730,7 +713,7 @@ static void *UE_thread(void *arg)
 	else
 	  diff2 = mbox_target - mbox_current;
 	
-	if (diff2 <(-7)) {
+	if (diff2 <(-5)) {
 	  LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
 	  if (frame>0)	  
 	    oai_exit=1;
@@ -798,7 +781,7 @@ static void *UE_thread(void *arg)
 	  */
 
           in = rt_get_time_ns();
-          phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode,0,NULL);
+          phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode);
           out = rt_get_time_ns();
           diff = out-in;
 
@@ -863,13 +846,11 @@ static void *UE_thread(void *arg)
 	    else {
 	      LOG_I(PHY,"[initial_sync] trying carrier off %d Hz\n",openair_daq_vars.freq_offset);
 	      for (i=0; i<4; i++) {
-		if (p_exmimo_config->rf.rf_freq_rx[i])
-		  p_exmimo_config->rf.rf_freq_rx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
-		if (p_exmimo_config->rf.rf_freq_tx[i])
-		  p_exmimo_config->rf.rf_freq_tx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
+		p_exmimo_config->rf.rf_freq_rx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
+		p_exmimo_config->rf.rf_freq_tx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
 	      }
 	      openair0_dump_config(card);
-	      rt_sleep_ns(FRAME_PERIOD);
+	      
 	      }
 	   }
         }
@@ -926,7 +907,7 @@ int main(int argc, char **argv) {
   u32 rf_vcocal_850[4] = {2015, 2015, 2015, 2015};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   u32 rxgain[4]      = {20,20,20,20};
-  u32 txgain[4]      = {20,20,20,20};
+  u32 txgain[4]      = {25,25,25,25};
 
   u16 Nid_cell = 0;
   u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
@@ -1125,7 +1106,7 @@ int main(int argc, char **argv) {
     case 5:
     case 6:
       frame_parms->nb_antennas_tx     = 2;
-      frame_parms->nb_antennas_rx     = 2;
+      frame_parms->nb_antennas_rx     = 1;
       break;
     default:
       printf("Unsupported transmission mode %d\n",transmission_mode);
@@ -1213,13 +1194,17 @@ int main(int argc, char **argv) {
     
     openair_daq_vars.manual_timing_advance = 0;
     //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
-    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+    openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
     openair_daq_vars.auto_freq_correction = 0;
-    openair_daq_vars.use_ia_receiver = 0;
+    openair_daq_vars.use_ia_receiver = 1;
 
     // if AGC is off, the following values will be used
-    for (i=0;i<4;i++) 
-      rxgain[i] = 0;
+    //    for (i=0;i<4;i++) 
+    //    rxgain[i] = 20;
+    rxgain[0] = 20;
+    rxgain[1] = 20;
+    rxgain[2] = 20;
+    rxgain[3] = 20;
 
     for (i=0;i<4;i++) {
       PHY_vars_UE_g[0]->rx_gain_max[i] = rxg_max[i];
@@ -1301,13 +1286,18 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=0;
+    openair_daq_vars.target_ue_dl_mcs=20;
     openair_daq_vars.ue_ul_nb_rb=6;
-    openair_daq_vars.target_ue_ul_mcs=6;
+    openair_daq_vars.target_ue_ul_mcs=12;
 
     // if AGC is off, the following values will be used
-    for (i=0;i<4;i++) 
-      rxgain[i]=10;
+    //    for (i=0;i<4;i++) 
+    //      rxgain[i]=30;
+    rxgain[0] = 20;
+    rxgain[1] = 20;
+    rxgain[2] = 20;
+    rxgain[3] = 20;
+
 
     // set eNB to max gain
     PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0] + rxgain[0] - 30; //was measured at rxgain=30;
@@ -1342,7 +1332,6 @@ int main(int argc, char **argv) {
     p_exmimo_config->framing.eNB_flag   = 0; 
   else 
     p_exmimo_config->framing.eNB_flag   = !UE_flag;
-
   p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
   p_exmimo_config->framing.resampling_factor = 2;
  
@@ -1371,18 +1360,14 @@ int main(int argc, char **argv) {
       p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal_850[ant];
       p_exmimo_config->rf.rffe_band_mode[ant] = DD_TDD;	    
     }
-    else if ((carrier_freq[ant] >= 1900000000) && (carrier_freq[ant] <= 2000000000)) {
+    else {
       p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
       p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
     }
-    else {
-      p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
-      p_exmimo_config->rf.rffe_band_mode[ant] = 0;	    
-    }
 
-    p_exmimo_config->rf.rffe_gain_txlow[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_txhigh[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 31;
+    p_exmimo_config->rf.rffe_gain_txlow[ant] = 63;
+    p_exmimo_config->rf.rffe_gain_txhigh[ant] = 63;
+    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
   }
 
@@ -1422,7 +1407,7 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef OPENAIR2
-    init_pdcp_thread();
+    init_pdcp_thread(!UE_flag);
 #endif
 
     number_of_cards = openair0_num_detected_cards;
