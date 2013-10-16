@@ -2067,7 +2067,8 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
   //memset(e,0,DCI_BITS_MAX);
   // reset all bits to <NIL>, here we set <NIL> elements as 2
-  memset(e, 2, DCI_BITS_MAX);
+  //  memset(e, 2, DCI_BITS_MAX);
+  for (i=0;i<DCI_BITS_MAX;i++) e[i]=taus()&1;
   e_ptr = e;
 
   // generate DCIs in order of decreasing aggregation level, then common/ue spec

@@ -3586,8 +3586,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue, u8 eNB_id){
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
   s32 **dl_channel_est = phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id];
-  double *s_dB;
-  s_dB = phy_vars_ue->sinr_CQI_dB;   
+  double *s_dB = phy_vars_ue->sinr_CQI_dB;   
   //  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id]; 
   //for the calculation of SINR_eff for CQI calculation
   int count,a_rx,a_tx;

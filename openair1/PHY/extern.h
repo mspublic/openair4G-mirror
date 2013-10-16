@@ -57,10 +57,11 @@ extern char mode_string[4][20];
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
+extern unsigned char NB_RN_INST;
 #endif
 
 extern int flag_LA;
-extern double sinr_bler_map[MCS_COUNT][2][20];
+extern double sinr_bler_map[MCS_COUNT][2][40];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
 extern int table_length[MCS_COUNT];
 extern double sinr_to_cqi[4][16];

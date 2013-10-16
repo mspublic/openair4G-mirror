@@ -71,7 +71,7 @@ int flagMag;
 //extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 //extern  double ABS_SINR_eff_BLER_table[MCS_COUNT][9][9];
 //extern  double ABS_beta[MCS_COUNT];odi
-double sinr_bler_map[MCS_COUNT][2][20];
+double sinr_bler_map[MCS_COUNT][2][40];
 int table_length[MCS_COUNT];
 //double sinr_bler_map_up[MCS_COUNT][2][16];
 
