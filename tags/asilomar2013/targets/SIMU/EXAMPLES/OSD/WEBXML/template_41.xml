@@ -65,13 +65,13 @@
  </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>1230</EMULATION_TIME_ms> 
+    <EMULATION_TIME_ms>5000</EMULATION_TIME_ms> 
     
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
-      <LEVEL>info</LEVEL>
+      <LEVEL>debug</LEVEL>
       <VERBOSITY>medium</VERBOSITY> <!-- low, medium, high, full -->
       <INTERVAL>1</INTERVAL>
     </LOG>		

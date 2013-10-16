@@ -1281,9 +1281,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  else {
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
 	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_id=phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
+#ifdef OPENAIR2
 	    mac_xface->Msg1_transmitted(phy_vars_ue->Mod_id,
 					 phy_vars_ue->frame,
 					 eNB_id);
+#endif
 	  }
 	  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
 		phy_vars_ue->Mod_id,phy_vars_ue->frame,next_slot>>1,eNB_id,
@@ -1426,6 +1428,9 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     ue_rrc_measurements(phy_vars_ue,
 			last_slot,
 			abstraction_flag);
+
+    phy_vars_ue->sinr_eff =  sinr_eff_cqi_calc(phy_vars_ue, 0);
+
   }  
 
   if ((last_slot==1) && (l==(4-frame_parms->Ncp))) {

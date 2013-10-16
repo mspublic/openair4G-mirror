@@ -35,7 +35,6 @@
 
 #define PI 3.1416
 #define Am 20
-#define MCS_COUNT 24
 #define MCL (-70) /*minimum coupling loss (MCL) in dB*/
 //double sinr[NUMBER_OF_eNB_MAX][2*25];
 /*
@@ -532,37 +531,39 @@ void get_beta_map() {
       LOG_I(OCM,"Opening the alternative path %s\n", file_path);
       fp = fopen(file_path,"r");
       if (fp == NULL) {
-      LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
-      exit(-1);
+	LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
+	exit(-1);
       }
     }
-    // else {
-      fgets(buffer, 1000, fp);
-      fgets(buffer, 1000, fp);
-      table_length[mcs]=0;
-      while (!feof(fp)) {
-	u=0;
-        sinr_bler = strtok(buffer, ";");
-	while(sinr_bler != NULL){
-	  perf_array[u]=atof(sinr_bler);
-	  u++;
-	  sinr_bler = strtok(NULL,";");
-	}
-	if((perf_array[4]/perf_array[5]) < 1){
-	  sinr_bler_map[mcs][0][table_length[mcs]] = perf_array[0];
-	  sinr_bler_map[mcs][1][table_length[mcs]] = (perf_array[4]/perf_array[5]);
-	  table_length[mcs]++;
-	}
-	fgets(buffer, 1000, fp);
-	
+
+    fgets(buffer, 1000, fp); //first line is header
+    fgets(buffer, 1000, fp);
+    table_length[mcs]=0;
+    while (!feof(fp)) {
+      u=0;
+      sinr_bler = strtok(buffer, ";");
+      while(sinr_bler != NULL){
+	perf_array[u]=atof(sinr_bler);
+	u++;
+	sinr_bler = strtok(NULL,";");
       }
-      fclose(fp);
-      //   }
-      //    LOG_D(OCM,"Print the table for mcs %d\n",mcs);
-printf("Print the table for mcs %d\n",mcs);
+      if((perf_array[4]/perf_array[5]) < 1){
+	sinr_bler_map[mcs][0][table_length[mcs]] = perf_array[0];
+	sinr_bler_map[mcs][1][table_length[mcs]] = (perf_array[4]/perf_array[5]);
+	table_length[mcs]++;
+	if (table_length[mcs]>40) {
+	  LOG_E(OCM,"increase table length (mcs %d)!\n",mcs);
+	  exit(-1);
+	}
+      }
+      fgets(buffer, 1000, fp);
+      
+    }
+    fclose(fp);
+
+    LOG_D(OCM,"Print the table for mcs %d\n",mcs);
     for (t = 0; t<table_length[mcs]; t++)
-      //      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][t],sinr_bler_map[mcs][1][t]);
-printf("%lf  %lf \n ",sinr_bler_map[mcs][0][t],sinr_bler_map[mcs][1][t]);
+      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map[mcs][0][t],sinr_bler_map[mcs][1][t]);
   }
   free(file_path);
 }
@@ -599,6 +600,8 @@ void get_MIESM_param() {
 	      MI_map_4qam[cnt][table_len]= atof(result);
 	      result = strtok(NULL, ",");
 	      table_len++;
+	      if (table_len>162)
+		exit(-1);
 	    }
 	  }
        fclose(fp);
@@ -617,6 +620,8 @@ void get_MIESM_param() {
 	      MI_map_16qam[cnt][table_len]= atof(result);
 	      result = strtok(NULL, ",");
 	      table_len++;
+	      if (table_len>197)
+		exit(-1);
 	    }
 	  }
        fclose(fp);
@@ -637,6 +642,8 @@ void get_MIESM_param() {
 	      MI_map_64qam[cnt][table_len]= atof(result);
 	      result = strtok(NULL, ",");
 	      table_len++;
+	      if (table_len>227)
+		exit(-1);
 	    }
 	  }
        fclose(fp);

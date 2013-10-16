@@ -78,7 +78,6 @@ char smbv_ip[16];
 
 //#define DEBUG_SIM
 
-#define MCS_COUNT 24//added for PHY abstraction
 #define N_TRIALS 1
 
 /*
@@ -323,7 +322,7 @@ int omv_write (int pfd,  Node_list enb_node_list, Node_list ue_node_list, Data_F
       omv_data.geo[i].Pathloss = 44;
       omv_data.geo[i].RSSI[0] = 33;
       omv_data.geo[i].RSSI[1] = 22;
-      omv_data.geo[i].RSSI[2] = 11;
+      //omv_data.geo[i].RSSI[2] = 11;
       
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors=0;
@@ -645,12 +644,14 @@ int main (int argc, char **argv) {
                 PHY_vars_eNB_g[eNB_id]->lte_frame_parms.frame_type,
                 PHY_vars_eNB_g[eNB_id]->lte_frame_parms.tdd_config,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 
+#ifdef OPENAIR2
           //Appliation: traffic gen
           update_otg_eNB(eNB_id, oai_emulation.info.time_ms);
 
           //IP/OTG to PDCP and PDCP to IP operation
           pdcp_run(frame, 1, 0, eNB_id);//PHY_vars_eNB_g[eNB_id]->Mod_id
-	  
+#endif
+
 	  // PHY_vars_eNB_g[eNB_id]->frame = frame;
           phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag, 
 				  no_relay,NULL);
@@ -696,11 +697,13 @@ int main (int argc, char **argv) {
             if (frame>0) {
               PHY_vars_UE_g[UE_id]->frame = frame;
 
+#ifdef OPENAIR2
               //Application
               update_otg_UE(UE_id, oai_emulation.info.time_ms);
 
               //Access layer
               pdcp_run(frame, 0, UE_id, 0);
+#endif
 
               phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag,normal_txrx,no_relay,NULL);
               ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id]->tx_power_dBm;

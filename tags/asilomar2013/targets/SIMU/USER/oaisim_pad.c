@@ -53,7 +53,6 @@
 
 //#define DEBUG_SIM
 
-#define MCS_COUNT 24//added for PHY abstraction
 #define N_TRIALS 1
 
 

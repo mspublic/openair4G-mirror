@@ -1110,7 +1110,7 @@ int main(int argc, char **argv) {
       case 6:
 	memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2_1E[k],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
 	dci_alloc[num_dci].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-	dci_alloc[num_dci].L          = 2;
+	dci_alloc[num_dci].L          = 1;
 	dci_alloc[num_dci].rnti       = n_rnti+k;
 	dci_alloc[num_dci].format     = format1E_2A_M10PRB;
 	dci_alloc[num_dci].nCCE       = 4*k;

@@ -423,8 +423,11 @@ typedef struct
   /// sinr for all subcarriers of the current link (used only for abstraction)
   double *sinr_dB;
   
-   /// sinr for all subcarriers of first symbol for the CQI Calculation 
+  /// sinr for all subcarriers of first symbol for the CQI Calculation 
   double *sinr_CQI_dB;
+
+  /// sinr_effective used for CQI calulcation
+  double sinr_eff;
 
   /// N0 (used for abstraction)
   double N0;

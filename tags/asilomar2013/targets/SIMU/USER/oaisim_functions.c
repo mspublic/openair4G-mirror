@@ -44,7 +44,7 @@ int for_times = 0;
 
 u16 Nid_cell = 0; //needed by init_lte_vars
 int nb_antennas_rx=2; // //
-u8 target_dl_mcs = 0;
+u8 target_dl_mcs = 20;
 u8 rate_adaptation_flag = 0;
 u8 set_sinr=0;
 double snr_dB, sinr_dB;
@@ -55,7 +55,7 @@ double snr_step=1.0;
 u8 ue_connection_test=0;
 double forgetting_factor=0.0;
 u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-u8 target_ul_mcs = 12;
+u8 target_ul_mcs = 10;
 LTE_DL_FRAME_PARMS *frame_parms;
 int map1,map2;
 double **ShaF= NULL;
@@ -459,6 +459,7 @@ void check_and_adjust_params() {
 
 }
 
+#ifdef OPENAIR2
 void init_omv() {
   if (oai_emulation.info.omv_enabled == 1) {
 
@@ -494,6 +495,7 @@ if(close( pfd[0] ) == -1 ) // we close the write desc.
       perror("close on read\n" );
   }
 }
+#endif
 
 void init_seed(u8 set_seed) {
 
@@ -769,6 +771,7 @@ void update_ocm() {
   }
 }
 
+#ifdef OPENAIR2
 void update_otg_eNB(int module_id, unsigned int ctime) {
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ) {
@@ -945,6 +948,7 @@ void update_otg_UE(int UE_id, unsigned int ctime) {
   }
 #endif
 }
+#endif
 
 int init_slot_isr(void)
 {
