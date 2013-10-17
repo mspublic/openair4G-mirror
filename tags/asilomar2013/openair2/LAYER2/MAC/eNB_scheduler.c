@@ -3539,9 +3539,8 @@ void schedule_ue_spec(unsigned char Mod_id,
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
-    //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
+    eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
     //eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
-    eNB_UE_stats->dlsch_mcs1=10;
     
     if(eNB_UE_stats->dlsch_mcs1>22)
       eNB_UE_stats->dlsch_mcs1=22;

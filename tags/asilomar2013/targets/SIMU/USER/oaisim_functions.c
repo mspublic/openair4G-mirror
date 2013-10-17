@@ -44,7 +44,7 @@ int for_times = 0;
 
 u16 Nid_cell = 0; //needed by init_lte_vars
 int nb_antennas_rx=2; // //
-u8 target_dl_mcs = 20;
+u8 target_dl_mcs = 10;
 u8 rate_adaptation_flag = 0;
 u8 set_sinr=0;
 double snr_dB, sinr_dB;

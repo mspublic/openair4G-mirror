@@ -4,13 +4,11 @@ double interp(double x, double *xs, double *ys, int count)
     double dx, dy;
 
     if (x < xs[0]) {
-        /* x is less than the minimum element
-         * handle error here if you want */
-        return ys[0]; /* return minimum element */
+        return 1.0; /* return minimum element */
     }
 
     if (x > xs[count-1]) {
-        return ys[count-1]; /* return maximum */
+        return 0.0; /* return maximum */
     }
 
     /* find i, such that xs[i] <= x < xs[i+1] */
