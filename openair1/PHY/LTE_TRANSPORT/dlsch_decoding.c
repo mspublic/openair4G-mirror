@@ -476,10 +476,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 	}
     }
   }       
-  //printf("sinr_eff1 = %f\n",sinr_eff);
+  LOG_D(OCM,"sinr_eff (lin, unweighted) = %f\n",sinr_eff);
   sinr_eff =  -beta2_dlsch[TM][mcs]*log((sinr_eff)/(12*rb_count));
+  LOG_D(OCM,"sinr_eff (lin, weighted) = %f\n",sinr_eff);
   sinr_eff = 10 * log10(sinr_eff);
-  LOG_D(OCM,"sinr_eff = %f\n",sinr_eff);
+  LOG_D(OCM,"sinr_eff (dB) = %f\n",sinr_eff);
 
   bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
 
