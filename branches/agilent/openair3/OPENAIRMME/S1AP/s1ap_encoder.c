@@ -31,7 +31,7 @@
 /*******************************************************************************
  * This file had been created by asn1tostruct.py script v0.5
  * Please do not modify this file but regenerate it via script.
- * Created on: 2013-09-29 10:14:25.355461 by root
+ * Created on: 2013-10-18 15:18:11.650495 by root
  * from ['../../../S1AP/MESSAGES/ASN1/R8.10/S1AP-PDU-Contents.asn']
  ******************************************************************************/
 #include "s1ap_common.h"

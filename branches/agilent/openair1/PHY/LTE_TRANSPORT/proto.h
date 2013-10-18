@@ -1521,7 +1521,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     @param subframe Subframe of received/transmitted PHICH
     @returns frame of PUSCH transmission
 */
-uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,uint8_t frame,uint8_t subframe);;
+uint32_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe);;
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id);
 
@@ -1701,7 +1701,6 @@ int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_par
 uint8_t Get_SB_size(uint8_t n_rb_dl);
 //end ALU's algo
 
-uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,uint8_t frame,uint8_t subframe);
 
 uint32_t dlsch_decoding_abstraction(double *dlsch_MIPB,
 				    LTE_DL_FRAME_PARMS *lte_frame_parms,

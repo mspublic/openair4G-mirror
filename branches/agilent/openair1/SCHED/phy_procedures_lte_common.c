@@ -514,7 +514,7 @@ u8 phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,u32 frame,u8 subfr
 
 unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
 
-  if (frame_parms->frame_type == 0) {
+  if (frame_parms->frame_type == FDD) {
     return(1);
   }
   else {
