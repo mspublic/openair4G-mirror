@@ -244,7 +244,37 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
       //    }
     }
     else {
+      // static DL HARQ pid assignment
+      switch(subframe) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+          i = subframe - 1;
+          break;
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+          i = subframe - 2;
+          break;
+        default:
+          LOG_E(PHY, "[eNB %d] DLSCH subframe %d not support HARQ\n", Mod_id, subframe);
+          return (-1);
+          break;
+      }
+      if (DLSCH_ptr->harq_processes[i] != NULL ) {
+        if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
+          *harq_pid = i;
+          *round = 0;
+          if (Ndi != NULL) {
+            *Ndi = DLSCH_ptr->harq_processes[i]->Ndi;
+          }
+          return(0);
+        }
+      }
       // get first free harq_pid (i.e. round 0)
+      /*
       for (i=0;i<DLSCH_ptr->Mdlharq;i++) {
 	if (DLSCH_ptr->harq_processes[i]!=NULL) {
 	  if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
@@ -264,6 +294,7 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
 	  return(-1);
 	}
       }
+      */
     }
   }
   else {  // This is a UL request
@@ -1086,7 +1117,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	frame_tx = (((int) (pbch_pdu[2]&0x3))<<8) + ((int) (pbch_pdu[1]&0xfc)) + phy_vars_eNB->frame%4;
 	
 #ifdef DEBUG_PHY_PROC
-        /*
+        
 	LOG_D(PHY,"[eNB %d] Frame %d, slot %d: Calling generate_pbch, mode1_flag=%d, frame_tx=%d, pdu=%02x%02x%02x\n",
 	      phy_vars_eNB->Mod_id,
 	      phy_vars_eNB->frame, 
@@ -1096,7 +1127,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	      ((u8*) pbch_pdu)[2],
 	      ((u8*) pbch_pdu)[1],
 	      ((u8*) pbch_pdu)[0]);
-              */
+              
 #endif
 	
 	if (abstraction_flag==0) {
@@ -1236,8 +1267,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,ul_frame,ul_subframe);
       for (i=0;i<NUMBER_OF_UE_MAX;i++)
 	if (phy_vars_eNB->ulsch_eNB[i]) {
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc=0;
-	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc=0;
+	  //phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc=0;
+	  //phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc=0;
 	}
     }
   
@@ -2076,7 +2107,7 @@ void process_HARQ_feedback(u8 UE_id,
 	  dlsch_ACK[m] = 0;
       }
       //TODO: ACK received
-      dlsch_ACK[m] = 1;
+      //dlsch_ACK[m] = 1;
       if (dl_harq_pid[m]<dlsch->Mdlharq) {
 	dlsch_harq_proc = dlsch->harq_processes[dl_harq_pid[m]];
 #ifdef DEBUG_PHY_PROC	
@@ -2096,6 +2127,7 @@ void process_HARQ_feedback(u8 UE_id,
 	  //	  msg("[PHY] eNB %d Process %d is active (%d)\n",phy_vars_eNB->Mod_id,dl_harq_pid[m],dlsch_ACK[m]);
 	  if ( dlsch_ACK[mp]==0) {
 	    // Received NAK 
+            msg("NAK Received\n");
 #ifdef DEBUG_PHY_PROC	
 	    LOG_I(PHY,"[eNB %d][PDSCH %x/%d] Frame %d subframe %d NAK Received(%s) in round %d, requesting retransmission\n",phy_vars_eNB->Mod_id,
 		  dlsch->rnti,dl_harq_pid[m], phy_vars_eNB->frame, dl_subframe, pusch_flag==1?"PUSCH":"PUCCH",
@@ -2122,8 +2154,8 @@ void process_HARQ_feedback(u8 UE_id,
 	  }
 	  else {
 #ifdef DEBUG_PHY_PROC	
-	    LOG_I(PHY,"[eNB %d][PDSCH %x/%d] ACK Received in round %d, resetting process\n",phy_vars_eNB->Mod_id,
-		  dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
+	    LOG_I(PHY,"[eNB %d][PDSCH %x/%d] ACK Received in round %d Ndi %d, resetting process \n",phy_vars_eNB->Mod_id,
+		  dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round, dlsch_harq_proc->Ndi);
 #endif
 	    ue_stats->dlsch_ACK[dlsch_harq_proc->round]++;
 
@@ -2560,7 +2592,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   */
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,
-			       ((last_slot>>1)==9 ? -1 : 0 )+ phy_vars_eNB->frame,last_slot>>1);
+			       ((last_slot>>1)>=8 ? -1 : 0 )+ phy_vars_eNB->frame,last_slot>>1);
   //  printf("[eNB][PUSCH] subframe %d => harq_pid %d\n",last_slot>>1,harq_pid);
 
   /*
@@ -2636,7 +2668,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
       phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
 
-      // update O_ACK
+      // TODO: update O_ACK 
 
     if (frame_parms->frame_type == FDD ) {
       int subframe = last_slot >> 1;
@@ -2774,8 +2806,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	LOG_D(PHY,"[UE][PUSCH %d] Increasing to round %d\n",harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round);
 
         // dump when error
-        dump_ulsch(phy_vars_eNB, last_slot>>1, i);
-        exit(-1);
+        //dump_ulsch(phy_vars_eNB, last_slot>>1, i);
+        //exit(-1);
 
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 	  LOG_D(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
@@ -3464,8 +3496,11 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
   }
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,0);
 
-  if (next_slot == 18)
+  if (next_slot == 18){
+    //phy_vars_eNB->frame = (phy_vars_eNB->frame+1)&0x3FF;
     phy_vars_eNB->frame++;
-
+    if (phy_vars_eNB->frame == 1024)
+      phy_vars_eNB->frame = 0;
+  }
 }
 

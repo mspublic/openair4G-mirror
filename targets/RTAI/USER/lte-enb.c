@@ -387,7 +387,7 @@ static void *eNB_thread(void *arg)
       last_slot+=20;
     next_slot = ((subframe<<1)+4)%LTE_SLOTS_PER_FRAME;
 
-    if ((frame>5)&&1)
+    if (1)
     {
 
       timing_info.time_last = rt_get_time_ns();
@@ -458,8 +458,8 @@ static void *eNB_thread(void *arg)
 
     if (oai_flag == 2) {
       //dump_ulsch(PHY_vars_eNB_g[0], subframe, 0);
-      //exit(-1);
-      oai_exit=1;
+      exit(-1);
+      //oai_exit=1;
     }
 
     if (oai_flag == 1)
@@ -507,7 +507,8 @@ int main(int argc, char **argv) {
   */
   u32 my_rf_mode = RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX;
   u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + /*LNAMax Antennas*/ LNAByp + RFBBNORM;
-  u32 rf_mode[4]     = {my_rf_mode,0,0,0};
+  //u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF5 + RXLPFNORM + RXLPFEN + RXLPF5 + LNA1ON + LNAMed  + RFBBNORM;
+  //u32 rf_mode[4]     = {my_rf_mode,0,0,0};
   u32 rf_local[4]    = {8255000,8255000,8255000,8255000}; // UE zepto
     //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
     //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
@@ -516,7 +517,7 @@ int main(int argc, char **argv) {
   u32 rf_vcocal_850[4] = {2015, 2015, 2015, 2015};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   // Gain for antennas connection
-  //u32 rxgain[4]      = {25,20,20,20};
+  //u32 rxgain[4]      = {3,20,20,20};
   //u32 txgain[4]      = {30,25,25,25}; 
 
   // Gain for Cable connection
@@ -607,17 +608,17 @@ int main(int argc, char **argv) {
 
   g_log->log_component[HW].level = LOG_INFO;
   g_log->log_component[HW].flag  = LOG_HIGH;
-  g_log->log_component[PHY].level = LOG_INFO;
+  g_log->log_component[PHY].level = LOG_DEBUG;
   g_log->log_component[PHY].flag  = LOG_HIGH;
-  g_log->log_component[MAC].level = LOG_DEBUG;
+  g_log->log_component[MAC].level = LOG_INFO;
   g_log->log_component[MAC].flag  = LOG_HIGH;
   g_log->log_component[RLC].level = LOG_INFO;
   g_log->log_component[RLC].flag  = LOG_HIGH;
-  g_log->log_component[PDCP].level = LOG_DEBUG;
+  g_log->log_component[PDCP].level = LOG_INFO;
   g_log->log_component[PDCP].flag  = LOG_HIGH;
   g_log->log_component[S1AP].level = LOG_DEBUG;
   g_log->log_component[S1AP].flag  = LOG_HIGH;
-  g_log->log_component[RRC].level = LOG_DEBUG;
+  g_log->log_component[RRC].level = LOG_INFO;
   g_log->log_component[RRC].flag  = LOG_HIGH;
   g_log->log_component[OIP].level = LOG_INFO;
   g_log->log_component[OIP].flag = LOG_HIGH;
@@ -626,18 +627,6 @@ int main(int argc, char **argv) {
   PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
   PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
   
-#ifndef OPENAIR2
-  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
-    PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-    PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-    PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-
-    PHY_vars_eNB_g[0]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
-    PHY_vars_eNB_g[0]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
-    PHY_vars_eNB_g[0]->scheduling_request_config[i].dsr_TransMax = sr_n4;
-  }
-#endif
-
   
   NB_eNB_INST=1;
   NB_INST=1;
@@ -645,16 +634,18 @@ int main(int argc, char **argv) {
   openair_daq_vars.ue_dl_rb_alloc=0x1fff;
   openair_daq_vars.target_ue_dl_mcs=16;
   openair_daq_vars.ue_ul_nb_rb=6;
-  openair_daq_vars.target_ue_ul_mcs=9;
+  openair_daq_vars.target_ue_ul_mcs=8;
 
 
 
   // set eNB to max gain
+  /*
   PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB =  rxg_max[0] + rxgain[0] - 30; //was measured at rxgain=30;
   for (i=0; i<4; i++) {
     //        frame_parms->rfmode[i] = rf_mode_max[i];
     rf_mode[i] = (rf_mode[i] & (~LNAGAINMASK)) | LNAMax;
   }
+  */
 
 
   // Initialize card

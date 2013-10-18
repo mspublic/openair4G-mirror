@@ -206,7 +206,7 @@ void initiate_ra_proc(u8 Mod_id, u32 frame, u16 preamble_index,s16 timing_offset
       eNB_mac_inst[Mod_id].RA_template[i].wait_ack_Msg4=0;
       eNB_mac_inst[Mod_id].RA_template[i].timing_offset=timing_offset;
       // Put in random rnti (to be replaced with proper procedure!!)
-      eNB_mac_inst[Mod_id].RA_template[i].rnti = taus(); //101
+      eNB_mac_inst[Mod_id].RA_template[i].rnti = 101;//taus(); //101
       eNB_mac_inst[Mod_id].RA_template[i].RA_rnti = 1+subframe+(10*f_id);
       eNB_mac_inst[Mod_id].RA_template[i].preamble_subframe = subframe;
       eNB_mac_inst[Mod_id].RA_template[i].preamble_index = preamble_index;
@@ -405,7 +405,7 @@ u16 find_dlgranted_UEs(unsigned char Mod_id){
 // get aggregatiob form phy for a give UE
 unsigned char process_ue_cqi (unsigned char Mod_id, unsigned char UE_id) {
 
-  unsigned char aggregation=2;
+  unsigned char aggregation=1;
   // check the MCS and SNR and set the aggregation accordingly
 
   return aggregation;
@@ -2100,7 +2100,7 @@ void schedule_ulsch_cba_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 fram
 void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, u8 granted_UEs, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb){ 
   unsigned char UE_id;
   unsigned char next_ue;
-  unsigned char aggregation=2;
+  unsigned char aggregation=0;
   u16 rnti;
   u8 round = 0;
   u8 harq_pid = 0;
@@ -2141,8 +2141,8 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 
       /* [SR] 01/07/13: Don't schedule UE if we cannot get harq pid */
       //if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (round>0) || ((ret == 0)&&(subframe==0))) {
-      if(subframe == 0) {
-      //if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (round>0) || (ret == 0)) {
+      //if(subframe == 0) {
+      if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || (round>0) || (ret == 0)) {
       //if ((UE_is_to_be_scheduled(Mod_id, UE_id)>0) || (round>0) ) {
 	// if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames 
 	
@@ -2165,13 +2165,6 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	else
 	  cqi_req = 0;
 
-        //TODO
-	//if (round > 0) {
-	//  ndi = 1; // if round != 0, it means the data is not new. ndi:new data indicator
-	//}
-	//else {
-	//  ndi = 0;
-	//}
 
 	//if ((frame&1)==0) {
 
@@ -2180,9 +2173,9 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	//if (ndi == 1) {// set mcs for first round
         if (round == 0) {
 	  mcs = openair_daq_vars.target_ue_ul_mcs;
-          // TODO: DCI0 Nid flag should toggle to previouse value when transmit new data
-          //ndi = (ndi+1)%2;
-          ndi = 1;
+          // TODO: DCI0 Ndi flag should toggle to previouse value when transmit new data
+          ndi = (ndi+1)%2;
+          //ndi = 1;
 	}
 	else { // increment RV
 	  if ((round&3)==0)
@@ -2238,7 +2231,8 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	    rb_table_index--;
 	    TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  }
-	  rb_table_index = 13;
+	  //rb_table_index = 13;
+          rb_table_index = 6;
 	  
 	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
@@ -3353,7 +3347,7 @@ void schedule_ue_spec(unsigned char Mod_id,
   u16 sdu_length_total=0;
   //  unsigned char loop_count;
   unsigned char DAI;
-  u8 Ndi;
+  u8 Ndi = 0;
   u16 i=0,ii=0,tpmi0=1;
   u8 dl_pow_off[NUMBER_OF_UE_MAX];
   unsigned char rballoc_sub_UE[NUMBER_OF_UE_MAX][N_RBGS_MAX];
@@ -3615,9 +3609,9 @@ void schedule_ue_spec(unsigned char Mod_id,
 
 
     // for EXMIMO, limit the MCS to 16QAM as well
-#ifdef EXMIMO
-    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
-#endif    
+//#ifdef EXMIMO
+//    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
+//#endif    
 
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round, &Ndi, 0);
@@ -3635,6 +3629,7 @@ void schedule_ue_spec(unsigned char Mod_id,
     
     // Retransmission schedule 
     if (round > 0) {
+      msg("DL Retransmission\n");
       if (mac_xface->lte_frame_parms->frame_type == TDD) {
 	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI++;
 	LOG_D(MAC,"DAI update: subframe %d: UE %d, DAI %d\n",subframe,next_ue,eNB_mac_inst[Mod_id].UE_template[next_ue].DAI);
@@ -4327,7 +4322,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       case 3:
         schedule_RA(Mod_id, frame, subframe, 2, &nprb, &nCCE);
         schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 4, &nCCE);
-	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
@@ -4365,8 +4360,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
       schedule_RA(Mod_id, frame, subframe, 7, &nprb, &nCCE);
-      schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 5, &nCCE);
-      //schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+      //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 5, &nCCE);
+      schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
       fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status);
     }
     break;
@@ -4395,8 +4390,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     // TDD, nothing 
     if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
       schedule_RA(Mod_id, frame, subframe, 0, &nprb, &nCCE);
-      schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 8, &nCCE);
-      //schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+      //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 8, &nCCE);
+      schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
       fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status);
     }
     break;
@@ -4477,6 +4472,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     }
     else {  //FDD
       schedule_RA(Mod_id, frame, subframe, 3, &nprb, &nCCE);
+      //subframe 1 is prach subframe, for simplify just ignor to schedule pusch in this subframe
       //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 1, &nCCE);
       schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
       fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status);
@@ -4488,7 +4484,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 4, &nprb, &nCCE);
-        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
+        //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
 	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
@@ -4531,7 +4527,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     else {  //FDD
       schedule_RA(Mod_id, frame, subframe, 5, &nprb, &nCCE);
       //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 3, &nCCE);
-      //schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+      schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
       fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status);
     }
     break;

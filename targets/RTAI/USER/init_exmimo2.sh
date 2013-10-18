@@ -39,8 +39,8 @@ insmod $MODULES_HOME/rtai_fifos.ko
 insmod $MODULES_HOME/rtai_sem.ko
 insmod $MODULES_HOME/rtai_msg.ko
 
-#sudo rmmod nasmesh
-#sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko
+sudo rmmod nasmesh
+sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko
 #
 #if [ "$1" = "eNB" ]; then 
 #     echo "bring up oai0 interface for enb"

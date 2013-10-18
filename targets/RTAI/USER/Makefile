@@ -87,7 +87,8 @@ CFLAGS += $(L2_incl) $(UTIL_incl)
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
-CFLAGS += -DNEW_FFT -DLOG_NO_THREAD
+#CFLAGS += -DNEW_FFT -DLOG_NO_THREAD
+CFLAGS += -DLOG_NO_THREAD
 
 ifeq ($(XFORMS),1)
 CFLAGS += -DXFORMS -I/usr/include/X11
@@ -222,7 +223,6 @@ rb_tool:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 
 nasmesh_install:
-	(sudo rmmod nasmesh)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 
 clean:
