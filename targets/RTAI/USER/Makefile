@@ -90,6 +90,10 @@ CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DI
 #CFLAGS += -DNEW_FFT -DLOG_NO_THREAD
 CFLAGS += -DLOG_NO_THREAD
 
+ifndef XFORMS
+XFORMS=1
+endif
+
 ifeq ($(XFORMS),1)
 CFLAGS += -DXFORMS -I/usr/include/X11
 LDFLAGS += -lforms
@@ -175,9 +179,6 @@ ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
 
 all: lte-enb
 
-$(LFDS_DIR)/bin/liblfds611.a:
-	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
-
 
 $(RTAI_OBJ): %.o : %.c
 	@echo Compiling $< ...
@@ -187,10 +188,6 @@ $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
 
-$(S1AP_BUILT_OBJS): %.o : %.c
-	@echo Compiling $<
-	@$(CC) -Wall -c $(CFLAGS_S1AP) $(S1AP_Incl) $(UTIL_incl) -o $@ $<
-
 $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU-Contents.asn $(ASN1DIR)/asn1tostruct.py
 	echo Timestamp > $@
 	(cd $(ASN1DIR) && python $(ASN1DIR)/asn1tostruct.py -f$<)
@@ -198,6 +195,10 @@ $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU-Content
 $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-CommonDataTypes.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-Constants.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-IEs.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU.asn
 	echo Timestamp > $@
 	(cd $(ASN1MESSAGESDIR) && asn1c -gen-PER -fnative-types -fskeletons-copy $^)
+
+$(S1AP_BUILT_OBJS): %.o : %.c $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp
+	@echo Compiling $<
+	@$(CC) -Wall -c $(CFLAGS_S1AP) $(S1AP_Incl) $(UTIL_incl) -o $@ $<
 
 $(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp $(S1AP_BUILT_OBJS)
 	@echo Creating $@
@@ -228,7 +229,7 @@ nasmesh_install:
 clean:
 	rm -rf $(OBJ) $(RTAI_OBJ)
 	rm -f $(S1AP_BUILT_OBJS)
-	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
+	rm -f $(S1AP_DIR)/libs1ap.a
 
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)

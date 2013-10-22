@@ -2231,8 +2231,8 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	    rb_table_index--;
 	    TBS = mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]);
 	  }
-	  //rb_table_index = 13;
-          rb_table_index = 6;
+	  rb_table_index = 13;
+          //rb_table_index = 6;
 	  
 	  LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframe %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
 		Mod_id,UE_id,rnti,frame,subframe,mcs,
@@ -4321,7 +4321,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 2, &nprb, &nCCE);
-        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 4, &nCCE);
+        //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 4, &nCCE);
 	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
@@ -4457,7 +4457,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 3, &nprb, &nCCE);
-	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
@@ -4484,8 +4484,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 4, &nprb, &nCCE);
-        //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
-	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
+	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
@@ -4501,7 +4501,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     else {  //FDD
       schedule_RA(Mod_id, frame, subframe, 4, &nprb, &nCCE);
       //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
-      schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+      //schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
       fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status);
     }
     break;
@@ -4510,8 +4510,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     if (mac_xface->lte_frame_parms->frame_type == TDD) { // TDD
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
-        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 3, &nCCE);
-	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+        schedule_RA(Mod_id, frame, subframe, 5, &nprb, &nCCE);
+        //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 3, &nCCE);
+	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
