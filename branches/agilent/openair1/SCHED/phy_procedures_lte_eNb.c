@@ -2488,9 +2488,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // check if we have to detect PRACH first
   // TODO: only support format 0
   if ((last_slot&1)==1){
-    //    printf("Checking PRACH for eNB %d, subframe %d\n",phy_vars_eNB->Mod_id,last_slot>>1);
     if (is_prach_subframe(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->frame,last_slot>>1)>0) {
-      //     printf("Running prach procedures\n");
       prach_procedures(phy_vars_eNB,last_slot>>1,abstraction_flag);
     }
   }
@@ -2680,6 +2678,30 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       else {
         phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->O_ACK = 0;
       }
+    } 
+    else if (frame_parms->tdd_config == 3) // 
+    {
+      int subframe = last_slot >> 1;
+      int O_ACK = 0;
+      if (subframe == 2) { // ACK DL subframe 5 and 6 or special subframe 11
+        if (phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[5] > 0)
+          O_ACK++;
+        if (phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[6] > 0)
+          O_ACK++;
+      }
+      if (subframe == 3) { // ACK DL subframe 7 and 8
+        if (phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[7] > 0)
+          O_ACK++;
+        if (phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[8] > 0)
+          O_ACK++;
+      }
+      if (subframe == 4) { // ACK DL subframe 9 and 0
+        if (phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[9] > 0)
+          O_ACK++;
+        if (phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[0] > 0)
+          O_ACK++;
+      }
+      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->O_ACK = O_ACK;
     }
 #ifdef DEBUG_PHY_PROC
       LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, Ndi %d, first_rb %d, nb_rb %d, mcs %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
@@ -2806,8 +2828,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	LOG_D(PHY,"[UE][PUSCH %d] Increasing to round %d\n",harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round);
 
         // dump when error
-        //dump_ulsch(phy_vars_eNB, last_slot>>1, i);
-        //exit(-1);
+        dump_ulsch(phy_vars_eNB, last_slot>>1, i);
+        exit(-1);
 
 	if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 	  LOG_D(PHY,"[eNB %d][RAPROC] frame %d, slot %d, subframe %d, UE %d: Error receiving ULSCH (Msg3), round %d/%d\n",
