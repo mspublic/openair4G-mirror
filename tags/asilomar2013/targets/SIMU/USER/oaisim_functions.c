@@ -55,7 +55,7 @@ double snr_step=1.0;
 u8 ue_connection_test=0;
 double forgetting_factor=0.0;
 u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-u8 target_ul_mcs = 10;
+u8 target_ul_mcs = 6;
 LTE_DL_FRAME_PARMS *frame_parms;
 int map1,map2;
 double **ShaF= NULL;
@@ -662,6 +662,7 @@ void init_ocm() {
       LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
             map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
 
+      /*
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
                                                    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
                                                    map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
@@ -671,6 +672,8 @@ void init_ocm() {
                                                    0);
 
       random_channel(UE2eNB[UE_id][eNB_id],abstraction_flag);
+      */
+      UE2eNB[UE_id][eNB_id] = eNB2UE[eNB_id][UE_id];
     }
   }
 }
