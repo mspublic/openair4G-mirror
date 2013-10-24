@@ -969,11 +969,11 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    (bundling_flag==bundling)    || 
 	    ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((next_slot!=4)||(next_slot!=14)))) {
 	  format = pucch_format1a;
-	  //	debug_msg("PUCCH 1a\n");
+	  msg("[UE] PUCCH 1a\n");
 	}
 	else {
 	  format = pucch_format1b;
-	  //	debug_msg("PUCCH 1b\n");
+	  msg("[UE] PUCCH 1b\n");
 	}
 	
 	// Check for SR and do ACK/NACK accordingly

@@ -69,7 +69,8 @@
 
 #define PUCCH 1
 
-#define PUCCH1_THRES 15
+#define PUCCH1_THRES 25
+#define PUCCH1a_THRES 15
 
 extern inline unsigned int taus(void);
 extern int exit_openair;
@@ -3114,7 +3115,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       1, // shortened format
 			       pucch_payload0,
 			       last_slot>>1,
-			       PUCCH1_THRES);
+			       PUCCH1a_THRES);
 	  else {
 #ifdef PHY_ABSTRACTION
 	    metric0 = rx_pucch_emul(phy_vars_eNB,i,
@@ -3149,11 +3150,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	      (bundling_flag==bundling)    || 
 	      ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((last_slot!=4)||(last_slot!=14)))) {
 	    format = pucch_format1a;
-	    //	    msg("PUCCH 1a\n");
+	    	    msg("[eNB] PUCCH 1a\n");
 	  }
 	  else {
 	    format = pucch_format1b;
-	    //	    msg("PUCCH 1b\n");
+	    	    msg("[eNB] PUCCH 1b\n");
 	  }
 	
 	  // if SR was detected, use the n1_pucch from SR
@@ -3173,7 +3174,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				 1, // shortened format
 				 pucch_payload0,
 				 last_slot>>1,
-				 PUCCH1_THRES);
+				 PUCCH1a_THRES);
 	    else {
 #ifdef PHY_ABSTRACTION
 	      metric0 = rx_pucch_emul(phy_vars_eNB,i,
@@ -3205,7 +3206,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				   1, // shortened format
 				   pucch_payload0,
 				   last_slot>>1,
-				   PUCCH1_THRES);
+				   PUCCH1a_THRES);
 	      else {
 #ifdef PHY_ABSTRACTION
 		metric0 = rx_pucch_emul(phy_vars_eNB,i,
@@ -3228,7 +3229,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				   1, // shortened format
 				   pucch_payload1,
 				   last_slot>>1,
-				   PUCCH1_THRES);
+				   PUCCH1a_THRES);
 	      else {
 #ifdef PHY_ABSTRACTION
 		metric1 = rx_pucch_emul(phy_vars_eNB,i,
