@@ -3563,8 +3563,6 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->uci_format                            = HLC_subband_cqi_nopmi;
     }
 
-    // check this (see comment in generate_ue_ulsch_params_from_dci)
-    ulsch->harq_processes[harq_pid]->O_ACK                                 = 1; //(dai+1)&3;
 
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
@@ -3574,6 +3572,22 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
     ulsch->srs_active                            = use_srs;
     ulsch->bundling = 1-AckNackFBMode;
+
+    // check this (see comment in generate_ue_ulsch_params_from_dci)
+    if(frame_parms->frame_type == FDD) {
+      int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4); 
+      if (phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[dl_subframe]>0) { // we have downlink transmission
+        ulsch->harq_processes[harq_pid]->O_ACK = 1;
+      }
+      else {
+        ulsch->harq_processes[harq_pid]->O_ACK = 0;
+      }
+    } else {
+      if (ulsch->bundling) 
+        ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
+      else 
+        ulsch->harq_processes[harq_pid]->O_ACK = (dai+1)&3;
+    }
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(cshift == 0)
       ulsch->harq_processes[harq_pid]->n_DMRS2 = 0;
@@ -3649,6 +3663,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (eNB): Or1           %d\n",ulsch->Or1);
     msg("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     msg("ulsch (eNB): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
+    if (frame_parms->frame_type == TDD)
+    msg("ulsch (eNB); DAI           %d\n\n",dai);
 #endif
     return(0);
   }
