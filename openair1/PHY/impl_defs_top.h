@@ -236,8 +236,8 @@
 #ifdef BIT8_TX
 #define AMP 128 
 #else
-//#define AMP 512 //1024 //4096
-#define AMP 1024
+#define AMP 512 //1024 //4096
+//#define AMP 1024
 #endif
 
 #ifndef OPENAIR_LTE

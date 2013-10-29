@@ -339,7 +339,7 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
   if (frame_parms->frame_type == FDD)
     (*sib1)->freqBandIndicator = 1;  // FDD works on band1
   else
-    (*sib1)->freqBandIndicator = 38; // TDD works on band38
+    (*sib1)->freqBandIndicator = 40; // TDD works on band38
 
   schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
 

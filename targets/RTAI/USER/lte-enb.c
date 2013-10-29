@@ -145,7 +145,8 @@ int time_offset[4] = {0,0,0,0};
 u8 eNB_id=0;
 
 u32 carrier_freq_fdd[4]= {2140e6,0,0,0};
-u32 carrier_freq_tdd[4]= {2590e6-4000,0,0,0};
+//u32 carrier_freq_tdd[4]= {2590e6,0,0,0};
+u32 carrier_freq_tdd[4]= {2350e6,0,0,0};
 u32 carrier_freq[4];
 
 struct timing_info_t {
@@ -524,7 +525,6 @@ int main(int argc, char **argv) {
   u32 rxgain[4]      = {3,20,20,20};
   u32 txgain[4]      = {0,25,25,25}; 
 
-
   u8 frame_type = FDD;
   u8 tdd_config = 3;
   u8 tdd_config_S = 0;
@@ -632,7 +632,9 @@ int main(int argc, char **argv) {
   NB_INST=1;
 
   openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-  openair_daq_vars.target_ue_dl_mcs=16;
+  openair_daq_vars.target_ue_dl_mcs=20;
+  if (frame_type == FDD)
+    openair_daq_vars.target_ue_dl_mcs=16;
   openair_daq_vars.ue_ul_nb_rb=6;
   openair_daq_vars.target_ue_ul_mcs=8;
 
