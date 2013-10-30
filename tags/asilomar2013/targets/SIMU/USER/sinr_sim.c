@@ -522,18 +522,11 @@ void get_beta_map() {
   file_path = (char*) malloc(512);
 
   for (mcs = 0; mcs < MCS_COUNT; mcs++) {
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/Perf_Curves_Abs/awgn_bler_tx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
+    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv",getenv("OPENAIR1_DIR"),mcs);
     fp = fopen(file_path,"r");
     if (fp == NULL) {
-      LOG_W(OCM,"ERROR: Unable to open the file %s, try an alternative path\n", file_path);
-      memset(file_path, 0, 512);
-      sprintf(file_path,"AWGN/awgn_snr_bler_mcs%d.csv",mcs);
-      LOG_I(OCM,"Opening the alternative path %s\n", file_path);
-      fp = fopen(file_path,"r");
-      if (fp == NULL) {
-	LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
-	exit(-1);
-      }
+      LOG_E(OCM,"ERROR: Unable to open the file %s! Exitng.\n", file_path);
+      exit(-1);
     }
 
     fgets(buffer, 1000, fp); //first line is header
@@ -547,12 +540,12 @@ void get_beta_map() {
 	u++;
 	sinr_bler = strtok(NULL,";");
       }
-      if((perf_array[4]/perf_array[5]) < 1){
+      if((perf_array[4]/perf_array[5]) < 1) {
 	sinr_bler_map[mcs][0][table_length[mcs]] = perf_array[0];
 	sinr_bler_map[mcs][1][table_length[mcs]] = (perf_array[4]/perf_array[5]);
 	table_length[mcs]++;
-	if (table_length[mcs]>40) {
-	  LOG_E(OCM,"increase table length (mcs %d)!\n",mcs);
+	if (table_length[mcs]>MCS_TABLE_LENGTH_MAX) {
+	  LOG_E(OCM,"Error reading MCS table. Increase MCS_TABLE_LENGTH_MAX (mcs %d)!\n",mcs);
 	  exit(-1);
 	}
       }

@@ -55,7 +55,7 @@ double snr_step=1.0;
 u8 ue_connection_test=0;
 double forgetting_factor=0.0;
 u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
-u8 target_ul_mcs = 6;
+u8 target_ul_mcs = 5;
 LTE_DL_FRAME_PARMS *frame_parms;
 int map1,map2;
 double **ShaF= NULL;

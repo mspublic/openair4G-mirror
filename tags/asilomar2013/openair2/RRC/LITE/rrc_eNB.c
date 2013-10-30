@@ -675,6 +675,7 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
               eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_RECONFIGURED;
               LOG_I (RRC, "[eNB %d] UE %d State = RRC_RECONFIGURED \n",
                      Mod_id, UE_index);
+	      oai_emulation.info.n_frames += frame;
             }
           break;
         case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
