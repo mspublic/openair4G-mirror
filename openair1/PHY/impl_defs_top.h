@@ -489,6 +489,7 @@ typedef struct
 } PHY_MEASUREMENTS_eNB;
 
 #define MCS_COUNT 28
+#define MCS_TABLE_LENGTH_MAX 64
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
 /**@}
