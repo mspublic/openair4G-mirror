@@ -230,8 +230,7 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
       if (subframe == 2) {  // ACK subframes 5 and 6
 	if (ACK_index==2)
 	  return(1);
-	//return(5+ACK_index);
-        return(6+ACK_index);
+	return(5+ACK_index);
       }
       else if (subframe == 3) {   // ACK subframes 7 and 8
 	return(7+ACK_index);  // To be updated
@@ -278,8 +277,7 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
     switch (frame_parms->tdd_config) {
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
-        //return(2); // should be 3
-        return(1); // only subframe 6 transmit PDSCH
+        return(2); // should be 3
       }
       else if (subframe == 3) {   // ACK subframes 7 and 8
 	return(2);  // To be updated

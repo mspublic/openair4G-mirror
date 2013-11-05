@@ -244,7 +244,9 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
       //    }
     }
     else {
+      
       // static DL HARQ pid assignment
+      if (PHY_vars_eNB_g[Mod_id]->lte_frame_parms.frame_type == FDD) {
       switch(subframe) {
         case 1:
         case 2:
@@ -262,6 +264,13 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
           LOG_E(PHY, "[eNB %d] DLSCH subframe %d not support HARQ\n", Mod_id, subframe);
           return (-1);
           break;
+      }
+      } else {
+        if (subframe == 0) {
+          i = 1;
+        } else {
+          i = subframe - 4;
+        }
       }
       if (DLSCH_ptr->harq_processes[i] != NULL ) {
         if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
@@ -2022,6 +2031,8 @@ void process_HARQ_feedback(u8 UE_id,
       dlsch_ACK[0] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[0];
       dlsch_ACK[1] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[1];
       //      printf("UE %d: ACK %d,%d\n",UE_id,dlsch_ACK[0],dlsch_ACK[1]);
+      LOG_D(PHY,"[eNB %d] Frame %d subframe %d: Received ACK/NAK %d\n",phy_vars_eNB->Mod_id,
+	  phy_vars_eNB->frame, subframe,dlsch_ACK[0]);
     }
 
     else {  // PUCCH ACK/NAK
@@ -2108,7 +2119,14 @@ void process_HARQ_feedback(u8 UE_id,
 	  dlsch_ACK[m] = 0;
       }
       //TODO: ACK received
-      dlsch_ACK[m] = 1;
+      //dlsch_ACK[m] = 1;
+
+      // to be updated
+      if (phy_vars_eNB->ulsch_eNB[UE_id]->bundling)
+        mp = 0;  // only 1 TB supported
+      else
+        mp = m;
+
       if (dl_harq_pid[m]<dlsch->Mdlharq) {
 	dlsch_harq_proc = dlsch->harq_processes[dl_harq_pid[m]];
 #ifdef DEBUG_PHY_PROC	
@@ -2725,11 +2743,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
 
       if (abstraction_flag == 0) {
+        LOG_I(PHY, "subframe %d, harq_pid %d, Nbundled %d\n", last_slot>>1, harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI);
 	ret = ulsch_decoding(phy_vars_eNB,
 			     i,
 			     last_slot>>1,
 			     0, // control_only_flag
-			     1, //Nbundled, to be updated!!!!
+			     phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI, //Nbundled, to be updated!!!!
 			     0);  
       }
 #ifdef PHY_ABSTRACTION

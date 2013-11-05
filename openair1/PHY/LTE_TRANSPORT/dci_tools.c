@@ -3587,6 +3587,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
         ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
       else 
         ulsch->harq_processes[harq_pid]->O_ACK = (dai+1)&3;
+
+      ulsch->harq_processes[harq_pid]->V_UL_DAI = dai+1;
     }
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(cshift == 0)
