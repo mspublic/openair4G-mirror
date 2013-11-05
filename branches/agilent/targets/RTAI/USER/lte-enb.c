@@ -144,9 +144,9 @@ int time_offset[4] = {0,0,0,0};
 
 u8 eNB_id=0;
 
-u32 carrier_freq_fdd[4]= {2140e6,0,0,0};
+u32 carrier_freq_fdd[4]= {2140e6,2140e6,0,0};
 //u32 carrier_freq_tdd[4]= {2590e6,0,0,0};
-u32 carrier_freq_tdd[4]= {2350e6,0,0,0};
+u32 carrier_freq_tdd[4]= {2350e6,2350e6,0,0};
 u32 carrier_freq[4];
 
 struct timing_info_t {
@@ -507,8 +507,8 @@ int main(int argc, char **argv) {
   u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
   */
   u32 my_rf_mode = RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX;
-  u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + /*LNAMax Antennas*/ LNAByp + RFBBNORM;
-  //u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF5 + RXLPFNORM + RXLPFEN + RXLPF5 + LNA1ON + LNAMed  + RFBBNORM;
+  //u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + /*LNAMax Antennas*/ LNAByp + RFBBNORM;
+  u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + LNAMed  + RFBBNORM;
   //u32 rf_mode[4]     = {my_rf_mode,0,0,0};
   u32 rf_local[4]    = {8255000,8255000,8255000,8255000}; // UE zepto
     //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
@@ -518,12 +518,12 @@ int main(int argc, char **argv) {
   u32 rf_vcocal_850[4] = {2015, 2015, 2015, 2015};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   // Gain for antennas connection
-  //u32 rxgain[4]      = {3,20,20,20};
-  //u32 txgain[4]      = {30,25,25,25}; 
+  u32 rxgain[4]      = {15,15,15,15};
+  u32 txgain[4]      = {30,30,30,30}; 
 
   // Gain for Cable connection
-  u32 rxgain[4]      = {3,20,20,20};
-  u32 txgain[4]      = {0,25,25,25}; 
+  //u32 rxgain[4]      = {3,0,0,0};
+  //u32 txgain[4]      = {0,0,0,0}; 
 
   u8 frame_type = FDD;
   u8 tdd_config = 3;
@@ -632,9 +632,7 @@ int main(int argc, char **argv) {
   NB_INST=1;
 
   openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-  openair_daq_vars.target_ue_dl_mcs=20;
-  if (frame_type == FDD)
-    openair_daq_vars.target_ue_dl_mcs=16;
+  openair_daq_vars.target_ue_dl_mcs=16;
   openair_daq_vars.ue_ul_nb_rb=6;
   openair_daq_vars.target_ue_ul_mcs=8;
 
@@ -676,31 +674,20 @@ int main(int argc, char **argv) {
   p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
   p_exmimo_config->framing.resampling_factor = 2;
  
-  for (ant=0;ant<max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant++) 
+  for (ant = 1; ant < 2; ant++) {
     p_exmimo_config->rf.rf_mode[ant] = rf_mode_base;
-  for (ant=0;ant<frame_parms->nb_antennas_tx;ant++)
-    p_exmimo_config->rf.rf_mode[ant] += (TXEN + DMAMODE_TX);
-  for (ant=0;ant<frame_parms->nb_antennas_rx;ant++)
-    p_exmimo_config->rf.rf_mode[ant] += (RXEN + DMAMODE_RX);
-  for (ant=max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant<4;ant++) {
-    p_exmimo_config->rf.rf_mode[ant] = 0;
-    carrier_freq[ant] = 0; //this turns off all other LIMEs
-  }
+    p_exmimo_config->rf.rf_mode[ant] += (TXEN+DMAMODE_TX);
+    p_exmimo_config->rf.rf_mode[ant] += (RXEN+DMAMODE_RX);
 
-  for (ant = 0; ant < 4; ant++) {
-    if (frame_type == FDD) 
-      carrier_freq[ant] = carrier_freq_fdd[ant];
-    else
-      carrier_freq[ant] = carrier_freq_tdd[ant];
-  }
-  for (ant = 0; ant<1; ant++) { 
     p_exmimo_config->rf.do_autocal[ant] = 1;
-    if (frame_type == FDD)
-      p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant]-190e6; // LTE FDD band 1 duplex space
-    else
-      p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];
-
-    p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
+    if(frame_type == FDD) {
+      p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq_fdd[ant] - 190e6;
+      p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq_fdd[ant];
+    } else {
+      p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq_tdd[ant];
+      p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq_tdd[ant];
+    }
+    
     p_exmimo_config->rf.rx_gain[ant][0] = rxgain[ant];
     p_exmimo_config->rf.tx_gain[ant][0] = txgain[ant];
     
@@ -720,9 +707,10 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rffe_gain_txhigh[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 63;
     p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
+
   }
 
-
+  
   dump_frame_parms(frame_parms);
   
   mac_xface = malloc(sizeof(MAC_xface));
@@ -752,19 +740,19 @@ int main(int argc, char **argv) {
 	 p_exmimo_config->rf.rf_mode[1],
 	 p_exmimo_config->rf.rf_mode[2],
 	 p_exmimo_config->rf.rf_mode[3],
-	 (p_exmimo_config->rf.rf_mode[0]&3),  // RXen+TXen
-	 (p_exmimo_config->rf.rf_mode[0]&4)>>2,         //TXLPFen
-	 (p_exmimo_config->rf.rf_mode[0]&TXLPFMASK)>>3, //TXLPF
-	 (p_exmimo_config->rf.rf_mode[0]&128)>>7,      //RXLPFen
-	 (p_exmimo_config->rf.rf_mode[0]&RXLPFMASK)>>8, //TXLPF
-	 (p_exmimo_config->rf.rf_mode[0]&RFBBMASK)>>16, // RFBB mode
-	 (p_exmimo_config->rf.rf_mode[0]&LNAMASK)>>12, // RFBB mode
-	 (p_exmimo_config->rf.rf_mode[0]&LNAGAINMASK)>>14, // RFBB mode
-	 (p_exmimo_config->rf.rf_mode[0]&RXLPFMODEMASK)>>19, // RXLPF mode
+	 (p_exmimo_config->rf.rf_mode[1]&3),  // RXen+TXen
+	 (p_exmimo_config->rf.rf_mode[1]&4)>>2,         //TXLPFen
+	 (p_exmimo_config->rf.rf_mode[1]&TXLPFMASK)>>3, //TXLPF
+	 (p_exmimo_config->rf.rf_mode[1]&128)>>7,      //RXLPFen
+	 (p_exmimo_config->rf.rf_mode[1]&RXLPFMASK)>>8, //TXLPF
+	 (p_exmimo_config->rf.rf_mode[1]&RFBBMASK)>>16, // RFBB mode
+	 (p_exmimo_config->rf.rf_mode[1]&LNAMASK)>>12, // RFBB mode
+	 (p_exmimo_config->rf.rf_mode[1]&LNAGAINMASK)>>14, // RFBB mode
+	 (p_exmimo_config->rf.rf_mode[1]&RXLPFMODEMASK)>>19, // RXLPF mode
 	 (p_exmimo_config->framing.tdd_config&TXRXSWITCH_MASK)>>1, // Switch mode
-	 p_exmimo_config->rf.rf_rxdc[0],
-	 p_exmimo_config->rf.rf_local[0],
-	 p_exmimo_config->rf.rf_vcocal[0]);
+	 p_exmimo_config->rf.rf_rxdc[1],
+	 p_exmimo_config->rf.rf_local[1],
+	 p_exmimo_config->rf.rf_vcocal[1]);
   
   for (ant=0;ant<4;ant++)
     p_exmimo_config->rf.do_autocal[ant] = 0;
@@ -939,30 +927,19 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
       exit(-1);
     }
     
+    carrier = 1;
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
         phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = ((s32*) openair0_exmimo_pci[card].adc_head[i+carrier]) - N_TA_offset; // N_TA offset for TDD
         
-        /*
-        printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
-        for (j=0;j<16;j++) {
-            printf("rxbuffer %d: %x\n",j,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j]);
-            phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j] = 16-j;
-        }
-        */
+        memset(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i], 0, FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
         phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
         
-        /*
-        printf("txdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
-        for (j=0;j<16;j++) {
-            printf("txbuffer %d: %x\n",j,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i][j]);
-            phy_vars_eNB->lte_eNB_common_vars.txdata[0][i][j] = 16-j;
-	}
-        */
+        memset(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i], 0, FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
     }
   }
 }

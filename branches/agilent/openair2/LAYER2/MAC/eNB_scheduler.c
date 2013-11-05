@@ -2348,7 +2348,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 	    ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
 	    ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = 1;
 	    ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
-	    ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->dai      = eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[sched_subframe];
+            ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->dai      = eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[sched_subframe];
 	    ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
 	     
 	    add_ue_spec_dci(DCI_pdu,
@@ -2359,6 +2359,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 			    sizeof_DCI0_5MHz_TDD_1_6_t,
 			    format0,
 			    0);
+            LOG_I(MAC,"setting UL DAI to %d for subframe %d=>%d\n", ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->dai , subframe,sched_subframe);
 	    break;
 	  case 50:
 	    ULSCH_dci = eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
@@ -4229,10 +4230,28 @@ void schedule_ue_spec(unsigned char Mod_id,
 	//	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul = DAI;
 	break;
       case 3:
-	if ((subframe==6)||(subframe==8)||(subframe==0)) {
-	  LOG_D(MAC,"schedule_ue_spec: setting UL DAI to %d for subframe %d => %d\n",DAI,subframe, ((subframe+8)%10)>>1);
-	  eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[((subframe+8)%10)>>1] = DAI;
-	}
+
+	//if ((subframe==6)||(subframe==8)||(subframe==0)) {
+	//  LOG_D(MAC,"schedule_ue_spec: setting UL DAI to %d for subframe %d => %d\n",DAI,subframe, ((subframe+8)%10)>>1);
+	//  eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[((subframe+8)%10)>>1] = DAI;
+	//}
+        switch (subframe) {
+          case 5:
+          case 6:
+          case 1:
+            eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[2] = DAI;
+            break;
+          case 7:
+          case 8:
+            eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[3] = DAI;
+            break;
+          case 9:
+          case 0:
+            eNB_mac_inst[Mod_id].UE_template[next_ue].DAI_ul[4] = DAI;
+            break;
+          default:
+            break;
+        }
 	break;
       case 4:
 	//      if ((subframe==8)||(subframe==9))
@@ -4324,8 +4343,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 2, &nprb, &nCCE);
-        //schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 4, &nCCE);
 	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 4, &nCCE);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
@@ -4487,8 +4506,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 4, &nprb, &nCCE);
-        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
+        // TODO: bug should put schedule_ulsch after schedule_ue_spec
 	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
+        schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 2, &nCCE);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
@@ -4514,8 +4534,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       switch (mac_xface->lte_frame_parms->tdd_config) {
       case 3:
         schedule_RA(Mod_id, frame, subframe, 5, &nprb, &nCCE);
+	schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         schedule_ulsch(Mod_id, frame, cooperation_flag, subframe, 3, &nCCE);
-	//schedule_ue_spec(Mod_id, frame, subframe, nprb, &nCCE, mbsfn_status);
         fill_DLSCH_dci(Mod_id, frame, subframe, RBalloc, 1, mbsfn_status); 
         break;
       case 0:
