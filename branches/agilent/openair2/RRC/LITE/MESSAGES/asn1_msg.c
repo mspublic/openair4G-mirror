@@ -335,7 +335,8 @@ uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
 
   (*sib1)->cellSelectionInfo.q_RxLevMin=-65;
   (*sib1)->cellSelectionInfo.q_RxLevMinOffset=NULL;
-
+  (*sib1)->p_Max = CALLOC(1, sizeof(P_Max_t));
+  *((*sib1)->p_Max) = 23; 
   if (frame_parms->frame_type == FDD)
     (*sib1)->freqBandIndicator = 1;  // FDD works on band1
   else
