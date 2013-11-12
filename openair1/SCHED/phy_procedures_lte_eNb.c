@@ -265,11 +265,23 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
           return (-1);
           break;
       }
-      } else {
-        if (subframe == 0) {
-          i = 1;
-        } else {
-          i = subframe - 4;
+      } else { //TDD
+        switch (PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config) {
+          case 3:
+            if (subframe == 0) {
+              i = 1;
+            } else {
+              i = subframe - 4;
+            }
+          break;
+          case 1:
+            if (subframe <= 1)
+              i = subframe;
+            else if (subframe <= 6)
+              i = subframe - 2;
+            else if (subframe == 9)
+              i = subframe - 4;
+          break;
         }
       }
       if (DLSCH_ptr->harq_processes[i] != NULL ) {
@@ -2119,7 +2131,7 @@ void process_HARQ_feedback(u8 UE_id,
 	  dlsch_ACK[m] = 0;
       }
       //TODO: ACK received
-      //dlsch_ACK[m] = 1;
+      dlsch_ACK[m] = 1;
 
       // to be updated
       if (phy_vars_eNB->ulsch_eNB[UE_id]->bundling)

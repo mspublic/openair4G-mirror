@@ -508,7 +508,7 @@ int main(int argc, char **argv) {
   */
   u32 my_rf_mode = RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX;
   //u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + /*LNAMax Antennas*/ LNAByp + RFBBNORM;
-  u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + LNAMed  + RFBBNORM;
+  u32 rf_mode_base = TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON + LNAMax  + RFBBNORM;
   //u32 rf_mode[4]     = {my_rf_mode,0,0,0};
   u32 rf_local[4]    = {8255000,8255000,8255000,8255000}; // UE zepto
     //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
@@ -518,7 +518,7 @@ int main(int argc, char **argv) {
   u32 rf_vcocal_850[4] = {2015, 2015, 2015, 2015};
   u32 rf_rxdc[4]     = {32896,32896,32896,32896};
   // Gain for antennas connection
-  u32 rxgain[4]      = {15,15,15,15};
+  u32 rxgain[4]      = {0,0,0,0};
   u32 txgain[4]      = {30,30,30,30}; 
 
   // Gain for Cable connection
