@@ -16,6 +16,7 @@
 
 
 void job_list_init (Job_List * listP) {
+  int  i = 0;
 
   listP->tail = NULL;
   listP->head = NULL;
@@ -23,6 +24,7 @@ void job_list_init (Job_List * listP) {
 }
 
 void event_list_init (Event_List * listP) {
+  int  i = 0;
 
   listP->tail = NULL;
   listP->head = NULL;
@@ -30,6 +32,7 @@ void event_list_init (Event_List * listP) {
 }
 
 void pkt_list_init (Packet_OTG_List * listP) {
+  int  i = 0;
 
   listP->tail = NULL;
   listP->head = NULL;

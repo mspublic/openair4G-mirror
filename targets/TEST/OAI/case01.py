@@ -38,14 +38,14 @@ import log
 import openair
 import core
 
-makerr1 = '***'
+makerr1 = 'make: ***'
 makerr2 = 'Error 1'
 
 def execute(oai, user, pw, logfile):
     
     case = '01'
     oai.send('cd $OPENAIR_TARGETS;')   
-    
+  
     try:
         test = '00'
         name = 'Check oai.svn.add'
@@ -64,7 +64,7 @@ def execute(oai, user, pw, logfile):
         log.ok(case, test, name, conf, '', logfile)
     
     oai.send('cd SIMU/USER;')   
-    
+  
     try:
         test = '01'
         name = 'Compile oai.rel8.make'
@@ -88,10 +88,15 @@ def execute(oai, user, pw, logfile):
         oai.send('make cleanall;')
         oai.send('rm -f ./oaisim.rel8.nas;')
         oai.send('rm -f ./nasmesh;')
-        oai.send('make nasmesh_clean;')
-        oai.send_expect_false('make nasmesh_fix;', makerr1,  60)
         oai.send_expect_false('make NAS=1 -j4;', makerr1,  1500)
         oai.send('cp ./oaisim ./oaisim.rel8.nas;')
+        if user == 'root' : 
+            oai.send_nowait('rmmod nasmesh;')
+            oai.send_expect_false('make nasmesh_fix;', makerr1,  60)
+        else :
+            oai.send_nowait('echo '+pw+ ' | sudo -S rmmod nasmesh;')
+            oai.send_expect_false('make test_nasmesh_fix;', makerr1,  60)
+            oai.send_nowait('echo '+pw+ ' | sudo -S insmod ./nasmesh.ko;')
         
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -165,45 +170,41 @@ def execute(oai, user, pw, logfile):
     else:
         log.ok(case, test, name, conf, '', logfile)
 
-    #try:
-        #test = '07'
-        #name = 'Compile oai.rel8.cellular.eNB.make'
-        #conf = 'make rrc_cellular=1 eNB_flag=1'
-        #diag = 'check the compilation errors for eNB/RG RRC Cellular'
-        #oai.send('make clean;')
-        #oai.send('make cleanall;')
-        #oai.send('make cleanasn1;')
-        #oai.send('rm -f ./oaisim.rel8.cellular.rg;')
-        #oai.send_expect_false('make rrc_cellular=1 eNB_flag=1 -j4;', makerr1,  1500)
-        #oai.send('cp ./oaisim ./oaisim.rel8.cellular.rg;')
-    #except log.err, e:
-        #log.fail(case, test, name, conf, e.value, diag, logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
-    #else:
-        #log.ok(case, test, name, conf, '', logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
+    try:
+        test = '07'
+        name = 'Compile oai.rel8.cellular.eNB.make'
+        conf = 'make rrc_cellular=1 eNB_flag=1'
+        diag = 'check the compilation errors for eNB/RG RRC Cellular'
+        oai.send('make clean;')
+        oai.send('make cleanall;')
+        oai.send('make cleanasn1;')
+        oai.send('rm -f ./oaisim.rel8.cellular.rg;')
+        oai.send_expect_false('make rrc_cellular=1 eNB_flag=1 -j4;', makerr1,  1500)
+        oai.send('cp ./oaisim /oaisim.rel8.cellular.rg;')
+    except log.err, e:
+        log.fail(case, test, name, conf, e.value, diag, logfile)
+    else:
+        log.ok(case, test, name, conf, '', logfile)
 
-    #try:
-        #test = '08'
-        #name = 'Compile oai.rel8.cellular.UE.make'
-        #conf = 'make rrc_cellular=1 UE_flag=1'
-        #diag = 'check the compilation errors for UE/MT RRC Cellular'
-        #oai.send('make clean;')
-        #oai.send('make cleanall;')
-        #oai.send('make cleanasn1;')
-        #oai.send('rm -f ./oaisim.rel8.cellular.mt;')
-        #oai.send_expect_false('make rrc_cellular=1 UE_flag=1 -j4;', makerr1,  1500)
-        #oai.send('cp ./oaisim ./oaisim.rel8.cellular.mt;')
-    #except log.err, e:
-        #log.fail(case, test, name, conf, e.value, diag, logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
-    #else:
-        #log.ok(case, test, name, conf, '', logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
+    try:
+        test = '08'
+        name = 'Compile oai.rel8.cellular.UE.make'
+        conf = 'make rrc_cellular=1 UE_flag=1'
+        diag = 'check the compilation errors for UE/MT RRC Cellular'
+        oai.send('make clean;')
+        oai.send('make cleanall;')
+        oai.send('make cleanasn1;')
+        oai.send('rm -f ./oaisim.rel8.cellular.mt;')
+        oai.send_expect_false('make rrc_cellular=1 UE_flag=1 -j4;', makerr1,  1500)
+        oai.send('cp ./oaisim /oaisim.rel8.cellular.mt;')
+    except log.err, e:
+        log.fail(case, test, name, conf, e.value, diag, logfile)
+    else:
+        log.ok(case, test, name, conf, '', logfile)
 
     #try:
         #test = '09'
-        #name = 'Compile oai.rel8.cellular.nas.eNB'
+        #name = 'Compile nas_sim_rg_cellular'
         #conf = 'make nas_sim_rg_cellular'
         #diag = 'check the compilation errors for NAS SIM RRC Cellular (node RG)'
         #oai.send('make clean;')
@@ -214,14 +215,12 @@ def execute(oai, user, pw, logfile):
         #oai.send_expect_false('make nas_sim_rg_cellular -j4;', makerr1,  1500)
     #except log.err, e:
         #log.fail(case, test, name, conf, e.value, diag, logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
     #else:
         #log.ok(case, test, name, conf, '', logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
-    
+
     #try:
         #test = '10'
-        #name = 'Compile oai.rel8.cellular.nas.UE'
+        #name = 'Compile nas_sim_mt_cellular'
         #conf = 'make nas_sim_mt_cellular'
         #diag = 'check the compilation errors for NAS SIM RRC Cellular (node MT)'
         #oai.send('make clean;')
@@ -232,39 +231,6 @@ def execute(oai, user, pw, logfile):
         #oai.send_expect_false('make nas_sim_mt_cellular -j4;', makerr1,  1500)
     #except log.err, e:
         #log.fail(case, test, name, conf, e.value, diag, logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
     #else:
         #log.ok(case, test, name, conf, '', logfile)
-        #log.skip(case, test, name, conf, '', '', logfile)
-        
-    try:
-        test = '11'
-        name = 'Compile oai.rel8.itti.make' 
-        conf = 'make DISABLE_XER_PRINT=1 ENABLE_ITTI=1 Rel8=1'
-        diag = 'check the compilation errors for ITTI Rel8'
-        oai.send('make clean;')
-        oai.send('make cleanall;')
-        oai.send('make cleanasn1;')
-        oai.send('rm -f ./oaisim.rel8.itti;')
-        oai.send_expect_false('make DISABLE_XER_PRINT=1 ENABLE_ITTI=1 Rel8=1 -j4;', makerr1,  1500)
-        oai.send('cp ./oaisim ./oaisim.rel8.itti;')
-    except log.err, e:
-        log.fail(case, test, name, conf, e.value, diag, logfile)
-    else:
-        log.ok(case, test, name, conf, '', logfile)
-    try:
-        test = '12'
-        name = 'Compile oai.rel10.itti.make' 
-        conf = 'make DISABLE_XER_PRINT=1 ENABLE_ITTI=1 Rel10=1'
-        diag = 'check the compilation errors for ITTI Rel10'
-        oai.send('make clean;')
-        oai.send('make cleanall;')
-        oai.send('make cleanasn1;')
-        oai.send('rm -f ./oaisim.rel10.itti;')
-        oai.send_expect_false('make DISABLE_XER_PRINT=1 ENABLE_ITTI=1 Rel10=1 -j4;', makerr1,  1500)
-        oai.send('cp ./oaisim ./oaisim.rel10.itti;')
-    except log.err, e:
-        log.fail(case, test, name, conf, e.value, diag, logfile)
-    else:
-        log.ok(case, test, name, conf, '', logfile)
 

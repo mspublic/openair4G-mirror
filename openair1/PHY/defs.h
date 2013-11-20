@@ -135,6 +135,7 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 
+
 #ifdef OPENAIR_LTE
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
@@ -158,7 +159,8 @@ enum transmission_access_mode{
 };
 
 /// Top-level PHY Data Structure for eNB 
-typedef struct {
+typedef struct
+{
   /// Module ID indicator for this instance
   u8 Mod_id;
   u8 local_flag;
@@ -331,11 +333,8 @@ typedef struct
   s8 tx_power_max_dBm;
   u32 frame;
   u8 n_connected_eNB;
-  u8 ho_initiated;
-  u8 ho_triggered;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
-  LTE_DL_FRAME_PARMS  lte_frame_parms_before_ho; // frame parame before ho used to recover if ho fails
   LTE_UE_COMMON    lte_ue_common_vars;
 
   LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
@@ -389,14 +388,7 @@ typedef struct
   int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
   int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mch_received_sf[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mch_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+  int dlsch_mch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
   u8               generate_prach;
@@ -488,19 +480,7 @@ typedef struct
   time_stats_t dlsch_tc_intl2_stats;
 } PHY_VARS_UE;
 
-/// Top-level PHY Data Structure for RN
-typedef struct {
-  /// Module ID indicator for this instance
-  u8 Mod_id;
-  u32 frame;
-  // phy_vars_eNB 
-  // phy_vars ue 
-  // cuurently only used to store and forward the PMCH
-  u8 mch_avtive[10]; 
-  u8 sync_area[10]; // num SF
-  LTE_UE_DLSCH_t   *dlsch_rn_MCH[10];
-   
-} PHY_VARS_RN;
+
 
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"

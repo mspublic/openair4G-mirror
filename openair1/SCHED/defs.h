@@ -126,9 +126,8 @@ void cleanup_dlsch_threads(void);
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-  @param *phy_vars_rn pointer to RN variables
 */
-void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag, relaying_type_t r_type, PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag, relaying_type_t r_type);
 /*!
   \brief Top-level entry routine for UE procedures.  Called every slot by process scheduler. In even slots, it performs RX functions from previous subframe (if required).  On odd slots, it generate TX waveform for the following subframe.
   @param last_slot Index of last slot (0-19)
@@ -138,9 +137,8 @@ void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eN
   @param abstraction_flag Indicator of PHY abstraction
   @param mode calibration/debug mode
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-  @param *phy_vars_rn pointer to RN variables
 */
-void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode, relaying_type_t r_type);
 
 #ifdef Rel10  
 /*!
@@ -177,9 +175,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   @param abstraction_flag Indicator of PHY abstraction
   @param mode calibration/debug mode
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-  @param phy_vars_rn pointer to RN variables
 */
-int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+int phy_procedures_UE_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode,relaying_type_t r_type);
 
 /*!
   \brief Scheduling for UE TX procedures in TDD S-subframes.  
@@ -207,9 +204,8 @@ void phy_procedures_UE_S_RX(u8 last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-  @param phy_vars_rn pointer to the RN variables
 */
-void phy_procedures_eNB_TX(u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_eNB_TX(u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag,relaying_type_t r_type);
 
 /*!
   \brief Scheduling for eNB RX procedures in normal subframes.  
@@ -401,9 +397,6 @@ s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 void process_timing_advance(u8 Mod_id,s16 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);
 
-unsigned int get_tx_amp(int gain_dBm, int gain_max_dBm);
-
-void phy_reset_ue(u8 Mod_id,u8 eNB_index);
 
 /** \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in 
 subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For

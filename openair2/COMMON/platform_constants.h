@@ -139,6 +139,4 @@
 #define printk printf
 #endif
 
-#define UNUSED_VARIABLE(vARIABLE)   (void)(vARIABLE)
-
-#endif /* __PLATFORM_CONSTANTS_H__ */
+#endif

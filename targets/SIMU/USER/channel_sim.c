@@ -59,7 +59,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame,u16 next_slot
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
    if (is_pmch_subframe(frame,next_slot>>1,frame_parms)) {
       if ((next_slot%2)==0) {
-	LOG_D(OCM,"Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset); 
+	printf("MBSFN eNB sim: Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset); 
 	PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
 		     &txdata[aa][slot_offset],         // output
 		     frame_parms->log2_symbol_size,                // log2_fft_size
@@ -79,7 +79,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, uint32_t frame,u16 next_slot
 		       frame_parms->rev,           // bit-reversal permutation
 		       CYCLIC_PREFIX);
 	else {
-	  LOG_D(OCM,"Frame %d, subframe %d: Doing PDCCH modulation\n",frame,next_slot>>1); 
+	  printf("MBSFN eNB sim: Frame %d, subframe %d: Doing PDCCH modulation\n",frame,next_slot>>1); 
 	  normal_prefix_mod(&txdataF[aa][slot_offset_F],
 			    &txdata[aa][slot_offset],
 			    2,
@@ -388,12 +388,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  12);
       
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,512);
-#ifdef DEBUG_SIM
+#ifdef DEBUG_SIM    
       LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d), writing to %p\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1,rxdata);  
-#else
-      UNUSED_VARIABLE(rx_pwr2);
-      UNUSED_VARIABLE(tx_pwr);
-      UNUSED_VARIABLE(rx_pwr);
 #endif
     //}// UE_index loop
   }
@@ -404,9 +400,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
 void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, u32 frame) {
 
   s32 **txdata,**rxdata;
-#ifdef PHY_ABSTRACTION_UL
+
   s32 att_eNB_id=-1;
-#endif
   u8 eNB_id=0,UE_id=0;
 
   u8 nb_antennas_rx = UE2eNB[0][0]->nb_rx; // number of rx antennas at eNB
@@ -416,18 +411,18 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   s32 rx_pwr2;
   u32 i,aa;
   u32 slot_offset,slot_offset_meas;
-
-  u8 hold_channel=0;
-
-#ifdef PHY_ABSTRACTION_UL
+  
   double min_path_loss=-200;
-
-  int subframe = (next_slot>>1);
-
-  u8 harq_pid;
-  u16 ul_nb_rb=0;
+  u16 ul_nb_rb=0 ;
   u16 ul_fr_rb=0;
-#endif
+  int ulnbrb2 ;
+  int ulfrrb2 ;
+  u8 harq_pid;
+  u8 hold_channel=0;
+  int subframe = (next_slot>>1);
+  
+  //  u8 aatx,aarx;
+
 
   if (next_slot==4) 
   {
@@ -629,13 +624,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,frame_parms->samples_per_tti>>1);
 #ifdef DEBUG_SIM    
-      printf("[SIM][UL] eNB %d rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",
-             eNB_id,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
-#else
-      UNUSED_VARIABLE(tx_pwr);
-      UNUSED_VARIABLE(rx_pwr);
-      UNUSED_VARIABLE(rx_pwr2);
-#endif
+      printf("[SIM][UL] eNB %d rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",eNB_id,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+#endif    
       
     } // eNB_id
   } // abstraction_flag==0

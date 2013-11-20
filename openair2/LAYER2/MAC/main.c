@@ -31,7 +31,6 @@
 * \author Raymond Knopp and Navid Nikaein
 * \date 2011
 * \version 0.5
-* \email: navid.nikaein@eurecom.fr
 * @ingroup _mac
 
 */
@@ -79,30 +78,40 @@ void dl_phy_sync_success(unsigned char Mod_id,
 			 unsigned char eNB_index,
 			 u8 first_sync){  //init as MR
 /***********************************************************************/
-  LOG_D(MAC,"[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n", Mod_id, frame, eNB_index);
+  // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
   if (first_sync==1) {
-    layer2_init_UE(Mod_id);
-    openair_rrc_ue_init(Mod_id,eNB_index);
+    if( (layer2_init_UE(Mod_id)==-1) ||
+	(openair_rrc_ue_init(Mod_id,eNB_index)==-1) ) {
+	//(openair_rrc_lite_ue_init(Mod_id,eNB_index)==-1) ) {
+      //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
+    }
   }
   else {
     mac_in_sync_ind(Mod_id,frame,eNB_index);
   }
-  
+
 }
 
 /***********************************************************************/
-void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 free_eNB_index){//init as CH
+void mrbch_phy_sync_failure(u8 Mod_id, u32 frame, u8 Free_ch_index){//init as CH
   /***********************************************************************/
-  LOG_I(MAC,"[eNB %d] Frame %d: PHY Sync failure \n",Mod_id,frame);
-  layer2_init_eNB(Mod_id, free_eNB_index);
-  openair_rrc_eNB_init(Mod_id);
-
+  LOG_I(MAC,"FRAME %d: Node %d, NO PHY SYNC to master\n",frame,Mod_id);
+  //if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_lite_eNB_init(Mod_id)==-1)){
+  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( openair_rrc_eNB_init(Mod_id)==-1)){
+    //    Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
+    }
 
 
 
 }
 
+/***********************************************************************/
 char layer2_init_eNB(unsigned char Mod_id, unsigned char eNB_index){
+/***********************************************************************/
+
+  Mac_rlc_xface->Is_cluster_head[Mod_id]=1;
+
+  //  msg("\nMAC: INIT eNB %d Successful \n\n",Mod_id);
 
   return 0;
 
@@ -110,7 +119,9 @@ char layer2_init_eNB(unsigned char Mod_id, unsigned char eNB_index){
 
 /***********************************************************************/
 char layer2_init_UE(unsigned char Mod_id){
- 
+  /***********************************************************************/
+  Mac_rlc_xface->Is_cluster_head[NB_eNB_INST + Mod_id]=0;
+
   return 0;
 }
 
@@ -123,7 +134,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u32 frame, u16 eNB_index){
 
 
 /***********************************************************************/
-int mac_top_init(int eMBMS_active, u8 cba_group_active, u8 HO_active){
+int mac_top_init(int eMBMS_active, u8 cba_group_active){
 /***********************************************************************/
   unsigned char  Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -138,11 +149,8 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active, u8 HO_active){
       mac_xface->macphy_exit("[MAC][MAIN] not enough memory for UEs \n");
     }
     LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
-
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-    for(i=0;i<NB_UE_INST; i++)
-      ue_init_mac(i); 
-    
+    ue_init_mac();
   }
   else 
     UE_mac_inst = NULL;
@@ -178,7 +186,7 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active, u8 HO_active){
   if (Is_rrc_registered == 1){
     LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
-    openair_rrc_top_init(eMBMS_active, cba_group_active,HO_active);
+    openair_rrc_top_init(eMBMS_active, cba_group_active);
 #endif
   }
     else {
@@ -293,7 +301,6 @@ int mac_top_init(int eMBMS_active, u8 cba_group_active, u8 HO_active){
 
  //ICIC init param
 #ifdef ICIC
-  u8 SB_size;
   SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
 
   srand (time(NULL));
@@ -395,7 +402,7 @@ void mac_top_cleanup(void){
   free( Mac_rlc_xface);
 }
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_active, u8 HO_active) {
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_active) {
 
 
 
@@ -454,11 +461,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
 
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
   mac_xface->get_PL                 = get_PL;
-  mac_xface->get_RSRP               = get_RSRP;
-  mac_xface->get_RSRQ               = get_RSRQ;
-  mac_xface->get_RSSI               = get_RSSI;
-  mac_xface->get_n_adj_cells        = get_n_adj_cells;
-  mac_xface->get_rx_total_gain_dB   = get_rx_total_gain_dB;
   mac_xface->get_Po_NOMINAL_PUSCH   = get_Po_NOMINAL_PUSCH;
   mac_xface->get_num_prach_tdd      = get_num_prach_tdd;
   mac_xface->get_fid_prach_tdd      = get_fid_prach_tdd;
@@ -473,7 +475,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
 
   mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
   mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
-  mac_xface->phy_config_afterHO_ue      = phy_config_afterHO_ue;
+
 #ifdef Rel10
   mac_xface->phy_config_sib13_eNB        = phy_config_sib13_eNB;
   mac_xface->phy_config_sib13_ue         = phy_config_sib13_ue;
@@ -482,7 +484,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->phy_config_cba_rnti         = phy_config_cba_rnti ;
 #endif 
   mac_xface->phy_config_meas_ue          = phy_config_meas_ue;
-  mac_xface->phy_reset_ue		 = phy_reset_ue;
 
   mac_xface->phy_config_dedicated_eNB    = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue     = phy_config_dedicated_ue;
@@ -494,7 +495,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, u8 cba_group_activ
   mac_xface->get_PHR = get_PHR;
   LOG_D(MAC,"[MAIN] ALL INIT OK\n");
 
-  mac_xface->macphy_init(eMBMS_active,cba_group_active,HO_active);
+  mac_xface->macphy_init(eMBMS_active,cba_group_active);
 
   //Mac_rlc_xface->Is_cluster_head[0] = 1;
   //Mac_rlc_xface->Is_cluster_head[1] = 0;

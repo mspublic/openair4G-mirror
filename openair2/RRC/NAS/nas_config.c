@@ -113,11 +113,7 @@ int set_gateway(char *interfaceName, char *gateway)
 
     rt.rt_dev = interfaceName;
     //rt.rt_flags = RTF_UP|RTF_GATEWAY|RTF_DEFAULT;
-    /* SR: rt_flags on 16 bits but RTF_DEFAULT = 0x00010000
-     * therefore doesn't lie in container -> disable it
-     */
-    //rt.rt_flags = RTF_GATEWAY|RTF_DEFAULT;
-    rt.rt_flags = RTF_GATEWAY;
+    rt.rt_flags = RTF_GATEWAY|RTF_DEFAULT;
 
     if (ioctl(sock_fd, SIOCADDRT, &rt) < 0)
     {

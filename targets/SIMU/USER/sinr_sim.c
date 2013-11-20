@@ -69,39 +69,21 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data, int n
     }
   }
 }
-void extract_position_fixed_enb  (node_desc_t **node_data, int nb_nodes, u32 frame){    
-     int i;
-     
-     for (i=0;i<nb_nodes;i++) {
-       if (i==0) {
-	 node_data[i]->x = 0;
-	 node_data[i]->y = 500;
-       }
-       else if (i == 1 ){
-	 node_data[i]->x = 866;// 
-	 node_data[i]->y = 1000;
-       }
-        else if (i == 2 ){
-	  node_data[i]->x = 866;
-	 node_data[i]->y = 0;
-       }
-     }
-}
 
 void extract_position_fixed_ue  (node_desc_t **node_data, int nb_nodes, u32 frame){    
      int i;
    if(frame<50)
-     for (i=0;i<nb_nodes;i++) {
-       if (i==0) {
-	 node_data[i]->x = 2050;
-	 node_data[i]->y = 1500;
-       }
-       else {
-	 node_data[i]->x = 2150;
-	 node_data[i]->y = 1500;
-       }
-     }
-   else
+  for (i=0;i<nb_nodes;i++) {
+    if (i==0) {
+      node_data[i]->x = 2050;
+      node_data[i]->y = 1500;
+    }
+    else {
+      node_data[i]->x = 2150;
+      node_data[i]->y = 1500;
+    }
+  }
+    else
     {
       for (i=0;i<nb_nodes;i++) {
 	if (i==0) {
@@ -205,6 +187,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
 void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, u8 transmission_mode, u16 q, u8 dl_power_off) {
 
+  int return_value;
   u16 nb_rb = 25; //No. of resource blocks
   double thermal_noise,abs_channel,channelx, channely,channelx_i, channely_i ;
   int count;
@@ -217,7 +200,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
   //for (aarx=0; aarx<eNB2UE->nb_rx; aarx++)
     *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
       
-    LOG_D(OCM,"Path loss %lf, noise (N0) %lf, signal %lf, snr %lf\n", 
+    LOG_D(OCM,"Path loss %lf, noise %lf, signal %lf, snr %lf\n", 
          eNB2UE->path_loss_dB, 
          thermal_noise + ue_data->rx_noise_level,
          enb_data->tx_power_dBm + eNB2UE->path_loss_dB,

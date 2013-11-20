@@ -154,27 +154,3 @@ def execute(oai, user, pw, logfile):
     else:
         log.ok(case, test, name, conf, 'Note: check the packet loss from the OTG stats', logfile)   
 
-   # try:
-   #     test = '08'
-   #     name = 'Run oai.rel10.phy.eMBMS.Relay.OTG.fdd'
-   #     diag = 'eMBMS multicast/broadcast DF relaying is not working properly in fdd mode, make sure that the SIB13/MCCH/MTCH have been correclty received by UEs'
-   #     conf = '-c43 -F -T mbvbr -Q4 -j1 -n120' 
-   #     oai.send_expect('./oaisim.rel10 ' + conf, ' MTCH for sync area 1', 100)
-   # except log.err, e:
-   #     log.fail(case, test, name, conf, e.value, diag, logfile)
-   # else:
-   #     log.ok(case, test, name, conf, 'Note: check the packet loss from the OTG stats', logfile)   
-
-    try:
-        test = '09'
-        name = 'Run oai.rel10.itti.phy.eMBMS.MCCH'
-        diag = 'eMBMS procedure is not finished completely, make sure that the SIB13/MCCH have been correclty received by UEs'
-        for i in range(NUM_UE) :
-            for j in range(NUM_eNB) :
-                conf = '-A AWGN -s 15 -x 1 -Q3 -n' + str((i+1+j) * 50) + ' -u' + str(i+1) +' -b'+ str(j+1)
-                oai.send_expect('./oaisim.rel10.itti ' + conf, ' Found MBSFNAreaConfiguration from eNB ' + str(j),  (i+1) * 100)
-    except log.err, e:
-        log.fail(case, test, name, conf, e.value, diag, logfile)
-    else:
-        log.ok(case, test, name, conf, '', logfile)  
-        

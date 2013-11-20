@@ -1812,8 +1812,8 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 	  LOG_E(PHY,"Format 1A: NPRB=0\n");
             return(-1);
         }
-        // change the mcs limit from 7 to 8, supported by MAC
-        if (mcs > 8) {
+        
+        if (mcs > 7) {
 	  LOG_E(PHY,"Format 1A: unlikely mcs for format 1A (%d)\n",mcs);
             return(-1);
         } 
@@ -3208,8 +3208,6 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     msg("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     msg("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
-#else
-    UNUSED_VARIABLE(dai);
 #endif
     return(0);
   }
@@ -3572,8 +3570,6 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (eNB): Or1           %d\n",ulsch->Or1);
     msg("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     msg("ulsch (eNB): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
-#else
-    UNUSED_VARIABLE(dai);
 #endif
     return(0);
   }

@@ -36,22 +36,12 @@
 # @ingroup _mac
 */
 
-#ifdef USER_MODE
-# include <inttypes.h>
-#else
+#ifndef USER_MODE
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 
-# ifndef PRIu64
-#  if __WORDSIZE == 64
-#     define PRIu64 "lu"
-#   else
-#     define PRIu64 "llu"
-#   endif
-# endif
 #endif
-
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
@@ -68,7 +58,7 @@ static mapping rrc_status_names[] = {
 
 int dump_eNB_l2_stats(char *buffer, int length){
   
-  u8 eNB_id,UE_id,number_of_cards;
+  u8 eNB_id,UE_id,lcid,i,j,number_of_cards;
   int len= length;
   
 #ifdef EXMIMO
@@ -124,10 +114,7 @@ int dump_eNB_l2_stats(char *buffer, int length){
 		       eNB_mac_inst[eNB_id].eNB_UE_stats[UE_id].ncce_used_retx 
 		       );
 	
-	len += sprintf(&buffer[len],
-                       "[MAC] DLSCH bitrate (TTI %d, avg %d), Transmitted bytes "
-                       "(TTI %d, total %"PRIu64"), Total Transmitted PDU %d, Overhead "
-                       "(TTI %"PRIu64", total %"PRIu64", avg %"PRIu64,
+	len += sprintf(&buffer[len],"[MAC] DLSCH bitrate (TTI %d, avg %d), Transmitted bytes (TTI %d, total %d), Total Transmitted PDU %d, Overhead (TTI %d, total %d, avg %d)",
 		       eNB_mac_inst[eNB_id].eNB_UE_stats[UE_id].dlsch_bitrate,
 		       eNB_mac_inst[eNB_id].eNB_UE_stats[UE_id].total_dlsch_bitrate,
 		       eNB_mac_inst[eNB_id].eNB_UE_stats[UE_id].TBS,

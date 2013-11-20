@@ -1,4 +1,4 @@
-#include "mex.h"
+#include "./lib/mex.h"
 #include "../../SIMULATION/TOOLS/defs.h"
 #include "../../PHY/types.h"
 #include "../../PHY/defs.h"

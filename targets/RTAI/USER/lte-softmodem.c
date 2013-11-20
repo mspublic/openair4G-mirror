@@ -63,7 +63,6 @@
 
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
-//#include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 
@@ -171,7 +170,8 @@ int otg_enabled;
 #endif
 int number_of_cards = 1;
 
-int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
+//int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
+int mbox_bounds[20] = {6,14,22,28,36,44,52,58,66,74,82,88,96,104,112,118,126,134,142, 148}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
 
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
@@ -496,7 +496,7 @@ static void *eNB_thread(void *arg)
       else
           diff = mbox_target - mbox_current;
       
-      if (((slot%2==0) && (diff < (-14))) || ((slot%2==1) && (diff < (-7)))) {
+      if (((slot%2==0) && (diff < (-10))) || ((slot%2==1) && (diff < (-7)))) {
 	// at the eNB, even slots have double as much time since most of the processing is done here and almost nothing in odd slots
 	LOG_D(HW,"eNB Frame %d, time %llu: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, diff);
 	slot++;
@@ -577,7 +577,7 @@ static void *eNB_thread(void *arg)
 
           if (fs4_test==0)
             {
-              phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0, 0,NULL);
+              phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0, 0);
 #ifndef IFFT_FPGA
               slot_offset_F = (next_slot)*
                               (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
@@ -799,7 +799,7 @@ static void *UE_thread(void *arg)
 	  */
 
           in = rt_get_time_ns();
-          phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode,0,NULL);
+          phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[0], 0, 0,mode,0);
           out = rt_get_time_ns();
           diff = out-in;
 
@@ -930,7 +930,7 @@ int main(int argc, char **argv) {
   u32 txgain[4]      = {20,20,20,20};
 
   u16 Nid_cell = 0;
-  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
+  u8  cooperation_flag=0, transmission_mode=5, abstraction_flag=0;
   u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 
   int c;
@@ -1135,7 +1135,7 @@ int main(int argc, char **argv) {
   }
   else { //UE_flag==1
     frame_parms->nb_antennas_tx     = 1;
-    frame_parms->nb_antennas_rx     = 1;
+    frame_parms->nb_antennas_rx     = 2;
   }
   frame_parms->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2; //initial value overwritten by initial sync later
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
@@ -1254,8 +1254,8 @@ int main(int argc, char **argv) {
     }
     
     PHY_vars_UE_g[0]->tx_power_max_dBm = tx_max_power;
-    
-    //  printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_power,tx_max_power));
+   
+    printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_power,tx_max_power));
   }
   else { //this is eNB
     g_log->log_component[HW].level = LOG_DEBUG;
@@ -1302,7 +1302,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=0;
+    openair_daq_vars.target_ue_dl_mcs=4;
     openair_daq_vars.ue_ul_nb_rb=6;
     openair_daq_vars.target_ue_ul_mcs=6;
 
@@ -1395,8 +1395,7 @@ int main(int argc, char **argv) {
 #ifdef OPENAIR2
   int eMBMS_active=0;
   l2_init(frame_parms,eMBMS_active,
-	  0,// cba_group_active
-	  0); // HO flag
+	  0); // cba_group_active
   if (UE_flag == 1)
     mac_xface->dl_phy_sync_success (0, 0, 0, 1);
   else

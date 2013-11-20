@@ -8,10 +8,8 @@
 * \warning 
 * @ingroup driver
 
-*/
+*/ 
 
-#include <sys/ioctl.h>
-#include <arpa/inet.h>
 
 #include "nas_config.h"
 #include "UTIL/LOG/log.h"
@@ -59,6 +57,8 @@ void rb_ioctl_init(int inst) {
 
 int rb_validate_config_ipv4(int cx, int inst, int rb) {
 
+  struct sockaddr_in sa;
+
   if (inst == -1){
     LOG_E(OIP,"Specify an interface\n");
     return(1);
@@ -92,6 +92,8 @@ int rb_conf_ipv4(int action,int cx, int inst, int rb, int dscp, in_addr_t saddr_
 //int rb_conf(rb_config *rb_cfg) {
 
   int err;
+  unsigned int mpls_outlabel,mpls_inlabel;
+  char addr_str[46];
   
   struct nas_msg_rb_establishment_request *msgreq; 
   struct nas_msg_class_add_request *msgreq_class;  
@@ -240,10 +242,10 @@ int rb_stats_req(int inst) {
 
 in_addr_t ipv4_address (int thirdOctet, int fourthOctet){
 
-  struct in_addr saddr_ipv4;
+  in_addr_t saddr_ipv4;
   char ipAddress[20];
   sprintf(ipAddress, "10.0.%d.%d",thirdOctet,fourthOctet);
   inet_aton(ipAddress,&saddr_ipv4);
-  return saddr_ipv4.s_addr;
+  return saddr_ipv4;
 
 }

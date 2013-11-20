@@ -24,13 +24,8 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "UTIL/OTG/otg_config.h"
-#include "UTIL/OTG/otg_tx.h"
 
 #include "cor_SF_sim.h"
-
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
 
 #ifdef SMBV
 extern u8 config_smbv;
@@ -79,7 +74,7 @@ int td, td_avg, sleep_time_us;
 // omv related info
 //pid_t omv_pid;
 char full_name[200];
-extern int pfd[2]; // fd for omv : fixme: this could be a local var
+int pfd[2]; // fd for omv : fixme: this could be a local var
 char fdstr[10];
 char frames[10];
 char num_enb[10];
@@ -115,7 +110,7 @@ void get_simulation_options(int argc, char *argv[]) {
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hHi:IJ:j:k:K:l:L:m:M:n:N:oO:p:P:Q:rR:s:S:t:T:u:U:vVw:W:x:X:y:Y:z:Z:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hi:IJ:k:L:l:m:M:n:N:oO:p:P:Q:rR:s:S:t:T:u:U:vVx:y:w:W:X:z:Z:", long_options, &option_index)) != -1) {
     switch (c) {
     case 0:
       if (! strcmp(long_options[option_index].name, "pdcp_period")) {
@@ -140,7 +135,7 @@ void get_simulation_options(int argc, char *argv[]) {
     case 'C':
       oai_emulation.info.tdd_config = atoi (optarg);
       if (oai_emulation.info.tdd_config > 6) {
-        printf("Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
+        LOG_E(EMU,"Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
         exit (-1);
       }
       break;
@@ -153,28 +148,23 @@ void get_simulation_options(int argc, char *argv[]) {
       oai_emulation.info.N_RB_DL = atoi (optarg);
       if ((oai_emulation.info.N_RB_DL != 6) && (oai_emulation.info.N_RB_DL != 15) && (oai_emulation.info.N_RB_DL != 25)
         && (oai_emulation.info.N_RB_DL != 50) && (oai_emulation.info.N_RB_DL != 75) && (oai_emulation.info.N_RB_DL != 100)) {
-        printf("Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
+        LOG_E(EMU,"Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
         exit (-1);
       }
     case 'N':
       Nid_cell = atoi (optarg);
       if (Nid_cell > 503) {
-        printf("Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
+        LOG_E(EMU,"Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
         exit(-1);
       }
       break;
     case 'h':
       help ();
       exit (1);
-      break;
-    case 'H':
-      oai_emulation.info.handover_active=1;
-      printf("Activate the handover procedure at RRC\n");
-      break;
     case 'x':
       oai_emulation.info.transmission_mode = atoi (optarg);
       if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
-        printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
+        LOG_E(EMU, "Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
         exit(-1);
       }
       break;
@@ -217,15 +207,12 @@ void get_simulation_options(int argc, char *argv[]) {
       break;
     case 'k':
       //ricean_factor = atof (optarg);
-      printf("[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n");
+      LOG_E(EMU,"[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n");
       exit(-1);
-      break;
-    case 'K':
-      oai_emulation.info.itti_dump_file = optarg;
       break;
     case 't':
       //Td = atof (optarg);
-      printf("[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n");
+      LOG_E(EMU,"[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n");
       exit(-1);
       break;
     case 'f':
@@ -389,13 +376,13 @@ void check_and_adjust_params() {
   s32 ret;
   int i,j;
 
-  if (oai_emulation.info.nb_ue_local  + oai_emulation.info.nb_rn_local > NUMBER_OF_UE_MAX) {
-    LOG_E(EMU,"Enter fewer than %d UEs/RNs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
+  if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX) {
+    LOG_E(EMU,"Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
     exit(EXIT_FAILURE);
   }
 
-  if (oai_emulation.info.nb_enb_local + oai_emulation.info.nb_rn_local > NUMBER_OF_eNB_MAX) {
-    LOG_E(EMU,"Enter fewer than %d eNBs/RNs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
+  if (oai_emulation.info.nb_enb_local > NUMBER_OF_eNB_MAX) {
+    LOG_E(EMU,"Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
     exit(EXIT_FAILURE);
   }
  
@@ -416,13 +403,13 @@ void check_and_adjust_params() {
   LOG_I(EMU,"[INIT] Starting NAS netlink interface\n");
   ret = netlink_init();
   if (ret < 0)
-    LOG_W(EMU,"[INIT] Netlink not available, careful ...\n");
+    LOG_E(EMU,"[INIT] Netlink not available, careful ...\n");
+
 
   if (ethernet_flag == 1) {
-    oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_rn_local;
-    oai_emulation.info.master[oai_emulation.info.master_id].nb_enb = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_rn_local;
-    if (oai_emulation.info.nb_rn_local>0)
-      LOG_N(EMU,"Ethernet emulation is not yet tested with the relay nodes\n");
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_enb = oai_emulation.info.nb_enb_local;
+
     if (!oai_emulation.info.master_id)
       oai_emulation.info.is_primary_master = 1;
     j = 1;
@@ -441,33 +428,10 @@ void check_and_adjust_params() {
     }
   } // ethernet flag
 
-  // 
+
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
   NB_RN_INST = oai_emulation.info.nb_rn_local + oai_emulation.info.nb_rn_remote;
-
-#if defined(ENABLE_PDCP_NETLINK_FIFO)
-  pdcp_netlink_init();
-#endif
-
-  if (NB_RN_INST > 0 ) {
-    LOG_N(EMU,"Total number of RN %d (local %d, remote %d) mobility (the same as eNB) %s  \n", NB_RN_INST,oai_emulation.info.nb_rn_local,oai_emulation.info.nb_rn_remote, oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
-    
-    LOG_N(EMU,"Adjust the number of eNB inst (%d->%d) and UE inst (%d->%d)\n ", 
-	  NB_eNB_INST, NB_eNB_INST+NB_RN_INST,
-	  NB_UE_INST, NB_UE_INST+NB_RN_INST);
-    NB_eNB_INST+=NB_RN_INST;
-    NB_UE_INST+=NB_RN_INST;
-  }
-  LOG_I(EMU,"Total number of UE %d (local %d, remote %d, relay %d) mobility %s \n", 
-	NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote, 
-	NB_RN_INST,
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
-  
-  LOG_I(EMU,"Total number of eNB %d (local %d, remote %d, relay %d) mobility %s \n", 
-	NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, 
-	NB_RN_INST,
-	oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option);
 
 }
 
@@ -484,9 +448,9 @@ void init_omv() {
     case -1 :
       perror("fork failed \n");
       break;
-      case 0 : // child is going to be the omv, it is the reader 
-      if(close(pfd[1]) == -1 ) // we close the write desc.
-      perror("close on write\n" );
+    case 0 : /* child is going to be the omv, it is the reader */
+      if(close(pfd[1]) == -1 ) /* we close the write desc. */
+        perror("close on write\n" );
       sprintf(fdstr, "%d", pfd[0] );
       sprintf(num_enb, "%d", NB_eNB_INST);
       sprintf(num_ue, "%d", NB_UE_INST);
@@ -497,12 +461,12 @@ void init_omv() {
       sprintf(nb_antenna, "%d", 4);
       sprintf(frame_type, "%s", (oai_emulation.info.frame_type == 0) ? "FDD" : "TDD");
       sprintf(tdd_config, "%d", oai_emulation.info.tdd_config);
-// execl is used to launch the visualisor 
+      /* execl is used to launch the visualisor */
       execl(full_name,"OMV", fdstr, frames, num_enb, num_ue, x_area, y_area, z_area, nb_antenna, frame_type, tdd_config,NULL );
       perror( "error in execl the OMV" );
     }
     //parent
-if(close( pfd[0] ) == -1 ) // we close the write desc. 
+    if(close( pfd[0] ) == -1 ) /* we close the write desc. */
       perror("close on read\n" );
   }
 }
@@ -524,7 +488,7 @@ void init_openair1() {
   s32 UE_id, eNB_id;
 
   // change the nb_connected_eNB
-  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag,nb_antennas_rx, oai_emulation.info.eMBMS_active_state);
+  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.tdd_config_S,oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag,nb_antennas_rx);
 
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
       for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
@@ -581,31 +545,13 @@ void init_openair2() {
 #ifdef OPENAIR2
   s32 i;
   s32 UE_id;
- 
-#if defined(ENABLE_ITTI)
-  if (NB_eNB_INST > 0) {
-    if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
-      LOG_E(EMU, "Create task failed");
-      LOG_D(EMU, "Initializing RRC eNB task interface: FAILED\n");
-      exit (-1);
-    }
-  }
+  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,oai_emulation.info.eMBMS_active_state, oai_emulation.info.cba_group_active);
+  printf ("after L2 init: Nid_cell %d\n", PHY_vars_eNB_g[0]->lte_frame_parms.Nid_cell);
+  printf ("after L2 init: frame_type %d,tdd_config %d\n",
+          PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
+          PHY_vars_eNB_g[0]->lte_frame_parms.tdd_config);
 
-  if (NB_UE_INST > 0) {
-    if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
-      LOG_E(EMU, "Create task failed");
-      LOG_D(EMU, "Initializing RRC UE task interface: FAILED\n");
-      exit (-1);
-    }
-  }
-#endif
-
-  l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,
-	   oai_emulation.info.eMBMS_active_state, 
-	   oai_emulation.info.cba_group_active, 
-	   oai_emulation.info.handover_active);
-
-   for (i = 0; i < NB_eNB_INST; i++)
+  for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, 0, i);
 
   if (abstraction_flag == 1) {
@@ -620,9 +566,7 @@ void init_openair2() {
 void init_ocm() {
   s32 UE_id, eNB_id;
   /* Added for PHY abstraction */
-  LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n", oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
-
- if (abstraction_flag) {
+  if (abstraction_flag) {
     
     get_beta_map();
 #ifdef PHY_ABSTRACTION_UL
@@ -762,21 +706,16 @@ void update_ocm() {
   if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
     //LOG_D(OMG," extracting position of eNb...\n");
     extract_position(enb_node_list, enb_data, NB_eNB_INST);
-    //extract_position_fixed_enb(enb_data, NB_eNB_INST,frame);
     //LOG_D(OMG," extracting position of UE...\n");
     //      if (oai_emulation.info.omg_model_ue == TRACE)
     extract_position(ue_node_list, ue_data, NB_UE_INST);
-        
-    /* if (frame % 50 == 0)
-      LOG_N(OCM,"Path loss for TTI %d : \n", frame); 
-    */
+
     for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
       for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
         calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF);
         //calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,0);
         UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	//    if (frame % 50 == 0)
-	LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
+        LOG_I(OCM,"Path loss between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
               eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
               eNB2UE[eNB_id][UE_id]->path_loss_dB, eNB2UE[eNB_id][UE_id]->aoa);
       }
@@ -796,7 +735,7 @@ void update_ocm() {
           eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
           UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
         }
-	LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
+        LOG_I(OCM,"Path loss from eNB %d to UE %d => %f dB (eNB TX %d)\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB,
               PHY_vars_eNB_g[eNB_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower);
         //      printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
       }
@@ -828,7 +767,6 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 	    (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH; // app could be binded to a given DRB
 	    (otg_pkt->otg_pkt).module_id = module_id;
 	    (otg_pkt->otg_pkt).dst_id = dst_id;
-	    (otg_pkt->otg_pkt).is_ue = 0;
 	    (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
 	    //Adding the packet to the OTG-PDCP buffer
 	    pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
@@ -849,7 +787,7 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 #ifdef Rel10
     int service_id, session_id, rb_id;
     // MBSM multicast traffic 
-    // if (frame >= 50) {// only generate when UE can receive MTCH (need to control this value)
+    //   if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
       for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
 	for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
 	  //   LOG_I(OTG,"DUY:frame %d, pdcp_mbms_array[module_id][rb_id].instanciated_instance is %d\n",frame,pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance);
@@ -863,12 +801,10 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
 	      (otg_pkt->otg_pkt).rb_id = rb_id;
 	      (otg_pkt->otg_pkt).module_id = module_id;
 	      (otg_pkt->otg_pkt).dst_id = session_id;
-	      (otg_pkt->otg_pkt).is_ue = 0;
 	      //Adding the packet to the OTG-PDCP buffer
 	      (otg_pkt->otg_pkt).mode = PDCP_TM;
 	      pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-	      LOG_I(EMU, "[eNB %d] ADD packet (%p) multicast to OTG buffer for dst %d on rb_id %d\n", 
-		    (otg_pkt->otg_pkt).module_id, otg_pkt, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
+	      LOG_I(EMU, "[eNB %d] ADD packet multicast to OTG buffer for dst %d on rb_id %d\n", (otg_pkt->otg_pkt).module_id, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
 	    } else {
 	      //LOG_I(EMU, "OTG returns null \n");
 	      free(otg_pkt);
@@ -925,8 +861,7 @@ void update_otg_eNB(int module_id, unsigned int ctime) {
           rb_id = dst_id * NB_RB_MAX + DTCH;
           (otg_pkt->otg_pkt).rb_id = rb_id;
           (otg_pkt->otg_pkt).module_id = module_id;
-	  (otg_pkt->otg_pkt).is_ue = 0;
-	  (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
+          (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
           //Adding the packet to the OTG-PDCP buffer
           pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
           LOG_I(EMU, "[eNB %d] ADD pkt to OTG buffer for dst %d on rb_id %d\n", (otg_pkt->otg_pkt).module_id, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
@@ -956,26 +891,23 @@ void update_otg_UE(int UE_id, unsigned int ctime) {
     src_id = module_id;
 
     for (dst_id=0;dst_id<NUMBER_OF_eNB_MAX;dst_id++) {
-      if (mac_get_rrc_status(UE_id, 0/*eNB_flag*/, dst_id ) > 2 /*RRC_CONNECTED*/) {
-	Packet_otg_elt *otg_pkt = malloc (sizeof(Packet_otg_elt));
-	// Manage to add this packet to the tail of your list
-	(otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(src_id, dst_id, 0, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+    if (mac_get_rrc_status(UE_id, 0/*eNB_flag*/, dst_id ) > 2 /*RRC_CONNECTED*/) {
+      Packet_otg_elt *otg_pkt = malloc (sizeof(Packet_otg_elt));
+      // Manage to add this packet to the tail of your list
+      (otg_pkt->otg_pkt).sdu_buffer = (u8*) packet_gen(src_id, dst_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
 
-	if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-	  (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH;
-	  (otg_pkt->otg_pkt).module_id = module_id;
-	  (otg_pkt->otg_pkt).dst_id = dst_id;
-	  (otg_pkt->otg_pkt).is_ue = 1;
-	  //Adding the packet to the OTG-PDCP buffer
-	  (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
-	  pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-	  LOG_I(EMU, "[UE %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d \n", 
-		(otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
-	} else {
-	  free(otg_pkt);
-	  otg_pkt=NULL;
-	}
+      if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+        (otg_pkt->otg_pkt).rb_id = dst_id * NB_RB_MAX + DTCH;
+        (otg_pkt->otg_pkt).module_id = module_id;
+        (otg_pkt->otg_pkt).dst_id = dst_id;
+        //Adding the packet to the OTG-PDCP buffer
+        (otg_pkt->otg_pkt).mode = PDCP_DATA_PDU;
+        pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
+      } else {
+        free(otg_pkt);
+        otg_pkt=NULL;
       }
+    }
     }
   }
 #endif
@@ -1007,7 +939,6 @@ int init_slot_isr(void)
 
         oai_emulation.info.slot_sfd = sfd;
     }
-    return 0;
 }
 
 void wait_for_slot_isr(void)

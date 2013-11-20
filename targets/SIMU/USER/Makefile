@@ -1,5 +1,5 @@
-# Include some standard directives
-include Makerules
+CC = gcc
+MPICC = gcc #mpicc
 
 CPUFLAGS = -mmmx -msse -msse2 -msse4.1 -march=native
 # FORCE ssse3 for compilation of openair on User Mode Linux
@@ -7,27 +7,15 @@ CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ;
 CPUFLAGS += $(shell if grep --silent sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
 linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
-COMMON_UTILS_DIR    = $(OPENAIR_HOME)/common/utils
-TOP_DIR             = $(OPENAIR1_DIR)
-OPENAIR1_TOP        = $(OPENAIR1_DIR)
-OPENAIR2_TOP        = $(OPENAIR2_DIR)
-OPENAIR3_TOP        = $(OPENAIR3_DIR)
-OPENAIR3            = $(OPENAIR3_DIR)
+NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
-S1AP_DIR            = $(OPENAIR_HOME)/openair-cn/S1AP
-SCTP_DIR            = $(OPENAIR_HOME)/openair-cn/SCTP
-
-export S1AP_DIR
-export COMMON_UTILS_DIR
+TOP_DIR      = $(OPENAIR1_DIR)
+OPENAIR1_TOP = $(OPENAIR1_DIR)
+OPENAIR2_TOP = $(OPENAIR2_DIR)
+OPENAIR3_TOP = $(OPENAIR3_DIR)
+OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -fno-strict-aliasing -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
-
-ifdef ENABLE_ITTI
-CFLAGS += -DENABLE_ITTI
-ifndef DISABLE_ITTI_EVENT_FD
-CFLAGS += -DENABLE_EVENT_FD
-endif
-endif
 
 # Check if GCC version is greater or equal to 4.4
 GCCVERSIONGTEQ44 := $(shell expr `gcc -dumpversion | cut -f1,2 -d. --output-delimiter=""` \>= 44)
@@ -41,7 +29,7 @@ CFLAGS += -DOPENAIR_LTE -DPUCCH #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE
 CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION #-DPHY_ABSTRACTION_UL #-DRLC_UM_TEST_TRAFFIC=1
 CFLAGS += -DNEW_FFT
 #CFLAGS += -DLLR8
-CFLAGS += -DPACKAGE_NAME='"oaisim"'
+
 ifndef OPENAIR2
 OPENAIR2=1
 endif
@@ -84,7 +72,7 @@ ifeq ($(ENABLE_DB), 1)
 CFLAGS +=-I/usr/include/mysql -L/usr/lib/mysql -DENABLE_DB_STATS
 DB_LDFLAGS = -lmysqlclient
 endif 
-endif
+endif 
 
 ifdef PRINT_STATS
 CFLAGS += -DPRINT_STATS
@@ -168,32 +156,12 @@ endif
 
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
-CFLAGS += -DENABLE_FXP -DOAI_EMU -DENABLE_USE_CPU_EXECUTION_TIME
-ifndef DISABLE_XER_PRINT
-CFLAGS += -DXER_PRINT
-endif
+CFLAGS += -DENABLE_FXP -DOAI_EMU -DENABLE_USE_CPU_EXECUTION_TIME -DXER_PRINT
 
 ifneq ($(USE_MME), R8)
 UPDATE_RELEASE_9=1
 endif
 
-ifdef SECU
-ifeq ($(NETTLE_FOUND), 0)
-@echo "Nettle library >= 2.5 is not installed on your system, continuing with security disabled"
-SECU=0
-else
-ifeq ($(OPENSSL_FOUND), 0)
-@echo "openssl library is not installed on your system, continuing with security disabled"
-SECU=0
-else
-CFLAGS += -DENABLE_SECURITY
-OSA_LDFLAGS += `pkg-config --libs nettle`
-OSA_LDFLAGS += `pkg-config --libs openssl`
-endif
-endif
-endif
-
-include $(COMMON_UTILS_DIR)/Makefile.inc
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
@@ -207,11 +175,14 @@ include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
 #LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
 #LOG_OBJS +=  $(LOG_DIR)/log.o
 
-ITTI_MESSAGES_H = messages_xml.h
+CFLAGS += -DENB_MODE
+S1AP_BUILT_OBJS=
 
-ITTI_MESSAGES_XML = messages.xml
-
-ITTI_MESSAGES_FILE =  $(ITTI_DIR)/intertask_interface_types.h
+ifdef USE_MME
+CFLAGS += -DENABLE_USE_MME
+CFLAGS_S1AP += -DENB_MODE -DENABLE_USE_MME -DEMIT_ASN_DEBUG=1 -DUSER_MODE
+S1AP_BUILT_OBJS += $(S1AP_OBJS) $(addprefix $(OPENAIR2_DIR)/S1AP/MESSAGES/, $(S1AP_ASN_MODULE_SOURCES))
+endif
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o
@@ -227,16 +198,13 @@ ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 #L2_OBJS =
 #EXTRA_CFLAGS =
 
-OAISIM_OBJS_COMMON = channel_sim.o
-OAISIM_OBJS_COMMON += init_lte.o
-OAISIM_OBJS_COMMON += oaisim_config.o
-OAISIM_OBJS_COMMON += sinr_sim.o
-OAISIM_OBJS_COMMON += cor_SF_sim.o
-#OAISIM_OBJS_COMMON += phy_procedures_sim_form.o
-OAISIM_OBJS_COMMON += oaisim_functions.o
-
-OAISIM_OBJS = oaisim.o
-
+OAISIM_OBJS = channel_sim.o
+OAISIM_OBJS += init_lte.o
+OAISIM_OBJS += oaisim_config.o
+OAISIM_OBJS += sinr_sim.o
+OAISIM_OBJS += cor_SF_sim.o
+#OAISIM_OBJS += phy_procedures_sim_form.o
+OAISIM_OBJS += oaisim_functions.o
 ifdef XFORMS
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
 endif
@@ -245,9 +213,8 @@ ifdef PAD
 CFLAGS += -DPAD
 endif
 
-OAISIM_PAD_OBJS =  discrete_event_generator.o
+OAISIM_PAD_OBJS = discrete_event_generator.o
 OAISIM_PAD_OBJS += threadpool.o
-OAISIM_PAD_OBJS += oaisim_pad.o
 #deactivate the log offloading 
 ifndef LOG_THREAD
 CFLAGS +=-DLOG_NO_THREAD
@@ -261,45 +228,26 @@ endif
 
 CFLAGS += -DENABLE_VCD_FIFO
 CFLAGS += -DENABLE_NEW_MULTICAST
-ifdef NAS
-CFLAGS += -DENABLE_PDCP_NETLINK_FIFO
-endif
 # CFLAGS += -DENABLE_LOG_FIFO
 
 # Check if libpgm is installed and use it if found instead of the unreliable
 # multicast
-ifeq ($(PGM_FOUND), 1)
+ENABLE_PGM = $(shell if pkg-config --exists openpgm-5.1; then echo "1" ; else echo "0"; fi)
+ifeq ($(ENABLE_PGM), 1)
 CFLAGS += `pkg-config --cflags openpgm-5.1` -DENABLE_PGM_TRANSPORT
 PGM_LDFLAGS = `pkg-config --libs openpgm-5.1`
 endif
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ) $(UTILS_OBJS) $(OAISIM_OBJS_COMMON) 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ)
 ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
 endif
 
-LIBS = $(LFDS_DIR)/bin/liblfds611.a
-
-default: oaisim
-
-all: oaisim pad
+all: oaisim
 
 pad: oaisim_pad
 
 userclean: cleanall oaisim
-
-ifdef USE_MME
-CFLAGS += -DENB_MODE -DENABLE_USE_MME -DENABLE_EVENT_FD -I$(S1AP_DIR) -I$(SCTP_DIR)
-
-S1AP_CFLAGS = $(CFLAGS) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl)
-LIBS += $(S1AP_DIR)/libs1ap.a $(SCTP_DIR)/libsctp.a -lsctp -lcrypt
-export S1AP_CFLAGS
-
-$(S1AP_DIR)/libs1ap.a: force_look
-	$(MAKE) -C $(S1AP_DIR) -f Makefile.eNB libs1ap.a
-$(SCTP_DIR)/libsctp.a: force_look
-	$(MAKE) -C $(SCTP_DIR) -f Makefile.eNB libsctp.a
-endif
 
 printvars:
 	@echo LINUX variable is $(linux)
@@ -316,62 +264,61 @@ printvars:
 	@echo CFLAGS: $(CFLAGS)
 	@echo Enable PGM: $(ENABLE_PGM)
 
--include $(ITTI_MESSAGES_XML:.xml=.d)
+ASN1RELDIR=R9.8
+ifeq ($(USE_MME), R8)
+	ASN1RELDIR=R8.10
+else
+	CFLAGS_S1AP += -DUPDATE_RELEASE_9
+endif
+S1AP_DIR=$(OPENAIR2_DIR)/S1AP
+ASN1MESSAGESDIR=$(S1AP_DIR)/MESSAGES
+ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
+
 -include $(OBJ:.o=.d)
--include $(OAISIM_OBJS:.o=.d)
--include $(OAISIM_PAD_OBJS:.o=.d)
 -include $(ASN1_MSG_OBJS1:.o=.d)
 
-ifdef ENABLE_ITTI
-gccxml_available = $(shell if [ `gccxml --version | grep GCC-XML -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
-ifeq 	($(gccxml_available), 0) 
-$(error gccxml is missing, please install)
-endif
-endif
-
-$(ITTI_MESSAGES_XML): $(ITTI_MESSAGES_FILE)
-	@echo "Generating messages.xml ..."
-	@gccxml $(L2_incl) $(UTILS_incl) $< -fxml=$@
-	@$(CC) -MM $(L2_incl) $(UTILS_incl) $< > $(basename $@).d
-	@mv -f $(basename $@).d $(basename $@).d.tmp
-	@sed -e 's|.*:|$@:|' < $(basename $@).d.tmp > $(basename $@).d
-	@sed -e 's/.*://' -e 's/\\$$//' < $(basename $@).d.tmp | fmt -1 | \
-	sed -e 's/^ *//' -e 's/$$/:/' >> $(basename $@).d
-	@rm -f $(basename $@).d.tmp
-
-$(ITTI_MESSAGES_H): $(ITTI_MESSAGES_XML)
-	@echo "Generating messages_xml.h ..."
-	@sed -e 's/[ ]*//' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
-
-ifdef ENABLE_ITTI
-$(OAISIM_OBJS): $(ITTI_MESSAGES_H)
-
-oaisim_pad.o: $(ITTI_MESSAGES_H)
-endif
-
-$(OBJ) $(OAISIM_OBJS) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1): %.o : %.c
+$(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) : %.o : %.c
 	@echo Compiling $<
-	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) -o $@ $<
-	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
 	@mv -f $*.d $*.d.tmp
 	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
 	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
 	sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
 	@rm -f $*.d.tmp
 
+$(S1AP_BUILT_OBJS): %.o : %.c
+	@echo Compiling $<
+	@$(CC) -Wall -c $(CFLAGS_S1AP) $(S1AP_Incl) $(UTIL_incl) -o $@ $<
+
+$(ASN1MESSAGESDIR)/s1ap_ieregen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU-Contents.asn $(ASN1DIR)/asn1tostruct.py
+	echo Timestamp > $@
+	(cd $(ASN1DIR) && python $(ASN1DIR)/asn1tostruct.py -f$<)
+
+$(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp: $(ASN1DIR)/$(ASN1RELDIR)/S1AP-CommonDataTypes.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-Constants.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-IEs.asn $(ASN1DIR)/$(ASN1RELDIR)/S1AP-PDU.asn
+	echo Timestamp > $@
+	(cd $(ASN1MESSAGESDIR) && asn1c -gen-PER -fnative-types -fskeletons-copy $^)
+
+$(S1AP_DIR)/libs1ap.a: $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp $(S1AP_BUILT_OBJS)
+	@echo Creating $@
+	$(AR) rcs $@ $^
+
 $(LFDS_DIR)/bin/liblfds611.a:
 	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
 
-oaisim_pad: $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1)
-	@echo "Linking oaisim_pad ..."
-	@$(MPICC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim_pad $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) \
+oaisim_pad : $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) oaisim_pad.c
+	@echo "Compiling oaisim_pad.c ..."
+	@$(MPICC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim_pad $(CFLAGS) $(EXTRA_CFLAGS) $^ \
 	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
 
-oaisim: $(OBJ) $(OAISIM_OBJS) $(ASN1_MSG_OBJS1) $(LIBS)
-	@echo "Linking oaisim ..."
-	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(OAISIM_OBJS) $(ASN1_MSG_OBJS1) \
-	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt \
-	$(LIBS) $(PGM_LDFLAGS) $(DB_LDFLAGS) $(OSA_LDFLAGS)
+ifdef USE_MME
+oaisim : $(ASN1_MSG_OBJS1) $(OBJ) $(S1AP_DIR)/libs1ap.a oaisim.c $(LFDS_DIR)/bin/liblfds611.a
+else
+oaisim : $(ASN1_MSG_OBJS1) $(OBJ) oaisim.c $(LFDS_DIR)/bin/liblfds611.a
+endif
+	@echo "Compiling oaisim.c ..."
+	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $^ \
+	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt $(LFDS_DIR)/bin/liblfds611.a $(PGM_LDFLAGS) $(DB_LDFLAGS) 
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -380,19 +327,18 @@ ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
 
-oaisimCROWN: $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
+oaisimCROWN : $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
 	@echo "Compiling oaisimCROWN.c ..."
-	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
 
-nasmesh_fix:
+test_nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 	(cd $(OPENAIR2_DIR) && $(MAKE) nasmesh_netlink_address_fix.ko)
 	(cp $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko . )
-nasmesh_fix_install:
+nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 	(cd $(OPENAIR2_DIR) && $(MAKE) nasmesh_netlink_address_fix.ko)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
-	(cp $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko . )	
 nasmesh_nl:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 	(cd $(OPENAIR2_DIR) && $(MAKE) nasmesh_netlink.ko)
@@ -403,8 +349,7 @@ rb_tool:
 nasmesh_install:
 	(sudo rmmod nasmesh)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
-nasmesh_clean:
-	(cd $(OPENAIR2_DIR) && $(MAKE) clean)
+
 nas_sim_mt_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make nasmt_sim CELLULAR=1 NO_RRM=1)
 
@@ -415,74 +360,69 @@ rrm_std_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make cell_rrm CELL_RRM=1 CELLULAR=1 NO_RRM=1)
 
 
-cleanall: clean cleanasn1
-	@if [ -d $(S1AP_DIR) ];then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB cleanall; fi
+cleanall: clean cleanasn1 cleanmmeasn1
 
 clean:
-	@$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
-	@$(RM_F_V) oaisim
-	@$(RM_F_V) oaisim_pad
-	@$(RM_F_V) $(ITTI_MESSAGES_H) $(ITTI_MESSAGES_XML) $(ITTI_MESSAGES_XML:.xml=.d)
-	@$(RM_F_V) $(OBJ) $(OBJ:.o=.d)
-	@$(RM_F_V) $(OAISIM_OBJS) $(OAISIM_OBJS:.o=.d)
-	@$(RM_F_V) $(OAISIM_PAD_OBJS) $(OAISIM_PAD_OBJS:.o=.d)
-	@$(RM_F_V) $(ASN1_MSG_OBJS1) $(ASN1_MSG_OBJS1:.o=.d)
-	@$(RM_F_V) *.exe*
-	@$(RM_F_V) $(ASN1_MSG_INC)/asn1_msg.o
-	@if [ -d $(S1AP_DIR) ];then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB clean; fi
-	@if [ -d $(S1AP_DIR) ];then $(MAKE) -C $(SCTP_DIR) -f Makefile.eNB clean; fi
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
+	rm -f oaisim
+	rm -f oaisim_pad
+	rm -f $(OBJ)
+	rm -f $(S1AP_BUILT_OBJS)
+	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
+	rm -f *.o
+	rm -f *.exe*
+	rm -f $(ASN1_MSG_INC)/asn1_msg.o
+	rm -f  $(OBJ:.o=.d) $(ASN1_MSG_OBJS1:.o=.d)
 
 cleanl1:
-	@$(RM_F_V) LOG_THREAD oaisim
-	@$(RM_F_V) $(PHY_OBJS) $(SCHED_OBJS)
-	@$(RM_F_V) *.o
-	@$(RM_F_V) *.exe
+	rm -f oaisim
+	rm -f $(PHY_OBJS) $(SCHED_OBJS)
+	rm -f *.o
+	rm -f *.exe
 
 cleanl2:
-	@$(RM_F_V) $(L2_OBJS)
-	@$(RM_F_V) $(ASN1_MSG_INC)/asn1_msg.o
+	rm -f $(L2_OBJS)
+	rm $(ASN1_MSG_INC)/asn1_msg.o
 
 cleanasn1:
-	@$(RM_F_V) $(ASN1_MSG_OBJS1)
-	$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; rm -f $(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS) *.o *.d)
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.am.sample
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
+	rm -f $(ASN1_MSG_OBJS1)
+	$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; rm -f $(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS) *.o *.d )
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.am.sample
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
+
+cleanmmeasn1:
+	rm -f $(S1AP_BUILT_OBJS)
+	rm -f $(S1AP_BUILT_OBJS:.o:.c)
+	rm -f $(ASN1MESSAGESDIR)/libs1ap.a
+	rm -f $(ASN1MESSAGESDIR)/s1ap_asn1regen.stamp
+	rm -f $(ASN1MESSAGESDIR)/s1ap_ieregen.stamp
 
 cleancell:
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/CELLULAR/*.d
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.o
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.d
-	@$(RM_F_V) $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
-	@$(RM_F_V) $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
+	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.d
+	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.o
+	rm -f $(OPENAIR2_DIR)/RRC/L2_INTERFACE/*.d
+	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
+	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
 
 print:
 #	@echo $(cygwin)
-	@echo "OBJ " 			$(OBJ)
-	@echo "OAISIM_OBJS " 		$(OAISIM_OBJS)
-	@echo "OAISIM_PAD_OBJS " 	$(OAISIM_PAD_OBJS)
-	@echo "OCG_FLAG are "		$(OCG_FLAG)
-	@echo "CFLAGS are "      	$(CFLAGS)
-	@echo "EXTRA_CFLAGS are" 	$(EXTRA_CFLAGS)
-	@echo "L2 includes are"	    	$(L2_incl)
-	@echo "S1AP Includes are"   	$(S1AP_Incl)
-	@echo "TOP_DIR Include is"  	I$(TOP_DIR)
-	@echo "UTIL includes are"	$(UTIL_incl)
-	@echo "UTILS includes are"	$(UTILS_incl)
-	@echo "IS_REL8 is "      	$(IS_REL8)
-	@echo "IS_REL10 is "     	$(IS_REL10)
-	@echo "ENABLE_DB is "    	$(ENABLE_DB)
+	@echo $(OBJ)
+	@echo $(OCG_FLAG)
+	@echo "CFLAGS are "      $(CFLAGS)
+	@echo "EXTRA_CFLAGS are" $(EXTRA_CFLAGS)
+
+	@echo "IS_REL8 is "      $(IS_REL10)
+	@echo "IS_REL8 is "      $(IS_REL8)
+	@echo "ENABLE_DB is "    $(ENABLE_DB)
 
 showcflags:
-	@echo oaisim cflags: $(CFLAGS)
-	@$(MAKE) -C $(S1AP_DIR) -f Makefile.eNB showcflags
+	@echo $(CFLAGS)
 
-force_look:
-	@true
 
-otg_all: otg_latency otg_gp
+otg_all : otg_latency otg_gp
 
 # need to check if the file exists before calling otgplot
 otg_latency:
@@ -512,10 +452,10 @@ ifeq 	($(pexpect), 1)
 ifndef	PW
 	@echo "Usage: make pre-ci PW=mypassword"
 	@echo "Password is used to access the local host through ssh."
-	python $(OPENAIR_TARGETS)/TEST/OAI/test01.py
+	python $(OPENAIR_TARGETS)/TEST/OAI/test01.py 
 else
 	python $(OPENAIR_TARGETS)/TEST/OAI/test01.py -w $(PW)
 endif
 else
 	@echo "Python pexpect package is missing, please install"
-endif
+endif 
