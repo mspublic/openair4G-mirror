@@ -1,6 +1,0 @@
-#include "mex.h"
-#include "../../SIMULATION/TOOLS/defs.h"
-#include "../../PHY/types.h"
-#include "../../PHY/defs.h"
-#include "../../PHY/vars.h"
-#include "../../MAC_INTERFACE/vars.h"
