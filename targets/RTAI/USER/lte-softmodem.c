@@ -1383,8 +1383,8 @@ int main(int argc, char **argv) {
 
     p_exmimo_config->rf.rffe_gain_txlow[ant] = 31;
     p_exmimo_config->rf.rffe_gain_txhigh[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 31;
-    p_exmimo_config->rf.rffe_gain_rxlow[ant] = 63;
+    p_exmimo_config->rf.rffe_gain_rxfinal[ant] = 52;
+    p_exmimo_config->rf.rffe_gain_rxlow[ant] = 31;
   }
 
 
