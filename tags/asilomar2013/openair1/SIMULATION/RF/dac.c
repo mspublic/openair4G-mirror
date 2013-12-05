@@ -1,4 +1,4 @@
-#define DEBUG_DAC 1
+//#define DEBUG_DAC 1
 #include <math.h>
 #include "PHY/TOOLS/defs.h"
 
@@ -64,10 +64,9 @@ double dac_fixed_gain(double **s_re,
   int aa;
   double amp, amp1;
  
-  amp = pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas); //this is the desired amp per tx antenna
+  amp = pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas); //this is amp per tx antenna
 
-  //amp1 = AMP; //this is the amp of the digital signal per tx antenna
-  
+  amp1 = 0;
   for (aa=0;aa<nb_tx_antennas;aa++) {
     amp1 += sqrt((double)signal_energy((s32*)&input[aa][input_offset_meas],length_meas) * (512.0/300.0));
   }
