@@ -1750,7 +1750,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = cmax(avgs,avgP[(aarx<<1)+aatx]);
   
-  log2_maxh = (log2_approx(avgs)/2);
+  log2_maxh = (log2_approx(avgs)/2) + 2 + frame_parms->nb_antennas_rx - 1;
 #ifdef DEBUG_PHY
   msg("[PDCCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgP[0],avgs);
 #endif
@@ -2065,9 +2065,9 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   y[0] = &yseq0[0];
   y[1] = &yseq1[0];
 
-  //memset(e,0,DCI_BITS_MAX);
   // reset all bits to <NIL>, here we set <NIL> elements as 2
-  //  memset(e, 2, DCI_BITS_MAX);
+  //memset(e, 2, DCI_BITS_MAX);
+  // here we interpred NIL as a random QPSK sequence. That makes power estimation easier.
   for (i=0;i<DCI_BITS_MAX;i++) e[i]=taus()&1;
   e_ptr = e;
 

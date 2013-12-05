@@ -12,7 +12,7 @@
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_vars.h"
-
+#include "oml.h"
 
 mapping log_level_names[] =
 {
@@ -325,11 +325,15 @@ void init_oai_emulation() {
   oai_emulation.info.vcd_enabled=0;
   oai_emulation.info.cba_group_active=0;
   oai_emulation.info.eMBMS_active_state=0;
+  oai_emulation.info.handover_active=0;
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_rn=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
+  oai_emulation.info.otg_traffic="no_predefined_traffic";
   oai_emulation.info.otg_bg_traffic_enabled = 0; // G flag 
+  oai_emulation.info.max_predefined_traffic_config_index = 0;
+  oai_emulation.info.max_customized_traffic_config_index = 0;
   oai_emulation.info.frame = 0; // frame counter of emulation 
   oai_emulation.info.time_s = 0; // time of emulation  
   oai_emulation.info.time_ms = 0; // time of emulation 
@@ -596,7 +600,6 @@ int ocg_config_app(){
   char *check_format1;
   char *check_format2;
   char *check_format1_dst;
-  char *check_format2_dst;
   char *source_id_start;
   char *source_id_end;
   char *destination_id_start;
@@ -663,6 +666,7 @@ int ocg_config_app(){
   init_seeds(g_otg->seed); // initialize all the nodes, then configure the nodes the user specifically did in the XML in the following
   
   LOG_I(OTG,"oai_emulation.info.max_predefined_traffic_config_index = %d\n", oai_emulation.info.max_predefined_traffic_config_index);
+  LOG_I(OTG,"oai_emulation.info.max_customized_traffic_config_index = %d\n", oai_emulation.info.max_customized_traffic_config_index);
   
 
   if (oai_emulation.info.ocg_ok) {
@@ -963,8 +967,9 @@ g_otg->application_idx[source_id_index][destination_id_index]+=1;
       }   
     }
   }
-  //if ( oai_emulation.info.otg_enabled==1){ // OCG not used, but -T option is used, so config here
-  else {
+  if ((oai_emulation.info.max_predefined_traffic_config_index == 0)  && 
+      (oai_emulation.info.max_customized_traffic_config_index == 0) &&
+      (oai_emulation.info.otg_enabled==1)){  // OCG not used to configure OTG, but -T option is used, so config here
     LOG_I(OTG,"configure OTG through options %s\n", oai_emulation.info.otg_traffic);
     for (i=0; i<g_otg->num_nodes; i++){
       for (j=0; j<g_otg->num_nodes; j++){ 

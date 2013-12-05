@@ -392,9 +392,13 @@ void do_DL_sig(double **r_re0,double **r_im0,
 	  frame_parms->samples_per_tti>>1,
 	  12);
       
-#ifdef DEBUG_SIM    
+#ifdef DEBUG_SIM
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,512)*512.0/300.0;
       LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d), writing to %p\n",UE_id, 10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1,rxdata);  
+#else
+      UNUSED_VARIABLE(rx_pwr2);
+      UNUSED_VARIABLE(tx_pwr);
+      UNUSED_VARIABLE(rx_pwr);
 #endif
     //}// UE_index loop
   }
@@ -405,8 +409,9 @@ void do_DL_sig(double **r_re0,double **r_im0,
 void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, u32 frame) {
 
   s32 **txdata,**rxdata;
-
+#ifdef PHY_ABSTRACTION_UL
   s32 att_eNB_id=-1;
+#endif
   u8 eNB_id=0,UE_id=0;
 
   u8 nb_antennas_rx = UE2eNB[0][0]->nb_rx; // number of rx antennas at eNB
@@ -598,7 +603,11 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM    
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,frame_parms->samples_per_tti>>1);
       LOG_D(OCM,"[SIM][UL] eNB %d rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",eNB_id,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
-#endif    
+#else
+      UNUSED_VARIABLE(tx_pwr);
+      UNUSED_VARIABLE(rx_pwr);
+      UNUSED_VARIABLE(rx_pwr2);
+#endif
       
     } // eNB_id
   } // abstraction_flag==0

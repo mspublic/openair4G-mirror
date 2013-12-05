@@ -65,6 +65,10 @@
 #endif
 #include "pdcp.h"
 
+#if defined(ENABLE_ITTI)
+# include "intertask_interface.h"
+#endif
+
 #define DEBUG_HEADER_PARSING 1
 #define ENABLE_MAC_PAYLOAD_DEBUG
 
@@ -85,43 +89,42 @@ mapping BSR_names[] = {
 extern inline unsigned int taus(void);
 
 
-void ue_init_mac(){
-  int i,j;
-  for (i=0 ; i < NB_UE_INST; i++){
-    // default values as deined in 36.331 sec 9.2.2
-    LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",i);
-    LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_UE][MOD %02d][]\n", i+NB_eNB_INST);
+void ue_init_mac(u8 Mod_id){
+  int i;
+  
+  // default values as deined in 36.331 sec 9.2.2
+  LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",Mod_id);
+  LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_UE][MOD %02d][]\n", Mod_id+NB_eNB_INST);
 
-    //UE_mac_inst[Mod_id].scheduling_info.macConfig=NULL;
-    UE_mac_inst[i].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
-    UE_mac_inst[i].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
-    UE_mac_inst[i].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
-    UE_mac_inst[i].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
-    UE_mac_inst[i].scheduling_info.PathlossChange_db = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
-    UE_mac_inst[i].PHR_state = MAC_MainConfig__phr_Config_PR_setup;
-    UE_mac_inst[i].scheduling_info.SR_COUNTER=0;
-    UE_mac_inst[i].scheduling_info.sr_ProhibitTimer=0;
-    UE_mac_inst[i].scheduling_info.sr_ProhibitTimer_Running=0;
-    UE_mac_inst[i].scheduling_info.maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-    UE_mac_inst[i].scheduling_info.ttiBundling=0;
-    UE_mac_inst[i].scheduling_info.drx_config=NULL;
-    UE_mac_inst[i].scheduling_info.phr_config=NULL;
-    UE_mac_inst[i].scheduling_info.periodicBSR_SF  =  get_sf_periodicBSRTimer(UE_mac_inst[i].scheduling_info.periodicBSR_Timer);
-    UE_mac_inst[i].scheduling_info.retxBSR_SF     =  get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
-    UE_mac_inst[i].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[i].scheduling_info.periodicPHR_Timer);
-    UE_mac_inst[i].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[i].scheduling_info.prohibitPHR_Timer);
-    UE_mac_inst[i].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[i].scheduling_info.PathlossChange);
-
-    for (j=0; j < MAX_NUM_LCID; j++){
-      LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",i,j);
-      UE_mac_inst[i].scheduling_info.Bj[j]=-1;
-      UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
-      if (j < DTCH) // initilize all control channels lcgid to 0
-	UE_mac_inst[i].scheduling_info.LCGID[j]=0;
-      else // initialize all the data channels lcgid to 1 
-	UE_mac_inst[i].scheduling_info.LCGID[j]=1;
-      UE_mac_inst[i].scheduling_info.LCID_status[j]=0;
-    }
+  //UE_mac_inst[Mod_id].scheduling_info.macConfig=NULL;
+  UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+  UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+  UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+  UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+  UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+  UE_mac_inst[Mod_id].PHR_state = MAC_MainConfig__phr_Config_PR_setup;
+  UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER=0;
+  UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer=0;
+  UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=0;
+  UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+  UE_mac_inst[Mod_id].scheduling_info.ttiBundling=0;
+  UE_mac_inst[Mod_id].scheduling_info.drx_config=NULL;
+  UE_mac_inst[Mod_id].scheduling_info.phr_config=NULL;
+  UE_mac_inst[Mod_id].scheduling_info.periodicBSR_SF  =  get_sf_periodicBSRTimer(UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer);
+  UE_mac_inst[Mod_id].scheduling_info.retxBSR_SF     =  get_sf_retxBSRTimer(UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer);
+  UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer);
+  UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer);
+  UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_id].scheduling_info.PathlossChange);
+  
+  for (i=0; i < MAX_NUM_LCID; i++){
+    LOG_D(MAC,"[UE%d] Applying default logical channel config for LCGID %d\n",Mod_id,i);
+    UE_mac_inst[Mod_id].scheduling_info.Bj[i]=-1;
+    UE_mac_inst[Mod_id].scheduling_info.bucket_size[i]=-1;
+    if (i < DTCH) // initilize all control channels lcgid to 0
+      UE_mac_inst[Mod_id].scheduling_info.LCGID[i]=0;
+    else // initialize all the data channels lcgid to 1 
+      UE_mac_inst[Mod_id].scheduling_info.LCGID[i]=1;
+    UE_mac_inst[Mod_id].scheduling_info.LCID_status[i]=0;
   }
 }
 
@@ -348,13 +351,13 @@ void ue_send_sdu(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index) {
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       int j;
       for (j=0;j<rx_lengths[i];j++)
-        LOG_T(MAC,"%x.",(unsigned char)payload_ptr[j]);
+        LOG_T(MAC,"%x.",(u8)payload_ptr[j]);
       LOG_T(MAC,"\n");
 #endif      
       mac_rrc_data_ind(Mod_id,
 		       frame,
 		       CCCH,
-		       (char *)payload_ptr,rx_lengths[i],0,eNB_index,0);
+		       (u8 *)payload_ptr,rx_lengths[i],0,eNB_index,0);
 
     }
     else if (rx_lcids[i] == DCCH) {
@@ -415,7 +418,7 @@ void ue_decode_si(u8 Mod_id,u32 frame, u8 eNB_index, void *pdu,u16 len) {
   mac_rrc_data_ind(Mod_id,
 		   frame,
 		   BCCH,
-		   (char *)pdu,
+		   (u8 *)pdu,
 		   len,
 		   0,
 		   eNB_index,
@@ -499,7 +502,7 @@ void ue_send_mch_sdu(u8 Mod_id, u32 frame, u8 *sdu, u16 sdu_len, u8 eNB_index, u
       mac_rrc_data_ind(Mod_id, 
 		       frame, 
 		       MCCH, 
-		       (char *)payload_ptr, rx_lengths[i], 0, eNB_index, sync_area);
+		       payload_ptr, rx_lengths[i], 0, eNB_index, sync_area);
     }
     else if (rx_lcids[i] == MTCH) {
       if (UE_mac_inst[Mod_id].msi_status==1) {  
@@ -1272,16 +1275,52 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   // mac_rlc_status_resp_t rlc_status[MAX_NUM_LCGID]; // 4
   // s8 lcg_id;
   struct RACH_ConfigCommon *rach_ConfigCommon = (struct RACH_ConfigCommon *)NULL;
+#ifdef EXMIMO
   int ret;  
+#endif
+#if defined(ENABLE_ITTI)
+  MessageDef *msg_p;
+  const char *msg_name;
+  instance_t instance;
+#endif
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_IN);
+
+#if defined(ENABLE_ITTI)
+  do {
+    // Checks if a message has been sent to MAC sub-task
+    itti_poll_msg (TASK_MAC_UE, &msg_p);
+
+    if (msg_p != NULL) {
+      msg_name = ITTI_MSG_NAME (msg_p);
+      instance = ITTI_MSG_INSTANCE (msg_p);
+
+      switch (ITTI_MSG_ID(msg_p)) {
+        case RRC_MAC_CCCH_DATA_REQ:
+          LOG_D(MAC, "Received %s from %s: instance %d, frame %d, eNB_index %d\n",
+                msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
+                RRC_MAC_CCCH_DATA_REQ (msg_p).frame, RRC_MAC_CCCH_DATA_REQ (msg_p).enb_index);
+
+          // TODO process CCCH data req.
+          break;
+
+
+        default:
+          LOG_E(MAC, "Received unexpected message %s\n", msg_name);
+          break;
+      }
+
+      free (msg_p);
+    }
+  } while(msg_p != NULL);
+#endif
 
   //Mac_rlc_xface->frame=frame;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   //if (subframe%5 == 0)
 #ifdef EXMIMO
-  //pdcp_run(frame, 0, Mod_id, eNB_index);
-  
+  pdcp_run(frame, 0, Mod_id, eNB_index);
+  /*
   ret = pthread_mutex_trylock (&pdcp_mutex);
   if (ret != 0) {
     if (ret==EBUSY)
@@ -1304,6 +1343,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       LOG_W(PDCP,"PDCP thread busy!!! inst_cnt=%d\n",pdcp_instance_cnt);
     }
   }
+  */
 #endif 
   UE_mac_inst[Mod_id].frame = frame;
   UE_mac_inst[Mod_id].subframe = subframe;
@@ -1326,6 +1366,15 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   case RRC_PHY_RESYNCH:
     LOG_E(MAC,"RRC Loss of synch, returning PHY_RESYNCH\n");
     return(PHY_RESYNCH);
+  case RRC_Handover_failed:
+    LOG_N(MAC,"Handover failure for UE %d eNB_index %d\n",Mod_id,eNB_index);
+    //Invalid...need to add another MAC UE state for re-connection procedure
+    mac_xface->phy_config_afterHO_ue(Mod_id,eNB_index,(MobilityControlInfo_t *)NULL,1);
+    //return(3);
+    break;
+  case RRC_HO_STARTED:
+    LOG_I(MAC,"RRC handover, Instruct PHY to start the contention-free PRACH and synchronization\n");
+    return(PHY_HO_PRACH);
   default:
     break;
   }
@@ -1340,7 +1389,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       LOG_E(MAC,"FATAL: radioResourceConfigCommon is NULL!!!\n");
       mac_xface->macphy_exit("");
       vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
-      return(RRC_OK); // RRC_OK ???
+      return(RRC_OK); 
     }
 
     LOG_I(MAC,"Frame %d: Contention resolution timer %d/%d\n",frame,UE_mac_inst[Mod_id].RA_contention_resolution_cnt,
@@ -1362,7 +1411,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
   // Put this in another function
 
     // Get RLC status info and update Bj for all lcids that are active
-  for (lcid=CCCH; lcid <= DTCH; lcid++ ) {
+  for (lcid=DCCH; lcid <= DTCH; lcid++ ) {
     if ((lcid == 0) ||(UE_mac_inst[Mod_id].logicalChannelConfig[lcid])) {
       // meausre the Bj
       if ((direction == SF_UL)&& (UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] >= 0)){
@@ -1533,9 +1582,11 @@ int  update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 lcg_id){
   u8 sr_pending = 0;
   if ((lcg_id < 0) || (lcg_id > MAX_NUM_LCGID) )
     return sr_pending;
-  
-  UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id]=0;
-  UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id]=0;
+  // fixme: need a better way to reset 
+  if ((lcid == DCCH) || (lcid == DTCH)){
+    UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id]=0;
+    UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id]=0;
+  }
   //  for (lcid =0 ; lcid < MAX_NUM_LCID; lcid++) {
   if (UE_mac_inst[Mod_id].scheduling_info.LCGID[lcid] == lcg_id) {
     rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,frame,0,RLC_MBMS_NO,
@@ -1547,13 +1598,13 @@ int  update_bsr(u8 Mod_id, u32 frame, u8 lcid, u8 lcg_id){
       UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id] += locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status.bytes_in_buffer);
       UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id] += rlc_status.bytes_in_buffer;
       // UE_mac_inst[Mod_id].scheduling_info.BSR_short_lcid = lcid; // only applicable to short bsr
+      LOG_D(MAC,"[UE %d] BSR level %d (LCGID %d, rlc buffer %d byte)\n",
+	Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id],lcg_id,  UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id]);
     }
     else 
       UE_mac_inst[Mod_id].scheduling_info.LCID_status[lcid]=LCID_EMPTY; 
   }
   //}
-  //LOG_D(MAC,"[UE %d] BSR level %d (LCGID %d, rlc buffer %d byte)\n",
-  //	 Mod_id, UE_mac_inst[Mod_id].scheduling_info.BSR[lcg_id],lcg_id,  UE_mac_inst[Mod_id].scheduling_info.BSR_bytes[lcg_id]);
   return sr_pending;
 }
 

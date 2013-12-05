@@ -47,17 +47,22 @@ NUM_TRIALS=3
 def execute(oai, user, pw, logfile):
     
     case = '02'
+    logs_dir = 'pre-ci-logs';
     oai.send('cd $OPENAIR_TARGETS;')
     oai.send('cd SIMU/USER;')
+    oai.send('mkdir ' + logs_dir + ';')
     
     try:
         test = '00'
         name = 'Run oai.rel8.sf'
         conf = '-a -A AWGN -n 100'
         diag = 'OAI is not running normally (Segmentation fault / Exiting / FATAL), debugging might be needed'
-        oai.send_expect_false('./oaisim.rel8 ' + conf, 'Segmentation fault', 30)
-        oai.send_expect_false('./oaisim.rel8 ' + conf, 'Exiting', 30)
-        oai.send_expect_false('./oaisim.rel8 ' + conf, 'FATAL', 30)
+        tee = ' | tee ' + logs_dir + '/log_' + case + test + '_1.txt'
+        oai.send_expect_false('./oaisim.rel8 ' + conf + tee, 'Segmentation fault', 30)
+        tee = ' | tee ' + logs_dir + '/log_' + case + test + '_2.txt'
+        oai.send_expect_false('./oaisim.rel8 ' + conf + tee, 'Exiting', 30)
+        tee = ' | tee ' + logs_dir + '/log_' + case + test + '_3.txt'
+        oai.send_expect_false('./oaisim.rel8 ' + conf + tee, 'FATAL', 30)
 
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -68,6 +73,7 @@ def execute(oai, user, pw, logfile):
         test = '01'
         name = 'Run oai.rel8.err'
         conf = '-a -A AWGN -n 100'
+        tee = ' | tee ' + logs_dir + '/log_' + case + test + '.txt'
         diag = 'Error(s) found in the execution, check the execution logs'
         oai.send_expect_false('./oaisim.rel8 ' + conf, '[E]', 30)
         
@@ -83,7 +89,8 @@ def execute(oai, user, pw, logfile):
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
                 conf = '-a -A AWGN -n' + str((i+1+j) * 40) + ' -u' + str(i+1) +' -b'+ str(j+1)
-                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
+                tee = ' | tee ' + logs_dir + '/log_' + case + test + '_' + str(i) + str(j) + '.txt'
+                oai.send_expect('./oaisim.rel8 ' + conf + tee, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
@@ -93,16 +100,18 @@ def execute(oai, user, pw, logfile):
         test = '03'
         name = 'Run oai.rel8.abs.ping'
         diag = 'Data-plane is not working normally, check the OAI protocol stack, OAI driver, and normal operation of the OS'
+        oai.driver(oai,user,pw)
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
                 conf = '-a -A AWGN -u' + str(i+1) +' -b'+ str(j+1)
+                tee = ' | tee ' + logs_dir + '/log_' + case + test + '_' + str(i) + str(j) + '.txt'
                 if user == 'root' :
                     oai.send_nowait('./oaisim.rel8.nas ' + conf + ' > /dev/null &')
                 else :    
                     oai.send_nowait('echo '+pw+ ' | sudo -S -E ./oaisim.rel8.nas ' + conf + ' > /dev/null &')
                 time.sleep(2)
                 for k in range(NUM_TRIALS) :
-                    oai.send_expect('ping 10.0.'+str(j+1)+'.'+str(NUM_eNB+i+1) + ' -c ' +  str(random.randint(2, 10))+ ' -s ' + str(random.randint(128, 1500)), ' 0% packet loss', 300)
+                    oai.send_expect('ping 10.0.'+str(j+1)+'.'+str(NUM_eNB+i+1) + ' -c ' +  str(random.randint(2, 10))+ ' -s ' + str(random.randint(128, 1500)) + tee, ' 0% packet loss', 300)
                 if user == 'root' :
                     oai.send('pkill oaisim;')
                     oai.send('pkill oaisim.rel8.nas;')
@@ -111,6 +120,8 @@ def execute(oai, user, pw, logfile):
                     oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas;')
                     time.sleep(1)
                     oai.send_nowait('echo '+pw+ ' | sudo -S pkill oaisim.rel8.nas;')
+        
+        oai.rm_driver(oai,user,pw)
 
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
@@ -124,7 +135,8 @@ def execute(oai, user, pw, logfile):
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
                 conf = '-A AWGN -n' + str((i+1+j) * 50) + ' -u' + str(i+1) +' -b'+ str(j+1) + ' -s15 -x1'
-                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
+                tee = ' | tee ' + logs_dir + '/log_' + case + test + '_' + str(i) + str(j) + '.txt'
+                oai.send_expect('./oaisim.rel8 ' + conf + tee, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
@@ -137,10 +149,25 @@ def execute(oai, user, pw, logfile):
         for i in range(NUM_UE) :
             for j in range(NUM_eNB) :
                 conf = '-A AWGN -F -n' + str((i+1+j) * 50) + ' -u' + str(i+1) +' -b'+ str(j+1) + ' -s15 -x1'
-                oai.send_expect('./oaisim.rel8 ' + conf, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
+                tee = ' | tee ' + logs_dir + '/log_' + case + test + '_' + str(i) + str(j) + '.txt'
+                oai.send_expect('./oaisim.rel8 ' + conf + tee, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 100)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile)
     else:
         log.ok(case, test, name, conf, '', logfile)
 
+    try:
+        test = '06'
+        name = 'Run oai.rel8.itti.abs.rrc'
+        diag = 'RRC procedure is not finished completely, check the execution logs and trace BCCH, CCCH, and DCCH channels'
+        for i in range(NUM_UE) :
+            for j in range(NUM_eNB) :
+                conf = '-a -A AWGN -n' + str((i+1+j) * 40) + ' -u' + str(i+1) +' -b'+ str(j+1)
+                tee = ' | tee ' + logs_dir + '/log_' + case + test + '_' + str(i) + str(j) + '.txt'
+                oai.send_expect('./oaisim.rel8.itti ' + conf + tee, ' Received RRCConnectionReconfigurationComplete from UE ' + str(i),  (i+1) * 50)
+    except log.err, e:
+        log.fail(case, test, name, conf, e.value, diag, logfile)
+    else:
+        log.ok(case, test, name, conf, '', logfile)
+        
 

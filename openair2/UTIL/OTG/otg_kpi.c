@@ -39,6 +39,11 @@
 
 */
 
+unsigned int start_log_latency=0;
+unsigned int start_log_latency_bg=0;
+unsigned int start_log_GP=0;
+unsigned int start_log_GP_bg=0;
+unsigned int start_log_jitter=0;
 
 #include"otg_kpi.h"
 #include"otg_externs.h"
@@ -117,7 +122,7 @@ void rx_loss_rate_bytes(int src, int dst, int application){
 
 }
 
-void nb_loss_pkts(){
+void otg_kpi_nb_loss_pkts(void){
 unsigned int i,j,k;
 
 otg_info->total_loss_dl=0;

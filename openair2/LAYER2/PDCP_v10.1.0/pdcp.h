@@ -82,8 +82,12 @@
 #include "PMCH-InfoList-r9.h"
 #endif
 
+#ifndef FALSE
 #define FALSE (0x00)
+#endif
+#ifndef TRUE
 #define TRUE  !(FALSE)
+#endif
 
 extern pthread_t pdcp_thread;
 extern pthread_attr_t pdcp_thread_attr;
@@ -91,7 +95,6 @@ extern pthread_mutex_t pdcp_mutex;
 extern pthread_cond_t pdcp_cond;
 extern int pdcp_instance_cnt;
 
-static void *pdcp_thread_main(void* param);
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
@@ -343,13 +346,14 @@ public_pdcp(int pdcp_module_init ();)
 public_pdcp(void pdcp_module_cleanup ();)
 public_pdcp(void pdcp_layer_init ();)
 public_pdcp(void pdcp_layer_cleanup ();)
+public_pdcp(int pdcp_netlink_init(void);)
 
 #define PDCP2NAS_FIFO 21
 #define NAS2PDCP_FIFO 22
 
 protected_pdcp_fifo(int pdcp_fifo_flush_sdus (u32_t,u8_t);)
 protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes (u32_t,u8_t);)
-protected_pdcp_fifo(int pdcp_fifo_read_input_sdus(u32_t,u8_t);)
+protected_pdcp_fifo(int pdcp_fifo_read_input_sdus (u32_t frame, u8_t eNB_flag, u8_t UE_index, u8_t eNB_index);)
 protected_pdcp_fifo(void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index, u8 eNB_index);)
 
 //-----------------------------------------------------------------------------
@@ -367,6 +371,13 @@ typedef struct pdcp_data_ind_header_t {
   sdu_size_t           data_size;
   int       inst;
 } pdcp_data_ind_header_t;
+
+struct pdcp_netlink_element_s {
+    pdcp_data_req_header_t pdcp_read_header;
+
+    /* Data part of the message */
+    uint8_t *data;
+};
 
 #if 0
 /*
@@ -387,7 +398,7 @@ typedef struct pdcp_missing_pdu_info_t {
 #define PDCP_MAX_SN_12BIT 4095 // 2^12-1
 
 protected_pdcp(signed int             pdcp_2_nas_irq;)
-protected_pdcp(pdcp_t                 pdcp_array[MAX_MODULES][NB_RB_MAX];)
+protected_pdcp(pdcp_t                 pdcp_array[MAX_MODULES][MAX_MODULES*NB_RB_MAX];)
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array[MAX_MODULES][16*29];) // MAX_SERVICEx MAX_SESSION
 protected_pdcp(sdu_size_t             pdcp_output_sdu_bytes_to_write;)
 protected_pdcp(sdu_size_t             pdcp_output_header_bytes_to_write;)

@@ -59,6 +59,10 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
+#if defined(ENABLE_ITTI)
+# include "intertask_interface.h"
+#endif
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 //#define DEBUG_HEADER_PARSING 1
@@ -265,7 +269,7 @@ void terminate_ra_proc(u8 Mod_id,u32 frame,u16 rnti,unsigned char *msg3, u16 msg
 	}
 
 	if (Is_rrc_registered == 1)
-	  mac_rrc_data_ind(Mod_id,frame,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id,0);
+	  mac_rrc_data_ind(Mod_id,frame,CCCH,(u8 *)payload_ptr,rx_lengths[0],1,Mod_id,0);
 	// add_user.  This is needed to have the rnti for configuring UE (PHY). The UE is removed if RRC
 	// doesn't provide a CCCH SDU
 
@@ -979,7 +983,7 @@ void schedule_SI(unsigned char Mod_id,u32 frame, unsigned char *nprb,unsigned in
   bcch_sdu_length = mac_rrc_data_req(Mod_id,
 				     frame,
 				     BCCH,1,
-				     (char*)&eNB_mac_inst[Mod_id].BCCH_pdu.payload[0],
+				     &eNB_mac_inst[Mod_id].BCCH_pdu.payload[0],
 				     1,
 				     Mod_id,
 				     0); // not used in this case 
@@ -1370,7 +1374,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
     mcch_sdu_length = mac_rrc_data_req(Mod_id,
 				       frame,
 				       MCCH,1,
-				       (char*)&eNB_mac_inst[Mod_id].MCCH_pdu.payload[0],
+				       &eNB_mac_inst[Mod_id].MCCH_pdu.payload[0],
 				       1,// this is eNB
 				       Mod_id, // index 
 				       i); // this is the mbsfn sync area index 
@@ -1498,7 +1502,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
 				   sdu_lengths, 
 				   sdu_lcids,
 				   255,    // no drx
-				   NULL,  // no timing advance
+				   0,  // no timing advance
 				   NULL,  // no contention res id
 				   padding,                        
 				   post_padding);
@@ -1521,7 +1525,7 @@ int schedule_MBMS(unsigned char Mod_id,u32 frame, u8 subframe) {
 #if defined(USER_MODE) && defined(OAI_EMU)
         /* Tracing of PDU is done on UE side */
 	if (oai_emulation.info.opt_enabled)
-            trace_pdu(1, (uint8_t *)eNB_mac_inst[Mod_id].MCH_pdu.payload[0],
+            trace_pdu(1, (uint8_t *)eNB_mac_inst[Mod_id].MCH_pdu.payload,
 		      TBS, Mod_id, 6, 0xffff,  // M_RNTI = 6 in wirehsark
 		      eNB_mac_inst[Mod_id].subframe,0,0);
 	LOG_D(OPT,"[eNB %d][MCH] Frame %d : MAC PDU with size %d\n", 
@@ -1595,7 +1599,7 @@ void schedule_RA(unsigned char Mod_id,u32 frame, unsigned char subframe,unsigned
 	  rrc_sdu_length = mac_rrc_data_req(Mod_id,
 					    frame,
 					    CCCH,1,
-					    (char*)&eNB_mac_inst[Mod_id].CCCH_pdu.payload[0],
+					    &eNB_mac_inst[Mod_id].CCCH_pdu.payload[0],
 					    1,
 					    Mod_id,
 					    0); // not used in this case 
@@ -3376,7 +3380,7 @@ void schedule_ue_spec(unsigned char Mod_id,
   u16 sdu_length_total=0;
   //  unsigned char loop_count;
   unsigned char DAI;
-  u16 i=0,ii=0,tpmi0=1;
+  u16 i=0;
   u8 dl_pow_off[NUMBER_OF_UE_MAX];
   unsigned char rballoc_sub_UE[NUMBER_OF_UE_MAX][N_RBGS_MAX];
 //   unsigned char rballoc_sub[N_RBGS_MAX];
@@ -4185,14 +4189,67 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   unsigned int nCCE=0;
   int mbsfn_status=0;
   u32 RBalloc=0;
+#ifdef EXMIMO
   int ret;
+#endif
+#if defined(ENABLE_ITTI)
+  MessageDef *msg_p;
+  const char *msg_name;
+  instance_t instance;
+#endif
 
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,1);
 
-  // clear DCI and BCCH contents before scheduling
+#if defined(ENABLE_ITTI)
+  do {
+    // Checks if a message has been sent to MAC sub-task
+    itti_poll_msg (TASK_MAC_ENB, &msg_p);
+
+    if (msg_p != NULL) {
+      msg_name = ITTI_MSG_NAME (msg_p);
+      instance = ITTI_MSG_INSTANCE (msg_p);
+
+      switch (ITTI_MSG_ID(msg_p)) {
+        case RRC_MAC_BCCH_DATA_REQ:
+          LOG_D(MAC, "Received %s from %s: instance %d, frame %d, eNB_index %d\n",
+                msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
+                RRC_MAC_BCCH_DATA_REQ (msg_p).frame, RRC_MAC_BCCH_DATA_REQ (msg_p).enb_index);
+
+          // TODO process BCCH data req.
+          break;
+
+        case RRC_MAC_CCCH_DATA_REQ:
+          LOG_D(MAC, "Received %s from %s: instance %d, frame %d, eNB_index %d\n",
+                msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
+                RRC_MAC_CCCH_DATA_REQ (msg_p).frame, RRC_MAC_CCCH_DATA_REQ (msg_p).enb_index);
+
+          // TODO process CCCH data req.
+          break;
+
+#ifdef Rel10
+        case RRC_MAC_MCCH_DATA_REQ:
+          LOG_D(MAC, "Received %s from %s: instance %d, frame %d, eNB_index %d, mbsfn_sync_area %d\n",
+                msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
+                RRC_MAC_MCCH_DATA_REQ (msg_p).frame, RRC_MAC_MCCH_DATA_REQ (msg_p).enb_index, RRC_MAC_MCCH_DATA_REQ (msg_p).mbsfn_sync_area);
+
+          // TODO process MCCH data req.
+          break;
+#endif
+
+        default:
+          LOG_E(MAC, "Received unexpected message %s\n", msg_name);
+          break;
+      }
+
+      free (msg_p);
+    }
+  } while(msg_p != NULL);
+#endif
+
+// clear DCI and BCCH contents before scheduling
   DCI_pdu->Num_common_dci  = 0;
   DCI_pdu->Num_ue_spec_dci = 0;
   eNB_mac_inst[Mod_id].bcch_active = 0;
@@ -4206,8 +4263,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
 
   //if (subframe%5 == 0)
 #ifdef EXMIMO 
-  //pdcp_run(frame, 1, 0, Mod_id);
- 
+  pdcp_run(frame, 1, 0, Mod_id);
+  /*
   ret = pthread_mutex_trylock (&pdcp_mutex);
   if (ret != 0) {
     if (ret==EBUSY)
@@ -4230,9 +4287,16 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
       LOG_W(PDCP,"PDCP thread busy!!! inst_cnt=%d\n",pdcp_instance_cnt);
     }
   }
+  */
 #endif
 #ifdef CELLULAR
   rrc_rx_tx(Mod_id, frame, 0, 0);
+#else
+  // check HO
+  rrc_rx_tx(Mod_id,
+	    frame,
+	    1,
+	    Mod_id);
 #endif
 
 #ifdef Rel10

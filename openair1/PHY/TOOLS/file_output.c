@@ -132,6 +132,7 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
 	fclose(fp);  
 	return(0);
   }
+  return 0;
 }
 
 #endif // USER_MODE

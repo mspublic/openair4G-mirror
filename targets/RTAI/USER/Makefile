@@ -12,21 +12,48 @@ endif
 CFLAGS += -O2
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
 
-SRC = synctest.c condtest.c lte-softmodem.c
+SRC = synctest.c condtest.c #lte-softmodem.c
 
 ifndef RTAI
 RTAI=1
 endif
 
+ifndef USRP
+USRP=0
+endif
+
 ifeq ($(RTAI),1)
 CFLAGS += -DENABLE_RTAI_CLOCK
-RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o 
+CFLAGS += -DCONFIG_RTAI_LXRT_INLINE  #remend the RTAI warning
+#RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o 
+RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o rt_wrapper.o 
+ifeq ($(USRP),1)
+RTAI_OBJ += lte-softmodem-usrp.o
 else
-OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o
+RTAI_OBJ += lte-softmodem.o
+endif
+else
+#OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-softmodem.o rt_wrapper.o
+OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o rt_wrapper.o
+ifeq ($(USRP),1)
+OBJ += lte-softmodem-usrp.o
+else
+OBJ += lte-softmodem.o
+endif
 CFLAGS += -DENABLE_USE_CPU_EXECUTION_TIME
 endif
 
-OBJ += $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
+OBJ += $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o #$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
+
+ifeq ($(USRP),1)
+include $(OPENAIR_TARGETS)/ARCH/USRP/USERSPACE/LIB/Makefile.inc
+endif
+
+OBJ += $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
+CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
+
+COMMON_UTILS_DIR    = $(OPENAIR_HOME)/common/utils
+include $(COMMON_UTILS_DIR)/Makefile.inc
 
 TOP_DIR = $(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -77,11 +104,11 @@ ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
 OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS) 
 OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
-OBJ += $(PDCP_DIR)/pdcp_thread.o
+#OBJ += $(PDCP_DIR)/pdcp_thread.o
 CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
 endif
 
-CFLAGS += $(L2_incl) $(UTIL_incl)
+CFLAGS += $(L2_incl) $(UTIL_incl) $(UTILS_incl)
 
 CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES	#-I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM
 
@@ -136,6 +163,11 @@ else
 LDFLAGS += -lrt
 endif
 
+ifeq ($(USRP),1)
+CFLAGS += -I/opt/uhd/include -L/opt/uhd/lib -luhd -lpthread -lstdc++
+endif
+#CFLAGS += -I/usr/include/c++/4.6 -I/usr/include/c++/4.6/x86_64-linux-gnu -I/usr/include/rtai/
+
 all: lte-softmodem
 
 $(LFDS_DIR)/bin/liblfds611.a:
@@ -150,6 +182,10 @@ $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
 
+$(USRP_OBJ):$(USRP_FILE_OBJ)
+	@echo Compiling openair_usrp.cpp
+	@$(CXX) -c $(USRP_CFLAGS) $(USRP_FILE_OBJ) -o $(USRP_OBJ)
+
 condtest: condtest.c 
 	$(CC) $(CFLAGS) $(LDFLAGS) condtest.c -o condtest
 
@@ -160,6 +196,8 @@ synctest: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ)
 lte-softmodem: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
 
+lte-softmodem-usrp: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(USRP_OBJ) $(LFDS_DIR)/bin/liblfds611.a
+	$(CC) $(USRP_OBJ) $(CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-softmodem-usrp $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv lte-softmodem lte-softmodem_eNB
@@ -272,13 +310,14 @@ cleanalmostall: clean
 	rm -rf synctest_eNB synctest_UE
 
 cleanall: clean cleanasn1
-	rm -rf condtest synctest lte-softmodem
+	rm -rf condtest synctest lte-softmodem lte-softmodem-usrp
 	rm -rf synctest_eNB synctest_UE
 
 show:
 	@echo $(CFLAGS)
 	@echo $(EXTRA_CFLAGS)
-	@echo $(OBJ) $(RTAI_OBJ)
+	@echo $(OBJ) $(RTAI_OBJ) 
+	@echo $(USRP_OBJ)
 	@echo rrc_cellular variable is $(rrc_cellular)
 	@echo eNB_flag is $(eNB_flag)
 	@echo UE_flag is $(UE_flag)
