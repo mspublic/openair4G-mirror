@@ -1057,9 +1057,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	if (next_slot == 0) {
 	  
 	  // First half of PSS/SSS (FDD)
-	  if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
+	  if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
 	    generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-			 4*AMP,
+			 AMP,
 			 &phy_vars_eNB->lte_frame_parms,
 			 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 			 next_slot);
@@ -1172,10 +1172,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
 	if (abstraction_flag==0) {
 	  
-          if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
+          if (phy_vars_eNB->lte_frame_parms.frame_type == TDD) {
 	    //	  printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
 	    generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-			 4*AMP,
+			 AMP,
 			 &phy_vars_eNB->lte_frame_parms,
 			 2,
 			 next_slot);
@@ -1188,9 +1188,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	
 	if (abstraction_flag==0) {
 	  
-	  if (phy_vars_eNB->lte_frame_parms.frame_type == 0) {
+	  if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
 	    generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-			 4*AMP,
+			 AMP,
 			 &phy_vars_eNB->lte_frame_parms,
 			 (phy_vars_eNB->lte_frame_parms.Ncp==0) ? 6 : 5,
 			 next_slot);
@@ -1224,7 +1224,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  if (phy_vars_eNB->lte_frame_parms.frame_type == 1) {
 	    //	    printf("Generating PSS (frame %d, subframe %d)\n",phy_vars_eNB->frame,next_slot>>1);
 	    generate_pss(phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id],
-			 4*AMP,
+			 AMP,
 			 &phy_vars_eNB->lte_frame_parms,
 			 2,
 			 next_slot);
@@ -1829,7 +1829,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
 
 #ifdef DEBUG_PHY_PROC
-	LOG_I(PHY,"[eNB %d][PDSCH %x/%d] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %d, G %d, nb_rb %d, mcs %d, pmi_alloc %x, Ndi %d, rv %d (round %d)\n",
+	LOG_I(PHY,"[eNB %d][PDSCH %x/%d] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %d, G %d, nb_rb %d, mcs %d, pmi_alloc %x, rv %d (round %d)\n",
 	      phy_vars_eNB->Mod_id, phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti,harq_pid,
 	      phy_vars_eNB->frame, next_slot>>1, input_buffer_length,
 	      get_G(&phy_vars_eNB->lte_frame_parms,
@@ -1839,14 +1839,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		    num_pdcch_symbols,phy_vars_eNB->frame,next_slot>>1),
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->nb_rb,
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->mcs,
-          pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->pmi_alloc),
-	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->Ndi,
+	      pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->pmi_alloc),
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->rvidx,
 	      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid]->round);
 #endif
 
 	  phy_vars_eNB->eNB_UE_stats[(u8)UE_id].dlsch_sliding_cnt++;
-	  if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->harq_processes[harq_pid]->Ndi == 1) {
+	  if (phy_vars_eNB->dlsch_eNB[(u32)UE_id][0]->harq_processes[harq_pid]->round == 0) {
 
 	    phy_vars_eNB->eNB_UE_stats[(u32)UE_id].dlsch_trials[0]++;
 	  
@@ -2697,12 +2696,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
 
 #ifdef DEBUG_PHY_PROC
-      LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, Ndi %d, first_rb %d, nb_rb %d, mcs %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
+      LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, mcs %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
 	    phy_vars_eNB->Mod_id,harq_pid,frame,last_slot>>1,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->rar_alloc,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round,
-	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->Ndi,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->first_rb,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb,
 	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->mcs,
@@ -3495,8 +3493,8 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
     if (phy_vars_eNB->frame >= 1000)
     mac_xface->macphy_exit("Exiting after 1000 Frames\n");
   */
-  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER, (last_slot + 1) % 20);
-  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER, phy_vars_eNB->frame);
+  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_ENB, (last_slot + 1) % 20);
+  vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_ENB, phy_vars_eNB->frame);
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,1);
 
   start_meas(&phy_vars_eNB->phy_proc);

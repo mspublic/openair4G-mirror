@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#define G_LOG_DOMAIN ("UI")
+
 #include <gtk/gtk.h>
 
 #include "rc.h"

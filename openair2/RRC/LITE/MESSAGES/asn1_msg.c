@@ -103,6 +103,13 @@ int errno;
 #define msg printf
 #endif
 
+typedef struct xer_sprint_string_s
+{
+    char *string;
+    size_t string_size;
+    size_t string_index;
+} xer_sprint_string_t;
+
 extern unsigned char NB_eNB_INST;
 
 uint16_t two_tier_hexagonal_cellIds[7] = {0,1,2,4,5,7,8};
@@ -114,6 +121,46 @@ uint16_t two_tier_hexagonal_adjacent_cellIds[7][6] = {{1,2,4,5,7,8},    // CellI
 				                      {8,0,5,9,17,12},  // CellId 7
 				                      {15,1,0,7,12,10}};// CellId 8
 
+/*
+ * This is a helper function for xer_sprint, which directs all incoming data
+ * into the provided string.
+ */
+static int xer__print2s (const void *buffer, size_t size, void *app_key)
+{
+    xer_sprint_string_t *string_buffer = (xer_sprint_string_t *) app_key;
+    size_t string_remaining = string_buffer->string_size - string_buffer->string_index;
+
+    if (string_remaining > 0)
+    {
+        if (size > string_remaining)
+        {
+          size = string_remaining;
+        }
+        memcpy(&string_buffer->string[string_buffer->string_index], buffer, size);
+        string_buffer->string_index += size;
+    }
+
+    return 0;
+}
+
+int xer_sprint (char *string, size_t string_size, asn_TYPE_descriptor_t *td, void *sptr)
+{
+    asn_enc_rval_t er;
+    xer_sprint_string_t string_buffer;
+
+    string_buffer.string = string;
+    string_buffer.string_size = string_size;
+    string_buffer.string_index = 0;
+
+    er = xer_encode(td, sptr, XER_F_BASIC, xer__print2s, &string_buffer);
+    if (er.encoded > string_buffer.string_size)
+    {
+        LOG_E(RRC, "xer_sprint string buffer too small, got %d need %d!", string_buffer.string_size, er.encoded);
+        er.encoded = string_buffer.string_size;
+    }
+
+    return er.encoded;
+}
 
 uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index) {
   return(two_tier_hexagonal_adjacent_cellIds[Mod_id][index]);
@@ -1029,7 +1076,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 
 }
 
-uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS) {
+uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS) {
 
 
   asn_enc_rval_t enc_rval;
@@ -1044,7 +1091,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer, const int dedicatedInfoNA
   ul_dcch_msg.message.choice.c1.present = UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete;
   rrcConnectionSetupComplete            = &ul_dcch_msg.message.choice.c1.choice.rrcConnectionSetupComplete;
 
-  rrcConnectionSetupComplete->rrc_TransactionIdentifier = 0x2;
+  rrcConnectionSetupComplete->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetupComplete->criticalExtensions.present = RRCConnectionSetupComplete__criticalExtensions_PR_c1;
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.present = RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8;
 
@@ -1089,7 +1136,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer, const int dedicatedInfoNA
 
 }
 
-uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
+uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer, const uint8_t Transaction_id) {
 
 
   asn_enc_rval_t enc_rval;
@@ -1104,7 +1151,7 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
   ul_dcch_msg.message.choice.c1.present           = UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete;
   rrcConnectionReconfigurationComplete            = &ul_dcch_msg.message.choice.c1.choice.rrcConnectionReconfigurationComplete;
 
-  rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = 0x2;
+  rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfigurationComplete->criticalExtensions.present = RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
   rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
 
@@ -1502,8 +1549,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 					struct MeasConfig__speedStatePars *speedStatePars,
 					RSRP_Range_t                      *rsrp,
                                         C_RNTI_t                          *cba_rnti, 
-					uint8_t                           *nas_pdu,
-                                        uint32_t                           nas_length
+                                        struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList
                                        ) {
 
   asn_enc_rval_t enc_rval;
@@ -1575,14 +1621,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
   else
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   
-  if ((nas_pdu == NULL) || (nas_length == 0)) {
-    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *) NULL;
-  } else {
-      DedicatedInfoNAS_t *dedicatedInfoNAS;
-      dedicatedInfoNAS = (DedicatedInfoNAS_t *) &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList;
-      dedicatedInfoNAS->buf = nas_pdu;
-      dedicatedInfoNAS->size = nas_length;
-  }
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = dedicatedInfoNASList;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->s_Measure= rsrp;
 
@@ -1593,6 +1632,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 #ifdef XER_PRINT
    xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
 #endif
+
   //#ifdef USER_MODE
   LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   // for (i=0;i<30;i++)
@@ -1843,9 +1883,9 @@ uint8_t do_DLInformationTransfer(uint8_t **buffer, uint8_t transaction_id, uint3
   dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer.criticalExtensions.choice.c1.choice.dlInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.size = pdu_length;
   dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer.criticalExtensions.choice.c1.choice.dlInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
 
-  encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message, (void*) &dl_dcch_msg, NULL, (void **) buffer);
+  encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message, NULL, (void*) &dl_dcch_msg, (void **) buffer);
 
-  return((encoded + 7) / 8);
+  return encoded;
 }
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer)
@@ -1864,9 +1904,9 @@ uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t 
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.size = pdu_length;
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
 
-  encoded = uper_encode_to_new_buffer (&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, NULL, (void **) buffer);
+  encoded = uper_encode_to_new_buffer (&asn_DEF_UL_DCCH_Message, NULL, (void*) &ul_dcch_msg, (void **) buffer);
 
-  return((encoded + 7) / 8);
+  return encoded;
 }
 
 OAI_UECapability_t *fill_ue_capability() {
@@ -1891,12 +1931,8 @@ OAI_UECapability_t *fill_ue_capability() {
   Bandlist[3].bandEUTRA  = 7;   // 2500-2570, 2620-2690 FDD
   Bandlist[3].halfDuplex = 0;
 
-  memset((void*)&InterFreqBandInfo,0,sizeof(InterFreqBandList_t));
-
-  memset((void*)&BandInfoEUTRA[0],0,sizeof(BandInfoEUTRA_t));
-  memset((void*)&BandInfoEUTRA[1],0,sizeof(BandInfoEUTRA_t));
-  memset((void*)&BandInfoEUTRA[2],0,sizeof(BandInfoEUTRA_t));
-  memset((void*)&BandInfoEUTRA[3],0,sizeof(BandInfoEUTRA_t));
+  memset((void*)InterFreqBandInfo, 0, sizeof(InterFreqBandInfo));
+  memset((void*)BandInfoEUTRA, 0, sizeof(BandInfoEUTRA));
 
   InterFreqBandInfo[0][0].interFreqNeedForGaps = 0;
   InterFreqBandInfo[0][1].interFreqNeedForGaps = 1;
@@ -1915,11 +1951,9 @@ OAI_UECapability_t *fill_ue_capability() {
   InterFreqBandInfo[3][2].interFreqNeedForGaps = 1;
   InterFreqBandInfo[3][3].interFreqNeedForGaps = 0;
 
-
-  
   LOG_I(RRC,"Allocating %d bytes for UE_EUTRA_Capability\n",sizeof(*UE_EUTRA_Capability));
-  UE_EUTRA_Capability = CALLOC(1,sizeof(*UE_EUTRA_Capability));
-  memset(UE_EUTRA_Capability,0,sizeof(*UE_EUTRA_Capability));
+
+  UE_EUTRA_Capability = CALLOC(1, sizeof(*UE_EUTRA_Capability));
 
   UE_EUTRA_Capability->accessStratumRelease = 0;//AccessStratumRelease_rel8;
   UE_EUTRA_Capability->ue_Category          = 4;
@@ -1928,10 +1962,10 @@ OAI_UECapability_t *fill_ue_capability() {
   UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0003=0;
   UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0004=0;
   UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0006=0;
-  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101=0;    
-  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102=0;    
-  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103=0;    
-  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104=0;    
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103=0;
+  UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104=0;
 
   UE_EUTRA_Capability->pdcp_Parameters.maxNumberROHC_ContextSessions = &maxNumberROHC_ContextSessions;
 
@@ -1982,22 +2016,39 @@ OAI_UECapability_t *fill_ue_capability() {
   				   MAX_UE_CAPABILITY_SIZE);
 
 #if defined(ENABLE_ITTI)
-  /* Test code */
+# if defined(DISABLE_XER_SPRINT)
   {
     MessageDef *message_p;
 
     message_p = itti_alloc_new_message (TASK_RRC_UE, RRC_UE_EUTRA_CAPABILITY);
-    memcpy (&message_p->msg, (void *) UE_EUTRA_Capability, sizeof(RrcUeEutraCapability));
+    memcpy (&message_p->ittiMsg, (void *) UE_EUTRA_Capability, sizeof(RrcUeEutraCapability));
 
     itti_send_msg_to_task (TASK_UNKNOWN, NB_eNB_INST, message_p);
   }
+# else
+  {
+    char        message_string[10000];
+    size_t      message_string_size;
+
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UE_EUTRA_Capability, (void *)UE_EUTRA_Capability)) > 0)
+    {
+      MessageDef *message_p;
+
+      message_p = itti_alloc_new_message_sized (TASK_RRC_UE, GENERIC_LOG, message_string_size);
+      memcpy(&message_p->ittiMsg.generic_log, message_string, message_string_size);
+
+      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    }
+  }
+# endif
 #endif
 
   UECapability.sdu_size = (enc_rval.encoded + 7) / 8;
-  LOG_I(PHY, "[RRC]UE Capability encoded, %d bytes (%d bits)\n", UECapability.sdu_size, enc_rval.encoded+7);
+  LOG_I(PHY, "[RRC]UE Capability encoded, %d bytes (%d bits)\n",
+        UECapability.sdu_size, enc_rval.encoded + 7);
   {
     char *sdu;
-    sdu = malloc (3 * UECapability.sdu_size);
+    sdu = malloc (3 * UECapability.sdu_size + 1 /* For '\0' */);
 
     for (i = 0; i < UECapability.sdu_size; i++)
       sprintf (&sdu[3 * i], "%02x.", UECapability.sdu[i]);
@@ -2017,7 +2068,7 @@ uint8_t do_SIB1_TDD_config_cell (LTE_DL_FRAME_PARMS *frame_parms,TDD_Config_t *t
   tdd_Config->subframeAssignment=frame_parms->tdd_config; //TDD_Config__subframeAssignment_sa3;
   tdd_Config->specialSubframePatterns=0;//frame_parms->tdd_config_S;//TDD_Config__specialSubframePatterns_ssp0;
   //msg ("ASN1 TDD_config %d\n", frame_parms->tdd_config);
-return 0;
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

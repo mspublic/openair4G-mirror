@@ -76,15 +76,23 @@ int log_list_head = 0;
 int log_shutdown;
 #endif
 
+#ifndef RTAI
 static int gfd;
+#endif
 
 static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_ORANGE, LOG_BLUE, "", ""};  /*!< \brief Optional start-format strings for highlighting */
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET,LOG_RESET,  "",""};   /*!< \brief Optional end-format strings for highlighting */
 
+#if defined(ENABLE_ITTI)
+static log_instance_type_t log_instance_type;
+#endif
+
 int logInit (void)
 {
 #ifdef USER_MODE
+#ifndef RTAI
     int i;
+#endif
     g_log = calloc(1, sizeof(log_t));
 
 #else
@@ -147,6 +155,14 @@ int logInit (void)
     g_log->log_component[RRC].fd = 0;
     g_log->log_component[RRC].filelog = 0;
     g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
+
+    g_log->log_component[NAS].name = "NAS";
+    g_log->log_component[NAS].level = LOG_TRACE;
+    g_log->log_component[NAS].flag = LOG_MED;
+    g_log->log_component[NAS].interval =  1;
+    g_log->log_component[NAS].fd = 0;
+    g_log->log_component[NAS].filelog = 0;
+    g_log->log_component[NAS].filelog_name = "/tmp/nas.log";
 
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_EMERG;
@@ -291,6 +307,22 @@ int logInit (void)
     g_log->log_component[OSA].fd = 0;
     g_log->log_component[OSA].filelog = 0;
     g_log->log_component[OSA].filelog_name = "";
+
+    g_log->log_component[ENB_APP].name = "ENB_APP";
+    g_log->log_component[ENB_APP].level = LOG_EMERG;
+    g_log->log_component[ENB_APP].flag = LOG_MED;
+    g_log->log_component[ENB_APP].interval = 1;
+    g_log->log_component[ENB_APP].fd = 0;
+    g_log->log_component[ENB_APP].filelog = 0;
+    g_log->log_component[ENB_APP].filelog_name = "";
+
+    g_log->log_component[TMR].name = "TMR";
+    g_log->log_component[TMR].level = LOG_EMERG;
+    g_log->log_component[TMR].flag = LOG_MED;
+    g_log->log_component[TMR].interval = 1;
+    g_log->log_component[TMR].fd = 0;
+    g_log->log_component[TMR].filelog = 0;
+    g_log->log_component[TMR].filelog_name = "";
 
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
@@ -482,10 +514,14 @@ void logRecord_thread_safe(const char *file, const char *func,
         syslog(g_log->level, "%s", log_buffer);
     }
     if (g_log->filelog) {
-        write(gfd, log_buffer, total_len);
+      if (write(gfd, log_buffer, total_len) < total_len) {
+        // TODO assert ?
+      }
     }
     if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-        write(g_log->log_component[comp].fd, log_buffer, total_len);
+      if (write(g_log->log_component[comp].fd, log_buffer, total_len) < total_len) {
+        // TODO assert ?
+      }
     }
 #endif
 
@@ -629,7 +665,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
         rtf_put (FIFO_PRINTF_NO, c->log_buffer, len);
     }
 #else
-        fprintf(stdout, "%s", c->log_buffer);
+        fwrite(c->log_buffer, len, 1, stdout);
 #endif
 
 #ifndef RTAI
@@ -637,22 +673,97 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
         syslog(g_log->level, "%s", c->log_buffer);
     }
     if (g_log->filelog) {
-        write(gfd, c->log_buffer, len);
+      if (write(gfd, c->log_buffer, len) < len){
+        // TODO assert ?
+      }
     }
     if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-        write(g_log->log_component[comp].fd, c->log_buffer, len);
+      if (write(g_log->log_component[comp].fd, c->log_buffer, len) < len) {
+        // TODO assert ?
+      }
     }
 #endif
 
 #if defined(ENABLE_ITTI)
     if (level <= LOG_DEBUG)
     {
+        task_id_t origin_task_id = TASK_UNKNOWN;
         MessagesIds messages_id;
         MessageDef *message_p;
         size_t      message_string_size;
         char       *message_msg_p;
 
         message_string_size = log_end - log_start;
+
+#if !defined(DISABLE_ITTI_DETECT_SUB_TASK_ID)
+        /* Try to identify sub task ID from log information (comp, log_instance_type) */
+        switch (comp)
+        {
+          case PHY:
+            switch (log_instance_type)
+            {
+              case LOG_INSTANCE_ENB:
+                origin_task_id = TASK_PHY_ENB;
+                break;
+
+              case LOG_INSTANCE_UE:
+                origin_task_id = TASK_PHY_UE;
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case MAC:
+            switch (log_instance_type)
+            {
+              case LOG_INSTANCE_ENB:
+                origin_task_id = TASK_MAC_ENB;
+                break;
+
+              case LOG_INSTANCE_UE:
+                origin_task_id = TASK_MAC_UE;
+
+              default:
+                break;
+            }
+           break;
+
+          case RLC:
+            switch (log_instance_type)
+            {
+              case LOG_INSTANCE_ENB:
+                origin_task_id = TASK_RLC_ENB;
+                break;
+
+              case LOG_INSTANCE_UE:
+                origin_task_id = TASK_RLC_UE;
+
+              default:
+                break;
+            }
+            break;
+
+          case PDCP:
+            switch (log_instance_type)
+            {
+              case LOG_INSTANCE_ENB:
+                origin_task_id = TASK_PDCP_ENB;
+                break;
+
+              case LOG_INSTANCE_UE:
+                origin_task_id = TASK_PDCP_UE;
+
+              default:
+                break;
+            }
+            break;
+
+          default:
+            break;
+        }
+#endif
 
         switch (level)
         {
@@ -679,30 +790,30 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
             messages_id = DEBUG_LOG;
             break;
         }
-        message_p = itti_alloc_new_message_sized(TASK_UNKNOWN, messages_id, message_string_size);
+        message_p = itti_alloc_new_message_sized(origin_task_id, messages_id, message_string_size);
         switch (level)
         {
           case LOG_EMERG:
           case LOG_ALERT:
           case LOG_CRIT:
           case LOG_ERR:
-            message_msg_p = (char *) &message_p->msg.error_log;
+            message_msg_p = (char *) &message_p->ittiMsg.error_log;
             break;
 
           case LOG_WARNING:
-            message_msg_p = (char *) &message_p->msg.warning_log;
+            message_msg_p = (char *) &message_p->ittiMsg.warning_log;
             break;
 
           case LOG_NOTICE:
-            message_msg_p = (char *) &message_p->msg.notice_log;
+            message_msg_p = (char *) &message_p->ittiMsg.notice_log;
             break;
 
           case LOG_INFO:
-            message_msg_p = (char *) &message_p->msg.info_log;
+            message_msg_p = (char *) &message_p->ittiMsg.info_log;
             break;
 
           default:
-            message_msg_p = (char *) &message_p->msg.debug_log;
+            message_msg_p = (char *) &message_p->ittiMsg.debug_log;
             break;
         }
         memcpy(message_msg_p, log_start, message_string_size);
@@ -843,10 +954,11 @@ int is_newline( char *str, int size)
 
 void logClean (void)
 {
-    int i;
 #ifdef RTAI
     rtf_destroy (FIFO_PRINTF_NO);
 #else
+    int i;
+
     if (g_log->syslog) {
         closelog();
     }
@@ -861,6 +973,13 @@ void logClean (void)
 #endif
 
 }
+
+#if defined(ENABLE_ITTI)
+void log_set_instance_type (log_instance_type_t instance)
+{
+    log_instance_type = instance;
+}
+#endif
 
 #ifdef LOG_TEST
 

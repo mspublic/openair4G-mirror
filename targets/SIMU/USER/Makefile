@@ -1,5 +1,9 @@
-# Include some standard directives
-include Makerules
+# Include some shared directives
+include $(OPENAIR_TARGETS)/Makerules
+
+default: oaisim
+
+include $(OPENAIR_TARGETS)/Makefile.common
 
 CPUFLAGS = -mmmx -msse -msse2 -msse4.1 -march=native
 # FORCE ssse3 for compilation of openair on User Mode Linux
@@ -7,27 +11,13 @@ CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ;
 CPUFLAGS += $(shell if grep --silent -w sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
 linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
-COMMON_UTILS_DIR    = $(OPENAIR_HOME)/common/utils
 TOP_DIR             = $(OPENAIR1_DIR)
 OPENAIR1_TOP        = $(OPENAIR1_DIR)
 OPENAIR2_TOP        = $(OPENAIR2_DIR)
 OPENAIR3_TOP        = $(OPENAIR3_DIR)
 OPENAIR3            = $(OPENAIR3_DIR)
 
-S1AP_DIR            = $(OPENAIR_HOME)/openair-cn/S1AP
-SCTP_DIR            = $(OPENAIR_HOME)/openair-cn/SCTP
-
-export S1AP_DIR
-export COMMON_UTILS_DIR
-
-CFLAGS = -O2 -Wall -fno-strict-aliasing -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
-
-ifdef ENABLE_ITTI
-CFLAGS += -DENABLE_ITTI
-ifndef DISABLE_ITTI_EVENT_FD
-CFLAGS += -DENABLE_EVENT_FD
-endif
-endif
+CFLAGS += $(COMMON_CFLAGS) -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 # Check if GCC version is greater or equal to 4.4
 GCCVERSIONGTEQ44 := $(shell expr `gcc -dumpversion | cut -f1,2 -d. --output-delimiter=""` \>= 44)
@@ -60,7 +50,7 @@ endif
 
 # activate OCG and libxml only under linux
 ifeq ($(linux),1)
-CFLAGS += -I/usr/include/libxml2 -L/usr/local/lib -I/usr/include/atlas -L/usr/X11R6/lib
+CFLAGS += $(LIBXML2_CFLAGS) -L/usr/local/lib -I/usr/include/atlas -L/usr/X11R6/lib
 OCG_FLAG = 1
 cygwin=0
 CFLAGS += -DLINUX
@@ -173,10 +163,6 @@ ifndef DISABLE_XER_PRINT
 CFLAGS += -DXER_PRINT
 endif
 
-ifneq ($(USE_MME), R8)
-UPDATE_RELEASE_9=1
-endif
-
 ifdef SECU
 ifeq ($(NETTLE_FOUND), 0)
 @echo "Nettle library >= 2.5 is not installed on your system, continuing with security disabled"
@@ -187,13 +173,11 @@ ifeq ($(OPENSSL_FOUND), 0)
 SECU=0
 else
 CFLAGS += -DENABLE_SECURITY
-OSA_LDFLAGS += `pkg-config --libs nettle`
-OSA_LDFLAGS += `pkg-config --libs openssl`
+LIBS += $(OPENSSL_LIBS) $(NETTLE_LIBS)
 endif
 endif
 endif
 
-include $(COMMON_UTILS_DIR)/Makefile.inc
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
@@ -201,17 +185,14 @@ include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 include $(OPENAIR2_DIR)/UTIL/Makefile.inc
-include $(OPENAIR2_DIR)/S1AP/Makefile.inc
-include $(OPENAIR2_DIR)/S1AP/MESSAGES/Makefile.inc
+include $(OPENAIR2_DIR)/ENB_APP/Makefile.inc
 
-#LOG_OBJS +=  $(LOG_DIR)/vcd_signal_dumper.o
-#LOG_OBJS +=  $(LOG_DIR)/log.o
-
-ITTI_MESSAGES_H = messages_xml.h
-
-ITTI_MESSAGES_XML = messages.xml
-
-ITTI_MESSAGES_FILE =  $(ITTI_DIR)/intertask_interface_types.h
+INCLUDES  = -I$(TOP_DIR)
+INCLUDES += $(L2_incl)
+INCLUDES += $(ENB_APP_incl)
+INCLUDES += $(UTIL_incl)
+INCLUDES += $(UTILS_incl)
+INCLUDES += -I$(ASN1_MSG_INC)
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o
@@ -224,17 +205,15 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
-#L2_OBJS =
 
-OAISIM_OBJS_COMMON = channel_sim.o
-OAISIM_OBJS_COMMON += init_lte.o
-OAISIM_OBJS_COMMON += oaisim_config.o
-OAISIM_OBJS_COMMON += sinr_sim.o
-OAISIM_OBJS_COMMON += cor_SF_sim.o
-#OAISIM_OBJS_COMMON += phy_procedures_sim_form.o
-OAISIM_OBJS_COMMON += oaisim_functions.o
+OAISIM_OBJS_COMMON  = $(OPENAIR_TARGETS)/SIMU/USER/channel_sim.o
+OAISIM_OBJS_COMMON += $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o
+OAISIM_OBJS_COMMON += $(OPENAIR_TARGETS)/SIMU/USER/oaisim_config.o
+OAISIM_OBJS_COMMON += $(OPENAIR_TARGETS)/SIMU/USER/sinr_sim.o
+OAISIM_OBJS_COMMON += $(OPENAIR_TARGETS)/SIMU/USER/cor_SF_sim.o
+OAISIM_OBJS_COMMON += $(OPENAIR_TARGETS)/SIMU/USER/oaisim_functions.o
 
-OAISIM_OBJS = oaisim.o
+OAISIM_OBJS = $(OPENAIR_TARGETS)/SIMU/USER/oaisim.o
 
 ifdef XFORMS
 TOOLS_OBJS += $(OPENAIR1_DIR)/PHY/TOOLS/lte_phy_scope.o
@@ -244,18 +223,18 @@ ifdef PAD
 CFLAGS += -DPAD
 endif
 
-OAISIM_PAD_OBJS =  discrete_event_generator.o
-OAISIM_PAD_OBJS += threadpool.o
-OAISIM_PAD_OBJS += oaisim_pad.o
+OAISIM_PAD_OBJS =  $(OPENAIR_TARGETS)/SIMU/USER/discrete_event_generator.o
+OAISIM_PAD_OBJS += $(OPENAIR_TARGETS)/SIMU/USER/threadpool.o
+OAISIM_PAD_OBJS += $(OPENAIR_TARGETS)/SIMU/USER/oaisim_pad.o
 #deactivate the log offloading 
 ifndef LOG_THREAD
 CFLAGS +=-DLOG_NO_THREAD
 endif
 
 ifdef PROC
-INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
-INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
-CFLAGS +=-DPROC
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/Process.o
+CFLAGS += -DPROC
 endif
 
 CFLAGS += -DENABLE_VCD_FIFO
@@ -268,18 +247,20 @@ endif
 # Check if libpgm is installed and use it if found instead of the unreliable
 # multicast
 ifeq ($(PGM_FOUND), 1)
-CFLAGS += `pkg-config --cflags openpgm-5.1` -DENABLE_PGM_TRANSPORT
-PGM_LDFLAGS = `pkg-config --libs openpgm-5.1`
+CFLAGS		+= $(PGM_CFLAGS) -DENABLE_PGM_TRANSPORT
+LIBS		+= $(PGM_LIBS)
 endif
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(NAS_OBJS) $(INT_OBJS) $(UTIL_OBJ) $(UTILS_OBJS) $(OAISIM_OBJS_COMMON) 
+OBJ  = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(NAS_OBJS)
+OBJ += $(INT_OBJS) $(UTIL_OBJ) $(UTILS_OBJS) $(OAISIM_OBJS_COMMON) $(ENB_APP_OBJS) 
 ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
 endif
 
-LIBS = $(LFDS_DIR)/bin/liblfds611.a
-
-default: oaisim
+LFDS_OBJ_DIR		 = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(LFDS_DIR))
+LFDS_LIB		 = $(LFDS_OBJ_DIR)/bin/liblfds611.a
+LIBS 			+= $(LFDS_LIB)
+SHARED_DEPENDENCIES 	+= $(LFDS_LIB)
 
 all: oaisim pad
 
@@ -287,22 +268,10 @@ pad: oaisim_pad
 
 userclean: cleanall oaisim
 
-ifdef USE_MME
-CFLAGS += -DENB_MODE -DENABLE_USE_MME -DENABLE_EVENT_FD -I$(S1AP_DIR) -I$(SCTP_DIR)
-
-S1AP_CFLAGS = $(CFLAGS) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl)
-LIBS += $(S1AP_DIR)/libs1ap.a $(SCTP_DIR)/libsctp.a -lsctp -lcrypt
-export S1AP_CFLAGS
-
-$(S1AP_DIR)/libs1ap.a: force_look
-	@$(MAKE) -C $(S1AP_DIR) -f Makefile.eNB libs1ap.a
-$(SCTP_DIR)/libsctp.a: force_look
-	@$(MAKE) -C $(SCTP_DIR) -f Makefile.eNB libsctp.a
-endif
+objsdir:
+	@if [ ! -d $(OBJS_DIR) ]; then mkdir -p $(OBJS_DIR); fi
 
 printvars:
-	@echo LINUX variable is $(linux)
-	@echo CYGWIN variable is $(cygwin)
 	@echo rrc_cellular variable is $(rrc_cellular)
 	@echo EXTRA_CFLAGS = $(EXTRA_CFLAGS)
 	@echo OAI Config generator is $(OCG_FLAG)
@@ -315,62 +284,46 @@ printvars:
 	@echo CFLAGS: $(CFLAGS)
 	@echo Enable PGM: $(ENABLE_PGM)
 
+OAISIM_COMPILED_OBJECTS = $(subst $(OPENAIR_HOME), $(OBJS_DIR), $(OBJ) $(OAISIM_OBJS) $(ASN1_MSG_OBJS1))
+
 -include $(ITTI_MESSAGES_XML:.xml=.d)
--include $(OBJ:.o=.d)
--include $(OAISIM_OBJS:.o=.d)
 -include $(OAISIM_PAD_OBJS:.o=.d)
--include $(ASN1_MSG_OBJS1:.o=.d)
+-include $(OAISIM_COMPILED_OBJECTS:.o=.d)
 
 ifdef ENABLE_ITTI
-gccxml_available = $(shell if [ `gccxml --version | grep GCC-XML -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
-ifeq 	($(gccxml_available), 0) 
-$(error gccxml is missing, please install)
-endif
-endif
-
-$(ITTI_MESSAGES_XML): $(ITTI_MESSAGES_FILE)
-	@echo "Generating messages.xml ..."
-	@gccxml $(L2_incl) $(UTILS_incl) $< -fxml=$@
-	@$(CC) -MM $(L2_incl) $(UTILS_incl) $< > $(basename $@).d
-	@mv -f $(basename $@).d $(basename $@).d.tmp
-	@sed -e 's|.*:|$@:|' < $(basename $@).d.tmp > $(basename $@).d
-	@sed -e 's/.*://' -e 's/\\$$//' < $(basename $@).d.tmp | fmt -1 | \
-	sed -e 's/^ *//' -e 's/$$/:/' >> $(basename $@).d
-	@rm -f $(basename $@).d.tmp
-
-$(ITTI_MESSAGES_H): $(ITTI_MESSAGES_XML)
-	@echo "Generating messages_xml.h ..."
-	@sed -e 's/[ ]*//' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
-
-ifdef ENABLE_ITTI
-$(OAISIM_OBJS): $(ITTI_MESSAGES_H)
+$(OAISIM_COMPILED_OBJECTS): $(ITTI_MESSAGES_H)
 
 oaisim_pad.o: $(ITTI_MESSAGES_H)
 endif
 
-$(OBJ) $(OAISIM_OBJS) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1): %.o : %.c
+$(OAISIM_COMPILED_OBJECTS): | objsdir
+
+.SECONDEXPANSION:
+$(OAISIM_COMPILED_OBJECTS) $(OAISIM_PAD_OBJS): %.o : $$(subst $(OBJS_DIR), $(OPENAIR_HOME), $$*.c)
 	@echo Compiling $<
-	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) -o $@ $<
-	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $*.c > $*.d
+	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi;
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 $(INCLUDES) -o $@ $<
+	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 $(INCLUDES) $< > $*.d
 	@mv -f $*.d $*.d.tmp
 	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
 	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
 	sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
 	@rm -f $*.d.tmp
 
-$(LFDS_DIR)/bin/liblfds611.a:
-	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
+$(LFDS_LIB):
+	@if [ ! -d $(LFDS_OBJ_DIR)/bin ]; then mkdir -p $(LFDS_OBJ_DIR)/bin; fi;
+	@if [ ! -d $(LFDS_OBJ_DIR)/obj ]; then mkdir -p $(LFDS_OBJ_DIR)/obj; fi;
+	$(MAKE) -C $(LFDS_DIR) -f makefile.linux OUTDIR=$(LFDS_OBJ_DIR)
 
 oaisim_pad: $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1)
 	@echo "Linking oaisim_pad ..."
-	@$(MPICC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim_pad $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) \
-	 -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt
+	@$(MPICC) $(INCLUDES) $(S1AP_Incl) -o oaisim_pad $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(OAISIM_PAD_OBJS) $(ASN1_MSG_OBJS1) \
+	-lpthread -llapack_atlas -lforms -lrt $(LIBS) $(DB_LDFLAGS)
 
-oaisim: $(OBJ) $(OAISIM_OBJS) $(ASN1_MSG_OBJS1) $(LIBS)
+oaisim: $(OAISIM_COMPILED_OBJECTS) $(SHARED_DEPENDENCIES)
 	@echo "Linking oaisim ..."
-	@$(CC) -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(OAISIM_OBJS) $(ASN1_MSG_OBJS1) \
-	-lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt \
-	$(LIBS) $(PGM_LDFLAGS) $(DB_LDFLAGS) $(OSA_LDFLAGS)
+	@$(CC) $(INCLUDES) $(S1AP_Incl) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OAISIM_COMPILED_OBJECTS) \
+	-lpthread -llapack_atlas -lforms -lrt $(LIBS) $(DB_LDFLAGS)
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
@@ -381,7 +334,7 @@ endif
 
 oaisimCROWN: $(OBJ) $(ASN1_MSG_OBJS1) oaisimCROWN.c
 	@echo "Compiling oaisimCROWN.c ..."
-	@$(CC) oaisimCROWN.c -I$(TOP_DIR) $(L2_incl) $(UTIL_incl) $(UTILS_incl) -I$(ASN1_MSG_INC) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms -lxml2 -lX11 -lXpm -lrt 
+	@$(CC) oaisimCROWN.c $(INCLUDES) $(S1AP_Incl) -o oaisimCROWN $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(ASN1_MSG_OBJS1) -lm -lblas -lpthread -llapack_atlas -lforms $(LIBXML2_LIBS) -lX11 -lXpm -lrt
 
 nasmesh_fix:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
@@ -413,26 +366,22 @@ nas_sim_rg_cellular:
 rrm_std_cellular:
 	( cd $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR && make cell_rrm CELL_RRM=1 CELLULAR=1 NO_RRM=1)
 
-
 cleanall: clean cleanasn1 
-	@if [ -d $(S1AP_DIR) ];then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB cleanall; fi
+	@if [ -d $(S1AP_DIR) ]; then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB cleanall OUTDIR=$(S1AP_OBJ_DIR); fi
 
 cleanalmostall: clean 
 	rm -f $(ASN1_MSG_OBJS1)
 
-clean:
-	@$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
+clean: common-clean
 	@$(RM_F_V) oaisim
 	@$(RM_F_V) oaisim_pad
-	@$(RM_F_V) $(ITTI_MESSAGES_H) $(ITTI_MESSAGES_XML) $(ITTI_MESSAGES_XML:.xml=.d)
-	@$(RM_F_V) $(OBJ) $(OBJ:.o=.d)
-	@$(RM_F_V) $(OAISIM_OBJS) $(OAISIM_OBJS:.o=.d)
-	@$(RM_F_V) $(OAISIM_PAD_OBJS) $(OAISIM_PAD_OBJS:.o=.d)
-	@$(RM_F_V) $(ASN1_MSG_OBJS1) $(ASN1_MSG_OBJS1:.o=.d)
+# 	@$(RM_F_V) $(ITTI_MESSAGES_H) $(ITTI_MESSAGES_XML) $(ITTI_MESSAGES_XML:.xml=.d)
+	@$(RM_F_V) $(OAISIM_PAD_OBJS)
+	@$(RM_F_V) $(OAISIM_PAD_OBJS:.o=.d)
+	@$(RM_F_V) $(OAISIM_COMPILED_OBJECTS)
+	@$(RM_F_V) $(OAISIM_COMPILED_OBJECTS:.o=.d)
 	@$(RM_F_V) *.exe*
 	@$(RM_F_V) $(ASN1_MSG_INC)/asn1_msg.o
-	@if [ -d $(S1AP_DIR) ];then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB clean; fi
-	@if [ -d $(SCTP_DIR) ];then $(MAKE) -C $(SCTP_DIR) -f Makefile.eNB clean; fi
 
 cleanl1:
 	@$(RM_F_V) LOG_THREAD oaisim
@@ -464,28 +413,26 @@ cleanlfds:
 	$(MAKE) -C $(LFDS_DIR) -f makefile.linux clean
 
 print:
-#	@echo $(cygwin)
-	@echo "OBJ " 			$(OBJ)
-	@echo "OAISIM_OBJS " 		$(OAISIM_OBJS)
-	@echo "OAISIM_PAD_OBJS " 	$(OAISIM_PAD_OBJS)
+	@echo "OBJ "				$(OBJ)
+	@echo "OAISIM_OBJS "		$(OAISIM_OBJS)
+	@echo "OAISIM_PAD_OBJS "	$(OAISIM_PAD_OBJS)
 	@echo "OCG_FLAG are "		$(OCG_FLAG)
-	@echo "CFLAGS are "      	$(CFLAGS)
-	@echo "EXTRA_CFLAGS are" 	$(EXTRA_CFLAGS)
-	@echo "L2 includes are"	    	$(L2_incl)
-	@echo "S1AP Includes are"   	$(S1AP_Incl)
-	@echo "TOP_DIR Include is"  	I$(TOP_DIR)
+	@echo "CFLAGS are "			$(CFLAGS)
+	@echo "EXTRA_CFLAGS are"	$(EXTRA_CFLAGS)
+	@echo "L2 includes are"		$(L2_incl)
+	@echo "INCLUDES are"		$(INCLUDES)
+	@echo "S1AP Includes are"	$(S1AP_Incl)
+	@echo "TOP_DIR Include is"	I$(TOP_DIR)
 	@echo "UTIL includes are"	$(UTIL_incl)
 	@echo "UTILS includes are"	$(UTILS_incl)
-	@echo "IS_REL8 is "      	$(IS_REL8)
-	@echo "IS_REL10 is "     	$(IS_REL10)
-	@echo "ENABLE_DB is "    	$(ENABLE_DB)
+	@echo "IS_REL8 is "			$(IS_REL8)
+	@echo "IS_REL10 is "		$(IS_REL10)
+	@echo "ENABLE_DB is "		$(ENABLE_DB)
+	@echo "Libs are"			$(LIBS)
 
 showcflags:
 	@echo oaisim cflags: $(CFLAGS)
 	@if [ -d $(S1AP_DIR) ]; then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB showcflags; fi
-
-force_look:
-	@true
 
 otg_all: otg_latency otg_gp
 
@@ -510,7 +457,7 @@ otg_jitter:
 
 pexpect = $(shell if [ `dpkg -l | grep pexpect -c` = "0" ]; then  echo "0" ; else  echo "1" ; fi )
 
-pre-ci: 
+pre-ci:
 	@echo "Pre-commit check"
 
 ifeq 	($(pexpect), 1) 

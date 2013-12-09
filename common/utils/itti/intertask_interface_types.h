@@ -57,6 +57,7 @@
 
 /* Defines to extract task ID fields */
 #define TASK_GET_THREAD_ID(tASKiD)          (itti_desc.tasks_info[tASKiD].thread)
+#define TASK_GET_PARENT_TASK_ID(tASKiD)     (itti_desc.tasks_info[tASKiD].parent_task)
 /* Extract the instance from a message */
 #define ITTI_MESSAGE_GET_INSTANCE(mESSAGE)  ((mESSAGE)->ittiMsgHeader.instance)
 
@@ -75,7 +76,7 @@ typedef enum
 //! Thread id of each task
 typedef enum
 {
-    THREAD_FIRST = 1, THREAD_NULL = 0,
+    THREAD_NULL = 0,
 
 #define TASK_DEF(tHREADiD, pRIO, qUEUEsIZE)             THREAD_##tHREADiD,
 #define SUB_TASK_DEF(tHREADiD, sUBtASKiD, qUEUEsIZE)
@@ -84,6 +85,7 @@ typedef enum
 #undef TASK_DEF
 
     THREAD_MAX,
+    THREAD_FIRST = 1,
 } thread_id_t;
 
 //! Sub-tasks id, to defined offset form thread id
@@ -99,7 +101,7 @@ typedef enum
 //! Tasks id of each task
 typedef enum
 {
-    TASK_FIRST = 1, TASK_UNKNOWN = 0,
+    TASK_UNKNOWN = 0,
 
 #define TASK_DEF(tHREADiD, pRIO, qUEUEsIZE)             tHREADiD,
 #define SUB_TASK_DEF(tHREADiD, sUBtASKiD, qUEUEsIZE)    sUBtASKiD,
@@ -108,6 +110,7 @@ typedef enum
 #undef TASK_DEF
 
     TASK_MAX,
+    TASK_FIRST = 1,
 } task_id_t;
 
 typedef union msg_s
@@ -117,10 +120,10 @@ typedef union msg_s
 #undef MESSAGE_DEF
 } msg_t;
 
-#define INSTANCE_DEFAULT    0
-#define INSTANCE_ALL        -1
+#define INSTANCE_DEFAULT    (UINT16_MAX - 1)
+#define INSTANCE_ALL        (UINT16_MAX)
 
-typedef int16_t instance_t;
+typedef uint16_t instance_t;
 typedef uint16_t MessageHeaderSize;
 
 typedef struct itti_lte_time_s
@@ -151,7 +154,7 @@ typedef struct MessageHeader_s
 typedef struct MessageDef_s
 {
         MessageHeader ittiMsgHeader; /**< Message header */
-        msg_t msg; /**< Union of payloads as defined in x_messages_def.h headers */
+        msg_t         ittiMsg; /**< Union of payloads as defined in x_messages_def.h headers */
 } MessageDef;
 
 #endif /* INTERTASK_INTERFACE_TYPES_H_ */

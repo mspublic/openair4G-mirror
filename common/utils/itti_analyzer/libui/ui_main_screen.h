@@ -20,6 +20,7 @@ typedef struct {
     /* Buttons */
     GtkToolItem *filters_enabled;
     GtkToolItem *open_filters_file;
+    GtkToolItem *refresh_filters_file;
     GtkToolItem *save_filters_file;
 
     GtkToolItem *open_replay_file;
@@ -57,6 +58,8 @@ typedef struct {
 } ui_main_data_t;
 
 extern ui_main_data_t ui_main_data;
+
+void ui_gtk_parse_arg(int argc, char *argv[]);
 
 void ui_set_title(const char *fmt, ...);
 

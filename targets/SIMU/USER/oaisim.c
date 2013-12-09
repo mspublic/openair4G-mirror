@@ -74,9 +74,12 @@ char smbv_ip[16];
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OTG/otg_kpi.h"
+#include "assertions.h"
+
+#include "enb_app.h"
 
 #if defined(ENABLE_ITTI)
-# include "intertask_interface_init.h"
+# include "intertask_interface.h"
 # include "timer.h"
 # if defined(ENABLE_USE_MME)
 #   include "s1ap_eNB.h"
@@ -336,7 +339,10 @@ int omv_write(int pfd, Node_list enb_node_list, Node_list ue_node_list, Data_Flo
       omv_data.geo[i].Pathloss = 44;
       omv_data.geo[i].RSSI[0] = 33;
       omv_data.geo[i].RSSI[1] = 22;
-      //omv_data.geo[i].RSSI[2] = 11;
+      if ((sizeof(omv_data.geo[0].RSSI) / sizeof(omv_data.geo[0].RSSI[0])) > 2)
+      {
+        omv_data.geo[i].RSSI[2] = 11;
+      }
 
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors = 0;
@@ -376,7 +382,7 @@ static s32 UE_id = 0, eNB_id = 0;
 static s32 RN_id=0;
 #endif
 
-void *l2l1_task(void *args_p) {
+static void *l2l1_task(void *args_p) {
   // Framing variables
   s32 slot, last_slot, next_slot;
 
@@ -388,56 +394,114 @@ void *l2l1_task(void *args_p) {
 
   char fname[64], vname[64];
 
+
+#ifdef XFORMS
+  // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
+  // at eNB 0, an UL scope for every UE 
+  FD_lte_phy_scope_ue *form_ue[NUMBER_OF_UE_MAX];
+  FD_lte_phy_scope_enb *form_enb[NUMBER_OF_UE_MAX];
+  char title[255];
+  char xname[32] = "oaisim";
+  int xargc=1;
+  char *xargv[1];
+#endif
+
+#ifdef PRINT_STATS
+  int len;
+  FILE *UE_stats[NUMBER_OF_UE_MAX], *UE_stats_th[NUMBER_OF_UE_MAX], *eNB_stats[NUMBER_OF_eNB_MAX], *eNB_avg_thr, *eNB_l2_stats;
+  char UE_stats_filename[255];
+  char eNB_stats_filename[255];
+  char UE_stats_th_filename[255];
+  char eNB_stats_th_filename[255];
+#endif
+
+#ifdef XFORMS
+  xargv[0] = xname;
+  fl_initialize (&xargc, xargv, NULL, 0, 0);
+  eNB_id = 0;
+  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+    // DL scope at UEs
+    form_ue[UE_id] = create_lte_phy_scope_ue();
+    sprintf (title, "LTE DL SCOPE eNB %d to UE %d", eNB_id, UE_id);
+    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+
+    // UL scope at eNB 0
+    form_enb[UE_id] = create_lte_phy_scope_enb();
+    sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_id, eNB_id);
+    fl_show_form (form_enb[UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+
+    if (openair_daq_vars.use_ia_receiver == 1) {
+      fl_set_button(form_ue[UE_id]->button_0,1);
+      fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
+      fl_set_object_color(form_ue[UE_id]->button_0, FL_GREEN, FL_GREEN);
+    }
+
+  }
+#endif
+
+
+#ifdef PRINT_STATS
+  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+    sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
+    UE_stats[UE_id] = fopen (UE_stats_filename, "w");
+  }
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+    sprintf(eNB_stats_filename,"eNB_stats%d.txt",eNB_id);
+    eNB_stats[eNB_id] = fopen (eNB_stats_filename, "w");
+  }
+
+  if(abstraction_flag==0) {
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+      sprintf(UE_stats_th_filename,"UE_stats_th%d_tx%d.txt",UE_id,oai_emulation.info.transmission_mode);
+      UE_stats_th[UE_id] = fopen (UE_stats_th_filename, "w");
+    }
+    sprintf(eNB_stats_th_filename,"eNB_stats_th_tx%d.txt",oai_emulation.info.transmission_mode);
+    eNB_avg_thr = fopen (eNB_stats_th_filename, "w");
+  }
+  else {
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+      sprintf(UE_stats_th_filename,"UE_stats_abs_th%d_tx%d.txt",UE_id,oai_emulation.info.transmission_mode);
+      UE_stats_th[UE_id] = fopen (UE_stats_th_filename, "w");
+    }
+    sprintf(eNB_stats_th_filename,"eNB_stats_abs_th_tx%d.txt",oai_emulation.info.transmission_mode);
+    eNB_avg_thr = fopen (eNB_stats_th_filename, "w");
+  }
+#ifdef OPENAIR2
+  eNB_l2_stats = fopen ("eNB_l2_stats.txt", "w");
+  LOG_I(EMU,"eNB_l2_stats=%p\n", eNB_l2_stats);
+#endif 
+
+#endif
+
+
 #if defined(ENABLE_ITTI)
-  MessageDef *message_p;
+  MessageDef *message_p = NULL;
 
   itti_mark_task_ready (TASK_L2L1);
-# if defined(ENABLE_USE_MME)
-    /* Trying to register each eNB */
-    for (eNB_id = oai_emulation.info.first_enb_local;
-         (eNB_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id] == 1);
-         eNB_id++)
-    {
-        char *mme_address_v4;
 
-        if (oai_emulation.info.mme_enabled)
-        {
-            mme_address_v4 = oai_emulation.info.mme_ip_address;
-        }
-        else
-        {
-            /* FIXME: acquire MMEs IP address by XML file or command line */
-            mme_address_v4 = "192.168.12.87";
-        }
-        char *mme_address_v6 = "2001:660:5502:12:30da:829a:2343:b6cf";
-        s1ap_register_eNB_t *s1ap_register_eNB;
-        uint32_t hash;
+  if (NB_eNB_INST > 0) {
+    /* Wait for the initialize message */
+    do {
+      if (message_p != NULL) {
+        free (message_p);
+      }
+      itti_receive_msg (TASK_L2L1, &message_p);
 
-        /* FIXME: following parameters should be setup by eNB applicative layer ? */
-        message_p = itti_alloc_new_message(TASK_L2L1, S1AP_REGISTER_ENB);
+      switch (ITTI_MSG_ID(message_p)) {
+        case INITIALIZE_MESSAGE:
+          break;
 
-        s1ap_register_eNB = &message_p->msg.s1ap_register_eNB;
+        case TERMINATE_MESSAGE:
+          itti_exit_task ();
+          break;
 
-        hash = s1ap_generate_eNB_id();
-
-        /* Some default/random parameters */
-        s1ap_register_eNB->eNB_id      = eNB_id + (hash & 0xFFFF8);
-        s1ap_register_eNB->cell_type   = CELL_MACRO_ENB;
-        s1ap_register_eNB->tac         = 0;
-        s1ap_register_eNB->mcc         = 208;
-        s1ap_register_eNB->mnc         = 34;
-        s1ap_register_eNB->default_drx = PAGING_DRX_256;
-        s1ap_register_eNB->nb_mme      = 1;
-        s1ap_register_eNB->mme_ip_address[0].ipv4 = 1;
-        s1ap_register_eNB->mme_ip_address[0].ipv6 = 0;
-        memcpy(s1ap_register_eNB->mme_ip_address[0].ipv4_address, mme_address_v4,
-               strlen(mme_address_v4));
-        memcpy(s1ap_register_eNB->mme_ip_address[0].ipv6_address, mme_address_v6,
-               strlen(mme_address_v6));
-
-        itti_send_msg_to_task(TASK_S1AP, eNB_id, message_p);
-    }
-# endif
+        default:
+          LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+          break;
+      }
+    } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
+    free (message_p);
+  }
 #endif
 
   for (frame = 0; frame < oai_emulation.info.n_frames; frame++) {
@@ -454,7 +518,7 @@ void *l2l1_task(void *args_p) {
             break;
 
           case MESSAGE_TEST:
-            LOG_D(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
+            LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
             break;
 
           default:
@@ -541,6 +605,10 @@ void *l2l1_task(void *args_p) {
       if(Channel_Flag==0)
 #endif
       {
+#if defined(ENABLE_ITTI)
+        log_set_instance_type (LOG_INSTANCE_ENB);
+#endif
+
         if ((next_slot % 2) == 0)
           clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
 
@@ -586,6 +654,10 @@ void *l2l1_task(void *args_p) {
         }
         // Call ETHERNET emulation here
         //emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
+
+#if defined(ENABLE_ITTI)
+        log_set_instance_type (LOG_INSTANCE_UE);
+#endif
 
         if ((next_slot % 2) == 0)
           clear_UE_transport_info (oai_emulation.info.nb_ue_local);
@@ -943,8 +1015,84 @@ void *l2l1_task(void *args_p) {
   itti_terminate_tasks(TASK_L2L1);
 #endif
 
+#ifdef PRINT_STATS
+  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+    if (UE_stats[UE_id])
+    fclose (UE_stats[UE_id]);
+    if(UE_stats_th[UE_id])
+    fclose (UE_stats_th[UE_id]);
+  }
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+    if (eNB_stats[eNB_id])
+    fclose (eNB_stats[eNB_id]);
+  }
+  if (eNB_avg_thr)
+  fclose (eNB_avg_thr);
+  if (eNB_l2_stats)
+  fclose (eNB_l2_stats);
+
+#endif
+
   return NULL;
 }
+
+#if defined(ENABLE_ITTI)
+static int create_tasks(uint32_t enb_nb, uint32_t ue_nb) {
+# if defined(ENABLE_USE_MME)
+  {
+    if (enb_nb > 0) {
+      if (itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+          LOG_E(EMU, "Create task failed");
+          LOG_D(EMU, "Initializing SCTP task interface: FAILED\n");
+          return -1;
+      }
+
+      if (itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
+          LOG_E(EMU, "Create task failed");
+          LOG_D(EMU, "Initializing S1AP task interface: FAILED\n");
+          return -1;
+      }
+    }
+  }
+# endif
+
+# ifdef OPENAIR2
+  {
+    if (enb_nb > 0) {
+      if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
+        LOG_E(EMU, "Create task failed");
+        LOG_D(EMU, "Initializing RRC eNB task interface: FAILED\n");
+        exit (-1);
+      }
+    }
+
+    if (ue_nb > 0) {
+      if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
+        LOG_E(EMU, "Create task failed");
+        LOG_D(EMU, "Initializing RRC UE task interface: FAILED\n");
+        exit (-1);
+      }
+    }
+  }
+# endif
+
+  if (itti_create_task(TASK_L2L1, l2l1_task, NULL) < 0) {
+    LOG_E(EMU, "Create task failed");
+    LOG_D(EMU, "Initializing L2L1 task interface: FAILED\n");
+    return -1;
+  }
+
+  if (enb_nb > 0) {
+    /* Last task to create, others task must be ready before its start */
+    if (itti_create_task(TASK_ENB_APP, eNB_app_task, NULL) < 0) {
+      LOG_E(EMU, "Create task failed");
+      LOG_D(EMU, "Initializing eNB APP task interface: FAILED\n");
+      return -1;
+    }
+  }
+  return 0;
+}
+#endif
 
 Packet_OTG_List *otg_pdcp_buffer;
 
@@ -965,25 +1113,6 @@ int main(int argc, char **argv) {
 #endif
 
   // time calibration for soft realtime mode  
-
-  // u8 awgn_flag = 0;
-#ifdef XFORMS
-  // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
-  // at eNB 0, an UL scope for every UE 
-  FD_lte_phy_scope_ue *form_ue[NUMBER_OF_UE_MAX];
-  FD_lte_phy_scope_enb *form_enb[NUMBER_OF_UE_MAX];
-  char title[255];
-#endif
-
-#ifdef PRINT_STATS
-  int len;
-  FILE *UE_stats[NUMBER_OF_UE_MAX], *UE_stats_th[NUMBER_OF_UE_MAX], *eNB_stats[NUMBER_OF_eNB_MAX], *eNB_avg_thr, *eNB_l2_stats;
-  char UE_stats_filename[255];
-  char eNB_stats_filename[255];
-  char UE_stats_th_filename[255];
-  char eNB_stats_th_filename[255];
-#endif
-
   char pbch_file_path[512];
   FILE *pbch_file_fd;
 
@@ -1010,11 +1139,7 @@ int main(int argc, char **argv) {
 
   // get command-line options
   get_simulation_options (argc, argv); //Command-line options
-
-#if defined(ENABLE_ITTI)
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, oai_emulation.info.itti_dump_file);
-#endif
-
+  
   // Initialize VCD LOG module
   vcd_signal_dumper_init ("openair_dump.vcd");
 
@@ -1047,39 +1172,6 @@ int main(int argc, char **argv) {
 
   check_and_adjust_params ();
 
-#ifdef PRINT_STATS
-  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
-    UE_stats[UE_id] = fopen (UE_stats_filename, "w");
-  }
-  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-    sprintf(eNB_stats_filename,"eNB_stats%d.txt",eNB_id);
-    eNB_stats[eNB_id] = fopen (eNB_stats_filename, "w");
-  }
-
-  if(abstraction_flag==0) {
-    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-      sprintf(UE_stats_th_filename,"UE_stats_th%d_tx%d.txt",UE_id,oai_emulation.info.transmission_mode);
-      UE_stats_th[UE_id] = fopen (UE_stats_th_filename, "w");
-    }
-    sprintf(eNB_stats_th_filename,"eNB_stats_th_tx%d.txt",oai_emulation.info.transmission_mode);
-    eNB_avg_thr = fopen (eNB_stats_th_filename, "w");
-  }
-  else {
-    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-      sprintf(UE_stats_th_filename,"UE_stats_abs_th%d_tx%d.txt",UE_id,oai_emulation.info.transmission_mode);
-      UE_stats_th[UE_id] = fopen (UE_stats_th_filename, "w");
-    }
-    sprintf(eNB_stats_th_filename,"eNB_stats_abs_th_tx%d.txt",oai_emulation.info.transmission_mode);
-    eNB_avg_thr = fopen (eNB_stats_th_filename, "w");
-  }
-#ifdef OPENAIR2
-  eNB_l2_stats = fopen ("eNB_l2_stats.txt", "w");
-  LOG_I(EMU,"eNB_l2_stats=%p\n", eNB_l2_stats);
-#endif 
-
-#endif
-
   set_seed = oai_emulation.emulation_config.seed.value;
 
   init_otg_pdcp_buffer ();
@@ -1092,30 +1184,6 @@ int main(int argc, char **argv) {
 
   init_ocm ();
 
-#ifdef XFORMS
-  eNB_id = 0;
-  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    // DL scope at UEs
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_ue[UE_id] = create_lte_phy_scope_ue();
-    sprintf (title, "LTE DL SCOPE eNB %d to UE %d", eNB_id, UE_id);
-    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-    // UL scope at eNB 0
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_enb[UE_id] = create_lte_phy_scope_enb();
-    sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_id, eNB_id);
-    fl_show_form (form_enb[UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-    if (openair_daq_vars.use_ia_receiver == 1) {
-      fl_set_button(form_ue[UE_id]->button_0,1);
-      fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
-      fl_set_object_color(form_ue[UE_id]->button_0, FL_GREEN, FL_GREEN);
-    }
-
-  }
-#endif
-
 #ifdef SMBV
   smbv_init_config(smbv_fname, smbv_nframes);
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0]->lte_frame_parms);
@@ -1126,40 +1194,26 @@ int main(int argc, char **argv) {
   init_slot_isr ();
 
   t = clock ();
-
-  LOG_N(EMU, "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+  
+  LOG_N(EMU, ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
 #if defined(ENABLE_ITTI)
-# if defined(ENABLE_USE_MME)
-  if (itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-      LOG_E(EMU, "Create task failed");
-      LOG_D(EMU, "Initializing SCTP task interface: FAILED\n");
-      return -1;
-  }
-  if (itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
-      LOG_E(EMU, "Create task failed");
-      LOG_D(EMU, "Initializing S1AP task interface: FAILED\n");
-      return -1;
-  }
-# endif
-
-  if (itti_create_task(TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(EMU, "Create task failed");
-    LOG_D(EMU, "Initializing L2L1 task interface: FAILED\n");
-    return -1;
-  }
-
   // Handle signals until all tasks are terminated
-  itti_wait_tasks_end();
+  if (create_tasks(NB_eNB_INST, NB_UE_INST) >= 0) {
+    itti_wait_tasks_end();
+  } else {
+    exit(-1); // need a softer mode
+  }
 #else
+  eNB_app_task(NULL); // do nothing for the moment
   l2l1_task (NULL);
 #endif
 
   t = clock () - t;
-  printf ("rrc Duration of the simulation: %f seconds\n", ((float) t) / CLOCKS_PER_SEC);
+  LOG_I (EMU,"Duration of the simulation: %f seconds\n", ((float) t) / CLOCKS_PER_SEC);
 
   //  fclose(SINRpost);
-  LOG_I(EMU, ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+  LOG_N(EMU, ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU Ending <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
 
   free (otg_pdcp_buffer);
 
@@ -1308,24 +1362,6 @@ int main(int argc, char **argv) {
 #ifdef OPENAIR2
   mac_top_cleanup ();
 #endif 
-
-#ifdef PRINT_STATS
-  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    if (UE_stats[UE_id])
-    fclose (UE_stats[UE_id]);
-    if(UE_stats_th[UE_id])
-    fclose (UE_stats_th[UE_id]);
-  }
-  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-    if (eNB_stats[eNB_id])
-    fclose (eNB_stats[eNB_id]);
-  }
-  if (eNB_avg_thr)
-  fclose (eNB_avg_thr);
-  if (eNB_l2_stats)
-  fclose (eNB_l2_stats);
-
-#endif
 
   // stop OMG
   stop_mobility_generator (oai_emulation.info.omg_model_ue); //omg_param_list.mobility_type

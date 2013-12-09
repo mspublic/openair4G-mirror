@@ -1,11 +1,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#define G_LOG_DOMAIN ("PARSER")
+
 #include <gtk/gtk.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#include "logs.h"
 #include "types.h"
 #include "xml_parse.h"
 #include "union_type.h"
@@ -26,18 +29,8 @@ extern int debug_parser;
 # define INDENT_START 0
 #endif
 
-#define PARSER_DEBUG(fmt, args...)       \
-do {                                     \
-    if (debug_parser)                    \
-        g_debug("WARNING: "fmt, ##args); \
-} while(0)
-
-#define PARSER_ERROR(fmt, args...)      \
-do {                                    \
-    g_error("FATAL: "fmt, ##args);      \
-} while(0)
-
-types_t *root = NULL;
+types_t *xml_head;
+types_t *root;
 
 static int xml_parse_doc(xmlDocPtr doc);
 
@@ -45,13 +38,13 @@ static int parse_attribute_name(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "name")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve name attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve name attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve name attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve name attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             return 0;
         }
     }
@@ -62,8 +55,8 @@ static int parse_attribute_name(xmlNode *node, types_t *type, int mandatory) {
 static int parse_attribute_id(xmlNode *node, types_t *type) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "id")) == NULL) {
-        PARSER_ERROR("cannot retrieve id attribute in node %s, %s:%ld",
-                     (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+        g_error("cannot retrieve id attribute in node %s, %s:%ld",
+                (char *)node->name, node->doc->URL, XML_GET_LINE(node));
         return -1;
     }
     type->id = atoi ((char *) &node_attribute->children->content[1]);
@@ -74,14 +67,14 @@ static int parse_attribute_size(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "size")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve size attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve size attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->size = -1;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve size attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve size attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->size = -1;
             return 0;
         }
@@ -94,14 +87,14 @@ static int parse_attribute_align(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "align")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve align attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve align attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->align = -1;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve align attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve align attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->align = -1;
             return 0;
         }
@@ -134,8 +127,8 @@ static int parse_attribute_context(xmlNode *node, types_t *type, int mandatory) 
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "context")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve context attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve context attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->context = -1;
             return -1;
         }
@@ -151,8 +144,8 @@ static int parse_attribute_context(xmlNode *node, types_t *type, int mandatory) 
 static int parse_attribute_artificial(xmlNode *node, types_t *type) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "artificial")) == NULL) {
-        PARSER_DEBUG("cannot retrieve artificial attribute in node %s, %s:%ld",
-                     (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+        g_debug("cannot retrieve artificial attribute in node %s, %s:%ld",
+                (char *)node->name, node->doc->URL, XML_GET_LINE(node));
         type->artificial = -1;
         return 0;
     }
@@ -163,8 +156,8 @@ static int parse_attribute_artificial(xmlNode *node, types_t *type) {
 static int parse_attribute_init(xmlNode *node, types_t *type) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "init")) == NULL) {
-        PARSER_ERROR("cannot retrieve init attribute in node %s, %s:%ld",
-                     (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+        g_error("cannot retrieve init attribute in node %s, %s:%ld",
+                (char *)node->name, node->doc->URL, XML_GET_LINE(node));
         type->init_value = -1;
         return 0;
     }
@@ -176,14 +169,14 @@ static int parse_attribute_members(xmlNode *node, types_t *type, int mandatory) 
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "members")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve members attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve members attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->members = 0;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve members attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve members attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->members = 0;
             return 0;
         }
@@ -196,14 +189,14 @@ static int parse_attribute_mangled(xmlNode *node, types_t *type, int mandatory) 
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "mangled")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve mangled attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve mangled attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->mangled = 0;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve mangled attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve mangled attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->mangled = 0;
             return 0;
         }
@@ -216,14 +209,14 @@ static int parse_attribute_demangled(xmlNode *node, types_t *type, int mandatory
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "mangled")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve demangled attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve demangled attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->demangled = 0;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve demangled attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve demangled attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->demangled = 0;
             return 0;
         }
@@ -236,14 +229,14 @@ static int parse_attribute_offset(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "offset")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve offset attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve offset attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->offset = -1;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve offset attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve offset attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->offset = -1;
             return 0;
         }
@@ -256,14 +249,14 @@ static int parse_attribute_bits(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "bits")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve bits attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve bits attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->bits = -1;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve bits attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve bits attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->bits = -1;
             return 0;
         }
@@ -276,14 +269,14 @@ static int parse_attribute_type(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "type")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve type attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve type attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->type_xml = 0;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve type attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve type attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->type_xml = 0;
             return 0;
         }
@@ -296,14 +289,14 @@ static int parse_attribute_min(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "min")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve min attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve min attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->min = 0;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve min attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve min attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->min = 0;
             return 0;
         }
@@ -316,14 +309,14 @@ static int parse_attribute_max(xmlNode *node, types_t *type, int mandatory) {
     xmlAttrPtr node_attribute;
     if ((node_attribute = xmlHasProp (node, (xmlChar *) "max")) == NULL) {
         if (mandatory) {
-            PARSER_ERROR("cannot retrieve max attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_error("cannot retrieve max attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->max = 0;
             return -1;
         }
         else {
-            PARSER_DEBUG("cannot retrieve max attribute in node %s, %s:%ld",
-                         (char *)node->name, node->doc->URL, XML_GET_LINE(node));
+            g_debug("cannot retrieve max attribute in node %s, %s:%ld",
+                    (char *)node->name, node->doc->URL, XML_GET_LINE(node));
             type->max = 0;
             return 0;
         }
@@ -656,14 +649,53 @@ static int parse_elements(xmlNode * a_node, types_t **head) {
     return RC_OK;
 }
 
+static int free_elements(types_t *parent, int indent) {
+    types_t *cur_node = parent;
+    types_t *child_node;
+
+    g_debug("%*s%p %s", indent, "", cur_node, cur_node->name != NULL ? cur_node->name : "");
+
+    for (; cur_node != NULL; cur_node = cur_node->next) {
+        if (cur_node->child != NULL) {
+            child_node = cur_node->child;
+            cur_node->child = NULL; /* Clear the child pointer to avoid re-processing it, we are handling a graph with loops */
+            CHECK_FCT_DO(free_elements((child_node), indent + 2), return RC_FAIL);
+        }
+    }
+    free (cur_node);
+
+    return RC_OK;
+}
+
 int xml_parse_buffer(const char *xml_buffer, const int size) {
     xmlDocPtr doc; /* the resulting document tree */
 
     if (xml_buffer == NULL) {
-        return -1;
+        return RC_NULL_POINTER;
     }
 
-    g_message("Parsing XML definition from buffer ...");
+    if (xml_head != NULL)
+    {
+        /* Free previous definitions */
+        free_elements(xml_head, 0);
+
+        g_info("xml_parse_buffer freed previous definitions");
+    }
+
+    xml_head = NULL;
+    root = NULL;
+    messages_id_enum = NULL;
+    lte_time_type = NULL;
+    lte_time_frame_type = NULL;
+    lte_time_slot_type = NULL;
+    origin_task_id_type = NULL;
+    destination_task_id_type = NULL;
+    instance_type = NULL;
+    message_header_type = NULL;
+    message_type = NULL;
+    message_size_type = NULL;
+
+    g_info("Parsing XML definition from buffer ...");
 
     doc = xmlReadMemory(xml_buffer, size, NULL, NULL, 0);
 
@@ -676,11 +708,12 @@ int xml_parse_buffer(const char *xml_buffer, const int size) {
     return xml_parse_doc(doc);
 }
 
+#if 0 /* Not used anymore */
 int xml_parse_file(const char *filename) {
     xmlDocPtr doc; /* the resulting document tree */
 
     if (filename == NULL) {
-        return -1;
+        return RC_NULL_POINTER;
     }
 
     doc = xmlReadFile (filename, NULL, 0);
@@ -692,6 +725,7 @@ int xml_parse_file(const char *filename) {
 
     return xml_parse_doc(doc);
 }
+#endif
 
 static int update_filters() {
     types_t *types;
@@ -707,7 +741,7 @@ static int update_filters() {
         {
             if (strcmp (types->name, "MESSAGES_ID_MAX") != 0)
             {
-                ui_filters_add (FILTER_MESSAGES, types->init_value, types->name, ENTRY_ENABLED_UNDEFINED);
+                ui_filters_add (FILTER_MESSAGES, types->init_value, types->name, ENTRY_ENABLED_UNDEFINED, NULL, NULL);
             }
             types = types->next;
         }
@@ -721,7 +755,7 @@ static int update_filters() {
         while (types != NULL) {
             if ((strcmp (types->name, "TASK_FIRST") != 0) && (strcmp (types->name, "TASK_MAX") != 0))
             {
-            	ui_filters_add(FILTER_ORIGIN_TASKS, types->init_value, types->name, ENTRY_ENABLED_UNDEFINED);
+            	ui_filters_add(FILTER_ORIGIN_TASKS, types->init_value, types->name, ENTRY_ENABLED_UNDEFINED, NULL, NULL);
             }
             types = types->next;
         }
@@ -735,7 +769,7 @@ static int update_filters() {
         while (types != NULL) {
             if ((strcmp (types->name, "TASK_FIRST") != 0) && (strcmp (types->name, "TASK_MAX") != 0))
             {
-            	ui_filters_add(FILTER_DESTINATION_TASKS, types->init_value, types->name, ENTRY_ENABLED_UNDEFINED);
+            	ui_filters_add(FILTER_DESTINATION_TASKS, types->init_value, types->name, ENTRY_ENABLED_UNDEFINED, NULL, NULL);
             }
             types = types->next;
         }
@@ -746,7 +780,6 @@ static int update_filters() {
 
 static int xml_parse_doc(xmlDocPtr doc) {
     xmlNode *root_element = NULL;
-    types_t *head = NULL;
     int ret = 0;
     FILE *dissect_file = NULL;
 
@@ -757,48 +790,48 @@ static int xml_parse_doc(xmlDocPtr doc) {
     /* Get the root element node */
     root_element = xmlDocGetRootElement(doc);
 
-    ret = parse_elements(root_element, &head);
+    ret = parse_elements(root_element, &xml_head);
 
     /* Free the document */
     xmlFreeDoc(doc);
 
     if (ret == RC_OK) {
-        resolve_typedefs (&head);
-        resolve_pointer_type (&head);
-        resolve_field (&head);
-        resolve_array (&head);
-        resolve_reference (&head);
-        resolve_struct (&head);
-        resolve_file (&head);
-        resolve_union (&head);
-        resolve_function (&head);
+        resolve_typedefs (&xml_head);
+        resolve_pointer_type (&xml_head);
+        resolve_field (&xml_head);
+        resolve_array (&xml_head);
+        resolve_reference (&xml_head);
+        resolve_struct (&xml_head);
+        resolve_file (&xml_head);
+        resolve_union (&xml_head);
+        resolve_function (&xml_head);
 
         /* Locate the root element which corresponds to the MessageDef struct */
-        CHECK_FCT(locate_root("MessageDef", head, &root));
+        CHECK_FCT(locate_root("MessageDef", xml_head, &root));
 
         /* Locate the LTE time fields */
-        if (locate_type("lte_time", head, &lte_time_type) == RC_OK)
+        if (locate_type("lte_time", xml_head, &lte_time_type) == RC_OK)
         {
             CHECK_FCT(locate_type("frame", lte_time_type->child->child, &lte_time_frame_type));
             CHECK_FCT(locate_type("slot", lte_time_type->child->child, &lte_time_slot_type));
         }
 
         /* Locate the message id field */
-        CHECK_FCT(locate_type("MessagesIds", head, &messages_id_enum));
+        CHECK_FCT(locate_type("MessagesIds", xml_head, &messages_id_enum));
 
         /* Locate the header part of a message */
-        CHECK_FCT(locate_type("ittiMsgHeader", head, &message_header_type));
+        CHECK_FCT(locate_type("ittiMsgHeader", xml_head, &message_header_type));
         /* Locate the main message part */
-        CHECK_FCT(locate_type("msg", head, &message_type));
+        CHECK_FCT(locate_type("ittiMsg", xml_head, &message_type));
 
         /* Locate the origin task id field */
-        CHECK_FCT(locate_type("originTaskId", message_header_type, &origin_task_id_type));
+        CHECK_FCT(locate_type_children("originTaskId", message_header_type->child->child, &origin_task_id_type));
         /* Locate the destination task id field */
-        CHECK_FCT(locate_type("destinationTaskId", message_header_type, &destination_task_id_type));
+        CHECK_FCT(locate_type_children("destinationTaskId", message_header_type->child->child, &destination_task_id_type));
         /* Locate the instance field */
-        CHECK_FCT(locate_type("instance", message_header_type, &instance_type));
+        CHECK_FCT(locate_type_children("instance", message_header_type->child->child, &instance_type));
         /* Locate the message size field */
-        CHECK_FCT(locate_type("ittiMsgSize", message_header_type, &message_size_type));
+        CHECK_FCT(locate_type_children("ittiMsgSize", message_header_type->child->child, &message_size_type));
 
         // root->type_hr_display(root, 0);
 

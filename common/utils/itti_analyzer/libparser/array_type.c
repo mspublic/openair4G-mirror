@@ -4,6 +4,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <tgmath.h>
+
+#define G_LOG_DOMAIN ("PARSER")
+
 #include "array_type.h"
 #include "fundamental_type.h"
 #include "ui_interface.h"
@@ -32,6 +36,7 @@ int array_dissect_from_buffer(
         int zero_counter = 0;
         gboolean is_string = FALSE;
         char *string;
+        int nb_digits = 0;
 
         /* Factorizes trailing 0 */
         if ((items > 1) && (type_child->type == TYPE_FUNDAMENTAL))
@@ -49,13 +54,15 @@ int array_dissect_from_buffer(
             }
 
             /* Check if this is an array of 8 bits items and if at least the firsts ones are not null */
-            if ((type_child->size == 8) && ((items - zero_counter) >= 2))
+            if ((type_child->size == 8) && (zero_counter >= 1) && ((items - zero_counter) >= 2))
             {
+                int end = items - zero_counter;
+
                 /* check if this is a printable string */
                 is_string = TRUE;
-                string = calloc(items + 1, 1);
+                string = malloc(end + 1);
 
-                for (i = 0; i < (items - zero_counter); i++)
+                for (i = 0; i < end; i++)
                 {
                     string[i] = fundamental_read_from_buffer(type_child, buffer, parent_offset, offset + i * type_child->size);
                     if (isprint(string[i]) == 0)
@@ -68,7 +75,8 @@ int array_dissect_from_buffer(
 
                 if (is_string)
                 {
-                    INDENTED_STRING(cbuf, indent, length = sprintf(cbuf, "[%d .. %d] \"%s\"\n", 0, (items - zero_counter - 1), string));
+                    string[i] = '\0';
+                    INDENTED_STRING(cbuf, indent, length = sprintf(cbuf, "[0 .. %d] \"%s\"\n", end - 1, string));
                     ui_set_signal_text_cb(user_data, cbuf, length);
                 }
             }
@@ -82,9 +90,11 @@ int array_dissect_from_buffer(
 
         if (is_string == FALSE)
         {
+            nb_digits = log10(items - zero_counter) + 1;
+
             for (i = 0; i < (items - zero_counter); i++)
             {
-                INDENTED_STRING(cbuf, indent, length = sprintf(cbuf, "[%d] ", i));
+                INDENTED_STRING(cbuf, indent, length = sprintf(cbuf, "[%*d] ", nb_digits, i));
                 ui_set_signal_text_cb(user_data, cbuf, length);
 
                 type->child->type_dissect_from_buffer (

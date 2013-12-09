@@ -53,6 +53,16 @@
 
 #include "RRC/LITE/defs.h"
 
+/*
+ * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)
+ * output into the chosen string buffer.
+ * RETURN VALUES:
+ *       0: The structure is printed.
+ *      -1: Problem printing the structure.
+ * WARNING: No sensible errno value is returned.
+ */
+int xer_sprint(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
+
 uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index);
 
 u8 get_adjacent_cell_mod_id(uint16_t phyCellId);
@@ -104,12 +114,12 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,u8 *rv);
 /** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS);
+uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS);
 
 /** \brief Generate an RRCConnectionReconfigurationComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer);
+uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer, const uint8_t Transaction_id);
 
 /** 
 \brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and 
@@ -171,8 +181,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t                           Mod_id
 					struct MeasConfig__speedStatePars *speedStatePars,
 					RSRP_Range_t                      *rsrp,
 					C_RNTI_t                          *cba_rnti, 
-					uint8_t                           *nas_pdu,
-                                        uint32_t                           nas_length);
+					struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList);
 
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)

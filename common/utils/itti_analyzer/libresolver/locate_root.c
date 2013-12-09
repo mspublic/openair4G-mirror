@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#define G_LOG_DOMAIN ("RESOLVER")
+
 #include <glib.h>
 
+#include "logs.h"
 #include "rc.h"
 
 #include "types.h"
@@ -10,19 +13,20 @@
 #include "locate_root.h"
 #include "xml_parse.h"
 
-types_t *messages_id_enum = NULL;
-types_t *lte_time_type = NULL;
-types_t *lte_time_frame_type = NULL;
-types_t *lte_time_slot_type = NULL;
-types_t *origin_task_id_type = NULL;
-types_t *destination_task_id_type = NULL;
-types_t *instance_type = NULL;
-types_t *message_header_type = NULL;
-types_t *message_type = NULL;
-types_t *message_size_type = NULL;
+types_t *messages_id_enum;
+types_t *lte_time_type;
+types_t *lte_time_frame_type;
+types_t *lte_time_slot_type;
+types_t *origin_task_id_type;
+types_t *destination_task_id_type;
+types_t *instance_type;
+types_t *message_header_type;
+types_t *message_type;
+types_t *message_size_type;
 
 int locate_root(const char *root_name, types_t *head, types_t **root_elm) {
     types_t *next_type;
+    int next_counter = 0;
 
     /* The root element is for example : MessageDef.
      * This element is the entry for other sub-types.
@@ -47,13 +51,17 @@ int locate_root(const char *root_name, types_t *head, types_t **root_elm) {
             /* Matching reference */
             break;
         }
+        next_counter ++;
     }
+    g_info("locate_root: %s %d", root_name, next_counter);
+
     *root_elm = next_type;
     return (next_type == NULL) ? -2 : 0;
 }
 
 int locate_type(const char *type_name, types_t *head, types_t **type) {
     types_t *next_type;
+    int next_counter = 0;
 
     /* The root element is for example : MessageDef.
      * This element is the entry for other sub-types.
@@ -74,10 +82,45 @@ int locate_type(const char *type_name, types_t *head, types_t **type) {
             /* Matching reference */
             break;
         }
+        next_counter ++;
     }
+    g_info("locate_type: %s %d %p", type_name, next_counter, next_type);
+
     if (type)
         *type = next_type;
     return (next_type == NULL) ? RC_FAIL : RC_OK;
+}
+
+int locate_type_children(const char *type_name, types_t *head, types_t **type) {
+    types_t *found_type = NULL;
+    int i;
+
+    /* The root element is for example : MessageDef.
+     * This element is the entry for other sub-types.
+     */
+    if (!type_name) {
+        g_warning("FATAL: no element name provided");
+        return RC_BAD_PARAM;
+    }
+    if (!head) {
+        g_warning("Empty list detected");
+        return RC_BAD_PARAM;
+    }
+
+    for (i = 0; i < head->nb_members; i++) {
+        if (head->members_child[i]->name == NULL)
+            continue;
+        if (strcmp (type_name, head->members_child[i]->name) == 0) {
+            /* Matching reference */
+            found_type = head->members_child[i];
+            break;
+        }
+    }
+    g_info("locate_type: %s %d %p", type_name, i, found_type);
+
+    if (type)
+        *type = found_type;
+    return (found_type == NULL) ? RC_FAIL : RC_OK;
 }
 
 uint32_t get_message_header_type_size(void)

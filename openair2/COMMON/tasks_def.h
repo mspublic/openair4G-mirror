@@ -4,7 +4,7 @@ TASK_DEF(TASK_TIMER, TASK_PRIORITY_MAX, 10)
 // Other possible tasks in the process
 
 /// Layer 2 and Layer 1 task supporting all the synchronous processing
-TASK_DEF(TASK_L2L1, TASK_PRIORITY_MAX_LEAST, 10)
+TASK_DEF(TASK_L2L1, TASK_PRIORITY_MAX_LEAST, 1000)
 //// Layer 2 and Layer 1 sub-tasks
 SUB_TASK_DEF(TASK_L2L1, TASK_PDCP_UE, 200)
 SUB_TASK_DEF(TASK_L2L1, TASK_PDCP_ENB, 200)
@@ -37,3 +37,6 @@ TASK_DEF(TASK_SCTP, TASK_PRIORITY_MED, 200)
 
 /// X2ap task for eNodeB, acts as both source and target
 TASK_DEF(TASK_X2AP, TASK_PRIORITY_MED, 200)
+
+/// eNB APP task
+TASK_DEF(TASK_ENB_APP, TASK_PRIORITY_MED, 200)

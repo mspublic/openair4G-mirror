@@ -34,8 +34,10 @@
  * @{
  */
 
-#if defined(ENABLE_EVENT_FD)
-# include <sys/epoll.h>
+#include <sys/epoll.h>
+
+#ifdef RTAI
+# include <rtai_sem.h>
 #endif
 
 #ifndef INTERTASK_INTERFACE_H_
@@ -91,6 +93,7 @@ typedef enum task_priorities_e {
 
 typedef struct task_info_s {
     thread_id_t thread;
+    task_id_t   parent_task;
     task_priorities_t priority;
     unsigned int queue_size;
     /* Printable name */
@@ -118,7 +121,6 @@ int itti_send_broadcast_message(MessageDef *message_p);
  **/
 int itti_send_msg_to_task(task_id_t task_id, instance_t instance, MessageDef *message);
 
-#if defined(ENABLE_EVENT_FD)
 /** \brief Add a new fd to monitor.
  * NOTE: it is up to the user to read data associated with the fd
  *  \param task_id Task ID of the receiving task
@@ -138,7 +140,6 @@ void itti_unsubscribe_event_fd(task_id_t task_id, int fd);
  *  @returns number of events to handle
  **/
 int itti_get_events(task_id_t task_id, struct epoll_event **events);
-#endif
 
 /** \brief Retrieves a message in the queue associated to task_id.
  * If the queue is empty, the thread is blocked till a new message arrives.
@@ -162,6 +163,13 @@ void itti_poll_msg(task_id_t task_id, MessageDef **received_msg);
 int itti_create_task(task_id_t task_id,
                      void *(*start_routine) (void *),
                      void *args_p);
+
+#ifdef RTAI
+/** \brief Mark the task as a real time task
+ * \param task_id task to mark as real time
+ **/
+void itti_set_task_real_time(task_id_t task_id);
+#endif
 
 /** \brief Mark the task as in ready state
  * \param task_id task to mark as ready
