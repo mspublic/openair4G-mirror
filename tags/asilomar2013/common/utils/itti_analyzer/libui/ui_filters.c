@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+
+#define G_LOG_DOMAIN ("UI_FILTER")
+
 #include <glib.h>
 
 #include <libxml/parser.h>
@@ -14,6 +17,13 @@
 
 const uint32_t FILTER_ALLOC_NUMBER = 100;
 const uint32_t FILTER_ID_UNDEFINED = ~0;
+
+const char * const COLOR_WHITE = "#ffffff";
+const char * const COLOR_DARK_GREY = "#585858";
+
+#define ENABLED_NAME    "enabled"
+#define FOREGROUND_NAME "foreground_color"
+#define BACKGROUND_NAME "background_color"
 
 ui_filters_t ui_filters;
 
@@ -100,7 +110,7 @@ int ui_filters_search_id(ui_filter_t *filter, uint32_t value)
         }
     }
 
-    return (item);
+    return (-1);
 }
 
 static void ui_filter_set_enabled(uint8_t *enabled, ui_entry_enabled_e entry_enabled, gboolean new)
@@ -125,7 +135,8 @@ static void ui_filter_set_enabled(uint8_t *enabled, ui_entry_enabled_e entry_ena
     }
 }
 
-static int ui_filter_add(ui_filter_t *filter, uint32_t value, const char *name, ui_entry_enabled_e entry_enabled)
+static int ui_filter_add(ui_filter_t *filter, uint32_t value, const char *name, ui_entry_enabled_e entry_enabled,
+                         const char *foreground, const char *background)
 {
     int item = ui_filters_search_name (filter, name);
 
@@ -145,12 +156,22 @@ static int ui_filter_add(ui_filter_t *filter, uint32_t value, const char *name, 
         /* New entry */
         strncpy (filter->items[item].name, name, SIGNAL_NAME_LENGTH);
         ui_filter_set_enabled (&filter->items[item].enabled, entry_enabled, TRUE);
+        strncpy (filter->items[item].foreground, foreground != NULL ? foreground : COLOR_DARK_GREY, COLOR_SIZE);
+        strncpy (filter->items[item].background, background != NULL ? background : COLOR_WHITE, COLOR_SIZE);
 
         filter->used++;
     }
     else
     {
         ui_filter_set_enabled (&filter->items[item].enabled, entry_enabled, FALSE);
+        if (foreground != NULL)
+        {
+            strncpy (filter->items[item].foreground, foreground, COLOR_SIZE);
+        }
+        if (background != NULL)
+        {
+            strncpy (filter->items[item].background, background, COLOR_SIZE);
+        }
     }
 
     g_debug("filter \"%s\" add %d \"%s\" %d", filter->name, value, name, entry_enabled);
@@ -158,24 +179,25 @@ static int ui_filter_add(ui_filter_t *filter, uint32_t value, const char *name, 
     return (item);
 }
 
-void ui_filters_add(ui_filter_e filter, uint32_t value, const char *name, ui_entry_enabled_e entry_enabled)
+void ui_filters_add(ui_filter_e filter, uint32_t value, const char *name, ui_entry_enabled_e entry_enabled,
+                    const char *foreground, const char *background)
 {
     switch (filter)
     {
         case FILTER_MESSAGES:
-            ui_filter_add (&ui_filters.messages, value, name, entry_enabled);
+            ui_filter_add (&ui_filters.messages, value, name, entry_enabled, foreground, background);
             break;
 
         case FILTER_ORIGIN_TASKS:
-            ui_filter_add (&ui_filters.origin_tasks, value, name, entry_enabled);
+            ui_filter_add (&ui_filters.origin_tasks, value, name, entry_enabled, foreground, background);
             break;
 
         case FILTER_DESTINATION_TASKS:
-            ui_filter_add (&ui_filters.destination_tasks, value, name, entry_enabled);
+            ui_filter_add (&ui_filters.destination_tasks, value, name, entry_enabled, foreground, background);
             break;
 
         case FILTER_INSTANCES:
-            ui_filter_add (&ui_filters.instances, value, name, entry_enabled);
+            ui_filter_add (&ui_filters.instances, value, name, entry_enabled, foreground, background);
             break;
 
         default:
@@ -192,7 +214,7 @@ static gboolean ui_item_enabled(ui_filter_t *filter, const uint32_t value)
     {
         item = ui_filters_search_id (filter, value);
 
-        if (item < filter->used)
+        if (item >= 0)
         {
             return (filter->items[item].enabled ? TRUE : FALSE);
         }
@@ -200,13 +222,14 @@ static gboolean ui_item_enabled(ui_filter_t *filter, const uint32_t value)
     return (FALSE);
 }
 
-gboolean ui_filters_message_enabled(const uint32_t message, const uint32_t origin_task, const uint32_t destination_task, const uint32_t instance)
+gboolean ui_filters_message_enabled(const uint32_t message, const uint32_t origin_task, const uint32_t destination_task,
+                                    const uint32_t instance)
 {
     gboolean result;
 
-    result = (ui_item_enabled(&ui_filters.messages, message) && ui_item_enabled(&ui_filters.origin_tasks, origin_task)
-            && ui_item_enabled(&ui_filters.destination_tasks, destination_task)
-            && ui_item_enabled(&ui_filters.instances, instance));
+    result = (ui_item_enabled (&ui_filters.messages, message) && ui_item_enabled (&ui_filters.origin_tasks, origin_task)
+            && ui_item_enabled (&ui_filters.destination_tasks, destination_task)
+            && ui_item_enabled (&ui_filters.instances, instance));
 
     return result;
 }
@@ -232,7 +255,7 @@ static ui_filter_e ui_filter_from_name(const char *name)
     return FILTER_UNKNOWN;
 }
 
-static int xml_parse_filters(xmlDocPtr doc)
+static int xml_parse_filters(xmlDocPtr doc, const char *file_name)
 {
     xmlNode *root_element = NULL;
     xmlNode *filter_node = NULL;
@@ -264,7 +287,7 @@ static int xml_parse_filters(xmlDocPtr doc)
                 if (filter_node != NULL)
                 {
                     filter = ui_filter_from_name ((const char*) filter_node->name);
-                    g_debug ("Found filter %s %d", filter_node->name, filter);
+                    g_debug("Found filter %s %d", filter_node->name, filter);
 
                     if (filter == FILTER_UNKNOWN)
                     {
@@ -282,13 +305,32 @@ static int xml_parse_filters(xmlDocPtr doc)
 
                             if (cur_node != NULL)
                             {
+                                xmlAttr *prop_node;
+                                ui_entry_enabled_e enabled = ENTRY_ENABLED_UNDEFINED;
+                                char *foreground = NULL;
+                                char *background = NULL;
+
+                                for (prop_node = cur_node->properties; prop_node != NULL; prop_node = prop_node->next)
+                                {
+                                    if (strcmp ((char *) prop_node->name, ENABLED_NAME) == 0)
+                                    {
+                                        enabled =
+                                                prop_node->children->content[0] == '0' ?
+                                                        ENTRY_ENABLED_FALSE : ENTRY_ENABLED_TRUE;
+                                    }
+                                    if (strcmp ((char *) prop_node->name, FOREGROUND_NAME) == 0)
+                                    {
+                                        foreground = (char *) prop_node->children->content;
+                                    }
+                                    if (strcmp ((char *) prop_node->name, BACKGROUND_NAME) == 0)
+                                    {
+                                        background = (char *) prop_node->children->content;
+                                    }
+                                }
+
                                 g_debug("  Found entry %s %s", cur_node->name, cur_node->properties->children->content);
-                                ui_filters_add (
-                                        filter,
-                                        FILTER_ID_UNDEFINED,
-                                        (const char*) cur_node->name,
-                                        cur_node->properties->children->content[0] == '0' ?
-                                                ENTRY_ENABLED_FALSE : ENTRY_ENABLED_TRUE);
+                                ui_filters_add (filter, FILTER_ID_UNDEFINED, (const char*) cur_node->name, enabled,
+                                                foreground, background);
 
                                 filters_entries++;
                                 cur_node = cur_node->next;
@@ -315,7 +357,7 @@ static int xml_parse_filters(xmlDocPtr doc)
         ret = RC_OK;
     }
 
-    g_message("Parsed XML filters definition found %d entries (%d messages to display)", filters_entries, ui_tree_view_get_filtered_number());
+    g_message("Parsed XML filters file \"%s\", found %d entries (%d messages to display)", file_name, filters_entries, ui_tree_view_get_filtered_number());
 
     return ret;
 }
@@ -338,7 +380,7 @@ int ui_filters_read(const char *file_name)
         return RC_FAIL;
     }
 
-    ret = xml_parse_filters (doc);
+    ret = xml_parse_filters (doc, file_name);
     if (ret != RC_OK)
     {
         ui_notification_dialog (GTK_MESSAGE_WARNING, "open filters", "Found no filter definitions in \"%s\"",
@@ -349,15 +391,25 @@ int ui_filters_read(const char *file_name)
     return ret;
 }
 
-static void write_filter(FILE *filter_file, ui_filter_t *filter)
+static void write_filter(FILE *filter_file, ui_filter_t *filter, gboolean save_colors)
 {
     int item;
 
     fprintf (filter_file, "  <%s>\n", filter->name);
     for (item = 0; item < filter->used; item++)
     {
-        fprintf (filter_file, "    <%s enabled=\"%d\"/>\n", filter->items[item].name,
-                 filter->items[item].enabled ? 1 : 0);
+        if (save_colors)
+        {
+            fprintf (filter_file,
+                     "    <%s " ENABLED_NAME "=\"%d\" " FOREGROUND_NAME "=\"%s\" " BACKGROUND_NAME "=\"%s\"/>\n",
+                     filter->items[item].name, filter->items[item].enabled ? 1 : 0, filter->items[item].foreground,
+                     filter->items[item].background);
+        }
+        else
+        {
+            fprintf (filter_file, "    <%s " ENABLED_NAME "=\"%d\"/>\n", filter->items[item].name,
+                     filter->items[item].enabled ? 1 : 0);
+        }
     }
     fprintf (filter_file, "  </%s>\n", filter->name);
 }
@@ -382,9 +434,9 @@ int ui_filters_file_write(const char *file_name)
     fprintf (filter_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
              "<filters>\n");
 
-    write_filter (filter_file, &ui_filters.messages);
-    write_filter (filter_file, &ui_filters.origin_tasks);
-    write_filter (filter_file, &ui_filters.destination_tasks);
+    write_filter (filter_file, &ui_filters.messages, TRUE);
+    write_filter (filter_file, &ui_filters.origin_tasks, FALSE);
+    write_filter (filter_file, &ui_filters.destination_tasks, FALSE);
 
     fprintf (filter_file, "</filters>\n");
 
@@ -392,88 +444,94 @@ int ui_filters_file_write(const char *file_name)
     return RC_OK;
 }
 
-void ui_create_filter_menu(GtkWidget **menu, ui_filter_t *filter)
+static void ui_create_filter_menu(GtkWidget **menu, ui_filter_t *filter)
 {
-    GtkWidget *menu_items;
-    int item;
-    gpointer data;
-
-    *menu = gtk_menu_new();
-
-    /* Create the "NONE" menu-item */
+    if (*menu == NULL)
     {
-        /* Create a new menu-item with a name */
-        menu_items = gtk_menu_item_new_with_label("NONE");
+        GtkWidget *menu_items;
+        int item;
+        gpointer data;
 
-        /* Add it to the menu. */
-        gtk_menu_shell_append(GTK_MENU_SHELL(*menu), menu_items);
+        *menu = gtk_menu_new ();
 
-        g_debug("ui_create_filter_menu %lx", (long) menu_items);
-        g_signal_connect(G_OBJECT(menu_items), "activate",
-                G_CALLBACK(ui_callback_on_menu_none), *menu);
+        /* Create the "NONE" menu-item */
+        {
+            /* Create a new menu-item with a name */
+            menu_items = gtk_menu_item_new_with_label ("NONE");
 
-        /* Show the widget */
-        gtk_widget_show(menu_items);
+            /* Add it to the menu. */
+            gtk_menu_shell_append (GTK_MENU_SHELL(*menu), menu_items);
+
+            g_debug("ui_create_filter_menu %lx", (long) menu_items);
+            g_signal_connect(G_OBJECT(menu_items), "activate", G_CALLBACK(ui_callback_on_menu_none), *menu);
+
+            /* Show the widget */
+            gtk_widget_show (menu_items);
+        }
+
+        /* Create the "ALL" menu-item */
+        {
+            /* Create a new menu-item with a name */
+            menu_items = gtk_menu_item_new_with_label ("ALL");
+
+            /* Add it to the menu. */
+            gtk_menu_shell_append (GTK_MENU_SHELL(*menu), menu_items);
+
+            g_debug("ui_create_filter_menu %lx", (long) menu_items);
+            g_signal_connect(G_OBJECT(menu_items), "activate", G_CALLBACK(ui_callback_on_menu_all), *menu);
+
+            /* Show the widget */
+            gtk_widget_show (menu_items);
+        }
+
+        /* Create separator */
+        {
+            menu_items = gtk_menu_item_new ();
+
+            /* Add it to the menu. */
+            gtk_menu_shell_append (GTK_MENU_SHELL(*menu), menu_items);
+
+            /* Show the widget */
+            gtk_widget_show (menu_items);
+        }
+
+        /* Creates menu-items */
+        for (item = 0; item < filter->used; item++)
+        {
+            /* Create a new menu-item with a name */
+            menu_items = gtk_check_menu_item_new_with_label (filter->items[item].name);
+
+            /* Add it to the menu. */
+            gtk_menu_shell_append (GTK_MENU_SHELL(*menu), menu_items);
+
+            gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(menu_items), filter->items[item].enabled);
+
+            /* Connect function to be called when the menu item is selected */
+            data = &filter->items[item];
+            g_debug("ui_create_filter_menu %lx %lx", (long) menu_items, (long) data);
+            g_signal_connect(G_OBJECT(menu_items), "activate", G_CALLBACK(ui_callback_on_menu_item_selected), data);
+            /* Save the menu_item reference */
+            filter->items[item].menu_item = menu_items;
+
+            /* Show the widget */
+            gtk_widget_show (menu_items);
+        }
     }
+}
 
-    /* Create the "ALL" menu-item */
-    {
-        /* Create a new menu-item with a name */
-        menu_items = gtk_menu_item_new_with_label("ALL");
-
-        /* Add it to the menu. */
-        gtk_menu_shell_append(GTK_MENU_SHELL(*menu), menu_items);
-
-        g_debug("ui_create_filter_menu %lx", (long) menu_items);
-        g_signal_connect(G_OBJECT(menu_items), "activate",
-                G_CALLBACK(ui_callback_on_menu_all), *menu);
-
-        /* Show the widget */
-        gtk_widget_show(menu_items);
-    }
-
-    /* Create separator */
-    {
-        menu_items = gtk_menu_item_new();
-
-        /* Add it to the menu. */
-        gtk_menu_shell_append(GTK_MENU_SHELL(*menu), menu_items);
-
-        /* Show the widget */
-        gtk_widget_show(menu_items);
-    }
-
-    /* Creates menu-items */
-    for (item = 0; item < filter->used; item++)
-    {
-        /* Create a new menu-item with a name */
-        menu_items = gtk_check_menu_item_new_with_label(
-                filter->items[item].name);
-
-        /* Add it to the menu. */
-        gtk_menu_shell_append(GTK_MENU_SHELL(*menu), menu_items);
-
-        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_items),
-                filter->items[item].enabled);
-
-        /* Connect function to be called when the menu item is selected */
-        data = &filter->items[item];
-        g_debug("ui_create_filter_menu %lx %lx", (long) menu_items, (long) data);
-        g_signal_connect(G_OBJECT(menu_items), "activate",
-                G_CALLBACK(ui_callback_on_menu_item_selected), data);
-        /* Save the menu_item reference */
-        filter->items[item].menu_item = menu_items;
-
-        /* Show the widget */
-        gtk_widget_show(menu_items);
-    }
+void ui_create_filter_menus(void)
+{
+    ui_create_filter_menu (&ui_main_data.menu_filter_messages, &ui_filters.messages);
+    ui_create_filter_menu (&ui_main_data.menu_filter_origin_tasks, &ui_filters.origin_tasks);
+    ui_create_filter_menu (&ui_main_data.menu_filter_destination_tasks, &ui_filters.destination_tasks);
+    ui_create_filter_menu (&ui_main_data.menu_filter_instances, &ui_filters.instances);
 }
 
 static void ui_destroy_filter_menu_item(GtkWidget *widget, gpointer data)
 {
     if (GTK_IS_MENU_ITEM(widget))
     {
-        gtk_widget_destroy(widget);
+        gtk_widget_destroy (widget);
     }
 }
 
@@ -481,9 +539,9 @@ static void ui_destroy_filter_menu_widget(GtkWidget **menu)
 {
     if (*menu != NULL)
     {
-        gtk_container_foreach(GTK_CONTAINER(*menu), ui_destroy_filter_menu_item, NULL);
+        gtk_container_foreach (GTK_CONTAINER(*menu), ui_destroy_filter_menu_item, NULL);
 
-        gtk_widget_destroy(*menu);
+        gtk_widget_destroy (*menu);
         *menu = NULL;
     }
 }
@@ -524,10 +582,7 @@ void ui_destroy_filter_menu(ui_filter_e filter)
 
 void ui_show_filter_menu(GtkWidget **menu, ui_filter_t *filter)
 {
-    if (*menu == NULL)
-    {
-        ui_create_filter_menu (menu, filter);
-    }
+    ui_create_filter_menu (menu, filter);
 
     gtk_menu_popup (GTK_MENU (*menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time ());
 }

@@ -41,14 +41,19 @@
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "timer.h"
-
+#include "log.h"
 #include "queue.h"
 
+#if defined (LOG_D) && defined (LOG_E)
+# define TMR_DEBUG(x, args...)  LOG_D(TMR, x, ##args)
+# define TMR_ERROR(x, args...)  LOG_E(TMR, x, ##args)
+#endif
+
 #ifndef TMR_DEBUG
-# define TMR_DEBUG(x, args...) do { fprintf(stdout, "[TMR][D]"x, ##args); } while(0)
+# define TMR_DEBUG(x, args...)  do { fprintf(stdout, "[TMR][D]"x, ##args); } while(0)
 #endif
 #ifndef TMR_ERROR
-# define TMR_ERROR(x, args...) do { fprintf(stdout, "[TMR][E]"x, ##args); } while(0)
+# define TMR_ERROR(x, args...)  do { fprintf(stdout, "[TMR][E]"x, ##args); } while(0)
 #endif
 
 int timer_handle_signal(siginfo_t *info);
@@ -95,7 +100,7 @@ int timer_handle_signal(siginfo_t *info)
     instance = timer_p->instance;
     message_p = itti_alloc_new_message(TASK_TIMER, TIMER_HAS_EXPIRED);
 
-    timer_expired_p = &message_p->msg.timer_has_expired;
+    timer_expired_p = &message_p->ittiMsg.timer_has_expired;
 
     timer_expired_p->timer_id = (long)timer_p->timer;
     timer_expired_p->arg      = timer_p->timer_arg;
@@ -207,8 +212,8 @@ int timer_setup(
 
 int timer_remove(long timer_id)
 {
-    struct timer_elm_s *timer_p;
     int rc = 0;
+    struct timer_elm_s *timer_p;
 
     TMR_DEBUG("Removing timer 0x%lx\n", timer_id);
 

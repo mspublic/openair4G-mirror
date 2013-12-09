@@ -32,6 +32,10 @@
 # include "intertask_interface.h"
 #endif
 
+#if defined(ENABLE_USE_MME)
+# include "s1ap_eNB.h"
+#endif
+
 #ifdef SMBV
 extern u8 config_smbv;
 extern char smbv_ip[16];
@@ -365,16 +369,17 @@ void get_simulation_options(int argc, char *argv[]) {
       break;
     case 'O':
 #if defined(ENABLE_USE_MME)
-      oai_emulation.info.mme_enabled = 1;
+      EPC_MODE_ENABLED = 1;
       if (optarg == NULL) /* No IP address provided: use localhost */
       {
-        memcpy(&oai_emulation.info.mme_ip_address[0], "127.0.0.1", 10);
+          memcpy(&EPC_MODE_MME_ADDRESS[0], "127.0.0.1", 10);
       } else {
         u8 ip_length = strlen(optarg) + 1;
-        memcpy(&oai_emulation.info.mme_ip_address[0], optarg, ip_length > 16 ? 16 : ip_length);
+        memcpy(&EPC_MODE_MME_ADDRESS[0], optarg,
+               ip_length > 16 ? 16 : ip_length);
       }
 #else
-      printf("You enabled MME mode without MME support...\n");
+      printf("You enabled MME mode without compiling using ENABLE_USE_MME=1 ...\n");
 #endif
       break;
     case 'o':
@@ -589,24 +594,6 @@ void init_openair2() {
   s32 i;
   s32 UE_id;
  
-#if defined(ENABLE_ITTI)
-  if (NB_eNB_INST > 0) {
-    if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
-      LOG_E(EMU, "Create task failed");
-      LOG_D(EMU, "Initializing RRC eNB task interface: FAILED\n");
-      exit (-1);
-    }
-  }
-
-  if (NB_UE_INST > 0) {
-    if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
-      LOG_E(EMU, "Create task failed");
-      LOG_D(EMU, "Initializing RRC UE task interface: FAILED\n");
-      exit (-1);
-    }
-  }
-#endif
-
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms,
 	   oai_emulation.info.eMBMS_active_state, 
 	   oai_emulation.info.cba_group_active, 

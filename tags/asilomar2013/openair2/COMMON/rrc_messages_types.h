@@ -12,6 +12,7 @@
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
+#if defined(DISABLE_ITTI_XER_PRINT)
 #include "BCCH-DL-SCH-Message.h"
 #include "DL-CCCH-Message.h"
 #include "DL-DCCH-Message.h"
@@ -25,14 +26,15 @@ typedef DL_DCCH_Message_t       RrcDlDcchMessage;
 typedef UE_EUTRA_Capability_t   RrcUeEutraCapability;
 typedef UL_CCCH_Message_t       RrcUlCcchMessage;
 typedef UL_DCCH_Message_t       RrcUlDcchMessage;
+#endif
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
-#define NAS_DOWNLINK_DATA_IND(mSGpTR)               (mSGpTR)->msg.nas_dl_data_ind
+#define NAS_DOWNLINK_DATA_IND(mSGpTR)               (mSGpTR)->ittiMsg.nas_dl_data_ind
 
-#define NAS_UPLINK_DATA_REQ(mSGpTR)                 (mSGpTR)->msg.nas_ul_data_req
-#define NAS_UPLINK_DATA_CNF(mSGpTR)                 (mSGpTR)->msg.nas_ul_data_cnf
-#define NAS_UPLINK_DATA_IND(mSGpTR)                 (mSGpTR)->msg.nas_ul_data_ind
+#define NAS_UPLINK_DATA_REQ(mSGpTR)                 (mSGpTR)->ittiMsg.nas_ul_data_req
+#define NAS_UPLINK_DATA_CNF(mSGpTR)                 (mSGpTR)->ittiMsg.nas_ul_data_cnf
+#define NAS_UPLINK_DATA_IND(mSGpTR)                 (mSGpTR)->ittiMsg.nas_ul_data_ind
 
 //-------------------------------------------------------------------------------------------//
 // Messages between NAS and RRC layers

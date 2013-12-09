@@ -2,7 +2,7 @@
  *   Eurecom OpenAirInterface 3
  *    Copyright(c) 2012 Eurecom
  *
- * Source eRALlte_thresholds.c
+ * Source eRAL_thresholds.c
  *
  * Version 0.1
  *
@@ -17,13 +17,11 @@
  * Description 
  *
  *****************************************************************************/
+#define LTE_RAL_ENB
+#define LTE_RAL_ENB_THRESHOLDS_C
+#include <assert.h>
+#include "lteRALenb.h"
 
-#include "lteRALenb_thresholds.h"
-
-#include "lteRALenb_mih_msg.h"
-#include "lteRALenb_variables.h"
-#include "lteRALenb_constants.h"
-#include "lteRALenb_proto.h"
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -31,103 +29,128 @@
 
 /****************************************************************************
  **                                                                        **
- ** Name:  eRALlte_configure_thresholds_request()                    **
+ ** Name:  eRAL_configure_thresholds_request()                          **
  **                                                                        **
- ** Description: Processes the Link_Configure_Thresholds.request message   **
- **   and sends a Link_Configure_Thresholds.confirm message to  **
- **   the MIHF.                                                 **
+ ** Description: Forwards the Link_Configure_Thresholds.request message    **
+ **   to the RRC layer.                                                    **
  **                                                                        **
- ** Inputs:  msgP:  Pointer to the received message            **
- **     Others: ralpriv                                    **
+ ** Inputs:  msgP:  Pointer to the received message                        **
+ **     Others: ralpriv                                                    **
  **                                                                        **
- ** Outputs:  None                                                      **
- **   Return: None                                       **
- **     Others: None                                       **
+ ** Outputs:  None                                                         **
+ ** Return:   None                                                         **
+ ** Others:   None                                                         **
  **                                                                        **
  ***************************************************************************/
-void eRALlte_configure_thresholds_request(MIH_C_Message_Link_Configure_Thresholds_request_t* msgP)
+void eRAL_configure_thresholds_request(ral_enb_instance_t instanceP, MIH_C_Message_Link_Configure_Thresholds_request_t* msgP)
 {
-    MIH_C_STATUS_T status = MIH_C_STATUS_SUCCESS;
-    unsigned int index;
-    //unsigned int temp_polling_interval;
+    unsigned int                             index;
+    unsigned int                             th_index;
+    rrc_ral_configure_threshold_req_t        configure_threshold_req;
+    MessageDef                              *message_p;
 
-    DEBUG("\n");
-    //DEBUG(" Configure thresholds request only returns success status to MIH_USER\n");
+    message_p = itti_alloc_new_message (TASK_RAL_ENB, RRC_RAL_CONFIGURE_THRESHOLD_REQ);
 
-    // SAVE REQUEST
-    memcpy(&ralpriv->mih_link_cfg_param_thresholds_list, &msgP->primitive.LinkConfigureParameterList_list, sizeof(MIH_C_LINK_CFG_PARAM_LIST_T));
+    memset(&configure_threshold_req, 0, sizeof(rrc_ral_configure_threshold_req_t));
 
-    for (index = 0; index < ralpriv->mih_link_cfg_param_thresholds_list.length; index++) {
-        ralpriv->active_mih_link_cfg_param_threshold[index] = MIH_C_BOOLEAN_TRUE;
-        if  ( ralpriv->mih_link_cfg_param_thresholds_list.val[index].th_action== MIH_C_SET_NORMAL_THRESHOLD){
-          ralpriv->measures_triggered_flag = RAL_TRUE;
-          // read period 
-          ralpriv->requested_period = ralpriv->mih_link_cfg_param_thresholds_list.val[index]._union.timer_interval;
-          ralpriv->meas_polling_interval = 1 + ((ralpriv->requested_period *1000)/ MIH_C_RADIO_POLLING_INTERVAL_MICRO_SECONDS);
-          //DEBUG(" Polling interval %d\n\n\n", temp_polling_interval);
-          ralpriv->meas_polling_counter = 1;
-          break;
-        } else if  ( ralpriv->mih_link_cfg_param_thresholds_list.val[index].th_action == MIH_C_CANCEL_THRESHOLD){
-          ralpriv->measures_triggered_flag = RAL_FALSE;
-          // read period 
-          ralpriv->requested_period = 0;
-          ralpriv->meas_polling_interval = RAL_DEFAULT_MEAS_POLLING_INTERVAL;
-          ralpriv->meas_polling_counter = 1;
-          break;
+    // copy transaction id
+    configure_threshold_req.transaction_id      = msgP->header.transaction_id;
+
+    // configure_threshold_req.num_link_cfg_params = 0; // done
+    for (index = 0; index < msgP->primitive.LinkConfigureParameterList_list.length; index++) {
+        // copy link_param_type
+        configure_threshold_req.link_cfg_params[index].link_param_type.choice = msgP->primitive.LinkConfigureParameterList_list.val[index].link_param_type.choice;
+        switch (configure_threshold_req.link_cfg_params[index].link_param_type.choice) {
+            case  RAL_LINK_PARAM_TYPE_CHOICE_GEN:
+                memcpy(&configure_threshold_req.link_cfg_params[index].link_param_type._union.link_param_gen,
+                        &msgP->primitive.LinkConfigureParameterList_list.val[index].link_param_type._union.link_param_gen,
+                        sizeof(ral_link_param_gen_t));
+                break;
+            case  RAL_LINK_PARAM_TYPE_CHOICE_QOS:
+                memcpy(&configure_threshold_req.link_cfg_params[index].link_param_type._union.link_param_qos,
+                        &msgP->primitive.LinkConfigureParameterList_list.val[index].link_param_type._union.link_param_qos,
+                        sizeof(ral_link_param_qos_t));
+                break;
+            case  RAL_LINK_PARAM_TYPE_CHOICE_LTE:
+                memcpy(&configure_threshold_req.link_cfg_params[index].link_param_type._union.link_param_lte,
+                        &msgP->primitive.LinkConfigureParameterList_list.val[index].link_param_type._union.link_param_lte,
+                        sizeof(ral_link_param_lte_t));
+                break;
+            default:
+                assert(1==0);
+        }
+        configure_threshold_req.num_link_cfg_params += 1;
+
+        // copy choice
+        configure_threshold_req.link_cfg_params[index].union_choice = msgP->primitive.LinkConfigureParameterList_list.val[index].choice;
+
+        // copy _union
+        switch (configure_threshold_req.link_cfg_params[index].union_choice) {
+            case RAL_LINK_CFG_PARAM_CHOICE_TIMER_NULL:
+                configure_threshold_req.link_cfg_params[index]._union.null_attr = 0;
+                break;
+            case RAL_LINK_CFG_PARAM_CHOICE_TIMER:
+                configure_threshold_req.link_cfg_params[index]._union.timer_interval = msgP->primitive.LinkConfigureParameterList_list.val[index]._union.timer_interval;
+            default:
+                assert(1==0);
+        }
+
+        // copy th_action
+        configure_threshold_req.link_cfg_params[index].th_action = msgP->primitive.LinkConfigureParameterList_list.val[index].th_action;
+
+        // configure_threshold_req.link_cfg_params[index].num_thresholds = 0; // done
+        for (th_index = 0; th_index < msgP->primitive.LinkConfigureParameterList_list.val[index].threshold_list.length;th_index++) {
+            configure_threshold_req.link_cfg_params[index].thresholds[th_index].threshold_val  = msgP->primitive.LinkConfigureParameterList_list.val[index].threshold_list.val[th_index].threshold_val;
+            configure_threshold_req.link_cfg_params[index].thresholds[th_index].threshold_xdir = msgP->primitive.LinkConfigureParameterList_list.val[index].threshold_list.val[th_index].threshold_xdir;
+            configure_threshold_req.link_cfg_params[index].num_thresholds += 1;
         }
     }
-    DEBUG(" Measurement values configured : Measures active %d, Requested period %d, Polling interval %d\n\n", 
-          ralpriv->measures_triggered_flag, ralpriv->requested_period, ralpriv->meas_polling_interval);
 
-    eRALlte_send_configure_thresholds_confirm(&msgP->header.transaction_id, &status, NULL);
 
-/*    MIH_C_STATUS_T                      status;
-    MIH_C_LINK_CFG_STATUS_LIST_T        link_cfg_status_list;
-    unsigned int                        threshold_index;
-    unsigned int                        link_index;
-    unsigned int                        result_index;
-
-    // SAVE REQUEST
-    // IT IS ASSUMED SINCE IT IS NOT CLEAR IN SPECs THAT THERE IS NO NEED TO MERGE CONFIGURE_THRESHOLDS_requests
-    //memset(&ralpriv->mih_link_cfg_param_thresholds_list, 0, sizeof(MIH_C_LINK_CFG_PARAM_LIST_T));
-    memcpy(&ralpriv->mih_link_cfg_param_thresholds_list, &messageP->primitive.LinkConfigureParameterList_list, sizeof(MIH_C_LINK_CFG_PARAM_LIST_T));
-
-    status = MIH_C_STATUS_SUCCESS;
-
-    result_index = 0;
-
-    for (link_index = 0;
-         link_index < messageP->primitive.LinkConfigureParameterList_list.length;
-         link_index++) {
-
-        ralpriv->active_mih_link_cfg_param_threshold[link_index] = MIH_C_BOOLEAN_TRUE;
-        for (threshold_index = 0;
-            threshold_index < messageP->primitive.LinkConfigureParameterList_list.val[link_index].threshold_list.length;
-            threshold_index ++) {
-
-            memcpy(&link_cfg_status_list.val[result_index].link_param_type,
-            &messageP->primitive.LinkConfigureParameterList_list.val[link_index].link_param_type,
-            sizeof(MIH_C_LINK_PARAM_TYPE_T));
-
-            memcpy(&link_cfg_status_list.val[result_index].threshold,
-            &messageP->primitive.LinkConfigureParameterList_list.val[link_index].threshold_list.val[threshold_index],
-            sizeof(MIH_C_THRESHOLD_T));
-
-             // NOW, ALWAYS SAY OK FOR PARAMETERS, BUT MAY BE WE WILL PUT MIH_C_BOOLEAN_FALSE in active_mih_link_cfg_param_threshold[link_index]
-            link_cfg_status_list.val[result_index].config_status = MIH_C_CONFIG_STATUS_SUCCESS;
-
-            result_index += 1;
-        }
-    }
-    // Say following thresholds entries are not configured
-    for (link_index = messageP->primitive.LinkConfigureParameterList_list.length;
-         link_index < MIH_C_LINK_CFG_PARAM_LIST_LENGTH;
-         link_index++) {
-        ralpriv->active_mih_link_cfg_param_threshold[link_index] = MIH_C_BOOLEAN_FALSE;
-    }
-    link_cfg_status_list.length = result_index;
-
-    eRALte_send_configure_thresholds_confirm(&messageP->header.transaction_id,&status, &link_cfg_status_list);
-*/
+    memcpy (&message_p->ittiMsg, (void *) &configure_threshold_req, sizeof(rrc_ral_configure_threshold_req_t));
+    itti_send_msg_to_task (TASK_RRC_ENB, instanceP, message_p);
 }
 
+//---------------------------------------------------------------------------------------------------------------------
+void eRAL_rx_rrc_ral_configure_threshold_conf(instance_t instance, MessageDef *msg_p)
+//---------------------------------------------------------------------------------------------------------------------
+{
+    MIH_C_STATUS_T                      status;
+    // This parameter is not included if Status does not indicate “Success.”
+    MIH_C_LINK_CFG_STATUS_LIST_T        link_cfg_status_list;
+    unsigned int                        i;
+
+    status = RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).status;
+    if (status == RAL_STATUS_SUCCESS) {
+        link_cfg_status_list.length = 0;
+        for (i = 0; i < RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).num_link_cfg_params; i++) {
+            link_cfg_status_list.val[i].link_param_type.choice = RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].link_param_type.choice;
+            switch (link_cfg_status_list.val[i].link_param_type.choice) {
+                case  RAL_LINK_PARAM_TYPE_CHOICE_GEN:
+                    memcpy(&link_cfg_status_list.val[i].link_param_type._union.link_param_gen,
+                            &RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].link_param_type._union.link_param_gen,
+                            sizeof(ral_link_param_gen_t));
+                    break;
+                case  RAL_LINK_PARAM_TYPE_CHOICE_QOS:
+                    memcpy(&link_cfg_status_list.val[i].link_param_type._union.link_param_qos,
+                            &RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].link_param_type._union.link_param_qos,
+                            sizeof(ral_link_param_qos_t));
+                    break;
+                case  RAL_LINK_PARAM_TYPE_CHOICE_LTE:
+                    memcpy(&link_cfg_status_list.val[i].link_param_type._union.link_param_lte,
+                            &RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].link_param_type._union.link_param_lte,
+                            sizeof(ral_link_param_lte_t));
+                    break;
+                default:
+                    assert(1==0);
+            }
+            link_cfg_status_list.val[i].threshold.threshold_val  = RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].threshold.threshold_val;
+            link_cfg_status_list.val[i].threshold.threshold_xdir = RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].threshold.threshold_xdir;
+            link_cfg_status_list.val[i].config_status            = RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).cfg_status[i].config_status;
+            link_cfg_status_list.length += 1;
+        }
+        eRAL_send_configure_thresholds_confirm(instance, &RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).transaction_id, &status, &link_cfg_status_list);
+    } else {
+        eRAL_send_configure_thresholds_confirm(instance, &RRC_RAL_CONFIGURE_THRESHOLD_CONF(msg_p).transaction_id, &status, NULL);
+    }
+}

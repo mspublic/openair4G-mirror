@@ -19,13 +19,16 @@ of the RRC spec is used to synthesize the data structures and encoding/decoding 
    1. use Microsoft WORD to generate a text version of the 3GPP 36.331 document
    2. run the script on the text file to generate the three files.
 
-Now download the asn1c utility (version 0.9.21) from 
+Now download the asn1c utility (version 0.9.22) from 
 
 http://lionet.info/asn1c/blog/
 
 or via svn from sourceforge (version 0.9.22)
 
+For version 0.9.2:
 svn co https://asn1c.svn.sourceforge.net/svnroot/asn1c/trunk asn1c
+For the latest version:
+svn co https://github.com/vlm/asn1c/trunk asn1c
 
 and put it in the asn1c directory (you should have a second asn1c directory now). Compile it and install it locally 
 (or make sure your $PATH can find the asn1c executable) according to the instructions given (see INSTALL file)

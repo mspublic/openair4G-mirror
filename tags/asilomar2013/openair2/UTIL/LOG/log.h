@@ -248,6 +248,7 @@ typedef enum {
     RLC,
     PDCP,
     RRC,
+    NAS,
     PERF,
     OIP,
     CLI,
@@ -257,7 +258,9 @@ typedef enum {
     SCTP,
     HW,
     OSA,
-    MAX_LOG_COMPONENTS
+    ENB_APP,
+    TMR,
+    MAX_LOG_COMPONENTS,
 } comp_name_t;
 
   //#define msg printf
@@ -321,6 +324,16 @@ extern LOG_params log_list[2000];
 extern pthread_mutex_t log_lock;
 extern pthread_cond_t log_notify;
 extern int log_shutdown;
+#endif
+
+#if defined(ENABLE_ITTI)
+typedef enum log_instance_type_e {
+  LOG_INSTANCE_UNKNOWN,
+  LOG_INSTANCE_ENB,
+  LOG_INSTANCE_UE,
+} log_instance_type_t;
+
+void log_set_instance_type (log_instance_type_t instance);
 #endif
 
 /*--- INCLUDES ---------------------------------------------------------------*/
