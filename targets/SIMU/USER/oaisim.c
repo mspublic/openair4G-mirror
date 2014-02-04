@@ -375,30 +375,18 @@ static s32 UE_id = 0, eNB_id = 0;
 static s32 RN_id=0;
 #endif
 
-Packet_OTG_List *otg_pdcp_buffer;
-
-typedef enum l2l1_task_state_e
-{
-    L2L1_WAITTING,
-    L2L1_RUNNING,
-    L2L1_TERMINATED,
-} l2l1_task_state_t;
-
-/*------------------------------------------------------------------------------*/
 void *l2l1_task(void *args_p) {
-  l2l1_task_state_t l2l1_state = L2L1_WAITTING;
-  clock_t           t;
-
   // Framing variables
-  s32               slot, last_slot, next_slot;
+  s32 slot, last_slot, next_slot;
 
 #ifdef Rel10
-  relaying_type_t   r_type = no_relay; // no relaying
+  relaying_type_t r_type=no_relay; // no relaying
 #endif
 
-  lte_subframe_t    direction;
+  lte_subframe_t direction;
 
-  char              fname[64], vname[64];
+  char fname[64], vname[64];
+
 
 #ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
@@ -444,6 +432,7 @@ void *l2l1_task(void *args_p) {
   }
 #endif
 
+
 #ifdef PRINT_STATS
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
@@ -477,6 +466,7 @@ void *l2l1_task(void *args_p) {
 
 #endif
 
+
 #if defined(ENABLE_ITTI)
   MessageDef   *message_p = NULL;
   int           result;
@@ -495,7 +485,6 @@ void *l2l1_task(void *args_p) {
 
       switch (ITTI_MSG_ID(message_p)) {
         case INITIALIZE_MESSAGE:
-          l2l1_state = L2L1_RUNNING;
           break;
 
         case ACTIVATE_MESSAGE:
@@ -507,20 +496,20 @@ void *l2l1_task(void *args_p) {
           break;
 
         case TERMINATE_MESSAGE:
-          l2l1_state = L2L1_TERMINATED;
+          itti_exit_task ();
           break;
 
         default:
           LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
           break;
       }
-    } while (l2l1_state == L2L1_WAITTING);
+    } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
     result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
   }
 #endif
 
-  for (frame = 0; (l2l1_state != L2L1_TERMINATED) && (frame < oai_emulation.info.n_frames); frame++) {
+  for (frame = 0; frame < oai_emulation.info.n_frames; frame++) {
 
 #if defined(ENABLE_ITTI)
     do {
@@ -538,7 +527,7 @@ void *l2l1_task(void *args_p) {
             break;
 
           case TERMINATE_MESSAGE:
-            l2l1_state = L2L1_TERMINATED;
+            itti_exit_task ();
             break;
 
           case MESSAGE_TEST:
@@ -986,7 +975,8 @@ void *l2l1_task(void *args_p) {
   return NULL;
 }
 
-/*------------------------------------------------------------------------------*/
+Packet_OTG_List *otg_pdcp_buffer;
+
 int main(int argc, char **argv) {
 
   s32 i;
@@ -1091,7 +1081,7 @@ int main(int argc, char **argv) {
 #if defined(ENABLE_ITTI)
   // Handle signals until all tasks are terminated
   if (create_tasks(oai_emulation.info.nb_enb_local, oai_emulation.info.nb_ue_local) >= 0) {
-  itti_wait_tasks_end();
+    itti_wait_tasks_end();
   } else {
     exit(-1); // need a softer mode
   }
@@ -1101,6 +1091,7 @@ int main(int argc, char **argv) {
   }
   l2l1_task (NULL);
 #endif
+
   t = clock () - t;
   LOG_I (EMU,"Duration of the simulation: %f seconds\n", ((float) t) / CLOCKS_PER_SEC);
 

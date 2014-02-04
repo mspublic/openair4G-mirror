@@ -219,19 +219,12 @@ static void init_SI (u8 Mod_id
                                                       &eNB_rrc_inst[Mod_id].sib13,
                                                       eNB_rrc_inst[Mod_id].MBMS_flag
 #endif
-#if defined(ENABLE_ITTI)
-                                                    , configuration
-#endif
                                                       );
       /*
          eNB_rrc_inst[Mod_id].sizeof_SIB23 = do_SIB2_AT4(Mod_id,
          eNB_rrc_inst[Mod_id].SIB23,
          &eNB_rrc_inst[Mod_id].systemInformation,
-         &eNB_rrc_inst[Mod_id].sib2,
-#if defined(ENABLE_ITTI)
-       , configuration
-#endif
-         );
+         &eNB_rrc_inst[Mod_id].sib2);
        */
       if (eNB_rrc_inst[Mod_id].sizeof_SIB23 == 255)
           mac_xface->macphy_exit ("[RRC][init_SI] FATAL, eNB_rrc_inst[Mod_id].sizeof_SIB23 == 255");
@@ -405,7 +398,7 @@ static void init_MCCH (u8 Mod_id) {
                       (struct LogicalChannelConfig *) NULL,
                       (MeasGapConfig_t *) NULL,
                       (TDD_Config_t *) NULL,
-                      NULL,
+		      NULL,
                       (u8 *) NULL,
                       (u16 *) NULL,
                       NULL, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
@@ -434,27 +427,29 @@ static void init_MBMS (u8 Mod_id, u32 frame) {
       // Configuring PDCP and RLC for MBMS Radio Bearer
 
       rrc_pdcp_config_asn1_req (Mod_id, 0, frame, 1,
-                                NULL,      // SRB_ToAddModList
+				NULL,      // SRB_ToAddModList
                                 NULL,   // DRB_ToAddModList
                                 (DRB_ToReleaseList_t *) NULL,
-                                0, // security mode
-                                NULL, // key rrc encryption
-                                NULL, // key rrc integrity
-                                NULL // key encryption
+				0, // security mode
+				NULL, // key rrc encryption
+				NULL, // key rrc integrity
+				NULL // key encryption
 #ifdef Rel10
                                 ,
                                 &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9)
 #endif
-                                );
+			     );
     
     rrc_rlc_config_asn1_req(Mod_id, frame, 1, 0,
-                            NULL,// SRB_ToAddModList
-                            NULL,// DRB_ToAddModList
-                            NULL,// DRB_ToReleaseList
-                            &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9));
+			    NULL,// SRB_ToAddModList
+			    NULL,// DRB_ToAddModList
+			    NULL,// DRB_ToReleaseList
+			    &(eNB_rrc_inst[Mod_id].mcch_message->pmch_InfoList_r9));
     
     //rrc_mac_config_req();
+    
   }  
+  
 }
 #endif
 
@@ -489,11 +484,11 @@ uint8_t rrc_eNB_get_next_transaction_identifier(uint8_t Mod_id)
 /*------------------------------------------------------------------------------*/
 /* Functions to handle UE index in eNB UE list */
 
-static uint8_t rrc_eNB_get_next_free_UE_index (uint8_t Mod_id, uint64_t UE_identity)
+uint8_t rrc_eNB_get_next_free_UE_index (uint8_t Mod_id, uint64_t UE_identity)
 {
   uint8_t i, first_index = UE_INDEX_INVALID, reg = 0;
 
-  AssertFatal(Mod_id < NB_eNB_INST, "eNB index invalid (%d/%d)!", Mod_id, NB_eNB_INST);
+  DevCheck(Mod_id < NB_eNB_INST, Mod_id, NB_eNB_INST, 0);
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     if ((first_index == UE_INDEX_INVALID) && (eNB_rrc_inst[Mod_id].Info.UE_list[i] == 0)) {
@@ -517,8 +512,8 @@ static uint8_t rrc_eNB_get_next_free_UE_index (uint8_t Mod_id, uint64_t UE_ident
 
 void rrc_eNB_free_UE_index (uint8_t Mod_id, uint8_t UE_id)
 {
-  AssertFatal(Mod_id < NB_eNB_INST, "eNB index invalid (%d/%d) for UE %d!", Mod_id, NB_eNB_INST, UE_id);
-  AssertFatal(UE_id < NUMBER_OF_UE_MAX, "UE index invalid (%d/%d) for eNB %d!", UE_id, NUMBER_OF_UE_MAX, Mod_id);
+  DevCheck(Mod_id < NB_eNB_INST, Mod_id, UE_id, NB_eNB_INST);
+  DevCheck(UE_id < NUMBER_OF_UE_MAX, Mod_id, UE_id, NUMBER_OF_UE_MAX);
 
   LOG_I (RRC, "[eNB %d] Removing UE %d rv 0x%" PRIx64 "\n", Mod_id, UE_id, eNB_rrc_inst[Mod_id].Info.UE_list[UE_id]);
   eNB_rrc_inst[Mod_id].Info.UE[UE_id].Status = RRC_IDLE;
@@ -596,9 +591,9 @@ void rrc_eNB_generate_UECapabilityEnquiry (u8 Mod_id, u32 frame, u16 UE_index)
 }
 
 /*------------------------------------------------------------------------------*/
-static void rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
-                                                                  u16 UE_index,
-                                                                  u8 ho_state)
+void rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
+							   u16 UE_index,
+							   u8 ho_state)
 {
 #if defined(ENABLE_ITTI)
   eNB_RRC_UE_INFO *UE_info = &eNB_rrc_inst[Mod_id].Info.UE[UE_index];
@@ -2153,8 +2148,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover (u8 Mod_id, u32 fram
 
 /*------------------------------------------------------------------------------*/
 void rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
-                                                      u8 UE_index,
-                                                      RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete)
+							   u8 UE_index,
+							   RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete)
 {
   int i;
 #ifdef NAS_NETLINK
@@ -2396,7 +2391,7 @@ void rrc_eNB_generate_RRCConnectionSetup (u8 Mod_id, u32 frame, u16 UE_index) {
   SRB_ToAddMod_t *SRB1_config;
   int cnt;
 
-  AssertFatal(UE_index < NUMBER_OF_UE_MAX, "UE index invalid (%d/%d) for eNB %d!", UE_index, NUMBER_OF_UE_MAX, Mod_id);
+  DevCheck(UE_index < NUMBER_OF_UE_MAX, UE_index, NUMBER_OF_UE_MAX, 0);
 
   SRB_configList = &eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
 
@@ -2494,7 +2489,7 @@ char openair_rrc_lite_eNB_init (u8 Mod_id)
   LOG_D (RRC, "[MSC_NEW][FRAME 00000][RRC_eNB][MOD %02d][]\n", Mod_id);
   LOG_D (RRC, "[MSC_NEW][FRAME 00000][IP][MOD %02d][]\n", Mod_id);
 
-  AssertFatal(eNB_rrc_inst != NULL, "eNB_rrc_inst not initialized!");
+  DevAssert(eNB_rrc_inst != NULL);
 
   for (j = 0; j < NUMBER_OF_UE_MAX; j++)
     eNB_rrc_inst[Mod_id].Info.UE[j].Status = RRC_IDLE;     //CH_READY;
@@ -2738,6 +2733,7 @@ for (i = 0; i < 8; i++)
                       Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
 
               rrc_eNB_generate_RRCConnectionSetup (Mod_id, frame, UE_index);
+
               //LOG_D(RRC, "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Tx RRCConnectionSetup][RRC_eNB][MOD %02d][]\n",
               //      frame, Mod_id, Mod_id);
 
@@ -2783,6 +2779,8 @@ for (i = 0; i < 8; i++)
                  LOG_D(RRC,"[eNB %d] RLC AM allocation index@0 is %d\n",Mod_id,rlc[Mod_id].m_rlc_am_array[0].allocation);
                  LOG_D(RRC,"[eNB %d] RLC AM allocation index@1 is %d\n",rlc[Mod_id].m_rlc_am_array[1].allocation);
                */
+
+	      
 #endif //NO_RRM
             }
           else
@@ -2817,9 +2815,10 @@ int rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
   UL_DCCH_Message_t *ul_dcch_msg = NULL;        //&uldcchmsg;
   UE_EUTRA_Capability_t *UE_EUTRA_Capability = NULL;
 
-  if ((Srb_id != 1) && (Srb_id != 2))
+  if (Srb_id != 1)
     {
-      LOG_E (RRC, "[eNB %d] Frame %d: Received message on SRB%d, should not have ...\n",
+      LOG_E (RRC,
+             "[eNB %d] Frame %d: Received message on SRB%d, should not have ...\n",
              Mod_id, frame, Srb_id);
     }
 

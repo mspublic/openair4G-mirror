@@ -10,7 +10,6 @@
 
 #include "as_message.h"
 #include "rrc_types.h"
-#include "s1ap_messages_types.h"
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
@@ -58,16 +57,12 @@ typedef struct RrcStateInd_s{
 
 // eNB: ENB_APP -> RRC messages
 typedef struct RrcConfigurationReq_s {
-    uint32_t            cell_identity;
+    uint32_t cell_identity;
 
-    uint16_t            tac;
+    uint16_t tac;
 
-    uint16_t            mcc;
-    uint16_t            mnc;
-
-    paging_drx_t        default_drx;
-
-    lte_frame_type_t    frame_type;
+    uint16_t mcc;
+    uint16_t mnc;
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages

@@ -652,9 +652,9 @@ void pdcp_fifo_read_input_sdus_from_otg (u32_t frame, u8_t eNB_flag, u8 UE_index
           LOG_I(OTG,"send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, rb_id, src_id, dst_id, pkt_size);
           free(otg_pkt);
         }
-        /*else {
-      LOG_I(OTG,"nothing generated (src %d, dst %d)\n",src_id, dst_id);
-      }*/
+        else {
+	  LOG_I(OTG,"nothing generated (src %d, dst %d)\n",src_id, dst_id);
+	}
       }
       /*else {
     LOG_I(OTG,"rrc_status (src %d, dst %d) = %d\n",src_id, dst_id, mac_get_rrc_status(src_id, eNB_flag, dst_id ));

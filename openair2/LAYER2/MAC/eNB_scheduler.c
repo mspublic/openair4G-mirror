@@ -3893,7 +3893,7 @@ void schedule_ue_spec(unsigned char Mod_id,
 
 
 
-	mcs = eNB_UE_stats->dlsch_mcs1;
+	mcs = 22;//eNB_UE_stats->dlsch_mcs1;
 	if (mcs==0) nb_rb = 4;   // don't let the TBS get too small
 	else nb_rb=min_rb_unit;
 
@@ -3903,11 +3903,11 @@ void schedule_ue_spec(unsigned char Mod_id,
 	  nb_rb += min_rb_unit;  // 
 	  if (nb_rb>nb_available_rb) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+	    TBS = mac_xface->get_TBS_DL(mcs,nb_available_rb);
 	    nb_rb = nb_available_rb;
 	    break;
 	  }
-	  TBS = mac_xface->get_TBS_DL(eNB_UE_stats->dlsch_mcs1,nb_rb);
+	  TBS = mac_xface->get_TBS_DL(mcs,nb_rb);
 	}
 
 	if(nb_rb == pre_nb_available_rbs[next_ue])
@@ -4250,10 +4250,29 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
   int           result;
 #endif
 
+#ifdef USER_PLANE_TEST
+  static int first_call = 1;
+#endif 
+
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   //  LOG_D(MAC,"[eNB %d] Frame %d, Subframe %d, entering MAC scheduler\n",Mod_id, frame, subframe);
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,1);
+
+#ifdef USER_PLANE_TEST
+  int UE_id;
+  if (first_call == 1) {
+    first_call = 0;
+    UE_id=add_new_ue(Mod_id,1234);
+    if (UE_id==-1) {
+      mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
+    }
+    else {
+      LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Added user with rnti %x => UE %d\n",
+	    Mod_id,frame,1234,UE_id);
+    }
+  }
+#endif
 
 #if defined(ENABLE_ITTI)
   do {

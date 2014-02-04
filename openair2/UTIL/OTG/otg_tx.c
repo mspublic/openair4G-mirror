@@ -232,8 +232,8 @@ Send Packets when:
 - when (emutime- ctime)>20m ==> to avoid the fact that TX transmit and RX 
 	can't received due to the end of the emulation 
 */
-  if (((size>0) || (otg_info->traffic_type_background[src][dst]==1)) && 
-      (((g_otg->max_nb_frames*10)-ctime)>20))   { 
+  if (((size>0) || (otg_info->traffic_type_background[src][dst]==1))) { 
+      //(((g_otg->max_nb_frames*10)-ctime)>20))   { 
     
     /* No aggregation for background traffic   */
     if (otg_info->traffic_type_background[src][dst]==0){
@@ -242,6 +242,7 @@ Send Packets when:
       header = random_string(otg_info->header_size[src][dst], g_otg->packet_gen_type, HEADER_ALPHABET);
       header_size = (header != NULL)? strlen(header) : 0;
       payload = random_string(size, RANDOM_STRING, PAYLOAD_ALPHABET);
+      LOG_D(OTG,"payload = %p\n",payload);
       if (payload == NULL) return NULL;
       flag=0xffff;
   	flow=otg_info->flow_id[src][dst];

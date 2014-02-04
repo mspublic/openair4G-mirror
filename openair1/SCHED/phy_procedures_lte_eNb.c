@@ -145,7 +145,7 @@ s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   u8 i;
 
   //#ifdef DEBUG_PHY_PROC
-  LOG_I(PHY,"[eNB %d] Adding UE with rnti %x\n",phy_vars_eNB->Mod_id,rnti);
+  LOG_D(PHY,"[eNB %d] Adding UE with rnti %x\n",phy_vars_eNB->Mod_id,rnti);
   //#endif
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
@@ -1040,9 +1040,15 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // there is at least one allocation for PDCCH
   u8 smbv_alloc_cnt = 1;
 #endif
+  static int first_call=1;
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,1);
 
+  if (first_call == 1) {
+    first_call = 0;
+    UE_id = add_ue(1234,phy_vars_eNB);
+    phy_vars_eNB->eNB_UE_stats[UE_id].mode = PUSCH;
+  }
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[%s %d] Frame %d subframe %d : Doing phy_procedures_eNB_TX(%d)\n", 
 	(r_type == multicast_relay) ? "RN/eNB" : "eNB",
@@ -2974,14 +2980,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			       frame,
 			       &phy_vars_eNB->ulsch_eNB[i]->Msg3_frame,
 			       &phy_vars_eNB->ulsch_eNB[i]->Msg3_subframe);
-	  }
+	  }/*
 	  LOG_I(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",frame,last_slot>>1,
 		harq_pid,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
 	  for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3;j++)
 	    printf("%x.",phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->c[0][j]);
 	  printf("\n");
 	  dump_ulsch(phy_vars_eNB,last_slot>>1,i);
-	  mac_exit_wrapper("Msg3 error");
+	  mac_exit_wrapper("Msg3 error");*/
 	} // This is Msg3 error
 	else { //normal ULSCH
 	  LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
@@ -3019,6 +3025,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  }
 	
 	  // If we've dropped the UE, go back to PRACH mode for this UE
+#ifndef USER_PLANE_TEST
 	  if (phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid] == 20) {
 	    LOG_I(PHY,"[eNB %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached, removing UE\n",
 		  phy_vars_eNB->Mod_id,frame,last_slot>>1, i);
@@ -3031,6 +3038,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]=0;
 	  }
+#endif
 	}
       }  // ulsch in error
       else {
@@ -3748,13 +3756,6 @@ void phy_procedures_eNB_lte(unsigned char last_slot, unsigned char next_slot,PHY
           }
           break;
 #   endif
-
-        /* Messages from eNB app */
-        case PHY_CONFIGURATION_REQ:
-          LOG_I(PHY, "[eNB %d] Received %s\n", instance, msg_name);
-          /* TODO */
-
-          break;
 
         default:
           LOG_E(PHY, "[ENB %d] Received unexpected message %s\n", Mod_id, msg_name);

@@ -53,6 +53,7 @@ extern UE_MAC_INST *UE_mac_inst;
 
 extern mui_t rrc_eNB_mui;
 
+
 //configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
 void openair_rrc_on(u8 Mod_id, u8 eNB_flag) {
   unsigned short i;
@@ -65,6 +66,66 @@ void openair_rrc_on(u8 Mod_id, u8 eNB_flag) {
     rrc_config_buffer (&eNB_rrc_inst[Mod_id].Srb0, CCCH, 1);
     eNB_rrc_inst[Mod_id].Srb0.Active = 1;
 
+#ifdef USER_PLANE_TEST
+    u32 Idx;
+    uint8_t UE_index;
+  
+  UE_index = rrc_eNB_get_next_free_UE_index (Mod_id, 0x1234);
+  memset (&eNB_rrc_inst[Mod_id].Info.UE_list[UE_index],
+	  0,5);
+  eNB_rrc_inst[Mod_id].Info.Nb_ue++;
+  Idx = (UE_index * NB_RB_MAX) + DCCH;
+  // SRB1
+  eNB_rrc_inst[Mod_id].Srb1[UE_index].Active = 1;
+  eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Srb_id = Idx;
+  memcpy (&eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.
+	  Lchan_desc[0], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  memcpy (&eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.
+	  Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  
+  // SRB2
+  eNB_rrc_inst[Mod_id].Srb2[UE_index].Active = 1;
+  eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id = Idx;
+  memcpy (&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.
+	  Lchan_desc[0], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  memcpy (&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.
+	  Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  
+  rrc_eNB_generate_RRCConnectionSetup (Mod_id, 0, UE_index);
+  rrc_pdcp_config_asn1_req (Mod_id, UE_index, 0, 1,
+			    eNB_rrc_inst[Mod_id].
+			    SRB_configList[UE_index],
+			    (DRB_ToAddModList_t *) NULL,
+			    (DRB_ToReleaseList_t *) NULL,
+			    0xff,
+			    NULL,
+			    NULL,
+			    NULL
+#ifdef Rel10
+			    , (PMCH_InfoList_r9_t *) NULL
+#endif
+			    );
+  
+  rrc_rlc_config_asn1_req (Mod_id, 0, 1, UE_index,
+			   eNB_rrc_inst[Mod_id].
+			   SRB_configList[UE_index],
+			   (DRB_ToAddModList_t *) NULL,
+			   (DRB_ToReleaseList_t *) NULL
+#ifdef Rel10
+			   , (PMCH_InfoList_r9_t *) NULL
+#endif
+			   );
+  
+  eNB_rrc_inst[Mod_id].Info.UE[UE_index].Status = RRC_CONNECTED;
+  rrc_eNB_generate_defaultRRCConnectionReconfiguration (Mod_id, 0,
+							UE_index,
+							0);
+  LOG_I(RRC,"Processing Dummy RRCConnectionReconfigurationComplete, UE_index %d\n",UE_index);
+  rrc_eNB_process_RRCConnectionReconfigurationComplete (Mod_id,
+							0,
+							UE_index,
+							NULL);
+#endif
   }
   else {
     LOG_I(RRC, "[UE %d] OPENAIR RRC IN....\n", Mod_id);
