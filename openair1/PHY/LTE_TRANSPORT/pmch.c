@@ -27,7 +27,7 @@ __m128i zeroM;//,tmp_over_sqrt_10,tmp_sum_4_over_sqrt_10,tmp_sign,tmp_sign_3_ove
 #endif
 
 
-void dump_mch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int subframe) {
+void dump_mch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword,int subframe) {
 
   unsigned int nsymb_pmch=12;
   char fname[32],vname[32];
@@ -143,12 +143,11 @@ int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_par
   return(0);
 } 
 
-void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx, int abstraction_flag) {
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx) {
 
   LTE_eNB_DLSCH_t *dlsch = phy_vars_eNB->dlsch_eNB_MCH;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
-  
-  //  dlsch->rnti   = M_RNTI;
+
   dlsch->harq_processes[0]->mcs   = mcs;
   //  dlsch->harq_processes[0]->Ndi   = ndi;
   dlsch->harq_processes[0]->rvidx = rvidx;
@@ -175,26 +174,13 @@ void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx, in
     dlsch->rb_alloc[3] = 0xf;
     break;
   }
-
-  if (abstraction_flag){
-    eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pmch_flag=1;
-    eNB_transport_info[phy_vars_eNB->Mod_id].num_pmch=1; // assumption: there is always one pmch in each SF
-    eNB_transport_info[phy_vars_eNB->Mod_id].num_common_dci=0;
-    eNB_transport_info[phy_vars_eNB->Mod_id].num_ue_spec_dci=0;
-    eNB_transport_info[phy_vars_eNB->Mod_id].dlsch_type[0]=5;// put at the reserved position for PMCH
-    eNB_transport_info[phy_vars_eNB->Mod_id].harq_pid[0]=0;
-    eNB_transport_info[phy_vars_eNB->Mod_id].ue_id[0]=255;//broadcast
-    eNB_transport_info[phy_vars_eNB->Mod_id].tbs[0]=dlsch->harq_processes[0]->TBS>>3;
-  }
-
 }
 
 void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int ndi,int rvidx,int eNB_id) {
 
   LTE_UE_DLSCH_t *dlsch = phy_vars_ue->dlsch_ue_MCH[eNB_id];
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
-  
-  //  dlsch->rnti   = M_RNTI;
+
   dlsch->harq_processes[0]->mcs   = mcs;
   dlsch->harq_processes[0]->rvidx = rvidx;
   //  dlsch->harq_processes[0]->Ndi   = ndi;
@@ -223,59 +209,42 @@ void fill_UE_dlsch_MCH(PHY_VARS_UE *phy_vars_ue,int mcs,int ndi,int rvidx,int eN
   }
 }
 
- void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a,int abstraction_flag) {
+void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a) {
 
   int G;
-  if (abstraction_flag != 0) {
-    if (eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]!=0)
-      printf("[PHY][EMU] PMCH transport block position is different than zero %d \n", eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]);
-    
-    memcpy(phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->b,
-	   a,
-	   phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3);
-    LOG_D(PHY, "[eNB %d] dlsch_encoding_emul pmch , tbs is %d \n", 
-	  phy_vars_eNB->Mod_id,
-	  phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3);
 
-    memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
-    	   a,
-	   phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3);
-    eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]+= phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3;//=eNB_transport_info[phy_vars_eNB->Mod_id].tbs[0];
-  }else {
-    G = get_G(&phy_vars_eNB->lte_frame_parms,
-	      phy_vars_eNB->lte_frame_parms.N_RB_DL,
-	      phy_vars_eNB->dlsch_eNB_MCH->rb_alloc,
-	      get_Qm(phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->mcs),
-	      2,phy_vars_eNB->frame,subframe);
-    
-    generate_mbsfn_pilot(phy_vars_eNB,
-			 phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
-			 AMP,
-			 subframe);
-    
-    if (dlsch_encoding(a,
-		       &phy_vars_eNB->lte_frame_parms,
-		       1,
-		       phy_vars_eNB->dlsch_eNB_MCH,
-		       phy_vars_eNB->frame,
-		       subframe,
-		       &phy_vars_eNB->dlsch_rate_matching_stats,
-		       &phy_vars_eNB->dlsch_turbo_encoding_stats,
-		       &phy_vars_eNB->dlsch_interleaving_stats
-		       )<0)
-      exit(-1);
-    
-    dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,1,phy_vars_eNB->dlsch_eNB_MCH,G,0,subframe<<1);
-    
-    
-    mch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
-		   AMP,
-		   subframe,
-		   &phy_vars_eNB->lte_frame_parms,
-		   phy_vars_eNB->dlsch_eNB_MCH);
-  }
-  
- }
+  G = get_G(&phy_vars_eNB->lte_frame_parms,
+	    phy_vars_eNB->lte_frame_parms.N_RB_DL,
+	    phy_vars_eNB->dlsch_eNB_MCH->rb_alloc,
+	    get_Qm(phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->mcs),
+	    2,phy_vars_eNB->frame,subframe);
+
+  generate_mbsfn_pilot(phy_vars_eNB,
+		       phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
+		       AMP,
+		       subframe);
+
+  if (dlsch_encoding(a,
+		     &phy_vars_eNB->lte_frame_parms,
+		     1,
+		     phy_vars_eNB->dlsch_eNB_MCH,
+		     phy_vars_eNB->frame,
+		     subframe,
+		     &phy_vars_eNB->dlsch_rate_matching_stats,
+		     &phy_vars_eNB->dlsch_turbo_encoding_stats,
+		     &phy_vars_eNB->dlsch_interleaving_stats
+		     )<0)
+    exit(-1);
+
+  dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,1,phy_vars_eNB->dlsch_eNB_MCH,G,0,subframe<<1);
+
+
+  mch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
+		 AMP,
+		 subframe,
+		 &phy_vars_eNB->lte_frame_parms,
+		 phy_vars_eNB->dlsch_eNB_MCH);
+}
 
 void mch_extract_rbs(int **rxdataF,
 		     int **dl_ch_estimates,
@@ -334,7 +303,7 @@ void mch_extract_rbs(int **rxdataF,
 void mch_channel_level(int **dl_ch_estimates_ext,
 		       LTE_DL_FRAME_PARMS *frame_parms,
 		       int *avg,
-		       uint8_t symbol,
+		       u8 symbol,
 		       unsigned short nb_rb){
 
   int i,aarx,nre;
@@ -534,15 +503,15 @@ int mch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		 unsigned char symbol,
 		 short **llr32p) {
 
-  uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  uint32_t *llr32;
+  u32 *rxF = (u32*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  u32 *llr32;
   int i,len;
 
   if (symbol==2) {
-      llr32 = (uint32_t*)dlsch_llr;
+      llr32 = (u32*)dlsch_llr;
   }
   else {
-      llr32 = (uint32_t*)(*llr32p);
+      llr32 = (u32*)(*llr32p);
   }
  
   if (!llr32) {
@@ -581,20 +550,20 @@ void mch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		   short *dlsch_llr,
 		   int **dl_ch_mag,
 		   unsigned char symbol,
-		   int16_t **llr32p) {
+		   s16 **llr32p) {
 
     __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
     __m128i *ch_mag;
     __m128i llr128[2],xmm0;
     int i,len;
     unsigned char len_mod4=0;
-    uint32_t *llr32;
+    u32 *llr32;
     
     if (symbol==2) {
-        llr32 = (uint32_t*)dlsch_llr;
+        llr32 = (u32*)dlsch_llr;
     }
     else {
-        llr32 = (uint32_t*)*llr32p;
+        llr32 = (u32*)*llr32p;
     }
   
     
@@ -627,14 +596,14 @@ void mch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
         // lambda_1=y_R, lambda_2=|y_R|-|h|^2, lamda_3=y_I, lambda_4=|y_I|-|h|^2
         llr128[0] = _mm_unpacklo_epi32(rxF[i],xmm0); 
         llr128[1] = _mm_unpackhi_epi32(rxF[i],xmm0);
-        llr32[0] = ((uint32_t *)&llr128[0])[0];
-        llr32[1] = ((uint32_t *)&llr128[0])[1];
-        llr32[2] = ((uint32_t *)&llr128[0])[2];
-        llr32[3] = ((uint32_t *)&llr128[0])[3];
-        llr32[4] = ((uint32_t *)&llr128[1])[0];
-        llr32[5] = ((uint32_t *)&llr128[1])[1];
-        llr32[6] = ((uint32_t *)&llr128[1])[2];
-        llr32[7] = ((uint32_t *)&llr128[1])[3];
+        llr32[0] = ((u32 *)&llr128[0])[0];
+        llr32[1] = ((u32 *)&llr128[0])[1];
+        llr32[2] = ((u32 *)&llr128[0])[2];
+        llr32[3] = ((u32 *)&llr128[0])[3];
+        llr32[4] = ((u32 *)&llr128[1])[0];
+        llr32[5] = ((u32 *)&llr128[1])[1];
+        llr32[6] = ((u32 *)&llr128[1])[2];
+        llr32[7] = ((u32 *)&llr128[1])[3];
         llr32+=8;
   }
   _mm_empty();
@@ -660,7 +629,7 @@ void mch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 //   int j=0;
   unsigned char len_mod4;
   short *llr;
-  int16_t *llr2;
+  s16 *llr2;
   
   if (symbol==2)
     llr = dlsch_llr;
@@ -750,7 +719,7 @@ void mch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 int avg_pmch[4];
 int rx_pmch(PHY_VARS_UE *phy_vars_ue,
 	   unsigned char eNB_id,
-	   uint8_t subframe,
+	   u8 subframe,
 	   unsigned char symbol) {
 
   LTE_UE_COMMON *lte_ue_common_vars  = &phy_vars_ue->lte_ue_common_vars;
@@ -831,4 +800,6 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
     }
     return(0);
 }
+
+
 

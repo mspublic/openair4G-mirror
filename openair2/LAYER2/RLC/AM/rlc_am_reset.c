@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           rlc_am_reset.c  -
                              -------------------
@@ -64,7 +33,7 @@ The RESET PDUs and the RESET ACK PDUs have higher priority than AMD PDUs.
 #include  "LAYER2/MAC/extern.h"
 #define DEBUG_RESET
 //-----------------------------------------------------------------------------
-void            send_reset_ack_pdu (uint8_t rsnP, struct rlc_am_entity *rlcP);
+void            send_reset_ack_pdu (u8_t rsnP, struct rlc_am_entity *rlcP);
 void            send_reset_pdu (struct rlc_am_entity *rlcP);
 void            reset_rlc_am (struct rlc_am_entity *rlcP);
 void            process_reset_ack (mem_block_t * pduP, struct rlc_am_reset_header *controlP, struct rlc_am_entity *rlcP);
@@ -166,7 +135,7 @@ send_reset_pdu (struct rlc_am_entity *rlcP)
 
 //-----------------------------------------------------------------------------
 void
-send_reset_ack_pdu (uint8_t rsnP, struct rlc_am_entity *rlcP)
+send_reset_ack_pdu (u8_t rsnP, struct rlc_am_entity *rlcP)
 {
 //-----------------------------------------------------------------------------
   mem_block_t      *pdu;
@@ -266,8 +235,8 @@ void
 process_reset (mem_block_t * pduP, struct rlc_am_reset_header *controlP, struct rlc_am_entity *rlcP)
 {
 //-----------------------------------------------------------------------------
-  uint8_t              rsn;
-  uint8_t              saved_vt_rst;
+  u8_t              rsn;
+  u8_t              saved_vt_rst;
 
 /* From 25.322 V5.0.0 (2002-03)
    Reception of the RESET PDU by the Receiver

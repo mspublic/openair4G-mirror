@@ -9,6 +9,12 @@
 #ifndef PDCP_PRIMITIVES_H
 #define PDCP_PRIMITIVES_H
 
+#ifndef TRUE
+  #define TRUE 0x01
+  #define FALSE 0x00
+  typedef unsigned char BOOL;
+#endif
+
 /*
  * 3GPP TS 36.323 V10.1.0 (2011-03)
  */
@@ -16,8 +22,9 @@
 /*
  * Data or control (1-bit, see 6.3.7)
  */
-#define PDCP_CONTROL_PDU_BIT_SET 0x00
-#define PDCP_DATA_PDU_BIT_SET    0x01
+#define PDCP_CONTROL_PDU 0x00
+#define PDCP_DATA_PDU 0x01
+#define PDCP_TM 0x02 // transparent mode 
 
 /*
  * PDU-type (3-bit, see 6.3.8)
@@ -32,17 +39,17 @@
 #define PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE 1
 #define PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE 4
 typedef struct {
-  uint8_t sn;      // PDCP sequence number will wrap around 2^5-1 so
+  u8 sn;      // PDCP sequence number will wrap around 2^5-1 so
               // reserved field is unnecessary here
-  uint8_t mac_i[PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE];  // Integration protection is not implemented (pad with 0)
+  u8 mac_i[PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE];  // Integration protection is not implemented (pad with 0)
 } pdcp_control_plane_data_pdu_header;
 
 /*
  * 6.2.3 User Plane PDCP Data PDU with long PDCP SN (12-bit)
  */
 typedef struct {
-  uint8_t dc;      // Data or control (see 6.3.7)
-  uint16_t sn;     // 12-bit sequence number
+  u8 dc;      // Data or control (see 6.3.7)
+  u16 sn;     // 12-bit sequence number
 } pdcp_user_plane_data_pdu_header_with_long_sn;
 #define PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE 2
 
@@ -50,8 +57,8 @@ typedef struct {
  * 6.2.4 User Plane PDCP Data PDU with short PDCP SN (7-bit)
  */
 typedef struct {
-  uint8_t dc;
-  uint8_t sn;      // 7-bit sequence number
+  u8 dc;
+  u8 sn;      // 7-bit sequence number
 } pdcp_user_plane_data_pdu_header_with_short_sn;
 #define PDCP_USER_PLANE_DATA_PDU_SHORT_SN_HEADER_SIZE 1
 
@@ -59,8 +66,8 @@ typedef struct {
  * 6.2.5 PDCP Control PDU for interspersed ROHC feedback packet
  */
 typedef struct {
-  uint8_t dc;
-  uint8_t pdu_type; // PDU type (see 6.3.8)
+  u8 dc;
+  u8 pdu_type; // PDU type (see 6.3.8)
 } pdcp_control_pdu_for_interspersed_rohc_feedback_packet_header;
 #define PDCP_CONTROL_PDU_INTERSPERSED_ROHC_FEEDBACK_HEADER_SIZE 1
 
@@ -68,11 +75,11 @@ typedef struct {
  * 6.2.6 PDCP Control PDU for PDCP status report
  */
 typedef struct {
-  uint8_t dc;
-  uint8_t pdu_type; // PDU type (see 6.3.8)
-  uint16_t first_missing_sn; // First missing PDCP SN
+  u8 dc;
+  u8 pdu_type; // PDU type (see 6.3.8)
+  u16 first_missing_sn; // First missing PDCP SN
   unsigned char* window_bitmap; // Ack/Nack information coded as a bitmap
-  uint16_t window_bitmap_size;
+  u16 window_bitmap_size;
 } pdcp_control_pdu_for_pdcp_status_report;
 /*
  * Following symbolic constant is the size of FIXED part of this PDU
@@ -88,7 +95,7 @@ typedef struct {
  * @return 1 bit dc
  */
 
-uint8_t pdcp_get_dc_filed(unsigned char* pdu_buffer);
+u8 pdcp_get_dc_filed(unsigned char* pdu_buffer);
 
 /*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
@@ -97,7 +104,7 @@ uint8_t pdcp_get_dc_filed(unsigned char* pdu_buffer);
  * @param pdu_buffer PDCP PDU buffer
  * @return 12-bit sequence number
  */
-uint16_t pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer);
+u16 pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer);
 
 /*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
@@ -106,7 +113,7 @@ uint16_t pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer)
  * @param pdu_buffer PDCP PDU buffer
  * @return 7-bit sequence number
  */
-uint8_t pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer);
+u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer);
 
 /*
  * Parses sequence number out of buffer of Control Plane PDCP Data PDU with
@@ -115,7 +122,7 @@ uint8_t pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer)
  * @param pdu_buffer PDCP PDU buffer
  * @return 5-bit sequence number
  */
-uint8_t pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer);
+u8 pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer);
 
 /*
  * Fills the incoming buffer with the fields of the header for SRB1 
@@ -123,7 +130,7 @@ uint8_t pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer);
  * @param pdu_buffer PDCP PDU buffer
  * @return TRUE on success, FALSE otherwise
  */
-boolean_t pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer, \
+BOOL pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer, \
 							      pdcp_control_plane_data_pdu_header* pdu);
 /*
  * Fills the incoming buffer with the fields of the header for long SN (RLC UM and AM)
@@ -131,7 +138,7 @@ boolean_t pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char
  * @param pdu_buffer PDCP PDU buffer
  * @return TRUE on success, FALSE otherwise
  */
-boolean_t pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer, \
+BOOL pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer, \
      pdcp_user_plane_data_pdu_header_with_long_sn* pdu);
 
 /*
@@ -143,23 +150,23 @@ boolean_t pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* 
  * @param pdu A status report header
  * @return TRUE on success, FALSE otherwise
  */
-boolean_t pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer, \
-     uint8_t bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu);
+BOOL pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer, \
+     u8 bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu);
 
-int pdcp_netlink_dequeue_element(module_id_t enb_mod_idP, module_id_t ue_mod_idP, eNB_flag_t eNB_flagP,
-                                 struct pdcp_netlink_element_s **data_ppP);
+int pdcp_netlink_dequeue_element(uint8_t eNB_flag, uint8_t UE_index, uint8_t eNB_index,
+                                 struct pdcp_netlink_element_s **data);
 
-void pdcp_config_set_security(pdcp_t *pdcp_pP, module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t rb_idP,
-                              uint16_t lc_idP, uint8_t security_modeP, uint8_t *kRRCenc_pP, uint8_t *kRRCint_pP, uint8_t *kUPenc_pP);
+void pdcp_config_set_security(pdcp_t *pdcp, u8 eNB_id, u8 UE_id, u32 frame, u8 eNB_flag, rb_id_t rb_id,
+                              u16 lc_id, u8 security_mode, u8 *kRRCenc, u8 *kRRCint, u8 *kUPenc);
 
 #if defined(ENABLE_SECURITY)
 int pdcp_apply_security(pdcp_t *pdcp_entity, rb_id_t rb_id,
-                        uint8_t pdcp_header_len, uint16_t current_sn, uint8_t *pdcp_pdu_buffer,
-                        uint16_t sdu_buffer_size);
+                        u8 pdcp_header_len, u16 current_sn, u8 *pdcp_pdu_buffer,
+                        u16 sdu_buffer_size);
 
 int pdcp_validate_security(pdcp_t *pdcp_entity, rb_id_t rb_id,
-                           uint8_t pdcp_header_len, uint16_t current_sn, uint8_t *pdcp_pdu_buffer,
-                           uint16_t sdu_buffer_size);
+                           u8 pdcp_header_len, u16 current_sn, u8 *pdcp_pdu_buffer,
+                           u16 sdu_buffer_size);
 #endif /* defined(ENABLE_SECURITY) */
 
 #endif

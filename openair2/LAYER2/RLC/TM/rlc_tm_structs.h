@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,14 +23,9 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
+*******************************************************************************/
 /*! \file rlc_tm_structs.h
 * \brief This file defines structures used inside the RLC TM.
 * \author GAUTHIER Lionel
@@ -54,19 +50,19 @@ Address      : EURECOM,
 #        include "mac_rlc_primitives.h"
 //-----------------------
 struct rlc_tm_tx_sdu_management {
-  uint8_t             *first_byte;
-  int32_t             sdu_creation_time;
-  uint16_t             sdu_segmented_size;
-  uint16_t             sdu_size;
+  u8_t             *first_byte;
+  s32_t             sdu_creation_time;
+  u16_t             sdu_segmented_size;
+  u16_t             sdu_size;
 };
 //-----------------------
 struct rlc_tm_tx_pdu_management {
-  uint8_t             *first_byte;
-  uint8_t              dummy[MAC_HEADER_MAX_SIZE];
+  u8_t             *first_byte;
+  u8_t              dummy[MAC_HEADER_MAX_SIZE];
 };
 //-----------------------
 struct rlc_tm_rx_pdu_management {
-  uint8_t             *first_byte;
+  u8_t             *first_byte;
 };
 //-----------------------
 struct rlc_tm_tx_data_pdu_struct {
@@ -81,7 +77,7 @@ struct rlc_tm_tx_data_pdu_struct {
     struct rlc_indication dummy4;
 #        endif
   } dummy;
-  uint8_t              data[1];
+  u8_t              data[1];
 };
 //-----------------------
 struct rlc_tm_data_req_alloc {  // alloc enought bytes for sdu mngt also

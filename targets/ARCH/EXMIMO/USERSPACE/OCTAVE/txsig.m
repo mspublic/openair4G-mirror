@@ -1,16 +1,16 @@
-%fc  = 2660000000;
-fc  = 1907600000;
+fc  = 2600000000;
+%fc  = 1907600000;
 %fc = 859.5e6;
 
 rxgain=0;
-txgain=25;
+txgain=0;
 eNB_flag = 0;
 card = 0;
-active_rf = [1 1 1 0];
+active_rf = [1 0 0 0];
 autocal = [1 1 1 1];
-resampling_factor = [2 2 2 2];
+resampling_factor = [0 0 0 0];
 limeparms;
-rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM) * active_rf;
+rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF10+RXLPFNORM+RXLPFEN+RXLPF10+LNA1ON+LNAMax+RFBBNORM) * active_rf;
 rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*active_rf;
 %rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
 %rf_local= [8253704   8253704   8257340   8257340]; %eNB2tx %850MHz
@@ -45,10 +45,10 @@ select = 1;
 switch(select)
 
 case 1
-  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
-  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
-  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
-  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
+  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/8)));
+  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/8)));
+  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/8)));
+  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/8)));
 
 case 2
   s(38400+128,1)= 80-1j*40;
@@ -84,20 +84,27 @@ case 5
   s(:,2) = 8*(mod(x-1,4096)) + 1i*(8*(mod(x-1,4096)));
   s(:,3) = 8*(mod(x-1,4096)) + 1i*(8*(mod(x-1,4096)));
   s(:,4) = 8*(mod(x-1,4096)) + 1i*(8*(mod(x-1,4096)));
-%  s(:,4) = 8*(rem(x-1,2048))-2**15 + 1i*(8*(rem(x-1,2048))-2**15);
 
-%  s(:,4) = 8*(mod(x-1,4096)) + 1i*8*(mod(x-1,4096));
+case 6
 
-  %s(:,1) = 8*floor(mod(x-1,76800)/75) + 1i*8*floor(mod(x-1,76800)/75);
-  %s(:,2) = 8*floor(mod(x-1,76800)/75) + 1i*8*floor(mod(x-1,76800)/75);
-  %s(:,3) = 8*floor(mod(x-1,76800)/75) + 1i*8*floor(mod(x-1,76800)/75);
-  %s(:,4) = 8*floor(mod(x-1,76800)/75) + 1i*8*floor(mod(x-1,76800)/75);
+nb_rb = 100; %this can be 25, 50, or 100
+num_carriers = 2048/100*nb_rb;
+num_zeros = num_carriers-(12*nb_rb+1);
+prefix_length = num_carriers/4; %this is extended CP
+num_symbols_frame = 120;
+preamble_length = 120;
+
+s(:,1) = OFDM_TX_FRAME(num_carriers,num_zeros,prefix_length,num_symbols_frame,preamble_length);
+s(:,1) = floor(amp*(s(:,1)./max([real(s(:,1)); imag(s(:,1))])));
+
+  %s(1:76800,1) = 8*floor(amp*OFDM_TX_FRAME(512,211,128,120,8)).';
+  %s(1:76800,2) = 8*floor(amp*OFDM_TX_FRAME(512,211,128,120,8)).';
+
 
 otherwise 
   error('unknown case')
 endswitch
 
-%s = s*2 - 2**15 -1i*(2**15);
 s = s*2;
 
 

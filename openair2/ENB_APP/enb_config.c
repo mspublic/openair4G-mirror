@@ -1,46 +1,36 @@
 /*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+ Eurecom OpenAirInterface
+ Copyright(c) 1999 - 2014 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+ This program is free software; you can redistribute it and/or modify it
+ under the terms and conditions of the GNU General Public License,
+ version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+ This program is distributed in the hope it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+ You should have received a copy of the GNU General Public License along with
+ this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
-/*
-                                enb_config.c
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER, Laurent Winckel
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-*/
+ The full GNU General Public License is included in this distribution in
+ the file called "COPYING".
+
+ Contact Information
+ Openair Admin: openair_admin@eurecom.fr
+ Openair Tech : openair_tech@eurecom.fr
+ Forums       : http://forums.eurecom.fr/openairinterface
+ Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+ 06410 Biot FRANCE
+
+ *******************************************************************************/
 
 #include <string.h>
 #include <libconfig.h>
 
-#include "log.h"
 #include "assertions.h"
 #include "enb_config.h"
 #if defined(OAI_EMU)
@@ -134,25 +124,6 @@ static const eutra_band_t eutra_bands[] =
 
 static Enb_properties_array_t enb_properties;
 
-static void enb_config_display(void) {
-    int i;
-
-    printf( "\n----------------------------------------------------------------------\n");
-    printf( " ENB CONFIG FILE CONTENT LOADED (TBC):\n");
-    printf( "----------------------------------------------------------------------\n");
-    for (i = 0; i < enb_properties.number; i++) {
-        printf( "ENB CONFIG no %u:\n\n", i);
-        printf( "\teNB name: \t%s:\n",enb_properties.properties[i]->eNB_name);
-        printf( "\teNB ID:   \t%u:\n",enb_properties.properties[i]->eNB_id);
-        printf( "\tCell type:\t%s:\n",enb_properties.properties[i]->cell_type == CELL_MACRO_ENB ? "CELL_MACRO_ENB":"CELL_HOME_ENB");
-        printf( "\tTAC:      \t%u:\n",enb_properties.properties[i]->tac);
-        printf( "\tMCC:      \t%u:\n",enb_properties.properties[i]->mcc);
-        printf( "\tMNC:      \t%u:\n",enb_properties.properties[i]->mnc);
-        printf( "\n--------------------------------------------------------\n");
-    }
-}
-
-
 static int enb_check_band_frequencies(char* lib_config_file_name_pP,
                                       int enb_properties_index,
                                       int16_t band,
@@ -211,10 +182,10 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
   int               parse_errors                  = 0;
   long int          enb_id                        = 0;
   const char*       cell_type                     = NULL;
-  const char*       tac                           = 0;
+  long int          tac                           = 0;
   const char*       enb_name                      = NULL;
-  const char*       mcc                           = 0;
-  const char*       mnc                           = 0;
+  long int          mcc                           = 0;
+  long int          mnc                           = 0;
   const char*       default_drx                   = NULL;
   const char*       frame_type;
   long int          tdd_config;
@@ -232,6 +203,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
   char*             enb_ipv4_address_for_S1U      = NULL;
   char*             enb_interface_name_for_S1_MME = NULL;
   char*             enb_ipv4_address_for_S1_MME   = NULL;
+  char             *astring                       = NULL;
   char             *address                       = NULL;
   char             *cidr                          = NULL;
 
@@ -295,9 +267,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
 
           if(  !(       config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_CELL_TYPE,           &cell_type)
                      && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_ENB_NAME,            &enb_name)
-                     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_TRACKING_AREA_CODE,  &tac)
-                     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_MOBILE_COUNTRY_CODE, &mcc)
-                     && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_MOBILE_NETWORK_CODE, &mnc)
+                     && config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_TRACKING_AREA_CODE,  &tac)
+                     && config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_MOBILE_COUNTRY_CODE, &mcc)
+                     && config_setting_lookup_int   (setting_enb, ENB_CONFIG_STRING_MOBILE_NETWORK_CODE, &mnc)
                      && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_DEFAULT_PAGING_DRX,  &default_drx)
                 )
             ) {
@@ -320,11 +292,10 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
                               lib_config_file_name_pP, i, cell_type);
                   }
-                  enb_properties.properties[enb_properties_index]->eNB_name         = strdup(enb_name);
-                  enb_properties.properties[enb_properties_index]->tac              = (uint16_t)atoi(tac);
-                  enb_properties.properties[enb_properties_index]->mcc              = (uint16_t)atoi(mcc);
-                  enb_properties.properties[enb_properties_index]->mnc              = (uint16_t)atoi(mnc);
-                  enb_properties.properties[enb_properties_index]->mnc_digit_length = strlen(mnc);
+                  enb_properties.properties[enb_properties_index]->eNB_name = strdup(enb_name);
+                  enb_properties.properties[enb_properties_index]->tac      = (uint16_t)tac;
+                  enb_properties.properties[enb_properties_index]->mcc      = (uint16_t)mcc;
+                  enb_properties.properties[enb_properties_index]->mnc      = (uint16_t)mnc;
 
                   if (strcmp(default_drx, "PAGING_DRX_32") == 0) {
                       enb_properties.properties[enb_properties_index]->default_drx = PAGING_DRX_32;
@@ -456,13 +427,13 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                   subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
                   if(subsetting != NULL) {
                       if(  (
-                              config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME,
+                              config_setting_lookup_string( setting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME,
                                       (const char **)&enb_interface_name_for_S1_MME)
-                           && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,
+                           && config_setting_lookup_string( setting, ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,
                                    (const char **)&enb_ipv4_address_for_S1_MME)
-                           && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,
+                           && config_setting_lookup_string( setting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,
                                    (const char **)&enb_interface_name_for_S1U)
-                           && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,
+                           && config_setting_lookup_string( setting, ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,
                                    (const char **)&enb_ipv4_address_for_S1U)
                          )
                      ){
@@ -470,6 +441,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                           cidr = enb_ipv4_address_for_S1U;
                           address = strtok(cidr, "/");
                           if (address) {
+                              address = strdup(address);
                               IPV4_STR_ADDR_TO_INT_NWBO ( address, enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1U, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
                           }
 
@@ -477,6 +449,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                           cidr = enb_ipv4_address_for_S1_MME;
                           address = strtok(cidr, "/");
                           if (address) {
+                              address = strdup(address);
                               IPV4_STR_ADDR_TO_INT_NWBO ( address, enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR eNB S1_MME !\n" );
                           }
                       }
@@ -496,7 +469,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
   AssertFatal (parse_errors == 0,
                "Failed to parse eNB configuration file %s, found %d error%s !\n",
                lib_config_file_name_pP, parse_errors, parse_errors > 1 ? "s" : "");
-  enb_config_display();
+
   return &enb_properties;
 
 }
@@ -504,4 +477,3 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
 const Enb_properties_array_t *enb_config_get(void) {
     return &enb_properties;
 }
-

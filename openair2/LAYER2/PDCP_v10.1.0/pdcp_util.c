@@ -87,15 +87,12 @@ void util_flush_hex_octets(comp_name_t component, unsigned char* data, unsigned 
     LOG_W(component, "Incoming buffer is NULL! Ignoring...\n");
     return;
   }
-  printf("[PDCP]");
 
   unsigned long octet_index = 0;
   for (octet_index = 0; octet_index < size; ++octet_index) {
-      //LOG_T(component, "%02x.", data[octet_index]);
-      printf("%02x.", data[octet_index]);
+    LOG_T(component, "%02x.", data[octet_index]);
   }
-  //LOG_T(component, " \n");
-  printf(" \n");
+  LOG_T(component, " \n");
 }
 
 /*
@@ -105,7 +102,7 @@ void util_flush_hex_octets(comp_name_t component, unsigned char* data, unsigned 
  * @param Octet as an unsigned character
  * @return None
  */
-void util_print_binary_representation(unsigned char* message, uint8_t octet)
+void util_print_binary_representation(unsigned char* message, u8_t octet)
 {
   unsigned char index = 0;
   unsigned char mask = 0x80;
@@ -131,9 +128,9 @@ void util_print_binary_representation(unsigned char* message, uint8_t octet)
  * @param index Index of bit to be set
  * @return TRUE on success, FALSE otherwise
  */
-boolean_t util_mark_nth_bit_of_octet(uint8_t* octet, uint8_t index)
+BOOL util_mark_nth_bit_of_octet(u8_t* octet, u8_t index)
 {
-  uint8_t mask = 0x80;
+  u8_t mask = 0x80;
 
   assert(octet != NULL);
 

@@ -47,23 +47,16 @@ int s1ap_mme_compare_plmn(S1ap_PLMNidentity_t *plmn)
     int i;
     uint16_t mcc;
     uint16_t mnc;
-    uint16_t mnc_len;
 
     DevAssert(plmn != NULL);
 
-    TBCD_TO_MCC_MNC(plmn, mcc, mnc, mnc_len);
+    TBCD_TO_MCC_MNC(plmn, mcc, mnc);
 
     config_read_lock(&mme_config);
 
     for (i = 0; i < mme_config.gummei.nb_mme_gid; i++) {
-        S1AP_DEBUG("Comparing plmn_mcc %d/%d, plmn_mnc %d/%d plmn_mnc_len %d/%d\n",
-            mme_config.gummei.plmn_mcc[i], mcc,
-            mme_config.gummei.plmn_mnc[i],mnc,
-            mme_config.gummei.plmn_mnc_len[i],mnc_len);
-
-        if ((mme_config.gummei.plmn_mcc[i] == mcc) &&
-            (mme_config.gummei.plmn_mnc[i] == mnc) &&
-            (mme_config.gummei.plmn_mnc_len[i] == mnc_len))
+        if (mme_config.gummei.plmn_mcc[i] == mcc &&
+            mme_config.gummei.plmn_mnc[i] == mnc)
             /* There is a matching plmn */
             return TA_LIST_AT_LEAST_ONE_MATCH;
     }
@@ -111,8 +104,7 @@ int s1ap_mme_compare_tac(S1ap_TAC_t *tac)
 
     config_read_lock(&mme_config);
 
-    for (i = 0; i < mme_config.gummei.nb_plmns; i++) {
-        S1AP_DEBUG("Comparing config tac %d, received tac = %d\n", mme_config.gummei.plmn_tac[i], tac_value);
+    for (i = 0; i < mme_config.gummei.nb_mme_gid; i++) {
         if (mme_config.gummei.plmn_tac[i] == tac_value)
             return TA_LIST_AT_LEAST_ONE_MATCH;
     }

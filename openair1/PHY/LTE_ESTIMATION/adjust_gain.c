@@ -16,16 +16,16 @@ extern int card;
 #endif
 
 void
-phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id) {
+phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, u8 eNB_id) {
 
-    uint16_t rx_power_fil_dB;
+    u16 rx_power_fil_dB;
 #ifdef EXMIMO
 #ifdef DRIVER2013
   exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
 #endif
 #endif
 #if defined(EXMIMO) || defined(CBMIMO1)
-  uint16_t i;
+  u16 i;
 #endif
 
   //rx_power_fil_dB = dB_fixed(phy_vars_ue->PHY_measurements.rssi);
@@ -154,11 +154,10 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id) {
 #endif
 
 #ifdef DEBUG_PHY
-      /*  if ((phy_vars_ue->frame%100==0) || (phy_vars_ue->frame < 10))
-    msg("[PHY][ADJUST_GAIN] frame %d,  rx_power = %d, rx_power_fil = %d, rx_power_fil_dB = %d, coef=%d, ncoef=%d, rx_total_gain_dB = %d (%d,%d,%d)\n",
-        phy_vars_ue->frame,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,phy_vars_ue->rx_total_gain_dB,
+  if ((mac_xface->frame%100==0) || (mac_xface->frame < 10))
+    msg("[PHY][ADJUST_GAIN] frame %d, clear = %d, rx_power = %d, rx_power_fil = %d, rx_power_fil_dB = %d, coef=%d, ncoef=%d, rx_total_gain_dB = %d (%d,%d,%d)\n",
+	mac_xface->frame,clear,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,phy_vars_ue->rx_total_gain_dB,
 	TARGET_RX_POWER,MAX_RF_GAIN,MIN_RF_GAIN);
-      */
 #endif //DEBUG_PHY
 	
 }

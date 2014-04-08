@@ -40,6 +40,7 @@
 //#include "nas_common.h"
 #include "local.h"
 #include "proto_extern.h"
+//#include "LAYER2/PDCP/pdcp.h"
 #ifndef NAS_NETLINK
 #include "rtai_fifos.h"
 #endif
@@ -55,7 +56,7 @@
 #include <net/udp.h>
 
 
-void nas_COMMON_receive(uint16_t dlen, 
+void nas_COMMON_receive(u16 dlen, 
 			void *pdcp_sdu,
 			int inst,
 			struct classifier_entity *rclass,
@@ -65,7 +66,7 @@ void nas_COMMON_receive(uint16_t dlen,
   struct sk_buff *skb;
   struct ipversion *ipv;
   struct nas_priv *gpriv=netdev_priv(nasdev[inst]);
-  uint32_t odaddr,osaddr;
+  u32 odaddr,osaddr;
 
   int i;
 
@@ -75,7 +76,7 @@ void nas_COMMON_receive(uint16_t dlen,
 
   struct udphdr *uh;
   struct tcphdr *th;
-  uint16_t *cksum,check;
+  u16 *cksum,check;
 
   struct iphdr *network_header; 
 
@@ -244,10 +245,10 @@ void nas_COMMON_receive(uint16_t dlen,
 	  case IPPROTO_TCP:
 
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
-	    cksum  = (uint16_t*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
+	    cksum  = (u16*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
 	    //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));	    
 #else
-	    cksum  = (uint16_t*)&(((struct tcphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
+	    cksum  = (u16*)&(((struct tcphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
 	    //check  = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr,tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
 #endif
 
@@ -274,10 +275,10 @@ void nas_COMMON_receive(uint16_t dlen,
 	  case IPPROTO_UDP:
 
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
-	    cksum  = (uint16_t*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
+	    cksum  = (u16*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
 	    // check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
 #else		
-	    cksum  = (uint16_t*)&(((struct udphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
+	    cksum  = (u16*)&(((struct udphdr*)((skb->data + (skb->nh.iph->ihl<<2))))->check);
 	    //check = csum_tcpudp_magic(((struct iphdr *)skb->data)->saddr, ((struct iphdr *)skb->data)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
 #endif 
 #ifdef NAS_DEBUG_RECEIVE
@@ -360,7 +361,7 @@ void nas_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 
 void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst){
   //---------------------------------------------------------------------------
-  struct pdcp_data_req_header_s     pdcph;
+  struct pdcp_data_req_header_t     pdcph;
   struct nas_priv *priv=netdev_priv(nasdev[inst]);
 #ifdef LOOPBACK_TEST
   int i;
@@ -477,8 +478,8 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 //---------------------------------------------------------------------------
 void nas_COMMON_QOS_receive(){
   //---------------------------------------------------------------------------
-  uint8_t sapi;
-  struct pdcp_data_ind_header_s     pdcph;
+  u8 sapi;
+  struct pdcp_data_ind_header_t     pdcph;
   unsigned char data_buffer[2048];
   struct classifier_entity *rclass;
   struct nas_priv *priv;
@@ -539,7 +540,7 @@ void nas_COMMON_QOS_receive(){
 void nas_COMMON_QOS_receive(struct nlmsghdr *nlh)
 {
 
-  struct pdcp_data_ind_header_s     *pdcph = (struct pdcp_data_ind_header_s *)NLMSG_DATA(nlh);
+  struct pdcp_data_ind_header_t     *pdcph = (struct pdcp_data_ind_header_t *)NLMSG_DATA(nlh);
   struct classifier_entity *rclass;
   struct nas_priv *priv;
 
@@ -588,19 +589,11 @@ struct rb_entity *nas_COMMON_search_rb(struct cx_entity *cx, nasRadioBearerId_t 
 #ifdef NAS_DEBUG_CLASS
   printk("NAS_COMMON_SEARCH_RB - rab_id %d\n", rab_id);
 #endif
-  for (rb=cx->rb; rb!=NULL; rb=rb->next) {
-#ifdef NAS_DEBUG_CLASS
-      printk("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS\n");
-      printk("NAS_COMMON_SEARCH_RB - rab_id %d Comparing  rb_entity.rab_id %u \n", rb->rab_id);
-      printk("NAS_COMMON_SEARCH_RB - rab_id %d Comparing  rb_entity.sapi %u \n", rb->sapi;
-      printk("NAS_COMMON_SEARCH_RB - rab_id %d Comparing  rb_entity.qos %u \n", rb->qos;
-      printk("NAS_COMMON_SEARCH_RB - rab_id %d Comparing  rb_entity.state %u \n", rb->state;
-      printk("NAS_COMMON_SEARCH_RB - rab_id %d Comparing  rb_entity.retry %u \n", rb->retry;
-      printk("NAS_COMMON_SEARCH_RB - rab_id %d Comparing  rb_entity.countimer %u \n\n", rb->countimer;);
-#endif
-        if (rb->rab_id==rab_id)
-            return rb;
-  }
+  for (rb=cx->rb; rb!=NULL; rb=rb->next)
+    {
+      if (rb->rab_id==rab_id)
+	return rb;
+    }
   return NULL;
 }
 
@@ -678,7 +671,7 @@ void nas_COMMON_flush_rb(struct cx_entity *cx){
   //---------------------------------------------------------------------------
   struct rb_entity *rb;
   struct classifier_entity *gc;
-  uint8_t dscp;
+  u8 dscp;
   // End debug information
 #ifdef NAS_DEBUG_CLASS
   printk("NAS_COMMON_FLUSH_RB - begin\n");

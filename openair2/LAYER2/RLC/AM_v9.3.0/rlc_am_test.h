@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_am_test.h
 * \brief This file defines the prototypes of RLC AM test functions.
@@ -65,7 +62,7 @@ protected_rlc_am_test(void rlc_am_v9_3_0_test_read_write_bit_field();)
 protected_rlc_am_test(void rlc_am_v9_3_0_test_data_conf(module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP);)
 protected_rlc_am_test(void rlc_am_v9_3_0_test_send_sdu(rlc_am_entity_t *am_txP, int sdu_indexP);)
 protected_rlc_am_test(void rlc_am_v9_3_0_test_exchange_pdus(rlc_am_entity_t *am_txP,rlc_am_entity_t *am_RxP,
-                                                            uint16_t bytes_txP,uint16_t bytes_rxP);)
+                                                            u16_t bytes_txP,u16_t bytes_rxP);)
 protected_rlc_am_test(void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP, int* dropped_tx_packetsP);)
 protected_rlc_am_test(void rlc_am_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sizeP,
 mem_block_t *sduP);)

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -DUSER_MODE 
+CFLAGS = -DUSER_MODE -g 
 XTRA_CFLAGS = -msse -msse2 -mssse3 -fPIC
 
 #ifndef OPENAIR0_DIR

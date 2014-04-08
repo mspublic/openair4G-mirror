@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 
   LTE_DL_FRAME_PARMS *frame_parms;
 
-  uint8_t num_pdcch_symbols = 3;
+  u8 num_pdcch_symbols = 3;
 
   // Init simulation parameters
 

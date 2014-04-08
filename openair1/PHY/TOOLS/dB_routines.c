@@ -2,7 +2,7 @@
 
 // Approximate 10*log10(x) in fixed point : x = 0...(2^32)-1
 
-int8_t dB_table[256] = {
+s8 dB_table[256] = {
    0,
    3,
    5,
@@ -261,7 +261,7 @@ int8_t dB_table[256] = {
   24
 };
 
-int16_t dB_table_times10[256] = {
+s16 dB_table_times10[256] = {
   0,
   30,
   47,
@@ -520,10 +520,10 @@ int16_t dB_table_times10[256] = {
   240
 };
 /*
-int8_t dB_fixed(int x) {
+s8 dB_fixed(int x) {
 
   int i=0,adj=0;
-  int8_t log10=0;
+  s8 log10=0;
     
   // find MSB
   for (i=31;i>=0;i--) {
@@ -550,8 +550,8 @@ int8_t dB_fixed(int x) {
 }
 */
 
-int16_t dB_fixed_times10(uint32_t x) {
-  int16_t dB_power=0;
+s16 dB_fixed_times10(u32 x) {
+  s16 dB_power=0;
 
 
   if (x==0) {
@@ -569,13 +569,13 @@ int16_t dB_fixed_times10(uint32_t x) {
     dB_power = dB_table_times10[(x&255)-1];
   }
   if (dB_power > 900)
-    return(900);
+    return(0);
   return dB_power;
 }
 
-int8_t dB_fixed(uint32_t x) {
+s8 dB_fixed(u32 x) {
 
-  int8_t dB_power=0;
+  s8 dB_power=0;
 
 
   if (x==0) {
@@ -593,11 +593,11 @@ int8_t dB_fixed(uint32_t x) {
     dB_power = dB_table[(x&255)-1];
   }
   if (dB_power > 90)
-    return(90);
+    return(0);
   return dB_power;
 }
 
-int8_t dB_fixed2(uint32_t x, uint32_t y) {
+s8 dB_fixed2(u32 x, u32 y) {
 
   if ((x>0) && (y>0) )
     if (x>y)

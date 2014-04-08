@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_um_segment.h
 * \brief This file defines the prototypes of the functions dealing with the segmentation of PDCP SDUs.
@@ -65,19 +62,19 @@ Address      : EURECOM,
 #                define public_rlc_um_segment(x)     extern x
 #            endif
 #        endif
-/*! \fn void rlc_um_segment_10 (rlc_um_entity_t *rlcP,frame_t frame)
+/*! \fn void rlc_um_segment_10 (struct rlc_um_entity *rlcP,u32_t frame)
 * \brief    Segmentation procedure with 10 bits sequence number, segment the first SDU in buffer and create a PDU of the size (nb_bytes_to_transmit) requested by MAC if possible and put it in the list "pdus_to_mac_layer".
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame Index.
 */
-protected_rlc_um_segment(void rlc_um_segment_10 (rlc_um_entity_t *rlcP,frame_t frame));
+protected_rlc_um_segment(void rlc_um_segment_10 (struct rlc_um_entity *rlcP,u32_t frame));
 
 
-/*! \fn void rlc_um_segment_5 (rlc_um_entity_t *rlcP,frame_t frame)
+/*! \fn void rlc_um_segment_5 (struct rlc_um_entity *rlcP,u32_t frame)
 * \brief    Segmentation procedure with 5 bits sequence number, segment the first SDU in buffer and create a PDU of the size (nb_bytes_to_transmit) requested by MAC if possible and put it in the list "pdus_to_mac_layer".
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  frame       Frame Index.
 */
-protected_rlc_um_segment(void rlc_um_segment_5 (rlc_um_entity_t *rlcP,frame_t frame));
+protected_rlc_um_segment(void rlc_um_segment_5 (struct rlc_um_entity *rlcP,u32_t frame));
 /** @} */
 #    endif

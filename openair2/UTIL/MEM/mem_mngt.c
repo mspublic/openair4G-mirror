@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           mem_mngt.c  -  description
                              -------------------
@@ -60,7 +29,7 @@ Address      : EURECOM,
 #endif
 //-----------------------------------------------------------------------------
 #ifdef USER_MODE
-uint32_t             counters[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+u32_t             counters[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
 //-----------------------------------------------------------------------------
 /*
@@ -71,7 +40,7 @@ pool_buffer_init (void *arg)
 {
 //-----------------------------------------------------------------------------
 
-  uint32_t             index, mb_index, pool_index;
+  u32_t             index, mb_index, pool_index;
   mem_pool       *memory = (mem_pool *) arg;
   int             pool_sizes[11] = { MEM_MNGT_MB0_NB_BLOCKS, MEM_MNGT_MB1_NB_BLOCKS,
     MEM_MNGT_MB2_NB_BLOCKS, MEM_MNGT_MB3_NB_BLOCKS,
@@ -184,7 +153,7 @@ free_mem_block (mem_block_t * leP)
 
 //-----------------------------------------------------------------------------
 mem_block_t      *
-get_free_mem_block (uint16_t sizeP)
+get_free_mem_block (u16_t sizeP)
 {
 //-----------------------------------------------------------------------------
   mem_block_t      *le = NULL;
@@ -388,9 +357,9 @@ check_free_mem_block (mem_block_t * leP)
 //-----------------------------------------------------------------------------
   int             block_index;
   if ((leP >= &mem->mem_blocks[0]) && (leP <= &mem->mem_blocks[MEM_MNGT_NB_ELEMENTS])) {
-    block_index = ((uint32_t) leP - (uint32_t) (&mem->mem_blocks[0])) / sizeof (mem_block_t);
+    block_index = ((u32_t) leP - (u32) (&mem->mem_blocks[0])) / sizeof (mem_block_t);
     if (block_index < MEM_MNGT_MB0_NB_BLOCKS) {
-      if (((uint32_t) (leP->data) != (uint32_t) (&(mem->mem_pool0[block_index][0]))) && (leP->pool_id != MEM_MNGT_POOL_ID0)) {
+      if (((u32_t) (leP->data) != (u32) (&(mem->mem_pool0[block_index][0]))) && (leP->pool_id != MEM_MNGT_POOL_ID0)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
     } else if (block_index < (MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS)) {

@@ -69,11 +69,10 @@
 #define MAX_NUM_CHANNEL_BITS (14*1200*6)  // 14 symbols, 1200 REs, 12 bits/RE
 #define MAX_NUM_RE (14*1200)
 
-#define SI_RNTI  (rnti_t)0xffff
-#define M_RNTI   (rnti_t)0xfffd
-#define P_RNTI   (rnti_t)0xfffe
-#define CBA_RNTI (rnti_t)0xfff4
-#define C_RNTI   (rnti_t)0x1234
+#define SI_RNTI 0xffff 
+#define P_RNTI  0xfffd
+#define CBA_RNTI 0xfff4
+#define C_RNTI  0x1234
 
 #define PMI_2A_11 0
 #define PMI_2A_1m1 1
@@ -426,13 +425,13 @@ typedef struct {
   /// ACK/NAK Bundling flag
   uint8_t bundling;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
-  int8_t q[MAX_CQI_PAYLOAD];
+  s8 q[MAX_CQI_PAYLOAD];
   /// number of coded CQI bits after interleaving
   uint8_t o_RCC;
   /// coded and interleaved CQI bits
-  int8_t o_w[(MAX_CQI_BITS+8)*3];
+  s8 o_w[(MAX_CQI_BITS+8)*3];
   /// coded CQI bits
-  int8_t o_d[96+((MAX_CQI_BITS+8)*3)];
+  s8 o_d[96+((MAX_CQI_BITS+8)*3)];
   /// coded ACK bits
   int16_t q_ACK[MAX_ACK_PAYLOAD];
   /// coded RI bits
@@ -509,7 +508,7 @@ typedef struct {
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Nl;
   /// current delta_pucch
-  int8_t delta_PUCCH;
+  s8 delta_PUCCH;
   /// Number of soft channel bits
   uint32_t G;
   /// Current Number of RBs
@@ -525,7 +524,7 @@ typedef struct {
 
 typedef struct {
   /// UL RSSI per receive antenna
-  int32_t UL_rssi[NB_ANTENNAS_RX];
+  s32 UL_rssi[NB_ANTENNAS_RX];
   /// DL Wideband CQI index (2 TBs)
   uint8_t DL_cqi[2];
   /// DL Subband CQI index (from HLC feedback)
@@ -539,9 +538,9 @@ typedef struct {
   /// CRNTI of UE
   uint16_t crnti; ///user id (rnti) of connected UEs
   /// Initial timing offset estimate from PRACH for RAR
-  int32_t UE_timing_offset; 
+  s32 UE_timing_offset; 
   /// Timing advance estimate from PUSCH for MAC timing advance signalling
-  int32_t timing_advance_update; 
+  s32 timing_advance_update; 
   /// Current mode of UE (NOT SYCHED, RAR, PUSCH)
   UE_MODE_t mode;
   /// Current sector where UE is attached
@@ -569,7 +568,7 @@ typedef struct {
   uint32_t sr_received;
   uint32_t sr_total;
 
-  int8_t dlsch_mcs_offset;
+  s8 dlsch_mcs_offset;
   /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
   uint8_t dlsch_mcs1;
   /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
@@ -677,9 +676,9 @@ typedef struct {
   /// Position of first CCE of the dci
   unsigned int nCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  uint8_t ra_flag;
   /// rnti
-  rnti_t rnti;
+  uint16_t rnti;
   /// Format
   DCI_format_t format;
   /// DCI pdu

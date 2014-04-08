@@ -33,9 +33,9 @@
 #else
 # if defined(OAI_NW_DRIVER_TYPE_ETHERNET)
 /* SR: When using ethernet network driver the packet size is 1512 :
- * 1500 bytes IP packet + 14 bytes ethernet header
+ * 1500 bytes IP packet + 12 bytes ethernet header
  */
-#   define MAX_IP_PACKET_SIZE          1514
+#   define MAX_IP_PACKET_SIZE          1512
 # else
 #   define MAX_IP_PACKET_SIZE          1500 // 3000
 # endif
@@ -45,25 +45,18 @@
 #    define MAX_MODULES                NB_MODULES_MAX
 
 #ifdef LARGE_SCALE
-#    define MAX_MOBILES_PER_ENB         128
-//#    define MAX_RG                      2
+#    define MAX_MOBILES_PER_RG         128
+#    define MAX_RG                     2
 #else
-#    define MAX_MOBILES_PER_ENB         16
-//#    define MAX_RG                      2
+#    define MAX_MOBILES_PER_RG         16
+#    define MAX_RG                     2
 #endif
 
-#define MAX_MANAGED_ENB_PER_MOBILE  2
+#define MAX_MANAGED_RG_PER_MOBILE  2
 
-#define DEFAULT_RAB_ID 1
-
-#define NB_RB_MAX      (maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
-#if defined(Rel10)
-#define NB_RB_MBMS_MAX (maxSessionPerPMCH*maxServiceCount)
-#else
-// Do not allocate unused memory
-#define NB_RB_MBMS_MAX 1
-#endif
-#define NB_RAB_MAX     maxDRB       /* was 8, now 11 */
+#define DEFAULT_RAB_ID 3
+#define NB_RB_MAX      11
+#define NB_RAB_MAX     8
 #define RAB_SHIFT1     9
 #define RAB_SHIFT2     3
 #define RAB_OFFSET     0x0007
@@ -73,6 +66,47 @@
 #define DIR_SHIFT      15
 #define CH_OFFSET      0x0004
 #define CH_SHIFT       2
+
+#ifdef MESH
+
+#    define MAX_RB_MOBILE              NB_RB_MAX  * ( MAX_MANAGED_RG_PER_MOBILE + MAX_MOBILES_PER_RG - 1 )
+#    define MAX_RAB_MOBILE             NB_RAB_MAX * ( MAX_MANAGED_RG_PER_MOBILE + MAX_MOBILES_PER_RG - 1 )
+#    define MAX_RB_RG                  MAX_RB_MOBILE //NB_RB_MAX  *  MAX_MOBILES_PER_RG
+#    define MAX_RAB_RG                 (NB_RB_MAX+1) * (MAX_MOBILES_PER_RG + 1)
+#    define MAX_RAB                    MAX_RAB_RG
+#    define MAX_RB                     MAX_RB_RG
+#else
+
+#    define MAX_RB_MOBILE              NB_RB_MAX * MAX_MANAGED_RG_PER_MOBILE
+#    define MAX_RAB_MOBILE             NB_RAB_MAX * MAX_MANAGED_RG_PER_MOBILE
+#    define MAX_RB_RG                  NB_RB_MAX * MAX_MOBILES_PER_RG
+#    define MAX_RAB_RG                 NB_RB_MAX * MAX_MOBILES_PER_RG
+#    //ifdef NODE_RG
+#        define MAX_RAB                MAX_RAB_RG
+#        define MAX_RB                 MAX_RB_RG
+#    //else
+#      //  ifdef NODE_MT
+#        //    define MAX_RAB            MAX_RAB_MOBILE
+#          //  define MAX_RB             MAX_RB_MOBILE
+#        //else
+#          //error NODE_RG or NODE_MT must be defined
+#        //endif
+//#    endif
+#endif //MESH
+
+// RLC_MODE
+#        define RLC_NONE     0
+#        define RLC_MODE_AM  1
+#        define RLC_MODE_TM  2
+#        define RLC_MODE_UM  3
+
+//E_R
+#        define E_R_RLC_ER_RELEASE          1
+#        define E_R_RLC_ER_MODIFICATION     2
+#        define E_R_RLC_ER_RE_ESTABLISHMENT 4
+#        define E_R_RLC_ER_STOP             8
+#        define E_R_RLC_ER_CONTINUE         16
+#        define E_R_RLC_ER_NONE             0
 
 // RLC_AM_SEND_MRW
 #        define SEND_MRW_OFF    15
@@ -100,8 +134,7 @@
 #        endif
 #    endif
 
-#define  UNUSED_PARAM_MBMS_SESSION_ID  0
-#define  UNUSED_PARAM_MBMS_SERVICE_ID  0
+
 
 #ifdef USER_MODE
 #define printk printf

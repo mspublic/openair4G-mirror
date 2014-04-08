@@ -21,7 +21,5 @@
 #include "s1ap_messages_types.h"
 #include "x2ap_messages_types.h"
 #include "sctp_messages_types.h"
-#include "udp_messages_types.h"
-#include "gtpv1_u_messages_types.h"
 
 #endif /* MESSAGES_TYPES_H_ */

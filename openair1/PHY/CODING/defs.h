@@ -1,32 +1,3 @@
-/*******************************************************************************
-
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2014 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it under 
-  the terms of the GNU General Public License as published by the Free Software 
-  Foundation; either version 2 of the License, or (at your option) any later version
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
 /* file: PHY/CODING/defs.h
    purpose: Top-level definitions, data types and function prototypes for openairinterface coding blocks
    author: raymond.knopp@eurecom.fr
@@ -41,6 +12,12 @@
 #include "PHY/defs.h"
 #else
 #include "PHY/TOOLS/time_meas.h"
+#define u32 uint32_t
+#define s32 int32_t
+#define u16 uint16_t
+#define s16 int16_t
+#define u8 uint8_t
+#define s8 int8_t
 #endif 
 
 #define CRC24_A 0
@@ -396,13 +373,13 @@ run in segments with final trace back after last segment.
 @param traceback flag to indicate that traceback should be performed*/
 void phy_viterbi_dot11_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n);
 
-/*!\fn void phy_viterbi_lte_sse2(int8_t *y, uint8_t *decoded_bytes, uint16_t n)
+/*!\fn void phy_viterbi_lte_sse2(s8 *y, u8 *decoded_bytes, u16 n)
 \brief This routine performs a SIMD optmized Viterbi decoder for the LTE 64-state tail-biting convolutional code.
 @param y Pointer to soft input (coded on 8-bits but should be limited to 4-bit precision to avoid overflow)
 @param decoded_bytes Pointer to decoded output
 @param n Length of input/trellis depth in bits*/
 //void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n);
-void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n);
+void phy_viterbi_lte_sse2(s8 *y,u8 *decoded_bytes,u16 n);
 
 /*!\fn void phy_generate_viterbi_tables(void)
 \brief This routine initializes metric tables for the optimized Viterbi decoder.

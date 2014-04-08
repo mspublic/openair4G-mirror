@@ -40,9 +40,9 @@
 /*
  * Initializes sequence numbering state
  * @param pdcp_entity The PDCP entity to be initialized
- * @return boolean_t TRUE on success, FALSE otherwise
+ * @return BOOL TRUE on success, FALSE otherwise
  */
-boolean_t pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
+BOOL pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
 {
   if (pdcp_entity == NULL)
     return FALSE;
@@ -64,7 +64,7 @@ boolean_t pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
   return TRUE;
 }
 
-boolean_t pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
+BOOL pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
 {
   if (pdcp_entity == NULL)
     return FALSE;
@@ -81,7 +81,7 @@ boolean_t pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
 /**
  * Check if SN number is in the range according to SN size
  */
-boolean_t pdcp_is_seq_num_valid(uint16_t seq_num, uint8_t seq_num_size)
+BOOL pdcp_is_seq_num_valid(u16 seq_num, u8 seq_num_size)
 {
   if (seq_num >= 0 && seq_num <= pdcp_calculate_max_seq_num_for_given_size(seq_num_size))
     return TRUE;
@@ -89,22 +89,22 @@ boolean_t pdcp_is_seq_num_valid(uint16_t seq_num, uint8_t seq_num_size)
   return FALSE;
 }
 
-uint16_t pdcp_calculate_max_seq_num_for_given_size(uint8_t seq_num_size)
+u16 pdcp_calculate_max_seq_num_for_given_size(u8 seq_num_size)
 {
-  uint16_t max_seq_num = 1;
+  u16 max_seq_num = 1;
 
   max_seq_num <<= seq_num_size;
 
   return max_seq_num - 1;
 }
 
-uint16_t pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
+u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
 {
   if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE)
     return -1;
 
   // Sequence number should be incremented after it is assigned for a PDU
-  uint16_t pdcp_seq_num = pdcp_entity->next_pdcp_tx_sn;
+  u16 pdcp_seq_num = pdcp_entity->next_pdcp_tx_sn;
 
   /*
    * Update sequence numbering state and Hyper Frame Number if SN has already reached
@@ -121,7 +121,7 @@ uint16_t pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
   return pdcp_seq_num;
 }
 
-boolean_t pdcp_advance_rx_window(pdcp_t* pdcp_entity)
+BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity)
 {
   if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE)
     return FALSE;
@@ -146,7 +146,7 @@ boolean_t pdcp_advance_rx_window(pdcp_t* pdcp_entity)
  * @return 1 if SN is okay, 0 otherwise
  * XXX Reordering window should also be handled here
  */
-boolean_t pdcp_is_rx_seq_number_valid(uint16_t seq_num, pdcp_t* pdcp_entity)
+BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
 {
   LOG_D(PDCP, "Incoming RX Seq # is %04d\n", seq_num);
 
@@ -187,7 +187,7 @@ boolean_t pdcp_is_rx_seq_number_valid(uint16_t seq_num, pdcp_t* pdcp_entity)
   }
 }
 
-boolean_t pdcp_mark_current_pdu_as_received(uint16_t seq_num, pdcp_t* pdcp_entity)
+BOOL pdcp_mark_current_pdu_as_received(u16 seq_num, pdcp_t* pdcp_entity)
 {
   /*
    * Incoming sequence number and PDCP entity were already
@@ -198,13 +198,13 @@ boolean_t pdcp_mark_current_pdu_as_received(uint16_t seq_num, pdcp_t* pdcp_entit
   /*
    * Find relevant octet
    */
-  uint16_t octet_index = seq_num / 8;
+  u16 octet_index = seq_num / 8;
   /*
    * Set relevant bit
    */
   LOG_D(PDCP, "Marking %d. bit of %d. octet of status bitmap\n", (seq_num % 8) + 1, octet_index);
   util_mark_nth_bit_of_octet(&pdcp_entity->missing_pdu_bitmap[octet_index], seq_num % 8); 
-  util_print_binary_representation((uint8_t*)"Current state of relevant octet: ", pdcp_entity->missing_pdu_bitmap[octet_index]);
+  util_print_binary_representation((u8*)"Current state of relevant octet: ", pdcp_entity->missing_pdu_bitmap[octet_index]);
 
   return TRUE;
 }

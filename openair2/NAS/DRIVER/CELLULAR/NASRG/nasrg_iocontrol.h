@@ -82,7 +82,7 @@
 #define NAS_LIST_RB_MAX 32
 #define NAS_LIST_CLASS_MAX 32
 
-typedef uint16_t nasMsgType_t;
+typedef u16 nasMsgType_t;
 
 struct nas_ioctl
 {
@@ -94,26 +94,26 @@ struct nas_ioctl
 //****
 struct nas_msg_statistic_reply
 {
- uint32_t rx_packets;
- uint32_t tx_packets;
- uint32_t rx_bytes;
- uint32_t tx_bytes;
- uint32_t rx_errors;
- uint32_t tx_errors;
- uint32_t rx_dropped;
- uint32_t tx_dropped;
+ u32 rx_packets;
+ u32 tx_packets;
+ u32 rx_bytes;
+ u32 tx_bytes;
+ u32 rx_errors;
+ u32 tx_errors;
+ u32 rx_dropped;
+ u32 tx_dropped;
 };
 
 //****
 struct nas_msg_cx_list_reply
 {
  nasLocalConnectionRef_t lcr;  // Local Connection reference
- uint8_t state;
+ u8 state;
  nasCellID_t cellid;  // cell identification
- uint32_t iid6[2];    // IPv6  interface identification
- uint8_t iid4;    // IPv4 interface identification
- uint16_t num_rb;
- uint16_t nsclassifier;
+ u32 iid6[2];    // IPv6  interface identification
+ u8 iid4;    // IPv4 interface identification
+ u16 num_rb;
+ u16 nsclassifier;
 };
 //****
 struct nas_msg_cx_establishment_reply
@@ -141,8 +141,8 @@ struct nas_msg_rb_list_reply
  nasRadioBearerId_t rab_id;
  nasSapId_t sapi;
  nasQoSTrafficClass_t qos;
- uint8_t state;
-  uint32_t cnxid;
+ u8 state;
+  u32 cnxid;
 };
 struct nas_msg_rb_list_request
 {
@@ -152,32 +152,32 @@ struct nas_msg_rb_list_request
 struct nas_msg_rb_establishment_reply
 {
  int status;
-  uint32_t cnxid;
+  u32 cnxid;
 };
 struct nas_msg_rb_establishment_request
 {
  nasLocalConnectionRef_t lcr; // Local Connection reference
  nasRadioBearerId_t rab_id;
  nasQoSTrafficClass_t qos;
-  uint16_t dscp_ul;
-  uint16_t dscp_dl;
-  uint16_t mcast_flag;
-  uint8_t mcast_group[16];
-  uint32_t cnxid;
+  u16 dscp_ul;
+  u16 dscp_dl;
+  u16 mcast_flag;
+  u8 mcast_group[16];
+  u32 cnxid;
 };
 
 //****
 struct nas_msg_rb_release_reply
 {
  int status;
-  uint32_t cnxid;
+  u32 cnxid;
 };
 struct nas_msg_rb_release_request
 {
  nasLocalConnectionRef_t lcr; // Local Connection reference
  nasRadioBearerId_t rab_id;
-  uint16_t mcast_flag;
-  uint32_t cnxid;
+  u16 mcast_flag;
+  u32 cnxid;
 };
 
 //****
@@ -185,26 +185,26 @@ struct nas_msg_class_add_request
 {
  nasLocalConnectionRef_t lcr; // Local Connection reference
  nasRadioBearerId_t rab_id;
- uint8_t dir; // direction (send or receive)
- uint8_t dscp; // codepoint
- uint8_t fct;
- uint16_t classref;
- uint8_t version;
+ u8 dir; // direction (send or receive)
+ u8 dscp; // codepoint
+ u8 fct;
+ u16 classref;
+ u8 version;
  union
  {
   struct in6_addr ipv6;
-  uint32_t ipv4;
+  u32 ipv4;
  } saddr; // IP source address
- uint8_t splen; // prefix length
+ u8 splen; // prefix length
  union
  {
   struct in6_addr ipv6;
-  uint32_t ipv4;
+  u32 ipv4;
  } daddr; // IP destination address
- uint8_t dplen; // prefix length
- uint8_t protocol;  // high layer protocol type
- uint16_t sport;  // source port
- uint16_t dport;  // destination port
+ u8 dplen; // prefix length
+ u8 protocol;  // high layer protocol type
+ u16 sport;  // source port
+ u16 dport;  // destination port
 };
 struct nas_msg_class_add_reply
 {
@@ -214,9 +214,9 @@ struct nas_msg_class_add_reply
 struct nas_msg_class_del_request
 {
  nasLocalConnectionRef_t lcr; // Local Connection reference
- uint8_t dir; // direction (send or receive)
- uint8_t dscp; // codepoint
- uint16_t classref;
+ u8 dir; // direction (send or receive)
+ u8 dscp; // codepoint
+ u16 classref;
 };
 struct nas_msg_class_del_reply
 {
@@ -227,15 +227,15 @@ struct nas_msg_class_del_reply
 struct nas_msg_class_list_request
 {
  nasLocalConnectionRef_t lcr;  // Local Connection reference
- uint8_t dir;
- uint8_t dscp;
+ u8 dir;
+ u8 dscp;
 };
 
 //****
 struct nas_msg_neighbour_cell_list_reply
 {
  nasCellID_t cellid;  // cell identification
- uint32_t iid6[4];    // IPv6  address of access router
+ u32 iid6[4];    // IPv6  address of access router
 };
 
 //MBMS
@@ -243,21 +243,21 @@ struct nas_msg_neighbour_cell_list_reply
 struct nas_msg_mt_mcast_join
 {
   nasLocalConnectionRef_t  ue_id;
-  uint32_t   cnxid;
+  u32   cnxid;
  nasRadioBearerId_t rab_id;
 };
 
 struct nas_msg_mt_mcast_leave
 {
   nasLocalConnectionRef_t  ue_id;
-  uint32_t   cnxid;
+  u32   cnxid;
   nasRadioBearerId_t rab_id;
 };
 
 struct nas_msg_mt_mcast_reply
 {
   nasLocalConnectionRef_t  ue_id;
-  uint32_t   cnxid;
+  u32   cnxid;
   int  result;
 };
 //****

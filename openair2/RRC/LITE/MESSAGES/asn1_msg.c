@@ -502,8 +502,7 @@ uint8_t do_SIB1(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer
 
   (*sib1)->cellSelectionInfo.q_RxLevMin=-65;
   (*sib1)->cellSelectionInfo.q_RxLevMinOffset=NULL;
-  //(*sib1)->p_Max = CALLOC(1, sizeof(P_Max_t));
-  //*((*sib1)->p_Max) = 23; 
+
   (*sib1)->freqBandIndicator =
 #if defined(ENABLE_ITTI)
           configuration->eutra_band;
@@ -664,7 +663,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 0;
 
   // PDSCH-Config
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=-24;
+  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=24;
   (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
 
   // PUSCH-Config
@@ -739,7 +738,7 @@ uint8_t do_SIB2_AT4(uint8_t Mod_id,
   *((*sib2)->freqInfo.ul_CarrierFreq) = 38050;
   *((*sib2)->freqInfo.ul_Bandwidth) = SystemInformationBlockType2__freqInfo__ul_Bandwidth_n50;
   (*sib2)->mbsfn_SubframeConfigList = NULL;
-  (*sib2)->timeAlignmentTimerCommon= TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf10240;
+  (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf10240;
 
 
 #ifdef XER_PRINT
@@ -1401,7 +1400,7 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t Mod_id, uint8_t *buffer,
 
 uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
                               uint8_t *buffer,
-                              uint8_t transmission_mode,
+                              u8 transmission_mode,
                               uint8_t UE_id,
                               uint8_t Transaction_id,
                               LTE_DL_FRAME_PARMS *frame_parms,
@@ -1490,7 +1489,7 @@ uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
   physicalConfigDedicated2->uplinkPowerControlDedicated   = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated));
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
-  physicalConfigDedicated2->cqi_ReportConfig              = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
+  physicalConfigDedicated2->cqi_ReportConfig              = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
@@ -1545,16 +1544,11 @@ uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.bits_unused=0;
 
   // CQI ReportConfig
-  
+  /*
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-#ifdef Rel10
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= CQI_ReportModeAperiodic_rm30;
-#else
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
-#endif
+  assign_enum(physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic,
+	      CQI_ReportConfig__cqi_ReportModeAperiodic_rm30); // HLC CQI, no PMI
   physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
-/*
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
@@ -2040,7 +2034,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
   memset((void*)pmch_Info_1,0,sizeof(PMCH_Info_r9_t));
   
   pmch_Info_1->pmch_Config_r9.sf_AllocEnd_r9= 3;//take the value of last mbsfn subframe in this CSA period because there is only one PMCH in this mbsfn area
-  pmch_Info_1->pmch_Config_r9.dataMCS_r9= 7;
+  pmch_Info_1->pmch_Config_r9.dataMCS_r9= 17;
   pmch_Info_1->pmch_Config_r9.mch_SchedulingPeriod_r9= PMCH_Config_r9__mch_SchedulingPeriod_r9_rf16;
 
   // MBMSs-SessionInfoList-r9

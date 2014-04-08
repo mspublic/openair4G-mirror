@@ -1,40 +1,32 @@
 /*******************************************************************************
-Eurecom OpenAirInterface core network
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2012 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+                 06410 Biot FRANCE
+
 *******************************************************************************/
-/*! \file gtpv1u.h
-* \brief
-* \author Sebastien ROUX, Lionel Gauthier
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
-*/
 
 #ifndef GTPV1_U_H_
 #define GTPV1_U_H_
@@ -42,9 +34,8 @@ Address      : EURECOM,
 /* When gtpv1u is compiled for eNB use MACRO from UTILS/log.h,
  * otherwise use standard fprintf as logger.
  */
-//#if defined(ENB_MODE)
-#if 0
-# define GTPU_DEBUG(x, args...) LOG_I(GTPU, x, ##args)
+#if defined(ENB_MODE)
+# define GTPU_DEBUG(x, args...) LOG_D(GTPU, x, ##args)
 # define GTPU_INFO(x, args...)  LOG_I(GTPU, x, ##args)
 # define GTPU_WARN(x, args...)  LOG_W(GTPU, x, ##args)
 # define GTPU_ERROR(x, args...) LOG_E(GTPU, x, ##args)

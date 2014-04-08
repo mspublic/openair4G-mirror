@@ -13,15 +13,15 @@
 
 
 #ifndef EXPRESSMIMO_TARGET
-int32_t signal_energy(int32_t *input,uint32_t length) {
+s32 signal_energy(s32 *input,u32 length) {
 
-  int32_t i;
-  int32_t temp,temp2;
+  s32 i;
+  s32 temp,temp2;
   register __m64 mm0,mm1,mm2,mm3;
   __m64 *in = (__m64 *)input;
 
 #ifdef MAIN
-  int16_t *printb;
+  s16 *printb;
 #endif
 
   mm0 = _m_pxor(mm0,mm0);
@@ -38,20 +38,20 @@ int32_t signal_energy(int32_t *input,uint32_t length) {
     //    printf("%d %d\n",((int *)&temp2)[0],((int *)&temp2)[1]);
 
 
-    //    printb = (int16_t *)&mm2;
+    //    printb = (s16 *)&mm2;
     //    printf("mm2 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
 
     mm2 = _m_psrawi(mm2,shift_DC);
     mm3 = _m_paddw(mm3,mm2);// add the two 64 bits words 2 bytes by 2 bytes
 
-    //    printb = (int16_t *)&mm3;
+    //    printb = (s16 *)&mm3;
     //    printf("mm3 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
 
   }
 
   /*
 #ifdef MAIN
-  printb = (int16_t *)&mm3;
+  printb = (s16 *)&mm3;
   printf("%d %d %d %d\n",printb[0],printb[1],printb[2],printb[3]);
 #endif
   */
@@ -94,15 +94,15 @@ int32_t signal_energy(int32_t *input,uint32_t length) {
   return((temp>0)?temp:1);
 }
 
-int32_t signal_energy_nodc(int32_t *input,uint32_t length) {
+s32 signal_energy_nodc(s32 *input,u32 length) {
 
-  int32_t i;
-  int32_t temp;
+  s32 i;
+  s32 temp;
   register __m64 mm0,mm1,mm2,mm3;
   __m64 *in = (__m64 *)input;
 
 #ifdef MAIN
-  int16_t *printb;
+  s16 *printb;
 #endif
 
   mm0 = _m_pxor(mm0,mm0);
@@ -119,7 +119,7 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length) {
     //    printf("%d %d\n",((int *)&in[i])[0],((int *)&in[i])[1]);
 
 
-    //    printb = (int16_t *)&mm2;
+    //    printb = (s16 *)&mm2;
     //    printf("mm2 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
 
 
@@ -127,7 +127,7 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length) {
 
   /*
 #ifdef MAIN
-  printb = (int16_t *)&mm3;
+  printb = (s16 *)&mm3;
   printf("%d %d %d %d\n",printb[0],printb[1],printb[2],printb[3]);
 #endif
   */
@@ -153,9 +153,9 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length) {
   return((temp>0)?temp:1);
 }
 
-double signal_energy_fp(double **s_re,double **s_im,uint32_t nb_antennas,uint32_t length,uint32_t offset) {
+double signal_energy_fp(double **s_re,double **s_im,u32 nb_antennas,u32 length,u32 offset) {
 
-  int32_t aa,i;
+  s32 aa,i;
   double V=0.0;
 
   for (i=0;i<length;i++) {
@@ -166,9 +166,9 @@ double signal_energy_fp(double **s_re,double **s_im,uint32_t nb_antennas,uint32_
   return(V/length/nb_antennas);
 }
 
-double signal_energy_fp2(struct complex *s,uint32_t length) {
+double signal_energy_fp2(struct complex *s,u32 length) {
 
-  int32_t i;
+  s32 i;
   double V=0.0;
 
   for (i=0;i<length;i++) {
@@ -180,7 +180,7 @@ double signal_energy_fp2(struct complex *s,uint32_t length) {
 }
 #else
 
-int32_t signal_energy(int32_t *input,uint32_t length) {
+s32 signal_energy(s32 *input,u32 length) {
 }
 
 #endif
@@ -195,7 +195,7 @@ main(int argc,char **argv) {
 
   int input[LENGTH];
   int energy=0,dc_r=0,dc_i=0;
-  int16_t s=1,i;
+  s16 s=1,i;
   int amp;
 
   amp = atoi(argv[1]);// arguments to integer
@@ -204,11 +204,11 @@ main(int argc,char **argv) {
 
   for (i=0;i<LENGTH;i++) {
     s = -s;
-    ((int16_t*)input)[2*i]     = 31 + (int16_t)(amp*sin(2*M_PI*i/LENGTH));
-    ((int16_t*)input)[1+(2*i)] = 30 + (int16_t)(amp*cos(2*M_PI*i/LENGTH));
-    energy += (((int16_t*)input)[2*i]*((int16_t*)input)[2*i]) + (((int16_t*)input)[1+(2*i)]*((int16_t*)input)[1+(2*i)]);
-    dc_r += ((int16_t*)input)[2*i];
-    dc_i += ((int16_t*)input)[1+(2*i)];
+    ((s16*)input)[2*i]     = 31 + (s16)(amp*sin(2*M_PI*i/LENGTH));
+    ((s16*)input)[1+(2*i)] = 30 + (s16)(amp*cos(2*M_PI*i/LENGTH));
+    energy += (((s16*)input)[2*i]*((s16*)input)[2*i]) + (((s16*)input)[1+(2*i)]*((s16*)input)[1+(2*i)]);
+    dc_r += ((s16*)input)[2*i];
+    dc_i += ((s16*)input)[1+(2*i)];
 
 
   }

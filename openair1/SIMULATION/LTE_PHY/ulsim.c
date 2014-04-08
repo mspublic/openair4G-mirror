@@ -1,43 +1,3 @@
-/*******************************************************************************
-
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2014 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France
-
-*******************************************************************************/
-
-/*! \file ulsim.c
- \brief Top-level DL simulator
- \author R. Knopp
- \date 2011
- \version 0.1
- \company Eurecom
- \email: knopp@eurecom.fr
- \note
- \warning
-*/
-
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -84,7 +44,7 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 //double sinr_bler_map[MCS_COUNT][2][16];
 
-extern uint16_t beta_ack[16],beta_ri[16],beta_cqi[16];
+extern u16 beta_ack[16],beta_ri[16],beta_cqi[16];
 //extern  char* namepointer_chMag ;
 
 
@@ -93,7 +53,7 @@ FD_lte_phy_scope_enb *form_enb;
 char title[255];
 #endif
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,uint8_t extended_prefix_flag,uint8_t N_RB_DL,uint8_t frame_type,uint8_t tdd_config,uint8_t osf) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u8 N_RB_DL,u8 frame_type,u8 tdd_config,u8 osf) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms;
 
@@ -164,7 +124,6 @@ int main(int argc, char **argv) {
   int aarx,aatx;
   double channelx,channely;
   double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate,saving_bler;
-  double input_snr_step=.2,snr_int=30;
   double blerr;
 
   //int **txdataF, **txdata;
@@ -175,7 +134,7 @@ int main(int argc, char **argv) {
   double **s_re,**s_im,**r_re,**r_im;
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
-  uint8_t extended_prefix_flag=0;
+  u8 extended_prefix_flag=0;
   int cqi_flag=0,cqi_error,cqi_errors,ack_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
   int ch_realization;
   int eNB_id = 0;
@@ -194,7 +153,7 @@ int main(int argc, char **argv) {
   unsigned int coded_bits_per_codeword,nsymb;
   int subframe=3;
   unsigned int tx_lev=0,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0};
-  uint8_t transmission_mode=1,n_rx=1;
+  u8 transmission_mode=1,n_rx=1;
  
   FILE *bler_fd;
   char bler_fname[512];
@@ -226,21 +185,22 @@ int main(int argc, char **argv) {
   int hold_channel=0; 
   channel_desc_t *UE2eNB;
 
-  uint8_t control_only_flag = 0;
+  u8 control_only_flag = 0;
   int delay = 0;	
   double maxDoppler = 0.0;	
-  uint8_t srs_flag = 0;
+  u8 srs_flag = 0;
 
-  uint8_t N_RB_DL=25,osf=1;
+  u8 N_RB_DL=25,osf=1;
 
-  uint8_t cyclic_shift = 0;
-  uint8_t cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
-  uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
-  uint8_t tdd_config=3,frame_type=FDD;
+  u8 cyclic_shift = 0;
+  u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
+  u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
+  u8 tdd_config=3,frame_type=FDD;
 
-  uint8_t N0=30;
+  u8 N0=30;
   double tx_gain=1.0;
   double cpu_freq_GHz;
+  time_stats_t ts;
   int avg_iter,iter_trials;
 
   uint32_t UL_alloc_pdu;
@@ -251,16 +211,18 @@ int main(int argc, char **argv) {
   uint8_t llr8_flag=0;
   int nb_rb_set = 0;
 
-  opp_enabled=1; // to enable the time meas
-
-  cpu_freq_GHz = (double)get_cpu_freq_GHz();
+  reset_meas(&ts);
+  start_meas(&ts);
+  sleep(1);
+  stop_meas(&ts);
+  cpu_freq_GHz = (double)ts.diff/1000000000;
 
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:w:e:q:d:D:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:L")) != -1) {
+  while ((c = getopt (argc, argv, "hapbm:n:Y:X:s:q:d:D:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:L")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -348,13 +310,7 @@ int main(int argc, char **argv) {
       }
       break;
     case 's':
-      snr0 = atof(optarg);
-      break;
-    case 'w':
-      snr_int = atof(optarg);
-      break;
-    case 'e':
-      input_snr_step= atof(optarg);
+      snr0 = atoi(optarg);
       break;
     case 'y':
       n_rx = atoi(optarg);
@@ -426,7 +382,6 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       dump_perf=1;
-      opp_enabled=1;
       break;
     case 'L':
       llr8_flag=1;
@@ -450,7 +405,7 @@ int main(int argc, char **argv) {
   printf("Setting mcs = %d\n",mcs);
   printf("n_frames = %d\n",	n_frames);
 
-  snr1 = snr0+snr_int;
+  snr1 = snr0+25.0;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
   /*
@@ -617,7 +572,7 @@ int main(int argc, char **argv) {
     else {
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(u32 *)&UL_alloc_pdu);
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -640,7 +595,7 @@ int main(int argc, char **argv) {
     else {
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(u32 *)&UL_alloc_pdu);
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -663,7 +618,7 @@ int main(int argc, char **argv) {
     else {
       ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,PHY_vars_eNB->lte_frame_parms.N_RB_UL,((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(u32 *)&UL_alloc_pdu);
       ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -743,7 +698,7 @@ int main(int argc, char **argv) {
     if ((subframe>5) || (subframe < 4))
       PHY_vars_UE->frame++;
  
-    for (SNR=snr0;SNR<snr1;SNR+=input_snr_step) {
+    for (SNR=snr0;SNR<snr1;SNR+=.2) {
       errs[0]=0;
       errs[1]=0;
       errs[2]=0;
@@ -840,8 +795,6 @@ int main(int argc, char **argv) {
 	fflush(stdout);
 	round=0;
 	while (round < 4) {
-	  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->round=round;
-	  PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->round=round;
 	  //	printf("Trial %d : Round %d ",trials,round);
 	  round_trials[round]++;
 	  if (round == 0) {
@@ -1220,15 +1173,15 @@ int main(int argc, char **argv) {
 	     errs[0],
 	     round_trials[0],
 	     errs[1],
-	     round_trials[0],
+	     round_trials[1],
 	     errs[2],
-	     round_trials[0],
+	     round_trials[2],
 	     errs[3],
-	     round_trials[0],
+	     round_trials[3],
 	     (double)errs[0]/(round_trials[0]),
-	     (double)errs[1]/(round_trials[0]),
-	     (double)errs[2]/(round_trials[0]),
-	     (double)errs[3]/(round_trials[0]),
+	     (double)errs[1]/(round_trials[1]),
+	     (double)errs[2]/(round_trials[2]),
+	     (double)errs[3]/(round_trials[3]),
 	     rate*((double)(round_trials[0])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])),
 	     100*((double)(round_trials[0])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])),
 	     rate,

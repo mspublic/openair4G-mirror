@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_um_receiver.h
 * \brief This file defines the prototypes of the functions dealing with the first stage of the receiving process.
@@ -62,19 +59,18 @@ Address      : EURECOM,
 #        include "rlc_um_entity.h"
 #        include "mac_primitives.h"
 
-/*! \fn void rlc_um_display_rx_window(rlc_um_entity_t *rlc_pP)
+/*! \fn void rlc_um_display_rx_window(struct rlc_um_entity *rlcP)
 * \brief    Display the content of the RX buffer, the output stream is targeted to TTY terminals because of escape sequences.
-* \param[in]  rlc_pP      RLC UM protocol instance pointer.
+* \param[in]  rlcP        RLC UM protocol instance pointer.
 */
-protected_rlc_um_receiver( void rlc_um_display_rx_window(rlc_um_entity_t *rlc_pP);)
+protected_rlc_um_receiver( void rlc_um_display_rx_window(struct rlc_um_entity *rlcP);)
 
-/*! \fn void rlc_um_receive (rlc_um_entity_t *rlc_pP, frame_t frameP, struct mac_data_ind data_indP)
+/*! \fn void rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, struct mac_data_ind data_indP)
 * \brief    Handle the MAC data indication, retreive the transport blocks and send them one by one to the DAR process.
-* \param[in]  rlc_pP      RLC UM protocol instance pointer.
-* \param[in]  frameP      Frame index.
-* \param[in]  eNB_flagP   Flag to indicated eNB (1) or UE (0).
+* \param[in]  rlcP        RLC UM protocol instance pointer.
+* \param[in]  frame       Frame index.
 * \param[in]  data_indP   Data indication structure containing transport block received from MAC layer.
 */
-protected_rlc_um_receiver( void rlc_um_receive (rlc_um_entity_t *rlc_pP, frame_t frameP, eNB_flag_t eNB_flagP, struct mac_data_ind data_indP));
+protected_rlc_um_receiver( void rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct mac_data_ind data_indP));
 /** @} */
 #    endif

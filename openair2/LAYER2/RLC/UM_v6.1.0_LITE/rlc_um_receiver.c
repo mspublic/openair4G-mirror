@@ -1,40 +1,11 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
-
-/******************************************************************************
+/*
+                             rlc_um_receiver.c
+                             -------------------
   AUTHOR  : Lionel GAUTHIER
   COMPANY : EURECOM
   EMAIL   : Lionel.Gauthier@eurecom.fr
-*******************************************************************************/
+
+ ***************************************************************************/
 #define RLC_UM_C
 #include "rtos_header.h"
 #include "platform_types.h"
@@ -57,17 +28,17 @@ Address      : EURECOM,
 //-----------------------------------------------------------------------------
 void
 rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_management *pdu_mngtP, struct
-                            rlc_um_rx_data_pdu_struct *dataP, uint16_t tb_sizeP, uint16_t bad_crc_l1P)
+                            rlc_um_rx_data_pdu_struct *dataP, u16_t tb_sizeP, u16 bad_crc_l1P)
 {
 //-----------------------------------------------------------------------------
-  uint8_t             *data_pdu;
-  int32_t             remaining_data_size;
-  uint32_t             rlc_um_crc;
+  u8_t             *data_pdu;
+  s32_t             remaining_data_size;
+  u32_t             rlc_um_crc;
   int             nb_li;
   int             li_index;
-  uint16_t             li[RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU];
-  uint16_t             li_synched;
-  uint16_t             rlc_crc_to_check;
+  u16_t             li[RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU];
+  u16_t             li_synched;
+  u16_t             rlc_crc_to_check;
 
   pdu_mngtP->sn = dataP->byte1 >> 1;
 
@@ -113,7 +84,7 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
   //---------------------------------
   // NO LENGTH INDICATOR IN PDU
   //---------------------------------
-  if ((dataP->byte1 & RLC_E_MASK) == (uint8_t) RLC_E_NEXT_FIELD_IS_DATA) {
+  if ((dataP->byte1 & RLC_E_MASK) == (u8_t) RLC_E_NEXT_FIELD_IS_DATA) {
     if ((li_synched)) {
       if ((rlcP->crc_on_header)) {
         if ((rlc_crc_to_check)) {
@@ -126,9 +97,9 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
             msg ("[RLC_UM_LITE][RB %d] GOOD CRC ON RLC HEADER 1 byte\n", rlcP->rb_id);
           }
         }
-        rlc_um_reassembly ((uint8_t *) (&dataP->li_data_7[0]), tb_sizeP - 2, rlcP, 0);
+        rlc_um_reassembly ((u8_t *) (&dataP->li_data_7[0]), tb_sizeP - 2, rlcP);
       } else {
-        rlc_um_reassembly ((uint8_t *) (&dataP->li_data_7[0]), tb_sizeP - 1, rlcP, 0);
+        rlc_um_reassembly ((u8_t *) (&dataP->li_data_7[0]), tb_sizeP - 1, rlcP);
       }
     }
     //---------------------------------
@@ -137,16 +108,16 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
   } else {
     nb_li = 0;
     if (tb_sizeP <= 125) {
-      while (((li[nb_li] = ((uint16_t) dataP->li_data_7[nb_li])) & RLC_E_NEXT_FIELD_IS_LI_E)
+      while (((li[nb_li] = ((u16_t) dataP->li_data_7[nb_li])) & RLC_E_NEXT_FIELD_IS_LI_E)
              && (nb_li < RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU)) {
-        li[nb_li] = li[nb_li] & (~(uint8_t) RLC_E_NEXT_FIELD_IS_LI_E);
+        li[nb_li] = li[nb_li] & (~(u8_t) RLC_E_NEXT_FIELD_IS_LI_E);
         nb_li++;
       }
       nb_li++;                  // count the last li
     } else {
-      while ((li[nb_li] = ((((uint16_t) dataP->li_data_7[nb_li << 1]) << 8) + dataP->li_data_7[(nb_li << 1) + 1]))
+      while ((li[nb_li] = ((((u16_t) dataP->li_data_7[nb_li << 1]) << 8) + dataP->li_data_7[(nb_li << 1) + 1]))
              & RLC_E_NEXT_FIELD_IS_LI_E) {
-        li[nb_li] = li[nb_li] & (~(uint16_t) RLC_E_NEXT_FIELD_IS_LI_E);
+        li[nb_li] = li[nb_li] & (~(u16_t) RLC_E_NEXT_FIELD_IS_LI_E);
         nb_li++;
       }
       nb_li++;                  // count the last li
@@ -185,25 +156,25 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
     if ((rlcP->crc_on_header)) {
       if (tb_sizeP <= 125) {
         remaining_data_size = tb_sizeP - 2 - nb_li;
-        data_pdu = (uint8_t *) (&dataP->li_data_7[nb_li]);
+        data_pdu = (u8_t *) (&dataP->li_data_7[nb_li]);
       } else {
         remaining_data_size = tb_sizeP - 2 - (nb_li << 1);
-        data_pdu = (uint8_t *) (&dataP->li_data_7[nb_li << 1]);
+        data_pdu = (u8_t *) (&dataP->li_data_7[nb_li << 1]);
       }
     } else {
       if (tb_sizeP <= 125) {
         remaining_data_size = tb_sizeP - 1 - nb_li;
-        data_pdu = (uint8_t *) (&dataP->li_data_7[nb_li]);
+        data_pdu = (u8_t *) (&dataP->li_data_7[nb_li]);
       } else {
         remaining_data_size = tb_sizeP - 1 - (nb_li << 1);
-        data_pdu = (uint8_t *) (&dataP->li_data_7[nb_li << 1]);
+        data_pdu = (u8_t *) (&dataP->li_data_7[nb_li << 1]);
       }
     }
 
     li_index = 0;
     while (li_index < nb_li) {
       switch (li[li_index]) {
-          case (uint8_t) RLC_LI_LAST_PDU_EXACTLY_FILLED:
+          case (u8_t) RLC_LI_LAST_PDU_EXACTLY_FILLED:
 #ifdef DEBUG_RLC_UM_RX_DECODE_LI
             msg ("[RLC_UM_LITE][RB %d] RX_7 PDU %p Li RLC_LI_LAST_PDU_EXACTLY_FILLED\n", rlcP->rb_id, pdu_mngtP);
 #endif
@@ -213,7 +184,7 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
             li_synched = 1;
             break;
 
-          case (uint8_t) RLC_LI_LAST_PDU_ONE_BYTE_SHORT:
+          case (u8_t) RLC_LI_LAST_PDU_ONE_BYTE_SHORT:
 #ifdef DEBUG_RLC_UM_RX_DECODE_LI
             msg ("[RLC_UM_LITE][RB %d] RX_7 PDU %p Li RLC_LI_LAST_PDU_ONE_BYTE_SHORT\n", rlcP->rb_id, pdu_mngtP);
 #endif
@@ -223,15 +194,15 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
             li_synched = 1;
             break;
 
-          case (uint8_t) RLC_LI_PDU_PIGGY_BACKED_STATUS:    // ignore for RLC-AM
-          case (uint8_t) RLC_LI_PDU_PADDING:
+          case (u8_t) RLC_LI_PDU_PIGGY_BACKED_STATUS:    // ignore for RLC-AM
+          case (u8_t) RLC_LI_PDU_PADDING:
 #ifdef DEBUG_RLC_UM_RX_DECODE_LI
             msg ("[RLC_UM_LITE][RB %d] RX_7 PDU %p Li RLC_LI_PDU_PADDING\n", rlcP->rb_id, pdu_mngtP);
 #endif
             remaining_data_size = 0;
             break;
 
-          case (uint8_t) RLC_LI_1ST_BYTE_SDU_IS_1ST_BYTE_PDU:
+          case (u8_t) RLC_LI_1ST_BYTE_SDU_IS_1ST_BYTE_PDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE_LI
             msg ("[RLC_UM_LITE][RB %d] RX_7 PDU %p Li RLC_LI_1ST_BYTE_SDU_IS_1ST_BYTE_PDU\n", rlcP->rb_id, pdu_mngtP);
 #endif
@@ -249,7 +220,7 @@ rlc_um_receive_process_pdu (struct rlc_um_entity *rlcP, struct rlc_um_rx_pdu_man
               rlc_um_send_sdu (rlcP);
             }
             li_synched = 1;
-            data_pdu = (uint8_t *) ((uint32_t) data_pdu + (li[li_index] >> 1));
+            data_pdu = (u8_t *) ((u32_t) data_pdu + (li[li_index] >> 1));
       }
       li_index++;
     }
@@ -270,11 +241,11 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
   struct rlc_um_rx_data_pdu_struct *data;
   struct rlc_um_rx_pdu_management *pdu_mngt;
   mem_block_t *tb;
-  uint8_t             *first_byte;
-  uint8_t              tb_size_in_bytes;
-  uint8_t              first_bit;
-  uint8_t              bits_to_shift;
-  uint8_t              bits_to_shift_last_loop;
+  u8_t             *first_byte;
+  u8_t              tb_size_in_bytes;
+  u8_t              first_bit;
+  u8_t              bits_to_shift;
+  u8_t              bits_to_shift_last_loop;
 
 
   while ((tb = list_remove_head (&data_indP.data))) {

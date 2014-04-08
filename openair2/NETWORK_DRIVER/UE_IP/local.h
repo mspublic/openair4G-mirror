@@ -1,33 +1,30 @@
 /*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2010 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /***************************************************************************
                           local.h  -  description
@@ -66,48 +63,49 @@ Address      : EURECOM,
 
 
 #include "constant.h"
-#include "platform_types.h"
 #include "sap.h"
 
 
-typedef struct ue_ip_priv_s {
+struct ue_ip_priv {
   int                        irq;
   int                        rx_flags;
   struct timer_list          timer;
   spinlock_t                 lock;
   struct net_device_stats    stats;
-  uint8_t                    retry_limit;
-  uint32_t                   timer_establishment;
-  uint32_t                   timer_release;
+  u8                         retry_limit;
+  u32                        timer_establishment;
+  u32                        timer_release;
   struct sock               *nl_sk;
-  uint8_t                    nlmsg[UE_IP_PRIMITIVE_MAX_LENGTH+sizeof(struct nlmsghdr)];
-  uint8_t                    xbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // transmition buffer
-  uint8_t                    rbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // reception buffer
-} ue_ip_priv_t;
+  u8                         nlmsg[UE_IP_PRIMITIVE_MAX_LENGTH+sizeof(struct nlmsghdr)];
+  u8                         xbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // transmition buffer
+  u8                         rbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // reception buffer
+};
 
-typedef struct ipversion_s {
+struct ipversion {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-  uint8_t    reserved:4,
+    u8    reserved:4,
           version:4;
 #else
-  uint8_t    version:4,
+    u8    version:4,
           reserved:4;
 #endif
-}ipversion_t;
+};
+
+typedef int traffic_type_t;
 
 
 typedef struct pdcp_data_req_header_s {
-  rb_id_t             rb_id;
-  sdu_size_t          data_size;
-  signed int          inst;
-  ip_traffic_type_t   traffic_type;
+  unsigned int           rb_id;
+  unsigned int           data_size;
+  int                    inst;
+  traffic_type_t         traffic_type;
 } pdcp_data_req_header_t;
 
 typedef struct pdcp_data_ind_header_s {
-  rb_id_t             rb_id;
-  sdu_size_t          data_size;
-  signed int          inst;
-  ip_traffic_type_t   dummy_traffic_type;
+  unsigned int           rb_id;
+  unsigned int           data_size;
+  int                    inst;
+  int                    dummy;
 } pdcp_data_ind_header_t;
 
 

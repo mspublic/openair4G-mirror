@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_um_fsm.h
 * \brief This file defines the prototypes of the functions dealing with the finite state machine of the RLC UM protocol instance.
@@ -63,7 +60,7 @@ Address      : EURECOM,
 #        include "platform_types.h"
 #        include "rlc_um_entity.h"
 //-----------------------------------------------------------------------------
-/*! \fn int rlc_um_fsm_notify_event (rlc_um_entity_t *rlcP, uint8_t eventP)
+/*! \fn int rlc_um_fsm_notify_event (struct rlc_um_entity *rlcP, u8_t eventP)
 * \brief    Send an event to the RLC UM finite state machine.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 * \param[in]  eventP      Event (#RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_NULL_STATE_EVENT,
@@ -74,6 +71,6 @@ Address      : EURECOM,
 * \return     1 if no error was encountered, 0 if the event was not processed.
 * \Note       This FSM is not LTE 9.3.0 compliant, it has to be modified or removed.
 */
-protected_rlc_um_fsm(int      rlc_um_fsm_notify_event (rlc_um_entity_t *rlcP, uint8_t eventP));
+protected_rlc_um_fsm(int      rlc_um_fsm_notify_event (struct rlc_um_entity *rlcP, u8_t eventP));
 /** @} */
 #    endif

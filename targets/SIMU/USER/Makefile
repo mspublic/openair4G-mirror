@@ -17,13 +17,7 @@ CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ;
 CPUFLAGS += $(shell if grep --silent -w sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
 linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
-ifdef DEBUG
-CFLAGS += -g -ggdb -DDEBUG_PHY
-else 
-CFLAGE += -O2	
-endif
-
-CFLAGS += -Wstrict-prototypes -Wpointer-sign
+CFLAGS += -g -ggdb
 CFLAGS += -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 # Check if GCC version is greater or equal to 4.4
@@ -100,6 +94,10 @@ else
   endif
 endif
 
+ifdef DEBUG_PHY
+CFLAGS += -DDEBUG_PHY
+endif
+
 ifdef JF
 CFLAGS += -DJUMBO_FRAME
 endif
@@ -111,6 +109,10 @@ endif
 # make cleanasn1
 #make all Rel10=1
 
+
+#export IS_REL10=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ] ; then  echo "1" ; else  echo "0" ; fi)
+#export IS_REL8=$(shell if [ -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ] ; then  echo "1" ; else  echo "0" ; fi)
+
 ifdef CBA
 CFLAGS += -DRel10
 CFLAGS += -DCBA
@@ -119,16 +121,19 @@ CFLAGS += -DCBA
 else ifdef Rel10
 CFLAGS += -DRel10
 @echo "Rel10=1"
+#ifeq ($(IS_REL10), 0)
+# $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-a20.asn EUTRA-RRC-Definitions.asn ; cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS) ; rm -f *.o ; rm -f oaisim ; rm -f oaisim_pad; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
+#endif
 else # default is rel 8
 @echo "Rel8=1"
 CFLAGS += -DRel8
+#ifeq ($(IS_REL8), 0)
+# $(/bin/bash cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/ ; rm EUTRA-RRC-Definitions.asn ln -s EUTRA-RRC-Definitions-86.asn EUTRA-RRC-Definitions.asn ;  cd $(OPENAIR_TARGETS)/SIMU/USER/ ; rm -f $(ASN1_MSG_OBJS1) ; rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated ; rm -f $(L2_OBJS); rm -f *.o ; rm -f oaisim ; touch $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8 ; rm $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10 ; $(OPENAIR_TARGETS)/SCRIPTS/asn1_generate_rrc_messaging_c_code.bash )
+#endif
 endif
 
 ifeq ($(RLC_STOP_ON_LOST_PDU), 1)
 CFLAGS += -DRLC_STOP_ON_LOST_PDU
-endif
-ifeq ($(STOP_ON_IP_TRAFFIC_OVERLOAD), 1)
-CFLAGS += -DSTOP_ON_IP_TRAFFIC_OVERLOAD
 endif
 
 ifeq ($(ENABLE_RAL), 1)
@@ -137,12 +142,7 @@ endif
 
 ifeq ($(MIH_C_MEDIEVAL_EXTENSIONS), 1)
 CFLAGS += -DMIH_C_MEDIEVAL_EXTENSIONS
-ifeq ($(USE_3GPP_ADDR_AS_LINK_ADDR), 1)
-CFLAGS += -DUSE_3GPP_ADDR_AS_LINK_ADDR
 endif
-endif
-
-
 
 ifeq ($(NAS), 1)
 CFLAGS += -DNAS_NETLINK -DLINUX
@@ -178,11 +178,11 @@ endif
 
 ifdef SECU
 ifeq ($(NETTLE_FOUND), 0)
-@echo "Nettle library >= 2.5 is not installed on your system, nettle-dev lib needed, continuing with security disabled"
+@echo "Nettle library >= 2.5 is not installed on your system, continuing with security disabled"
 SECU=0
 else
 ifeq ($(OPENSSL_FOUND), 0)
-@echo "openssl library is not installed on your system, openssl lib needed, continuing with security disabled"
+@echo "openssl library is not installed on your system, continuing with security disabled"
 SECU=0
 else
 CFLAGS += -DENABLE_SECURITY
@@ -207,7 +207,6 @@ INCLUDES += $(ENB_APP_incl)
 INCLUDES += $(UTIL_incl)
 INCLUDES += $(UTILS_incl)
 INCLUDES += -I$(ASN1_MSG_INC)
-INCLUDES += -I$(COMMON_UTILS_DIR)/collection
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o
@@ -297,7 +296,7 @@ printvars:
 	@echo UE_flag is $(UE_flag)
 	@echo S1AP objs: $(S1AP_BUILT_OBJS)
 	@echo CFLAGS: $(CFLAGS)
-	@echo Enable PGM: $(PGM_FOUND)
+	@echo Enable PGM: $(ENABLE_PGM)
 
 ##UTIL_YAC_C = $(OPENAIR2_TOP)/UTIL/enb_parser.o
 ##$(UTIL_LEX_C) = $(subst $(OPENAIR_HOME), $(OBJS_DIR), $(OBJ) $(OAISIM_OBJS) $(ASN1_MSG_OBJS1))

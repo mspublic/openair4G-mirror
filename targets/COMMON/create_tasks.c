@@ -38,8 +38,6 @@
 #     include "sctp_eNB_task.h"
 #     include "s1ap_eNB.h"
 #     include "nas_ue_task.h"
-#     include "udp_eNB_task.h"
-#     include "gtpv1u_eNB_task.h"
 #   endif
 #   if defined(ENABLE_RAL)
 #     include "lteRALue.h"
@@ -67,18 +65,6 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
                 if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0)
                 {
                     LOG_E(EMU, "Create task for S1AP failed\n");
-                    return -1;
-                }
-
-                if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0)
-                {
-                    LOG_E(EMU, "Create task for UDP failed\n");
-                    return -1;
-                }
-
-                if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0)
-                {
-                    LOG_E(EMU, "Create task for GTPV1U failed\n");
                     return -1;
                 }
             }

@@ -47,8 +47,6 @@ import log
 import case01
 import case02
 import case03
-import case04
-import case05
 
 from  openair import *
 
@@ -56,8 +54,6 @@ debug = 0
 prompt = '$'
 pw =''
 i = 0
-dlsim=0
-
 for arg in sys.argv:
     if arg == '-d':
         debug = 1
@@ -67,8 +63,6 @@ for arg in sys.argv:
         prompt = sys.argv[i+1]
     elif arg == '-w' :
         pw = sys.argv[i+1]
-    elif arg == '-P' :
-        dlsim = 1
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
@@ -118,9 +112,6 @@ oai.rm_driver(oai,user,pw)
 case01.execute(oai, user, pw, logfile,logdir)
 case02.execute(oai, user, pw, logfile,logdir)
 case03.execute(oai, user, pw, logfile,logdir)
-if dlsim != 0 :
-    case04.execute(oai, user, pw, logfile,logdir)
-    case05.execute(oai, user, pw, logfile,logdir)
 
 oai.kill(user, pw) 
 oai.rm_driver(oai,user,pw)

@@ -314,7 +314,8 @@ unsigned char *packet_gen_multicast(int src, int dst, int ctime, unsigned int * 
   for (app=0; app<1; app++){  
 
     if ( (g_otg_multicast->idt_dist[src][dst][app]> 0) &&  
-	 ((ctime - otg_multicast_info->ptime[src][dst][app]) >= otg_multicast_info->idt[src][dst][app]) ){
+	 ((ctime - otg_multicast_info->ptime[src][dst][app]) >= otg_multicast_info->idt[src][dst][app]) && 
+	 (g_otg_multicast->duration[src][dst][app] > ctime) ){
 
       //Duy add
       LOG_I(OTG,"multicast gen: entering generating\n");

@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_am_timer_status_prohibit.h
 * \brief This file defines the prototypes of the functions manipulating the t-StatusProhibit timer.
@@ -60,32 +57,32 @@ Address      : EURECOM,
 #        endif
 #    endif
 
-/*! \fn void rlc_am_check_timer_status_prohibit(rlc_am_entity_t *rlc_pP,frame_t frameP)
+/*! \fn void rlc_am_check_timer_status_prohibit(rlc_am_entity_t *rlcP,u32_t frame)
 * \brief      Check if timer status-prohibit has timed-out, if so it is stopped and has the status "timed-out".
-* \param[in]  rlc_pP              RLC AM protocol instance pointer.
-* \param[in]  frameP             Frame index
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index
 */
-protected_rlc_am_timer_status_prohibit(void rlc_am_check_timer_status_prohibit(rlc_am_entity_t *rlc_pP,frame_t frameP));
+protected_rlc_am_timer_status_prohibit(void rlc_am_check_timer_status_prohibit(rlc_am_entity_t *rlcP,u32_t frame));
 
-/*! \fn void rlc_am_stop_and_reset_timer_status_prohibit(rlc_am_entity_t *rlc_pP)
+/*! \fn void rlc_am_stop_and_reset_timer_status_prohibit(rlc_am_entity_t *rlcP)
 * \brief      Stop and reset the timer status-prohibit.
-* \param[in]  rlc_pP              RLC AM protocol instance pointer.
-* \param[in]  frameP             Frame index
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index
 */
-protected_rlc_am_timer_status_prohibit(void rlc_am_stop_and_reset_timer_status_prohibit(rlc_am_entity_t *rlc_pP,frame_t frameP);)
+protected_rlc_am_timer_status_prohibit(void rlc_am_stop_and_reset_timer_status_prohibit(rlc_am_entity_t *rlcP,u32_t frame);)
 
-/*! \fn void rlc_am_start_timer_status_prohibit(rlc_am_entity_t *rlc_pP,frame_t frameP)
+/*! \fn void rlc_am_start_timer_status_prohibit(rlc_am_entity_t *rlcP,u32_t frame)
 * \brief      Re-arm (based on RLC AM config parameter) and start timer status-prohibit.
-* \param[in]  rlc_pP              RLC AM protocol instance pointer.
-* \param[in]  frameP             Frame index
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  frame             Frame index
 */
-protected_rlc_am_timer_status_prohibit(void rlc_am_start_timer_status_prohibit(rlc_am_entity_t *rlc_pP,frame_t frameP);)
+protected_rlc_am_timer_status_prohibit(void rlc_am_start_timer_status_prohibit(rlc_am_entity_t *rlcP,u32_t frame);)
 
-/*! \fn void rlc_am_init_timer_status_prohibit(rlc_am_entity_t *rlc_pP, uint32_t time_outP)
+/*! \fn void rlc_am_init_timer_status_prohibit(rlc_am_entity_t *rlcP, u32_t time_outP)
 * \brief      Initialize the timer status-prohibit with RLC AM time-out config parameter.
-* \param[in]  rlc_pP              RLC AM protocol instance pointer.
-* \param[in]  time_outP         Time-out in frameP units.
+* \param[in]  rlcP              RLC AM protocol instance pointer.
+* \param[in]  time_outP         Time-out in frame units.
 */
-protected_rlc_am_timer_status_prohibit(void rlc_am_init_timer_status_prohibit(rlc_am_entity_t *rlc_pP, uint32_t time_outP);)
+protected_rlc_am_timer_status_prohibit(void rlc_am_init_timer_status_prohibit(rlc_am_entity_t *rlcP, u32_t time_outP);)
 /** @} */
 #endif

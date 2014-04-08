@@ -1,33 +1,30 @@
 /*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+  Eurecom OpenAirInterface 2
+  Copyright(c) 1999 - 2010 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fsr/openairinterface
+  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 
 /*! \file device.c
@@ -73,12 +70,12 @@ extern int ue_ip_netlink_init(void);
 #endif
 
 //---------------------------------------------------------------------------
-int ue_ip_find_inst(struct net_device *dev_pP) {
+int ue_ip_find_inst(struct net_device *dev) {
 //---------------------------------------------------------------------------
   int i;
 
   for (i=0;i<UE_IP_NB_INSTANCES_MAX;i++)
-    if (ue_ip_dev[i] == dev_pP)
+    if (ue_ip_dev[i] == dev)
       return(i);
   return(-1);
 }
@@ -88,23 +85,23 @@ int ue_ip_find_inst(struct net_device *dev_pP) {
 #ifndef OAI_NW_DRIVER_USE_NETLINK
 void *ue_ip_interrupt(void){
   //---------------------------------------------------------------------------
-  uint8_t cxi;
+  u8 cxi;
 
-  //  ue_ip_priv_t *priv_p=netdev_priv(dev_id);
+  //  struct ue_ip_priv *priv=netdev_priv(dev_id);
   //  unsigned int flags;
-  //  priv_p->lock = SPIN_LOCK_UNLOCKED;
+  //  priv->lock = SPIN_LOCK_UNLOCKED;
 
 #ifdef OAI_DRV_DEBUG_INTERRUPT
   printk("INTERRUPT - begin\n");
 #endif
-  //  spin_lock_irqsave(&priv_p->lock,flags);
+  //  spin_lock_irqsave(&priv->lock,flags);
   cxi=0;
   //    mesh_GC_receive();
   //    mesh_DC_receive(naspriv->cx+cxi);
 #ifndef OAI_NW_DRIVER_USE_NETLINK
   ue_ip_common_wireless2ip();
 #endif
-  //  spin_unlock_irqrestore(&priv_p->lock,flags);
+  //  spin_unlock_irqrestore(&priv->lock,flags);
 #ifdef OAI_DRV_DEBUG_INTERRUPT
   printk("INTERRUPT: end\n");
 #endif
@@ -112,15 +109,15 @@ void *ue_ip_interrupt(void){
 }
 #endif //NETLINK
 //---------------------------------------------------------------------------
-void ue_ip_timer(unsigned long dataP){
+void ue_ip_timer(unsigned long data){
   //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p=(ue_ip_priv_t *)dataP;
-  spin_lock(&priv_p->lock);
-  (priv_p->timer).function=ue_ip_timer;
-  (priv_p->timer).expires=jiffies+UE_IP_TIMER_TICK;
-  (priv_p->timer).data=dataP;
-  add_timer(&priv_p->timer);
-  spin_unlock(&priv_p->lock);
+  struct ue_ip_priv *priv=(struct ue_ip_priv *)data;
+  spin_lock(&priv->lock);
+  (priv->timer).function=ue_ip_timer;
+  (priv->timer).expires=jiffies+UE_IP_TIMER_TICK;
+  (priv->timer).data=data;
+  add_timer(&priv->timer);
+  spin_unlock(&priv->lock);
   return;
 //  add_timer(&gpriv->timer);
 //  spin_unlock(&gpriv->lock);
@@ -128,9 +125,9 @@ void ue_ip_timer(unsigned long dataP){
 
 //---------------------------------------------------------------------------
 // Called by ifconfig when the device is activated by ifconfig
-int ue_ip_open(struct net_device *dev_pP){
+int ue_ip_open(struct net_device *dev){
   //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p=netdev_priv(dev_pP);
+  struct ue_ip_priv *priv=netdev_priv(dev);
 
   // Address has already been set at init
 #ifndef OAI_NW_DRIVER_USE_NETLINK
@@ -140,45 +137,45 @@ int ue_ip_open(struct net_device *dev_pP){
   }
 #endif //OAI_NW_DRIVER_USE_NETLINK
 
-  if(!netif_queue_stopped(dev_pP))
-      netif_start_queue(dev_pP);
+  if(!netif_queue_stopped(dev))
+          netif_start_queue(dev);
   else
-      netif_wake_queue(dev_pP);
+          netif_wake_queue(dev);
 
-  init_timer(&priv_p->timer);
-  (priv_p->timer).expires   = jiffies+UE_IP_TIMER_TICK;
-  (priv_p->timer).data      = (unsigned long)priv_p;
-  (priv_p->timer).function  = ue_ip_timer;
-  //add_timer(&priv_p->timer);
+  init_timer(&priv->timer);
+  (priv->timer).expires   = jiffies+UE_IP_TIMER_TICK;
+  (priv->timer).data      = (unsigned long)priv;
+  (priv->timer).function  = ue_ip_timer;
+  //add_timer(&priv->timer);
 
-  printk("[UE_IP_DRV][%s] name = %s\n", __FUNCTION__, dev_pP->name);
+  printk("[UE_IP_DRV][%s] name = %s\n", __FUNCTION__, dev->name);
   return 0;
 }
 
 //---------------------------------------------------------------------------
 // Called by ifconfig when the device is desactivated
-int ue_ip_stop(struct net_device *dev_pP){
+int ue_ip_stop(struct net_device *dev){
   //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p = netdev_priv(dev_pP);
+  struct ue_ip_priv *priv = netdev_priv(dev);
 
   printk("[UE_IP_DRV][%s] Begin\n", __FUNCTION__);
-  del_timer(&(priv_p->timer));
-  netif_stop_queue(dev_pP);
+  del_timer(&(priv->timer));
+  netif_stop_queue(dev);
   //    MOD_DEC_USE_COUNT;
   printk("[UE_IP_DRV][%s] End\n", __FUNCTION__);
   return 0;
 }
 
 //---------------------------------------------------------------------------
-void ue_ip_teardown(struct net_device *dev_pP){
+void ue_ip_teardown(struct net_device *dev){
   //---------------------------------------------------------------------------
-  ue_ip_priv_t    *priv_p;
+  struct ue_ip_priv *priv;
   int              inst;
 
   printk("[UE_IP_DRV][%s] Begin\n", __FUNCTION__);
-  if (dev_pP) {
-      priv_p = netdev_priv(dev_pP);
-      inst = ue_ip_find_inst(dev_pP);
+  if (dev) {
+      priv = netdev_priv(dev);
+      inst = ue_ip_find_inst(dev);
       if ((inst<0) || (inst>=UE_IP_NB_INSTANCES_MAX)) {
           printk("[UE_IP_DRV][%s] ERROR, couldn't find instance\n", __FUNCTION__);
           return;
@@ -186,38 +183,38 @@ void ue_ip_teardown(struct net_device *dev_pP){
 
 
       printk("[UE_IP_DRV][%s] End\n", __FUNCTION__);
-  } // check dev_pP
+  } // check dev
   else {
       printk("[UE_IP_DRV][%s] Device is null\n", __FUNCTION__);
   }
 }
 //---------------------------------------------------------------------------
-int ue_ip_set_config(struct net_device *dev_pP, struct ifmap *map_pP){
+int ue_ip_set_config(struct net_device *dev, struct ifmap *map){
   //---------------------------------------------------------------------------
   printk("[UE_IP_DRV][%s] Begin\n", __FUNCTION__);
-  if (dev_pP->flags & IFF_UP)
+  if (dev->flags & IFF_UP)
       return -EBUSY;
-  if (map_pP->base_addr != dev_pP->base_addr) {
+  if (map->base_addr != dev->base_addr) {
       printk(KERN_WARNING "[UE_IP_DRV][%s] Can't change I/O address\n", __FUNCTION__);
       return -EOPNOTSUPP;
   }
-  if (map_pP->irq != dev_pP->irq)
-      dev_pP->irq = map_pP->irq;
+  if (map->irq != dev->irq)
+      dev->irq = map->irq;
   printk("[UE_IP_DRV][%s] End\n", __FUNCTION__);
   return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP){
+int ue_ip_hard_start_xmit(struct sk_buff *skb, struct net_device *dev){
   //---------------------------------------------------------------------------
   int inst;
 
-  if (dev_pP) {
-      inst = ue_ip_find_inst(dev_pP);
+  if (dev) {
+    inst = ue_ip_find_inst(dev);
   } else {
-      printk("[UE_IP_DRV][%s] ERROR, device is null\n", __FUNCTION__);
-      return -1;
+    printk("[UE_IP_DRV][%s] ERROR, device is null\n", __FUNCTION__);
+    return -1;
   }
 
   if ((inst>=0) && (inst<UE_IP_NB_INSTANCES_MAX)) {
@@ -225,25 +222,25 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP){
       printk("[UE_IP_DRV][%s] inst %d,  begin\n", __FUNCTION__,inst);
       #endif
 
-      if (!skb_pP){
+      if (!skb){
           printk("[UE_IP_DRV][%s] input parameter skb is NULL\n", __FUNCTION__);
           return -1;
       }
       // End debug information
-      netif_stop_queue(dev_pP);
-      dev_pP->trans_start = jiffies;
+      netif_stop_queue(dev);
+      dev->trans_start = jiffies;
       #ifdef OAI_DRV_DEBUG_DEVICE
       printk("[UE_IP_DRV][%s] step 1\n", __FUNCTION__);
       #endif
-      ue_ip_common_ip2wireless(skb_pP,inst);
+      ue_ip_common_ip2wireless(skb,inst);
       #ifdef OAI_DRV_DEBUG_DEVICE
       printk("[UE_IP_DRV][%s] step 2\n", __FUNCTION__);
       #endif
-      dev_kfree_skb(skb_pP);
+      dev_kfree_skb(skb);
       #ifdef OAI_DRV_DEBUG_DEVICE
       printk("[UE_IP_DRV][%s] step 3\n", __FUNCTION__);
       #endif
-      netif_wake_queue(dev_pP);
+      netif_wake_queue(dev);
       #ifdef OAI_DRV_DEBUG_DEVICE
       printk("[UE_IP_DRV][%s] end\n", __FUNCTION__);
       #endif
@@ -255,48 +252,50 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP){
 }
 
 //---------------------------------------------------------------------------
-struct net_device_stats *ue_ip_get_stats(struct net_device *dev_pP){
+struct net_device_stats *ue_ip_get_stats(struct net_device *dev){
 //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p = netdev_priv(dev_pP);
-  return &priv_p->stats;
+  //    return &((struct ue_ip_priv *)dev->priv)->stats;
+  struct ue_ip_priv *priv = netdev_priv(dev);
+  //printk("[UE_IP_DRV][%s]\n", __FUNCTION__);
+  return &priv->stats;
 }
 //---------------------------------------------------------------------------
-int ue_ip_set_mac_address(struct net_device *dev_pP, void *mac_pP) {
+int ue_ip_set_mac_address(struct net_device *dev, void *mac) {
 //---------------------------------------------------------------------------
-  //struct sockaddr *addr = mac_pP;
+  //struct sockaddr *addr = mac;
   printk("[UE_IP_DRV][%s] CHANGE MAC ADDRESS UNSUPPORTED\n", __FUNCTION__);
-  //memcpy(dev_pP->dev_addr, addr->sa_data, dev_pP->addr_len);
+  //memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
   return 0;
 }
 //---------------------------------------------------------------------------
-int ue_ip_change_mtu(struct net_device *dev_pP, int mtuP){
+int ue_ip_change_mtu(struct net_device *dev, int mtu){
   //---------------------------------------------------------------------------
-  printk("[UE_IP_DRV][%s] CHANGE MTU %d bytes\n", __FUNCTION__, mtuP);
-  if ((mtuP<50) || (mtuP>1500))
+  printk("[UE_IP_DRV][%s] CHANGE MTU %d bytes\n", __FUNCTION__, mtu);
+  if ((mtu<50) || (mtu>1500))
       return -EINVAL;
-  dev_pP->mtu = mtuP;
+  dev->mtu = mtu;
   return 0;
 }
 //---------------------------------------------------------------------------
-void ue_ip_change_rx_flags(struct net_device *dev_pP, int flagsP){
+void ue_ip_change_rx_flags(struct net_device *dev, int flags){
   //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p =  netdev_priv(dev_pP);
-  printk("[UE_IP_DRV][%s] CHANGE RX FLAGS %08X\n", __FUNCTION__, flagsP);
-  priv_p->rx_flags ^= flagsP;
+  struct ue_ip_priv *priv =  netdev_priv(dev);
+  printk("[UE_IP_DRV][%s] CHANGE RX FLAGS %08X\n", __FUNCTION__, flags);
+  priv->rx_flags ^= flags;
 }
 
 //---------------------------------------------------------------------------
-void ue_ip_tx_timeout(struct net_device *dev_pP){
+void ue_ip_tx_timeout(struct net_device *dev){
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.
-  ue_ip_priv_t *priv_p =  netdev_priv(dev_pP);
+  struct ue_ip_priv *priv =  netdev_priv(dev);
 
   printk("[UE_IP_DRV][%s] begin\n", __FUNCTION__);
-  //  (ue_ip_priv_t *)(dev_pP->priv_p)->stats.tx_errors++;
-  (priv_p->stats).tx_errors++;
-  dev_pP->trans_start = jiffies;
-  netif_wake_queue(dev_pP);
-  printk("[UE_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev_pP->name);
+  //  (struct ue_ip_priv *)(dev->priv)->stats.tx_errors++;
+  (priv->stats).tx_errors++;
+  dev->trans_start = jiffies;
+  netif_wake_queue(dev);
+  printk("[UE_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev->name);
 }
 
 static const struct net_device_ops ue_ip_netdev_ops = {
@@ -316,23 +315,23 @@ static const struct net_device_ops ue_ip_netdev_ops = {
 
 //---------------------------------------------------------------------------
 // Initialisation of the network device
-void ue_ip_init(struct net_device *dev_pP){
+void ue_ip_init(struct net_device *dev){
   //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p = NULL;
-    if (dev_pP) {
-        priv_p = netdev_priv(dev_pP);
-        memset(priv_p, 0, sizeof(ue_ip_priv_t));
-        spin_lock_init(&priv_p->lock);
+    struct ue_ip_priv *priv;
+    if (dev) {
+        priv = netdev_priv(dev);
+        memset(priv, 0, sizeof(struct ue_ip_priv));
+        spin_lock_init(&priv->lock);
         #ifdef KERNEL_VERSION_GREATER_THAN_2629
-        dev_pP->netdev_ops = &ue_ip_netdev_ops;
+        dev->netdev_ops = &ue_ip_netdev_ops;
         #else
         #error "KERNEL VERSION MUST BE NEWER THAN 2.6.29"
         #endif
-        dev_pP->hard_header_len = 0;
-        dev_pP->addr_len = UE_IP_ADDR_LEN;
-        dev_pP->flags = IFF_BROADCAST|IFF_MULTICAST|IFF_NOARP;
-        dev_pP->tx_queue_len = UE_IP_TX_QUEUE_LEN;
-        dev_pP->mtu = UE_IP_MTU;
+        dev->hard_header_len = 0;
+        dev->addr_len = UE_IP_ADDR_LEN;
+        dev->flags = IFF_BROADCAST|IFF_MULTICAST|IFF_NOARP;
+        dev->tx_queue_len = UE_IP_TX_QUEUE_LEN;
+        dev->mtu = UE_IP_MTU;
     } else {
         printk("[UE_IP_DRV][%s] ERROR, Device is NULL!!\n", __FUNCTION__);
         return;
@@ -351,7 +350,7 @@ int init_module (void) {
   for (inst=0;inst<UE_IP_NB_INSTANCES_MAX;inst++) {
     printk("[UE_IP_DRV][%s] begin init instance %d\n", __FUNCTION__,inst);
     sprintf(devicename,"oip%d",inst);
-    ue_ip_dev[inst]  = alloc_netdev(sizeof(ue_ip_priv_t),devicename, ue_ip_init);
+    ue_ip_dev[inst]  = alloc_netdev(sizeof(struct ue_ip_priv),devicename, ue_ip_init);
     //netif_stop_queue(ue_ip_dev[inst]);
     if (ue_ip_dev[inst] == NULL) {
          printk("[UE_IP_DRV][%s][INST %02d] alloc_netdev FAILED\n", __FUNCTION__,inst);

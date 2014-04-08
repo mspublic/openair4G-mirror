@@ -71,9 +71,7 @@
 //-----------------------------------------------------------------------------
 #include "lteRALue.h"
 #include "commonDef.h"
-#include "hashtable.h"
-//#include "collection/hashtable/hashtable.h"
-
+#include "collection/hashtable/hashtable.h"
 public_mrallte_main(char*   g_conf_ue_ral_listening_port;)
 public_mrallte_main(char*   g_conf_ue_ral_ip_address;)
 public_mrallte_main(char*   g_conf_ue_ral_link_id;)
@@ -101,42 +99,42 @@ typedef struct lte_ral_ue_object_s {
 
 
     // only to call ralu_verifyPendingConnection
-    uint8_t pending_req_flag;
+    u8 pending_req_flag;
 
 
  // network parameters
-    uint16_t     cell_id;
+    u16     cell_id;
     plmn_t  plmn_id;
-    //uint16_t nas_state;
+    //u16 nas_state;
     int state;
-    //uint32_t curr_signal_level;
-    uint32_t ipv6_l2id[2];
+    //u32 curr_signal_level;
+    u32 ipv6_l2id[2];
  //measures
-    uint8_t  req_num_bs;
-    uint16_t req_cell_id[MAX_NUMBER_BS];
-    uint32_t req_prov_id[MAX_NUMBER_BS];
-    uint16_t req_order_index[MAX_NUMBER_BS];
+    u8  req_num_bs;
+    u16 req_cell_id[MAX_NUMBER_BS];
+    u32 req_prov_id[MAX_NUMBER_BS];
+    u16 req_order_index[MAX_NUMBER_BS];
     int num_measures;
-    uint16_t meas_cell_id[MAX_NUMBER_BS];
-    uint32_t last_meas_level[MAX_NUMBER_BS];
-    uint32_t integrated_meas_level[MAX_NUMBER_BS];
-    uint32_t prev_integrated_meas_level[MAX_NUMBER_BS];
-    uint32_t provider_id[MAX_NUMBER_BS];
+    u16 meas_cell_id[MAX_NUMBER_BS];
+    u32 last_meas_level[MAX_NUMBER_BS];
+    u32 integrated_meas_level[MAX_NUMBER_BS];
+    u32 prev_integrated_meas_level[MAX_NUMBER_BS];
+    u32 provider_id[MAX_NUMBER_BS];
  //Radio Bearers
-    uint16_t num_rb;
+    u16 num_rb;
     int num_class;
-    uint16_t rbId[RAL_MAX_RB];
-    uint16_t QoSclass[RAL_MAX_RB];
-    uint16_t dscp[RAL_MAX_RB];
+    u16 rbId[RAL_MAX_RB];
+    u16 QoSclass[RAL_MAX_RB];
+    u16 dscp[RAL_MAX_RB];
  // statistics
-    //uint32_t rx_packets;
-    //uint32_t tx_packets;
-    //uint32_t rx_bytes;
-    //uint32_t tx_bytes;
-    //uint32_t rx_errors;
-    //uint32_t tx_errors;
-    //uint32_t rx_dropped;
-    //uint32_t tx_dropped;
+    //u32 rx_packets;
+    //u32 tx_packets;
+    //u32 rx_bytes;
+    //u32 tx_bytes;
+    //u32 rx_errors;
+    //u32 tx_errors;
+    //u32 rx_dropped;
+    //u32 tx_dropped;
     //char buffer[800];  // For ioctl with NAS driver
 
     // MIH-INTERFACE data

@@ -3,7 +3,7 @@
 
 /*
 #ifndef RTAI
-typedef uint64_t RTIME;
+typedef u64 RTIME;
 #else
 */
 #ifdef RTAI
@@ -31,7 +31,7 @@ typedef uint64_t RTIME;
 
 struct fifo_dump_emos_struct_UE {
   // RX
-  uint64_t              timestamp;              //! Timestamp of the receiver
+  u64              timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
   unsigned int     frame_rx;               //! Framenumber of the RX 
   UE_MODE_t        UE_mode;
@@ -70,7 +70,7 @@ typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;
 
 struct fifo_dump_emos_struct_eNB {
   // TX
-  uint64_t              timestamp;              //! Timestamp of the receiver
+  u64              timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX
   unsigned char    mimo_mode;              /// Transmission mode
   // RX

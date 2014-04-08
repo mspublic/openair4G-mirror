@@ -1,45 +1,35 @@
 /*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2014 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+                 06410 Biot FRANCE
+
 *******************************************************************************/
-/*
-                                enb_config.h
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER, Laurent Winckel
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-*/
 
 #ifndef ENB_CONFIG_H_
 #define ENB_CONFIG_H_
-#include  <netinet/in.h>
 
 #include "commonDef.h"
 #include "PHY/impl_defs_lte.h"
@@ -89,7 +79,6 @@ typedef struct Enb_properties_s {
      */
     uint16_t            mcc;
     uint16_t            mnc;
-    uint8_t             mnc_digit_length;
 
     /* Default Paging DRX of the eNB as defined in TS 36.304 */
     paging_drx_t        default_drx;
@@ -109,10 +98,10 @@ typedef struct Enb_properties_s {
     mme_ip_address_t    mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
 
     char               *enb_interface_name_for_S1U;
-    in_addr_t           enb_ipv4_address_for_S1U;
+    uint32_t            enb_ipv4_address_for_S1U;
 
     char               *enb_interface_name_for_S1_MME;
-    in_addr_t           enb_ipv4_address_for_S1_MME;
+    uint32_t            enb_ipv4_address_for_S1_MME;
 
 } Enb_properties_t;
 

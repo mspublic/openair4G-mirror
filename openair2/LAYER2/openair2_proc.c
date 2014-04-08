@@ -55,7 +55,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
-#include "LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "LAYER2/PDCP/pdcp.h"
 #include "UTIL/LOG/log.h"
 
 static mapping rrc_status_names[] = {
@@ -68,7 +68,7 @@ static mapping rrc_status_names[] = {
 
 int dump_eNB_l2_stats(char *buffer, int length){
   
-  uint8_t eNB_id,UE_id,number_of_cards;
+  u8 eNB_id,UE_id,number_of_cards;
   int len= length;
   
 #ifdef EXMIMO

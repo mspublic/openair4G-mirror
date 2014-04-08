@@ -2,34 +2,34 @@
                              Job_list.c  -  description
                              -------------------
                              -------------------
-  AUTHOR  : Mohamed Said MOSLI BOUKSIAA, Lionel GAUTHIER
+  AUTHOR  : Lionel GAUTHIER, Mohamed Said MOSLI BOUKSIAA
   COMPANY : EURECOM
-  EMAIL   : mosli@eurecom.fr, Lionel.Gauthier@eurecom.fr
+  EMAIL   : Lionel.Gauthier@eurecom.fr, mosli@eurecom.fr
  ***************************************************************************/
 //#define LIST_C
 //#define NULL 0
 
+#include "pad_list.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "pad_list.h"
 //#include <mpi.h>
 
 
-void job_list_init (Job_List_t * listP) {
+void job_list_init (Job_List * listP) {
 
   listP->tail = NULL;
   listP->head = NULL;
   listP->nb_elements = 0;
 }
 
-void event_list_init (Event_List_t * listP) {
+void event_list_init (Event_List * listP) {
 
   listP->tail = NULL;
   listP->head = NULL;
   listP->nb_elements = 0;
 }
 
-void pkt_list_init (Packet_OTG_List_t * listP) {
+void pkt_list_init (Packet_OTG_List * listP) {
 
   listP->tail = NULL;
   listP->head = NULL;
@@ -38,24 +38,24 @@ void pkt_list_init (Packet_OTG_List_t * listP) {
 
 //-----------------------------------------------------------------------------
 
-void job_list_free (Job_List_t * listP) {
-  Job_elt_t *le;
+void job_list_free (Job_List * listP) {
+  Job_elt *le;
 
   while ((le = job_list_remove_head (listP))) {
     free(le);
   }
 }
 
-void event_list_free (Event_List_t * listP) {
-  Event_elt_t *le;
+void event_list_free (Event_List * listP) {
+  Event_elt *le;
 
   while ((le = event_list_remove_head (listP))) {
     free(le);
   }
 }
 
-void pkt_list_free (Packet_OTG_List_t * listP) {
-  Packet_otg_elt_t *le;
+void pkt_list_free (Packet_OTG_List * listP) {
+  Packet_otg_elt *le;
 
   while ((le = pkt_list_remove_head (listP))) {
     free(le);
@@ -64,15 +64,15 @@ void pkt_list_free (Packet_OTG_List_t * listP) {
 
 //-----------------------------------------------------------------------------
 
-Job_elt_t * job_list_get_head (Job_List_t * listP) {
+Job_elt * job_list_get_head (Job_List * listP) {
   return listP->head;
 }
 
-Event_elt_t * event_list_get_head (Event_List_t * listP) {
+Event_elt * event_list_get_head (Event_List * listP) {
   return listP->head;
 }
 
-Packet_otg_elt_t * pkt_list_get_head (Packet_OTG_List_t * listP) {
+Packet_otg_elt * pkt_list_get_head (Packet_OTG_List * listP) {
   return listP->head;
 }
 
@@ -81,12 +81,12 @@ Packet_otg_elt_t * pkt_list_get_head (Packet_OTG_List_t * listP) {
 /*
  *  remove an element from head of a list
  *  @param  pointer on targeted list
- *  @return pointer on removed Job_elt_t
+ *  @return pointer on removed Job_elt
  */
-Job_elt_t * job_list_remove_head (Job_List_t * listP) {
+Job_elt * job_list_remove_head (Job_List * listP) {
 
   // access optimisation
-  Job_elt_t *head;
+  Job_elt *head;
   head = listP->head;
   // almost one element
   if (head != NULL) {
@@ -104,10 +104,10 @@ Job_elt_t * job_list_remove_head (Job_List_t * listP) {
   return head;
 }
 
-Event_elt_t * event_list_remove_head (Event_List_t * listP) {
+Event_elt * event_list_remove_head (Event_List * listP) {
 
   // access optimisation
-  Event_elt_t *head;
+  Event_elt *head;
   head = listP->head;
   // almost one element
   if (head != NULL) {
@@ -125,10 +125,10 @@ Event_elt_t * event_list_remove_head (Event_List_t * listP) {
   return head;
 }
 
-Packet_otg_elt_t * pkt_list_remove_head (Packet_OTG_List_t * listP) {
+Packet_otg_elt * pkt_list_remove_head (Packet_OTG_List * listP) {
 
   // access optimisation
-  Packet_otg_elt_t *head;
+  Packet_otg_elt *head;
   head = listP->head;
   // almost one element
   if (head != NULL) {
@@ -148,10 +148,10 @@ Packet_otg_elt_t * pkt_list_remove_head (Packet_OTG_List_t * listP) {
 
 //-----------------------------------------------------------------------------
 
-Job_elt_t * job_list_remove_element (Job_elt_t * elementP, Job_List_t * listP) {
+Job_elt * job_list_remove_element (Job_elt * elementP, Job_List * listP) {
 
   // access optimisation;
-  Job_elt_t *head;
+  Job_elt *head;
 
   if (elementP != NULL) {
     // test head
@@ -186,10 +186,10 @@ Job_elt_t * job_list_remove_element (Job_elt_t * elementP, Job_List_t * listP) {
   return elementP;
 }
 
-Event_elt_t * event_list_remove_element (Event_elt_t * elementP, Event_List_t * listP) {
+Event_elt * event_list_remove_element (Event_elt * elementP, Event_List * listP) {
 
   // access optimisation;
-  Event_elt_t *head;
+  Event_elt *head;
 
   if (elementP != NULL) {
     // test head
@@ -224,10 +224,10 @@ Event_elt_t * event_list_remove_element (Event_elt_t * elementP, Event_List_t * 
   return elementP;
 }
 
-Packet_otg_elt_t * pkt_list_remove_element (Packet_otg_elt_t * elementP, Packet_OTG_List_t * listP) {
+Packet_otg_elt * pkt_list_remove_element (Packet_otg_elt * elementP, Packet_OTG_List * listP) {
 
   // access optimisation;
-  Packet_otg_elt_t *head;
+  Packet_otg_elt *head;
 
   if (elementP != NULL) {
     // test head
@@ -266,13 +266,13 @@ Packet_otg_elt_t * pkt_list_remove_element (Packet_otg_elt_t * elementP, Packet_
 /*
  *  add an element to the beginning of a list
  *  @param  pointer on targeted list
- *  @return pointer on removed Job_elt_t
+ *  @return pointer on removed Job_elt
  */
 
-void job_list_add_head (Job_elt_t * elementP, Job_List_t * listP) {
+void job_list_add_head (Job_elt * elementP, Job_List * listP) {
 
   // access optimisation;
-  Job_elt_t *head;
+  Job_elt *head;
 
   if (elementP != NULL) {
     head = listP->head;
@@ -288,10 +288,10 @@ void job_list_add_head (Job_elt_t * elementP, Job_List_t * listP) {
   }
 }
 
-void event_list_add_head (Event_elt_t * elementP, Event_List_t * listP) {
+void event_list_add_head (Event_elt * elementP, Event_List * listP) {
 
   // access optimisation;
-  Event_elt_t *head;
+  Event_elt *head;
 
   if (elementP != NULL) {
     head = listP->head;
@@ -307,10 +307,10 @@ void event_list_add_head (Event_elt_t * elementP, Event_List_t * listP) {
   }
 }
 
-void pkt_list_add_head (Packet_otg_elt_t * elementP, Packet_OTG_List_t * listP) {
+void pkt_list_add_head (Packet_otg_elt * elementP, Packet_OTG_List * listP) {
 
   // access optimisation;
-  Packet_otg_elt_t *head;
+  Packet_otg_elt *head;
 
   if (elementP != NULL) {
     head = listP->head;
@@ -326,10 +326,10 @@ void pkt_list_add_head (Packet_otg_elt_t * elementP, Packet_OTG_List_t * listP) 
   }
 }
 
-void event_list_add_element (Event_elt_t * elementP, Event_elt_t * previous, Event_List_t * listP) {
+void event_list_add_element (Event_elt * elementP, Event_elt * previous, Event_List * listP) {
 
   // access optimisation;
-  Event_elt_t *next;
+  Event_elt *next;
   elementP->next = NULL;
 
   if (elementP != NULL && previous != NULL) {
@@ -351,10 +351,10 @@ void event_list_add_element (Event_elt_t * elementP, Event_elt_t * previous, Eve
 /*
  *  add an element to the end of a list
  *  @param  pointer on targeted list
- *  @return pointer on removed Job_elt_t
+ *  @return pointer on removed Job_elt
  */
-void job_list_add_tail_eurecom (Job_elt_t * elementP, Job_List_t * listP) {
-  Job_elt_t *tail;
+void job_list_add_tail_eurecom (Job_elt * elementP, Job_List * listP) {
+  Job_elt *tail;
 
   if (elementP != NULL) {
     // access optimisation
@@ -373,8 +373,8 @@ void job_list_add_tail_eurecom (Job_elt_t * elementP, Job_List_t * listP) {
   }
 }
 
-void event_list_add_tail_eurecom (Event_elt_t * elementP, Event_List_t * listP) {
-  Event_elt_t *tail;
+void event_list_add_tail_eurecom (Event_elt * elementP, Event_List * listP) {
+  Event_elt *tail;
 
   if (elementP != NULL) {
     // access optimisation
@@ -393,8 +393,8 @@ void event_list_add_tail_eurecom (Event_elt_t * elementP, Event_List_t * listP) 
   }
 }
 
-void pkt_list_add_tail_eurecom (Packet_otg_elt_t * elementP, Packet_OTG_List_t * listP) {
-  Packet_otg_elt_t *tail;
+void pkt_list_add_tail_eurecom (Packet_otg_elt * elementP, Packet_OTG_List * listP) {
+  Packet_otg_elt *tail;
 
   if (elementP != NULL) {
     // access optimisation
@@ -414,12 +414,12 @@ void pkt_list_add_tail_eurecom (Packet_otg_elt_t * elementP, Packet_OTG_List_t *
 }
 
 //-----------------------------------------------------------------------------
-void job_list_add_list (Job_List_t * sublistP, Job_List_t * listP) {
+void job_list_add_list (Job_List * sublistP, Job_List * listP) {
 
   if (sublistP) {
     if (sublistP->head) {
       // access optimisation
-      Job_elt_t *tail;
+      Job_elt *tail;
 
       tail = listP->tail;
       // almost one element
@@ -438,12 +438,12 @@ void job_list_add_list (Job_List_t * sublistP, Job_List_t * listP) {
   }
 }
 
-void event_list_add_list (Event_List_t * sublistP, Event_List_t * listP) {
+void event_list_add_list (Event_List * sublistP, Event_List * listP) {
 
   if (sublistP) {
     if (sublistP->head) {
       // access optimisation
-      Event_elt_t *tail;
+      Event_elt *tail;
 
       tail = listP->tail;
       // almost one element
@@ -462,12 +462,12 @@ void event_list_add_list (Event_List_t * sublistP, Event_List_t * listP) {
   }
 }
 
-void pkt_list_add_list (Packet_OTG_List_t * sublistP, Packet_OTG_List_t * listP) {
+void pkt_list_add_list (Packet_OTG_List * sublistP, Packet_OTG_List * listP) {
 
   if (sublistP) {
     if (sublistP->head) {
       // access optimisation
-      Packet_otg_elt_t *tail;
+      Packet_otg_elt *tail;
 
       tail = listP->tail;
       // almost one element
@@ -487,11 +487,11 @@ void pkt_list_add_list (Packet_OTG_List_t * sublistP, Packet_OTG_List_t * listP)
 }
 
 //-----------------------------------------------------------------------------
-void job_list_display (Job_List_t * listP) {
+void job_list_display (Job_List * listP) {
 
     //Correct the output once the content of struct Job is fixed
 
-    /*Job_elt_t *cursor;
+    /*Job_elt *cursor;
     unsigned short nb_elements = 0;
 
     if (listP) {
@@ -519,8 +519,8 @@ void job_list_display (Job_List_t * listP) {
     }*/
 }
 
-void event_list_display (Event_List_t * listP) {
-    Event_elt_t *cursor;
+void event_list_display (Event_List * listP) {
+    Event_elt *cursor;
     unsigned short nb_elements = 0;
 
     if (listP) {
@@ -541,8 +541,8 @@ void event_list_display (Event_List_t * listP) {
     }
 }
 
-void pkt_list_display (Packet_OTG_List_t * listP) {
-    Packet_otg_elt_t *cursor;
+void pkt_list_display (Packet_OTG_List * listP) {
+    Packet_otg_elt *cursor;
     unsigned short nb_elements = 0;
 
     if (listP) {

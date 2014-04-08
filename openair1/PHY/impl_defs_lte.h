@@ -89,20 +89,20 @@ typedef struct {
 
 typedef struct {
   /// Config Index
-  uint8_t prach_ConfigIndex;
+  u8 prach_ConfigIndex;
   /// High Speed Flag (0,1)
-  uint8_t highSpeedFlag;
+  u8 highSpeedFlag;
   /// Zero correlation zone
-  uint8_t zeroCorrelationZoneConfig;
+  u8 zeroCorrelationZoneConfig;
   /// Frequency offset
-  uint8_t prach_FreqOffset;
+  u8 prach_FreqOffset;
 } PRACH_CONFIG_INFO;
 
 typedef struct {
   ///Root Sequence Index (0...837)
-  uint16_t rootSequenceIndex;
+  u16 rootSequenceIndex;
   /// prach_Config_enabled=1 means enabled
-  uint8_t prach_Config_enabled;
+  u8 prach_Config_enabled;
   ///PRACH Configuration Information
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
@@ -121,11 +121,11 @@ typedef enum {
 /// PUCCH-ConfigCommon Structure from 36.331 RRC spec
 typedef struct {
   /// Flag to indicate ACK NAK repetition activation, see 36.213 (10.1)
-  uint8_t ackNackRepetition;
+  u8 ackNackRepetition;
   /// NANRep, see 36.213 (10.1)
   ACKNAKREP_t repetitionFactor;
   /// n1PUCCH-AN-Rep, see 36.213 (10.1)
-  uint16_t n1PUCCH_AN_Rep;
+  u16 n1PUCCH_AN_Rep;
   /// Feedback mode, see 36.213 (7.3).  Applied to both PUCCH and PUSCH feedback.  For TDD, should always be set to bundling.
   ANFBmode_t tdd_AckNackFeedbackMode;
 } PUCCH_CONFIG_DEDICATED;
@@ -133,31 +133,31 @@ typedef struct {
 /// PUCCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
   /// Parameter rom 36.211, 5.4.1, values 1,2,3
-  uint8_t deltaPUCCH_Shift;
+  u8 deltaPUCCH_Shift;
   /// NRB2 from 36.211, 5.4
-  uint8_t nRB_CQI;
+  u8 nRB_CQI;
   /// NCS1 from 36.211, 5.4
-  uint8_t nCS_AN;
+  u8 nCS_AN;
   /// N1PUCCH from 36.213, 10.1
-  uint16_t n1PUCCH_AN;
+  u16 n1PUCCH_AN;
 } PUCCH_CONFIG_COMMON;
 
 /// UL-ReferenceSignalsPUSCH from 36.331 RRC spec
 typedef struct {
   /// See 36.211 (5.5.1.3) (0,1)
-  uint8_t groupHoppingEnabled;
+  u8 groupHoppingEnabled;
   ///deltaSS see 36.211 (5.5.1.3)
-  uint8_t groupAssignmentPUSCH;
+  u8 groupAssignmentPUSCH;
   /// See 36.211 (5.5.1.4) (0,1)
-  uint8_t sequenceHoppingEnabled;
+  u8 sequenceHoppingEnabled;
   /// cyclicShift from 36.211 (see Table 5.5.2.1.1-2) (0...7) n_DMRS1
-  uint8_t cyclicShift;
+  u8 cyclicShift;
   /// nPRS for cyclic shift of DRS
-  uint8_t nPRS[20];
+  u8 nPRS[20];
   /// group hopping sequence for DRS
-  uint8_t grouphop[20];
+  u8 grouphop[20];
   /// sequence hopping sequence for DRS
-  uint8_t seqhop[20];
+  u8 seqhop[20];
 } UL_REFERENCE_SIGNALS_PUSCH_t;
  
 typedef enum {
@@ -168,40 +168,40 @@ typedef enum {
 /// PUSCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
   /// Nsb from 36.211 (5.3.4)
-  uint8_t n_SB;
+  u8 n_SB;
   /// Hopping mode, see 36.211 (5.3.4)
   PUSCH_HOPPING_t hoppingMode;
   /// NRBHO from 36.211 (5.3.4)
-  uint8_t pusch_HoppingOffset;
+  u8 pusch_HoppingOffset;
   /// 1 indicates 64QAM is allowed, 0 not allowed, see 36.213
-  uint8_t enable64QAM;
+  u8 enable64QAM;
   /// Ref signals configuration
   UL_REFERENCE_SIGNALS_PUSCH_t ul_ReferenceSignalsPUSCH;
 } PUSCH_CONFIG_COMMON;
 
 typedef struct {
   /// 
-  uint16_t betaOffset_ACK_Index;
+  u16 betaOffset_ACK_Index;
   ///
-  uint16_t betaOffset_RI_Index;
+  u16 betaOffset_RI_Index;
   /// 
-  uint16_t betaOffset_CQI_Index;
+  u16 betaOffset_CQI_Index;
 } PUSCH_CONFIG_DEDICATED;
 
 /// lola CBA information 
 typedef struct {
   /// 
-  uint16_t betaOffset_CA_Index;
+  u16 betaOffset_CA_Index;
   ///
-  uint16_t cShift;
+  u16 cShift;
 } PUSCH_CA_CONFIG_DEDICATED;
 
 /// PDSCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
   /// Donwlink Reference Signal EPRE (-60... 50), 36.213 (5.2)
-  int8_t referenceSignalPower;
+  s8 referenceSignalPower;
   /// Parameter PB, 36.213 (Table 5.2-1)
-  uint8_t p_b;
+  u8 p_b;
 } PDSCH_CONFIG_COMMON;
 
 typedef enum {
@@ -224,15 +224,15 @@ typedef struct {
 /// SoundingRS-UL-ConfigCommon Information Element from 36.331 RRC spec
 typedef struct {
   /// enabled flag=1 means SRS is enabled
-  uint8_t enabled_flag;
+  u8 enabled_flag;
   ///SRS BandwidthConfiguration \f$\in\{0,1,...,7\}\f$ see 36.211 (Table 5.5.3.2-1,5.5.3.2-2,5.5.3-2.3 and 5.5.3.2-4). Actual configuration depends on UL bandwidth.
-  uint8_t srs_BandwidthConfig;
+  u8 srs_BandwidthConfig;
   ///SRS Subframe configuration \f$\in\{0,...,15\}\f$ see 36.211 (Table 5.5.3.3-1 FDD, Table 5.5.3.3-2 TDD)
-  uint8_t srs_SubframeConfig;
+  u8 srs_SubframeConfig;
   ///SRS Simultaneous-AN-and-SRS, see 36.213 (8.2)
-  uint8_t ackNackSRS_SimultaneousTransmission;
+  u8 ackNackSRS_SimultaneousTransmission;
   ///srsMaxUpPts \f$\in\{0,1\}\f$, see 36.211 (5.5.3.2).  If this field is 1, reconfiguration of mmax_SRS0 applies for UpPts, otherwise reconfiguration does not apply
-  uint8_t srs_MaxUpPts;
+  u8 srs_MaxUpPts;
 } SOUNDINGRS_UL_CONFIG_COMMON;
 
 typedef enum {
@@ -284,28 +284,28 @@ typedef struct {
 /// SoundingRS-UL-ConfigDedicated Information Element from 36.331 RRC spec
 typedef struct {
   ///SRS Bandwidth b \f$\in\{0,1,2,3\}\f$
-  uint8_t srs_Bandwidth;
+  u8 srs_Bandwidth;
   ///SRS Hopping bandwidth bhop \f$\in\{0,1,2,3\}\f$
-  uint8_t srs_HoppingBandwidth;
+  u8 srs_HoppingBandwidth;
   ///SRS n_RRC Frequency Domain Position \f$\in\{0,1,...,23\}\f$, see 36.211 (5.5.3.2)
-  uint8_t freqDomainPosition;
+  u8 freqDomainPosition;
   ///SRS duration, see 36.213 (8.2), 0 corresponds to "single" and 1 to "indefinite"
-  uint8_t duration;
+  u8 duration;
   ///SRS Transmission comb kTC \f$\in\{0,1\}\f$, see 36.211 (5.5.3.2)
-  uint8_t transmissionComb;
+  u8 transmissionComb;
   ///SRS Config Index (Isrs) \f$\in\{0,1,...,1023\}\f$, see 36.213 (8.2)
-  uint16_t srs_ConfigIndex;
+  u16 srs_ConfigIndex;
   ///cyclicShift, n_SRS \f$\in\{0,1,...,7\}\f$, see 36.211 (5.5.3.1)
-  uint8_t cyclicShift;
+  u8 cyclicShift;
 } SOUNDINGRS_UL_CONFIG_DEDICATED;
 
 typedef struct {
-  int8_t p0_UE_PUSCH;
-  uint8_t deltaMCS_Enabled;
-  uint8_t accumulationEnabled;
-  int8_t p0_UE_PUCCH;
-  int8_t pSRS_Offset;
-  uint8_t filterCoefficient;
+  s8 p0_UE_PUSCH;
+  u8 deltaMCS_Enabled;
+  u8 accumulationEnabled;
+  s8 p0_UE_PUCCH;
+  s8 pSRS_Offset;
+  u8 filterCoefficient; 
 } UL_POWER_CONTROL_DEDICATED;
 
 typedef enum {
@@ -331,13 +331,13 @@ typedef enum {
 /// UplinkPowerControlCommon Information Element from 36.331 RRC spec
 typedef struct {
   /// p0-NominalPUSCH \f$\in\{-126,...24\}\f$, see 36.213 (5.1.1)
-  int8_t p0_NominalPUSCH;
+  s8 p0_NominalPUSCH;
   /// alpha, See 36.213 (5.1.1.1)
   PUSCH_alpha_t alpha;
   /// p0-NominalPUCCH \f$\in\{-127,...,-96\}\f$, see 36.213 (5.1.1)
-  int8_t p0_NominalPUCCH;
+  s8 p0_NominalPUCCH;
   /// Power parameter for RRCConnectionRequest
-  int8_t deltaPreambleMsg3;
+  s8 deltaPreambleMsg3;
   /// deltaF-PUCCH-Format1, see 36.213 (5.1.2)
   long deltaF_PUCCH_Format1;
   /// deltaF-PUCCH-Format1a, see 36.213 (5.1.2)
@@ -354,14 +354,14 @@ typedef struct {
 
 typedef union {
     /// indexOfFormat3 \f$\in\{1,...,15\}\f$
-    uint8_t indexOfFormat3;
+    u8 indexOfFormat3;
     /// indexOfFormat3A \f$\in\{1,...,31\}\f$
-    uint8_t indexOfFormat3A;
+    u8 indexOfFormat3A;
 } TPC_INDEX_t;
 
 typedef struct
 {
-  uint16_t rnti;
+  u16 rnti;
   TPC_INDEX_t tpc_Index;
 } TPC_PDCCH_CONFIG;
 
@@ -382,28 +382,28 @@ typedef enum {
 } DSR_TRANSMAX_t;
 
 typedef struct {
-  uint16_t sr_PUCCH_ResourceIndex;
-  uint8_t sr_ConfigIndex;
+  u16 sr_PUCCH_ResourceIndex;
+  u8 sr_ConfigIndex;
   DSR_TRANSMAX_t dsr_TransMax;
 } SCHEDULING_REQUEST_CONFIG;
 
 typedef struct {
   /// Parameter n2pucch, see 36.213 (7.2)
-  uint16_t cqi_PUCCH_ResourceIndex;
+  u16 cqi_PUCCH_ResourceIndex;
   /// Parameter Icqi/pmi, see 36.213 (tables 7.2.2-1A and 7.2.2-1C)
-  uint16_t cqi_PMI_ConfigIndex;
+  u16 cqi_PMI_ConfigIndex;
   /// Parameter K from 36.213 (4.2.2)
-  uint8_t K;
+  u8 K;
   /// Parameter IRI, 36.213 (7.2.2-1B)
-  uint16_t ri_ConfigIndex;
+  u16 ri_ConfigIndex;
   /// Parameter simultaneousAckNackAndCQI
-  uint8_t simultaneousAckNackAndCQI;
+  u8 simultaneousAckNackAndCQI;
 } CQI_REPORTPERIODIC;
 
  
 typedef struct {
   CQI_REPORTMODEAPERIODIC cqi_ReportModeAperiodic;
-  int8_t nomPDSCH_RS_EPRE_Offset;
+  s8 nomPDSCH_RS_EPRE_Offset;
   CQI_REPORTPERIODIC CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG;
 
@@ -416,77 +416,77 @@ typedef struct {
 
 typedef struct {
   /// Number of resource blocks (RB) in DL
-  uint8_t N_RB_DL;
+  u8 N_RB_DL;                
   /// Number of resource blocks (RB) in UL
-  uint8_t N_RB_UL;
+  u8 N_RB_UL;
 /// Number of Resource Block Groups for P=2
-  uint8_t N_RBGS;
+  u8 N_RBGS;
   /// Cell ID                 
-  uint16_t Nid_cell;
+  u16 Nid_cell;               
   /// MBSFN Area ID
-  uint16_t Nid_cell_mbsfn;
+  u16 Nid_cell_mbsfn;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// Cyclic Prefix for UL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp_UL;                   
   /// shift of pilot position in one RB
-  uint8_t nushift;
+  u8 nushift;                
   /// Frame type (0 FDD, 1 TDD)
   lte_frame_type_t frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
-  uint8_t tdd_config;
+  u8 tdd_config;
   /// TDD S-subframe configuration (0-9) 
-  uint8_t tdd_config_S;
+  u8 tdd_config_S;
   /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
-  uint8_t node_id;
+  u8 node_id;
   /// Frequency index of CBMIMO1 card
-  uint8_t freq_idx;
+  u8 freq_idx;
   /// RX Frequency for ExpressMIMO/LIME
-  uint32_t carrier_freq[4];
+  u32 carrier_freq[4];
   /// TX Frequency for ExpressMIMO/LIME
-  uint32_t carrier_freqtx[4];
+  u32 carrier_freqtx[4];
   /// RX gain for ExpressMIMO/LIME
-  uint32_t rxgain[4];
+  u32 rxgain[4];
   /// TX gain for ExpressMIMO/LIME
-  uint32_t txgain[4];
+  u32 txgain[4];
   /// RF mode for ExpressMIMO/LIME
-  uint32_t rfmode[4];
+  u32 rfmode[4];
   /// RF RX DC Calibration for ExpressMIMO/LIME
-  uint32_t rxdc[4];
+  u32 rxdc[4];
   /// RF TX DC Calibration for ExpressMIMO/LIME
-  uint32_t rflocal[4];
+  u32 rflocal[4];
   /// RF VCO calibration for ExpressMIMO/LIME
-  uint32_t rfvcolocal[4];
+  u32 rfvcolocal[4];
   /// Turns on second TX of CBMIMO1 card
-  uint8_t dual_tx;
+  u8 dual_tx;                
   /// flag to indicate SISO transmission
-  uint8_t mode1_flag;
+  u8 mode1_flag;           
   /// Size of FFT  
-  uint16_t ofdm_symbol_size;
+  u16 ofdm_symbol_size;
   /// log2(Size of FFT)  
-  uint8_t log2_symbol_size;
+  u8 log2_symbol_size;
   /// Number of prefix samples in all but first symbol of slot
-  uint16_t nb_prefix_samples;
+  u16 nb_prefix_samples;
   /// Number of prefix samples in first symbol of slot
-  uint16_t nb_prefix_samples0;
+  u16 nb_prefix_samples0;
   /// Carrier offset in FFT buffer for first RE in PRB0
-  uint16_t first_carrier_offset;
+  u16 first_carrier_offset;
   /// Number of samples in a subframe
-  uint32_t samples_per_tti;
+  u32 samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
-  uint16_t symbols_per_tti;
+  u16 symbols_per_tti;
   /// Number of Transmit antennas in node
-  uint8_t nb_antennas_tx;
+  u8 nb_antennas_tx;
   /// Number of Receive antennas in node
-  uint8_t nb_antennas_rx;
+  u8 nb_antennas_rx;
   /// Number of Transmit antennas in eNodeB
-  uint8_t nb_antennas_tx_eNB;
+  u8 nb_antennas_tx_eNB;
   /// Pointer to twiddle factors for FFT
-  int16_t *twiddle_fft;
+  s16 *twiddle_fft;
   ///pointer to twiddle factors for IFFT
-  int16_t *twiddle_ifft;
+  s16 *twiddle_ifft;                 
   ///pointer to FFT permutation vector
-  uint16_t *rev;
+  u16 *rev;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
   /// PUCCH Config Common (from 36-331 RRC spec)
@@ -506,17 +506,17 @@ typedef struct {
   /// Array of MBSFN Configurations (max 8 elements as per 36.331)
   MBSFN_config_t MBSFN_config[8];
   /// Maximum Number of Retransmissions of RRCConnectionRequest (from 36-331 RRC Spec)
-  uint8_t maxHARQ_Msg3Tx;
+  u8 maxHARQ_Msg3Tx;
   /// Size of SI windows used for repetition of one SI message (in frames)
-  uint8_t SIwindowsize;
+  u8 SIwindowsize;
   /// Period of SI windows used for repetition of one SI message (in frames)
-  uint16_t SIPeriod;
+  u16 SIPeriod;
   /// REGs assigned to PCFICH
-  uint16_t pcfich_reg[4];
+  u16 pcfich_reg[4];
   /// Index of first REG assigned to PCFICH
-  uint8_t pcfich_first_reg_idx;
+  u8 pcfich_first_reg_idx;
   /// REGs assigned to PHICH
-  uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
+  u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
 
@@ -539,57 +539,57 @@ typedef enum {
 
 typedef struct{
   ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
-  int32_t **txdata[3];
+  s32 **txdata[3];           
   ///holds the transmit data in the frequency domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   mod_sym_t **txdataF[3];    
   ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
-  int32_t **rxdata[3];
+  s32 **rxdata[3];
   ///holds the last subframe of received data in time domain after removal of 7.5kHz frequency offset
-  int32_t **rxdata_7_5kHz[3];
+  s32 **rxdata_7_5kHz[3];
   ///holds the received data in the frequency domain
-  int32_t **rxdataF[3];
+  s32 **rxdataF[3];          
   /// holds output of the sync correlator
-  uint32_t *sync_corr[3];
+  u32 *sync_corr[3];         
 } LTE_eNB_COMMON;
 
 typedef struct{
   /// hold the channel estimates in frequency domain based on SRS
-  int32_t **srs_ch_estimates[3];
+  s32 **srs_ch_estimates[3];   
   /// hold the channel estimates in time domain based on SRS
-  int32_t **srs_ch_estimates_time[3];
+  s32 **srs_ch_estimates_time[3];
   /// holds the SRS for channel estimation at the RX    
-  int32_t *srs;
+  s32 *srs;               
 } LTE_eNB_SRS;
 
 typedef struct{
   ///holds the received data in the frequency domain for the allocated RBs in repeated format
-  int32_t **rxdataF_ext[3];
+  s32 **rxdataF_ext[3];       
   ///holds the received data in the frequency domain for the allocated RBs in normal format
-  int32_t **rxdataF_ext2[3];
+  s32 **rxdataF_ext2[3];       
   /// hold the channel estimates in time domain based on DRS   
-  int32_t **drs_ch_estimates_time[3];
+  s32 **drs_ch_estimates_time[3]; 
   /// hold the channel estimates in frequency domain based on DRS   
-  int32_t **drs_ch_estimates[3];
+  s32 **drs_ch_estimates[3]; 
   /// hold the channel estimates for UE0 in case of Distributed Alamouti Scheme
-  int32_t **drs_ch_estimates_0[3];
+  s32 **drs_ch_estimates_0[3];
   /// hold the channel estimates for UE1 in case of Distributed Almouti Scheme 
-  int32_t **drs_ch_estimates_1[3];
+  s32 **drs_ch_estimates_1[3];
   /// holds the compensated signal
-  int32_t **rxdataF_comp[3];
+  s32 **rxdataF_comp[3];
   /// hold the compensated data (y)*(h0*) in case of Distributed Alamouti Scheme
-  int32_t **rxdataF_comp_0[3];
+  s32 **rxdataF_comp_0[3];
   /// hold the compensated data (y*)*(h1) in case of Distributed Alamouti Scheme
-  int32_t **rxdataF_comp_1[3];
-  int32_t **ul_ch_mag[3];
-  int32_t **ul_ch_magb[3];
+  s32 **rxdataF_comp_1[3];
+  s32 **ul_ch_mag[3];
+  s32 **ul_ch_magb[3];
   /// hold the channel mag for UE0 in case of Distributed Alamouti Scheme
-  int32_t **ul_ch_mag_0[3];
+  s32 **ul_ch_mag_0[3];   
   /// hold the channel magb for UE0 in case of Distributed Alamouti Scheme
-  int32_t **ul_ch_magb_0[3];
+  s32 **ul_ch_magb_0[3];  
   /// hold the channel mag for UE1 in case of Distributed Alamouti Scheme
-  int32_t **ul_ch_mag_1[3];
+  s32 **ul_ch_mag_1[3];   
   /// hold the channel magb for UE1 in case of Distributed Alamouti Scheme
-  int32_t **ul_ch_magb_1[3];
+  s32 **ul_ch_magb_1[3]; 
   /// measured RX power based on DRS
   int ulsch_power[2];
   /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
@@ -597,76 +597,76 @@ typedef struct{
   /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
   int ulsch_power_1[2];
   /// llr values
-  int16_t *llr;
+  s16 *llr;
 } LTE_eNB_PUSCH;
 
 typedef struct {
   ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER)
-  int32_t **txdata;
+  s32 **txdata;           
   ///holds the transmit data in the frequency domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   mod_sym_t **txdataF;    
   ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
-  int32_t **rxdata;
+  s32 **rxdata;          
   ///holds the received data in the frequency domain
-  int32_t **rxdataF;
-  int32_t **rxdataF2;
+  s32 **rxdataF;         
+  s32 **rxdataF2;         
   /// hold the channel estimates in frequency domain
-  int32_t **dl_ch_estimates[7];
+  s32 **dl_ch_estimates[7];  
   /// hold the channel estimates in time domain (used for tracking)
-  int32_t **dl_ch_estimates_time[7];
+  s32 **dl_ch_estimates_time[7];
   /// holds output of the sync correlator  
-  int32_t *sync_corr;
+  s32 *sync_corr;         
   /// estimated frequency offset (in radians) for all subcarriers
-  int32_t freq_offset;
+  s32 freq_offset;
   /// eNb_id user is synched to          
-  int32_t eNb_id;
+  s32 eNb_id;     
 } LTE_UE_COMMON;
 
 typedef struct {
   /// Received frequency-domain signal after extraction
-  int32_t **rxdataF_ext;
+  s32 **rxdataF_ext;
   /// Received frequency-domain signal after extraction and channel compensation
-  int32_t **rxdataF_comp;
+  s32 **rxdataF_comp;
   /// Downlink channel estimates extracted in PRBS
-  int32_t **dl_ch_estimates_ext;
+  s32 **dl_ch_estimates_ext;
   /// Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS
-  int32_t **dl_ch_rho_ext;
+  s32 **dl_ch_rho_ext;
   /// Downlink PMIs extracted in PRBS and grouped in subbands
-  uint8_t *pmi_ext;
+  u8 *pmi_ext;
   /// Magnitude of Downlink Channel (16QAM level/First 64QAM level)
-  int32_t **dl_ch_mag;
+  s32 **dl_ch_mag;
   /// Magnitude of Downlink Channel (2nd 64QAM level)
-  int32_t **dl_ch_magb;
+  s32 **dl_ch_magb;
   /// Cross-correlation of two eNB signals
-  int32_t **rho;
+  s32 **rho;
   /// never used... always send dl_ch_rho_ext instead...
-  int32_t **rho_i;
+  s32 **rho_i;  
   /// Pointers to llr vectors (2 TBs)
-  int16_t *llr[2];
+  s16 *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
-  int16_t log2_maxh;
+  s16 log2_maxh;
   /// LLR shifts for subband scaling
-  uint8_t *llr_shifts;
+  u8 *llr_shifts;
   /// Pointer to LLR shifts
-  uint8_t *llr_shifts_p;
+  u8 *llr_shifts_p;
   /// Pointers to llr vectors (128-bit alignment)
-  int16_t **llr128;
-  //uint32_t *rb_alloc;
-  //uint8_t Qm[2];
+  s16 **llr128;  
+  //u32 *rb_alloc;
+  //u8 Qm[2];
   //MIMO_mode_t mimo_mode;
 } LTE_UE_PDSCH;
 
 typedef struct {
   /// Received frequency-domain signal after extraction
-  int32_t **rxdataF_ext;
+  s32 **rxdataF_ext;
   /// Received frequency-domain signal after extraction and channel compensation
   double **rxdataF_comp;
   /// Downlink channel estimates extracted in PRBS
-  int32_t **dl_ch_estimates_ext;
+  s32 **dl_ch_estimates_ext;
   /// Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS
   double **dl_ch_rho_ext;
   /// Downlink PMIs extracted in PRBS and grouped in subbands
-  uint8_t *pmi_ext;
+  u8 *pmi_ext;
   /// Magnitude of Downlink Channel (16QAM level/First 64QAM level)
   double **dl_ch_mag;
   /// Magnitude of Downlink Channel (2nd 64QAM level)
@@ -676,112 +676,112 @@ typedef struct {
   /// never used... always send dl_ch_rho_ext instead...
   double **rho_i;  
   /// Pointers to llr vectors (2 TBs)
-  int16_t *llr[2];
+  s16 *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
-  uint8_t log2_maxh;
+  u8 log2_maxh;
   /// Pointers to llr vectors (128-bit alignment)
-  int16_t **llr128;
-  //uint32_t *rb_alloc;
-  //uint8_t Qm[2];
+  s16 **llr128;  
+  //u32 *rb_alloc;
+  //u8 Qm[2];
   //MIMO_mode_t mimo_mode;
 } LTE_UE_PDSCH_FLP;
 
 typedef struct {
   /// pointers to extracted PDCCH symbols in frequency-domain
-  int32_t **rxdataF_ext;
+  s32 **rxdataF_ext;
   /// pointers to extracted and compensated PDCCH symbols in frequency-domain
-  int32_t **rxdataF_comp;
+  s32 **rxdataF_comp;
   /// pointers to extracted channel estimates of PDCCH symbols
-  int32_t **dl_ch_estimates_ext;
+  s32 **dl_ch_estimates_ext;
   /// pointers to channel cross-correlation vectors for multi-eNB detection
-  int32_t **dl_ch_rho_ext;
+  s32 **dl_ch_rho_ext;
   /// pointers to channel cross-correlation vectors for multi-eNB detection
-  int32_t **rho;
+  s32 **rho;
   /// pointer to llrs, 4-bit resolution
-  uint16_t *llr;
+  u16 *llr;
   /// pointer to llrs, 16-bit resolution
-  uint16_t *llr16;
+  u16 *llr16;
   /// \f$\overline{w}\f$ from 36-211
-  uint16_t *wbar;
+  u16 *wbar;
   /// PDCCH/DCI e-sequence (input to rate matching)
-  int8_t *e_rx;
+  s8 *e_rx;
   /// number of PDCCH symbols in current subframe
-  uint8_t num_pdcch_symbols;
+  u8 num_pdcch_symbols;
   /// Allocated CRNTI for UE
-  uint16_t crnti;
+  u16 crnti;
   /// Total number of PDU errors (diagnostic mode)
-  uint32_t dci_errors;
+  u32 dci_errors;          
   /// Total number of PDU received
-  uint32_t dci_received;
+  u32 dci_received;        
   /// Total number of DCI False detection (diagnostic mode)
-  uint32_t dci_false;
+  u32 dci_false;           
   /// Total number of DCI missed (diagnostic mode)
-  uint32_t dci_missed;
+  u32 dci_missed;          
   /// nCCE for PUCCH per subframe
-  uint8_t nCCE[10];
+  u8 nCCE[10];
 } LTE_UE_PDCCH;
 
 #define PBCH_A 24
 typedef struct {
-  uint8_t pbch_d[96+(3*(16+PBCH_A))];
-  uint8_t pbch_w[3*3*(16+PBCH_A)];
-  uint8_t pbch_e[1920];
+  u8 pbch_d[96+(3*(16+PBCH_A))];
+  u8 pbch_w[3*3*(16+PBCH_A)];
+  u8 pbch_e[1920]; 
 } LTE_eNB_PBCH;
 
 typedef struct {
   /// Pointers to extracted PBCH symbols in frequency-domain
-  int32_t **rxdataF_ext;
+  s32 **rxdataF_ext;
   /// Pointers to extracted and compensated PBCH symbols in frequency-domain
-  int32_t **rxdataF_comp;
+  s32 **rxdataF_comp;
   /// Pointers to downlink channel estimates in frequency-domain extracted in PRBS
-  int32_t **dl_ch_estimates_ext;
+  s32 **dl_ch_estimates_ext;
   /// Pointer to PBCH llrs
-  int8_t *llr;
+  s8 *llr;
   /// Pointer to PBCH decoded output
-  uint8_t *decoded_output;
+  u8 *decoded_output;
   /// Total number of PDU errors
-  uint32_t pdu_errors;
+  u32 pdu_errors;          
   /// Total number of PDU errors 128 frames ago
-  uint32_t pdu_errors_last;
+  u32 pdu_errors_last;     
   /// Total number of consecutive PDU errors
-  uint32_t pdu_errors_conseq;
+  u32 pdu_errors_conseq;   
   /// FER (in percent) 
-  uint32_t pdu_fer;
+  u32 pdu_fer;             
 } LTE_UE_PBCH;
 
 typedef struct {
-  int16_t amp;
-  int16_t *prachF;
-  int16_t *prach;
+  s16 amp;
+  s16 *prachF;
+  s16 *prach;
 } LTE_UE_PRACH;
 
 typedef struct {
-  int16_t *prachF;
-  int16_t *rxsigF[4];
+  s16 *prachF;
+  s16 *rxsigF[4];
 } LTE_eNB_PRACH;
 
 typedef struct {
   /// Preamble index for PRACH (0-63)
-  uint8_t ra_PreambleIndex;
+  u8 ra_PreambleIndex;
   /// RACH MaskIndex
-  uint8_t ra_RACH_MaskIndex;
+  u8 ra_RACH_MaskIndex;
   /// Target received power at eNB (-120 ... -82 dBm)
-  int8_t ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  s8 ra_PREAMBLE_RECEIVED_TARGET_POWER;
   /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
-  uint8_t ra_TDD_map_index;
+  u8 ra_TDD_map_index;
   /// Corresponding RA-RNTI for UL-grant
-  uint16_t ra_RNTI;
+  u16 ra_RNTI;
   /// Pointer to Msg3 payload for UL-grant
-  uint8_t *Msg3;
+  u8 *Msg3;
 } PRACH_RESOURCES_t;
 
 typedef struct {
   /// Downlink Power offset field
-  uint8_t dl_pow_off;
+  u8 dl_pow_off;
   ///Subband resource allocation field
-  uint8_t rballoc_sub[50];
+  u8 rballoc_sub[50];
   ///Total number of PRBs indicator
-  uint8_t pre_nb_available_rbs;
+  u8 pre_nb_available_rbs;
 }MU_MIMO_mode;
 
 typedef enum {

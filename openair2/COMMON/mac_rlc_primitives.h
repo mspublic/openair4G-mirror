@@ -109,7 +109,7 @@ struct mac_tx_tb_management {
   unsigned char              first_bit;    // 0 if data starts on byte boundary(b7), 1 if b6, 2 if b5, etc.
   // Previously designed for interlayers optimizations, (avoid aligning on byte boundary)
   // but not used by L1 !, so extra cost for alignement in MAC.
-  tb_size_t                  tb_size_in_bits;      // L1H does not care of the field first bit any more, so in order to byte
+  unsigned short             tb_size_in_bits;      // L1H does not care of the field first bit any more, so in order to byte
   // align the tb we have to know its size
 
   // for reporting tx status to upper layers
@@ -123,8 +123,8 @@ struct mac_tx_tb_management {
 
 struct mac_rx_tb_management {
   unsigned char             *data_ptr;
-  tb_size_t                  tb_size;      // in bits
-  boolean_t                  valid_checksum;
+  unsigned short             tb_size;      // in bits
+  unsigned char              valid_checksum;
   unsigned char              first_bit;    // 0 if data starts on byte boundary(b7), 1 if b6, 2 if b5, etc
 };
 
@@ -132,7 +132,7 @@ struct mac_tb_req {
   // BE CAREFULL TO KEEP THE SAME MAPPING FOR THE 6 FIELDS BELLOW AS FOR  struct mac_tx_tb_management
   unsigned char             *data_ptr;
   unsigned char              first_bit;
-  tb_size_t                  tb_size;
+  unsigned short             tb_size;
   // align the tb we have to know its size
 
   // for reporting tx status to upper layers
@@ -165,8 +165,8 @@ in a suspended state or to indicate the current buffer occupancy to MAC.
 struct mac_status_resp {
   unsigned int             buffer_occupancy_in_bytes;   /*!< \brief the parameter Buffer Occupancy (BO) indicates for each logical channel the amount of data in number of bytes that is available for transmission and retransmission in RLC layer. */
   unsigned short             buffer_occupancy_in_pdus;    /*!< xxx*/
-  uint32_t             head_sdu_creation_time;          
-  uint32_t             head_sdu_remaining_size_to_send;
+  u32_t             head_sdu_creation_time;          
+  u32_t             head_sdu_remaining_size_to_send;
   unsigned char     head_sdu_is_segmented;
   struct rlc_entity_info rlc_info;             /*!< xxx*/
 };

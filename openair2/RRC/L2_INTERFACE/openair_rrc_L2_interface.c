@@ -75,7 +75,7 @@
 #endif
 #endif //USER_MODE
 
-#include "platform_types.h"
+#include "openair_types.h"
 #include "openair_defs.h"
 
 #ifdef CELLULAR
@@ -87,74 +87,124 @@
 #include "openair_rrc_L2_interface.h"
  
 /********************************************************************************************************************/
-int8_t mac_rrc_data_req(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t nb_tbP,uint8_t *buffer_pP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP, uint8_t mbsfn_sync_areaP){
+s8 mac_rrc_data_req(u8 Mod_id, u32 frame, u16 Srb_id, u8 Nb_tb,u8 *Buffer,u8 eNB_flag,u8 eNB_index, u8 mbsfn_sync_area){
 /********************************************************************************************************************/
-  return(mac_rrc_lite_data_req(module_idP,frameP,srb_idP,nb_tbP,buffer_pP,eNB_flagP,eNB_indexP,mbsfn_sync_areaP));
+#ifdef CELLULAR
+  return(rrc_L2_data_req_rx(Mod_id,Srb_id,Nb_tb,Buffer,eNB_index));
+#else 
+  return(mac_rrc_lite_data_req(Mod_id,frame,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index,mbsfn_sync_area));
+#endif //CELLULAR
 }   
 
 /********************************************************************************************************************/
-int8_t mac_rrc_data_ind(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t *sduP, sdu_size_t sdu_lenP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP,uint8_t mbsfn_sync_area){
+s8 mac_rrc_data_ind(u8 Mod_id, u32 frame, u16 Srb_id, u8 *Sdu,u16 Sdu_len,u8 eNB_flag, u8 eNB_index,u8 mbsfn_sync_area){
 /********************************************************************************************************************/
-  return(mac_rrc_lite_data_ind(module_idP,frameP,srb_idP,sduP,sdu_lenP,eNB_flagP,eNB_indexP,mbsfn_sync_area));
+#ifdef CELLULAR
+  return(rrc_L2_mac_data_ind_rx(Mod_id, Srb_id, Sdu, Sdu_len, eNB_index));
+#else 
+  return(mac_rrc_lite_data_ind(Mod_id,frame,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index,mbsfn_sync_area));
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-void rlcrrc_data_ind(module_id_t enb_instP, module_id_t ue_instP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t srb_idP, sdu_size_t sdu_lenP,uint8_t *buffer_pP){
+void rlcrrc_data_ind(u8_t eNB_id, u8_t UE_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer){
 /********************************************************************************************************************/
-  rrc_lite_data_ind(enb_instP, ue_instP,frameP,eNB_flagP,srb_idP,sdu_lenP,buffer_pP);
+#ifdef CELLULAR
+  rrc_L2_rlc_data_ind_rx(Mod_id,Srb_id, Sdu_size, Buffer);
+#else  // now this is called from PDCP
+  //rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+  rrc_lite_data_ind(eNB_id, UE_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-uint8_t pdcp_rrc_data_req(module_id_t enb_instP, module_id_t ue_instP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, boolean_t confirmP,
-      sdu_size_t sdu_buffer_sizeP, uint8_t* sdu_buffer_pP, uint8_t modeP) {
+u8 pdcp_rrc_data_req(u8 eNB_id, u8 UE_id, u32 frame, u8 eNB_flag, unsigned int rb_id, u32 muiP, u32 confirmP,
+                     unsigned int sdu_buffer_size, u8* sdu_buffer, u8 mode) {
   /********************************************************************************************************************/
-  return rrc_lite_data_req (enb_instP, ue_instP, frameP, eNB_flagP, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu_buffer_pP, modeP);
+#ifdef CELLULAR
+  return pdcp_data_req( module_id, frame, eNB_flag, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer, mode);
+#else
+  return rrc_lite_data_req (eNB_id, UE_id, frame, eNB_flag, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer, mode);
+#endif
 }
 
 /********************************************************************************************************************/
-void pdcp_rrc_data_ind(module_id_t enb_instP, module_id_t ue_instP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t srb_idP, sdu_size_t sdu_sizeP,uint8_t *buffer_pP){
+void pdcp_rrc_data_ind(u8_t eNB_id, u8_t UE_id, u32 frame, u8 eNB_flag, unsigned int Srb_id, unsigned int Sdu_size,u8 *Buffer){
 /********************************************************************************************************************/
-  rrc_lite_data_ind(enb_instP, ue_instP,frameP,eNB_flagP,srb_idP,sdu_sizeP,buffer_pP);
+#ifdef CELLULAR
+  rrc_L2_rlc_data_ind_rx(Mod_id,Srb_id, Sdu_size, Buffer);
+#else  // now this is called from PDCP
+  //rlcrrc_lite_data_ind(Mod_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+  rrc_lite_data_ind(eNB_id, UE_id,frame,eNB_flag,Srb_id,Sdu_size,Buffer);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-void mac_rrc_meas_ind(module_id_t module_idP,MAC_MEAS_REQ_ENTRY *Meas_entry_pP){
+void mac_rrc_meas_ind(u8 Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry){
 /********************************************************************************************************************/
-  //  mac_rrc_meas_ind(module_idP,Meas_entry_pP);
+#ifdef CELLULAR
+  rrc_L2_mac_meas_ind_rx ();
+#else
+  //  mac_rrc_meas_ind(Mod_id,Meas_entry);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-void mac_sync_ind(module_id_t module_idP,uint8_t Status){
+void mac_sync_ind(u8 Mod_id,u8 Status){
 /********************************************************************************************************************/
-  mac_lite_sync_ind(module_idP,Status);
+#ifdef CELLULAR
+  rrc_L2_sync_ind_rx(Mod_id);
+#else 
+  mac_lite_sync_ind(Mod_id,Status);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-void mac_in_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_indexP){
+void mac_in_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
-  rrc_lite_in_sync_ind(module_idP,frameP,eNB_indexP);
+#ifdef CELLULAR
+  rrc_L2_sync_ind_rx(Mod_id);
+#else
+  rrc_lite_in_sync_ind(Mod_id,frame,eNB_index);
+#endif
 }
 
 /********************************************************************************************************************/
-void mac_out_of_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_indexP){
+void mac_out_of_sync_ind(u8 Mod_id,u32 frame, u16 eNB_index){
 /********************************************************************************************************************/
-  rrc_lite_out_of_sync_ind(module_idP,frameP,eNB_indexP);
+#ifdef CELLULAR
+  rrc_L2_out_sync_ind_rx();
+#else 
+  rrc_lite_out_of_sync_ind(Mod_id,frame,eNB_index);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-int mac_get_rrc_status(module_id_t module_idP,eNB_flag_t eNB_flagP,uint8_t indexP) {
+int mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index) {
 /********************************************************************************************************************/
-  return mac_get_rrc_lite_status(module_idP, eNB_flagP, indexP);
+#ifdef CELLULAR
+  return (rrc_L2_get_rrc_status(Mod_id,eNB_flag,index));
+#else 
+  return mac_get_rrc_lite_status(Mod_id, eNB_flag, index);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-char openair_rrc_ue_init(module_id_t module_idP, unsigned char eNB_indexP){
+char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
 /********************************************************************************************************************/
-  return openair_rrc_lite_ue_init(module_idP, eNB_indexP);
+#ifdef CELLULAR
+  return (rrc_L2_ue_init(Mod_id,eNB_index));
+#else 
+  return openair_rrc_lite_ue_init(Mod_id, eNB_index);
+#endif //CELLULAR
 }
 
 /********************************************************************************************************************/
-char openair_rrc_eNB_init(module_id_t module_idP){
+char openair_rrc_eNB_init(u8 Mod_id){
 /********************************************************************************************************************/
-  return openair_rrc_lite_eNB_init(module_idP);
+#ifdef CELLULAR
+ return( rrc_L2_eNB_init(Mod_id));
+#else 
+  return openair_rrc_lite_eNB_init(Mod_id);
+#endif //CELLULAR
 }

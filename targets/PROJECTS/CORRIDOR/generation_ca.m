@@ -23,6 +23,7 @@ preamble_length = 120;
 [s1,f1] = OFDM_TX_FRAME_MIMO(num_carriers,num_zeros,prefix_length,num_symbols_frame,preamble_length,nant);
 % scale to conserve energy (Matlabs IFFT does not scale)
 s1=s1*sqrt(num_carriers);
+%s1 = zeros(size(s1));
 
 % upsample PSS to the right frequency and insert it in the first symbol of the frame
 
@@ -40,7 +41,7 @@ prefix_length = num_carriers/4; %this is extended CP
 [s2,f2] = OFDM_TX_FRAME_MIMO(num_carriers,num_zeros,prefix_length,num_symbols_frame,preamble_length,nant);
 % scale to conserve energy (Matlabs IFFT does not scale)
 s2=s2*sqrt(num_carriers);
-
+%s2 = zeros(size(s2));
 % upsample PSS to the right frequency and insert it in the first symbol of the frame
 
 pss0_up = interp(primary_synch0_time,num_carriers/128);

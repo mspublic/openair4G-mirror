@@ -45,7 +45,6 @@
 #define __OCG_H__
 
 #include "PHY/impl_defs_top.h"
-#include "platform_types.h"
 
 #if defined(ENABLE_USE_MME)
 # include "s1ap_eNB.h"
@@ -626,9 +625,9 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
   typedef struct
   {
     unsigned char nb_ue;
-    module_id_t        first_ue;
+    unsigned char first_ue;
     unsigned char nb_enb;
-    module_id_t        first_enb;
+    unsigned char first_enb;
   } master_info_t;
 
   typedef struct
@@ -644,9 +643,9 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char nb_enb_remote;
     unsigned char nb_rn_local;
     unsigned char nb_rn_remote;
-    module_id_t   first_enb_local;
-    module_id_t   first_rn_local;
-    module_id_t   first_ue_local;
+    unsigned char first_enb_local;
+    unsigned char first_rn_local;
+    unsigned char first_ue_local;
     unsigned short master_id;
     unsigned char nb_master;
     unsigned int master_list;
@@ -657,13 +656,12 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned char multicast_group;
     char *multicast_ifname;
     // status
-    unsigned char ocg_enabled; // openair config generator
-    unsigned char ocm_enabled; // openair channel modeling 
-    unsigned char opt_enabled;//openair packet tracer
-    unsigned char opt_mode;  // openair packet tracer mode: wireshark, pcap
-    unsigned char otg_enabled;  // openair traffic generator
-    unsigned char omv_enabled; // openair mobility visulizer
-    unsigned char opp_enabled; // openair performance profiler 
+    unsigned char ocg_enabled;
+    unsigned char ocm_enabled;
+    unsigned char opt_enabled;
+    unsigned char opt_mode; 
+    unsigned char otg_enabled; 
+    unsigned char omv_enabled;
     char *itti_dump_file;
     unsigned char vcd_enabled;
     char *vcd_file;
@@ -695,13 +693,12 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     unsigned int n_frames;
     unsigned int n_frames_flag;	// if set, then let the emulation goes to infinity
     unsigned char frame_type;
-    char * frame_type_name;
     unsigned char tdd_config;
     unsigned char tdd_config_S;
     unsigned char extended_prefix_flag;
     unsigned char N_RB_DL;
     unsigned char transmission_mode;
- 
+
     int max_predefined_traffic_config_index;
     int max_customized_traffic_config_index;
 
@@ -757,7 +754,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
 
   int OCG_main (char is_local_server[FILENAME_LENGTH_MAX]);
 
-  //  void init_oai_emulation (void);
+  void init_oai_emulation (void);
   //#include "UTIL/LOG/log.h"
 
 #ifdef __cplusplus

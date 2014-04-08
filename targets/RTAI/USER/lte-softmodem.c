@@ -128,12 +128,12 @@ struct timing_info_t {
   unsigned int n_samples;
 } timing_info;
 
-extern int16_t* sync_corr_ue0;
-extern int16_t prach_ifft[4][1024*2];
+extern s16* sync_corr_ue0;
+extern s16 prach_ifft[4][1024*2];
 
 int init_dlsch_threads(void);
 void cleanup_dlsch_threads(void);
-int32_t init_rx_pdsch_thread(void);
+s32 init_rx_pdsch_thread(void);
 void cleanup_rx_pdsch_thread(void);
 int init_ulsch_threads(void);
 void cleanup_ulsch_threads(void);
@@ -156,9 +156,9 @@ unsigned char                   scope_enb_num_ue = 1;
 static SEM                     *mutex;
 //static CND *cond;
 
-static int                      thread0;
-static int                      thread1;
-//static int sync_thread;
+static                          long int thread0;
+static                          long int thread1;
+//static                        long int sync_thread;
 #else
 pthread_t                       thread0;
 pthread_t                       thread1;
@@ -198,11 +198,11 @@ static int                      time_offset[4] = {0,0,0,0};
 
 static int                      fs4_test=0;
 static char                     UE_flag=0;
-static uint8_t                       eNB_id=0,UE_id=0;
+static u8                       eNB_id=0,UE_id=0;
 
-uint32_t                             carrier_freq[4] =           {1907600000,1907600000,1907600000,1907600000}; /* For UE! */
-static uint32_t                      downlink_frequency[4] =     {1907600000,1907600000,1907600000,1907600000};
-static int32_t                      uplink_frequency_offset[4]= {-120000000,-120000000,-120000000,-120000000};
+u32                             carrier_freq[4] =           {1907600000,1907600000,1907600000,1907600000}; /* For UE! */
+static u32                      downlink_frequency[4] =     {1907600000,1907600000,1907600000,1907600000};
+static s32                      uplink_frequency_offset[4]= {-120000000,-120000000,-120000000,-120000000};
 static char                    *conf_config_file_name = NULL;
 
 static char                    *itti_dump_file = NULL;
@@ -221,20 +221,20 @@ static unsigned int             rxg_byp[4] =    {120,120,120,120};
 static int                      tx_max_power =  0;
 
 /*
-uint32_t rf_mode_max[4]     = {55759,55759,55759,55759};
-uint32_t rf_mode_med[4]     = {39375,39375,39375,39375};
-uint32_t rf_mode_byp[4]     = {22991,22991,22991,22991};
+u32 rf_mode_max[4]     = {55759,55759,55759,55759};
+u32 rf_mode_med[4]     = {39375,39375,39375,39375};
+u32 rf_mode_byp[4]     = {22991,22991,22991,22991};
 */
-static uint32_t                      rf_mode[4] =        {MY_RF_MODE,0,0,0};
-static uint32_t                      rf_local[4] =       {8255000,8255000,8255000,8255000}; // UE zepto
+static u32                      rf_mode[4] =        {MY_RF_MODE,0,0,0};
+static u32                      rf_local[4] =       {8255000,8255000,8255000,8255000}; // UE zepto
   //{8254617, 8254617, 8254617, 8254617}; //eNB khalifa
   //{8255067,8254810,8257340,8257340}; // eNB PETRONAS
 
-static uint32_t                      rf_vcocal[4] =      {910,910,910,910};
-static uint32_t                      rf_vcocal_850[4] =  {2015, 2015, 2015, 2015};
-static uint32_t                      rf_rxdc[4] =        {32896,32896,32896,32896};
-static uint32_t                      rxgain[4] =         {20,20,20,20};
-static uint32_t                      txgain[4] =         {20,20,20,20};
+static u32                      rf_vcocal[4] =      {910,910,910,910};
+static u32                      rf_vcocal_850[4] =  {2015, 2015, 2015, 2015};
+static u32                      rf_rxdc[4] =        {32896,32896,32896,32896};
+static u32                      rxgain[4] =         {20,20,20,20};
+static u32                      txgain[4] =         {20,20,20,20};
 
 static runmode_t                mode;
 static int                      rx_input_level_dBm;
@@ -376,14 +376,14 @@ void *emos_thread (void *arg)
   char *fifo2file_buffer, *fifo2file_ptr;
 
   int fifo, counter=0, bytes;
+  int channel_buffer_size;
+  int ret;
 
   FILE  *dumpfile_id;
   char  dumpfile_name[1024];
   time_t starttime_tmp;
   struct tm starttime;
-  
-  int channel_buffer_size;
-  
+    
   time_t timer;
   struct tm *now;
 
@@ -402,8 +402,13 @@ void *emos_thread (void *arg)
 
   memset(&dummy_gps_data,1,sizeof(struct gps_fix_t));
   
+#if GPSD_API_MAJOR_VERSION>=5
+  ret = gps_open("127.0.0.1","2947",gps_data);
+  if (ret==-1)
+#else
   gps_data = gps_open("127.0.0.1","2947");
-  if (gps_data == NULL) 
+  if (gps_data == NULL)
+#endif 
     {
       printf("[EMOS] Could not open GPS\n");
       //exit(-1);
@@ -496,7 +501,11 @@ void *emos_thread (void *arg)
             }
 	  if (gps_data)
 	    {
+#if GPSD_API_MAJOR_VERSION>=5
+	      if (gps_read(gps_data) != 0) {
+#else
 	      if (gps_poll(gps_data) != 0) {
+#endif
 		printf("[EMOS] problem polling data from gps\n");
 	      }
 	      else {
@@ -701,7 +710,9 @@ static void *eNB_thread(void *arg)
             time_in = rt_get_time_ns();
             //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d, (slot+1)*15=%d, diff %d, time %llu\n",frame,delay_cnt,hw_slot,((unsigned int *)DAQ_MBOX)[0],slot,(((slot+1)*15)>>1),diff,time_in);
             //LOG_D(HW,"eNB Frame %d, time %llu: sleeping for %llu (slot %d, hw_slot %d, diff %d, mbox %d, delay_cnt %d)\n", frame, time_in, diff*DAQ_PERIOD,slot,hw_slot,diff,((volatile unsigned int *)DAQ_MBOX)[0],delay_cnt);
+            vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,1);
             ret = rt_sleep_ns(diff*DAQ_PERIOD);
+            vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,0);
             if (ret)
               LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
             hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
@@ -719,6 +730,10 @@ static void *eNB_thread(void *arg)
               diff = -150+mbox_target-mbox_current;
             else
               diff = mbox_target - mbox_current;
+
+            vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0]));
+            vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DIFF, diff);
+
           }
 
         last_slot = (slot)%LTE_SLOTS_PER_FRAME;
@@ -1118,7 +1133,7 @@ static void get_options (int argc, char **argv)
     {"no-L2-connect",   no_argument,        NULL, LONG_OPTION_NO_L2_CONNECT},
     {NULL, 0, NULL, 0}};
 
-  while ((c = getopt_long (argc, argv, "C:dF:K:qO:ST:UV",long_options,NULL)) != -1)
+  while ((c = getopt_long (argc, argv, "C:dF:K:O:ST:UV",long_options,NULL)) != -1)
     {
       switch (c)
         {
@@ -1254,10 +1269,7 @@ static void get_options (int argc, char **argv)
         case 'V':
           ouput_vcd = 1;
           break;
-	  /*	case  'q': 
-	  opp_enabled = 1;
-	  break;
-	  */
+
         default:
           break;
         }
@@ -1295,10 +1307,10 @@ int main(int argc, char **argv) {
   void *status;
 #endif
 
-  uint16_t Nid_cell = 0;
-  uint8_t  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
+  u16 Nid_cell = 0;
+  u8  cooperation_flag=0, transmission_mode=1, abstraction_flag=0;
 #ifndef OPENAIR2
-  uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
+  u8 beta_ACK=0,beta_RI=0,beta_CQI=2;
 #endif
 
 #ifdef ENABLE_TCXO
@@ -1306,7 +1318,7 @@ int main(int argc, char **argv) {
 #endif
 
   int amp;
-  // uint8_t prach_fmt;
+  // u8 prach_fmt;
   // int N_ZC;
 
   int ret, ant;
@@ -1320,7 +1332,7 @@ int main(int argc, char **argv) {
 
   frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
   /* Set some default values that may be overwritten while reading options */
-  frame_parms->frame_type         = 1; /* TDD */
+  frame_parms->frame_type         = TDD;
   frame_parms->tdd_config         = 3;
   frame_parms->tdd_config_S       = 0;
 
@@ -1429,7 +1441,7 @@ int main(int argc, char **argv) {
     case 2:
     case 5:
     case 6:
-      frame_parms->nb_antennas_tx     = 2;
+      frame_parms->nb_antennas_tx     = 1;
       frame_parms->nb_antennas_rx     = 2;
       break;
     default:
@@ -1440,7 +1452,7 @@ int main(int argc, char **argv) {
   else
   { //UE_flag==1
     frame_parms->nb_antennas_tx     = 1;
-    frame_parms->nb_antennas_rx     = 1;
+    frame_parms->nb_antennas_rx     = 2;
   }
   frame_parms->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2; //initial value overwritten by initial sync later
   frame_parms->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
@@ -1565,7 +1577,7 @@ int main(int argc, char **argv) {
     NB_INST=1;
 
     openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=20;
+    openair_daq_vars.target_ue_dl_mcs=18;
     openair_daq_vars.ue_ul_nb_rb=6;
     openair_daq_vars.target_ue_ul_mcs=6;
 
@@ -2091,14 +2103,14 @@ void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms,
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
       free(phy_vars_ue->lte_ue_common_vars.rxdata[i]);
-      phy_vars_ue->lte_ue_common_vars.rxdata[i] = (int32_t*) openair0_exmimo_pci[card].adc_head[i+carrier];
+      phy_vars_ue->lte_ue_common_vars.rxdata[i] = (s32*) openair0_exmimo_pci[card].adc_head[i+carrier];
 
 
       printf("rxdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.rxdata[i]);
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
       free(phy_vars_ue->lte_ue_common_vars.txdata[i]);
-      phy_vars_ue->lte_ue_common_vars.txdata[i] = (int32_t*) openair0_exmimo_pci[card].dac_head[i+carrier];
+      phy_vars_ue->lte_ue_common_vars.txdata[i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
 
       printf("txdata[%d] @ %p\n",i,phy_vars_ue->lte_ue_common_vars.txdata[i]);
     }
@@ -2123,7 +2135,7 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
       free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
-      phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (int32_t*) openair0_exmimo_pci[card].adc_head[i+carrier];
+      phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = (s32*) openair0_exmimo_pci[card].adc_head[i+carrier];
 
       printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
       for (j=0;j<16;j++) {
@@ -2133,7 +2145,7 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
     }
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
       free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
-      phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (int32_t*) openair0_exmimo_pci[card].dac_head[i+carrier];
+      phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
 
       printf("txdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
       for (j=0;j<16;j++) {

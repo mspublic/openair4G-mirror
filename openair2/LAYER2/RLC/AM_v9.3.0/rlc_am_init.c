@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 #define RLC_AM_MODULE
 #define RLC_AM_INIT_C
@@ -39,147 +36,119 @@ Address      : EURECOM,
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 //-----------------------------------------------------------------------------
-void rlc_am_init(rlc_am_entity_t *rlc_pP, frame_t frameP)
+void rlc_am_init(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
-    int saved_allocation = rlc_pP->allocation;
-    LOG_D(RLC, "[FRAME %5u][RLC_AM][MOD XX][RB XX][INIT] STATE VARIABLES, BUFFERS, LISTS\n", frameP);
-    memset(rlc_pP, 0, sizeof(rlc_am_entity_t));
-    rlc_pP->allocation = saved_allocation;
+    int saved_allocation = rlcP->allocation;
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] STATE VARIABLES, BUFFERS, LISTS\n", frame);
+    memset(rlcP, 0, sizeof(rlc_am_entity_t));
+    rlcP->allocation = saved_allocation;
 
-    list2_init(&rlc_pP->receiver_buffer,      "RX BUFFER");
-    list_init(&rlc_pP->pdus_to_mac_layer,     "PDUS TO MAC");
-    list_init(&rlc_pP->control_pdu_list,      "CONTROL PDU LIST");
-    list_init(&rlc_pP->segmentation_pdu_list, "SEGMENTATION PDU LIST");
+    list2_init(&rlcP->receiver_buffer,      "RX BUFFER");
+    list_init(&rlcP->pdus_to_mac_layer,     "PDUS TO MAC");
+    list_init(&rlcP->control_pdu_list,      "CONTROL PDU LIST");
+    list_init(&rlcP->segmentation_pdu_list, "SEGMENTATION PDU LIST");
     //LOG_D(RLC,"RLC_AM_SDU_CONTROL_BUFFER_SIZE %d sizeof(rlc_am_tx_sdu_management_t) %d \n",  RLC_AM_SDU_CONTROL_BUFFER_SIZE, sizeof(rlc_am_tx_sdu_management_t));
     
-    rlc_pP->input_sdus               = calloc(1, RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
-    rlc_pP->pdu_retrans_buffer       = calloc(1, (uint16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
-    LOG_D(RLC, "[FRAME %5u][RLC_AM][MOD XX][RB XX][INIT] input_sdus[] = %p  element size=%d\n", frameP, rlc_pP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
-    LOG_D(RLC, "[FRAME %5u][RLC_AM][MOD XX][RB XX][INIT] pdu_retrans_buffer[] = %p element size=%d\n", frameP, rlc_pP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
+    rlcP->input_sdus_alloc         = get_free_mem_block(RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
+    rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
+    rlcP->pdu_retrans_buffer_alloc = get_free_mem_block((u16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
+    rlcP->pdu_retrans_buffer       = (rlc_am_tx_data_pdu_management_t*)((rlcP->pdu_retrans_buffer_alloc)->data);
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] input_sdus[] = %p  element size=%d\n", frame, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] pdu_retrans_buffer[] = %p element size=%d\n", frame, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
 
     // TX state variables
-    //rlc_pP->vt_a    = 0;
-    rlc_pP->vt_ms   = rlc_pP->vt_a + RLC_AM_WINDOW_SIZE;
-    //rlc_pP->vt_s    = 0;
-    //rlc_pP->poll_sn = 0;
+    //rlcP->vt_a    = 0;
+    rlcP->vt_ms   = rlcP->vt_a + RLC_AM_WINDOW_SIZE;
+    //rlcP->vt_s    = 0;
+    //rlcP->poll_sn = 0;
     // TX counters
-    //rlc_pP->c_pdu_without_poll  = 0;
-    //rlc_pP->c_byte_without_poll = 0;
+    //rlcP->c_pdu_without_poll  = 0;
+    //rlcP->c_byte_without_poll = 0;
     // RX state variables
-    //rlc_pP->vr_r    = 0;
-    rlc_pP->vr_mr   = rlc_pP->vr_r + RLC_AM_WINDOW_SIZE;
-    //rlc_pP->vr_x    = 0;
-    //rlc_pP->vr_ms   = 0;
-    //rlc_pP->vr_h    = 0;
+    //rlcP->vr_r    = 0;
+    rlcP->vr_mr   = rlcP->vr_r + RLC_AM_WINDOW_SIZE;
+    //rlcP->vr_x    = 0;
+    //rlcP->vr_ms   = 0;
+    //rlcP->vr_h    = 0;
 
-    rlc_pP->last_frame_status_indication = 123456; // any value > 1
-    rlc_pP->first_retrans_pdu_sn         = -1;
+    rlcP->last_frame_status_indication = 123456; // any value > 1
+    rlcP->first_retrans_pdu_sn         = -1;
 }
 //-----------------------------------------------------------------------------
-void rlc_am_cleanup(rlc_am_entity_t *rlc_pP)
+void rlc_am_cleanup(rlc_am_entity_t *rlcP,u32_t frame)
 //-----------------------------------------------------------------------------
 {
-    LOG_I(RLC, "[FRAME ?????][%s][RLC_AM][MOD %u/%u][RB %u][CLEANUP]\n",
-          (rlc_pP->is_enb) ? "eNB" : "UE",
-          rlc_pP->enb_module_id,
-          rlc_pP->ue_module_id,
-          rlc_pP->rb_id);
+    LOG_I(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CLEANUP]\n", frame, rlcP->module_id, rlcP->rb_id);
 
-    list2_free(&rlc_pP->receiver_buffer);
-    list_free(&rlc_pP->pdus_to_mac_layer);
-    list_free(&rlc_pP->control_pdu_list);
-    list_free(&rlc_pP->segmentation_pdu_list);
+    list2_free(&rlcP->receiver_buffer);
+    list_free(&rlcP->pdus_to_mac_layer);
+    list_free(&rlcP->control_pdu_list);
+    list_free(&rlcP->segmentation_pdu_list);
 
 
-    if (rlc_pP->output_sdu_in_construction != NULL) {
-        free_mem_block(rlc_pP->output_sdu_in_construction);
-        rlc_pP->output_sdu_in_construction = NULL;
+    if (rlcP->output_sdu_in_construction != NULL) {
+        free_mem_block(rlcP->output_sdu_in_construction);
+        rlcP->output_sdu_in_construction = NULL;
     }
     unsigned int i;
-    if (rlc_pP->input_sdus != NULL) {
+    if (rlcP->input_sdus_alloc != NULL) {
         for (i=0; i < RLC_AM_SDU_CONTROL_BUFFER_SIZE; i++) {
-            if (rlc_pP->input_sdus[i].mem_block != NULL) {
-                free_mem_block(rlc_pP->input_sdus[i].mem_block);
-                rlc_pP->input_sdus[i].mem_block = NULL;
+            if (rlcP->input_sdus[i].mem_block != NULL) {
+                free_mem_block(rlcP->input_sdus[i].mem_block);
+                rlcP->input_sdus[i].mem_block = NULL;
             }
         }
-        free(rlc_pP->input_sdus);
-        rlc_pP->input_sdus       = NULL;
+        free_mem_block(rlcP->input_sdus_alloc);
+        rlcP->input_sdus_alloc = NULL;
+        rlcP->input_sdus       = NULL;
     }
-    if (rlc_pP->pdu_retrans_buffer != NULL) {
+    if (rlcP->pdu_retrans_buffer_alloc != NULL) {
         for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
-            if (rlc_pP->pdu_retrans_buffer[i].mem_block != NULL) {
-                free_mem_block(rlc_pP->pdu_retrans_buffer[i].mem_block);
-                rlc_pP->pdu_retrans_buffer[i].mem_block = NULL;
+            if (rlcP->pdu_retrans_buffer[i].mem_block != NULL) {
+                free_mem_block(rlcP->pdu_retrans_buffer[i].mem_block);
+                rlcP->pdu_retrans_buffer[i].mem_block = NULL;
             }
         }
-        free(rlc_pP->pdu_retrans_buffer);
-        rlc_pP->pdu_retrans_buffer       = NULL;
+        free_mem_block(rlcP->pdu_retrans_buffer_alloc);
+        rlcP->pdu_retrans_buffer_alloc = NULL;
+        rlcP->pdu_retrans_buffer       = NULL;
     }
-    memset(rlc_pP, 0, sizeof(rlc_am_entity_t));
 }
 //-----------------------------------------------------------------------------
-void rlc_am_configure(rlc_am_entity_t *rlc_pP,
-		      frame_t          frameP,
-                      uint16_t            max_retx_thresholdP,
-                      uint16_t            poll_pduP,
-                      uint16_t            poll_byteP,
-                      uint32_t            t_poll_retransmitP,
-                      uint32_t            t_reorderingP,
-                      uint32_t            t_status_prohibitP)
+void rlc_am_configure(rlc_am_entity_t *rlcP,
+		      u32_t frame,
+                      u16_t max_retx_thresholdP,
+                      u16_t poll_pduP,
+                      u16_t poll_byteP,
+                      u32_t t_poll_retransmitP,
+                      u32_t t_reorderingP,
+                      u32_t t_status_prohibitP)
 //-----------------------------------------------------------------------------
 {
-    LOG_I(RLC, "[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u][CONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n",
-          frameP,
-          (rlc_pP->is_enb) ? "eNB" : "UE",
-          rlc_pP->enb_module_id,
-          rlc_pP->ue_module_id,
-          rlc_pP->rb_id,
-          max_retx_thresholdP,
-          poll_pduP,
-          poll_byteP,
-          t_poll_retransmitP,
-          t_reorderingP,
-          t_status_prohibitP);
+    LOG_I(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n", frame, rlcP->module_id, rlcP->rb_id, max_retx_thresholdP, poll_pduP, poll_byteP, t_poll_retransmitP, t_reorderingP, t_status_prohibitP);
 
-    rlc_pP->max_retx_threshold = max_retx_thresholdP;
-    rlc_pP->poll_pdu           = poll_pduP;
-    rlc_pP->poll_byte          = poll_byteP;
-    rlc_pP->protocol_state     = RLC_DATA_TRANSFER_READY_STATE;
+    rlcP->max_retx_threshold = max_retx_thresholdP;
+    rlcP->poll_pdu           = poll_pduP;
+    rlcP->poll_byte          = poll_byteP;
+    rlcP->protocol_state     = RLC_DATA_TRANSFER_READY_STATE;
 
-    rlc_am_init_timer_poll_retransmit(rlc_pP, t_poll_retransmitP);
-    rlc_am_init_timer_reordering     (rlc_pP, t_reorderingP);
-    rlc_am_init_timer_status_prohibit(rlc_pP, t_status_prohibitP);
+    rlc_am_init_timer_poll_retransmit(rlcP, t_poll_retransmitP);
+    rlc_am_init_timer_reordering     (rlcP, t_reorderingP);
+    rlc_am_init_timer_status_prohibit(rlcP, t_status_prohibitP);
 }
 //-----------------------------------------------------------------------------
-void rlc_am_set_debug_infos(rlc_am_entity_t *rlc_pP,
-                            frame_t          frameP,
-                            eNB_flag_t       eNB_flagP,
-                            srb_flag_t       srb_flagP,
-                            module_id_t      enb_module_idP,
-                            module_id_t      ue_module_idP,
-                            rb_id_t          rb_idP)
+void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, u32 frame, u8_t eNB_flagP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 //-----------------------------------------------------------------------------
 {
-    LOG_D(RLC, "[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u][SET DEBUG INFOS] module_id %d rb_id %d is SRB %d\n",
-          frameP,
-          (rlc_pP->is_enb) ? "eNB" : "UE",
-          rlc_pP->enb_module_id,
-          rlc_pP->ue_module_id,
-          rb_idP,
-          enb_module_idP,
-          ue_module_idP,
-          rb_idP,
-          (srb_flagP) ? "TRUE" : "FALSE");
+    LOG_D(RLC, "[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
 
-    rlc_pP->enb_module_id = enb_module_idP;
-    rlc_pP->ue_module_id  = ue_module_idP;
-    rlc_pP->rb_id         = rb_idP;
-    if (srb_flagP) {
-      rlc_pP->is_data_plane = 0;
+    rlcP->module_id = module_idP;
+    rlcP->rb_id     = rb_idP;
+    if (rb_typeP != SIGNALLING_RADIO_BEARER) {
+      rlcP->is_data_plane = 1;
     } else {
-      rlc_pP->is_data_plane = 1;
+      rlcP->is_data_plane = 0;
     }
-    rlc_pP->is_enb = eNB_flagP;
+    rlcP->is_enb = eNB_flagP;
 }

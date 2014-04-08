@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,14 +23,9 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
+*******************************************************************************/
 /*! \file rlc_tm_control_primitives_proto_extern.h
 * \brief This file defines the prototypes of the functions dealing with the control primitives and initialization.
 * \author GAUTHIER Lionel

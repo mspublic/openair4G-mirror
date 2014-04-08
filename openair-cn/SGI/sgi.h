@@ -1,40 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
-/*! \file sgi.h
-* \brief
-* \author Lionel Gauthier
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
-*/
 #ifndef SGI_H_
 #define SGI_H_
 
@@ -57,9 +20,9 @@ Address      : EURECOM,
 #include "sgw_lite_ie_defs.h"
 #include "ip_forward_messages_types.h"
 
-//# define SGI_IF_DEBUG(x, args...)
-//# define SGI_IF_ERROR(x, args...)
-//# define SGI_IF_WARNING(x, args...)
+# define SGI_IF_DEBUG(x, args...)
+# define SGI_IF_ERROR(x, args...)
+# define SGI_IF_WARNING(x, args...)
 //-----------------------------------------------------------------------------
 #ifndef SGI_IF_DEBUG
 # define SGI_IF_DEBUG(x, args...) do { fprintf(stdout, "[SGI_IF][D]"x, ##args); } \
@@ -224,8 +187,7 @@ typedef struct sgi_read_thread_args_s {
 //-----------------------------------------------------------------------------
 // sgi_task.c
 //-----------------------------------------------------------------------------
-#include "spgw_config.h"
-int sgi_init(const pgw_config_t *pgw_config_p);
+int sgi_init(const mme_config_t *mme_config);
 char* sgi_status_2_str(SGIStatus_t statusP);
 
 //-----------------------------------------------------------------------------

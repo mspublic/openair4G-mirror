@@ -38,19 +38,16 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <libconfig.h>
 
 #include <arpa/inet.h> /* To provide inet_addr */
 
-#include "assertions.h"
 #include "mme_config.h"
-#include "spgw_config.h"
 #include "intertask_interface_conf.h"
 
 mme_config_t mme_config;
 
 static
-void mme_config_init(mme_config_t *mme_config_p)
+void config_init(mme_config_t *mme_config_p)
 {
     memset(mme_config_p, 0, sizeof(mme_config_t));
 
@@ -68,15 +65,29 @@ void mme_config_init(mme_config_t *mme_config_p)
     mme_config_p->gtpv1u_config.port_number = GTPV1_U_PORT_NUMBER;
     mme_config_p->s1ap_config.port_number   = S1AP_PORT_NUMBER;
     /* IP configuration */
+    mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up = DEFAULT_SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP;
     mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up     = inet_addr(DEFAULT_SGW_IP_ADDRESS_FOR_S1U_S12_S4_UP);
+    mme_config_p->ipv4.sgw_ip_netmask_for_S1u_S12_S4_up     = DEFAULT_SGW_IP_NETMASK_FOR_S1U_S12_S4_UP;
+
+    mme_config_p->ipv4.sgw_interface_name_for_S5_S8_up      = DEFAULT_SGW_INTERFACE_NAME_FOR_S5_S8_UP;
+    mme_config_p->ipv4.sgw_ip_address_for_S5_S8_up          = inet_addr(DEFAULT_SGW_IP_ADDRESS_FOR_S5_S8_UP);
+    mme_config_p->ipv4.sgw_ip_netmask_for_S5_S8_up          = DEFAULT_SGW_IP_NETMASK_FOR_S5_S8_UP;
+
+    mme_config_p->ipv4.pgw_interface_name_for_SGI           = DEFAULT_PGW_INTERFACE_NAME_FOR_S5_S8;
+    mme_config_p->ipv4.pgw_ip_addr_for_SGI                  = inet_addr(DEFAULT_PGW_IP_ADDRESS_FOR_S5_S8);
+    mme_config_p->ipv4.pgw_ip_netmask_for_SGI               = DEFAULT_PGW_IP_NETMASK_FOR_S5_S8;
 
     mme_config_p->ipv4.mme_interface_name_for_S1_MME        = DEFAULT_MME_INTERFACE_NAME_FOR_S1_MME;
     mme_config_p->ipv4.mme_ip_address_for_S1_MME            = inet_addr(DEFAULT_MME_IP_ADDRESS_FOR_S1_MME);
+    mme_config_p->ipv4.mme_ip_netmask_for_S1_MME            = DEFAULT_MME_IP_NETMASK_FOR_S1_MME;
 
     mme_config_p->ipv4.mme_interface_name_for_S11           = DEFAULT_MME_INTERFACE_NAME_FOR_S11;
     mme_config_p->ipv4.mme_ip_address_for_S11               = inet_addr(DEFAULT_MME_IP_ADDRESS_FOR_S11);
+    mme_config_p->ipv4.mme_ip_netmask_for_S11               = DEFAULT_MME_IP_NETMASK_FOR_S11;
 
+    mme_config_p->ipv4.sgw_interface_name_for_S11           = DEFAULT_SGW_INTERFACE_NAME_FOR_S11;
     mme_config_p->ipv4.sgw_ip_address_for_S11               = inet_addr(DEFAULT_SGW_IP_ADDRESS_FOR_S11);
+    mme_config_p->ipv4.sgw_ip_netmask_for_S11               = DEFAULT_SGW_IP_NETMASK_FOR_S11;
 
     mme_config_p->s6a_config.conf_file    = S6A_CONF_FILE;
 
@@ -112,242 +123,34 @@ void mme_config_init(mme_config_t *mme_config_p)
 
 static int config_parse_file(mme_config_t *mme_config_p)
 {
-    config_t          cfg;
-    config_setting_t *setting_mme                      = NULL;
-    config_setting_t *setting                          = NULL;
-    config_setting_t *subsetting                       = NULL;
-    config_setting_t *sub2setting                      = NULL;
+    extern FILE *yyin;
+    int ret = -1;
 
-    long int         alongint;
-    int              i, num;
-    char             *astring                          = NULL;
-    char             *address                          = NULL;
-    char             *cidr                             = NULL;
-
-    const char*       tac                              = NULL;
-    const char*       mcc                              = NULL;
-    const char*       mnc                              = NULL;
-
-    char             *sgw_ip_address_for_S1u_S12_S4_up = NULL;
-    char             *mme_interface_name_for_S1_MME    = NULL;
-    char             *mme_ip_address_for_S1_MME        = NULL;
-    char             *mme_interface_name_for_S11       = NULL;
-    char             *mme_ip_address_for_S11           = NULL;
-    char             *sgw_ip_address_for_S11           = NULL;
-
-    config_init(&cfg);
-
-    if(mme_config_p->config_file != NULL)
-    {
-        /* Read the file. If there is an error, report it and exit. */
-        if(! config_read_file(&cfg, mme_config_p->config_file))
-        {
-            fprintf(stdout, "ERROR: %s:%d - %s\n", mme_config_p->config_file, config_error_line(&cfg), config_error_text(&cfg));
-            config_destroy(&cfg);
-            AssertFatal (1 == 0, "Failed to parse MME configuration file %s!\n", mme_config_p->config_file);
-        }
-    }
-    else
-    {
-        fprintf(stdout, "ERROR No MME configuration file provided!\n");
-        config_destroy(&cfg);
-        AssertFatal (0, "No MME configuration file provided!\n");
+    if (mme_config_p == NULL)
+        return ret;
+    if (mme_config_p->config_file == NULL) {
+        fprintf(stderr, "No Configuration file given... Attempting default values\n");
+        return 0;
     }
 
-    setting_mme = config_lookup(&cfg, MME_CONFIG_STRING_MME_CONFIG);
-    if(setting_mme != NULL) {
-        // GENERAL MME SETTINGS
-        if(  (config_setting_lookup_string( setting_mme, MME_CONFIG_STRING_REALM, (const char **)&astring) )) {
-            mme_config_p->realm = strdup(astring);
-            mme_config_p->realm_length = strlen(mme_config_p->realm);
-        }
-        if(  (config_setting_lookup_int( setting_mme, MME_CONFIG_STRING_MAXENB, &alongint) )) {
-            mme_config_p->max_eNBs = (uint32_t)alongint;
-        }
-        if(  (config_setting_lookup_int( setting_mme, MME_CONFIG_STRING_MAXUE, &alongint) )) {
-            mme_config_p->max_ues = (uint32_t)alongint;
-        }
-        if(  (config_setting_lookup_int( setting_mme, MME_CONFIG_STRING_RELATIVE_CAPACITY, &alongint) )) {
-            mme_config_p->relative_capacity = (uint8_t)alongint;
-        }
-        if(  (config_setting_lookup_int( setting_mme, MME_CONFIG_STRING_STATISTIC_TIMER, &alongint) )) {
-            mme_config_p->mme_statistic_timer = (uint32_t)alongint;
-        }
-        if(  (config_setting_lookup_string( setting_mme, MME_CONFIG_STRING_EMERGENCY_ATTACH_SUPPORTED, (const char **)&astring) )) {
-            if (strcasecmp(astring , "yes") == 0)
-                mme_config_p->emergency_attach_supported = 1;
-            else
-                mme_config_p->emergency_attach_supported = 0;
-        }
-        if(  (config_setting_lookup_string( setting_mme, MME_CONFIG_STRING_UNAUTHENTICATED_IMSI_SUPPORTED, (const char **)&astring) )) {
-            if (strcasecmp(astring , "yes") == 0)
-                mme_config_p->unauthenticated_imsi_supported = 1;
-            else
-                mme_config_p->unauthenticated_imsi_supported = 0;
-        }
-
-        // ITTI SETTING
-        setting = config_setting_get_member (setting_mme, MME_CONFIG_STRING_INTERTASK_INTERFACE_CONFIG);
-        if (setting != NULL) {
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_INTERTASK_INTERFACE_QUEUE_SIZE, &alongint) )) {
-                mme_config_p->itti_config.queue_size = (uint32_t)alongint;
-            }
-        }
-
-        // S6A SETTING
-        setting = config_setting_get_member (setting_mme, MME_CONFIG_STRING_S6A_CONFIG);
-        if (setting != NULL) {
-            if(  (config_setting_lookup_string( setting, MME_CONFIG_STRING_S6A_CONF_FILE_PATH, (const char **)&astring) )) {
-                if (astring != NULL)
-                    mme_config_p->s6a_config.conf_file = strdup(astring);
-            }
-        }
-
-        // SCTP SETTING
-        setting = config_setting_get_member (setting_mme, MME_CONFIG_STRING_SCTP_CONFIG);
-        if (setting != NULL) {
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_SCTP_INSTREAMS, &alongint) )) {
-                mme_config_p->sctp_config.in_streams = (uint16_t)alongint;
-            }
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_SCTP_OUTSTREAMS, &alongint) )) {
-                mme_config_p->sctp_config.out_streams = (uint16_t)alongint;
-            }
-        }
-
-        // S1AP SETTING
-        setting = config_setting_get_member (setting_mme, MME_CONFIG_STRING_S1AP_CONFIG);
-        if (setting != NULL) {
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_S1AP_OUTCOME_TIMER, &alongint) )) {
-                mme_config_p->s1ap_config.outcome_drop_timer_sec = (uint8_t)alongint;
-            }
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_SCTP_OUTSTREAMS, &alongint) )) {
-                mme_config_p->sctp_config.out_streams = (uint16_t)alongint;
-            }
-        }
-
-        // GUMMEI SETTING
-        setting = config_setting_get_member (setting_mme, MME_CONFIG_STRING_GUMMEI_CONFIG);
-        if (setting != NULL) {
-            subsetting = config_setting_get_member (setting, MME_CONFIG_STRING_MME_CODE);
-            if (subsetting != NULL) {
-                num     = config_setting_length(subsetting);
-                if (mme_config_p->gummei.nb_mmec != num) {
-                    if (mme_config_p->gummei.mmec != NULL) {
-                        free(mme_config_p->gummei.mmec);
-                    }
-                    mme_config_p->gummei.mmec = calloc(num, sizeof(*mme_config_p->gummei.mmec));
-                }
-                mme_config_p->gummei.nb_mmec = num;
-                for (i = 0; i < num; i++) {
-                    mme_config_p->gummei.mmec[i] = config_setting_get_int_elem(subsetting, i);
-                }
-            }
-
-            subsetting = config_setting_get_member (setting, MME_CONFIG_STRING_MME_GID);
-            if (subsetting != NULL) {
-                num     = config_setting_length(subsetting);
-                if (mme_config_p->gummei.nb_mme_gid != num) {
-                    if (mme_config_p->gummei.mme_gid != NULL) {
-                        free(mme_config_p->gummei.mme_gid);
-                    }
-                    mme_config_p->gummei.mme_gid = calloc(num, sizeof(*mme_config_p->gummei.mme_gid));
-                }
-                mme_config_p->gummei.nb_mme_gid = num;
-                for (i = 0; i < num; i++) {
-                    mme_config_p->gummei.mme_gid[i] = config_setting_get_int_elem(subsetting, i);
-                }
-            }
-
-            subsetting = config_setting_get_member (setting, MME_CONFIG_STRING_PLMN);
-            if (subsetting != NULL) {
-                num     = config_setting_length(subsetting);
-                if (mme_config_p->gummei.nb_plmns != num) {
-                    if (mme_config_p->gummei.plmn_mcc != NULL)     free(mme_config_p->gummei.plmn_mcc);
-                    if (mme_config_p->gummei.plmn_mnc != NULL)     free(mme_config_p->gummei.plmn_mnc);
-                    if (mme_config_p->gummei.plmn_mnc_len != NULL) free(mme_config_p->gummei.plmn_mnc_len);
-                    if (mme_config_p->gummei.plmn_tac != NULL)     free(mme_config_p->gummei.plmn_tac);
-
-                    mme_config_p->gummei.plmn_mcc     = calloc(num, sizeof(*mme_config_p->gummei.plmn_mcc));
-                    mme_config_p->gummei.plmn_mnc     = calloc(num, sizeof(*mme_config_p->gummei.plmn_mnc));
-                    mme_config_p->gummei.plmn_mnc_len = calloc(num, sizeof(*mme_config_p->gummei.plmn_mnc_len));
-                    mme_config_p->gummei.plmn_tac     = calloc(num, sizeof(*mme_config_p->gummei.plmn_tac));
-                }
-                mme_config_p->gummei.nb_plmns = num;
-                for (i = 0; i < num; i++) {
-                    sub2setting =  config_setting_get_elem(subsetting, i);
-                    if (sub2setting != NULL) {
-                        if(  (config_setting_lookup_string( sub2setting, MME_CONFIG_STRING_MCC, &mcc) )) {
-                            mme_config_p->gummei.plmn_mcc[i] = (uint16_t)atoi(mcc);
-                        }
-                        if(  (config_setting_lookup_string( sub2setting, MME_CONFIG_STRING_MNC, &mnc) )) {
-                            mme_config_p->gummei.plmn_mnc[i] = (uint16_t)atoi(mnc);
-                            mme_config_p->gummei.plmn_mnc_len[i] = strlen(mnc);
-                            AssertFatal((mme_config_p->gummei.plmn_mnc_len[i] == 2) || (mme_config_p->gummei.plmn_mnc_len[i] == 3),
-                                "Bad MNC length %u, must be 2 or 3", mme_config_p->gummei.plmn_mnc_len[i]);
-                        }
-                        if(  (config_setting_lookup_string( sub2setting, MME_CONFIG_STRING_TAC, &tac) )) {
-                            mme_config_p->gummei.plmn_tac[i] = (uint16_t)atoi(tac);
-                            AssertFatal(mme_config_p->gummei.plmn_tac[i] != 0,
-                                "TAC must not be 0");
-                        }
-                    }
-                }
-            }
-        }
-
-        // NETWORK INTERFACE SETTING
-        setting = config_setting_get_member (setting_mme, MME_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-        if(setting != NULL) {
-            if(  (
-                       config_setting_lookup_string( setting, MME_CONFIG_STRING_INTERFACE_NAME_FOR_S1_MME,
-                               (const char **)&mme_interface_name_for_S1_MME)
-                    && config_setting_lookup_string( setting, MME_CONFIG_STRING_IPV4_ADDRESS_FOR_S1_MME,
-                            (const char **)&mme_ip_address_for_S1_MME)
-                    && config_setting_lookup_string( setting, MME_CONFIG_STRING_INTERFACE_NAME_FOR_S11_MME,
-                            (const char **)&mme_interface_name_for_S11)
-                    && config_setting_lookup_string( setting, MME_CONFIG_STRING_IPV4_ADDRESS_FOR_S11_MME,
-                            (const char **)&mme_ip_address_for_S11)
-                  )
-              ) {
-                mme_config_p->ipv4.mme_interface_name_for_S1_MME = strdup(mme_interface_name_for_S1_MME);
-                cidr = strdup(mme_ip_address_for_S1_MME);
-                address = strtok(cidr, "/");
-                IPV4_STR_ADDR_TO_INT_NWBO ( address, mme_config_p->ipv4.mme_ip_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR MME S1_MME !\n" )
-                free(cidr);
-
-                mme_config_p->ipv4.mme_interface_name_for_S11 = strdup(mme_interface_name_for_S11);
-                cidr = strdup(mme_ip_address_for_S11);
-                address = strtok(cidr, "/");
-                IPV4_STR_ADDR_TO_INT_NWBO ( address, mme_config_p->ipv4.mme_ip_address_for_S11, "BAD IP ADDRESS FORMAT FOR MME S11 !\n" )
-                free(cidr);
-            }
-        }
+    yyin = fopen(mme_config_p->config_file, "r");
+    if (!yyin) {
+        /* We failed to open the file */
+        fprintf(stderr, "Unable to open the configuration file: %s (%d:%s)\n",
+                mme_config_p->config_file, errno, strerror(errno));
+        return errno;
     }
 
-    setting = config_lookup(&cfg, SGW_CONFIG_STRING_SGW_CONFIG);
-    if(setting != NULL) {
-        subsetting = config_setting_get_member (setting, SGW_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-        if(subsetting != NULL) {
-            if(  (
-                    config_setting_lookup_string( subsetting, SGW_CONFIG_STRING_SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP,
-                            (const char **)&sgw_ip_address_for_S1u_S12_S4_up)
-                    && config_setting_lookup_string( subsetting, SGW_CONFIG_STRING_SGW_IPV4_ADDRESS_FOR_S11,
-                            (const char **)&sgw_ip_address_for_S11)
-                  )
-              ) {
-                cidr = strdup(sgw_ip_address_for_S1u_S12_S4_up);
-                address = strtok(cidr, "/");
-                IPV4_STR_ADDR_TO_INT_NWBO ( address, mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR SGW S1u_S12_S4 !\n" )
-                free(cidr);
+    /* Call the yacc parser */
+    ret = yyparse(mme_config_p);
 
-                cidr = strdup(sgw_ip_address_for_S11);
-                address = strtok(cidr, "/");
-                IPV4_STR_ADDR_TO_INT_NWBO ( address, mme_config_p->ipv4.sgw_ip_address_for_S11, "BAD IP ADDRESS FORMAT FOR SGW S11 !\n" )
-                free(cidr);
-            }
-        }
+    /* Close the file descriptor */
+    if (fclose(yyin) != 0) {
+        fprintf(stderr, "Unable to close the configuration file: %s (%d:%s)\n",
+                mme_config_p->config_file, errno, strerror(errno));
+        return errno;
     }
-    return 0;
+    return ret;
 }
 
 #define DISPLAY_ARRAY(size, format, args...)                        \
@@ -366,8 +169,6 @@ do {                                                                \
 
 static void config_display(mme_config_t *mme_config_p)
 {
-    int j;
-
     fprintf(stdout, "==== EURECOM %s v%s ====\n", PACKAGE_NAME, PACKAGE_VERSION);
     fprintf(stdout, "Configuration:\n");
     fprintf(stdout, "- File ...............: %s\n", mme_config_p->config_file);
@@ -377,6 +178,7 @@ static void config_display(mme_config_t *mme_config_p)
     fprintf(stdout, "- Max UEs ............: %u\n", mme_config_p->max_ues);
     fprintf(stdout, "- Emergency support ..: %s\n", mme_config_p->emergency_attach_supported == 0 ? "FALSE" : "TRUE");
     fprintf(stdout, "- Unauth IMSI support : %s\n", mme_config_p->unauthenticated_imsi_supported == 0 ? "FALSE" : "TRUE");
+    fprintf(stdout, "- Max UEs ............: %u\n", mme_config_p->max_ues);
     fprintf(stdout, "- Relative capa ......: %u\n\n", mme_config_p->relative_capacity);
     fprintf(stdout, "- Statistics timer ...: %u (seconds)\n\n", mme_config_p->mme_statistic_timer);
     fprintf(stdout, "- S1-U:\n");
@@ -384,24 +186,26 @@ static void config_display(mme_config_t *mme_config_p)
     fprintf(stdout, "- S1-MME:\n");
     fprintf(stdout, "    port number ......: %d\n", mme_config_p->s1ap_config.port_number);
     fprintf(stdout, "- IP:\n");
-    //fprintf(stdout, "    s1-u iface .......: %s\n", mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up);
-    //fprintf(stdout, "    s1-u ip ..........: %s/%d\n",
-    //        inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up)),
-    //        mme_config_p->ipv4.sgw_ip_netmask_for_S1u_S12_S4_up);
-    //fprintf(stdout, "    sgi iface ........: %s\n", mme_config_p->ipv4.pgw_interface_name_for_SGI);
-    //fprintf(stdout, "    sgi ip ...........: %s/%d\n",
-    //        inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.pgw_ip_addr_for_SGI)),
-    //        mme_config_p->ipv4.pgw_ip_netmask_for_SGI);
+    fprintf(stdout, "    s1-u iface .......: %s\n", mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up);
+    fprintf(stdout, "    s1-u ip ..........: %s/%d\n",
+            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up)),
+            mme_config_p->ipv4.sgw_ip_netmask_for_S1u_S12_S4_up);
+    fprintf(stdout, "    sgi iface ........: %s\n", mme_config_p->ipv4.pgw_interface_name_for_SGI);
+    fprintf(stdout, "    sgi ip ...........: %s/%d\n",
+            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.pgw_ip_addr_for_SGI)),
+            mme_config_p->ipv4.pgw_ip_netmask_for_SGI);
     fprintf(stdout, "    s1-MME iface .....: %s\n", mme_config_p->ipv4.mme_interface_name_for_S1_MME);
-    fprintf(stdout, "    s1-MME ip ........: %s\n",
-            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.mme_ip_address_for_S1_MME)));
-    //fprintf(stdout, "    s11 S-GW iface ...: %s\n", mme_config_p->ipv4.sgw_interface_name_for_S11);
-    //fprintf(stdout, "    s11 S-GW ip ......: %s/%d\n",
-    //        inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.sgw_ip_address_for_S11)),
-    //        mme_config_p->ipv4.sgw_ip_netmask_for_S11);
+    fprintf(stdout, "    s1-MME ip ........: %s/%d\n",
+            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.mme_ip_address_for_S1_MME)),
+            mme_config_p->ipv4.mme_ip_netmask_for_S1_MME);
+    fprintf(stdout, "    s11 S-GW iface ...: %s\n", mme_config_p->ipv4.sgw_interface_name_for_S11);
+    fprintf(stdout, "    s11 S-GW ip ......: %s/%d\n",
+            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.sgw_ip_address_for_S11)),
+            mme_config_p->ipv4.sgw_ip_netmask_for_S11);
     fprintf(stdout, "    s11 MME iface ....: %s\n", mme_config_p->ipv4.mme_interface_name_for_S11);
-    fprintf(stdout, "    s11 S-GW ip ......: %s\n",
-            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.mme_ip_address_for_S11)));
+    fprintf(stdout, "    s11 S-GW ip ......: %s/%d\n",
+            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.mme_ip_address_for_S11)),
+            mme_config_p->ipv4.mme_ip_netmask_for_S11);
     fprintf(stdout, "- ITTI:\n");
     fprintf(stdout, "    queue size .......: %u (bytes)\n", mme_config_p->itti_config.queue_size);
     fprintf(stdout, "    log file .........: %s\n", mme_config_p->itti_config.log_file);
@@ -413,20 +217,10 @@ static void config_display(mme_config_t *mme_config_p)
     DISPLAY_ARRAY(mme_config_p->gummei.nb_mme_gid, "| %u ", mme_config_p->gummei.mme_gid[i]);
     fprintf(stdout, "    mme codes ........:\n        ");
     DISPLAY_ARRAY(mme_config_p->gummei.nb_mmec, "| %u ", mme_config_p->gummei.mmec[i]);
-    fprintf(stdout, "    plmns ............: (mcc.mnc:tac)\n");
-    for (j= 0; j < mme_config_p->gummei.nb_plmns; j++) {
-        if (mme_config_p->gummei.plmn_mnc_len[j] ==2 ) {
-            fprintf(stdout, "            %3u.%3u:%u\n",
-                mme_config_p->gummei.plmn_mcc[j],
-                mme_config_p->gummei.plmn_mnc[j],
-                mme_config_p->gummei.plmn_tac[j]);
-        } else {
-            fprintf(stdout, "            %3u.%03u:%u\n",
-                mme_config_p->gummei.plmn_mcc[j],
-                mme_config_p->gummei.plmn_mnc[j],
-                mme_config_p->gummei.plmn_tac[j]);
-        }
-    }
+    fprintf(stdout, "    plmns ............: (mcc.mnc:tac)\n        ");
+    DISPLAY_ARRAY(mme_config_p->gummei.nb_plmns, "| %3u.%3u:%u ",
+                  mme_config_p->gummei.plmn_mcc[i], mme_config_p->gummei.plmn_mnc[i],
+                  mme_config_p->gummei.plmn_tac[i]);
     fprintf(stdout, "- S6A:\n");
     fprintf(stdout, "    conf file ........: %s\n", mme_config_p->s6a_config.conf_file);
 }
@@ -457,7 +251,7 @@ nwGtpv1uDisplayBanner(void);
 int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config_p)
 {
     int c;
-    mme_config_init(mme_config_p);
+    config_init(mme_config_p);
     /* Parsing command line */
     while ((c = getopt (argc, argv, "c:hi:K:v:V")) != -1) {
         switch (c) {
@@ -471,15 +265,15 @@ int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config_p)
                 memcpy(mme_config_p->config_file, optarg, config_file_len);
                 mme_config_p->config_file[config_file_len] = '\0';
             } break;
-            /*case 'i': {
+            case 'i': {
                 int interface_len = 0;
 
-                // Copying provided interface name to use for ipv4 forwarding
+                /* Copying provided interface name to use for ipv4 forwarding */
                 interface_len = strlen(optarg);
                 mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up = calloc(interface_len + 1, sizeof(char));
                 memcpy(mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up, optarg, interface_len);
                 mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up[interface_len] = '\0';
-            } break;*/
+            } break;
             case 'v': {
                 mme_config_p->verbosity_level = atoi(optarg);
             } break;
@@ -499,7 +293,7 @@ int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config_p)
                 exit(0);
         }
     }
-    /* Parse the configuration file using libconfig */
+    /* Parse the configuration file using bison */
     if (config_parse_file(mme_config_p) != 0) {
         return -1;
     }

@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           rlc_am_mac_status.c  -
                              -------------------
@@ -48,7 +17,7 @@ Address      : EURECOM,
 #include "umts_timer_proto_extern.h"
 //-----------------------------------------------------------------------------
 void
-rlc_am_status_report_from_mac (void *rlcP, uint16_t eventP)
+rlc_am_status_report_from_mac (void *rlcP, u16_t eventP)
 {
 //-----------------------------------------------------------------------------
 
@@ -73,7 +42,7 @@ rlc_am_status_report_from_mac (void *rlcP, uint16_t eventP)
     // rearm the timer
     if (!(rlc->timer_mrw) && (rlc->discard_procedures.head)) {
       rlc->timer_mrw = umts_add_timer_list_up (&rlc->rlc_am_timer_list, rlc_am_discard_notify_mrw_ack_time_out, rlc,
-                                               rlc->discard_procedures.head, (uint32_t) rlc->timer_mrw_init, *rlc->frame_tick_milliseconds);
+                                               rlc->discard_procedures.head, (u32_t) rlc->timer_mrw_init, *rlc->frame_tick_milliseconds);
     }
     return;
   }
@@ -82,10 +51,10 @@ rlc_am_status_report_from_mac (void *rlcP, uint16_t eventP)
   //----------------------------------------
   if ((eventP & RLC_AM_RESET_PDU_TYPE)) {
 #ifdef DEBUG_RESET
-    msg ("[RLC_AM %p][MAC_STATUS]  EVENT RLC_AM_RESET_PDU_TYPE SENT ARMING RESET TIMER %d frames frame %d\n", rlcP, (uint32_t) rlc->timer_rst_init, *rlc->frame_tick_milliseconds);
+    msg ("[RLC_AM %p][MAC_STATUS]  EVENT RLC_AM_RESET_PDU_TYPE SENT ARMING RESET TIMER %d frames frame %d\n", rlcP, (u32_t) rlc->timer_rst_init, *rlc->frame_tick_milliseconds);
 #endif
 
-    rlc->timer_rst = umts_add_timer_list_up (&rlc->rlc_am_timer_list, rlc_am_reset_time_out, rlcP, NULL, (uint32_t) rlc->timer_rst_init, *rlc->frame_tick_milliseconds);
+    rlc->timer_rst = umts_add_timer_list_up (&rlc->rlc_am_timer_list, rlc_am_reset_time_out, rlcP, NULL, (u32_t) rlc->timer_rst_init, *rlc->frame_tick_milliseconds);
 
     return;
   }

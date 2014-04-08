@@ -1,40 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface core network
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
-/*! \file sgi_egress.c
-* \brief
-* \author Lionel Gauthier
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
-*/
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -94,7 +57,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     //*******************
         iph_p      = (struct iphdr *)   (data_pP + sizeof(struct ether_header));
         dest4_addr = iph_p->daddr;
-        if (hashtable_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) == HASH_TABLE_OK) {
+        if (hashtbl_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) == HASH_TABLE_OK) {
             memcpy(eh_p->ether_dhost, addr_mapping_p->ue_mac_addr, ETH_ALEN);
 
         } else {
@@ -115,7 +78,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     //*******************
         ip6h_p     = (struct ipv6hdr *) (data_pP + sizeof(struct ether_header));
         memcpy(dest6_addr.__in6_u.__u6_addr8, ip6h_p->daddr.__in6_u.__u6_addr8, 16);
-        if (obj_hashtable_get(sgi_data_pP->addr_v6_mapping, (void*)&dest6_addr, sizeof(struct in6_addr), (void**)&addr_mapping_p) == HASH_TABLE_OK) {
+        if (obj_hashtbl_get(sgi_data_pP->addr_v6_mapping, (void*)&dest6_addr, sizeof(struct in6_addr), (void**)&addr_mapping_p) == HASH_TABLE_OK) {
             memcpy(eh_p->ether_dhost, addr_mapping_p->ue_mac_addr, ETH_ALEN);
         } else {
             SGI_IF_WARNING("%s Dropping incoming egress IPV6 packet, IPV6 dest %X:%X:%X:%X:%X:%X:%X:%X not found \n", __FUNCTION__, NIP6ADDR(&dest6_addr));
@@ -143,7 +106,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         // get "    unsigned char __ar_tip[4];      /* Target IP address.  */" (from /usr/include/net/if_apr.h line 68)
         memcpy(&dest4_addr, &((unsigned char*)(&arph_p[1]))[ETH_ALEN*2+4], 4);
         SGI_IF_DEBUG("%s ARP OPCODE %s TARGET IP %d.%d.%d.%d\n", __FUNCTION__, sgi_arpopcode_2_str(ntohl(arph_p->ar_op)), NIPADDR(dest4_addr));
-        if (hashtable_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) == HASH_TABLE_OK) {
+        if (hashtbl_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) == HASH_TABLE_OK) {
             memcpy(eh_p->ether_dhost, addr_mapping_p->ue_mac_addr, ETH_ALEN);
         } else {
             if (sgi_data_pP->ipv4_addr == dest4_addr) {
@@ -233,7 +196,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     //*******************
         iph_p      = (struct iphdr *)   (data_pP + sizeof(struct ether_header));
         dest4_addr = iph_p->daddr;
-        if (hashtable_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) != HASH_TABLE_OK) {
+        if (hashtbl_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) != HASH_TABLE_OK) {
             if (sgi_data_pP->ipv4_addr == dest4_addr) {
                 SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
                 return;
@@ -251,7 +214,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     //*******************
         ip6h_p     = (struct ipv6hdr *) (data_pP + sizeof(struct ether_header));
         memcpy(dest6_addr.__in6_u.__u6_addr8, ip6h_p->daddr.__in6_u.__u6_addr8, 16);
-        if (obj_hashtable_get(sgi_data_pP->addr_v6_mapping, (void*)&dest6_addr, sizeof(struct in6_addr), (void**)&addr_mapping_p) != HASH_TABLE_OK) {
+        if (obj_hashtbl_get(sgi_data_pP->addr_v6_mapping, (void*)&dest6_addr, sizeof(struct in6_addr), (void**)&addr_mapping_p) != HASH_TABLE_OK) {
             SGI_IF_WARNING("%s Dropping incoming egress IPV6 packet, IPV6 dest %X:%X:%X:%X:%X:%X:%X:%X not found \n", __FUNCTION__, NIP6ADDR(&dest6_addr));
             return;
         }
@@ -276,7 +239,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         // get "    unsigned char __ar_tip[4];      /* Target IP address.  */" (from /usr/include/net/if_apr.h line 68)
         memcpy(&dest4_addr, &((unsigned char*)(&arph_p[1]))[ETH_ALEN*2+4], 4);
         SGI_IF_DEBUG("%s ARP OPCODE %s TARGET IP %d.%d.%d.%d\n", __FUNCTION__, sgi_arpopcode_2_str(ntohl(arph_p->ar_op)), NIPADDR(dest4_addr));
-        if (hashtable_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) != HASH_TABLE_OK) {
+        if (hashtbl_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) != HASH_TABLE_OK) {
             if (sgi_data_pP->ipv4_addr == dest4_addr) {
                 SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
                 return;

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern frame_t frame;
+extern u32 frame;
 End_Of_Sim_Event end_event; //Could later be a list of condition_events (if the end condition is more complicated)
 Event_List event_list;
 

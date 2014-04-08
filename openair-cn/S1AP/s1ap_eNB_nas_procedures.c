@@ -161,12 +161,9 @@ int s1ap_eNB_handle_nas_first_req(
     if (s1ap_nas_first_req_p->ue_identity.presenceMask & UE_IDENTITIES_gummei) {
         initial_ue_message_p->presenceMask |= S1AP_INITIALUEMESSAGEIES_GUMMEI_ID_PRESENT;
 
-        MCC_MNC_TO_PLMNID(
-            s1ap_nas_first_req_p->ue_identity.gummei.mcc,
-            s1ap_nas_first_req_p->ue_identity.gummei.mnc,
-            s1ap_nas_first_req_p->ue_identity.gummei.mnc_len,
-            &initial_ue_message_p->gummei_id.pLMN_Identity);
-
+        MCC_MNC_TO_PLMNID(s1ap_nas_first_req_p->ue_identity.gummei.mcc,
+                          s1ap_nas_first_req_p->ue_identity.gummei.mnc,
+                          &initial_ue_message_p->gummei_id.pLMN_Identity);
         MME_GID_TO_OCTET_STRING(s1ap_nas_first_req_p->ue_identity.gummei.mme_group_id,
                                 &initial_ue_message_p->gummei_id.mME_Group_ID);
         MME_CODE_TO_OCTET_STRING(s1ap_nas_first_req_p->ue_identity.gummei.mme_code,
@@ -175,10 +172,8 @@ int s1ap_eNB_handle_nas_first_req(
 
     /* Assuming TAI is the TAI from the cell */
     INT16_TO_OCTET_STRING(instance_p->tac, &initial_ue_message_p->tai.tAC);
-    MCC_MNC_TO_PLMNID(instance_p->mcc,
-        instance_p->mnc,
-        instance_p->mnc_digit_length,
-        &initial_ue_message_p->tai.pLMNidentity);
+    MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc,
+                      &initial_ue_message_p->tai.pLMNidentity);
 
     /* Set the EUTRAN CGI
      * The cell identity is defined on 28 bits but as we use macro enb id,
@@ -186,10 +181,8 @@ int s1ap_eNB_handle_nas_first_req(
      */
     MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,
                                   &initial_ue_message_p->eutran_cgi.cell_ID);
-    MCC_MNC_TO_TBCD(instance_p->mcc,
-        instance_p->mnc,
-        instance_p->mnc_digit_length,
-        &initial_ue_message_p->eutran_cgi.pLMNidentity);
+    MCC_MNC_TO_TBCD(instance_p->mcc, instance_p->mnc,
+                    &initial_ue_message_p->eutran_cgi.pLMNidentity);
 
     if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
         /* Failed to encode message */
@@ -326,22 +319,14 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
     uplink_NAS_transport_p->nas_pdu.buf  = s1ap_uplink_nas_p->nas_pdu.buffer;
     uplink_NAS_transport_p->nas_pdu.size = s1ap_uplink_nas_p->nas_pdu.length;
 
-    MCC_MNC_TO_PLMNID(
-        s1ap_eNB_instance_p->mcc,
-        s1ap_eNB_instance_p->mnc,
-        s1ap_eNB_instance_p->mnc_digit_length,
-        &uplink_NAS_transport_p->eutran_cgi.pLMNidentity);
-
+    MCC_MNC_TO_PLMNID(s1ap_eNB_instance_p->mcc, s1ap_eNB_instance_p->mnc,
+                      &uplink_NAS_transport_p->eutran_cgi.pLMNidentity);
     MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
                                   &uplink_NAS_transport_p->eutran_cgi.cell_ID);
 
     /* MCC/MNC should be repeated in TAI and EUTRAN CGI */
-    MCC_MNC_TO_PLMNID(
-        s1ap_eNB_instance_p->mcc,
-        s1ap_eNB_instance_p->mnc,
-        s1ap_eNB_instance_p->mnc_digit_length,
-        &uplink_NAS_transport_p->tai.pLMNidentity);
-
+    MCC_MNC_TO_PLMNID(s1ap_eNB_instance_p->mcc, s1ap_eNB_instance_p->mnc,
+                      &uplink_NAS_transport_p->tai.pLMNidentity);
     TAC_TO_ASN1(s1ap_eNB_instance_p->tac, &uplink_NAS_transport_p->tai.tAC);
 
     if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
@@ -417,14 +402,14 @@ void s1ap_eNB_nas_non_delivery_ind(instance_t instance,
 int s1ap_eNB_initial_ctxt_resp(
     instance_t instance, s1ap_initial_context_setup_resp_t *initial_ctxt_resp_p)
 {
-    s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
-    struct s1ap_eNB_ue_context_s *ue_context_p        = NULL;
+    s1ap_eNB_instance_t          *s1ap_eNB_instance_p;
+    struct s1ap_eNB_ue_context_s *ue_context_p;
 
-    S1ap_InitialContextSetupResponseIEs_t *initial_ies_p  = NULL;
+    S1ap_InitialContextSetupResponseIEs_t *initial_ies_p;
 
     s1ap_message  message;
 
-    uint8_t  *buffer  = NULL;
+    uint8_t  *buffer;
     uint32_t length;
     int      ret = -1;
     int      i;

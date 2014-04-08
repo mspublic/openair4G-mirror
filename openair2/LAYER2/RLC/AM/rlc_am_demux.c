@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           rlc_am_demux.c  -
                              -------------------
@@ -69,13 +38,13 @@ rlc_am_demux_routing (struct rlc_am_entity *rlcP, unsigned int traffic_typeP, st
   struct rlc_am_pdu_header *data;
   struct rlc_am_reset_header *control;
   mem_block_t      *tb;
-  uint8_t             *first_byte;
-  uint16_t             tb_size_in_bytes;
-  uint8_t              first_bit;
-  uint8_t              bits_to_shift;
-  uint8_t              bits_to_shift_last_loop;
+  u8_t             *first_byte;
+  u16_t             tb_size_in_bytes;
+  u8_t              first_bit;
+  u8_t              bits_to_shift;
+  u8_t              bits_to_shift_last_loop;
 
-  uint8_t              data_received;
+  u8_t              data_received;
   int index;
 
   //-------------------------------------------------------
@@ -180,8 +149,8 @@ rlc_info_t Rlc_info_am_config1;
   Rlc_info_am_config1.rlc.rlc_am_info.last_transmission_pdu_poll_trigger   = 1;//boolean
   Rlc_info_am_config1.rlc.rlc_am_info.last_retransmission_pdu_poll_trigger = 1;//boolean
   Rlc_info_am_config1.rlc.rlc_am_info.send_mrw              = 1;//boolean*
-	  Mac_rlc_xface->rrc_rlc_config_req(0,CONFIG_ACTION_REMOVE,rlcP->rb_id,RADIO_ACCESS_BEARER,Rlc_info_am_config1);
-	  Mac_rlc_xface->rrc_rlc_config_req(0,CONFIG_ACTION_ADD,rlcP->rb_id,RADIO_ACCESS_BEARER,Rlc_info_am_config1);
+	  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_REMOVE,rlcP->rb_id,RADIO_ACCESS_BEARER,Rlc_info_am_config1);
+	  Mac_rlc_xface->rrc_rlc_config_req(0,ACTION_ADD,rlcP->rb_id,RADIO_ACCESS_BEARER,Rlc_info_am_config1);
 
 #endif
         }

@@ -142,12 +142,6 @@ mapping otg_distribution_names[] =
     {"background_dist",13},
     {NULL, -1}
 };
-mapping frame_type_names[] =
-{
-    {"TDD", 1},
-    {"FDD", 0},
-    {NULL, -1}
-};
 
 mapping switch_names[] =
 {
@@ -337,8 +331,6 @@ void init_oai_emulation() {
   oai_emulation.info.cli_enabled=0;// I flag
   oai_emulation.info.omv_enabled =0; // v flag 
   oai_emulation.info.vcd_enabled=0;
-  oai_emulation.info.opp_enabled=0;
-
   oai_emulation.info.cba_group_active=0;
   oai_emulation.info.eMBMS_active_state=0;
   oai_emulation.info.handover_active=0;
@@ -380,14 +372,13 @@ void init_oai_emulation() {
   oai_emulation.info.g_log_verbosity = 0x15;
   oai_emulation.info.g_log_verbosity_option = "medium";
     
-    oai_emulation.info.frame_type=TDD;
-    oai_emulation.info.frame_type_name="TDD";
-    oai_emulation.info.tdd_config=3;
-    oai_emulation.info.tdd_config_S=0;
-    oai_emulation.info.extended_prefix_flag=0;
-    oai_emulation.info.N_RB_DL=25;
-    oai_emulation.info.transmission_mode=2;
-    
+  oai_emulation.info.frame_type=1;
+  oai_emulation.info.tdd_config=3;
+  oai_emulation.info.tdd_config_S=0;
+  oai_emulation.info.extended_prefix_flag=0;
+  oai_emulation.info.N_RB_DL=25;
+  oai_emulation.info.transmission_mode=2;
+
   oai_emulation.profile = "EURECOM";
 }
 
@@ -433,6 +424,7 @@ void oaisim_config() {
     g_log->log_component[OTG_LATENCY].filelog=1;
     g_log->log_component[OTG_OWD].filelog = 1;*/
     ocg_config_app(); // packet generator 
+    //    oai_emulation.info.frame_type=1;
   }
 }
 
@@ -440,11 +432,18 @@ int olg_config() {
   int comp;
   int ocg_log_level = map_str_to_int(log_level_names, oai_emulation.emulation_config.log_emu.level);
   int ocg_log_verbosity= map_str_to_int(log_verbosity_names, oai_emulation.emulation_config.log_emu.verbosity);
+  LOG_I(EMU, "ocg log level %d, oai log level%d \n ",ocg_log_level, oai_emulation.info.g_log_level);
   // fix me: 
   oai_emulation.info.g_log_level = ((oai_emulation.info.ocg_enabled == 1) && (ocg_log_level != -1)) ? ocg_log_level : oai_emulation.info.g_log_level;
   oai_emulation.info.g_log_verbosity = (((oai_emulation.info.ocg_enabled == 1) && (ocg_log_verbosity != -1)) ? ocg_log_verbosity : 
 					map_str_to_int(log_verbosity_names, oai_emulation.info.g_log_verbosity_option));
   
+  LOG_N(EMU, "global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n",
+	map_int_to_str (log_level_names, oai_emulation.info.g_log_level), 
+	oai_emulation.info.g_log_level,
+	map_int_to_str (log_verbosity_names, oai_emulation.info.g_log_verbosity),
+	oai_emulation.info.g_log_verbosity,
+	oai_emulation.emulation_config.log_emu.interval );
   set_glog(oai_emulation.info.g_log_level, oai_emulation.info.g_log_verbosity ); //g_glog
   // component, log level, log interval
   for (comp = PHY; comp < MAX_LOG_COMPONENTS ; comp++)
@@ -452,35 +451,26 @@ int olg_config() {
 		 oai_emulation.info.g_log_level,
 		 oai_emulation.info.g_log_verbosity,
 		 oai_emulation.emulation_config.log_emu.interval);
-  LOG_I(EMU, "OCG log level %d, oai log level%d \n ",ocg_log_level, oai_emulation.info.g_log_level);
-  LOG_N(EMU,"global log level is set to (%s,%d) with vebosity (%s, 0x%x) and frequency %d\n", 
-	map_int_to_str (log_level_names, oai_emulation.info.g_log_level), 
-	oai_emulation.info.g_log_level,
-	map_int_to_str (log_verbosity_names,oai_emulation.info.g_log_verbosity),
-	oai_emulation.info.g_log_verbosity,
-	oai_emulation.emulation_config.log_emu.interval );
-  
-  /*  
+
   // if perf eval then reset the otg log level
   set_comp_log(PHY,  LOG_EMERG, 0x15,1);
   set_comp_log(EMU,  LOG_EMERG, 0x15,1);
   set_comp_log(OCG,  LOG_EMERG, 0x15,1);
   set_comp_log(OCM,  LOG_EMERG, 0x15,1);
   set_comp_log(OTG,  LOG_EMERG, 0x15,1);
-  set_comp_log(MAC,  LOG_EMERG, 0x15,1);
+  set_comp_log(MAC,  LOG_DEBUG, 0x15,1);
   set_comp_log(OMG,  LOG_EMERG, 0x15,1);
   set_comp_log(OPT,  LOG_EMERG, 0x15,1);
-  set_comp_log(PDCP, LOG_DEBUG, LOG_MED,1);
-  set_comp_log(RLC,  LOG_DEBUG, LOG_MED,1);
-  set_comp_log(RRC,  LOG_DEBUG, LOG_MED,1);
-  */ 
+  set_comp_log(PDCP, LOG_TRACE, LOG_MED,1);
+  set_comp_log(RLC,  LOG_TRACE, LOG_MED,1);
+  set_comp_log(RRC,  LOG_TRACE, LOG_MED,1);
 #if defined(ENABLE_RAL)
   set_comp_log(RAL_ENB, LOG_TRACE, LOG_MED,1);
   set_comp_log(RAL_UE,  LOG_TRACE, LOG_MED,1);
   set_log(RAL_ENB,  LOG_DEBUG, 1);
   set_log(RAL_UE,  LOG_DEBUG, 1);
 #endif
- /*
+
   //set_log(OCG,  LOG_DEBUG, 1);
   //set_log(EMU,  LOG_INFO,  20);
   set_log(MAC,  LOG_DEBUG, 1);
@@ -501,31 +491,14 @@ int olg_config() {
   set_comp_log(OTG,  LOG_ERR, 0x15,1);  
   set_comp_log(OMG,  LOG_ERR, 0x15,1);  
   set_comp_log(OPT,  LOG_ERR, 0x15,1);  
-   */
+  
   // set_comp_log(MAC, LOG_TRACE, LOG_FULL,1);
   return 1; 
 }
 
 int ocg_config_env() {
 // int func related to channel desc from oaisim.c could be moved here
-  
-  if (oai_emulation.info.ocg_enabled){
-    oai_emulation.info.frame_type = map_str_to_int(frame_type_names, oai_emulation.info.frame_type_name);
-    if (oai_emulation.info.frame_type == -1){
-      LOG_E(EMU,"frame type incorrect %s, set it to TDD \n",oai_emulation.info.frame_type_name);
-      oai_emulation.info.frame_type=TDD;
-    }
-    else 
-      LOG_I(EMU,"Frame type is %s \n",oai_emulation.info.frame_type_name);
-    if (oai_emulation.info.frame_type == TDD ){
-      if ((oai_emulation.info.tdd_config > 6) || (oai_emulation.info.tdd_config < 0)) {
-	LOG_E(EMU,"TDD config %d out of range, set it to 3\n",oai_emulation.info.tdd_config);
-	oai_emulation.info.tdd_config=3;
-      } else 
-	LOG_I(EMU,"TDD config is set to \n",oai_emulation.info.tdd_config);
-    }
-  }    
-  return 1;
+return 1;
 }
 int ocg_config_topo() {
 

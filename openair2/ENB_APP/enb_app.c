@@ -1,44 +1,34 @@
 /*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+ Eurecom OpenAirInterface
+ Copyright(c) 1999 - 2012 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+ This program is free software; you can redistribute it and/or modify it
+ under the terms and conditions of the GNU General Public License,
+ version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+ This program is distributed in the hope it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+ You should have received a copy of the GNU General Public License along with
+ this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
-/*
-                                enb_app.c
-                             -------------------
-  AUTHOR  : Laurent Winckel, Sebastien ROUX, Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-*/
+ The full GNU General Public License is included in this distribution in
+ the file called "COPYING".
+
+ Contact Information
+ Openair Admin: openair_admin@eurecom.fr
+ Openair Tech : openair_tech@eurecom.fr
+ Forums       : http://forums.eurecom.fr/openairinterface
+ Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+ 06410 Biot FRANCE
+
+ *******************************************************************************/
 
 #include <string.h>
-#include <stdio.h>
 
 #include "enb_app.h"
 #include "enb_config.h"
@@ -56,7 +46,6 @@ Address      : EURECOM,
 # if defined(ENABLE_USE_MME)
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
-#   include "gtpv1u_eNB_task.h"
 # endif
 
 extern unsigned char NB_eNB_INST;
@@ -87,7 +76,7 @@ static void configure_phy(uint32_t enb_id, const Enb_properties_array_t *enb_pro
 /*------------------------------------------------------------------------------*/
 static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_properties)
 {
-    MessageDef *msg_p = NULL;
+    MessageDef *msg_p;
 
     msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
 
@@ -95,7 +84,6 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
     RRC_CONFIGURATION_REQ (msg_p).tac =             enb_properties->properties[enb_id]->tac;
     RRC_CONFIGURATION_REQ (msg_p).mcc =             enb_properties->properties[enb_id]->mcc;
     RRC_CONFIGURATION_REQ (msg_p).mnc =             enb_properties->properties[enb_id]->mnc;
-    RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length = enb_properties->properties[enb_id]->mnc_digit_length;
     RRC_CONFIGURATION_REQ (msg_p).default_drx =     enb_properties->properties[enb_id]->default_drx;
     RRC_CONFIGURATION_REQ (msg_p).frame_type =      enb_properties->properties[enb_id]->frame_type;
     RRC_CONFIGURATION_REQ (msg_p).tdd_config =      enb_properties->properties[enb_id]->tdd_config;
@@ -109,12 +97,10 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
 # if defined(ENABLE_USE_MME)
 static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, const Enb_properties_array_t *enb_properties)
 {
-    uint32_t         enb_id;
-    uint32_t         mme_id;
-    MessageDef      *msg_p;
-    uint32_t         register_enb_pending = 0;
-    char            *str                  = NULL;
-    struct in_addr   addr;
+    uint32_t enb_id;
+    uint32_t mme_id;
+    MessageDef *msg_p;
+    uint32_t register_enb_pending = 0;
 
 #   if defined(OAI_EMU)
 
@@ -134,14 +120,13 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
             s1ap_register_eNB = &S1AP_REGISTER_ENB_REQ(msg_p);
 
             /* Some default/random parameters */
-            s1ap_register_eNB->eNB_id           = enb_properties->properties[enb_id]->eNB_id;
-            s1ap_register_eNB->cell_type        = enb_properties->properties[enb_id]->cell_type;
-            s1ap_register_eNB->eNB_name         = enb_properties->properties[enb_id]->eNB_name;
-            s1ap_register_eNB->tac              = enb_properties->properties[enb_id]->tac;
-            s1ap_register_eNB->mcc              = enb_properties->properties[enb_id]->mcc;
-            s1ap_register_eNB->mnc              = enb_properties->properties[enb_id]->mnc;
-            s1ap_register_eNB->mnc_digit_length = enb_properties->properties[enb_id]->mnc_digit_length;
-            s1ap_register_eNB->default_drx      = enb_properties->properties[enb_id]->default_drx;
+            s1ap_register_eNB->eNB_id =         enb_properties->properties[enb_id]->eNB_id;
+            s1ap_register_eNB->cell_type =      enb_properties->properties[enb_id]->cell_type;
+            s1ap_register_eNB->eNB_name =       enb_properties->properties[enb_id]->eNB_name;
+            s1ap_register_eNB->tac =            enb_properties->properties[enb_id]->tac;
+            s1ap_register_eNB->mcc =            enb_properties->properties[enb_id]->mcc;
+            s1ap_register_eNB->mnc =            enb_properties->properties[enb_id]->mnc;
+            s1ap_register_eNB->default_drx =    enb_properties->properties[enb_id]->default_drx;
 
             s1ap_register_eNB->nb_mme =         enb_properties->properties[enb_id]->nb_mme;
             AssertFatal (s1ap_register_eNB->nb_mme <= S1AP_MAX_NB_MME_IP_ADDRESS, "Too many MME for eNB %d (%d/%d)!", enb_id, s1ap_register_eNB->nb_mme, S1AP_MAX_NB_MME_IP_ADDRESS);
@@ -158,12 +143,6 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
                          sizeof(s1ap_register_eNB->mme_ip_address[0].ipv6_address));
             }
 
-            s1ap_register_eNB->enb_ip_address.ipv6 = 0;
-            s1ap_register_eNB->enb_ip_address.ipv4 = 1;
-            addr.s_addr = enb_properties->properties[enb_id]->enb_ipv4_address_for_S1_MME;
-            str = inet_ntoa(addr);
-            strcpy(s1ap_register_eNB->enb_ip_address.ipv4_address, str);
-
             itti_send_msg_to_task (TASK_S1AP, enb_id, msg_p);
 
             register_enb_pending++;
@@ -178,7 +157,7 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
 /*------------------------------------------------------------------------------*/
 void *eNB_app_task(void *args_p)
 {
-    const Enb_properties_array_t   *enb_properties_p  = NULL;
+    const Enb_properties_array_t   *enb_properties;
 #if defined(ENABLE_ITTI)
     uint32_t                        enb_nb = 1; /* Default number of eNB is 1 */
     uint32_t                        enb_id_start = 0;
@@ -189,8 +168,8 @@ void *eNB_app_task(void *args_p)
     long                            enb_register_retry_timer_id;
 # endif
     uint32_t                        enb_id;
-    MessageDef                     *msg_p           = NULL;
-    const char                     *msg_name        = NULL;
+    MessageDef                     *msg_p;
+    const char                     *msg_name;
     instance_t                      instance;
     int                             result;
 
@@ -208,22 +187,22 @@ void *eNB_app_task(void *args_p)
 #   endif
 # endif
 
-    enb_properties_p = enb_config_get();
+    enb_properties = enb_config_get();
 
-    AssertFatal (enb_nb <= enb_properties_p->number,
+    AssertFatal (enb_nb <= enb_properties->number,
                  "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
-                 enb_nb, enb_properties_p->number);
+                 enb_nb, enb_properties->number);
 
     for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++)
     {
-        configure_phy(enb_id, enb_properties_p);
-        configure_rrc(enb_id, enb_properties_p);
+        configure_phy(enb_id, enb_properties);
+        configure_rrc(enb_id, enb_properties);
     }
 
 # if defined(ENABLE_USE_MME)
     /* Try to register each eNB */
     registered_enb = 0;
-    register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties_p);
+    register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties);
 # else
     /* Start L2L1 task */
     msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
@@ -299,7 +278,7 @@ void *eNB_app_task(void *args_p)
                             sleep(ENB_REGISTER_RETRY_DELAY);
                             /* Restart the registration process */
                             registered_enb = 0;
-                            register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties_p);
+                            register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties);
                         }
                     }
                 }
@@ -319,7 +298,7 @@ void *eNB_app_task(void *args_p)
                 {
                     /* Restart the registration process */
                     registered_enb = 0;
-                    register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties_p);
+                    register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties);
                 }
                 break;
 # endif

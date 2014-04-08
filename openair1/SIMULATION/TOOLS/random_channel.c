@@ -11,25 +11,25 @@
 #include "UTIL/LOG/log.h"
 //#define DEBUG_CH
 
-void fill_channel_desc(channel_desc_t *chan_desc,
-		       uint8_t nb_tx,
-		       uint8_t nb_rx, 
-		       uint8_t nb_taps, 
-		       uint8_t channel_length, 
-		       double *amps, 
-		       double *delays, 
-		       struct complex** R_sqrt, 
-		       double Td, 
-		       double BW, 
-		       double ricean_factor, 
-		       double aoa, 
-		       double forgetting_factor,
-		       double max_Doppler, 
-		       int32_t channel_offset, 
-		       double path_loss_dB,
-		       uint8_t random_aoa) {
-  
-  uint16_t i,j;
+channel_desc_t *new_channel_desc(u8 nb_tx,
+				 u8 nb_rx, 
+				 u8 nb_taps, 
+				 u8 channel_length, 
+				 double *amps, 
+				 double *delays, 
+				 struct complex** R_sqrt, 
+				 double Td, 
+				 double BW, 
+				 double ricean_factor, 
+				 double aoa, 
+				 double forgetting_factor,
+				 double max_Doppler, 
+				 s32 channel_offset, 
+				 double path_loss_dB,
+				 u8 random_aoa) {
+
+  channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
+  u16 i,j;
   double delta_tau;
 
   LOG_I(OCM,"[CHANNEL] Getting new channel descriptor, nb_tx %d, nb_rx %d, nb_taps %d, channel_length %d\n",
@@ -106,11 +106,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
 
   chan_desc->nb_paths=10;
 
-  reset_meas(&chan_desc->random_channel);
-  reset_meas(&chan_desc->interp_time);
-  reset_meas(&chan_desc->interp_freq);
-  reset_meas(&chan_desc->convolution);
-
+  return(chan_desc);
 }
 
 double mbsfn_delays[] = {0,.03,.15,.31,.37,1.09,12.490,12.52,12.64,12.80,12.86,13.58,27.49,27.52,27.64,27.80,27.86,28.58};
@@ -156,16 +152,16 @@ struct complex *R_sqrt_21_anticorr[1]     = {R_sqrt_21_anticorr_tap};
 struct complex **R_sqrt_ptr2;
 
 
-channel_desc_t *new_channel_desc_scm(uint8_t nb_tx, 
-				     uint8_t nb_rx, 
+channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
+				     u8 nb_rx, 
 				     SCM_t channel_model, 
 				     double BW, 
 				     double forgetting_factor,
-				     int32_t channel_offset, 
+				     s32 channel_offset, 
 				     double path_loss_dB) {
 
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
-  uint16_t i,j;
+  u16 i,j;
   double sum_amps;
   double aoa,ricean_factor,Td,maxDoppler;
   int channel_length,nb_taps;
@@ -461,23 +457,22 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = .03;
       maxDoppler = 0;
 
-      fill_channel_desc(chan_desc,
-			nb_tx,
-			nb_rx,
-			nb_taps,
-			channel_length,
-			default_amps_lin,
-			NULL,
-			NULL,
-			Td,
-			BW,
-			ricean_factor,
-			aoa,
-			forgetting_factor,
-			maxDoppler,
-			channel_offset, 
-			path_loss_dB,
-			0);
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amps_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
       break;
 
   case Rice8:
@@ -488,7 +483,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = .03;
       maxDoppler = 0;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -514,7 +509,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = .03;
       maxDoppler = 0;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -540,7 +535,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = .03;
       maxDoppler = 800;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -575,7 +570,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       else
 	R_sqrt_ptr2 = NULL;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -610,7 +605,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       else 
 	R_sqrt_ptr2 = NULL;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -636,7 +631,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = .03;
       maxDoppler = 0;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -662,7 +657,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = 0.0;
       maxDoppler = 0;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -699,7 +694,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       else
 	R_sqrt_ptr2 = NULL;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -734,7 +729,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       else 
 	R_sqrt_ptr2 = NULL;
 
-      fill_channel_desc(chan_desc,nb_tx,
+      chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
 				   nb_taps,
 				   channel_length,
@@ -767,7 +762,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 }
 
 
-int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
+int random_channel(channel_desc_t *desc) {
 		    
   double s;
   int i,k,l,aarx,aatx;
@@ -779,7 +774,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     return(-1);
   }
 
-  start_meas(&desc->random_channel);
+
   for (i=0;i<(int)desc->nb_taps;i++) {
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
@@ -867,12 +862,9 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     */
 
   } //nb_taps      
-  stop_meas(&desc->random_channel);
 
   //memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
   
-  if (abstraction_flag==0) {
-  start_meas(&desc->interp_time);
   for (aarx=0;aarx<desc->nb_rx;aarx++) {
     for (aatx=0;aatx<desc->nb_tx;aatx++) {
       if (desc->channel_length == 1) {
@@ -903,8 +895,6 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
       } //channel_length
     } //aatx
   } //aarx
-  stop_meas(&desc->interp_time);
-  }
 
   if (desc->first_run==1)
     desc->first_run = 0;

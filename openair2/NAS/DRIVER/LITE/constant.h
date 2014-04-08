@@ -157,7 +157,7 @@
 #define OAI_NW_DRV_PROTOCOL_UDP       IPPROTO_UDP
 #define OAI_NW_DRV_PROTOCOL_ICMP4     IPPROTO_ICMP
 #define OAI_NW_DRV_PROTOCOL_ICMP6     IPPROTO_ICMPV6
-//#warning "OAI_NW_DRV_PROTOCOL_ARP value 200 may collide with new defined values in kernel"
+#warning "OAI_NW_DRV_PROTOCOL_ARP value 200 may collide with new defined values in kernel"
 #define OAI_NW_DRV_PROTOCOL_ARP       200
 
 #define OAI_NW_DRV_PORT_DEFAULT       __constant_htons(65535)
@@ -172,6 +172,17 @@
 #define OAI_NW_DRV_DEFAULT_IPV6_ADDR1 0
 #define OAI_NW_DRV_DEFAULT_IPV6_ADDR2 0
 #define OAI_NW_DRV_DEFAULT_IPV6_ADDR3 0
+
+
+#define OAI_NW_DRV_IPVX_ADDR_TYPE_UNKNOWN        0
+#define OAI_NW_DRV_IPV6_ADDR_TYPE_UNICAST        1
+#define OAI_NW_DRV_IPV6_ADDR_TYPE_MULTICAST      2
+#define OAI_NW_DRV_IPV6_ADDR_TYPE_UNKNOWN        3
+
+#define OAI_NW_DRV_IPV4_ADDR_TYPE_UNICAST        5
+#define OAI_NW_DRV_IPV4_ADDR_TYPE_MULTICAST      6
+#define OAI_NW_DRV_IPV4_ADDR_TYPE_BROADCAST      7
+#define OAI_NW_DRV_IPV4_ADDR_TYPE_UNKNOWN        8
 
 
 #define OAI_NW_DRV_MPLS_VERSION_CODE  99

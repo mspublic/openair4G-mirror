@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_primitives.h
 * \brief This file contains constants definition for RLC primitives.
@@ -84,22 +81,22 @@ Address      : EURECOM,
 
 struct rlc_am_data_req {
   //struct rlc_am_sdu_management sdu_mngt;
-  uint32_t             mui;
-  uint16_t             data_size;    // in bytes
-  uint16_t             data_offset;  // beginning of payload data may not start just after the header (PDCP header compression, etc)
-  uint8_t              conf;         // confirm of sdu delivery to the peer entity
+  u32_t             mui;
+  u16_t             data_size;    // in bytes
+  u16_t             data_offset;  // beginning of payload data may not start just after the header (PDCP header compression, etc)
+  u8_t              conf;         // confirm of sdu delivery to the peer entity
 };
 
 struct rlc_tm_data_req {
-  uint16_t             data_size;    // in bits
-  uint16_t             data_offset;  // beginning of payload data may not start just after the header (PDCP header compression, etc)
+  u16_t             data_size;    // in bits
+  u16_t             data_offset;  // beginning of payload data may not start just after the header (PDCP header compression, etc)
 };
 
 
 struct rlc_um_data_req {
-  uint16_t             data_size;    // in bytes
-  uint16_t             data_offset;  // beginning of payload data may not start just after the header (PDCP header compression, etc)
-  uint8_t              use_special_li;
+  u16_t             data_size;    // in bytes
+  u16_t             data_offset;  // beginning of payload data may not start just after the header (PDCP header compression, etc)
+  u8_t              use_special_li;
 };
 
 typedef struct rlc_am_data_req  rlc_am_data_req_t;
@@ -125,62 +122,62 @@ typedef struct rlc_um_data_req  rlc_um_data_req_t;
 
 
 struct rlc_am_parameters {
-  uint8_t              rb_id;
-  uint8_t              e_r;          // reestablishment, release or modification of the rlc
-  uint8_t              stop;
-  uint8_t              cont;         // continue
+  u8_t              rb_id;
+  u8_t              e_r;          // reestablishment, release or modification of the rlc
+  u8_t              stop;
+  u8_t              cont;         // continue
   // timers
-  uint32_t            *frame_tick_milliseconds;
+  u32_t            *frame_tick_milliseconds;
 
-  uint16_t             timer_poll;
-  uint16_t             timer_poll_prohibit;
-  uint16_t             timer_epc;
-  uint16_t             timer_discard;
-  uint16_t             timer_poll_periodic;
-  uint16_t             timer_status_prohibit;
-  uint16_t             timer_status_periodic;
-  uint16_t             timer_rst;
-  uint8_t              max_rst;
-  uint16_t             timer_mrw;
+  u16_t             timer_poll;
+  u16_t             timer_poll_prohibit;
+  u16_t             timer_epc;
+  u16_t             timer_discard;
+  u16_t             timer_poll_periodic;
+  u16_t             timer_status_prohibit;
+  u16_t             timer_status_periodic;
+  u16_t             timer_rst;
+  u8_t              max_rst;
+  u16_t             timer_mrw;
 
   // protocol_parameters
-  uint16_t             pdu_size;     // in bits
-  uint8_t              missing_pdu_indicator;
-  uint8_t              in_sequence_delivery; // no action : this version always deliver sdus in sequence
-  uint16_t             max_dat;
-  uint16_t             poll_pdu;
-  uint16_t             poll_sdu;
-  uint8_t              poll_window;  // in percent of the window
-  uint16_t             configured_tx_window_size;
-  uint16_t             configured_rx_window_size;
-  uint16_t             max_mrw;
+  u16_t             pdu_size;     // in bits
+  u8_t              missing_pdu_indicator;
+  u8_t              in_sequence_delivery; // no action : this version always deliver sdus in sequence
+  u16_t             max_dat;
+  u16_t             poll_pdu;
+  u16_t             poll_sdu;
+  u8_t              poll_window;  // in percent of the window
+  u16_t             configured_tx_window_size;
+  u16_t             configured_rx_window_size;
+  u16_t             max_mrw;
 
-  uint8_t              last_transmission_pdu_poll_trigger;
-  uint8_t              last_retransmission_pdu_poll_trigger;
-  uint8_t              sdu_discard_mode;
-  uint8_t              send_mrw;
+  u8_t              last_transmission_pdu_poll_trigger;
+  u8_t              last_retransmission_pdu_poll_trigger;
+  u8_t              sdu_discard_mode;
+  u8_t              send_mrw;
 };
 
 struct rlc_um_parameters {
-  uint32_t            *frame_tick_milliseconds;
-  uint8_t              rb_id;
-  uint8_t              e_r;          // reestablishment, release or modification of the rlc
-  uint8_t              stop;
-  uint8_t              cont;         // continue
-  uint8_t              sdu_discard_mode;
-  uint16_t             timer_discard;
-  uint16_t             size_input_sdus_buffer;
+  u32_t            *frame_tick_milliseconds;
+  u8_t              rb_id;
+  u8_t              e_r;          // reestablishment, release or modification of the rlc
+  u8_t              stop;
+  u8_t              cont;         // continue
+  u8_t              sdu_discard_mode;
+  u16_t             timer_discard;
+  u16_t             size_input_sdus_buffer;
 };
 
 struct rlc_tm_parameters {
-  uint32_t            *frame_tick_milliseconds;
-  uint8_t              rb_id;
-  uint8_t              e_r;          // reestablishment, release or modification of the rlc
-  uint8_t              sdu_discard_mode;
-  uint8_t              segmentation_indication;
-  uint8_t              delivery_of_erroneous_sdu;
-  uint16_t             timer_discard;
-  uint16_t             size_input_sdus_buffer;
+  u32_t            *frame_tick_milliseconds;
+  u8_t              rb_id;
+  u8_t              e_r;          // reestablishment, release or modification of the rlc
+  u8_t              sdu_discard_mode;
+  u8_t              segmentation_indication;
+  u8_t              delivery_of_erroneous_sdu;
+  u16_t             timer_discard;
+  u16_t             size_input_sdus_buffer;
 };
 
 
@@ -193,20 +190,20 @@ struct crlc_config_req {
 };
 
 struct crlc_suspend_conf {
-  uint16_t             vt_s_or_vt_us;
+  u16_t             vt_s_or_vt_us;
 };
 
 struct crlc_resume_req {
   // no parameters
-  uint8_t              todo;
+  u8_t              todo;
 };
 
 struct crlc_status_ind {
-  uint16_t             evc;
+  u16_t             evc;
 };
 
 struct crlc_primitive {
-  uint8_t              type;
+  u8_t              type;
   union {
     struct crlc_config_req c_config_req;
     struct crlc_suspend_conf c_suspend_conf;

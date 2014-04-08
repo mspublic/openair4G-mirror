@@ -17,13 +17,13 @@ double **cos_lut=NULL,**sin_lut=NULL;
 
 
 
-void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
+void init_freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 
   double delta_f,freq;  // 90 kHz spacing
   double delay;
-  int16_t f;
-  uint8_t l;
+  s16 f;
+  u8 l;
 
 
   cos_lut = (double **)malloc(n_samples*sizeof(double*));
@@ -54,11 +54,11 @@ void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
   }
 }
 
-void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
+void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
 
-  int16_t f;
-  uint8_t aarx,aatx,l;
+  s16 f;
+  u8 aarx,aatx,l;
   double *clut,*slut;
   static int freq_channel_init=0;
 
@@ -69,8 +69,7 @@ void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
     init_freq_channel(desc,nb_rb,n_samples);
     freq_channel_init=1;
   }
-   
-  start_meas(&desc->interp_freq);
+    
   for (f=-n_samples/2;f<n_samples/2;f++) {
 	clut = cos_lut[n_samples/2+f];
         slut = sin_lut[n_samples/2+f];
@@ -89,7 +88,6 @@ void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
 	}
       }
   }
-  stop_meas(&desc->interp_freq);
 }
 
 double compute_pbch_sinr(channel_desc_t *desc,
@@ -97,11 +95,11 @@ double compute_pbch_sinr(channel_desc_t *desc,
 			 channel_desc_t *desc_i2,
 			 double snr_dB,double snr_i1_dB,
 			 double snr_i2_dB,
-			 uint16_t nb_rb) {
+			 u16 nb_rb) {
 
   double avg_sinr,snr=pow(10.0,.1*snr_dB),snr_i1=pow(10.0,.1*snr_i1_dB),snr_i2=pow(10.0,.1*snr_i2_dB);
-  uint16_t f;
-  uint8_t aarx,aatx;
+  u16 f;
+  u8 aarx,aatx;
   double S;
   struct complex S_i1;
   struct complex S_i2;
@@ -147,11 +145,11 @@ double compute_sinr(channel_desc_t *desc,
 		    channel_desc_t *desc_i2,
 		    double snr_dB,double snr_i1_dB,
 		    double snr_i2_dB,
-		    uint16_t nb_rb) {
+		    u16 nb_rb) {
 
   double avg_sinr,snr=pow(10.0,.1*snr_dB),snr_i1=pow(10.0,.1*snr_i1_dB),snr_i2=pow(10.0,.1*snr_i2_dB);
-  uint16_t f;
-  uint8_t aarx,aatx;
+  u16 f;
+  u8 aarx,aatx;
   double S;
   struct complex S_i1;
   struct complex S_i2;
@@ -189,8 +187,8 @@ double compute_sinr(channel_desc_t *desc,
   return(10*log10(avg_sinr/(nb_rb*2)));
 }
 
-int pbch_polynomial_degree=6;
-double pbch_awgn_polynomial[7]={-7.2926e-05, -2.8749e-03, -4.5064e-02, -3.5301e-01, -1.4655e+00, -3.6282e+00, -6.6907e+00};
+int pbch_polynomial_degree;
+double a[7];
 
 void load_pbch_desc(FILE *pbch_file_fd) {
 
@@ -215,8 +213,8 @@ void load_pbch_desc(FILE *pbch_file_fd) {
       printf("fscanf failed: %s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    pbch_awgn_polynomial[i] = strtod(dummy,NULL);
-    printf("%f ",pbch_awgn_polynomial[i]);
+    a[i] = strtod(dummy,NULL);
+    printf("%f ",a[i]);
   }
   printf("\n");
 } 
@@ -224,24 +222,19 @@ void load_pbch_desc(FILE *pbch_file_fd) {
 double pbch_bler(double sinr) {
 
   int i;
-  double log10_bler=pbch_awgn_polynomial[pbch_polynomial_degree];
+  double log10_bler=a[pbch_polynomial_degree];
   double sinrpow=sinr;
-  double bler=0.0;
   //  printf("log10bler %f\n",log10_bler);
-  if (sinr<-10.0)
-    bler= 1.0;
+  if (sinr<-7.9)
+    return(1.0);
   else if (sinr>=0.0)
-    bler=0.0;
-  else  {
-    for (i=1;i<=pbch_polynomial_degree;i++) {
-      //    printf("sinrpow %f\n",sinrpow);
-      log10_bler += (pbch_awgn_polynomial[pbch_polynomial_degree-i]*sinrpow);
-      sinrpow *= sinr;
-      //    printf("log10bler %f\n",log10_bler);
-    }
-    bler = pow(10.0,log10_bler);
-  }
-  printf ("sinr %f bler %f\n",sinr,bler);
-  return(bler);
+    return(1e-4);
 
+  for (i=1;i<=pbch_polynomial_degree;i++) {
+    //    printf("sinrpow %f\n",sinrpow);
+    log10_bler += (a[pbch_polynomial_degree-i]*sinrpow);
+    sinrpow *= sinr;
+    //    printf("log10bler %f\n",log10_bler);
+  }
+  return(pow(10.0,log10_bler));
 }

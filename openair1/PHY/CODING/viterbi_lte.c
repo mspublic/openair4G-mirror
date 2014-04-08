@@ -1,32 +1,3 @@
-/*******************************************************************************
-
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2014 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it under 
-  the terms of the GNU General Public License as published by the Free Software 
-  Foundation; either version 2 of the License, or (at your option) any later version
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
 /* file: viterbit_lte.c
    purpose: SIMD optimized LTE Viterbi Decoder for rate 1/3 Tail-biting convolutional code.  Performs two iterations
             of code.  First pass does Viterbi with all initial partial metrics set to zero.  Second pass does Viterbi
@@ -54,7 +25,7 @@
 #include "emmintrin.h"
 #endif //EXPRESSMIMO_TARGET
 
-extern uint8_t ccodelte_table[128],ccodelte_table_rev[128];
+extern u8 ccodelte_table[128],ccodelte_table_rev[128];
 
 
 
@@ -65,15 +36,15 @@ extern uint8_t ccodelte_table[128],ccodelte_table_rev[128];
 
 #ifndef EXPRESSMIMO_TARGET
 
-static int8_t m0_table[64*16*16*16] __attribute__ ((aligned(16)));
-static int8_t m1_table[64*16*16*16] __attribute__ ((aligned(16)));
+static s8 m0_table[64*16*16*16] __attribute__ ((aligned(16)));
+static s8 m1_table[64*16*16*16] __attribute__ ((aligned(16)));
 
 
 // Set up Viterbi tables for SSE2 implementation
 void phy_generate_viterbi_tables_lte() {
 
-  int8_t w[8],in0,in1,in2;
-  uint8_t state,index0,index1;
+  s8 w[8],in0,in1,in2;
+  u8 state,index0,index1;
 
   for (in0 = -8; in0 <8 ; in0++) {   // use 4-bit quantization
     for (in1 = -8; in1 <8 ;in1++) {
@@ -120,7 +91,7 @@ void phy_generate_viterbi_tables_lte() {
 #ifdef DEBUG_VITERBI
 void print_bytes(char *s,__m128i *x) {
 
-  uint8_t *tempb = (uint8_t *)x;
+  u8 *tempb = (u8 *)x;
 
   printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,
 	 tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7],
@@ -131,7 +102,7 @@ void print_bytes(char *s,__m128i *x) {
 /*
 void print_shorts(__m128i x,char *s) {
 
-  int16_t *tempb = (int16_t *)&x;
+  s16 *tempb = (s16 *)&x;
 
   printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d\n",s,
 	 tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7]
@@ -148,18 +119,18 @@ static __m128i metrics0_15,metrics16_31,metrics32_47,metrics48_63,even0_30a,even
 
 static __m128i min_state,min_state2;// __attribute__((aligned(16)));
 
-void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n) {
+void phy_viterbi_lte_sse2(s8 *y,u8 *decoded_bytes,u16 n) {
   
 
   static __m128i *m0_ptr,*m1_ptr,*TB_ptr = &TB[0];
 
 
-  int8_t *in = y;
-  uint8_t prev_state0,maxm,s;
-  static uint8_t *TB_ptr2;
-  uint32_t table_offset;
-  uint8_t iter;
-  int16_t position;
+  s8 *in = y;
+  u8 prev_state0,maxm,s;
+  static u8 *TB_ptr2;
+  u32 table_offset;
+  u8 iter;
+  s16 position;
 
   // set initial metrics
   //debug_msg("Doing viterbi\n");
@@ -363,31 +334,31 @@ void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n) {
   maxm = 0;
 
   for (s=0;s<16;s++)
-    if (((uint8_t *)&metrics0_15)[s] > maxm) {
-      maxm = ((uint8_t *)&metrics0_15)[s];
+    if (((u8 *)&metrics0_15)[s] > maxm) {
+      maxm = ((u8 *)&metrics0_15)[s];
       prev_state0 = s;
     }
 
   for (s=0;s<16;s++)
-    if (((uint8_t *)&metrics16_31)[s] > maxm) {
-      maxm = ((uint8_t *)&metrics16_31)[s];
+    if (((u8 *)&metrics16_31)[s] > maxm) {
+      maxm = ((u8 *)&metrics16_31)[s];
       prev_state0 = s+16;
     }
 
   for (s=0;s<16;s++)
-    if (((uint8_t *)&metrics32_47)[s] > maxm) {
-      maxm = ((uint8_t *)&metrics32_47)[s];
+    if (((u8 *)&metrics32_47)[s] > maxm) {
+      maxm = ((u8 *)&metrics32_47)[s];
       prev_state0 = s+32;
     }
 
   for (s=0;s<16;s++)
-    if (((uint8_t *)&metrics48_63)[s] > maxm) {
-      maxm = ((uint8_t *)&metrics48_63)[s];
+    if (((u8 *)&metrics48_63)[s] > maxm) {
+      maxm = ((u8 *)&metrics48_63)[s];
       prev_state0 = s+48;
     }
 
   //  printf("Max state %d\n",prev_state0);
-  TB_ptr2 = (uint8_t *)&TB[(n-1)*4];
+  TB_ptr2 = (u8 *)&TB[(n-1)*4];
   for (position = n-1 ; position>-1; position--) {
 
 //    if ((position%8) == 0)
@@ -412,15 +383,15 @@ void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n) {
 
 #else //EXPRESSMIMO_TARGET
 
-void phy_viterbi_lte(int8_t *y,uint8_t *decoded_bytes,uint16_t n) {
+void phy_viterbi_lte(s8 *y,u8 *decoded_bytes,u16 n) {
 }
 
 #endif //EXPRESSMIMO_TARGET
 
 /*
-void print_bytes(__m128i x,int8_t *s) {
+void print_bytes(__m128i x,s8 *s) {
 
-  uint8_t *tempb = (uint8_t *)&x;
+  u8 *tempb = (u8 *)&x;
 
   printf("%s  : %u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",s,
 	 tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7],
@@ -430,15 +401,15 @@ void print_bytes(__m128i x,int8_t *s) {
 */
 
 #ifdef TEST_DEBUG
-int test_viterbi(uint8_t dabflag)
+int test_viterbi(u8 dabflag)
 {
-  uint8_t test[8];
-  //_declspec(align(16))  int8_t channel_output[512];
-  //_declspec(align(16))  uint8_t output[512],decoded_output[16], *inPtr, *outPtr;
+  u8 test[8];
+  //_declspec(align(16))  s8 channel_output[512];
+  //_declspec(align(16))  u8 output[512],decoded_output[16], *inPtr, *outPtr;
 
-  int8_t channel_output[512];
-  uint8_t output[512],decoded_output[16], *inPtr, *outPtr;
-  uint32_t i;
+  s8 channel_output[512];
+  u8 output[512],decoded_output[16], *inPtr, *outPtr;
+  u32 i;
 
   
   test[0] = 7;
@@ -485,7 +456,7 @@ int test_viterbi(uint8_t dabflag)
 int main(int argc, char **argv) {
 
   char c;
-  uint8_t dabflag=0;
+  u8 dabflag=0;
 
   while ((c = getopt (argc, argv, "d")) != -1) {
     if (c=='d')

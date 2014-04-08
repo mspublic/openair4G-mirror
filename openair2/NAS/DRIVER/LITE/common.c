@@ -68,9 +68,9 @@
         ntohs((addr)->s6_addr16[7])
 
 
-//#define OAI_DRV_DEBUG_SEND
-//#define OAI_DRV_DEBUG_RECEIVE
-void oai_nw_drv_common_class_wireless2ip(uint16_t dlen,
+#define OAI_DRV_DEBUG_SEND
+#define OAI_DRV_DEBUG_RECEIVE
+void oai_nw_drv_common_class_wireless2ip(u16 dlen,
                         void *pdcp_sdu,
                         int inst,
                         OaiNwDrvRadioBearerId_t rb_id) {
@@ -80,8 +80,8 @@ void oai_nw_drv_common_class_wireless2ip(uint16_t dlen,
     struct ipversion    *ipv;
     struct oai_nw_drv_priv     *gpriv=netdev_priv(oai_nw_drv_dev[inst]);
     unsigned int         hard_header_len = 0;
-    uint16_t                 *p_ether_type;
-    uint16_t                  ether_type;
+    u16                 *p_ether_type;
+    u16                  ether_type;
     #ifdef OAI_DRV_DEBUG_RECEIVE
     int i;
     unsigned char *addr;
@@ -221,7 +221,7 @@ void oai_nw_drv_common_class_wireless2ip(uint16_t dlen,
             switch(protocol) {
                 case IPPROTO_TCP:
 
-                    cksum  = (uint16_t*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
+                    cksum  = (u16*)&(((struct tcphdr*)((network_header + (network_header->ihl<<2))))->check);
                     check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
                     //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
                     //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_TCP, ~(*cksum));
@@ -245,7 +245,7 @@ void oai_nw_drv_common_class_wireless2ip(uint16_t dlen,
                     break;
 
                 case IPPROTO_UDP:
-                    cksum  = (uint16_t*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
+                    cksum  = (u16*)&(((struct udphdr*)((network_header + (network_header->ihl<<2))))->check);
                     check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, 0,0, ~(*cksum));
                     // check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, udp_hdr(skb)->len, IPPROTO_UDP, ~(*cksum));
                     //check = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, dlen, IPPROTO_UDP, ~(*cksum));
@@ -284,8 +284,8 @@ void oai_nw_drv_common_class_wireless2ip(uint16_t dlen,
                 // fill skb->pkt_type, skb->dev
 
                 skb->protocol = eth_type_trans(skb, oai_nw_drv_dev[inst]);
-                // minus 1(short) instead of 2(bytes) because uint16_t*
-                p_ether_type = (uint16_t *)(skb_network_header(skb)-2);
+                // minus 1(short) instead of 2(bytes) because u16*
+                p_ether_type = (u16 *)(skb_network_header(skb)-2);
                 ether_type = ntohs(*p_ether_type);
 
                 switch (ether_type) {

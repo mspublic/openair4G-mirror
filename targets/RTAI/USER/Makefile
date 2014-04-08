@@ -17,10 +17,11 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
-CFLAGS += -O2 
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
 ifdef DEBUG
 CFLAGS += -g -ggdb
+else
+CFLAGS += -O2 
 endif
 SRC = synctest.c condtest.c #lte-softmodem.c
 
@@ -101,9 +102,8 @@ OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
 CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
 endif
 
-RTAI_OBJ += $(UTILS_OBJS)
-
 ifdef ENABLE_ITTI
+RTAI_OBJ += $(UTILS_OBJS)
 CFLAGS += -DEXMIMO_IOT
 endif
 

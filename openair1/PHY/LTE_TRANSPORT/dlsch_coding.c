@@ -45,7 +45,6 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_DLSCH_CODING 
 //#define DEBUG_DLSCH_FREE 1
@@ -75,12 +74,11 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
 	msg("Freeing dlsch process %d (%p)\n",i,dlsch->harq_processes[i]);
 #endif
 	if (dlsch->harq_processes[i]->b) {
-	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
-	  dlsch->harq_processes[i]->b = NULL;
+        free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 #ifdef DEBUG_DLSCH_FREE
 	  msg("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
 #endif
-	}
+    }
 	if (dlsch->harq_processes[i]->c) {
 #ifdef DEBUG_DLSCH_FREE
 	  msg("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
@@ -90,23 +88,19 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
 #ifdef DEBUG_DLSCH_FREE
 	    msg("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
 #endif
-	    if (dlsch->harq_processes[i]->c[r]) {
+	    if (dlsch->harq_processes[i]->c[r]) 
 	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
-	      dlsch->harq_processes[i]->c[r] = NULL;
-	    }
 	  }
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
-	dlsch->harq_processes[i] = NULL;
       }
     }
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
-    dlsch = NULL;
   }
   
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, uint8_t abstraction_flag) {
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, u8 abstraction_flag) {
 
   LTE_eNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
@@ -143,10 +137,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
           bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
 	  //	  dlsch->harq_processes[i]->first_tx=1;
           dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
-          if (dlsch->harq_processes[i]->b) {
-	    bzero(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
-	  }
-	  else {
+          if (!dlsch->harq_processes[i]->b) {
               msg("Can't get b\n");
               exit_flag=1;
           }
@@ -154,10 +145,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling;r++) {
 	    // account for filler in first segment and CRCs for multiple segment case
 	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+ 768);  
-	    if (dlsch->harq_processes[i]->c[r]) {
-	      bzero(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+ 768);
-	    } 
-	    else {
+	    if (!dlsch->harq_processes[i]->c[r]) {
 	      msg("Can't get c\n");
 	      exit_flag=2;
 	    }
@@ -181,15 +169,14 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
       return(dlsch);
     }
   }
-  LOG_D(PHY, "new_eNB_dlsch exit flag %d, size of  %ld\n",
-        exit_flag, sizeof(LTE_eNB_DLSCH_t));
+  msg("new_eNB_dlsch exit flag %d, size of %zd\n", exit_flag, sizeof(LTE_eNB_DLSCH_t));
   free_eNB_dlsch(dlsch);
   return(NULL);
   
   
 }
 
-void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag) {
+void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag) {
 
   unsigned char Mdlharq;
   unsigned char i,j,r;
@@ -219,10 +206,10 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag) {
  
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
-		   uint8_t num_pdcch_symbols,
+		   u8 num_pdcch_symbols,
 		   LTE_eNB_DLSCH_t *dlsch,
 		   int frame,
-		   uint8_t subframe,
+		   u8 subframe,
 		   time_stats_t *rm_stats,
 		   time_stats_t *te_stats,
 		   time_stats_t *i_stats) {
@@ -236,8 +223,6 @@ int dlsch_encoding(unsigned char *a,
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
-
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = dlsch->harq_processes[harq_pid]->TBS; //6228
   // printf("Encoder: A: %d\n",A);
@@ -259,9 +244,9 @@ int dlsch_encoding(unsigned char *a,
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
 		 A)>>8;
-    a[A>>3] = ((uint8_t*)&crc)[2];
-    a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-    a[2+(A>>3)] = ((uint8_t*)&crc)[0];
+    a[A>>3] = ((u8*)&crc)[2];
+    a[1+(A>>3)] = ((u8*)&crc)[1];
+    a[2+(A>>3)] = ((u8*)&crc)[0];
     //    printf("CRC %x (A %d)\n",crc,A);
 
     dlsch->harq_processes[harq_pid]->B = A+24;
@@ -370,14 +355,12 @@ int dlsch_encoding(unsigned char *a,
       write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);
 #endif
   }
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
-
   return(0);
 }
 
 #ifdef PHY_ABSTRACTION
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
-			 uint8_t *DLSCH_pdu,
+			 u8 *DLSCH_pdu,
 			 LTE_eNB_DLSCH_t *dlsch) {
 
   //int payload_offset = 0;

@@ -64,7 +64,6 @@ typedef struct RrcConfigurationReq_s {
 
     uint16_t            mcc;
     uint16_t            mnc;
-    uint8_t             mnc_digit_length;
 
     paging_drx_t        default_drx;
 

@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           rlc_am_retrans.c  -
                              -------------------
@@ -60,28 +29,28 @@ Address      : EURECOM,
 //#define DEBUG_BITMAP
 //#define DEBUG_LIST
 //-----------------------------------------------------------------------------
-inline int16_t      retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufiP, uint8_t byte_alignedP, int16_t * first_error_indicated_snP);
-inline uint8_t      *retransmission_buffer_management_bitmap (struct rlc_am_entity *rlcP, uint8_t * bitmap_sufiP, uint8_t byte_alignedP, int16_t * first_error_indicated_snP);
-inline uint8_t      *retransmission_buffer_management_list (struct rlc_am_entity *rlcP, uint8_t * bitmap_sufiP, uint8_t byte_alignedP, int16_t * first_error_indicated_snP);
-inline void     free_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP);
-inline void     free_retransmission_buffer_no_confirmation (struct rlc_am_entity *rlcP, uint16_t indexP);
-inline void     insert_into_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP, mem_block_t * pduP);
-inline uint8_t       retransmit_pdu (struct rlc_am_entity *rlcP, uint16_t snP);
-inline uint8_t       add_to_transmission_buffer_unack_pdu (struct rlc_am_entity *rlcP, int16_t * nb_pdu_to_transmit);
+inline s16_t      retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, u8_t * sufiP, u8 byte_alignedP, s16 * first_error_indicated_snP);
+inline u8_t      *retransmission_buffer_management_bitmap (struct rlc_am_entity *rlcP, u8 * bitmap_sufiP, u8 byte_alignedP, s16_t * first_error_indicated_snP);
+inline u8_t      *retransmission_buffer_management_list (struct rlc_am_entity *rlcP, u8 * bitmap_sufiP, u8 byte_alignedP, s16_t * first_error_indicated_snP);
+inline void     free_retransmission_buffer (struct rlc_am_entity *rlcP, u16_t indexP);
+inline void     free_retransmission_buffer_no_confirmation (struct rlc_am_entity *rlcP, u16_t indexP);
+inline void     insert_into_retransmission_buffer (struct rlc_am_entity *rlcP, u16_t indexP, mem_block_t * pduP);
+inline u8_t       retransmit_pdu (struct rlc_am_entity *rlcP, u16_t snP);
+inline u8_t       add_to_transmission_buffer_unack_pdu (struct rlc_am_entity *rlcP, s16_t * nb_pdu_to_transmit);
 //-----------------------------------------------------------------------------
 /*
  * remove all mem_block_t(s) having sn <= snP
  */
-int16_t
-retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufiP, uint8_t byte_alignedP, int16_t * first_error_indicated_snP)
+s16_t
+retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, u8_t * sufiP, u8 byte_alignedP, s16_t * first_error_indicated_snP)
 {
 //-----------------------------------------------------------------------------
 
-  uint16_t             lsn;          // sequence number acknowledged
-  uint16_t             current_sn;
-  uint16_t             upper_bound;
-  int16_t             current_index;
-  uint8_t              tmp;
+  u16_t             lsn;          // sequence number acknowledged
+  u16_t             current_sn;
+  u16_t             upper_bound;
+  s16_t             current_index;
+  u8_t              tmp;
 
   // get LSN field;
   if (byte_alignedP) {
@@ -123,16 +92,16 @@ retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufi
   if (rlc_am_comp_sn (rlcP, rlcP->vt_a, lsn, rlcP->vt_a) >= 0) {
 
     if (*first_error_indicated_snP >= 0) {
-      if (rlc_am_comp_sn (rlcP, rlcP->vt_a, lsn, (uint16_t) * first_error_indicated_snP) <= 0) {
+      if (rlc_am_comp_sn (rlcP, rlcP->vt_a, lsn, (u16_t) * first_error_indicated_snP) <= 0) {
 #ifdef DEBUG_ACK
         msg ("[RLC_AM][RB %d][ACK] VT(A) 0x%04X -> 0x%04X    VT(S) 0x%04X CASE LSN <= FIRST PDU IN ERROR IN STATUS PDU\n", rlcP->rb_id, rlcP->vt_a, lsn, rlcP->vt_s);
 #endif
         rlcP->vt_a = lsn;
       } else {
 #ifdef DEBUG_ACK
-        msg ("[RLC_AM][RB %d][ACK] VT(A) 0x%04X -> 0x%04X    VT(S) 0x%04X CASE LSN > FIRST PDU IN ERROR IN STATUS PDU \n", rlcP->rb_id, rlcP->vt_a, (uint16_t) * first_error_indicated_snP, rlcP->vt_s);
+        msg ("[RLC_AM][RB %d][ACK] VT(A) 0x%04X -> 0x%04X    VT(S) 0x%04X CASE LSN > FIRST PDU IN ERROR IN STATUS PDU \n", rlcP->rb_id, rlcP->vt_a, (u16_t) * first_error_indicated_snP, rlcP->vt_s);
 #endif
-        rlcP->vt_a = (uint16_t) * first_error_indicated_snP;
+        rlcP->vt_a = (u16_t) * first_error_indicated_snP;
       }
     } else {
 #ifdef DEBUG_ACK
@@ -142,8 +111,8 @@ retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufi
     }
     rlcP->vt_ms = (rlcP->vt_a + rlcP->vt_ws - 1) & SN_12BITS_MASK;
 
-    current_index = current_sn % (uint16_t) rlcP->recomputed_configured_tx_window_size;
-    upper_bound = lsn % (uint16_t) rlcP->recomputed_configured_tx_window_size;
+    current_index = current_sn % (u16_t) rlcP->recomputed_configured_tx_window_size;
+    upper_bound = lsn % (u16_t) rlcP->recomputed_configured_tx_window_size;
 
     // remove all matching pdus from retransmission buffer;
     while (upper_bound != current_index) {
@@ -154,7 +123,7 @@ retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufi
           msg ("[RLC_AM][RB %d][ACK]  FREE PDU SN 0x%04X BECAUSE FIELD ACK=%d\n", rlcP->rb_id, current_sn,
                ((struct rlc_am_tx_data_pdu_management *) (rlcP->retransmission_buffer[current_index]->data))->ack);
 #endif
-          free_retransmission_buffer (rlcP, (uint16_t) current_index);
+          free_retransmission_buffer (rlcP, (u16_t) current_index);
         } else {
 #ifdef DEBUG_ACK
           msg ("[RLC_AM][RB %d][ACK] CLEAR NACK EVENT (%d) PDU SN 0x%04X\n", rlcP->rb_id, ((struct rlc_am_tx_data_pdu_management *) (rlcP->retransmission_buffer[current_index]->data))->ack,
@@ -164,7 +133,7 @@ retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufi
         }
       }
       current_sn = (current_sn + 1) & SN_12BITS_MASK;
-      current_index = current_sn % (uint16_t) rlcP->recomputed_configured_tx_window_size;
+      current_index = current_sn % (u16_t) rlcP->recomputed_configured_tx_window_size;
     }
 
     /*if (rlcP->retransmission_buffer[current_index] != NULL) {
@@ -185,7 +154,7 @@ retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufi
     //display_protocol_vars_rlc_am(rlcP);
 #endif
     send_reset_pdu (rlcP);
-    return (int16_t) (-1);
+    return (s16_t) (-1);
   }
 }
 
@@ -196,17 +165,17 @@ retransmission_buffer_management_ack (struct rlc_am_entity *rlcP, uint8_t * sufi
  * @param bitmap_sufiP pointer on byte containing field "sufi type"
  * @param byte_alignedP tells if sufi type quartet is on MSByte (1) or LSByte (0)
  */
-inline uint8_t      *
-retransmission_buffer_management_bitmap (struct rlc_am_entity * rlcP, uint8_t * bitmap_sufiP, uint8_t byte_alignedP, int16_t * first_error_indicated_snP)
+inline u8_t      *
+retransmission_buffer_management_bitmap (struct rlc_am_entity * rlcP, u8_t * bitmap_sufiP, u8 byte_alignedP, s16_t * first_error_indicated_snP)
 {
   //-----------------------------------------------------------------------------
 
-  uint16_t             id_index;
-  uint16_t             fsn;
-  uint8_t              length, tmp;
-  uint8_t              one_pdu_removed = 0;  //optim: update vt_a only at the end of the proc
-  uint8_t              bit_mask;
-  uint8_t              end_bit;
+  u16_t             id_index;
+  u16_t             fsn;
+  u8_t              length, tmp;
+  u8_t              one_pdu_removed = 0;  //optim: update vt_a only at the end of the proc
+  u8_t              bit_mask;
+  u8_t              end_bit;
 
 
   if (byte_alignedP) {
@@ -241,7 +210,7 @@ retransmission_buffer_management_bitmap (struct rlc_am_entity * rlcP, uint8_t * 
 
     while (end_bit) {
 
-      id_index = fsn % (uint16_t) (rlcP->recomputed_configured_tx_window_size);
+      id_index = fsn % (u16_t) (rlcP->recomputed_configured_tx_window_size);
       // found a matching pdu
       if (*bitmap_sufiP & bit_mask) {
         // pdu correctly received
@@ -306,15 +275,15 @@ retransmission_buffer_management_bitmap (struct rlc_am_entity * rlcP, uint8_t * 
  * @param bitmap_sufiP pointer on byte containing field "sufi type"
  * @param byte_alignedP tells if sufi type quartet is on MSByte (1) or LSByte (0)
  */
-inline uint8_t      *
-retransmission_buffer_management_list (struct rlc_am_entity * rlcP, uint8_t * bitmap_sufiP, uint8_t byte_alignedP, int16_t * first_error_indicated_snP)
+inline u8_t      *
+retransmission_buffer_management_list (struct rlc_am_entity * rlcP, u8_t * bitmap_sufiP, u8 byte_alignedP, s16_t * first_error_indicated_snP)
 {
   //-----------------------------------------------------------------------------
 
-  uint8_t             *p8;
-  uint16_t             start_marking_sn;
-  uint8_t              nb_missing_pdu;
-  uint8_t              nb_pairs;
+  u8_t             *p8;
+  u16_t             start_marking_sn;
+  u8_t              nb_missing_pdu;
+  u8_t              nb_pairs;
 
   p8 = bitmap_sufiP;
 
@@ -335,7 +304,7 @@ retransmission_buffer_management_list (struct rlc_am_entity * rlcP, uint8_t * bi
       return p8;
     } else {
       while (nb_pairs) {
-        start_marking_sn = ((uint16_t) (*p8++)) << 4;
+        start_marking_sn = ((u16_t) (*p8++)) << 4;
         start_marking_sn = start_marking_sn | (*p8 >> 4);
         nb_missing_pdu = *p8++ & 0X0F;
 
@@ -395,7 +364,7 @@ retransmission_buffer_management_list (struct rlc_am_entity * rlcP, uint8_t * bi
       return p8;
     } else {
       while (nb_pairs) {
-        start_marking_sn = ((uint16_t) (*p8++) & 0x0F) << 8;
+        start_marking_sn = ((u16_t) (*p8++) & 0x0F) << 8;
         start_marking_sn = start_marking_sn | *p8++;
         nb_missing_pdu = *p8 >> 4;
 
@@ -442,7 +411,7 @@ retransmission_buffer_management_list (struct rlc_am_entity * rlcP, uint8_t * bi
 
 //-----------------------------------------------------------------------------
 inline void
-free_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP)
+free_retransmission_buffer (struct rlc_am_entity *rlcP, u16_t indexP)
 {
 //-----------------------------------------------------------------------------
 
@@ -455,7 +424,7 @@ free_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP)
 
   index = indexP;
 
-  if (index < (uint16_t) rlcP->recomputed_configured_tx_window_size) {
+  if (index < (u16_t) rlcP->recomputed_configured_tx_window_size) {
 
     le = rlcP->retransmission_buffer[index];
 
@@ -517,7 +486,7 @@ free_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP)
 
 //-----------------------------------------------------------------------------
 inline void
-free_retransmission_buffer_no_confirmation (struct rlc_am_entity *rlcP, uint16_t indexP)
+free_retransmission_buffer_no_confirmation (struct rlc_am_entity *rlcP, u16_t indexP)
 {
 //-----------------------------------------------------------------------------
   struct rlc_am_tx_data_pdu_management *pdu;
@@ -527,7 +496,7 @@ free_retransmission_buffer_no_confirmation (struct rlc_am_entity *rlcP, uint16_t
 
   index = indexP;
 
-  if (index < (uint16_t) rlcP->recomputed_configured_tx_window_size) {
+  if (index < (u16_t) rlcP->recomputed_configured_tx_window_size) {
 
     le = rlcP->retransmission_buffer[index];
 
@@ -580,13 +549,13 @@ free_retransmission_buffer_no_confirmation (struct rlc_am_entity *rlcP, uint16_t
 
 //-----------------------------------------------------------------------------
 inline void
-insert_into_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP, mem_block_t * pduP)
+insert_into_retransmission_buffer (struct rlc_am_entity *rlcP, u16_t indexP, mem_block_t * pduP)
 {
 //-----------------------------------------------------------------------------
-  uint16_t             index;
+  u16_t             index;
   index = indexP;
 
-  if (index < (uint16_t) (rlcP->recomputed_configured_tx_window_size)) {
+  if (index < (u16_t) (rlcP->recomputed_configured_tx_window_size)) {
     if (rlcP->retransmission_buffer[index]) {
 #ifdef  DEBUG_BUFFER_RETRANSMISSION
       msg ("[RLC_AM][RB %d][RETRANSMISSION] INSERT PDU ERROR SLOT NOT EMPTY %d=0x%04X\n", rlcP->rb_id, index, index);
@@ -607,13 +576,13 @@ insert_into_retransmission_buffer (struct rlc_am_entity *rlcP, uint16_t indexP, 
 }
 
 //-----------------------------------------------------------------------------
-inline          uint8_t
-retransmit_pdu (struct rlc_am_entity * rlcP, uint16_t snP)
+inline          u8_t
+retransmit_pdu (struct rlc_am_entity * rlcP, u16_t snP)
 {
 //-----------------------------------------------------------------------------
   mem_block_t      *pdu, *copy;
   struct rlc_am_tx_data_pdu_management *pdu_mngt;
-  uint16_t             index;
+  u16_t             index;
 
   if ((rlcP->protocol_state & RLC_DATA_TRANSFER_READY_STATE)) {
     index = snP % rlcP->recomputed_configured_tx_window_size;
@@ -689,9 +658,9 @@ void
 rlc_am_get_not_acknowledged_pdu_optimized (struct rlc_am_entity *rlcP)
 {
 //-----------------------------------------------------------------------------
-  uint16_t             vt_dat_min = 255;
-  uint16_t             sn;
-  uint16_t             sn_min;
+  u16             vt_dat_min = 255;
+  u16             sn;
+  u16             sn_min;
   mem_block_t      *pdu;
   struct rlc_am_tx_data_pdu_management *pdu_mngt;
 
@@ -720,7 +689,7 @@ void
 rlc_am_get_not_acknowledged_pdu (struct rlc_am_entity *rlcP)
 {
 //-----------------------------------------------------------------------------
-  uint16_t             sn;
+  u16_t             sn;
   sn = rlcP->vt_s;
   while (sn != rlcP->vt_a) {
     sn = (sn - 1) & SN_12BITS_MASK;

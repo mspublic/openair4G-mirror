@@ -40,7 +40,6 @@
 #include "extern.h"
 #include "LAYER2/MAC/extern.h"
 #include "COMMON/openair_defs.h"
-#include "COMMON/platform_types.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
@@ -55,7 +54,7 @@ extern UE_MAC_INST *UE_mac_inst;
 extern mui_t rrc_eNB_mui;
 
 //configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
-void openair_rrc_on(module_id_t Mod_id, const eNB_flag_t eNB_flag) {
+void openair_rrc_on(u8 Mod_id, u8 eNB_flag) {
   unsigned short i;
 
   if (eNB_flag == 1) {
@@ -123,13 +122,13 @@ int rrc_init_global_param(void) {
   DTCH_UL_LCHAN_DESC.max_transport_blocks = 20;
   DTCH_UL_LCHAN_DESC.Delay_class = 1;
 
-  Rlc_info_um.rlc_mode = RLC_MODE_UM;
+  Rlc_info_um.rlc_mode = RLC_UM;
   Rlc_info_um.rlc.rlc_um_info.timer_reordering = 5;
   Rlc_info_um.rlc.rlc_um_info.sn_field_length = 10;
   Rlc_info_um.rlc.rlc_um_info.is_mXch = 0;
   //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;
 
-  Rlc_info_am_config.rlc_mode = RLC_MODE_AM;
+  Rlc_info_am_config.rlc_mode = RLC_AM;
   Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 50;
   Rlc_info_am_config.rlc.rlc_am_info.poll_pdu = 8;
   Rlc_info_am_config.rlc.rlc_am_info.poll_byte = 1000;
@@ -199,18 +198,18 @@ int L3_xface_init(void) {
 }
 #endif
 
-void rrc_config_buffer(SRB_INFO *Srb_info, uint8_t Lchan_type, uint8_t Role) {
+void rrc_config_buffer(SRB_INFO *Srb_info, u8 Lchan_type, u8 Role) {
 
   Srb_info->Rx_buffer.payload_size = 0;
   Srb_info->Tx_buffer.payload_size = 0;
 }
 
 /*------------------------------------------------------------------------------*/
-void openair_rrc_top_init(int eMBMS_active, uint8_t cba_group_active,uint8_t HO_active){
+void openair_rrc_top_init(int eMBMS_active, u8 cba_group_active,u8 HO_active){
   /*-----------------------------------------------------------------------------*/
 
-  module_id_t         module_id;
-  OAI_UECapability_t *UECap     = NULL;
+  int i;
+  OAI_UECapability_t *UECap;
   //  uint8_t dummy_buffer[100];
 
   LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n", NB_UE_INST, NB_eNB_INST);
@@ -222,9 +221,9 @@ void openair_rrc_top_init(int eMBMS_active, uint8_t cba_group_active,uint8_t HO_
 
     // fill UE capability
     UECap = fill_ue_capability ();
-    for (module_id = 0; module_id < NB_UE_INST; module_id++) {
-      UE_rrc_inst[module_id].UECapability = UECap->sdu;
-      UE_rrc_inst[module_id].UECapability_size = UECap->sdu_size;
+    for (i = 0; i < NB_UE_INST; i++) {
+      UE_rrc_inst[i].UECapability = UECap->sdu;
+      UE_rrc_inst[i].UECapability_size = UECap->sdu_size;
     }
     /*
      do_UECapabilityEnquiry(0,
@@ -233,8 +232,8 @@ void openair_rrc_top_init(int eMBMS_active, uint8_t cba_group_active,uint8_t HO_
      0);*/
 #ifdef Rel10
     LOG_I(RRC,"[UE] eMBMS active state is %d \n", eMBMS_active);
-    for (module_id=0;module_id<NB_UE_INST;module_id++) {
-      UE_rrc_inst[module_id].MBMS_flag = (uint8_t)eMBMS_active;
+    for (i=0;i<NB_eNB_INST;i++) {
+      UE_rrc_inst[i].MBMS_flag = (uint8_t)eMBMS_active;
     }
 #endif 
   }
@@ -245,18 +244,18 @@ void openair_rrc_top_init(int eMBMS_active, uint8_t cba_group_active,uint8_t HO_
     eNB_rrc_inst = (eNB_RRC_INST*) malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
     memset (eNB_rrc_inst, 0, NB_eNB_INST * sizeof(eNB_RRC_INST));
     LOG_I(RRC,"[eNB] handover active state is %d \n", HO_active);
-    for (module_id=0;module_id<NB_eNB_INST;module_id++) {
-      eNB_rrc_inst[module_id].HO_flag   = (uint8_t)HO_active;
+    for (i=0;i<NB_eNB_INST;i++) {
+      eNB_rrc_inst[i].HO_flag   = (uint8_t)HO_active;
     }
 #ifdef Rel10
     LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
-    for (module_id=0;module_id<NB_eNB_INST;module_id++) {
-      eNB_rrc_inst[module_id].MBMS_flag = (uint8_t)eMBMS_active;
+    for (i=0;i<NB_eNB_INST;i++) {
+      eNB_rrc_inst[i].MBMS_flag = (uint8_t)eMBMS_active;
     }
 #endif 
 #ifdef CBA
-    for (module_id=0;module_id<NB_eNB_INST;module_id++) {
-      eNB_rrc_inst[module_id].num_active_cba_groups = cba_group_active;
+    for (i=0;i<NB_eNB_INST;i++) {
+      eNB_rrc_inst[i].num_active_cba_groups = cba_group_active;
     }
 #endif
     LOG_D(RRC,
@@ -288,7 +287,7 @@ void rrc_top_cleanup(void) {
 }
 
 
-void rrc_t310_expiration(const frame_t frameP, uint8_t Mod_id, uint8_t eNB_index) {
+void rrc_t310_expiration(u32 frame, u8 Mod_id, u8 eNB_index) {
 
   if (UE_rrc_inst[Mod_id].Info[eNB_index].State != RRC_CONNECTED) {
     LOG_D(RRC, "Timer 310 expired, going to RRC_IDLE\n");
@@ -304,10 +303,10 @@ void rrc_t310_expiration(const frame_t frameP, uint8_t Mod_id, uint8_t eNB_index
     if (UE_rrc_inst[Mod_id].Srb2[eNB_index].Active == 1) {
       msg ("[RRC Inst %d] eNB_index %d, Remove RB %d\n ", Mod_id, eNB_index,
            UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id);
-      rrc_pdcp_config_req (eNB_index, Mod_id, frameP, ENB_FLAG_NO, SRB_FLAG_YES, CONFIG_ACTION_REMOVE,
+      rrc_pdcp_config_req (eNB_index, Mod_id, frame, 0, ACTION_REMOVE,
                            UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id, 0);
-      rrc_rlc_config_req (eNB_index, Mod_id, frameP, ENB_FLAG_NO, SRB_FLAG_YES, MBMS_FLAG_NO, CONFIG_ACTION_REMOVE,
-                          UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id, Rlc_info_um);
+      rrc_rlc_config_req (Mod_id + NB_eNB_INST, frame, 0, ACTION_REMOVE,
+                          UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id, SIGNALLING_RADIO_BEARER, Rlc_info_um);
       UE_rrc_inst[Mod_id].Srb2[eNB_index].Active = 0;
       UE_rrc_inst[Mod_id].Srb2[eNB_index].Status = IDLE;
       UE_rrc_inst[Mod_id].Srb2[eNB_index].Next_check_frame = 0;
@@ -318,21 +317,21 @@ void rrc_t310_expiration(const frame_t frameP, uint8_t Mod_id, uint8_t eNB_index
   }
 }
 
-RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eNB_flagP,uint8_t index){
+RRC_status_t rrc_rx_tx(u8 Mod_id,u32 frame, u8 eNB_flag,u8 index){
   
-  if(eNB_flagP == 0) {
+  if(eNB_flag == 0) {
     // check timers
 
     if (UE_rrc_inst[Mod_id].Info[index].T300_active == 1) {
       if ((UE_rrc_inst[Mod_id].Info[index].T300_cnt % 10) == 0)
         LOG_D(RRC,
-              "[UE %d][RAPROC] Frame %d T300 Count %d ms\n", Mod_id, frameP, UE_rrc_inst[Mod_id].Info[index].T300_cnt);
+              "[UE %d][RAPROC] Frame %d T300 Count %d ms\n", Mod_id, frame, UE_rrc_inst[Mod_id].Info[index].T300_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T300_cnt
           == T300[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t300]) {
         UE_rrc_inst[Mod_id].Info[index].T300_active = 0;
         // ALLOW CCCH to be used
         UE_rrc_inst[Mod_id].Srb0[index].Tx_buffer.payload_size = 0;
-        rrc_ue_generate_RRCConnectionRequest (Mod_id, frameP, index);
+        rrc_ue_generate_RRCConnectionRequest (Mod_id, frame, index);
         return (RRC_ConnSetup_failed);
       }
       UE_rrc_inst[Mod_id].Info[index].T300_cnt++;
@@ -356,11 +355,11 @@ RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eN
         UE_rrc_inst[Mod_id].Info[index].N311_cnt = 0;
       }
       if ((UE_rrc_inst[Mod_id].Info[index].T310_cnt % 10) == 0)
-        LOG_D(RRC, "[UE %d] Frame %d T310 Count %d ms\n", Mod_id, frameP, UE_rrc_inst[Mod_id].Info[index].T310_cnt);
+        LOG_D(RRC, "[UE %d] Frame %d T310 Count %d ms\n", Mod_id, frame, UE_rrc_inst[Mod_id].Info[index].T310_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T310_cnt
           == T310[UE_rrc_inst[Mod_id].sib2[index]->ue_TimersAndConstants.t310]) {
         UE_rrc_inst[Mod_id].Info[index].T310_active = 0;
-        rrc_t310_expiration (frameP, Mod_id, index);
+        rrc_t310_expiration (frame, Mod_id, index);
         return (RRC_PHY_RESYNCH);
       }
       UE_rrc_inst[Mod_id].Info[index].T310_cnt++;
@@ -369,7 +368,7 @@ RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eN
     
     if (UE_rrc_inst[Mod_id].Info[index].T304_active==1) {
       if ((UE_rrc_inst[Mod_id].Info[index].T304_cnt % 10) == 0)
-	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T304 Count %d ms\n",Mod_id,frameP,
+	LOG_D(RRC,"[UE %d][RAPROC] Frame %d T304 Count %d ms\n",Mod_id,frame,
 	      UE_rrc_inst[Mod_id].Info[index].T304_cnt);
       if (UE_rrc_inst[Mod_id].Info[index].T304_cnt == 0) {
 	UE_rrc_inst[Mod_id].Info[index].T304_active = 0;
@@ -382,11 +381,11 @@ RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eN
     }
     // Layer 3 filtering of RRC measurements
     if (UE_rrc_inst[Mod_id].QuantityConfig[0] != NULL) {
-      ue_meas_filtering(Mod_id,frameP,index);
+      ue_meas_filtering(Mod_id,frame,index);
     }
-    ue_measurement_report_triggering(Mod_id,frameP,index);
+    ue_measurement_report_triggering(Mod_id,frame,index);
     if (UE_rrc_inst[Mod_id].Info[0].handoverTarget > 0)       
-      LOG_I(RRC,"[UE %d] Frame %d : RRC handover initiated\n", Mod_id, frameP);
+      LOG_I(RRC,"[UE %d] Frame %d : RRC handover initiated\n", Mod_id, frame);
     if((UE_rrc_inst[Mod_id].Info[index].State == RRC_HO_EXECUTION)   && 
        (UE_rrc_inst[Mod_id].HandoverInfoUe.targetCellId != 0xFF)) {
       UE_rrc_inst[Mod_id].Info[index].State= RRC_IDLE;
@@ -395,7 +394,7 @@ RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eN
 
   }
   else {
-    check_handovers(Mod_id,frameP);
+    check_handovers(Mod_id,frame);
   }
   
   return (RRC_OK);

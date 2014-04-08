@@ -23,7 +23,6 @@
 #define NAS_UL_DATA_IND(mSGpTR)                     (mSGpTR)->ittiMsg.nas_ul_data_ind
 #define NAS_DL_DATA_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.nas_dl_data_req
 #define NAS_DL_DATA_CNF(mSGpTR)                     (mSGpTR)->ittiMsg.nas_dl_data_cnf
-#define NAS_PDN_CONNECTIVITY_REQ(mSGpTR)            (mSGpTR)->ittiMsg.nas_pdn_connectivity_req
 #define NAS_CONN_EST_IND(mSGpTR)                    (mSGpTR)->ittiMsg.nas_conn_est_ind
 #define NAS_CONNECTION_ESTABLISHMENT_CNF(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_est_cnf
 #define NAS_BEARER_PARAM(mSGpTR)                    (mSGpTR)->ittiMsg.nas_bearer_param
@@ -126,17 +125,6 @@ typedef struct nas_paging_ind_s {
 
 } nas_paging_ind_t;
 
-typedef struct nas_pdn_connectivity_req_s {
-    char                  imsi[16];
-    uint8_t               imsi_length;
-    OctetString           apn;
-    OctetString           pdn_addr;
-    int                   mme_pdn_index;
-    network_qos_t         esm_qos;
-    int                   is_emergency;
-} nas_pdn_connectivity_req_t;
-
-
 typedef struct nas_conn_est_ind_s {
     nas_establish_ind_t nas;
 
@@ -180,9 +168,9 @@ typedef struct nas_bearer_param_s {
     pre_emp_capability_t    pre_emp_capability;
 
     /* S-GW TEID for user-plane */
-    uint32_t     sgw_s1u_teid;
+    uint32_t teid;
     /* S-GW IP address for User-Plane */
-    ip_address_t sgw_s1u_address;
+    ip_address_t s_gw_address;
 } nas_bearer_param_t;
 
 typedef struct nas_conn_rel_ind_s {

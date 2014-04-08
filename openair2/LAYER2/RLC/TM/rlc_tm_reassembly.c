@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,14 +23,9 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
+*******************************************************************************/
 /***************************************************************************
                           rlc_tm_reassembly.c  -
                              -------------------
@@ -51,7 +47,7 @@ Address      : EURECOM,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void
-rlc_tm_send_sdu_no_segment (struct rlc_tm_entity *rlcP, uint8_t error_indicationP, uint8_t * srcP, uint16_t length_in_bitsP)
+rlc_tm_send_sdu_no_segment (struct rlc_tm_entity *rlcP, u8_t error_indicationP, u8 * srcP, u16_t length_in_bitsP)
 {
 //-----------------------------------------------------------------------------
   int             length_in_bytes;
@@ -86,7 +82,7 @@ rlc_tm_send_sdu_no_segment (struct rlc_tm_entity *rlcP, uint8_t error_indication
 
 //-----------------------------------------------------------------------------
 void
-rlc_tm_send_sdu_segment (struct rlc_tm_entity *rlcP, uint8_t error_indicationP)
+rlc_tm_send_sdu_segment (struct rlc_tm_entity *rlcP, u8_t error_indicationP)
 {
 //-----------------------------------------------------------------------------
   if ((rlcP->output_sdu_in_construction) && (rlcP->output_sdu_size_to_write)) {

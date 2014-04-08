@@ -44,7 +44,7 @@
 
 //---------------------------------------------------------------------------
 //
-void nas_TOOL_fct(struct classifier_entity *gc, uint8_t fct){
+void nas_TOOL_fct(struct classifier_entity *gc, u8 fct){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -76,7 +76,7 @@ void nas_TOOL_fct(struct classifier_entity *gc, uint8_t fct){
 }
 
 //---------------------------------------------------------------------------
-uint8_t nas_TOOL_invfct(struct classifier_entity *gc){
+u8 nas_TOOL_invfct(struct classifier_entity *gc){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -102,7 +102,7 @@ uint8_t nas_TOOL_invfct(struct classifier_entity *gc){
 }
 
 //---------------------------------------------------------------------------
-uint8_t nas_TOOL_get_dscp6(struct ipv6hdr *iph){
+u8 nas_TOOL_get_dscp6(struct ipv6hdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -121,7 +121,7 @@ uint8_t nas_TOOL_get_dscp6(struct ipv6hdr *iph){
 }
 
 //---------------------------------------------------------------------------
-uint8_t nas_TOOL_get_dscp4(struct iphdr *iph){
+u8 nas_TOOL_get_dscp4(struct iphdr *iph){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -139,7 +139,7 @@ uint8_t nas_TOOL_get_dscp4(struct iphdr *iph){
 }
 
 //---------------------------------------------------------------------------
-int nas_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, uint8_t plen){
+int nas_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, u8 plen){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -183,7 +183,7 @@ int nas_TOOL_network6(struct in6_addr *addr, struct in6_addr *prefix, uint8_t pl
 }
 
 //---------------------------------------------------------------------------
-int nas_TOOL_network4(uint32_t *addr, uint32_t *prefix, uint8_t plen){
+int nas_TOOL_network4(u32 *addr, u32 *prefix, u8 plen){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -215,9 +215,9 @@ int nas_TOOL_network4(uint32_t *addr, uint32_t *prefix, uint8_t plen){
 //}
 
 //---------------------------------------------------------------------------
-uint8_t *nas_TOOL_get_protocol6(struct ipv6hdr *iph, uint8_t *protocol){
+u8 *nas_TOOL_get_protocol6(struct ipv6hdr *iph, u8 *protocol){
 //---------------------------------------------------------------------------
-	uint16_t size;
+	u16 size;
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
 	printk("NAS_TOOL_GET_PROTOCOL6 - begin \n");
@@ -244,16 +244,16 @@ uint8_t *nas_TOOL_get_protocol6(struct ipv6hdr *iph, uint8_t *protocol){
 		case IPPROTO_UDP:
 		case IPPROTO_TCP:
 		case IPPROTO_ICMPV6:
-			return (uint8_t *)((uint8_t *)iph+size);
+			return (u8 *)((u8 *)iph+size);
 		case IPPROTO_HOPOPTS:
 		case IPPROTO_ROUTING:
 		case IPPROTO_DSTOPTS:
-			*protocol=((uint8_t *)iph+size)[0];
-			size+=((uint8_t *)iph+size)[1]*8+8;
+			*protocol=((u8 *)iph+size)[0];
+			size+=((u8 *)iph+size)[1]*8+8;
 			break;
 		case IPPROTO_FRAGMENT:
-			*protocol=((uint8_t *)iph+size)[0];
-			size+=((uint8_t *)iph+size)[1]+8;
+			*protocol=((u8 *)iph+size)[0];
+			size+=((u8 *)iph+size)[1]+8;
 			break;
 		case IPPROTO_NONE:
 		case IPPROTO_AH:
@@ -265,7 +265,7 @@ uint8_t *nas_TOOL_get_protocol6(struct ipv6hdr *iph, uint8_t *protocol){
 }
 
 //---------------------------------------------------------------------------
-uint8_t *nas_TOOL_get_protocol4(struct iphdr *iph, uint8_t *protocol){
+u8 *nas_TOOL_get_protocol4(struct iphdr *iph, u8 *protocol){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -290,7 +290,7 @@ uint8_t *nas_TOOL_get_protocol4(struct iphdr *iph, uint8_t *protocol){
 	case IPPROTO_UDP:
 	case IPPROTO_TCP:
 	case IPPROTO_ICMP:
-		return (uint8_t *)((uint8_t *)iph+iph->tot_len);
+		return (u8 *)((u8 *)iph+iph->tot_len);
 	default:
 		return NULL;
 	}
@@ -298,7 +298,7 @@ uint8_t *nas_TOOL_get_protocol4(struct iphdr *iph, uint8_t *protocol){
 
 //---------------------------------------------------------------------------
 // Convert the IMEI to iid
-void nas_TOOL_imei2iid(uint8_t *imei, uint8_t *iid){
+void nas_TOOL_imei2iid(u8 *imei, u8 *iid){
 //---------------------------------------------------------------------------
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -353,11 +353,11 @@ char *nas_TOOL_get_udpmsg(struct udphdr *udph){
 
 //---------------------------------------------------------------------------
 // Compute the UDP checksum (the data size must be odd)
-uint16_t nas_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, uint8_t proto, uint32_t udplen, void *data){
+u16 nas_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, u8 proto, u32 udplen, void *data){
 //---------------------------------------------------------------------------
-	uint32_t i;
-  uint16_t *data16;
-	uint32_t csum=0;
+	u32 i;
+  u16 *data16;
+	u32 csum=0;
 
 // Start debug information
 #ifdef NAS_DEBUG_TOOL
@@ -410,7 +410,7 @@ uint16_t nas_TOOL_udpcksum(struct in6_addr *saddr, struct in6_addr *daddr, uint8
 		if (csum>0xffff)
 			csum-=0xffff;
 	}
-	return htons((uint16_t)(~csum)&0xffff);
+	return htons((u16)(~csum)&0xffff);
 }
 
 //---------------------------------------------------------------------------
@@ -611,12 +611,12 @@ void print_TOOL_pk_all(struct sk_buff *skb){
 	}
 }*/
 
-/*int nas_TOOL_inet_pton4(char *src, uint32_t *dst)
+/*int nas_TOOL_inet_pton4(char *src, u32 *dst)
 {
-	uint32_t val;
+	u32 val;
 	int n;
-	uint8_t c;
-	uint32_t parts[4];
+	u8 c;
+	u32 parts[4];
 
 	c = *src;
 	val=0;
@@ -655,7 +655,7 @@ void print_TOOL_pk_all(struct sk_buff *skb){
 }*/
 
 //---------------------------------------------------------------------------
-void print_TOOL_state(uint8_t state){
+void print_TOOL_state(u8 state){
 //---------------------------------------------------------------------------
 //	case NAS_STATE_IDLE:printk(" State NAS_STATE_IDLE\n");return;
 //	case NAS_STATE_CONNECTED:printk(" State NAS_STATE_CONNECTED\n");return;

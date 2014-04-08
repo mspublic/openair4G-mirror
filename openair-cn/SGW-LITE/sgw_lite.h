@@ -1,40 +1,32 @@
 /*******************************************************************************
-Eurecom OpenAirInterface core network
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2012 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+                 06410 Biot FRANCE
+
 *******************************************************************************/
-/*! \file sgw_lite.h
-* \brief
-* \author Lionel Gauthier
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
-*/
 
 #ifndef SGW_LITE_H_
 #define SGW_LITE_H_
@@ -66,20 +58,6 @@ typedef struct sgw_app_s{
 	
 
 } sgw_app_t;
-
-typedef struct ipv4_address_s {
-
-}ipv4_address_t;
-typedef struct ipv6_address_s {
-
-}ipv6_address_t;
-
-typedef struct pgw_app_s{
-    STAILQ_HEAD(free_ipv4_addresses_head_s,      ipv4_address_s) free_ipv4_addresses_head;
-    STAILQ_HEAD(free_ipv6_addresses_head_s,      ipv6_address_s) free_ipv6_addresses_head;
-    STAILQ_HEAD(allocated_ipv4_addresses_head_s, ipv4_address_s) allocated_ipv4_addresses_head;
-    STAILQ_HEAD(allocated_ipv6_addresses_head_s, ipv6_address_s) allocated_ipv6_addresses_head;
-} pgw_app_t;
 
 #endif
 

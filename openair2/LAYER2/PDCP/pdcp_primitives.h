@@ -28,12 +28,12 @@
 // primitives definition
 //----------------------------------------------------------
 struct pdcp_data_req {
-  uint16_t             rb_id;
-  uint16_t             data_size;
+  u16             rb_id;
+  u16             data_size;
 };
 struct pdcp_data_ind {
-  uint16_t             rb_id;
-  uint16_t             data_size;
+  u16             rb_id;
+  u16             data_size;
 };
 
 //----------------------------------------------------------
@@ -42,28 +42,28 @@ struct pdcp_data_ind {
 // TO DO
 struct cpdcp_config_req {
   void           *rlc_sap;
-  uint8_t              rlc_type_sap; // am, um, tr
-  uint8_t              header_compression_type;
+  u8              rlc_type_sap; // am, um, tr
+  u8              header_compression_type;
 };
 struct cpdcp_release_req {
   void           *rlc_sap;
 };
 
 struct cpdcp_sn_req {
-  uint32_t             sn;
+  u32             sn;
 };
 
 struct cpdcp_relloc_req {
-  uint32_t             receive_sn;
+  u32             receive_sn;
 };
 
 struct cpdcp_relloc_conf {
-  uint32_t             receive_sn;
-  uint32_t             send_sn;
+  u32             receive_sn;
+  u32             send_sn;
 };
 
 struct cpdcp_primitive {
-  uint8_t              type;
+  u8              type;
   union {
     struct cpdcp_config_req config_req;
     struct cpdcp_release_req release_req;

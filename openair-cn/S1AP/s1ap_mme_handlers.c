@@ -234,7 +234,7 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assoc_id, uint32_t stream,
          * This should not happen -> reject eNB s1 setup request.
          */
         if (stream != 0) {
-            S1AP_ERROR("Received new s1 setup request on stream != 0\n");
+            S1AP_DEBUG("Received new s1 setup request on stream != 0\n");
             /* Send a s1 setup failure with protocol cause unspecified */
             return s1ap_mme_generate_s1_setup_failure(assoc_id, S1ap_Cause_PR_protocol,
                                                       S1ap_CauseProtocol_unspecified, -1);
@@ -273,7 +273,7 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assoc_id, uint32_t stream,
         config_unlock(&mme_config);
 
         if (nb_eNB_associated == max_enb_connected) {
-            S1AP_ERROR("There is too much eNB connected to MME, rejecting the association\n");
+            S1AP_DEBUG("There is too much eNB connected to MME, rejecting the association\n");
             S1AP_DEBUG("Connected = %d, maximum allowed = %d\n", nb_eNB_associated,
                        max_enb_connected);
 
@@ -290,7 +290,6 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assoc_id, uint32_t stream,
 
         /* eNB and MME have no common PLMN */
         if (ta_ret != TA_LIST_RET_OK) {
-            S1AP_ERROR("No Common PLMN with eNB, generate_s1_setup_failure\n");
             return s1ap_mme_generate_s1_setup_failure(assoc_id, S1ap_Cause_PR_misc,
                                                       S1ap_CauseMisc_unknown_PLMN,
                                                       S1ap_TimeToWait_v20s);
@@ -327,7 +326,7 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assoc_id, uint32_t stream,
                 /* Send an overload cause... */
                 s1SetupFailure.cause.present = S1ap_Cause_PR_misc; //TODO: send the right cause
                 s1SetupFailure.cause.choice.misc = S1ap_CauseMisc_control_processing_overload;
-                S1AP_ERROR("Rejeting s1 setup request as eNB id %d is already associated to an active sctp association"
+                S1AP_DEBUG("Rejeting s1 setup request as eNB id %d is already associated to an active sctp association"
                            "Previous known: %d, new one: %d\n",
                            eNB_id, eNB_association->sctp_assoc_id, assoc_id);
     //             s1ap_mme_encode_s1setupfailure(&s1SetupFailure,
@@ -340,7 +339,6 @@ int s1ap_mme_handle_s1_setup_request(uint32_t assoc_id, uint32_t stream,
         return s1ap_generate_s1_setup_response(eNB_association);
     } else {
         /* Can not process the request, MME is not connected to HSS */
-        S1AP_ERROR("Rejecting s1 setup request Can not process the request, MME is not connected to HSS\n");
         return s1ap_mme_generate_s1_setup_failure(assoc_id, S1ap_Cause_PR_misc,
                                                   S1ap_CauseMisc_unspecified, -1);
     }
@@ -375,11 +373,9 @@ int s1ap_generate_s1_setup_response(eNB_description_t *eNB_association)
 
         /* FIXME: free object from list once encoded */
         plmn = calloc(1, sizeof(*plmn));
-        MCC_MNC_TO_PLMNID(
-            mme_config.gummei.plmn_mcc[i],
-            mme_config.gummei.plmn_mnc[i],
-            mme_config.gummei.plmn_mnc_len[i],
-            plmn);
+        MCC_MNC_TO_PLMNID(mme_config.gummei.plmn_mcc[i],
+                          mme_config.gummei.plmn_mnc[i],
+                          plmn);
         ASN_SEQUENCE_ADD(&servedGUMMEI.servedPLMNs.list, plmn);
     }
     for (i = 0; i < mme_config.gummei.nb_mme_gid; i++) {

@@ -162,13 +162,13 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  uint16_t iind;
+  u16 iind;
   //  uint8_t dummy_channel_output[(3*8*block_length)+12];
   short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0;
   uint8_t crc_type;
 #ifdef DEBUG_DLSCH_DECODING
-  uint16_t i;
+  u16 i;
 #endif
   uint8_t (*tc)(int16_t *y,
 		uint8_t *,
@@ -495,14 +495,34 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 	}
     }
   }       
-  LOG_D(OCM,"sinr_eff (lin, unweighted) = %f\n",sinr_eff);
+  //printf("sinr_eff1 = %f\n",sinr_eff);
   sinr_eff =  -beta2_dlsch[TM][mcs]*log((sinr_eff)/(12*rb_count));
-  LOG_D(OCM,"sinr_eff (lin, weighted) = %f\n",sinr_eff);
   sinr_eff = 10 * log10(sinr_eff);
-  LOG_D(OCM,"sinr_eff (dB) = %f\n",sinr_eff);
+  LOG_I(OCM,"sinr_eff2 = %f\n",sinr_eff);
 
-  bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
-
+  // table lookup
+  sinr_eff *= 10;
+  sinr_eff = floor(sinr_eff);
+  // if ((int)sinr_eff%2) {
+  //   sinr_eff += 1;
+  // }
+  sinr_eff /= 10;
+  msg("Imran sinr_eff after rounding = %f\n",sinr_eff);
+ for (index = 0; index < table_length[mcs]; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+      else if(sinr_eff > sinr_bler_map[mcs][0][table_length[mcs]]){
+	bler = 0;
+	break;
+      }
+    }
+    if (sinr_eff == sinr_bler_map[mcs][0][index]) {
+      bler = sinr_bler_map[mcs][1][index];
+    }
+  }
 #ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
    if (uniformrandom() < bler) {
      LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
@@ -571,34 +591,56 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     }
   }
   // averaging of accumulated MI 
-  I = I/(12*rb_count);  
-  //Now  I->SINR_effective Mapping
-  
-  if(mcs<10)
-    {
-      sinr_eff = (p_qpsk[0]*pow(I,7) + p_qpsk[1]*pow(I,6) + p_qpsk[2]*pow(I,5) + p_qpsk[3]*pow(I,4) + p_qpsk[4]*pow(I,3) + p_qpsk[5]*pow(I,2) + p_qpsk[6]*I + p_qpsk[7]);
+	  I = I/(12*rb_count);  
+	  //Now  I->SINR_effective Mapping
+	  
+	  if(mcs<10)
+	    {
+	      sinr_eff = (p_qpsk[0]*pow(I,7) + p_qpsk[1]*pow(I,6) + p_qpsk[2]*pow(I,5) + p_qpsk[3]*pow(I,4) + p_qpsk[4]*pow(I,3) + p_qpsk[5]*pow(I,2) + p_qpsk[6]*I + p_qpsk[7]);
+	    }
+	  else if(mcs>9 && mcs<17)
+	    {
+	      sinr_eff = (p_qam16[0]*pow(I,7) + p_qam16[1]*pow(I,6) + p_qam16[2]*pow(I,5) + p_qam16[3]*pow(I,4) + p_qam16[4]*pow(I,3) + p_qam16[5]*pow(I,2) + p_qam16[6]*I + p_qam16[7]);
+	    }
+	  else if(mcs>16 && mcs<23)
+	    {
+	      sinr_eff = (p_qam64[0]*pow(I,7) + p_qam64[1]*pow(I,6) + p_qam64[2]*pow(I,5) + p_qam64[3]*pow(I,4) + p_qam64[4]*pow(I,3) + p_qam64[5]*pow(I,2) + p_qam64[6]*I + p_qam64[7]);
+	    }	  
+
+  sinr_eff = sinr_eff + 10*log10(beta2_dlsch_MI[TM][mcs]);
+  msg("SINR_Eff = %e\n",sinr_eff);
+
+  sinr_eff *= 10;
+  sinr_eff = floor(sinr_eff);
+  // if ((int)sinr_eff%2) {
+  //   sinr_eff += 1;
+  // }
+  sinr_eff /= 10;
+  msg("sinr_eff after rounding = %f\n",sinr_eff);
+
+  for (index = 0; index < table_length[mcs]; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+      else if(sinr_eff > sinr_bler_map[mcs][0][table_length[mcs]]){
+	bler = 0;
+	break;
+      }
     }
-  else if(mcs>9 && mcs<17)
-    {
-      sinr_eff = (p_qam16[0]*pow(I,7) + p_qam16[1]*pow(I,6) + p_qam16[2]*pow(I,5) + p_qam16[3]*pow(I,4) + p_qam16[4]*pow(I,3) + p_qam16[5]*pow(I,2) + p_qam16[6]*I + p_qam16[7]);
+    if (sinr_eff == sinr_bler_map[mcs][0][index]) {
+      bler = sinr_bler_map[mcs][1][index];
     }
-  else if(mcs>16 && mcs<23)
-    {
-      sinr_eff = (p_qam64[0]*pow(I,7) + p_qam64[1]*pow(I,6) + p_qam64[2]*pow(I,5) + p_qam64[3]*pow(I,4) + p_qam64[4]*pow(I,3) + p_qam64[5]*pow(I,2) + p_qam64[6]*I + p_qam64[7]);
-    }	  
-  
-  //sinr_eff = sinr_eff + 10*log10(beta2_dlsch_MI[TM][mcs]); 
-  LOG_D(OCM,"SINR_Eff = %e\n",sinr_eff);
-  
-  bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
-  
+  }
+
 #ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
-  if (uniformrandom() < bler) {
-    LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+   if (uniformrandom() < bler) {
+    msg("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(0);
   }
   else {
-    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    msg("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(1);
   }
 #endif
@@ -615,10 +657,9 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   uint32_t eNB_id2;
   uint32_t ue_id;
 #ifdef DEBUG_DLSCH_DECODING
-  uint16_t i;
+  u16 i;
 #endif
 
-  // may not be necessary for PMCH??
   for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
     if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
       break;
@@ -662,7 +703,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    ue_id= (uint32_t)find_ue((int16_t)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    ue_id= (uint32_t)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
 
 #ifdef DEBUG_DLSCH_DECODING
@@ -698,7 +739,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(uint32_t)find_ue((int16_t)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[(uint32_t)find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,
 								PHY_vars_eNB_g[eNB_id2])][1];
      // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
@@ -708,35 +749,6 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue->harq_ack[subframe].send_harq_status = 1;
     if (dlsch_ue->harq_processes[harq_pid]->round == 0)
       memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
-    break;
-  case 5: // PMCH
- 
-    dlsch_ue  = phy_vars_ue->dlsch_ue_MCH[eNB_id];
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_MCH;
-
-    LOG_D(PHY,"decoding pmch emul (size is %d, enb %d %d)\n",  dlsch_ue->harq_processes[0]->TBS>>3, eNB_id, eNB_id2);
-#ifdef DEBUG_DLSCH_DECODING
-    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
-      LOG_T(PHY,"%x.",dlsch_eNB->harq_processes[0]->b[i]);
-    LOG_T(PHY,"\n");
-#endif
-    /*
-      if (dlsch_abstraction_MIESM(phy_vars_ue->sinr_dB, phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, 
-				dlsch_eNB->harq_processes[0]->mcs,PHY_vars_eNB_g[eNB_id]->mu_mimo_mode[ue_id].dl_pow_off) == 1) {
-    */ 
-    if (1) {
-      // reset HARQ 
-      dlsch_ue->harq_processes[0]->status = SCH_IDLE;
-      dlsch_ue->harq_processes[0]->round  = 0;
-      memcpy(dlsch_ue->harq_processes[0]->b,
-	     dlsch_eNB->harq_processes[0]->b,
-	     dlsch_ue->harq_processes[0]->TBS>>3);
-      return(1);
-    }
-    else {
-      // retransmission
-      return(1+dlsch_ue->max_turbo_iterations);
-    }
     break;
   default:
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][0];

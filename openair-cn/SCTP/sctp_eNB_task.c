@@ -35,11 +35,6 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
 
 #include <netinet/in.h>
 #include <netinet/sctp.h>
@@ -125,19 +120,14 @@ void sctp_handle_new_association_req(
     const task_id_t requestor,
     const sctp_new_association_req_t * const sctp_new_association_req_p)
 {
-    int                           sd;
-    int32_t                       assoc_id;
+    int     sd;
+    int32_t assoc_id;
 
-    struct sctp_event_subscribe   events;
+    struct sctp_event_subscribe events;
 
-    struct sctp_cnx_list_elm_s   *sctp_cnx = NULL;
-    enum sctp_connection_type_e   connection_type = SCTP_TYPE_CLIENT;
+    struct sctp_cnx_list_elm_s *sctp_cnx = NULL;
+    enum sctp_connection_type_e connection_type = SCTP_TYPE_CLIENT;
 
-    struct ifreq                  ifr;
-    struct ifaddrs               *ifaddr, *ifa;
-    int                           family, s;
-    struct in_addr                in;
-    struct in6_addr               in6;
     /* Prepare a new SCTP association as requested by upper layer and try to connect
      * to remote host.
      */
@@ -171,63 +161,6 @@ void sctp_handle_new_association_req(
         close(sd);
         return;
     }
-
-    // Bind to device ... or we could bind to address also
-    if (getifaddrs(&ifaddr) == -1) {
-        SCTP_ERROR("getifaddrs failed: %s\n", strerror(errno));
-        close(sd);
-    }
-    /* Walk through linked list, maintaining head pointer so we
-       can free list later */
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr == NULL)
-            continue;
-
-        family = ifa->ifa_addr->sa_family;
-
-        /* For an AF_INET* interface address, display the address */
-        if (sctp_new_association_req_p->local_address.ipv4 && family == AF_INET) {
-            // compare address
-            s = inet_aton(sctp_new_association_req_p->local_address.ipv4_address,
-                    &in);
-            if (s > 0 ) {
-                if (((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr == in.s_addr) {
-                    memset(&ifr, 0, sizeof(ifr));
-                    snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), ifa->ifa_name);
-                    if (setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
-                        SCTP_ERROR("Setsockopt SOL_SOCKET failed: %s\n",
-                                   strerror(errno));
-                    } else {
-                        SCTP_DEBUG("Setsockopt SOL_SOCKET socket bound to : %s\n",
-                                ifa->ifa_name);
-                    }
-                    break;
-                }
-            }
-        } else if (sctp_new_association_req_p->local_address.ipv6 && family == AF_INET6) {
-            // compare address
-            s = inet_pton(AF_INET6,
-                    sctp_new_association_req_p->local_address.ipv6_address,
-                    &in6);
-            if (s == 1 ) {
-                if (memcmp(&((struct sockaddr_in6*)ifa->ifa_addr)->sin6_addr,
-                        &in6, sizeof(in6)) == 0) {
-                    memset(&ifr, 0, sizeof(ifr));
-                    snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), ifa->ifa_name);
-                    if (setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
-                        SCTP_ERROR("Setsockopt SOL_SOCKET failed: %s\n",
-                                   strerror(errno));
-                    } else {
-                        SCTP_DEBUG("Setsockopt SOL_SOCKET socket bound to : %s\n",
-                                ifa->ifa_name);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    freeifaddrs(ifaddr);
 
     /* Mark the socket as non-blocking */
     if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
@@ -554,12 +487,12 @@ inline void sctp_eNB_read_from_socket(struct sctp_cnx_list_elm_s *sctp_cnx)
              * may be we received unsollicited traffic from stack other than S1AP.
              */
             SCTP_ERROR("Received data from peer with unsollicited PPID %d, expecting %d\n",
-                sinfo.sinfo_ppid, sctp_cnx->ppid);
+                       sinfo.sinfo_ppid, sctp_cnx->ppid);
         }
 
         SCTP_DEBUG("[%d][%d] Msg of length %d received from port %u, on stream %d, PPID %d\n",
                    sinfo.sinfo_assoc_id, sctp_cnx->sd, n, ntohs(addr.sin_port),
-                   sinfo.sinfo_stream, ntohl(sinfo.sinfo_ppid));
+                   sinfo.sinfo_stream, sinfo.sinfo_ppid);
 
         sctp_itti_send_new_message_ind(sctp_cnx->task_id,
                                        sinfo.sinfo_assoc_id,

@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           mem_block.c  -  description
                              -------------------
@@ -51,7 +20,7 @@ Address      : EURECOM,
 //#define DEBUG_MEM_MNGT_ALLOC
 //-----------------------------------------------------------------------------
 #if defined(USER_MODE) && defined(DEBUG_MEM_MNGT_ALLOC)
-uint32_t             counters[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+u32_t             counters[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 #endif
 //-----------------------------------------------------------------------------
 /*
@@ -62,7 +31,7 @@ pool_buffer_init ()
 {
 //-----------------------------------------------------------------------------
 
-  uint32_t             index, mb_index, pool_index;
+  u32_t             index, mb_index, pool_index;
   mem_pool       *memory = (mem_pool *) &mem_block_var;
   int             pool_sizes[14] = { MEM_MNGT_MB0_NB_BLOCKS, MEM_MNGT_MB1_NB_BLOCKS,
     MEM_MNGT_MB2_NB_BLOCKS, MEM_MNGT_MB3_NB_BLOCKS,
@@ -170,7 +139,7 @@ free_mem_block (mem_block_t * leP)
 
 //-----------------------------------------------------------------------------
 mem_block_t      *
-get_free_mem_block (uint16_t sizeP)
+get_free_mem_block (u16_t sizeP)
 {
 //-----------------------------------------------------------------------------
   mem_block_t      *le = NULL;

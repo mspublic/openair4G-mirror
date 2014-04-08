@@ -1,40 +1,3 @@
-################################################################################
-# Eurecom OpenAirInterface core network
-# Copyright(c) 1999 - 2014 Eurecom
-#
-# This program is free software; you can redistribute it and/or modify it
-# under the terms and conditions of the GNU General Public License,
-# version 2, as published by the Free Software Foundation.
-#
-# This program is distributed in the hope it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-# more details.
-#
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# The full GNU General Public License is included in this distribution in
-# the file called "COPYING".
-#
-# Contact Information
-# Openair Admin: openair_admin@eurecom.fr
-# Openair Tech : openair_tech@eurecom.fr
-# Forums       : http://forums.eurecom.fsr/openairinterface
-# Address      : EURECOM,
-#                Campus SophiaTech,
-#                450 Route des Chappes,
-#                CS 50193
-#                06904 Biot Sophia Antipolis cedex,
-#                FRANCE
-################################################################################
-# file utils.bash
-# brief
-# author Lionel Gauthier
-# company Eurecom
-# email: lionel.gauthier@eurecom.fr
-#
 cidr2mask() {
   local i mask=""
   local full_octets=$(($1/8))
@@ -54,36 +17,6 @@ cidr2mask() {
   echo $mask
 }
 
-# example: netcalc 192.168.12.100 255.255.255.0
-netcalc(){
-    local IFS='.' ip i
-    local -a oct msk
-    
-    read -ra oct <<<"$1"
-    read -ra msk <<<"$2"
-
-    for i in ${!oct[@]}; do
-        ip+=( "$(( oct[i] & msk[i] ))" )
-    done
-    
-    echo "${ip[*]}"
-}
-
-# example: s
-bcastcalc(){
-
-    local IFS='.' ip i
-    local -a oct msk
-    
-    read -ra oct <<<"$1"
-    read -ra msk <<<"$2"
-
-    for i in ${!oct[@]}; do
-        ip+=( "$(( oct[i] + ( 255 - ( oct[i] | msk[i] ) ) ))" )
-    done
-
-    echo "${ip[*]}"
-}
 
 black='\E[30m'
 red='\E[31m'
@@ -224,6 +157,7 @@ set_openair() {
         #echo ${path%$token*}
         if [[ $index -lt $length_path  && index -gt 0 ]]
            then
+               declare -x OPENAIR_DIR
                index=`expr $index - 1`
                openair_path=`echo $path | cut -c1-$index`
                #openair_path=`echo ${path:0:$index}`
@@ -290,7 +224,6 @@ assert() {
         echo_fatal "File \"$0\", line $lineno"
     fi
 }
-
 
 test_command_install_lib() {
   # usage: test_command_install_package searched_binary package_to_be_installed_if_binary_not_found optional_option_to_apt_get_install
@@ -392,80 +325,72 @@ check_for_root_rights() {
 }
 
 is_openvswitch_interface() {
-    for var in "$@"
-    do
-        if [ "a$var" == "a" ]; then
-            return 0
-        fi
-        if [ "a${var:0:3}" == "aeth" ]; then
-            return 0;
-        else 
-            if [ "a${var:0:4}" == "awlan" ]; then
-                return 0;
-            else
-                if [ "a${var:0:4}" == "awifi" ]; then
-                    return 0;
-                else
-                    if [ "a${var:0:4}" == "anone" ]; then
-                        return 0;
-                    fi
-                fi
-            fi
-        fi
-    done
-    return 1;
+   if [ "a$1" == "a" ]; then
+       return 0
+   fi
+   if [ "a${1:0:3}" == "aeth" ]; then
+       return 0;
+   else 
+       if [ "a${1:0:4}" == "awlan" ]; then
+           return 0;
+       else
+           if [ "a${1:0:4}" == "awifi" ]; then
+               return 0;
+           else
+               if [ "a${1:0:4}" == "anone" ]; then
+                   return 0;
+               fi
+           fi
+       fi
+   fi
+   return 1;
 }
 
 is_real_interface() {
-    my_bool=1
-    for var in "$@"
-    do
-        if [ "a$var" == "a" ]; then
-           return 0
-        fi
-        if [ "a$var" == "anone" ]; then
-           return 0
-        fi
-        IF=`cat /etc/udev/rules.d/70-persistent-net.rules | grep $var | sed 's/^.*NAME=//' | tr -d '"'`
-        if [ "$IF" == "$var" ]; then
-            if [ "a${var:0:3}" != "aeth" ]; then
-                if [ "a${var:0:4}" != "awlan" ]; then
-                    if [ "a${var:0:4}" != "awifi" ]; then
-                        my_bool=0;
-                    fi
-                fi
-            fi
-        fi
-    done
-    return $my_bool
+   if [ "a$1" == "a" ]; then
+       return 0
+   fi
+   IF=`cat /etc/udev/rules.d/70-persistent-net.rules | grep $1 | sed 's/^.*NAME=//' | tr -d '"'`
+   if [ "$IF" == "$1" ]; then
+       if [ "a${1:0:3}" == "aeth" ]; then
+           return 1;
+       else 
+           if [ "a${1:0:4}" == "awlan" ]; then
+               return 1;
+           else
+               if [ "a${1:0:4}" == "awifi" ]; then
+                   return 1;
+               fi
+           fi
+       fi
+   fi
+   return 0
 }
 
 is_vlan_interface() {
-    my_bool=1
-    for var in "$@"
-    do
-        if [ "a$var" == "a" ]; then
-            return 0
-        fi
-        if [[ $var == *.* ]]
-        then
-            interface_name=`echo $var | cut -f1 -d '.'`
-            vlan=`echo $var | cut -f2 -d '.'`
-            IF=`cat /etc/udev/rules.d/70-persistent-net.rules | grep $interface_name | sed 's/^.*NAME=//' | tr -d '"'`
-            if [ "$IF" == "$interface_name" ]; then
-                if [ "a${interface_name:0:3}" != "aeth" ]; then
-                    if [ "a${interface_name:0:4}" != "awlan" ]; then
-                        if [ "a${interface_name:0:4}" != "awifi" ]; then
-                            return 0;
-                        fi
-                    fi
-                fi
-            fi
-        else
-            return 0;
-        fi
-    done
-    return $my_bool
+   if [ "a$1" == "a" ]; then
+       return 0
+   fi
+   if [[ $1 == *.* ]]
+   then
+       interface_name=`echo $1 | cut -f1 -d '.'`
+       vlan=`echo $1 | cut -f2 -d '.'`
+       IF=`cat /etc/udev/rules.d/70-persistent-net.rules | grep $interface_name | sed 's/^.*NAME=//' | tr -d '"'`
+       if [ "$IF" == "$interface_name" ]; then
+           if [ "a${interface_name:0:3}" == "aeth" ]; then
+               return 1;
+           else 
+               if [ "a${interface_name:0:4}" == "awlan" ]; then
+                   return 1;
+               else
+                   if [ "a${interface_name:0:4}" == "awifi" ]; then
+                       return 1;
+                   fi
+               fi
+           fi
+       fi
+   fi
+   return 0
 }
 
 
@@ -484,21 +409,6 @@ create_openvswitch_interface() {
   fi
 }
 
-# arg1 = interface name
-# arg2 = ipv4 addr cidr
-# arg3 = netmask cidr
-set_interface_up() {
-    interface=$1
-    address=$2
-    cidr_netmask=$3
-    bash_exec "ifconfig  $interface up"
-    sync
-    netmask=`cidr2mask $cidr_netmask`
-    broadcast=`bcastcalc $address $netmask`
-    bash_exec "ip -4 addr add  $address/$cidr_netmask broadcast $broadcast dev $interface"
-    sync
-}
-
 build_enb_vlan_network() {
     # create vlan interface
     is_vlan_interface $ENB_INTERFACE_NAME_FOR_S1_MME
@@ -510,10 +420,9 @@ build_enb_vlan_network() {
         sync
         bash_exec "vconfig add $interface_name $vlan"
         sync
-        #bash_exec "ifconfig  $ENB_INTERFACE_NAME_FOR_S1_MME up"
-        #sync
-        #bash_exec "ip -4 addr add  $ENB_IPV4_ADDRESS_FOR_S1_MME/$ENB_IPV4_NETMASK_FOR_S1_MME dev $ENB_INTERFACE_NAME_FOR_S1_MME"
-        set_interface_up $ENB_INTERFACE_NAME_FOR_S1_MME $ENB_IPV4_ADDRESS_FOR_S1_MME $ENB_IPV4_NETMASK_FOR_S1_MME
+        bash_exec "ifconfig  $ENB_INTERFACE_NAME_FOR_S1_MME up"
+        sync
+        bash_exec "ip -4 addr add  $ENB_IPV4_ADDRESS_FOR_S1_MME/$ENB_IPV4_NETMASK_FOR_S1_MME dev $ENB_INTERFACE_NAME_FOR_S1_MME"
     else
         echo_fatal "BAD INTERFACE NAME FOR ENB S1-MME $ENB_INTERFACE_NAME_FOR_S1_MME"' (waiting for ethx.y, wlanx.y or wifix.y)'
     fi;
@@ -527,10 +436,9 @@ build_enb_vlan_network() {
         sync
         bash_exec "vconfig add $interface_name $vlan"
         sync
-        #bash_exec "ifconfig $ENB_INTERFACE_NAME_FOR_S1U up"
-        #sync
-        #bash_exec "ip -4 addr add  $ENB_IPV4_ADDRESS_FOR_S1U/$ENB_IPV4_NETMASK_FOR_S1U dev $ENB_INTERFACE_NAME_FOR_S1U"
-        set_interface_up $ENB_INTERFACE_NAME_FOR_S1U $ENB_IPV4_ADDRESS_FOR_S1U $ENB_IPV4_NETMASK_FOR_S1U
+        bash_exec "ifconfig $ENB_INTERFACE_NAME_FOR_S1U up"
+        sync
+        bash_exec "ip -4 addr add  $ENB_IPV4_ADDRESS_FOR_S1U/$ENB_IPV4_NETMASK_FOR_S1U dev $ENB_INTERFACE_NAME_FOR_S1U"
         sync
     else
         echo_fatal "BAD INTERFACE NAME FOR ENB S1U $ENB_INTERFACE_NAME_FOR_S1U"' (waiting for ethx.y, wlanx.y or wifix.y)'
@@ -540,21 +448,17 @@ build_enb_vlan_network() {
 clean_enb_vlan_network() {
     is_vlan_interface $ENB_INTERFACE_NAME_FOR_S1_MME
     if [ $? -eq 1 ]; then
-        echo_success "Found VLAN interface $ENB_INTERFACE_NAME_FOR_S1_MME ... deleting"
         ifconfig    $ENB_INTERFACE_NAME_FOR_S1_MME down > /dev/null 2>&1
         vconfig rem $ENB_INTERFACE_NAME_FOR_S1_MME      > /dev/null 2>&1
     fi;
     
     is_vlan_interface $ENB_INTERFACE_NAME_FOR_S1U
     if [ $? -eq 1 ]; then
-        echo_success "Found VLAN interface $ENB_INTERFACE_NAME_FOR_S1U ... deleting"
         ifconfig    $ENB_INTERFACE_NAME_FOR_S1U down > /dev/null 2>&1
         vconfig rem $ENB_INTERFACE_NAME_FOR_S1U > /dev/null 2>&1
     fi;
     sync;
-    clean_network
 }
-
 
 test_enb_vlan_network() {
     # TEST INTERFACES
@@ -615,10 +519,9 @@ build_mme_spgw_vlan_network() {
         sync
         bash_exec "vconfig add $interface_name $vlan"
         sync
-        #bash_exec "ifconfig  $MME_INTERFACE_NAME_FOR_S1_MME up"
-        #sync
-        #"bash_exec "ip -4 addr add  $MME_IPV4_ADDRESS_FOR_S1_MME/$MME_IPV4_NETMASK_FOR_S1_MME dev $MME_INTERFACE_NAME_FOR_S1_MME"
-        set_interface_up $MME_INTERFACE_NAME_FOR_S1_MME $MME_IPV4_ADDRESS_FOR_S1_MME $MME_IPV4_NETMASK_FOR_S1_MME
+        bash_exec "ifconfig  $MME_INTERFACE_NAME_FOR_S1_MME up"
+        sync
+        bash_exec "ip -4 addr add  $MME_IPV4_ADDRESS_FOR_S1_MME/$MME_IPV4_NETMASK_FOR_S1_MME dev $MME_INTERFACE_NAME_FOR_S1_MME"
     else
         echo_fatal "BAD INTERFACE NAME FOR SGW S1-MME $MME_INTERFACE_NAME_FOR_S1_MME"' (waiting for ethx.y, wlanx.y or wifix.y)'
     fi;
@@ -632,128 +535,121 @@ build_mme_spgw_vlan_network() {
         sync
         bash_exec "vconfig add $interface_name $vlan"
         sync
-        #bash_exec "ifconfig  $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP up"
-        #sync
-        #bash_exec "ip -4 addr add  $SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP/$SGW_IPV4_NETMASK_FOR_S1U_S12_S4_UP dev $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP"
-        #sync
-        set_interface_up $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP $SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP $SGW_IPV4_NETMASK_FOR_S1U_S12_S4_UP
+        bash_exec "ifconfig  $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP up"
+        sync
+        bash_exec "ip -4 addr add  $SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP/$SGW_IPV4_NETMASK_FOR_S1U_S12_S4_UP dev $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP"
+        sync
     else
         echo_fatal "BAD INTERFACE NAME FOR SGW S1U $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP"' (waiting for ethx.y, wlanx.y or wifix.y)'
     fi;
     
-    #
-    is_real_interface $PGW_INTERFACE_NAME_FOR_SGI
-    if [ $? -eq 1 ]; then
-        ping -c 1 router.eur > /dev/null || { echo_fatal "router.eur does not respond to ping" >&2 ; }
-        IP_ROUTER=`python -c 'import socket; print socket.gethostbyname("router.eur")'`
-        export MAC_ROUTER=`ip neigh show | grep $IP_ROUTER | cut -d ' '  -f5 | tr -d ':'`
-        echo_success "ROUTER MAC ADDRESS= $MAC_ROUTER"
+    ping -c 1 router.eur > /dev/null || { echo_fatal "router.eur does not respond to ping" >&2 ; }
+    IP_ROUTER=`python -c 'import socket; print socket.gethostbyname("router.eur")'`
+    export MAC_ROUTER=`ip neigh show | grep $IP_ROUTER | cut -d ' '  -f5 | tr -d ':'`
+    echo_success "ROUTER MAC ADDRESS= $MAC_ROUTER"
 
-        if [ $ENABLE_USE_NETFILTER_FOR_SGI -eq 1 ]; then
+    if [ $ENABLE_USE_NETFILTER_FOR_SGI -eq 1 ]; then
 
-            bash_exec "modprobe nf_conntrack"
-            bash_exec "modprobe nf_conntrack_ftp"
+        bash_exec "modprobe nf_conntrack"
+        bash_exec "modprobe nf_conntrack_ftp"
 
-            ######################################################
-            # PREROUTING
-            ######################################################
-            # We restore the mark following the CONNMARK mark. In fact, it does a simple MARK=CONNMARK
-            # where MARK is the standard mark (usable by tc)
-            # In French: Cette option de cible restaure le paquet marqué dans la marque de connexion
-            # comme défini par CONNMARK. Un masque peut aussi être défini par l'option --mask.
-            # Si une option mask est placée, seules les options masquées seront placées.
-            # Notez que cette option de cible n'est valide que dans la table mangle.
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -j CONNMARK --restore-mark"
+        ######################################################
+        # PREROUTING
+        ######################################################
+        # We restore the mark following the CONNMARK mark. In fact, it does a simple MARK=CONNMARK
+        # where MARK is the standard mark (usable by tc)
+        # In French: Cette option de cible restaure le paquet marqué dans la marque de connexion
+        # comme défini par CONNMARK. Un masque peut aussi être défini par l'option --mask.
+        # Si une option mask est placée, seules les options masquées seront placées.
+        # Notez que cette option de cible n'est valide que dans la table mangle.
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -j CONNMARK --restore-mark"
 
-            # TEST bash_exec "$IPTABLES -t mangle -A PREROUTING -m mark --mark 0 -i $PGW_INTERFACE_NAME_FOR_SGI -j MARK --set-mark 15"
-            # We set the mark of the initial packet as value of the conntrack mark for all the packets of the connection.
-            # This mark will be restore for the other packets by the first rule of POSTROUTING --restore-mark).
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -j CONNMARK --save-mark"
+        # TEST bash_exec "$IPTABLES -t mangle -A PREROUTING -m mark --mark 0 -i $PGW_INTERFACE_NAME_FOR_SGI -j MARK --set-mark 15"
+        # We set the mark of the initial packet as value of the conntrack mark for all the packets of the connection.
+        # This mark will be restore for the other packets by the first rule of POSTROUTING --restore-mark).
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -j CONNMARK --save-mark"
 
 
-            ######################################################
-            # POSTROUTING
-            ######################################################
+        ######################################################
+        # POSTROUTING
+        ######################################################
 
-            # MARK=CONNMARK
-            bash_exec "iptables -A POSTROUTING -t mangle -o tap0 -j CONNMARK --restore-mark"
-            # If we’ve got a mark no need to get further[
-            bash_exec "iptables -A POSTROUTING -t mangle -o tap0 -m mark ! --mark 0 -j ACCEPT"
+        # MARK=CONNMARK
+        bash_exec "iptables -A POSTROUTING -t mangle -o tap0 -j CONNMARK --restore-mark"
+        # If we’ve got a mark no need to get further[
+        bash_exec "iptables -A POSTROUTING -t mangle -o tap0 -m mark ! --mark 0 -j ACCEPT"
 
-            #bash_exec "iptables -A POSTROUTING -p tcp --dport 21 -t mangle -j MARK --set-mark 1"
-            #bash_exec "iptables -A POSTROUTING -p tcp --dport 80 -t mangle -j MARK --set-mark 2"
+        #bash_exec "iptables -A POSTROUTING -p tcp --dport 21 -t mangle -j MARK --set-mark 1"
+        #bash_exec "iptables -A POSTROUTING -p tcp --dport 80 -t mangle -j MARK --set-mark 2"
 
-            # We set the mark of the initial packet as value of the conntrack mark for all the packets
-            # of the connection. This mark will be restore for the other packets by the first rule
-            # of POSTROUTING (–restore-mark).
-            bash_exec "iptables -A POSTROUTING -t mangle -j CONNMARK --save-mark"
+        # We set the mark of the initial packet as value of the conntrack mark for all the packets
+        # of the connection. This mark will be restore for the other packets by the first rule
+        # of POSTROUTING (–restore-mark).
+        bash_exec "iptables -A POSTROUTING -t mangle -j CONNMARK --save-mark"
 
-            bash_exec "iptables -A PREROUTING  -t mangle -j CONNMARK --restore-mark"
+        bash_exec "iptables -A PREROUTING  -t mangle -j CONNMARK --restore-mark"
 
-            # We restore the mark following the CONNMARK mark.
-            # In fact, it does a simple MARK=CONNMARK where MARK is the standard mark (usable by tc)
-            #bash_exec "$IPTABLES -A OUTPUT -t mangle -m mark ! --mark 0 -j CONNMARK --restore-mark"
+        # We restore the mark following the CONNMARK mark.
+        # In fact, it does a simple MARK=CONNMARK where MARK is the standard mark (usable by tc)
+        #bash_exec "$IPTABLES -A OUTPUT -t mangle -m mark ! --mark 0 -j CONNMARK --restore-mark"
 
-            # If we’ve got a mark no need to get further[1]
-            #TEST bash_exec "$IPTABLES -A OUTPUT -t mangle -p icmp -j MARK --set-mark 14"
-            #bash_exec "$IPTABLES -A OUTPUT -t mangle -m mark ! --mark 0 -j ACCEPT"
+        # If we’ve got a mark no need to get further[1]
+        #TEST bash_exec "$IPTABLES -A OUTPUT -t mangle -p icmp -j MARK --set-mark 14"
+        #bash_exec "$IPTABLES -A OUTPUT -t mangle -m mark ! --mark 0 -j ACCEPT"
 
 
-            # We set the mark of the initial packet as value of the conntrack mark for all the packets of the connection.
-            # This mark will be restore for the other packets by the first rule of OUTPUT (–restore-mark).
-            #bash_exec "$IPTABLES -A OUTPUT -t mangle -j CONNMARK --save-mark"
+        # We set the mark of the initial packet as value of the conntrack mark for all the packets of the connection.
+        # This mark will be restore for the other packets by the first rule of OUTPUT (–restore-mark).
+        #bash_exec "$IPTABLES -A OUTPUT -t mangle -j CONNMARK --save-mark"
 
-            ######################################################
-            # NETFILTER QUEUE
-            ######################################################
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 5 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 6 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 7 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 8 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 9 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 10 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 11 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 12 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 13 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 14 -j NFQUEUE --queue-num 1"
-            bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 15 -j NFQUEUE --queue-num 1"
+        ######################################################
+        # NETFILTER QUEUE
+        ######################################################
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 5 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 6 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 7 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 8 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 9 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 10 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 11 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 12 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 13 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 14 -j NFQUEUE --queue-num 1"
+        bash_exec "$IPTABLES -t mangle -A PREROUTING -i $PGW_INTERFACE_NAME_FOR_SGI -m connmark  --mark 15 -j NFQUEUE --queue-num 1"
 
-            #echo 0 > /proc/sys/net/bridge/bridge-nf-call-iptables #To disable Iptables in the bridge.
-            #Raw table: Some years ago appeared a new tables in Iptables.
-            #This table can be used to avoid packets (connection really) to enter the NAT table:
-            # iptables -t raw -I PREROUTING -i BRIDGE -s x.x.x.x -j NOTRACK.
-            #bash_exec "$IPTABLES -t nat -A POSTROUTING -o $PGW_INTERFACE_NAME_FOR_SGI -j SNAT --to-source $PGW_IP_ADDR_FOR_SGI"
-        else
-            # # get ipv4 address from PGW_INTERFACE_NAME_FOR_SGI
-            #IP_ADDR=`ifconfig $PGW_INTERFACE_NAME_FOR_SGI | awk '/inet addr/ {split ($2,A,":"); print A[2]}' | tr '\n' ' ' | sed -n '1h;1!H;${;g;s/^[ \t]*//g;s/[ \t]*$//g;p;}'`
-
-            #NETWORK=`echo $IP_ADDR | cut -d . -f 1,2,3`
-
-            bash_exec "modprobe 8021q"
-
-            for i in 5 6 7 8 9 10 11 12 13 14 15
-            do
-                # create vlan interface
-                ifconfig    $PGW_INTERFACE_NAME_FOR_SGI.$i down > /dev/null 2>&1
-                vconfig rem $PGW_INTERFACE_NAME_FOR_SGI.$i > /dev/null 2>&1
-                sync
-                bash_exec "vconfig add $PGW_INTERFACE_NAME_FOR_SGI $i"
-                sync
-                bash_exec "ifconfig  $PGW_INTERFACE_NAME_FOR_SGI.$i up"
-                sync
-                # configure vlan interface
-                #CIDR=$NETWORK'.'$i'/24'
-                base=200
-                NET=$(( $i + $base ))
-                CIDR='10.0.'$NET'.2/8'
-                bash_exec "ip -4 addr add  $CIDR dev $PGW_INTERFACE_NAME_FOR_SGI.$i"
-            done
-        fi
-
-        bash_exec "ip link set $PGW_INTERFACE_NAME_FOR_SGI promisc on"
+        #echo 0 > /proc/sys/net/bridge/bridge-nf-call-iptables #To disable Iptables in the bridge.
+        #Raw table: Some years ago appeared a new tables in Iptables.
+        #This table can be used to avoid packets (connection really) to enter the NAT table:
+        # iptables -t raw -I PREROUTING -i BRIDGE -s x.x.x.x -j NOTRACK.
+        #bash_exec "$IPTABLES -t nat -A POSTROUTING -o $PGW_INTERFACE_NAME_FOR_SGI -j SNAT --to-source $PGW_IP_ADDR_FOR_SGI"
     else
-        echo_warning "SGI interface disabled by config file"
+        # # get ipv4 address from PGW_INTERFACE_NAME_FOR_SGI
+        #IP_ADDR=`ifconfig $PGW_INTERFACE_NAME_FOR_SGI | awk '/inet addr/ {split ($2,A,":"); print A[2]}' | tr '\n' ' ' | sed -n '1h;1!H;${;g;s/^[ \t]*//g;s/[ \t]*$//g;p;}'`
+
+        #NETWORK=`echo $IP_ADDR | cut -d . -f 1,2,3`
+
+        bash_exec "modprobe 8021q"
+
+        for i in 5 6 7 8 9 10 11 12 13 14 15
+        do
+            # create vlan interface
+            ifconfig    $PGW_INTERFACE_NAME_FOR_SGI.$i down > /dev/null 2>&1
+            vconfig rem $PGW_INTERFACE_NAME_FOR_SGI.$i > /dev/null 2>&1
+            sync
+            bash_exec "vconfig add $PGW_INTERFACE_NAME_FOR_SGI $i"
+            sync
+            bash_exec "ifconfig  $PGW_INTERFACE_NAME_FOR_SGI.$i up"
+            sync
+            # configure vlan interface
+            #CIDR=$NETWORK'.'$i'/24'
+            base=200
+            NET=$(( $i + $base ))
+            CIDR='10.0.'$NET'.2/8'
+            bash_exec "ip -4 addr add  $CIDR dev $PGW_INTERFACE_NAME_FOR_SGI.$i"
+        done
     fi
+
+    bash_exec "ip link set $PGW_INTERFACE_NAME_FOR_SGI promisc on"    
 }
 
 clean_epc_vlan_network() {
@@ -807,7 +703,6 @@ clean_epc_vlan_network() {
         vconfig rem $PGW_INTERFACE_NAME_FOR_SGI.$i      > /dev/null 2>&1
     done
     #ip link set $PGW_INTERFACE_NAME_FOR_SGI down > /dev/null 2>&1
-    clean_network
 }
 
 build_openvswitch_network() {
@@ -1054,8 +949,6 @@ build_epc_ovs_network() {
             sync
             bash_exec "vconfig add $PGW_INTERFACE_NAME_FOR_SGI $i"
             sync
-            bash_exec "ifconfig  $PGW_INTERFACE_NAME_FOR_SGI.$i up"
-            sync
             # configure vlan interface
             #CIDR=$NETWORK'.'$i'/24'
             base=200
@@ -1137,49 +1030,9 @@ clean_epc_ovs_network() {
         vconfig rem $PGW_INTERFACE_NAME_FOR_SGI.$i   > /dev/null 2>&1
     done
     
-    clean_network
     clean_openvswitch_network
 }
 
-clean_network() {
-  interfaces=`ifconfig | grep HWaddr | cut -d " " -f1-2 | tr -d '\n'`
-  for interface in $interfaces
-  do
-      is_openvswitch_interface $interface
-      if [ $? -eq 1 ]; then
-         echo_success "Found open-vswitch interface $interface ... deleting"
-         delete_openvswitch_interface $interface
-      fi
-      
-      is_vlan_interface $interface
-      if [ $? -eq 1 ]; then
-         echo_success "Found VLAN interface $interface ... deleting"
-         ifconfig    $interface down > /dev/null 2>&1
-         vconfig rem $interface      > /dev/null 2>&1
-      fi
-  done
-}
-
-check_s6a_certificate() {
-    if [ -d /usr/local/etc/freeDiameter ]
-    then
-        if [ -f /usr/local/etc/freeDiameter/user.cert.pem ]
-        then
-            full_hostname=`cat /usr/local/etc/freeDiameter/user.cert.pem | grep "Subject" | grep "CN" | cut -d '=' -f6`
-            if [ a$full_hostname == a`hostname`.eur ]
-            then
-                echo_success "S6A: Found valid certificate in /usr/local/etc/freeDiameter"
-                return 1
-            fi
-        fi
-    fi
-    echo_error "S6A: Did not find valid certificate in /usr/local/etc/freeDiameter"
-    echo_warning "S6A: generatting new certificate in /usr/local/etc/freeDiameter..."
-    cd $OPENAIRCN_DIR/S6A/freediameter
-    ./make_certs.sh
-    check_s6a_certificate
-    return 1
-}
 
 ###########################################################
 IPTABLES=/sbin/iptables
@@ -1194,7 +1047,6 @@ declare -x OPENAIR_TARGETS=""
 
 set_openair
 cecho "OPENAIR_DIR     = $OPENAIR_DIR" $green
-cecho "OPENAIR_HOME    = $OPENAIR_HOME" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
 cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green

@@ -120,9 +120,7 @@ typedef struct ue_context_s {
 #define SUBSCRIPTION_KNOWN      0x1
     unsigned subscription_known:1;
 
-    uint8_t               msisdn[MSISDN_LENGTH+1];
-    uint8_t               msisdn_length;
-
+    uint8_t msisdn[MSISDN_LENGTH];
     mm_state_t mm_state;
     /* Globally Unique Temporary Identity */
     GUTI_t        guti;
@@ -140,7 +138,7 @@ typedef struct ue_context_s {
 
     network_access_mode_t access_mode;
 
-    /* TODO: add ue radio cap, ms classmarks, supported codecs */
+    /* TODO: add ue radio cap, ms classmarks, cupported codecs */
 
     /* TODO: add ue network capability, ms network capability */
     /* TODO: add selected NAS algorithm */

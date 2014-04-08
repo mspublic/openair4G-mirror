@@ -62,8 +62,8 @@ extern int card;
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t mode, int input_level_dBm) {
 
-  uint8_t eNB=0;
-  uint32_t RRC_status;
+  u8 eNB=0;
+  u32 RRC_status;
   int len=length;
 #ifdef EXMIMO
 #ifdef DRIVER2013
@@ -95,9 +95,9 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 #else
 #ifdef EXMIMO
 #ifdef DRIVER2013
-    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],p_exmimo_config->rf.rx_gain[0][0]);
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (LNA %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, (p_exmimo_config->rf.rf_mode[0]& LNAGAINMASK) >> 14,p_exmimo_config->rf.rx_gain[0][0]);
 #else
-    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, phy_vars_ue->rx_gain_mode[0],exmimo_pci_interface->rf.rx_gain00);
+    len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (LNA %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, (p_exmimo_config->rf.rf_mode[0]& LNAGAINMASK) >> 14,exmimo_pci_interface->rf.rx_gain00);
 #endif
 #else
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
@@ -119,7 +119,6 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 
     len += sprintf(&buffer[len], "[UE PROC] RX total power eNB%d: %d dB, avg: %d dB\n",eNB,phy_vars_ue->PHY_measurements.rx_power_tot_dB[eNB],phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB]);
     len += sprintf(&buffer[len], "[UE PROC] RX total power lin: %d, avg: %d, RX total noise lin: %d, avg: %d\n",phy_vars_ue->PHY_measurements.rx_power_tot[eNB], phy_vars_ue->PHY_measurements.rx_power_avg[eNB], phy_vars_ue->PHY_measurements.n0_power_tot, phy_vars_ue->PHY_measurements.n0_power_avg);
-    len += sprintf(&buffer[len], "[UE PROC] effective SINR %.2f dB\n",phy_vars_ue->sinr_eff);
     len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d: %d dB, avg: %d dB\n",eNB,phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB],phy_vars_ue->PHY_measurements.wideband_cqi_avg[eNB]);
 
     len += sprintf(&buffer[len], "[UE PROC] Subband CQI eNB%d (Ant 0): [%d %d %d %d %d %d %d] dB\n",
@@ -196,9 +195,13 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
       RRC_status = mac_get_rrc_status(phy_vars_ue->Mod_id,0,0);
       len += sprintf(&buffer[len],"[UE PROC] RRC status = %d\n",RRC_status);
 #endif
-      len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %d, RSSI %d, RSRQ[0] %d\n",phy_vars_ue->PHY_measurements.rsrp[0], phy_vars_ue->PHY_measurements.rssi, phy_vars_ue->PHY_measurements.rsrq[0]);
     
     len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
+    len += sprintf(&buffer[len], "[UE PROC] PBCH err conseq %d, PBCH error total %d, PBCH FER %d\n",
+		   phy_vars_ue->lte_ue_pbch_vars[eNB]->pdu_errors_conseq,
+		   phy_vars_ue->lte_ue_pbch_vars[eNB]->pdu_errors,
+		   phy_vars_ue->lte_ue_pbch_vars[eNB]->pdu_fer);
+
     if (phy_vars_ue->transmission_mode[eNB] == 6)
       len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
     if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
@@ -254,7 +257,8 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
   }
 
   len += sprintf(&buffer[len],"EOF\n");
-  len += sprintf(&buffer[len],"\0");
+  /* SR: for trailing '\0' */
+  len ++;
 
   return len;
 } // is_clusterhead
@@ -262,11 +266,11 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
 
   unsigned int success=0;
-  uint8_t eNB,UE_id,i,j,number_of_cards_l=1;
-  uint32_t ulsch_errors=0;
-  uint32_t ulsch_round_attempts[4]={0,0,0,0},ulsch_round_errors[4]={0,0,0,0};
-  uint32_t harq_pid_ul, harq_pid_dl;
-  uint32_t UE_id_mac, RRC_status;
+  u8 eNB,UE_id,i,j,number_of_cards=1;
+  u32 ulsch_errors=0;
+  u32 ulsch_round_attempts[4]={0,0,0,0},ulsch_round_errors[4]={0,0,0,0};
+  u32 harq_pid_ul, harq_pid_dl;
+  u32 UE_id_mac, RRC_status;
   if (phy_vars_eNB==NULL)
     return 0;
 
@@ -278,9 +282,9 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
   phy_vars_eNB->total_system_throughput = 0;//phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
   // }
 
-  for (eNB=0;eNB<number_of_cards_l;eNB++) {
+  for (eNB=0;eNB<number_of_cards;eNB++) {
     len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
-		   eNB,number_of_cards_l,
+		   eNB,number_of_cards,
 		   phy_vars_eNB->frame,
 		   phy_vars_eNB->rx_total_gain_eNB_dB,
 		   phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_tot_dBm,
@@ -301,7 +305,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
 
     for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
 #ifdef OPENAIR2
-      if (phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti>0) {
+      if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
 	phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
 	phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS + phy_vars_eNB->total_transmitted_bits;
 	//phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
@@ -329,9 +333,9 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
 #ifdef OPENAIR2
-    if (phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti>0) {
+    if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
 #endif
-      harq_pid_dl = phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->current_harq_pid;
+      harq_pid_dl = phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->current_harq_pid;
       harq_pid_ul = 2;
       len += sprintf(&buffer[len],"[eNB PROC] UE %d (%x) RSSI: (%d,%d) dBm, Sector %d, DLSCH Mode %d, UE_DL_mcs %d, UE_UL_MCS %d\n",
 		     UE_id,
@@ -340,8 +344,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
 		     phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[1],
 		     phy_vars_eNB->eNB_UE_stats[UE_id].sector,
 		     phy_vars_eNB->transmission_mode[UE_id],
-		     phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid_dl]->mcs,
-		     phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[harq_pid_ul]->mcs);
+		     phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->harq_processes[harq_pid_dl]->mcs,
+		     phy_vars_eNB->ulsch_eNB[(u8)UE_id]->harq_processes[harq_pid_ul]->mcs);
       
       len += sprintf(&buffer[len],"[eNB PROC] Wideband CQI: (%d,%d) dB\n",
 		     phy_vars_eNB->PHY_measurements_eNB[eNB].wideband_cqi_dB[UE_id][0],
@@ -366,7 +370,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
 		     mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
 		     phy_vars_eNB->eNB_UE_stats[UE_id].mode);
 #ifdef OPENAIR2
-      UE_id_mac = find_UE_id(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti);
+      UE_id_mac = find_UE_id(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti);
       RRC_status = mac_get_rrc_status(phy_vars_eNB->Mod_id,1,UE_id_mac);
 	
       len += sprintf(&buffer[len],"[eNB PROC] UE_id_mac = %d, RRC status = %d\n",UE_id_mac,RRC_status);
@@ -480,7 +484,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length) {
     len += sprintf(&buffer[len],"\n");
   }
   len += sprintf(&buffer[len],"EOF\n");
-  len += sprintf(&buffer[len],"\0");
-  
+  /* SR: for trailing '\0' */
+  len++;
+
   return len;
 }

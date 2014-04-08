@@ -69,34 +69,33 @@
 #include "constant.h"
 #include "sap.h"
 #include "rrc_nas_primitives.h"
-#include "COMMON/platform_types.h"
 
 struct rb_entity
 {
   nasRadioBearerId_t rab_id;
   nasSapId_t sapi;
   nasQoSTrafficClass_t qos;
-  uint8_t state;
-  uint8_t retry;
-  uint32_t countimer;
+  u8 state;
+  u8 retry;
+  u32 countimer;
   struct rb_entity *next;
 };
 
 struct cx_entity{
   int sap[NAS_SAPI_CX_MAX];
-  uint8_t state; 			// state of the connection
+  u8 state; 			// state of the connection
   nasLocalConnectionRef_t lcr;	// Local connection reference
   nasCellID_t cellid;		// cell identification
-  uint32_t countimer;			// timeout's counter
-  uint8_t retry;			// number of retransmission
+  u32 countimer;			// timeout's counter
+  u8 retry;			// number of retransmission
   struct classifier_entity *sclassifier[NAS_DSCP_MAX]; // send classifier;
   struct classifier_entity *fclassifier[NAS_DSCP_MAX]; // send classifier;
-  uint16_t nsclassifier;
-  uint16_t nfclassifier;
-  uint32_t iid6[2]; 			// IPv6  interface identification
-  uint8_t iid4; 			// IPv4 interface identification
+  u16 nsclassifier;
+  u16 nfclassifier;
+  u32 iid6[2]; 			// IPv6  interface identification
+  u8 iid4; 			// IPv4 interface identification
   struct rb_entity *rb;
-  uint16_t num_rb;
+  u16 num_rb;
   int lastRRCprimitive;
   //measures
   int req_prov_id[MAX_MEASURE_NB];
@@ -109,24 +108,24 @@ struct cx_entity{
 
 struct classifier_entity
 {
-  uint32_t classref;
+  u32 classref;
   struct classifier_entity *next;
-  uint8_t version;
+  u8 version;
   union{
     struct in6_addr ipv6;
-    uint32_t ipv4;
+    u32 ipv4;
   } saddr; // IP source address
-  uint8_t splen; // prefix length
+  u8 splen; // prefix length
   union{
     struct in6_addr ipv6;
-    uint32_t ipv4;
+    u32 ipv4;
     unsigned int mpls_label;
   } daddr; // IP destination address
-  uint8_t dplen; // prefix length
-  uint8_t protocol; 	// high layer protocol type
+  u8 dplen; // prefix length
+  u8 protocol; 	// high layer protocol type
   unsigned char protocol_message_type;
-  uint16_t sport; 	// source port
-  uint16_t dport; 	// destination port
+  u16 sport; 	// source port
+  u16 dport; 	// destination port
   struct rb_entity *rb;      //pointer to rb_entity for sending function or receiving in case of forwarding rule
   struct rb_entity *rb_rx;   //pointer to rb_entity for receiving (in case of forwarding rule)
   nasRadioBearerId_t rab_id;            // RAB identification for sending
@@ -144,53 +143,53 @@ struct nas_priv
   struct timer_list timer;
   spinlock_t lock;
   struct net_device_stats stats;
-  uint8_t retry_limit;
-  uint32_t timer_establishment;
-  uint32_t timer_release;
+  u8 retry_limit;
+  u32 timer_establishment;
+  u32 timer_release;
   struct cx_entity cx[NAS_CX_MAX];
   struct classifier_entity *rclassifier[NAS_DSCP_MAX]; // receive classifier
-  uint16_t nrclassifier;
+  u16 nrclassifier;
   int sap[NAS_SAPI_MAX];
   struct sock *nl_sk;
-  uint8_t nlmsg[NAS_MAX_LENGTH+sizeof(struct nlmsghdr)];
-  uint8_t xbuffer[NAS_MAX_LENGTH]; // transmition buffer
-  uint8_t rbuffer[NAS_MAX_LENGTH]; // reception buffer
+  u8 nlmsg[NAS_MAX_LENGTH+sizeof(struct nlmsghdr)];
+  u8 xbuffer[NAS_MAX_LENGTH]; // transmition buffer
+  u8 rbuffer[NAS_MAX_LENGTH]; // reception buffer
 };
 
 struct ipversion {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-         uint8_t    reserved:4,
+         u8    reserved:4,
                  version:4;
 #else
-         uint8_t    version:4,
+         u8    version:4,
                  reserved:4;
 #endif
 };
 
-typedef struct pdcp_data_req_header_s {
-  rb_id_t             rb_id;
-  sdu_size_t          data_size;
-  signed int          inst;
-  ip_traffic_type_t   traffic_type;
+typedef struct pdcp_data_req_header_t {
+  unsigned int           rb_id;
+  unsigned int           data_size;
+  int                    inst;
+  int                    traffic_type;
 } pdcp_data_req_header_t;
 
-typedef struct pdcp_data_ind_header_s {
-  rb_id_t             rb_id;
-  sdu_size_t          data_size;
-  signed int          inst;
-  ip_traffic_type_t   dummy_traffic_type;
+typedef struct pdcp_data_ind_header_t {
+  unsigned int           rb_id;
+  unsigned int           data_size;
+  int                    inst;
+  int                    dummy;
 } pdcp_data_ind_header_t;
 
 extern struct net_device *nasdev[NB_INSTANCES_MAX];
 //extern int bytes_wrote;
 //extern int bytes_read;
 
-extern uint8_t NAS_NULL_IMEI[14];
+extern u8 NAS_NULL_IMEI[14];
 
 //global variables shared with RRC
 #ifndef NAS_NETLINK
 extern int pdcp_2_nas_irq;
 #endif
-//extern uint8_t nas_IMEI[14];
+//extern u8 nas_IMEI[14];
 
 #endif

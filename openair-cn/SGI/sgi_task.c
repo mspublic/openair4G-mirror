@@ -1,40 +1,32 @@
 /*******************************************************************************
-Eurecom OpenAirInterface core network
-Copyright(c) 1999 - 2014 Eurecom
 
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2012 Eurecom
 
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
 
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Contact Information
+  Openair Admin: openair_admin@eurecom.fr
+  Openair Tech : openair_tech@eurecom.fr
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+                 06410 Biot FRANCE
+
 *******************************************************************************/
-/*! \file sgi_task.c
-* \brief
-* \author Lionel Gauthier
-* \company Eurecom
-* \email: lionel.gauthier@eurecom.fr
-*/
 
 #include <pthread.h>
 #include <stdio.h>
@@ -132,14 +124,14 @@ static void* sgi_task_thread(void *args_p)
 static int sgi_create_endpoint_request(sgi_data_t *sgi_dataP, SGICreateEndpointReq *req_p)
 //------------------------------------------------------
 {
-    SGICreateEndpointResp                     *sgi_create_endpoint_resp_p;
+	SGICreateEndpointResp                     *sgi_create_endpoint_resp_p;
     MessageDef                                *message_p;
     sgi_teid_mapping_t                        *mapping;
 
     SGI_IF_DEBUG("Rx IP_FW_CREATE_SGI_ENDPOINT_REQUEST, Context: S-GW S11 teid %u, S-GW S1U teid %u EPS bearer id %u\n",
-        req_p->context_teid, req_p->sgw_S1u_teid, req_p->eps_bearer_id);
+    		req_p->context_teid, req_p->sgw_S1u_teid, req_p->eps_bearer_id);
 
-    message_p               = itti_alloc_new_message(TASK_FW_IP, SGI_CREATE_ENDPOINT_RESPONSE);
+  	message_p               = itti_alloc_new_message(TASK_FW_IP, SGI_CREATE_ENDPOINT_RESPONSE);
     if (message_p == NULL) {
         return -1;
     }
@@ -151,20 +143,20 @@ static int sgi_create_endpoint_request(sgi_data_t *sgi_dataP, SGICreateEndpointR
     sgi_create_endpoint_resp_p->paa            = req_p->paa;
     sgi_create_endpoint_resp_p->status         = SGI_STATUS_OK;
 
-    if (hashtable_is_key_exists(sgi_dataP->teid_mapping, req_p->sgw_S1u_teid) == HASH_TABLE_OK)
+    if (hashtbl_is_key_exists(sgi_dataP->teid_mapping, req_p->sgw_S1u_teid) == HASH_TABLE_OK)
     {
         SGI_IF_ERROR("SGI_STATUS_ERROR_CONTEXT_ALREADY_EXIST Context: S11 teid %u\n", req_p->context_teid);
         sgi_create_endpoint_resp_p->status       = SGI_STATUS_ERROR_CONTEXT_ALREADY_EXIST;
     } else {
-        mapping = malloc(sizeof(sgi_teid_mapping_t));
-        if (mapping == NULL) {
+    	mapping = malloc(sizeof(sgi_teid_mapping_t));
+    	if (mapping == NULL) {
             sgi_create_endpoint_resp_p->status       = SGI_STATUS_ERROR_NO_MEMORY_AVAILABLE;
-        } else {
+    	} else {
             memset(mapping, 0 , sizeof(sgi_teid_mapping_t));
 
             mapping->eps_bearer_id              = req_p->eps_bearer_id;
             mapping->enb_S1U_teid               = -1;
-            if (hashtable_insert(sgi_dataP->teid_mapping, req_p->sgw_S1u_teid, mapping) != 0) {
+            if (hashtbl_insert(sgi_dataP->teid_mapping, req_p->sgw_S1u_teid, mapping) != 0) {
                 SGI_IF_ERROR("SGI_STATUS_ERROR_SYSTEM_FAILURE Context: S11 teid %u\n", req_p->context_teid);
                 sgi_create_endpoint_resp_p->status  = SGI_STATUS_ERROR_SYSTEM_FAILURE;
                 free(mapping);
@@ -181,14 +173,14 @@ static int sgi_create_endpoint_request(sgi_data_t *sgi_dataP, SGICreateEndpointR
 static int sgi_update_endpoint_request(sgi_data_t *sgi_dataP, SGIUpdateEndpointReq *req_p)
 //------------------------------------------------------
 {
-    SGIUpdateEndpointResp                     *sgi_update_endpoint_resp_p = NULL;
+	SGIUpdateEndpointResp                     *sgi_update_endpoint_resp_p = NULL;
     MessageDef                                *message_p = NULL;
     sgi_teid_mapping_t                        *mapping   = NULL;
 
     SGI_IF_DEBUG("Rx IP_FW_UPDATE_SGI_ENDPOINT_REQUEST, Context: S-GW S11 teid %u, S-GW S1U teid %u EPS bearer id %u\n",
-        req_p->context_teid, req_p->sgw_S1u_teid, req_p->eps_bearer_id);
+    		req_p->context_teid, req_p->sgw_S1u_teid, req_p->eps_bearer_id);
 
-    message_p               = itti_alloc_new_message(TASK_FW_IP, SGI_UPDATE_ENDPOINT_RESPONSE);
+  	message_p               = itti_alloc_new_message(TASK_FW_IP, SGI_UPDATE_ENDPOINT_RESPONSE);
     if (message_p == NULL) {
         return -1;
     }
@@ -199,7 +191,7 @@ static int sgi_update_endpoint_request(sgi_data_t *sgi_dataP, SGIUpdateEndpointR
     sgi_update_endpoint_resp_p->enb_S1u_teid   = req_p->enb_S1u_teid;
     sgi_update_endpoint_resp_p->status         = SGI_STATUS_OK;
 
-    if (hashtable_get(sgi_dataP->teid_mapping, req_p->sgw_S1u_teid, (void**)&mapping) == HASH_TABLE_OK)
+    if (hashtbl_get(sgi_dataP->teid_mapping, req_p->sgw_S1u_teid, (void**)&mapping) == HASH_TABLE_OK)
     {
         mapping->enb_S1U_teid = req_p->enb_S1u_teid;
     } else {
@@ -210,7 +202,7 @@ static int sgi_update_endpoint_request(sgi_data_t *sgi_dataP, SGIUpdateEndpointR
 }
 
 //-----------------------------------------------------------------------------
-int sgi_init(const pgw_config_t *pgw_config_p)
+int sgi_init(const mme_config_t *mme_config_p)
 //-----------------------------------------------------------------------------
 {
 
@@ -229,41 +221,38 @@ int sgi_init(const pgw_config_t *pgw_config_p)
     sgi_data_p->thread_started = 0;
     pthread_mutex_init (&sgi_data_p->thread_started_mutex, NULL);
 
-    sgi_data_p->teid_mapping = hashtable_create (SGI_MAX_EPS_BEARERS, NULL, NULL);
+    sgi_data_p->teid_mapping = hashtbl_create (SGI_MAX_EPS_BEARERS, NULL, NULL);
     if (sgi_data_p->teid_mapping == NULL) {
         SGI_IF_ERROR("Failed to create SGI hashtable teid_mapping\n");
         return -1;
     }
 
-    sgi_data_p->addr_v4_mapping = hashtable_create (SGI_MAX_SERVED_USERS_PER_PGW, NULL, NULL);
+    sgi_data_p->addr_v4_mapping = hashtbl_create (SGI_MAX_SERVED_USERS_PER_PGW, NULL, NULL);
     if (sgi_data_p->addr_v4_mapping == NULL) {
         SGI_IF_ERROR("Failed to create SGI hashtable addr_v4_mapping\n");
         return -1;
     }
 
-    sgi_data_p->addr_v6_mapping = obj_hashtable_create (SGI_MAX_SERVED_USERS_PER_PGW, NULL, NULL, NULL);
+    sgi_data_p->addr_v6_mapping = obj_hashtbl_create (SGI_MAX_SERVED_USERS_PER_PGW, NULL, NULL, NULL);
     if (sgi_data_p->addr_v6_mapping == NULL) {
         SGI_IF_ERROR("Failed to create SGI hashtable addr_v6_mapping\n");
         return -1;
     }
 
 
-    len = strlen(pgw_config_p->ipv4.pgw_interface_name_for_SGI);
+    len = strlen(mme_config_p->ipv4.pgw_interface_name_for_SGI);
     sgi_data_p->interface_name = calloc(len + 1, sizeof(char));
-    memcpy(sgi_data_p->interface_name, pgw_config_p->ipv4.pgw_interface_name_for_SGI, len);
+    memcpy(sgi_data_p->interface_name, mme_config_p->ipv4.pgw_interface_name_for_SGI, len);
     sgi_data_p->interface_name[len] = '\0';
-    sgi_data_p->ipv4_addr = pgw_config_p->ipv4.pgw_ipv4_address_for_SGI;
+    sgi_data_p->ipv4_addr = mme_config_p->ipv4.pgw_ip_addr_for_SGI;
 
-    if (strcmp(sgi_data_p->interface_name, PGW_CONFIG_STRING_INTERFACE_DISABLED) != 0) {
-        sgi_data_p->interface_index = if_nametoindex(sgi_data_p->interface_name);
+    sgi_data_p->interface_index = if_nametoindex(sgi_data_p->interface_name);
 
-        if (sgi_create_sockets(sgi_data_p) < 0) {
-            SGI_IF_ERROR("Could not create socket, leaving thread %s\n", __FUNCTION__);
-            free(sgi_data_p);
-            return -1;
-        }
-    } else {
-        SGI_IF_WARNING("SGI interface disabled by config file\n");
+
+    if (sgi_create_sockets(sgi_data_p) < 0) {
+        SGI_IF_ERROR("Could not create socket, leaving thread %s\n", __FUNCTION__);
+        free(sgi_data_p);
+        return -1;
     }
 
     if (pthread_create(&fw_2_sgi_task_thread, NULL, &sgi_task_thread, (void *)sgi_data_p) < 0) {
@@ -271,31 +260,29 @@ int sgi_init(const pgw_config_t *pgw_config_p)
         return -1;
     }
 
-    if (strcmp(sgi_data_p->interface_name, PGW_CONFIG_STRING_INTERFACE_DISABLED) != 0) {
 #ifdef ENABLE_USE_PCAP_FOR_SGI
-        if (pthread_create(&sgi_data_p->capture_on_sgi_if_thread, NULL, &sgi_pcap_fw_2_gtpv1u_thread, (void *)sgi_data_p) < 0) {
-            SGI_IF_ERROR("sgi_pcap_fw_2_gtpv1u_thread pthread_create: %s", strerror(errno));
-            return -1;
-        }
+    if (pthread_create(&sgi_data_p->capture_on_sgi_if_thread, NULL, &sgi_pcap_fw_2_gtpv1u_thread, (void *)sgi_data_p) < 0) {
+        SGI_IF_ERROR("sgi_pcap_fw_2_gtpv1u_thread pthread_create: %s", strerror(errno));
+        return -1;
+    }
 #endif
 #ifdef ENABLE_USE_NETFILTER_FOR_SGI
-        if (pthread_create(&sgi_data_p->capture_on_sgi_if_thread, NULL, &sgi_nf_fw_2_gtpv1u_thread, (void *)sgi_data_p) < 0) {
-            SGI_IF_ERROR("sgi_nf_fw_2_gtpv1u_thread pthread_create: %s", strerror(errno));
-            return -1;
-        }
+    if (pthread_create(&sgi_data_p->capture_on_sgi_if_thread, NULL, &sgi_nf_fw_2_gtpv1u_thread, (void *)sgi_data_p) < 0) {
+        SGI_IF_ERROR("sgi_nf_fw_2_gtpv1u_thread pthread_create: %s", strerror(errno));
+        return -1;
+    }
 #endif
 #ifdef ENABLE_USE_RAW_SOCKET_FOR_SGI
-        for (i=0; i < SGI_MAX_EPS_BEARERS_PER_USER; i++) {
-            sgi_read_thread_args_t *args_p = malloc(sizeof(sgi_read_thread_args_t));
-            args_p->sgi_data      = sgi_data_p;
-            args_p->socket_index  = i;
-            if (pthread_create(&sgi_data_p->capture_on_sgi_if_thread, NULL, &sgi_sock_raw_fw_2_gtpv1u_thread, (void *)args_p) < 0) {
-                SGI_IF_ERROR("sgi_sock_raw_fw_2_gtpv1u_thread pthread_create: %s", strerror(errno));
-                return -1;
-            }
+    for (i=0; i < SGI_MAX_EPS_BEARERS_PER_USER; i++) {
+        sgi_read_thread_args_t *args_p = malloc(sizeof(sgi_read_thread_args_t));
+        args_p->sgi_data      = sgi_data_p;
+        args_p->socket_index  = i;
+        if (pthread_create(&sgi_data_p->capture_on_sgi_if_thread, NULL, &sgi_sock_raw_fw_2_gtpv1u_thread, (void *)args_p) < 0) {
+            SGI_IF_ERROR("sgi_sock_raw_fw_2_gtpv1u_thread pthread_create: %s", strerror(errno));
+            return -1;
         }
-#endif
     }
+#endif
 
     while (sgi_data_p->thread_started != SGI_MAX_EPS_BEARERS_PER_USER ) {
         usleep(1000);

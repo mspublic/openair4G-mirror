@@ -1,32 +1,3 @@
-/*******************************************************************************
-
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2014 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it under 
-  the terms of the GNU General Public License as published by the Free Software 
-  Foundation; either version 2 of the License, or (at your option) any later version
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
 /* file: 3gpplte_turbo_decoder_sse_16bit.c
    purpose: Routines for implementing max-logmap decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
    authors: raymond.knopp@eurecom.fr, Laurent Thomas (Alcatel-Lucent)
@@ -687,7 +658,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
   unsigned int i,j,iind;//,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
-  uint8_t temp;
+  u8 temp;
 
   __m128i tmp, zeros=_mm_setzero_si128();
 
@@ -904,17 +875,17 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
 	oldcrc&=0x00ffffff;
 	crc = crc24a(&decoded_bytes[F>>3],
 		     n-24-F)>>8;
-	temp=((uint8_t *)&crc)[2];
-	((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
-	((uint8_t *)&crc)[0] = temp;
+	temp=((u8 *)&crc)[2];
+	((u8 *)&crc)[2] = ((u8 *)&crc)[0];
+	((u8 *)&crc)[0] = temp;
 	break;
       case CRC24_B:
 	oldcrc&=0x00ffffff;
 	crc = crc24b(decoded_bytes,
 		     n-24)>>8;
-	temp=((uint8_t *)&crc)[2];
-	((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
-	((uint8_t *)&crc)[0] = temp;
+	temp=((u8 *)&crc)[2];
+	((u8 *)&crc)[2] = ((u8 *)&crc)[0];
+	((u8 *)&crc)[0] = temp;
 	break;
       case CRC16:
 	oldcrc&=0x0000ffff;

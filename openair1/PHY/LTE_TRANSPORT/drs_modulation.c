@@ -44,33 +44,33 @@
 //#define DEBUG_DRS
 
 int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
-		       uint8_t eNB_id,
+		       u8 eNB_id,
 		       short amp,
 		       unsigned int subframe,
 		       unsigned int first_rb,
 		       unsigned int nb_rb,
-		       uint8_t ant) {
+		       u8 ant) {
 
-  uint16_t k,l,Msc_RS,Msc_RS_idx,rb,drs_offset;
-  uint16_t * Msc_idx_ptr;
+  u16 k,l,Msc_RS,Msc_RS_idx,rb,drs_offset;
+  u16 * Msc_idx_ptr;
   int subframe_offset,re_offset,symbol_offset;
 
-  //uint32_t phase_shift; // phase shift for cyclic delay in DM RS
-  //uint8_t alpha_ind;
+  //u32 phase_shift; // phase shift for cyclic delay in DM RS
+  //u8 alpha_ind;
 
-  int16_t alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
-  int16_t alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
+  s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
+  s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
-  uint8_t cyclic_shift,cyclic_shift0,cyclic_shift1; 
+  u8 cyclic_shift,cyclic_shift0,cyclic_shift1; 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[ant];
-  uint32_t u,v,alpha_ind;
-  uint32_t u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-  uint32_t u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
-  uint32_t v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-  uint32_t v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
-  int32_t ref_re,ref_im;
-  uint8_t harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
+  u32 u,v,alpha_ind;
+  u32 u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
+  u32 u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  u32 v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  u32 v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+  s32 ref_re,ref_im;
+  u8 harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
 
   cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 		   phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
@@ -89,7 +89,7 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE
-  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 33, sizeof(uint16_t), compareints);
+  Msc_idx_ptr = (u16*) bsearch(&Msc_RS, dftsizes, 33, sizeof(u16), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
@@ -97,7 +97,7 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
     return(-1);
   }
 #else
-  uint8_t b;
+  u8 b;
   for (b=0;b<33;b++) 
     if (Msc_RS==dftsizes[b])
       Msc_RS_idx = b;
@@ -186,15 +186,15 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 #else  //IFFT_FPGA_UE
 
 	for (k=0;k<12;k++) {
-	  ref_re = (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1];
-	  ref_im = (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1];
+	  ref_re = (s32) ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1];
+	  ref_im = (s32) ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1];
 
-	  ((int16_t*) txdataF)[2*(symbol_offset + re_offset)]   = (int16_t) (((ref_re*alpha_re[alpha_ind]) - 
+	  ((s16*) txdataF)[2*(symbol_offset + re_offset)]   = (s16) (((ref_re*alpha_re[alpha_ind]) - 
 								      (ref_im*alpha_im[alpha_ind]))>>15);
-	  ((int16_t*) txdataF)[2*(symbol_offset + re_offset)+1] = (int16_t) (((ref_re*alpha_im[alpha_ind]) + 
+	  ((s16*) txdataF)[2*(symbol_offset + re_offset)+1] = (s16) (((ref_re*alpha_im[alpha_ind]) + 
 								      (ref_im*alpha_re[alpha_ind]))>>15);
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)]*(int32_t)amp)>>15);
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)+1]*(int32_t)amp)>>15);
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)]*(s32)amp)>>15);
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)+1]*(s32)amp)>>15);
 
 	  
 	  alpha_ind = (alpha_ind + cyclic_shift);

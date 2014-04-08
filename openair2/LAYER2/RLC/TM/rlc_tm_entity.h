@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,14 +23,9 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
+*******************************************************************************/
 /*! \file rlc_tm_entity.h
 * \brief This file defines the RLC TM variables stored in a struct called rlc_tm_entity_t.
 * \author GAUTHIER Lionel
@@ -50,48 +46,48 @@ Address      : EURECOM,
 struct rlc_tm_entity {
 
   module_id_t     module_id;
-  uint8_t              allocation;
-  uint8_t              protocol_state;
+  u8_t              allocation;
+  u8_t              protocol_state;
   // for stats and trace purpose :
-  uint16_t             data_plane;   // act as a boolean
-  uint16_t              rb_id;
+  u16_t             data_plane;   // act as a boolean
+  u16_t              rb_id;
   //-----------------------------
   // discard info
   //-----------------------------
-  uint8_t              sdu_discard_mode;
+  u8_t              sdu_discard_mode;
   //-----------------------------
   // time
   //-----------------------------
-  uint16_t             timer_discard_init;
-  uint32_t            *frame_tick_milliseconds;      // pointer on this tick variable handled by RRC : READ ONLY
-  int32_t             last_tti;
+  u16_t             timer_discard_init;
+  u32_t            *frame_tick_milliseconds;      // pointer on this tick variable handled by RRC : READ ONLY
+  s32_t             last_tti;
   //-----------------------------
   // tranmission
   //-----------------------------
   // sdu communication;
   mem_block_t   **input_sdus;   // should be accessed as an array
   mem_block_t    *input_sdus_alloc;     // allocation of the array
-  uint16_t             size_input_sdus_buffer;
-  uint16_t             nb_sdu;
+  u16_t             size_input_sdus_buffer;
+  u16_t             nb_sdu;
   void            (*segmentation) (struct rlc_tm_entity * rlcP);
 
-  uint16_t             next_sdu_index;       // next location of incoming sdu
-  uint16_t             current_sdu_index;
+  u16_t             next_sdu_index;       // next location of incoming sdu
+  u16_t             current_sdu_index;
 
   list_t          pdus_to_mac_layer;
 
-  uint16_t             rlc_pdu_size;
-  uint16_t             nb_pdu_requested_by_mac;
-  uint8_t              segmentation_indication;
-  uint8_t              delivery_of_erroneous_sdu;
-  uint32_t             buffer_occupancy;
+  u16_t             rlc_pdu_size;
+  u16_t             nb_pdu_requested_by_mac;
+  u8_t              segmentation_indication;
+  u8_t              delivery_of_erroneous_sdu;
+  u32_t             buffer_occupancy;
   //-----------------------------
   // receiver
   //-----------------------------
   unsigned int    output_sdu_size_to_write;     // for writing in sdu
   mem_block_t    *output_sdu_in_construction;
   void            (*rx) (void *argP, struct mac_data_ind data_indP);
-  uint8_t              last_bit_position_reassemblied;
+  u8_t              last_bit_position_reassemblied;
 
 
   list_t          pdus_from_mac_layer;
@@ -103,6 +99,6 @@ struct rlc_tm_entity {
   //-----------------------------
   // Mapping info
   //-----------------------------
-  uint8_t              logical_channel_identity;
+  u8_t              logical_channel_identity;
 };
 #    endif

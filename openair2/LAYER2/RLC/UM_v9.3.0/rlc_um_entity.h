@@ -1,6 +1,7 @@
 /*******************************************************************************
+
 Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
+Copyright(c) 1999 - 2010 Eurecom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms and conditions of the GNU General Public License,
@@ -22,12 +23,8 @@ Contact Information
 Openair Admin: openair_admin@eurecom.fr
 Openair Tech : openair_tech@eurecom.fr
 Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
+
 *******************************************************************************/
 /*! \file rlc_um_entity.h
 * \brief This file defines the RLC UM variables stored in a struct called rlc_um_entity_t.
@@ -47,81 +44,84 @@ Address      : EURECOM,
 #        include "rlc_primitives.h"
 #        include "rlc_def.h"
 
-typedef struct rlc_um_timer_s {
-    uint32_t  frame_time_out;/*!< \brief When set, indicate the frame number the timer will time-out. */
-    uint32_t  frame_start;   /*!< \brief indicate the frame number the timer has been started. */
-    uint32_t  time_out;      /*!< \brief Configured timer duration in frames. */
-    uint32_t  running:1;     /*!< \brief The timer is running. */
-    uint32_t  timed_out:1;   /*!< \brief The timer has timed-out. */
-    uint32_t  dummy:30;      /*!< \brief Bits not used. */
+typedef struct rlc_um_timer {
+    u32_t  frame_time_out;/*!< \brief When set, indicate the frame number the timer will time-out. */
+    u32_t  frame_start;   /*!< \brief indicate the frame number the timer has been started. */
+    u32_t  time_out;      /*!< \brief Configured timer duration in frames. */
+    u32_t  running:1;     /*!< \brief The timer is running. */
+    u32_t  timed_out:1;   /*!< \brief The timer has timed-out. */
+    u32_t  dummy:30;      /*!< \brief Bits not used. */
 } rlc_um_timer_t ;
 
 
-/*! \struct  rlc_um_entity_s
+/*! \struct  rlc_um_entity_t
 * \brief Structure containing a RLC UM instance protocol variables, statistic variables, allocation variables, buffers and other miscellaneous variables.
 */
 
-typedef struct rlc_um_entity_s {
-  module_id_t          enb_module_id;      /*!< \brief eNB Virtualization index for this protocol instance. */
-  module_id_t          ue_module_id;       /*!< \brief UE Virtualization index for this protocol instance. */
-  boolean_t            allocation;         /*!< \brief Boolean for rlc_am_entity_t struct allocation. */
-  boolean_t            is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
-  rlc_protocol_state_t protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
-  boolean_t            is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
-  boolean_t            is_enb;             /*!< \brief To know if the RLC belongs to a eNB or UE. */
-  boolean_t            is_mxch;            /*!< \brief To know if the RLC belongs to a MBMS bearer. */
+typedef struct rlc_um_entity {
+  module_id_t       module_id;          /*!< \brief Virtualization index for this protocol instance, means handset or eNB index.*/
+  u8_t              allocation;         /*!< \brief Boolean for rlc_am_entity_t struct allocation. */
+  u8_t              is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
+  u8_t              protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
+  u16_t             is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  boolean_t         is_enb;             /*!< \brief To know if the RLC belongs to a eNB or UE. */
+  boolean_t         is_mxch;            /*!< \brief To know if the RLC belongs to a MBMS bearer. */
   //-----------------------------
   // PROTOCOL VARIABLES
   //-----------------------------
-  rlc_usn_t            vt_us; /*!< \brief This state variable holds the value of the SN to be assigned for the next newly generated UMD PDU. It is initially set to 0, and is updated whenever the UM RLC entity delivers an UMD PDU with SN = VT(US). */
-  rlc_usn_t            vr_ur; /*!< \brief UM receive state variable. This state variable holds the value of the SN of the earliest UMD PDU that is still considered for reordering. It is initially set to 0. */
-  rlc_usn_t            vr_ux; /*!< \brief UM t-Reordering state variable. This state variable holds the value of the SN following the SN of the UMD PDU which triggered t-Reordering. */
-  rlc_usn_t            vr_uh; /*!< \brief UM highest received state variable. This state variable holds the value of the SN following the SN of the UMD PDU with the highest SN among received UMD PDUs, and it serves as the higher edge of the reordering window. It is initially set to 0. */
+  u16_t              vt_us; /*!< \brief This state variable holds the value of the SN to be assigned for the next newly generated UMD PDU. It is initially set to 0, and is updated whenever the UM RLC entity delivers an UMD PDU with SN = VT(US). */
+  u16_t              vr_ur; /*!< \brief UM receive state variable. This state variable holds the value of the SN of the earliest UMD PDU that is still considered for reordering. It is initially set to 0. */
+  u16_t              vr_ux; /*!< \brief UM t-Reordering state variable. This state variable holds the value of the SN following the SN of the UMD PDU which triggered t-Reordering. */
+  u16_t              vr_uh; /*!< \brief UM highest received state variable. This state variable holds the value of the SN following the SN of the UMD PDU with the highest SN among received UMD PDUs, and it serves as the higher edge of the reordering window. It is initially set to 0. */
   //-----------------------------
   // TIMERS
   //-----------------------------
-  struct rlc_um_timer_s  t_reordering;
+  struct rlc_um_timer  t_reordering;
+  //signed int        timer_reordering;           /*!< \brief Timer t-Reordering starting time frame, this timer is used by the receiving side of an AM RLC entity and receiving UM RLC entity in order to detect loss of RLC PDUs at lower layer. If t-Reordering is running, t-Reordering shall not be started additionally, i.e. only one t-Reordering per RLC entity is running at a given time. */
+  //signed int        timer_reordering_init;     /*!< \brief Timer t-Reordering initial configuration value. */
+  //signed int        timer_reordering_running;  /*!< \brief Boolean to know if timer t-Reordering is running. */
   //*****************************************************************************
   // CONFIGURATION PARAMETERS
   //*****************************************************************************
-  uint8_t              tx_sn_length;                     /*!< \brief Length of sequence number in bits, can be 5 or 10. */
-  uint8_t              rx_sn_length;                     /*!< \brief Length of sequence number in bits, can be 5 or 10. */
-  uint8_t              tx_header_min_length_in_bytes;    /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
-  uint8_t              rx_header_min_length_in_bytes;    /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
-  rlc_sn_t             tx_sn_modulo;                     /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
-  rlc_sn_t             rx_sn_modulo;                     /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
-  rlc_sn_t             rx_um_window_size;
-  rlc_sn_t             tx_um_window_size;
+  u8_t              tx_sn_length;                     /*!< \brief Length of sequence number in bits, can be 5 or 10. */
+  u8_t              rx_sn_length;                     /*!< \brief Length of sequence number in bits, can be 5 or 10. */
+  u8_t              tx_header_min_length_in_bytes;    /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
+  u8_t              rx_header_min_length_in_bytes;    /*!< \brief Length of PDU header, can be 1 or 2 bytes. */
+  signed int        tx_sn_modulo;                     /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
+  signed int        rx_sn_modulo;                     /*!< \brief Module of the sequence number of PDU, can be RLC_UM_SN_5_BITS_MODULO or RLC_UM_SN_10_BITS_MODULO. */
+  signed int        rx_um_window_size;
+  signed int        tx_um_window_size;
   //-----------------------------
   // tranmission
   //-----------------------------
   // sdu communication;
-  mem_block_t        **input_sdus;                /*!< \brief Input SDU buffer (for SDUs coming from upper layers). Should be accessed as an array. */
-  uint16_t             size_input_sdus_buffer;    /*!< \brief Size of the input SDU buffer. */
-  uint16_t             nb_sdu;                    /*!< \brief Total number of SDUs in input_sdus[] */
-  uint16_t             next_sdu_index;            /*!< \brief Next SDU index for a new incomin SDU in input_sdus[]. */
-  uint16_t             current_sdu_index;         /*!< \brief Current SDU index in input_sdus array to be segmented. */
-  rlc_buffer_occupancy_t buffer_occupancy;          /*!< \brief Number of bytes contained in input_sdus buffer.*/
-  uint32_t             nb_bytes_requested_by_mac; /*!< \brief Number of bytes requested by lower layer for next transmission. */
-  list_t               pdus_to_mac_layer;         /*!< \brief PDUs buffered for transmission to MAC layer. */
+  mem_block_t     **input_sdus;                /*!< \brief Input SDU buffer (for SDUs coming from upper layers). Should be accessed as an array. */
+  mem_block_t     * input_sdus_alloc;          /*!< \brief Allocated memory for the input SDU buffer (for SDUs coming from upper layers). */
+  u16_t             size_input_sdus_buffer;    /*!< \brief Size of the input SDU buffer. */
+  u16_t             nb_sdu;                    /*!< \brief Total number of SDUs in input_sdus[] */
+  u16_t             next_sdu_index;            /*!< \brief Next SDU index for a new incomin SDU in input_sdus[]. */
+  u16_t             current_sdu_index;         /*!< \brief Current SDU index in input_sdus array to be segmented. */
+  u32_t             buffer_occupancy;          /*!< \brief Number of bytes contained in input_sdus buffer.*/
+  u32_t             nb_bytes_requested_by_mac; /*!< \brief Number of bytes requested by lower layer for next transmission. */
+  list_t            pdus_to_mac_layer;         /*!< \brief PDUs buffered for transmission to MAC layer. */
   //*****************************************************************************
   // RECEIVER
   //*****************************************************************************
-  mem_block_t      *output_sdu_in_construction;     /*!< \brief Memory area where a complete SDU is reassemblied before being send to upper layers. */
-  sdu_size_t        output_sdu_size_to_write;       /*!< \brief Size of the reassemblied SDU. */
+  mem_block_t    *  output_sdu_in_construction;     /*!< \brief Memory area where a complete SDU is reassemblied before being send to upper layers. */
+  s32_t             output_sdu_size_to_write;       /*!< \brief Size of the reassemblied SDU. */
 
   mem_block_t     **dar_buffer;                     /*!< \brief Array of rx PDUs. */
+  mem_block_t      *dar_buffer_alloc;               /*!< \brief Allocated memory for the DAR buffer. */
   list_t            pdus_from_mac_layer;            /*!< \brief Not Used. */
 
-  logical_chan_id_t channel_id;                     /*!< \brief Transport channel identifier. */
-  rb_id_t           rb_id;                          /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
-  rlc_usn_t         last_reassemblied_sn;           /*!< \brief Sequence number of the last reassemblied PDU. */
-  rlc_usn_t         last_reassemblied_missing_sn;   /*!< \brief Sequence number of the last found missing PDU. */
-  rlc_usn_t         reassembly_missing_sn_detected; /*!< \brief Act as a boolean, set if a hole in the sequence numbering of received PDUs has been found. */
+  u16_t             rb_id;                          /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
+  u16_t             last_reassemblied_sn;           /*!< \brief Sequence number of the last reassemblied PDU. */
+  u16_t             last_reassemblied_missing_sn;   /*!< \brief Sequence number of the last found missing PDU. */
+  u16_t             reassembly_missing_sn_detected; /*!< \brief Act as a boolean, set if a hole in the sequence numbering of received PDUs has been found. */
   //-----------------------------
   // STATISTICS
   //-----------------------------
-  boolean_t         first_pdu;                        /*!< \brief Act as a boolean, tells if the next PDU is the first PDU to be received. */
+  u8_t              first_pdu;                        /*!< \brief Act as a boolean, tells if the next PDU is the first PDU to be received. */
 
   unsigned int stat_tx_pdcp_sdu;                      /*!< \brief Number of SDUs received from upper layers. */
   unsigned int stat_tx_pdcp_bytes;                    /*!< \brief Number of SDU bytes received from upper layers. */

@@ -1,34 +1,3 @@
-/*******************************************************************************
-Eurecom OpenAirInterface 2
-Copyright(c) 1999 - 2014 Eurecom
-
-This program is free software; you can redistribute it and/or modify it
-under the terms and conditions of the GNU General Public License,
-version 2, as published by the Free Software Foundation.
-
-This program is distributed in the hope it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-The full GNU General Public License is included in this distribution in
-the file called "COPYING".
-
-Contact Information
-Openair Admin: openair_admin@eurecom.fr
-Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
-*******************************************************************************/
 /***************************************************************************
                           rlc_am_mux.c  -
                              -------------------
@@ -74,10 +43,10 @@ rlc_am_mux_ue (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
   unsigned int    j, segmentation_returned_pdu;
   unsigned int    data_pdu_tx;  // data pdu effectively transmitted
   unsigned int    tx_pdu;
-  int16_t             nb_pdu_to_transmit_ch1;
-  int16_t             nb_pdu_to_transmit_ch2;
+  s16_t             nb_pdu_to_transmit_ch1;
+  s16_t             nb_pdu_to_transmit_ch2;
 #    ifdef DEBUG_MUX
-  uint16_t             id;
+  u16_t             id;
 #    endif
   data_pdu_tx = 0;
   nb_pdu_to_transmit_ch1 = rlcP->nb_pdu_requested_by_mac_on_ch1;
@@ -199,7 +168,7 @@ rlc_am_mux_ue (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
         }
       }
 #    ifdef DEBUG_MUX
-      id = (((uint16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
+      id = (((u16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
         ((((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
 
       msg ("[RLC_AM][RB %d][MUX] RETRANSMIT DATA PDU %04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",
@@ -287,7 +256,7 @@ rlc_am_mux_ue (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
           }
 
           rlc_header->byte1 |= (rlcP->vt_s >> 5);
-          rlc_header->byte2 |= ((uint8_t) rlcP->vt_s << 3);
+          rlc_header->byte2 |= ((u8_t) rlcP->vt_s << 3);
           ((struct rlc_am_tx_data_pdu_management *) (pdu->data))->sn = rlcP->vt_s;
           insert_into_retransmission_buffer (rlcP, rlcP->vt_s % rlcP->recomputed_configured_tx_window_size, pdu);
 
@@ -356,7 +325,7 @@ rlc_am_mux_ue (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
 
 
 #    ifdef DEBUG_MUX
-            id = (((uint16_t) (rlc_header->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) | ((rlc_header->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
+            id = (((u16_t) (rlc_header->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) | ((rlc_header->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
             msg ("[RLC_AM][RB %d][MUX] TX DATA PDU 0x%04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",
                  rlcP->rb_id, id, rlcP->vt_a, rlcP->vt_s, rlcP->vt_ms, rlcP->vr_r, rlcP->vr_mr);
             /*        for (index = 0; index < 32 ; index++) {
@@ -426,7 +395,7 @@ rlc_am_mux_ue (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
         ((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 |= RLC_AM_P_STATUS_REPORT_REQUESTED;
 
 #    ifdef DEBUG_MUX
-        id = (((uint16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
+        id = (((u16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
           ((((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
 
         msg ("[RLC_AM][RB %d][MUX] RETRANSMIT DATA PDU 0x%04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",
@@ -461,10 +430,10 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
   unsigned int    tx_pdu;
   static unsigned int last_scheduled;
 
-  int16_t             nb_pdu_to_transmit_ch1;
-  int16_t             nb_pdu_to_transmit_ch2;
+  s16_t             nb_pdu_to_transmit_ch1;
+  s16_t             nb_pdu_to_transmit_ch2;
 #    ifdef DEBUG_MUX
-  uint16_t             id;
+  u16_t             id;
 #    endif
   data_pdu_tx = 0;
   nb_pdu_to_transmit_ch1 = rlcP->nb_pdu_requested_by_mac_on_ch1;
@@ -622,7 +591,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
         }
       }
 #    ifdef DEBUG_MUX
-      id = (((uint16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
+      id = (((u16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
         ((((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
 
       msg ("[RLC_AM][RB %d][MUX] RETRANSMIT DATA PDU %04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",
@@ -670,7 +639,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
         }
       }
 #    ifdef DEBUG_MUX
-      id = (((uint16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
+      id = (((u16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
         ((((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
 
       msg ("[RLC_AM][RB %d][MUX] RETRANSMIT DATA PDU 0x%04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",
@@ -757,7 +726,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
           }
 
           rlc_header->byte1 |= (rlcP->vt_s >> 5);
-          rlc_header->byte2 |= ((uint8_t) rlcP->vt_s << 3);
+          rlc_header->byte2 |= ((u8_t) rlcP->vt_s << 3);
           ((struct rlc_am_tx_data_pdu_management *) (pdu->data))->sn = rlcP->vt_s;
           insert_into_retransmission_buffer (rlcP, rlcP->vt_s % rlcP->recomputed_configured_tx_window_size, pdu);
 
@@ -831,7 +800,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
 
 
 #    ifdef DEBUG_MUX
-            id = (((uint16_t) (((struct rlc_am_pdu_header *) (&pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
+            id = (((u16_t) (((struct rlc_am_pdu_header *) (&pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
               ((((struct rlc_am_pdu_header *) (&pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
             msg ("[RLC_AM][RB %d][MUX] TX DATA PDU 0x%04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",
                  rlcP->rb_id, id, rlcP->vt_a, rlcP->vt_s, rlcP->vt_ms, rlcP->vr_r, rlcP->vr_mr);
@@ -912,7 +881,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
         ((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 |= RLC_AM_P_STATUS_REPORT_REQUESTED;
 
 #    ifdef DEBUG_MUX
-        id = (((uint16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
+        id = (((u16_t) (((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte1 & RLC_AM_SN_1ST_PART_MASK)) << 5) |
           ((((struct rlc_am_pdu_header *) (&copy_pdu->data[sizeof (struct rlc_am_tx_data_pdu_allocation)]))->byte2 & RLC_AM_SN_2ND_PART_MASK) >> 3);
 
         msg ("[RLC_AM][RB %d][MUX] RETRANSMIT DATA PDU 0x%04X   VT(A) 0x%03X VT(S) 0x%03X VT(MS) 0x%03X VR(R) 0x%03X VR(MR) 0x%03X\n",

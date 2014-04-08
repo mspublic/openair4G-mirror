@@ -171,9 +171,9 @@
 
 
 #ifdef EXMIMO
-#define TARGET_RX_POWER 40		// Target digital power for the AGC
-#define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
-#define TARGET_RX_POWER_MIN 30		// Minimum digital power, anything below will be discarded (value found by simulation)
+#define TARGET_RX_POWER 55		// Target digital power for the AGC
+#define TARGET_RX_POWER_MAX 55		// Maximum digital power, such that signal does not saturate (value found by simulation)
+#define TARGET_RX_POWER_MIN 50		// Minimum digital power, anything below will be discarded (value found by simulation)
 #else
 #define TARGET_RX_POWER 50		// Target digital power for the AGC
 #define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
@@ -238,10 +238,6 @@
 #else
 #define AMP 512//1024 //4096
 #endif
-
-#define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
-#define AMP_OVER_2 (AMP>>1)
-
 
 #ifndef OPENAIR_LTE
 ///
@@ -490,8 +486,7 @@ typedef struct
 
 } PHY_MEASUREMENTS_eNB;
 
-#define MCS_COUNT 28
-#define MCS_TABLE_LENGTH_MAX 64
+#define MCS_COUNT 24
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
 /**@}

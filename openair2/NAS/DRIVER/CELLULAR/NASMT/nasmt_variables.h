@@ -66,35 +66,35 @@ struct cx_entity;
 
 struct rb_entity
 {
-  uint32_t   cnxid;
+  u32   cnxid;
   nasRadioBearerId_t rab_id;  //ue_rbId
   nasSapId_t sapi;
   nasQoSTrafficClass_t qos;
   nasQoSTrafficClass_t RadioQosClass;
   nasIPdscp_t dscp;
-  uint8_t state;
-  uint8_t result;
-  uint8_t retry;
-  uint32_t countimer;
+  u8 state;
+  u8 result;
+  u8 retry;
+  u32 countimer;
   struct rb_entity *next;
 };
 
 struct classifier_entity{
-  uint32_t classref;               // classifier identity
-  uint8_t version;                 // IP version 4 or 6
+  u32 classref;               // classifier identity
+  u8 version;                 // IP version 4 or 6
   union{
     struct in6_addr ipv6;
-    uint32_t ipv4;
+    u32 ipv4;
   } saddr;                    // IP source address
-  uint8_t splen;                   // IP prefix size
+  u8 splen;                   // IP prefix size
   union{
     struct in6_addr ipv6;
-    uint32_t ipv4;
+    u32 ipv4;
   } daddr;                    // IP destination address
-  uint8_t dplen;                   // IP prefix size
-  uint8_t protocol;                 // layer 4 protocol type (tcp, udp, ...)
-  uint16_t sport;                   // source port
-  uint16_t dport;                   // destination port
+  u8 dplen;                   // IP prefix size
+  u8 protocol;                 // layer 4 protocol type (tcp, udp, ...)
+  u16 sport;                   // source port
+  u16 dport;                   // destination port
   struct rb_entity *rb;
   nasRadioBearerId_t rab_id;  // RAB identification
   void (*fct)(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
@@ -104,17 +104,17 @@ struct classifier_entity{
 
 struct cx_entity{
   int sap[NAS_SAPI_CX_MAX];
-  uint8_t state;                     // state of the connection
+  u8 state;                     // state of the connection
   nasLocalConnectionRef_t lcr;  // Local connection reference
   nasCellID_t cellid;           // cell identification
-  uint32_t countimer;                // timeout's counter
-  uint8_t retry;                     // number of retransmissions
+  u32 countimer;                // timeout's counter
+  u8 retry;                     // number of retransmissions
   struct classifier_entity *sclassifier[NAS_DSCP_MAX]; // send classifiers table
-  uint16_t nsclassifier;
-  uint32_t iid6[2];                  // IPv6  interface identification
-  uint8_t iid4;                      // IPv4 interface identification
+  u16 nsclassifier;
+  u32 iid6[2];                  // IPv6  interface identification
+  u8 iid4;                      // IPv4 interface identification
   struct rb_entity *rb;
-  uint16_t num_rb;
+  u16 num_rb;
 //measures
   int req_prov_id[MAX_MEASURE_NB];
   int num_measures;
@@ -132,24 +132,24 @@ struct nas_priv{
   struct timer_list timer;
   spinlock_t lock;
   struct net_device_stats stats;
-  uint8_t retry_limit;
-  uint32_t timer_establishment;
-  uint32_t timer_release;
+  u8 retry_limit;
+  u32 timer_establishment;
+  u32 timer_release;
   struct cx_entity cx[NAS_CX_MAX];
   struct classifier_entity *rclassifier[NAS_DSCP_MAX]; // receive classifier
-  uint16_t nrclassifier;
-  uint32_t next_sclassref;
+  u16 nrclassifier;
+  u32 next_sclassref;
   int sap[NAS_SAPI_MAX];
-  uint8_t xbuffer[NAS_MAX_LENGTH]; // transmission buffer
-  uint8_t rbuffer[NAS_MAX_LENGTH]; // reception buffer
+  u8 xbuffer[NAS_MAX_LENGTH]; // transmission buffer
+  u8 rbuffer[NAS_MAX_LENGTH]; // reception buffer
 };
 
 struct ipversion {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-  uint8_t    reserved:4,
+  u8    reserved:4,
   version:4;
 #else
-  uint8_t    version:4,
+  u8    version:4,
   reserved:4;
 #endif
 };
@@ -172,10 +172,10 @@ extern struct net_device *gdev;
 //extern int bytes_wrote;
 //extern int bytes_read;
 
-extern uint8_t NAS_NULL_IMEI[14];
-extern uint8_t NAS_RG_IMEI[14];
+extern u8 NAS_NULL_IMEI[14];
+extern u8 NAS_RG_IMEI[14];
 
 //global variables shared with RRC
 extern int *pt_nas_ue_irq;
-//extern uint8_t nas_IMEI[14];
+//extern u8 nas_IMEI[14];
 #endif
