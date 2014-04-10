@@ -463,12 +463,13 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP,u32_t frame,u8_t eNB_
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d]*    T I M E  -  O U T                              *\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d]*****************************************************\n", rlcP->module_id, rlcP->rb_id, frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] TIMER t-Reordering expiration\n", rlcP->module_id, rlcP->rb_id, frame);
-            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] timer_reordering=%d frame=%d expire frame %d\n",
+            LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] timer_reordering=%d frame=%d frame_start %d expire frame %d\n",
             		rlcP->module_id,
             		rlcP->rb_id,
             		frame,
             		rlcP->t_reordering.time_out,
             		rlcP->t_reordering.frame_time_out,
+                rlcP->t_reordering.frame_start,
             		frame);
             LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] set VR(UR)=%03d to", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur);
 
@@ -652,6 +653,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, u32_t frame, u8_t eNB_flag, m
     } else {
     	free_mem_block(pdu_memP);
     }
+    LOG_D(RLC, "DEBUG SN = %d size = %d\n", sn, tb_sizeP);
     in_window = rlc_um_in_window(rlcP, frame, rlcP->vr_uh - rlcP->rx_um_window_size, sn, rlcP->vr_ur);
 
     rlc_util_print_hex_octets(RLC, &pduP->b1, tb_sizeP);

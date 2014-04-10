@@ -1,7 +1,7 @@
 /* file: lte_segmentation.c
-   purpose: Procedures for transport block segmentation for LTE (turbo-coded transport channels) 
+   purpose: Procedures for transport block segmentation for LTE (turbo-coded transport channels)
    author: raymond.knopp@eurecom.fr
-   date: 21.10.2009 
+   date: 21.10.2009
 */
 #include "PHY/defs.h"
 
@@ -29,7 +29,7 @@ int lte_segmentation(unsigned char *input_buffer,
     *C = B/(6144-L);
     if ((6144-L)*(*C) < B)
       *C=*C+1;
-    Bprime = B+((*C)*L); 
+    Bprime = B+((*C)*L);
 #ifdef DEBUG_SEGMENTATION
     printf("Bprime %d\n",Bprime);
 #endif
@@ -71,7 +71,7 @@ int lte_segmentation(unsigned char *input_buffer,
    *Kplus = (Bprime_by_C>>6)<<6;
 #ifdef DEBUG_SEGMENTATION
     printf("Bprime_by_C_by_C %d , Kplus %d\n",Bprime_by_C,*Kplus);
-#endif 
+#endif
     if (*Kplus < Bprime_by_C)
       *Kplus = *Kplus + 64;
 #ifdef DEBUG_SEGMENTATION
@@ -82,7 +82,7 @@ int lte_segmentation(unsigned char *input_buffer,
   else {
     msg("lte_segmentation.c: Illegal codeword size !!!\n");
     return(-1);
-  }  
+  }
 
   if (*C == 1) {
     *Cplus = *C;
@@ -101,13 +101,13 @@ int lte_segmentation(unsigned char *input_buffer,
 
   *F = ((*Cplus)*(*Kplus) + (*Cminus)*(*Kminus) - (Bprime));
 #ifdef DEBUG_SEGMENTATION
-  printf("C %d, Cplus %d, Cminus %d, Kplus %d, Kminus %d, Bprime_bytes %d, Bprime %d, F %d\n",*C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
+  printf("C %d, Cplus %d, Cminus %d, Kplus %d, Kminus %d, Bprime_bytes %d, Bprime %d, B %d, F %d\n",*C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,B,*F);
 #endif
   if ((input_buffer) && (output_buffers)) {
 
     for (k=0;k<*F>>3;k++) {
       output_buffers[0][k] = 0;
-    } 
+    }
     s=0;
     for (r=0;r<*C;r++) {
 
@@ -143,7 +143,7 @@ int lte_segmentation(unsigned char *input_buffer,
 main() {
 
   unsigned int Kplus,Kminus,C,Cplus,Cminus,F,Bbytes;
-  
+
   for (Bbytes=5;Bbytes<2*768;Bbytes++) {
     lte_segmentation(0,0,Bbytes<<3,&C,&Cplus,&Cminus,&Kplus,&Kminus,&F);
     printf("Bbytes %d : C %d, Cplus %d, Cminus %d, Kplus %d, Kminus %d, F %d\n",

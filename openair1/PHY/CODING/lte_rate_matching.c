@@ -1,13 +1,13 @@
 /* file: lte_rate_matching.c
    purpose: Procedures for rate matching/interleaving for LTE (turbo-coded transport channels) (TX/RX)
    author: raymond.knopp@eurecom.fr
-   date: 21.10.2009 
+   date: 21.10.2009
 */
 #ifdef MAIN
 #include <stdio.h>
 #include <stdlib.h>
 #endif
-#include "PHY/defs.h" 
+#include "PHY/defs.h"
 
 //#define cmin(a,b) ((a)<(b) ? (a) : (b))
 
@@ -19,7 +19,7 @@ static uint32_t bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
 //#define RM_DEBUG_CC 1
- 
+
 uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
 
   uint32_t RTC = (D>>5), ND, ND3;
@@ -58,25 +58,25 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
 
       w[k]            =  d1[index3];//d[index3-ND3];
       w[Kpi+k2]       =  d2[index3];//d[index3-ND3+1];
-      w[Kpi+1+k2]     =  d3[index3];//d[index3-ND3+5]; 
+      w[Kpi+1+k2]     =  d3[index3];//d[index3-ND3+5];
 
 
 #ifdef RM_DEBUG
       printf("row %d, index %d, index-Nd %d index-Nd+1 %d (k,Kpi+2k,Kpi+2k+1) (%d,%d,%d) w(%d,%d,%d)\n",row,index,index-ND,((index+1)%Kpi)-ND,k,Kpi+(k<<1),Kpi+(k<<1)+1,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
-      
+
       if (w[k]== LTE_NULL)
 	nulled++;
       if (w[Kpi+(k<<1)] ==LTE_NULL)
 	nulled++;
       if (w[Kpi+1+(k<<1)] ==LTE_NULL)
 	nulled++;
-      
+
 #endif
       index3+=96;
       index+=32;
       k++;
       k2++;k2++;
-    }      
+    }
   }
 
   if (ND>0)
@@ -122,22 +122,22 @@ uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w) {
     for (row=0;row<RCC;row++) {
       w[k]          =  d[(int32_t)index3-(int32_t)ND3];
       w[Kpi+k]     =   d[(int32_t)index3-(int32_t)ND3+1];
-      w[(Kpi<<1)+k] =  d[(int32_t)index3-(int32_t)ND3+2]; 
+      w[(Kpi<<1)+k] =  d[(int32_t)index3-(int32_t)ND3+2];
 #ifdef RM_DEBUG_CC
       printf("row %d, index %d k %d w(%d,%d,%d)\n",row,index,k,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
-      
+
       if (w[k]== LTE_NULL)
 	nulled++;
       if (w[Kpi+k] ==LTE_NULL)
 	nulled++;
       if (w[(Kpi<<1)+k] ==LTE_NULL)
 	nulled++;
-      
+
 #endif
       index3+=96;
       index+=32;
       k++;
-    }      
+    }
   }
 #ifdef RM_DEBUG_CC
   printf("RM_TX: Nulled %d\n",nulled);
@@ -178,12 +178,12 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
     for (row=0;row<RTC;row++) {
 
       d1[index3]   = w[k];
-      d2[index3]   = w[Kpi+k2];  
-      d3[index3]   = w[Kpi+1+k2];  
+      d2[index3]   = w[Kpi+k2];
+      d3[index3]   = w[Kpi+1+k2];
       index3+=96;
       index+=32;
       k++;k2++;k2++;
-    }      
+    }
   }
   if (ND>0)
     d[2] = LTE_NULL;//d[(3*D)+2];
@@ -221,15 +221,15 @@ void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w) {
     for (row=0;row<RCC;row++) {
 
       d[index3-ND3]   = w[k];
-      d[index3-ND3+1] = w[Kpi+k];  
-      d[index3-ND3+2] = w[(Kpi<<1)+k];  
+      d[index3-ND3+1] = w[Kpi+k];
+      d[index3-ND3+2] = w[(Kpi<<1)+k];
 #ifdef RM_DEBUG2
       printf("row %d, index %d k %d index3-ND3 %d w(%d,%d,%d)\n",row,index,k,index3-ND3,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
 #endif
       index3+=96;
       index+=32;
       k++;
-    }      
+    }
   }
 
 }
@@ -253,8 +253,8 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
   printf("dummy sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d, F=%d (Nulled %d)\n",RTC,Kpi,ND,F,(2*F + 3*ND));
 #endif
- 
- 
+
+
   k=0;
   k2=0;
   wKpi = &w[Kpi];
@@ -266,7 +266,7 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
     printf("Col %d\n",col);
 #endif
     index = bitrev[col];
-    
+
     if (index<(ND+F)) {
       w[k]   =  LTE_NULL;
       wKpi[k2] = LTE_NULL;
@@ -304,10 +304,10 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
     k2=k<<1;
   }
 
- // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212  
+ // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   if (ND>0)
     w[(3*Kpi)-1] = LTE_NULL;
-  
+
 #ifdef RM_DEBUG
   if (ND>0) {
     nulled++;
@@ -346,7 +346,7 @@ uint32_t generate_dummy_w_cc(uint32_t D, uint8_t *w){
     printf("Col %d\n",col);
 #endif
     index = bitrev_cc[col];
-    
+
     if (index<ND) {
       w[k]          = LTE_NULL;
       w[Kpi+k]      = LTE_NULL;
@@ -396,21 +396,21 @@ uint32_t generate_dummy_w_cc(uint32_t D, uint8_t *w){
 
 
 uint32_t lte_rate_matching_turbo(uint32_t RTC,
-				 uint32_t G, 
+				 uint32_t G,
 				 uint8_t *w,
-				 uint8_t *e, 
-				 uint8_t C, 
-				 uint32_t Nsoft, 
+				 uint8_t *e,
+				 uint8_t C,
+				 uint32_t Nsoft,
 				 uint8_t Mdlharq,
 				 uint8_t Kmimo,
 				 uint8_t rvidx,
-				 uint8_t Qm, 
-				 uint8_t Nl, 
+				 uint8_t Qm,
+				 uint8_t Nl,
 				 uint8_t r,
 				 uint8_t nb_rb,
 				 uint8_t m) {
-  
-  
+
+
   uint32_t Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
   //  int cnt=0;
   int code_block,round;
@@ -426,12 +426,12 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   FILE *counter_fd;
   char fname[512];
 #endif
-  
+
   Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
   Ncb = cmin(Nir/C,3*(RTC<<5));
 #ifdef RM_DEBUG_TX
   if (rvidx==0 && r==0){
-    for(round=0;round<4;round++) 
+    for(round=0;round<4;round++)
       for (code_block=0;code_block<MAX_NUM_DLSCH_SEGMENTS;code_block++){
 	counter_buffer[code_block][round] = (unsigned char *)malloc(Ncb*sizeof(char));
 	memset(counter_buffer[code_block][round],0,Ncb*sizeof(char));
@@ -441,7 +441,7 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
     if(rvidx==3){
       sprintf(fname, "mcs%d_rate_matching_RB_%d.txt", m, nb_rb);
       // sprintf(fname,"mcs0_rate_matching_RB_6.txt");
-      counter_fd = fopen(fname,"w");      
+      counter_fd = fopen(fname,"w");
     }
 #endif
   // if (rvidx==3)
@@ -471,8 +471,9 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   printf("lte_rate_matching_turbo: E %d, k0 %d, Ncbmod %d, Ncb/(RTC<<3) %d\n",E,ind,Ncbmod,Ncb/(RTC<<3));
 #endif
 
-  e2=e+(r*E);
-  
+  //e2=e+(r*E);
+  e2 = e;
+
   k=0;
 
   for (;(ind<Ncb)&&(k<E);ind++) {
@@ -491,9 +492,9 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
       if (w[ind] != LTE_NULL) k++;
     }
   }
-  /*  
+  /*
   for (k=0;k<E;k++) {
-    
+
 
     while(w[ind] == LTE_NULL) {
 #ifdef RM_DEBUG_TX
@@ -518,7 +519,7 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
     if (ind==Ncb)
       ind=0;
   }
-  
+
 #ifdef RM_DEBUG_TX
   if (rvidx==3){
     for(cnt=0;cnt<Ncb;cnt++)
@@ -531,10 +532,10 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
 		);
     }
     fclose(counter_fd);
-    
+
   }
-  
-  
+
+
    for(cnt=0;cnt<Ncb;cnt++){
     printf("Bit_Counter[%d][%d]=%d\n",rvidx,cnt,counter_buffer[r][rvidx][cnt]);
     if(counter_buffer[r][rvidx][cnt]==0)
@@ -551,21 +552,21 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
 printf("oned %d\n",oned);
 printf("twoed %d\n",twoed);
 printf("threed %d\n",threed);
- 
+
   printf("nulled %d\n",nulled);
-  
+
 #endif
 */
   return(E);
 }
-  
+
 
 uint32_t lte_rate_matching_cc(uint32_t RCC,
 				  u16 E,
 				  uint8_t *w,
 				  uint8_t *e) {
 
-  
+
   uint32_t ind=0,k;
 
   u16 Kw = 3*(RCC<<5);
@@ -608,22 +609,22 @@ uint32_t lte_rate_matching_cc(uint32_t RCC,
 
 
 int lte_rate_matching_turbo_rx(uint32_t RTC,
-			       uint32_t G, 
+			       uint32_t G,
 			       int16_t *w,
 			       uint8_t *dummy_w,
-			       int16_t *soft_input, 
-			       uint8_t C, 
-			       uint32_t Nsoft, 
+			       int16_t *soft_input,
+			       uint8_t C,
+			       uint32_t Nsoft,
 			       uint8_t Mdlharq,
 			       uint8_t Kmimo,
 			       uint8_t rvidx,
 			       uint8_t clear,
-			       uint8_t Qm, 
-			       uint8_t Nl, 
+			       uint8_t Qm,
+			       uint8_t Nl,
 			       uint8_t r,
 			       uint32_t *E_out) {
-  
-  
+
+
   uint32_t Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
   int16_t *soft_input2;
   s32 w_tmp;
@@ -637,7 +638,7 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 
   Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
   Ncb = cmin(Nir/C,3*(RTC<<5));
-  
+
 
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
@@ -659,7 +660,7 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 
   if (clear==1)
     memset(w,0,Ncb*sizeof(int16_t));
- 
+
   soft_input2 = soft_input + (r*E);
   k=0;
 
@@ -710,7 +711,7 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
       printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
     */
     // Maximum-ratio combining of repeated bits and retransmissions
-    /* 
+    /*
     w_tmp = (int) w[ind] + (int) soft_input2[k];
     if (w_tmp > 32767) {
       //#ifdef DEBUG_RM
@@ -744,13 +745,13 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 
 
 void lte_rate_matching_cc_rx(uint32_t RCC,
-			     u16 E, 
+			     u16 E,
 			     int8_t *w,
 			     uint8_t *dummy_w,
 			     int8_t *soft_input) {
 
-  
-  
+
+
   uint32_t ind=0,k;
   u16 Kw = 3*(RCC<<5);
   uint32_t acc=1;
@@ -824,7 +825,7 @@ void main() {
   uint32_t i;
 
   G = ( nb_rb * (12 * mod_order) * (12-first_dlsch_symbol-3)) ;//( nb_rb * (12 * mod_order) * (14-first_dlsch_symbol-3)) :
-    
+
   // initialize 96 first positions to "LTE_NULL"
   for (i=0;i<96;i++)
     d[i]=LTE_NULL;
@@ -832,19 +833,19 @@ void main() {
   RTC = sub_block_interleaving_turbo(4+(192*8), &d[96], w);
   for (rvidx=0;rvidx<4;rvidx++) {
     lte_rate_matching_turbo(RTC,
-			G, 
+			G,
 			w,
-			e, 
-			1,           //C 
-			1827072,     //Nsoft, 
+			e,
+			1,           //C
+			1827072,     //Nsoft,
 			8,           //Mdlharq,
 			1,           //Kmimo,
 			rvidx,       //rvidx,
-			mod_order,   //Qm, 
-			1,           //Nl, 
+			mod_order,   //Qm,
+			1,           //Nl,
 			0            //r
-			); 
-  }    
+			);
+  }
 }
 
 #endif

@@ -1882,7 +1882,13 @@ int s1ap_decode_downlinknastransporties(
             {
                 MME_UE_S1AP_ID_t  mmeues1apid;
                 MME_UE_S1AP_ID_t *mmeues1apid_p = &mmeues1apid;
-                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_MME_UE_S1AP_ID, (void**)&mmeues1apid_p);
+                // ZTE EPC
+                if (ie_p->value.size == 5)
+                {
+                  tempDecoded = 5;
+                  memcpy(mmeues1apid_p, &(ie_p->value.buf[1]), 4);
+                } else
+                  tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_MME_UE_S1AP_ID, (void**)&mmeues1apid_p);
                 if (tempDecoded < 0) {
                     S1AP_DEBUG("Decoding of IE mme_ue_s1ap_id failed\n");
                     return -1;
@@ -4280,7 +4286,14 @@ int s1ap_decode_initialcontextsetuprequesties(
             {
                 MME_UE_S1AP_ID_t  mmeues1apid;
                 MME_UE_S1AP_ID_t *mmeues1apid_p = &mmeues1apid;
-                tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_MME_UE_S1AP_ID, (void**)&mmeues1apid_p);
+
+                // ZTE EPC
+                if (ie_p->value.size == 5)
+                {
+                  tempDecoded = 5;
+                  memcpy(mmeues1apid_p, &(ie_p->value.buf[1]), 4);
+                } else
+                  tempDecoded = ANY_to_type_aper(&ie_p->value, &asn_DEF_MME_UE_S1AP_ID, (void**)&mmeues1apid_p);
                 if (tempDecoded < 0) {
                     S1AP_DEBUG("Decoding of IE mme_ue_s1ap_id failed\n");
                     return -1;

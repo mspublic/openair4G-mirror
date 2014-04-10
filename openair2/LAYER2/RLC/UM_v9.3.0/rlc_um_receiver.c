@@ -155,16 +155,16 @@ rlc_um_receive (struct rlc_um_entity *rlcP, u32_t frame, u8_t eNB_flag, struct m
 
     while ((tb = list_remove_head (&data_indP.data))) {
 
-		first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
-		tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
+      first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
+      tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
 
     	rlcP->stat_rx_data_bytes += tb_size_in_bytes;
     	rlcP->stat_rx_data_pdu   += 1;
 
     	if (tb_size_in_bytes > 0) {
-			rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
-			LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
-			rlc_um_display_rx_window(rlcP);
+        rlc_um_receive_process_dar (rlcP, frame, eNB_flag, tb, (rlc_um_pdu_sn_10_t *)first_byte, tb_size_in_bytes);
+        LOG_D(RLC, "[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, frame, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
+        rlc_um_display_rx_window(rlcP);
 		}
-    }
+  }
 }

@@ -11,10 +11,13 @@ endif
 
 CFLAGS += -O2
 # Debug
-#CFLAGS += -O0 -g -ggdb
+#CFLAGS += -O2 -pg
+#CFLAGS += -O2 -pg
+#EXTRA_CFLAGS += -O0 -g -ggdb
+#EXTRA_CFLAGS += -O0 -g -ggdb
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
 
-SRC = lte-enb.c
+#SRC = lte-enb.c
 
 ifndef RTAI
 RTAI=1
@@ -22,11 +25,41 @@ endif
 
 ifeq ($(RTAI),1)
 CFLAGS += -DENABLE_RTAI_CLOCK -DRTAI
-RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-enb.o rt_wrapper.o 
+#RTAI_OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o  rt_wrapper.o 
+RTAI_OBJ = rt_wrapper.o
 else
-OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o lte-enb.o rt_wrapper.o
+#OBJ = sched_dlsch.o sched_ulsch.o sched_rx_pdsch.o rt_wrapper.o
+OBJ = rt_wrapper.o
 CFLAGS += -DENABLE_USE_CPU_EXECUTION_TIME
 endif
+
+
+ifndef USRP
+USRP=1
+endif
+
+ifeq ($(USRP),1)
+ifeq ($(RTAI),1)
+RTAI_OBJ += lte-enb-usrp.o
+else
+OBJ += lte-enb-usrp.o
+endif
+
+include $(OPENAIR_TARGETS)/ARCH/USRP/USERSPACE/LIB/Makefile.inc
+CFLAGS += -I/opt/uhd/include -L/opt/uhd/lib -luhd -lpthread -lstdc++
+CFLAGS += -DUSRP
+LDFLAGS += -L/opt/uhd/lib -luhd -lpthread -lstdc++ 
+endif
+
+ifndef SECU
+SECU=1
+endif
+
+ifdef SECU
+CFLAGS += -DENABLE_SECURITY
+LDFLAGS += -lnettle -lssl -lcrypto 
+endif
+
 
 OBJ += $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o
 
@@ -73,11 +106,11 @@ include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 OBJ += $(LOG_OBJS) 
 
 ifndef OPENAIR2
-OPENAIR2=1
+#OPENAIR2=1
 endif
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
-OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS) 
+OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS) $(OSA_OBJS)
 OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
 OBJ += $(PDCP_DIR)/pdcp_thread.o
 CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
@@ -109,7 +142,7 @@ endif
 CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
 #CFLAGS += -fno-common -mpreferred-stack-boundary=4  
 CFLAGS += -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
-CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
+CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 #-DDLSCH_THREAD -DULSCH_THREAD
 
 #only for CBMIMO1
 ifdef CBMIMO1
@@ -122,7 +155,7 @@ CFLAGS += -DEXMIMO
 endif
 
 ifndef HARD_RT
-HARD_RT=1
+HARD_RT=0
 endif
 
 ifeq ($(HARD_RT),1)
@@ -144,9 +177,9 @@ OBJ += $(NAS_OBJS)
 endif
 
 RTAI_CFLAGS += $(shell rtai-config --lxrt-cflags)
-CFLAGS += -I/usr/realtime/include -DRTAI
 LDFLAGS += -lpthread -lm -lforms
 ifeq ($(RTAI),1)
+CFLAGS += -I/usr/realtime/include -DRTAI
 LDFLAGS += $(shell rtai-config --lxrt-ldflags) 
 else
 LDFLAGS += -lrt
@@ -162,6 +195,8 @@ ifdef USE_MME
   CFLAGS += -DENABLE_USE_MME -DENB_MODE
   LDFLAGS += -lsctp
   CFLAGS_S1AP += -DENB_MODE -DENABLE_USE_MME -DEMIT_ASN_DEBUG=1 -DUSER_MODE
+
+  S1AP_Incl += -I$(OPENAIR3_DIR)/OPENAIRMME/SCTP
   S1AP_BUILT_OBJS += $(S1AP_OBJS) $(addprefix $(OPENAIR2_DIR)/S1AP/MESSAGES/, $(S1AP_ASN_MODULE_SOURCES))
   S1AP_BUILT_OBJS += $(OPENAIR3_DIR)/OPENAIRMME/SCTP/sctp_primitives_client.o
 endif
@@ -177,12 +212,21 @@ S1AP_DIR=$(OPENAIR2_DIR)/S1AP
 ASN1MESSAGESDIR=$(S1AP_DIR)/MESSAGES
 ASN1DIR=$(ASN1MESSAGESDIR)/ASN1
 
+ifeq ($(USRP),1)
+all: lte-enb-usrp
+else
 all: lte-enb
+endif
 
+$(USRP_OBJ):$(USRP_FILE_OBJ)
+	@echo Compiling $<
+	@$(CXX) -c  $(USRP_CFLAGS) $(USRP_FILE_OBJ) -o $(USRP_OBJ)
 
+ifeq ($(RTAI),1)
 $(RTAI_OBJ): %.o : %.c
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $(RTAI_CFLAGS) -o $@ $<
+endif
 
 $(OBJ) $(ASN1_MSG_OBJS1): %.o : %.c
 	@echo Compiling $< ...
@@ -208,26 +252,21 @@ $(LFDS_DIR)/bin/liblfds611.a:
 	$(MAKE) -C $(LFDS_DIR) -f makefile.linux
 
 ifdef USE_MME
-  lte-enb: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(S1AP_DIR)/libs1ap.a $(LFDS_DIR)/bin/liblfds611.a
+  lte-enb-usrp: $(OBJ) $(USRP_OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(S1AP_DIR)/libs1ap.a $(LFDS_DIR)/bin/liblfds611.a
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(USRP_OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-enb  $(S1AP_DIR)/libs1ap.a $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
 else
-  lte-enb: $(OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
+  lte-enb-usrp: $(OBJ) $(USRP_OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) $(LFDS_DIR)/bin/liblfds611.a
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(USRP_OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-enb  $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
 endif
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) -o lte-enb  $(S1AP_DIR)/libs1ap.a $(LDFLAGS) $(LFDS_DIR)/bin/liblfds611.a
 
-
-
-nasmesh:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
-	(cd $(OPENAIR2_DIR) && $(MAKE) nasmesh_netlink.ko)
-	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
-rb_tool:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
-
-nasmesh_install:
-	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
+drivers:
+	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
+	cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make clean && make
+	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
+	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make 
 
 clean:
-	rm -rf $(OBJ) $(RTAI_OBJ)
+	rm -rf $(OBJ) $(RTAI_OBJ) $(USRP_OBJ)
 	rm -f $(S1AP_BUILT_OBJS)
 	rm -f $(S1AP_DIR)/libs1ap.a
 

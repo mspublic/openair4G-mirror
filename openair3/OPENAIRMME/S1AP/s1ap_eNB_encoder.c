@@ -37,6 +37,15 @@
 
 #include "sctp_primitives_client.h"
 
+// TODO: Gobal id of enb, iditical to SIB1 infomation
+char tac[] = { 0x00, 0x01 };
+uint8_t id[] = { 0x00, 0x00, 0x00, 0x01 };
+#define TEST_SIM
+#ifdef TEST_SIM
+char identity[] = { 0x00, 0xf1, 0x10 };
+#else
+char identity[] = { 0x64, 0xf0, 0x00 };
+#endif // TEST_SIM
 int s1ap_eNB_encode_initial_ue_message(InitialUEMessageIEs_t  *initialUEmessageIEs_p,
                                        uint8_t             **buffer,
                                        uint32_t             *length) {
@@ -83,11 +92,11 @@ int s1ap_eNB_encode_uplink_nas_transport(UplinkNASTransportIEs_t  *uplinkNASTran
     UplinkNASTransport_t *uplinkNASTransport_p = &uplinkNASTransport;
 
     memset((void *)uplinkNASTransport_p, 0, sizeof(UplinkNASTransport_t));
-    
+
     if (s1ap_encode_uplinknastransporties(uplinkNASTransport_p, uplinkNASTransportIEs_p) < 0)
       return -1;
 
-    return s1ap_generate_initiating_message(buffer, 
+    return s1ap_generate_initiating_message(buffer,
         length,
         ProcedureCode_id_uplinkNASTransport,
         Criticality_reject,
@@ -103,9 +112,9 @@ int s1ap_eNB_generate_initial_ue_message(struct s1ap_eNB_UE_description_s *ue_re
     uint8_t  *buffer;
     uint32_t  len;
 
-    char tac[] = { 0x00, 0x01 };
-    uint8_t id[] = { 0x03, 0x56, 0xf0, 0xd8 };
-    char identity[] = { 0x02, 0x08, 0x34 };
+    //char tac[] = { 0x00, 0x01 };
+    //uint8_t id[] = { 0x03, 0x56, 0xf0, 0xd8 };
+    //char identity[] = { 0x02, 0x08, 0x34 };
 
     memset((void *)initialUEmessageIEs_p, 0, sizeof(InitialUEMessageIEs_t));
 
@@ -155,7 +164,7 @@ int s1ap_eNB_encode_initial_context_setup_response(InitialContextSetupResponseIE
 int s1ap_eNB_generate_initial_setup_resp(struct s1ap_eNB_UE_description_s *ue_ref) {
     InitialContextSetupResponseIEs_t  initialResponseIEs;
     InitialContextSetupResponseIEs_t *initialResponseIEs_p = &initialResponseIEs;
-    
+
     uint8_t *buffer;
     uint32_t len;
 
@@ -197,9 +206,9 @@ int s1ap_eNB_generate_uplink_nas_transport(struct s1ap_eNB_UE_description_s *ue_
     uint8_t  *buffer;
     uint32_t  len;
 
-    char tac[] = { 0x00, 0x01 };
-    uint8_t id[] = { 0x03, 0x56, 0xf0, 0xd8 };
-    char identity[] = { 0x02, 0x08, 0x34 };
+    //char tac[] = { 0x00, 0x01 };
+    //uint8_t id[] = { 0x03, 0x56, 0xf0, 0xd8 };
+    //char identity[] = { 0x00, 0x01, 0x01 };
 
     memset((void *)uplinkNASTransportIEs_p,0, sizeof(UplinkNASTransportIEs_t));
 
@@ -232,8 +241,6 @@ int s1ap_eNB_generate_s1_setup_request(struct s1ap_eNB_description_s* eNB_ref) {
     PLMNidentity_t plmnIdentity;
     S1SetupRequestIEs_t s1SetupRequest;
 
-    char tac[] = { 0x00, 0x01 };
-    char identity[] = { 0x02, 0x08, 0x34 };
     char eNBname[150];
     int eNBnameLength = 0;
     uint8_t *buffer;
@@ -254,7 +261,6 @@ int s1ap_eNB_generate_s1_setup_request(struct s1ap_eNB_description_s* eNB_ref) {
         s1SetupRequest.presenceMask |= S1SETUPREQUESTIES_ENBNAME_PRESENT;
         OCTET_STRING_fromBuf(&s1SetupRequest.eNBname, eNBname, eNBnameLength);
     }
-
     memset((void *)&ta, 0, sizeof(SupportedTAs_Item_t));
     memset((void *)&plmnIdentity, 0, sizeof(PLMNidentity_t));
     OCTET_STRING_fromBuf(&ta.tAC, tac, 2);

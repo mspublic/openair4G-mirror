@@ -75,7 +75,7 @@ unsigned short fill_rar(u8 Mod_id,
     }
   }
 
-  // subheader fixed 
+  // subheader fixed
   rarh->E                     = 0; // First and last RAR
   rarh->T                     = 1; // 0 for E/T/R/R/BI subheader, 1 for E/T/RAPID subheader
   rarh->RAPID                 = eNB_mac_inst[Mod_id].RA_template[ra_idx].preamble_index; // Respond to Preamble 0 only for the moment
@@ -90,7 +90,7 @@ unsigned short fill_rar(u8 Mod_id,
   rar->cqi_req                = 1;
   rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti;
   */
-  rar[4] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti>>8); 
+  rar[4] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti>>8);
   rar[5] = (uint8_t)(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti&0xff);
   eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset = 0;
   //eNB_mac_inst[Mod_id].RA_template[ra_idx].timing_offset /= 16;
@@ -104,13 +104,17 @@ unsigned short fill_rar(u8 Mod_id,
   ULdelay = 0;
   cqireq = 0;
   rar[2] |= ((mcs&0x8)>>3);  // mcs 10
-  rar[3] = (((mcs&0x7)<<5)) | ((TPC&7)<<2) | ((ULdelay&1)<<1) | (cqireq&1); 
+  rar[3] = (((mcs&0x7)<<5)) | ((TPC&7)<<2) | ((ULdelay&1)<<1) | (cqireq&1);
 
   LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Generating RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for CRNTI %x,preamble %d/%d\n",Mod_id,frame,
 	*(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
 	eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti,
 	rarh->RAPID,eNB_mac_inst[Mod_id].RA_template[0].preamble_index);
 
+  msg("Generating RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for CRNTI %x,preamble %d/%d\n",
+	*(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
+	eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti,
+	rarh->RAPID,eNB_mac_inst[Mod_id].RA_template[0].preamble_index);
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.opt_enabled){
     trace_pdu(1, dlsch_buffer, input_buffer_length, Mod_id, 2, 1,
@@ -118,8 +122,8 @@ unsigned short fill_rar(u8 Mod_id,
     LOG_I(OPT,"[eNB %d][RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
           Mod_id, frame, eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti,
           rarh->RAPID, input_buffer_length);
-  } 
-#endif 
+  }
+#endif
 
   //oai_flag = 1;
   return(eNB_mac_inst[Mod_id].RA_template[ra_idx].rnti);
@@ -130,7 +134,7 @@ uint16_t ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 p
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   //  RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
-  
+
   LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",Mod_id,frame,
 	*(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
 	rarh->RAPID,preamble_index);
@@ -147,10 +151,10 @@ uint16_t ue_process_rar(u8 Mod_id, u32 frame, u8 *dlsch_buffer,u16 *t_crnti,u8 p
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->TPC %d\n",Mod_id,rar->TPC);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->UL_delay %d\n",Mod_id,rar->UL_delay);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->cqi_req %d\n",Mod_id,rar->cqi_req);
-  LOG_I(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",Mod_id,(uint16_t)rar[5]+(rar[4]<<8)); 
+  LOG_I(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",Mod_id,(uint16_t)rar[5]+(rar[4]<<8));
 #endif
 
-  
+
   if (preamble_index == rarh->RAPID) {
     *t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;
     UE_mac_inst[Mod_id].crnti = *t_crnti;//rar->t_crnti;

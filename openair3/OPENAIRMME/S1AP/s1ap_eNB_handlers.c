@@ -196,7 +196,7 @@ int s1ap_eNB_handle_initial_context_setup(uint32_t assocId, uint32_t stream, str
     //TODO: init E-RAB configuration procedure
     ue_ref->nb_of_e_rabs = initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.e_RABToBeSetupItemCtxtSUReq.count;
 
-    
+
     for (i = 0; i < initialContextSetupRequest_p->e_RABToBeSetupListCtxtSUReq.e_RABToBeSetupItemCtxtSUReq.count; i++) {
       uint8_t *nas_pdu = NULL;
       uint32_t nas_length = 0;
@@ -224,7 +224,7 @@ int s1ap_eNB_handle_initial_context_setup(uint32_t assocId, uint32_t stream, str
         ue_ref->e_rab_list_head->next_e_rab = ue_e_rab;
 
       S1AP_DEBUG("nas buf %p, len %d\n", nas_pdu, nas_length);
-      rrc_eNB_ind_reconfiguration(ue_ref->eNB->eNB_id, ue_ref->eNB_UE_s1ap_id, nas_pdu, nas_length);
+      rrc_eNB_ind_reconfiguration(ue_ref->eNB->eNB_id, ue_ref->eNB_UE_s1ap_id, nas_pdu, nas_length, ue_ref->security_key);
     }
 
 #endif
@@ -252,6 +252,8 @@ int s1ap_eNB_handle_downlink_nas_transport(uint32_t assocId, uint32_t stream, st
           assocId, (int)downlinkNASTransport_p->eNB_UE_S1AP_ID);
     }
 
+    /* This is the first time we receive the MME UE S1AP ID for the UE, store it and use it as UE identifier over MME */
+    ue_ref->mme_UE_s1ap_id = downlinkNASTransport_p->mme_ue_s1ap_id;
 #if defined(ENB_MODE)
     rrc_eNB_generate_DLInformationTransfer (ue_ref->eNB->eNB_id, ue_ref->eNB_UE_s1ap_id, downlinkNASTransport_p->nas_pdu.buf, downlinkNASTransport_p->nas_pdu.size);
 #endif

@@ -67,7 +67,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms) {
 
-  
+
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   //  RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
@@ -123,16 +123,16 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->O_RI                                  = 0;//1;
     ulsch->Or2                                   = 0;
     ulsch->Or1                                   = 0;
- 
+
   }
   ulsch->harq_processes[harq_pid]->O_ACK                                 = 0;//2;
   ulsch->beta_offset_cqi_times8                = 18;
   ulsch->beta_offset_ri_times8                 = 10;
   ulsch->beta_offset_harqack_times8            = 16;
 
-  
+
   ulsch->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1);
-  ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];  
+  ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;
     ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -147,16 +147,16 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[harq_pid]->rvidx = 0;
     ulsch->harq_processes[harq_pid]->round++;
   }
-  //#ifdef DEBUG_RAR
+  #ifdef DEBUG_RAR
   msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
   msg("ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
   msg("ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  msg("ulsch ra (eNB): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+  msg("ulsch ra (eNB): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);
   msg("ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
   msg("ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
   msg("ulsch ra (eNB): Or1      %d\n",ulsch->Or1);
   msg("ulsch ra (eNB): ORI      %d\n",ulsch->O_RI);
-  //#endif
+  #endif
   return(0);
 }
 
@@ -164,7 +164,7 @@ s8 delta_PUSCH_msg2[8] = {-6,-4,-2,0,2,4,6,8};
 
 int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 				      unsigned char eNB_id ){
-  
+
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   uint8_t transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
   unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
@@ -172,7 +172,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
   PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
   LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
-  //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];  
+  //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
 
   uint8_t *rar = (uint8_t *)(rar_pdu+1);
   uint8_t harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame,subframe);
@@ -208,9 +208,9 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   }
 
 
-  
+
   ulsch->harq_processes[harq_pid]->TPC                                   = (rar[3]>>3)&7;//rar->TPC;
-  
+
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
   cqireq=rar[3]&1;
 
@@ -247,18 +247,18 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
       ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
       ulsch->o_RI[0]                             = 0;
     }
-  
+
     ulsch->uci_format = HLC_subband_cqi_nopmi;
     //int flag_LA = 0;
     //   if(flag_LA==1)
     //  {
     sinr_eff = sinr_eff_cqi_calc(phy_vars_ue, eNB_id);
-    
+
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,0, transmission_mode,sinr_eff);
     //  }
     // else
     // fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id,transmission_mode);
-    if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10)) 
+    if (((phy_vars_ue->frame % 100) == 0) || (phy_vars_ue->frame < 10))
       print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
   }
   else {
@@ -266,14 +266,14 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     ulsch->O                                   = 0;
   }
   ulsch->harq_processes[harq_pid]->O_ACK                                  = 0;//2;
-  
+
   ulsch->beta_offset_cqi_times8                  = 18;
   ulsch->beta_offset_ri_times8                   = 10;
   ulsch->beta_offset_harqack_times8              = 16;
-  
+
   ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
   ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];  //rar->t_crnti;
-  
+
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;
     ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -296,13 +296,13 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
 	LOG_D(PHY,"[UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
 	    phy_vars_ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
 	    mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id));
-    
+
 
 	//#ifdef DEBUG_RAR
     msg("ulsch ra (UE): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch ra (UE): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("ulsch ra (UE): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    msg("ulsch ra (UE): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+    msg("ulsch ra (UE): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);
     msg("ulsch ra (UE): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch ra (UE): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
     msg("ulsch ra (UE): TPC      %d\n",ulsch->harq_processes[harq_pid]->TPC);

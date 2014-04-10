@@ -186,8 +186,19 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t rb
       //For control plane data that are not integrity protected,
       // the MAC-I field is still present and should be padded with padding bits set to 0.
       for (i=0;i<pdcp_tailer_len;i++)
-        pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00;// pdu_header.mac_i[i];
-      
+          pdcp_pdu->data[pdcp_header_len + sdu_buffer_size + i] = 0x00;// pdu_header.mac_i[i];
+
+#if defined(ENABLE_SECURITY)
+      //if ((pdcp->security_activated != 0) &&
+      //    ((pdcp->cipheringAlgorithm) != 0) &&
+      //    ((pdcp->integrityProtAlgorithm) != 0)) {
+      if (pdcp->security_activated != 0) {
+        pdcp_apply_security(pdcp, rb_id % NB_RB_MAX,
+                            pdcp_header_len, current_sn, pdcp_pdu->data,
+                            sdu_buffer_size);
+      }
+#endif
+
       /* Print octets of outgoing data in hexadecimal form */
       LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n",
             pdcp_pdu_size);

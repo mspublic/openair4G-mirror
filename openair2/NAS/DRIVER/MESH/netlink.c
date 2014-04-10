@@ -31,9 +31,10 @@
 * \author Raymond knopp, and Navid Nikaein
 * \company Eurecom
 * \email: knopp@eurecom.fr, and navid.nikaein@eurecom.fr
-*/ 
+*/
 
 //#include <linux/config.h>
+#include <linux/version.h>
 #include <linux/socket.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -57,6 +58,9 @@
 static struct sock *nas_nl_sk = NULL;
 static int exit_netlink_thread=0;
 static int nas_netlink_rx_thread(void *);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)
+struct netlink_kernel_cfg oai_netlink_cfg;
+#endif
 
 
 static DEFINE_MUTEX(nasmesh_mutex);
@@ -81,16 +85,16 @@ static void nas_nl_data_ready (struct sk_buff *skb)
   //nasmesh_unlock();
 
   struct nlmsghdr *nlh = NULL;
-  int j;  
+  int j;
   if (skb) {
-    
+
 #ifdef NETLINK_DEBUG
     printk("[NAS][NETLINK] Received socket from PDCP\n");
 #endif //NETLINK_DEBUG
     nlh = (struct nlmsghdr *)skb->data;
-  
+
     nas_COMMON_QOS_receive(nlh);
-    
+
     //kfree_skb(skb); // not required,
   }
 
@@ -100,31 +104,31 @@ static void nas_nl_data_ready (struct sk_buff *skb)
 static struct task_struct *netlink_rx_thread;
 
 // this thread is used to avoid blocking other system calls from entering the kernel
-static int nas_netlink_rx_thread(void *data) { 
+static int nas_netlink_rx_thread(void *data) {
 
   int err;
   struct sk_buff *skb = NULL;
   struct nlmsghdr *nlh = NULL;
-  
+
   printk("[NAS][NETLINK] Starting RX Thread \n");
 
   while (!kthread_should_stop()) {
-    
+
     if (nas_nl_sk) {
-      skb = skb_recv_datagram(nas_nl_sk, 0, 0, &err);   
+      skb = skb_recv_datagram(nas_nl_sk, 0, 0, &err);
 
       if (skb) {
-	
+
 #ifdef NETLINK_DEBUG
 	printk("[NAS][NETLINK] Received socket from PDCP\n");
 #endif //NETLINK_DEBUG
 	nlh = (struct nlmsghdr *)skb->data;
-	
+
 	nas_COMMON_QOS_receive(nlh);
-	
+
 	skb_free_datagram(nas_nl_sk,skb);
       }
-      
+
     }
     else {
       if (exit_netlink_thread == 1) {
@@ -133,16 +137,16 @@ static int nas_netlink_rx_thread(void *data) {
       }
     }
   } // while
-  
+
   printk("[NAS][NETLINK] Exiting RX thread\n");
-  
+
   return(0);
-  
+
 }
 
 static void nas_nl_data_ready (struct sock *sk, int len)
 
-{ 
+{
   wake_up_interruptible(sk->sk_sleep);
 }
 #endif
@@ -152,19 +156,33 @@ int nas_netlink_init()
 {
 
   printk("[NAS][NETLINK] Running init ...\n");
-  
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)
+  oai_netlink_cfg.groups    = 0;
+  oai_netlink_cfg.input     = nas_nl_data_ready;
+  oai_netlink_cfg.cb_mutex  = &nasmesh_mutex;
+  oai_netlink_cfg.bind      = NULL;
 
   nas_nl_sk = netlink_kernel_create(
-#ifdef KERNEL_VERSION_GREATER_THAN_2622
-				    &init_net,       
+				    &init_net,
+				    NAS_NETLINK_ID,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0)
+            THIS_MODULE,
 #endif
-				    NAS_NETLINK_ID, 
-				    0, 
-				    nas_nl_data_ready, 
+            &oai_netlink_cfg);
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0) */
+  nas_nl_sk = netlink_kernel_create(
+#ifdef KERNEL_VERSION_GREATER_THAN_2622
+				    &init_net,
+#endif
+				    NAS_NETLINK_ID,
+				    0,
+				    nas_nl_data_ready,
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
 				    &nasmesh_mutex, // NULL
 #endif
 				    THIS_MODULE);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0) */
 
 
   if (nas_nl_sk == NULL) {
@@ -174,31 +192,31 @@ int nas_netlink_init()
   }
 
 #ifdef KERNEL_VERSION_GREATER_THAN_2629
-  
+
 #else
     // Create receive thread
   netlink_rx_thread = kthread_run(nas_netlink_rx_thread, NULL, "NAS_NETLINK_RX_THREAD");
 #endif
 
   return(0);
-  
+
 }
 
 
-void nas_netlink_release(void) {  
+void nas_netlink_release(void) {
 
   exit_netlink_thread=1;
   printk("[NAS][NETLINK] Releasing netlink socket\n");
- 
+
   if(nas_nl_sk){
-#ifdef KERNEL_VERSION_GREATER_THAN_2629 
+#ifdef KERNEL_VERSION_GREATER_THAN_2629
     netlink_kernel_release(nas_nl_sk); //or skb->sk
 #else
     sock_release(nas_nl_sk->sk_socket);
 #endif
-    
+
   }
-  
+
  //  printk("[NAS][NETLINK] Removing netlink_rx_thread\n");
  //kthread_stop(netlink_rx_thread);
 
@@ -224,7 +242,11 @@ int nas_netlink_send(unsigned char *data,unsigned int len) {
 
   nlh->nlmsg_pid = 0;      /* from kernel */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+  NETLINK_CB(nl_skb).portid = 0;
+#else
   NETLINK_CB(nl_skb).pid = 0;
+#endif
 
 #ifdef NETLINK_DEBUG
   printk("[NAS][NETLINK] In nas_netlink_send, nl_skb %p, nl_sk %x, nlh %p, nlh->nlmsg_len %d\n",nl_skb,nas_nl_sk,nlh,nlh->nlmsg_len);

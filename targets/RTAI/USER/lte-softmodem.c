@@ -95,7 +95,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
-// at eNB 0, an UL scope for every UE 
+// at eNB 0, an UL scope for every UE
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[NUMBER_OF_UE_MAX];
 FD_stats_form *form_stats=NULL;
@@ -143,7 +143,6 @@ int oai_flag = 0;
 //int time_offset[4] = {-138,-138,-138,-138};
 //int time_offset[4] = {-145,-145,-145,-145};
 int time_offset[4] = {0,0,0,0};
-
 int fs4_test=0;
 char UE_flag=0;
 u8  eNB_id=0,UE_id=0;
@@ -206,7 +205,7 @@ void signal_handler(int sig)
   if (sig==SIGSEGV) {
     // get void*'s for all entries on the stack
     size = backtrace(array, 10);
-    
+
     // print out all the frames to stderr
     fprintf(stderr, "Error: signal %d:\n", sig);
     backtrace_symbols_fd(array, size, 2);
@@ -236,45 +235,45 @@ void *scope_thread(void *arg) {
     char stats_buffer[16384];
     //FILE *UE_stats, *eNB_stats;
     int len=0;
-    
+
     /*
-      if (UE_flag==1) 
+      if (UE_flag==1)
       UE_stats  = fopen("UE_stats.txt", "w");
-      else 
+      else
       eNB_stats = fopen("eNB_stats.txt", "w");
     */
-    
+
     while (!oai_exit) {
         if (UE_flag==1) {
             len = dump_ue_stats (PHY_vars_UE_g[0], stats_buffer, 0, mode,rx_input_level_dBm);
             fl_set_object_label(form_stats->stats_text, stats_buffer);
             //rewind (UE_stats);
             //fwrite (stats_buffer, 1, len, UE_stats);
-            
-            phy_scope_UE(form_ue[UE_id], 
+
+            phy_scope_UE(form_ue[UE_id],
                          PHY_vars_UE_g[UE_id],
                          eNB_id,
                          UE_id,7);
-            
+
         } else {
             len = dump_eNB_stats (PHY_vars_eNB_g[0], stats_buffer, 0);
             fl_set_object_label(form_stats->stats_text, stats_buffer);
             //rewind (eNB_stats);
             //fwrite (stats_buffer, 1, len, eNB_stats);
             for(UE_id=0;UE_id<scope_enb_num_ue;UE_id++) {
-                phy_scope_eNB(form_enb[UE_id], 
+                phy_scope_eNB(form_enb[UE_id],
                               PHY_vars_eNB_g[eNB_id],
                               UE_id);
             }
-              
+
         }
         //printf("doing forms\n");
         sleep(0.1);
     }
-    
+
     //fclose (UE_stats);
     //fclose (eNB_stats);
-    
+
     pthread_exit((void*)arg);
 }
 #endif
@@ -295,22 +294,22 @@ void *emos_thread (void *arg)
   char  dumpfile_name[1024];
   time_t starttime_tmp;
   struct tm starttime;
-  
+
   int channel_buffer_size;
-  
+
   time_t timer;
   struct tm *now;
 
   struct gps_data_t *gps_data = NULL;
   struct gps_fix_t dummy_gps_data;
- 
+
   timer = time(NULL);
   now = localtime(&timer);
 
   memset(&dummy_gps_data,1,sizeof(struct gps_fix_t));
-  
+
   gps_data = gps_open("127.0.0.1","2947");
-  if (gps_data == NULL) 
+  if (gps_data == NULL)
     {
       printf("[EMOS] Could not open GPS\n");
       //exit(-1);
@@ -325,7 +324,7 @@ void *emos_thread (void *arg)
       printf("[EMOS] Error sending command to GPS\n");
       //exit(-1);
     }
-  
+
   if (UE_flag==0)
     channel_buffer_size = sizeof(fifo_dump_emos_eNB);
   else
@@ -421,14 +420,14 @@ void *emos_thread (void *arg)
 		  printf("[EMOS] Error writing to dumpfile, stopping recording\n");
 		  exit(EXIT_FAILURE);
 		}
-	    } 
+	    }
         }
     }
-  
+
   free(fifo2file_buffer);
   fclose(dumpfile_id);
   close(fifo);
-  
+
   pthread_exit((void*) arg);
 
 }
@@ -475,8 +474,8 @@ static void *eNB_thread(void *arg)
     {
       hw_subframe = ((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)/15;
       //LOG_D(HW,"eNB frame %d, time %llu: slot %d, hw_slot %d (mbox %d)\n",frame,rt_get_time_ns(),slot,hw_slot,((unsigned int *)DAQ_MBOX)[0]);
-      //this is the mbox counter where we should be 
-      
+      //this is the mbox counter where we should be
+
       mbox_target = mbox_bounds[subframe];
       //this is the mbox counter where we are
       mbox_current = ((volatile unsigned int *)DAQ_MBOX)[0];
@@ -487,12 +486,12 @@ static void *eNB_thread(void *arg)
           diff = -150+mbox_target-mbox_current;
       else
           diff = mbox_target - mbox_current;
-      
+
       if (diff < -15) {
-      
+
         LOG_D(HW,"time %4d.%3d.%3d: Frame %d, missed subframe, proceeding with next one (subframe %d, hw_subframe %d, diff %d)\n",frame, rt_get_time_ns(), subframe, hw_subframe, diff);
         slot++;
-        //if (frame>0)	  
+        //if (frame>0)
         //  oai_exit=1;
         if (slot==20){
             slot=0;
@@ -500,7 +499,7 @@ static void *eNB_thread(void *arg)
         }
         continue;
       }
-      if (diff > 15) 
+      if (diff > 15)
           LOG_D(HW,"eNB Frame %d, time %llu: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, rt_get_time_ns(), slot, hw_slot, mbox_current, mbox_target, diff);
 
       delay_cnt = 0;
@@ -542,23 +541,23 @@ static void *eNB_thread(void *arg)
             LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, next_slot %d (before): DAQ_MBOX %d\n",frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,next_slot,DAQ_MBOX[0]);
 	  */
 
-          /* 
+          /*
 	  if (PHY_vars_eNB_g[0]->frame>5) {
-          
+
 	    timing_info.time_last = timing_info.time_now;
 	    timing_info.time_now = rt_get_time_ns();
-	  
+
 	    if (timing_info.n_samples>0) {
 	      time_diff = timing_info.time_now - timing_info.time_last;
-	      if (time_diff < timing_info.time_min) 
+	      if (time_diff < timing_info.time_min)
 		timing_info.time_min = time_diff;
-	      if (time_diff > timing_info.time_max) 
+	      if (time_diff > timing_info.time_max)
 		timing_info.time_max = time_diff;
 	      timing_info.time_avg += time_diff;
 	    }
 
 	    timing_info.n_samples++;
-	    
+
 	    if ((timing_info.n_samples%2000)==0) {
 	      LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d: diff=%llu, min=%llu, max=%llu, avg=%llu (n_samples %d)\n",
 		    frame, PHY_vars_eNB_g[0]->frame, slot, hw_slot,time_diff,
@@ -568,7 +567,7 @@ static void *eNB_thread(void *arg)
               timing_info.time_max = 0;
 	      timing_info.time_avg = 0;
 	    }
-	    
+
 	    }
             */
 
@@ -615,7 +614,7 @@ static void *eNB_thread(void *arg)
                                             &(PHY_vars_eNB_g[0]->lte_frame_parms));
                         }
 #ifdef EXMIMO
-		      for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti/2; i++) 
+		      for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti/2; i++)
 			{
 			  tx_offset = (int)slot_offset+time_offset[aa]+i;
 			  if (tx_offset<0)
@@ -715,11 +714,11 @@ static void *UE_thread(void *arg)
   while (!oai_exit)
     {
       hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15; //the slot the hw is about to store
-      
+
       if (is_synchronized) {
 	//this is the mbox counter that indicates the start of the frame
-	rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (10*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti); 
-	//this is the mbox counter where we should be 
+	rx_offset_mbox = (PHY_vars_UE_g[0]->rx_offset * 150) / (10*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti);
+	//this is the mbox counter where we should be
 	mbox_target = (((((slot+1)%20)*15+1)>>1) + rx_offset_mbox + 1)%150;
 	// round up to the next multiple of two (mbox counter from express MIMO gives only even numbers)
 	mbox_target = ((mbox_target+1)-((mbox_target-1)%2))%150;
@@ -732,10 +731,10 @@ static void *UE_thread(void *arg)
 	  diff2 = -150+mbox_target-mbox_current;
 	else
 	  diff2 = mbox_target - mbox_current;
-	
+
 	if (diff2 <(-5)) {
 	  LOG_D(HW,"UE Frame %d: missed slot, proceeding with next one (slot %d, hw_slot %d, diff %d)\n",frame, slot, hw_slot, diff2);
-	  if (frame>0)	  
+	  if (frame>0)
 	    oai_exit=1;
 	  slot++;
 	  if (slot==20) {
@@ -744,9 +743,9 @@ static void *UE_thread(void *arg)
 	  }
 	  continue;
 	}
-	if (diff2>8) 
+	if (diff2>8)
 	  LOG_D(HW,"UE Frame %d: skipped slot, waiting for hw to catch up (slot %d, hw_slot %d, mbox_current %d, mbox_target %d, diff %d)\n",frame, slot, hw_slot, mbox_current, mbox_target, diff2);
-	
+
 	/*
 	  if (frame%100==0)
 	  LOG_D(HW,"frame %d (%d), slot %d, hw_slot %d, rx_offset_mbox %d, mbox_target %d, mbox_current %d, diff %d\n",frame, PHY_vars_UE_g[0]->frame, slot,hw_slot,rx_offset_mbox,mbox_target,mbox_current,diff2);
@@ -760,11 +759,11 @@ static void *UE_thread(void *arg)
 	    time_in = rt_get_time_ns();
 	    //LOG_D(HW,"eNB Frame %d delaycnt %d : hw_slot %d (%d), slot %d (%d), diff %d, time %llu\n",frame,delay_cnt,hw_slot,((volatile unsigned int *)DAQ_MBOX)[0],slot,mbox_target,diff2,time_in);
 	    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,1);
-	    ret = rt_sleep_ns(diff2*DAQ_PERIOD); 
+	    ret = rt_sleep_ns(diff2*DAQ_PERIOD);
 	    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_RT_SLEEP,0);
 	    if (ret)
 	      LOG_D(HW,"eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame, time_in);
-	    
+
 	    hw_slot = (((((volatile unsigned int *)DAQ_MBOX)[0]+1)%150)<<1)/15;
 	    //LOG_D(HW,"eNB Frame %d : hw_slot %d, time %llu\n",frame,hw_slot,rt_get_time_ns());
 	    delay_cnt++;
@@ -784,7 +783,7 @@ static void *UE_thread(void *arg)
 	    vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[card].rxcnt_ptr[0]));
 	    vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DIFF, diff2);
  	  }
-	
+
       }
 
       last_slot = (slot)%LTE_SLOTS_PER_FRAME;
@@ -808,7 +807,7 @@ static void *UE_thread(void *arg)
 	  /*
           if (frame % 100 == 0)
             LOG_D(HW,"hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
-	  
+
             LOG_D(HW,"Frame %d: last_slot %d, phy_procedures_lte_ue time_in %llu, time_out %llu, diff %llu\n",
                       frame, last_slot,in,out,diff);
 	  */
@@ -846,7 +845,7 @@ static void *UE_thread(void *arg)
 		//start the DMA transfers
 		//LOG_D(HW,"Before openair0_start_rt_acquisition \n");
 		openair0_start_rt_acquisition(card);
-		
+
 		hw_slot_offset = (PHY_vars_UE_g[0]->rx_offset<<1) / PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti;
 		LOG_D(HW,"Got synch: hw_slot_offset %d\n",hw_slot_offset);
 		}
@@ -858,7 +857,7 @@ static void *UE_thread(void *arg)
 	    }
 	    else {
 	      openair_daq_vars.freq_offset *= -1;
-	    }	      
+	    }
 	    if (abs(openair_daq_vars.freq_offset) > 7500) {
 	      LOG_I(PHY,"[initial_sync] No cell synchronization found, abondoning\n");
 	      mac_xface->macphy_exit("");
@@ -870,7 +869,7 @@ static void *UE_thread(void *arg)
 		p_exmimo_config->rf.rf_freq_tx[i] = carrier_freq[i]+openair_daq_vars.freq_offset;
 	      }
 	      openair0_dump_config(card);
-	      
+
 	      }
 	   }
         }
@@ -1011,7 +1010,7 @@ int main(int argc, char **argv) {
 	      }
 	    }
 	  }
-	  else 
+	  else
 	    printf("%s not found, running with defaults\n",rxg_fname);
 
 	  sprintf(txg_fname,"%stxg.lime",optarg);
@@ -1030,7 +1029,7 @@ int main(int argc, char **argv) {
 	      }
 	    }
 	  }
-	  else 
+	  else
 	    printf("%s not found, running with defaults\n",txg_fname);
 
 	  sprintf(rflo_fname,"%srflo.lime",optarg);
@@ -1039,7 +1038,7 @@ int main(int argc, char **argv) {
 	    printf("Loading RF LO parameters from %s\n",rflo_fname);
 	    fscanf(rflo_fd,"%d %d %d %d",&rf_local[0],&rf_local[1],&rf_local[2],&rf_local[3]);
 	  }
-	  else 
+	  else
 	    printf("%s not found, running with defaults\n",rflo_fname);
 
 	  sprintf(rfdc_fname,"%srfdc.lime",optarg);
@@ -1048,7 +1047,7 @@ int main(int argc, char **argv) {
 	    printf("Loading RF DC parameters from %s\n",rfdc_fname);
 	    fscanf(rfdc_fd,"%d %d %d %d",&rf_rxdc[0],&rf_rxdc[1],&rf_rxdc[2],&rf_rxdc[3]);
 	  }
-	  else 
+	  else
 	    printf("%s not found, running with defaults\n",rfdc_fname);
 
 	  break;
@@ -1118,7 +1117,7 @@ int main(int argc, char **argv) {
   frame_parms->nushift            = 0;
   if (UE_flag==0) {
     switch (transmission_mode) {
-    case 1: 
+    case 1:
       frame_parms->nb_antennas_tx     = 1;
       frame_parms->nb_antennas_rx     = 1;
       break;
@@ -1157,9 +1156,9 @@ int main(int argc, char **argv) {
   phy_init_lte_top(frame_parms);
 
   //init prach for openair1 test
-  frame_parms->prach_config_common.rootSequenceIndex=22; 
+  frame_parms->prach_config_common.rootSequenceIndex=22;
   frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
-  frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0; 
+  frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
   frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
   frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
   prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
@@ -1188,7 +1187,7 @@ int main(int argc, char **argv) {
 
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
     PHY_vars_UE_g[0] = init_lte_UE(frame_parms, UE_id,abstraction_flag,transmission_mode);
-    
+
 #ifndef OPENAIR2
     for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       PHY_vars_UE_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
@@ -1200,7 +1199,7 @@ int main(int argc, char **argv) {
       PHY_vars_UE_g[0]->scheduling_request_config[i].dsr_TransMax = sr_n4;
     }
 #endif
-    
+
     compute_prach_seq(&PHY_vars_UE_g[0]->lte_frame_parms.prach_config_common,
 		      PHY_vars_UE_g[0]->lte_frame_parms.frame_type,
 		      PHY_vars_UE_g[0]->X_u);
@@ -1211,7 +1210,7 @@ int main(int argc, char **argv) {
 #endif
     NB_UE_INST=1;
     NB_INST=1;
-    
+
     openair_daq_vars.manual_timing_advance = 0;
     //openair_daq_vars.timing_advance = TIMING_ADVANCE_HW;
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
@@ -1219,7 +1218,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.use_ia_receiver = 1;
 
     // if AGC is off, the following values will be used
-    //    for (i=0;i<4;i++) 
+    //    for (i=0;i<4;i++)
     //    rxgain[i] = 20;
     rxgain[0] = 0;
     rxgain[1] = 20;
@@ -1231,7 +1230,7 @@ int main(int argc, char **argv) {
       PHY_vars_UE_g[0]->rx_gain_med[i] = rxg_med[i];
       PHY_vars_UE_g[0]->rx_gain_byp[i] = rxg_byp[i];
     }
-  
+
     if ((mode == normal_txrx) || (mode == rx_calib_ue) || (mode == no_L2_connect) || (mode == debug_prach)) {
         for (i=0; i<4; i++) {
             PHY_vars_UE_g[0]->rx_gain_mode[i]  = max_gain;
@@ -1256,9 +1255,9 @@ int main(int argc, char **argv) {
         }
         PHY_vars_UE_g[0]->rx_total_gain_dB =  PHY_vars_UE_g[0]->rx_gain_byp[0]  + rxgain[0] - 30; //-30 because it was calibrated with a 30dB gain;
     }
-    
+
     PHY_vars_UE_g[0]->tx_power_max_dBm = tx_max_power;
-   
+
     printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_power,tx_max_power));
   }
   else { //this is eNB
@@ -1285,7 +1284,7 @@ int main(int argc, char **argv) {
 
     PHY_vars_eNB_g = malloc(sizeof(PHY_VARS_eNB*));
     PHY_vars_eNB_g[0] = init_lte_eNB(frame_parms,eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
-    
+
 #ifndef OPENAIR2
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       PHY_vars_eNB_g[0]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
@@ -1301,7 +1300,7 @@ int main(int argc, char **argv) {
     compute_prach_seq(&PHY_vars_eNB_g[0]->lte_frame_parms.prach_config_common,
 		      PHY_vars_eNB_g[0]->lte_frame_parms.frame_type,
 		      PHY_vars_eNB_g[0]->X_u);
-    
+
     NB_eNB_INST=1;
     NB_INST=1;
 
@@ -1311,7 +1310,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.target_ue_ul_mcs=12;
 
     // if AGC is off, the following values will be used
-    //    for (i=0;i<4;i++) 
+    //    for (i=0;i<4;i++)
     //      rxgain[i]=30;
     rxgain[0] = 10;
     rxgain[1] = 20;
@@ -1342,20 +1341,20 @@ int main(int argc, char **argv) {
      }
 
   printf ("Detected %d number of cards, %d number of antennas.\n", openair0_num_detected_cards, openair0_num_antennas[card]);
-  
+
   p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
   p_exmimo_id     = openair0_exmimo_pci[card].exmimo_id_ptr;
-  
+
   printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", card, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
 
   if (p_exmimo_id->board_swrev>=BOARD_SWREV_CNTL2)
-    p_exmimo_config->framing.eNB_flag   = 0; 
-  else 
+    p_exmimo_config->framing.eNB_flag   = 0;
+  else
     p_exmimo_config->framing.eNB_flag   = 0;!UE_flag;
   p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
   p_exmimo_config->framing.resampling_factor = 2;
- 
-  for (ant=0;ant<max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant++) 
+
+  for (ant=0;ant<max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant++)
     p_exmimo_config->rf.rf_mode[ant] = rf_mode_base;
   for (ant=0;ant<frame_parms->nb_antennas_tx;ant++)
     p_exmimo_config->rf.rf_mode[ant] += (TXEN + DMAMODE_TX);
@@ -1366,23 +1365,23 @@ int main(int argc, char **argv) {
     carrier_freq[ant] = 0; //this turns off all other LIMEs
   }
 
-  for (ant = 0; ant<1; ant++) { 
+  for (ant = 0; ant<1; ant++) {
     p_exmimo_config->rf.do_autocal[ant] = 1;
     p_exmimo_config->rf.rf_freq_rx[ant] = carrier_freq[ant];//-190e6;
     p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
     p_exmimo_config->rf.rx_gain[ant][0] = rxgain[ant];
     p_exmimo_config->rf.tx_gain[ant][0] = txgain[ant];
-    
+
     p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
     p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];
 
     if ((carrier_freq[ant] >= 850000000) && (carrier_freq[ant] <= 865000000)) {
       p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal_850[ant];
-      p_exmimo_config->rf.rffe_band_mode[ant] = DD_TDD;	    
+      p_exmimo_config->rf.rffe_band_mode[ant] = DD_TDD;
     }
     else {
       p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
-      p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;	    
+      p_exmimo_config->rf.rffe_band_mode[ant] = B19G_TDD;
     }
 
     p_exmimo_config->rf.rffe_gain_txlow[ant] = 63;
@@ -1393,9 +1392,9 @@ int main(int argc, char **argv) {
 
 
   dump_frame_parms(frame_parms);
-  
+
   mac_xface = malloc(sizeof(MAC_xface));
-  
+
 #ifdef OPENAIR2
   int eMBMS_active=0;
   l2_init(frame_parms,eMBMS_active,
@@ -1416,7 +1415,7 @@ int main(int argc, char **argv) {
     init_seeds(g_otg->seed);
     g_otg->num_nodes = 2;
     for (i=0; i<g_otg->num_nodes; i++){
-      for (j=0; j<g_otg->num_nodes; j++){ 
+      for (j=0; j<g_otg->num_nodes; j++){
 	g_otg->application_idx[i][j] = 1;
 	//g_otg->packet_gen_type=SUBSTRACT_STRING;
 	g_otg->aggregation_level[i][j][0]=1;
@@ -1447,7 +1446,7 @@ int main(int argc, char **argv) {
 	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
 
-      //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;      
+      //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   }
   else {
     setup_eNB_buffers(PHY_vars_eNB_g[0],frame_parms,0);
@@ -1462,10 +1461,10 @@ int main(int argc, char **argv) {
 	  // Set the last OFDM symbol of subframe 4 to TX to allow enough time for switch to settle
 	  // (that's ok since the last symbol can be configured as SRS)
 	  /*
-          for (i=frame_parms->samples_per_tti*5-0*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples); 
+          for (i=frame_parms->samples_per_tti*5-0*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 	       i<frame_parms->samples_per_tti*5; i++)
             for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-              PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x0; 
+              PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][i] = 0x0;
 	  */
         }
       else {
@@ -1488,7 +1487,7 @@ int main(int argc, char **argv) {
 
   openair0_dump_config(card);
 
-  printf("EXMIMO_CONFIG: rf_mode 0x %x %x %x %x, [0]: TXRXEn %d, TXLPFEn %d, TXLPF %d, RXLPFEn %d, RXLPF %d, RFBB %d, LNA %d, LNAGain %d, RXLPFMode %d, SWITCH %d, rf_rxdc %d, rf_local %d, rf_vcocal %d\n",  
+  printf("EXMIMO_CONFIG: rf_mode 0x %x %x %x %x, [0]: TXRXEn %d, TXLPFEn %d, TXLPF %d, RXLPFEn %d, RXLPF %d, RFBB %d, LNA %d, LNAGain %d, RXLPFMode %d, SWITCH %d, rf_rxdc %d, rf_local %d, rf_vcocal %d\n",
 	 p_exmimo_config->rf.rf_mode[0],
 	 p_exmimo_config->rf.rf_mode[1],
 	 p_exmimo_config->rf.rf_mode[2],
@@ -1506,7 +1505,7 @@ int main(int argc, char **argv) {
 	 p_exmimo_config->rf.rf_rxdc[0],
 	 p_exmimo_config->rf.rf_local[0],
 	 p_exmimo_config->rf.rf_vcocal[0]);
-  
+
   for (ant=0;ant<4;ant++)
     p_exmimo_config->rf.do_autocal[ant] = 0;
 
@@ -1518,7 +1517,7 @@ int main(int argc, char **argv) {
     printf("[OPENAIR][SCHED][INIT] Problem: EMOS FIFO %d is greater than or equal to RTF_NO\n",CHANSOUNDER_FIFO_MINOR);
   else if (error_code==ENOMEM)
     printf("[OPENAIR][SCHED][INIT] Problem: cannot allocate memory for EMOS FIFO %d\n",CHANSOUNDER_FIFO_MINOR);
-  else 
+  else
     printf("[OPENAIR][SCHED][INIT] Problem creating EMOS FIFO %d, error_code %d\n",CHANSOUNDER_FIFO_MINOR,error_code);
 #endif
 
@@ -1663,7 +1662,7 @@ int main(int argc, char **argv) {
   //getchar();
   //while (oai_exit==0)
   //  rt_sleep_ns(FRAME_PERIOD);
-  
+
   rt_sem_wait(mutex);
 
   // stop threads
@@ -1690,9 +1689,9 @@ int main(int argc, char **argv) {
   // cleanup
   if (UE_flag == 1) {
 #ifdef RTAI
-    rt_thread_join(thread1); 
+    rt_thread_join(thread1);
 #else
-    pthread_join(thread1,&status); 
+    pthread_join(thread1,&status);
 #endif
 #ifdef DLSCH_THREAD
     cleanup_dlsch_threads();
@@ -1701,9 +1700,9 @@ int main(int argc, char **argv) {
   }
   else {
 #ifdef RTAI
-    rt_thread_join(thread0); 
+    rt_thread_join(thread0);
 #else
-    pthread_join(thread0,&status); 
+    pthread_join(thread0,&status);
 #endif
 #ifdef ULSCH_THREAD
     cleanup_ulsch_threads();
@@ -1748,13 +1747,13 @@ void test_config(int card, int ant, unsigned int rf_mode, int UE_flag) {
     p_exmimo_config->framing.eNB_flag   = !UE_flag;
     p_exmimo_config->framing.tdd_config = 0;
     p_exmimo_config->framing.resampling_factor = 2;
-    
+
     p_exmimo_config->rf.rf_freq_rx[ant] = 1907600000;
     p_exmimo_config->rf.rf_freq_tx[ant] = 1907600000;;
     p_exmimo_config->rf.rx_gain[ant][0] = 20;
     p_exmimo_config->rf.tx_gain[ant][0] = 10;
     p_exmimo_config->rf.rf_mode[ant] = rf_mode;
-    
+
     p_exmimo_config->rf.rf_local[ant] = build_rflocal(20,25,26,04);
     p_exmimo_config->rf.rf_rxdc[ant] = build_rfdc(128, 128);
     p_exmimo_config->rf.rf_vcocal[ant] = (0xE<<6) + 0xE;
@@ -1774,7 +1773,7 @@ void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms,
       printf("TX antennas > 1 and carrier > 0 not possible\n");
       exit(-1);
     }
-    
+
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
       free(phy_vars_ue->lte_ue_common_vars.rxdata[i]);
@@ -1806,12 +1805,12 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
       printf("TX antennas > 1 and carrier > 0 not possible\n");
       exit(-1);
     }
-    
+
     // replace RX signal buffers with mmaped HW versions
     for (i=0;i<frame_parms->nb_antennas_rx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
         phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i] = ((s32*) openair0_exmimo_pci[card].adc_head[i+carrier]) - 156; // N_TA offset for TDD
-        
+
         /*
         printf("rxdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i]);
         for (j=0;j<16;j++) {
@@ -1823,7 +1822,7 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
     for (i=0;i<frame_parms->nb_antennas_tx;i++) {
         free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
         phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (s32*) openair0_exmimo_pci[card].dac_head[i+carrier];
-        
+
         /*
         printf("txdata[%d] @ %p\n",i,phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
         for (j=0;j<16;j++) {
