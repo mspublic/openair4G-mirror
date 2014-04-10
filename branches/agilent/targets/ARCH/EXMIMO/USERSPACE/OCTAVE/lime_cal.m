@@ -4,10 +4,12 @@ card=0;
 limeparms;
 TX_LO_LEAKAGE_MIN0 = 99999;
 TX_LO_LEAKAGE_MIN1 = 99999;
-%freq_rx = 1907588000*[1 1 1 1];
-freq_rx = 859500000*[1 1 1 1];
-freq_tx = freq_rx; %+1920000;
-rf_vcocal = rf_vcocal_859*[1 1 1 1];
+%freq_rx = 1907600000*[1 1 1 1];
+%freq_rx = 859500000*[1 1 1 1];
+freq_rx = 2590000000*[1 0 0 0];
+freq_tx = freq_rx+1920000;
+%rf_vcocal = rf_vcocal_19G*[1 1 1 1];
+rf_vcocal = rf_vcocal_26G_eNB*[1 0 0 0]; 
 rf_rxdc   = rf_rxdc*[1 1 1 1];
 rxgain = 30*[1 1 1 1];
 txgain = 25*[1 1 1 1];
@@ -26,7 +28,8 @@ for txdc_I=0:4:63
         rf_mode = rf_mode + (DMAMODE_RX+DMAMODE_TX)*[1 1 0 0];
         rf_local  = (txdc_I + (txdc_Q)*(2^6) + 31*(2^12) + 31*(2^18))*[1 1 1 1];
 
-	oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
+	oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,0,rf_mode,
+  rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band);
 	sleep(sleepafterconfig)
 	
         s=oarf_get_frame(card);

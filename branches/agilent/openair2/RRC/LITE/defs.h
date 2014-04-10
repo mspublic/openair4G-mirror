@@ -242,6 +242,15 @@ typedef struct{
   SRB_INFO                          Srb0;
   SRB_INFO_TABLE_ENTRY              Srb1[NUMBER_OF_UE_MAX+1];
   SRB_INFO_TABLE_ENTRY              Srb2[NUMBER_OF_UE_MAX+1];
+  
+
+#if defined(ENABLE_SECURITY)
+  /* KeNB as derived from KASME received from EPC */
+  uint8_t kenb[NUMBER_OF_UE_MAX][32];
+#endif
+  /* Used integrity/ciphering algorithms */
+  e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm[NUMBER_OF_UE_MAX];
+  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm[NUMBER_OF_UE_MAX];
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255

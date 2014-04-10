@@ -45,7 +45,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_MODULATION 
+//#define DEBUG_DLSCH_MODULATION
 
 //#define is_not_pilot(pilots,re,nushift,use2ndpilots) ((pilots==0) || ((re!=nushift) && (re!=nushift+6)&&((re!=nushift+3)||(use2ndpilots==1))&&((re!=nushift+9)||(use2ndpilots==1)))?1:0)
 
@@ -53,7 +53,7 @@ uint8_t is_not_pilot(uint8_t pilots, uint8_t re, uint8_t nushift, uint8_t use2nd
 
   uint8_t offset = (pilots==2)?3:0;
   int nushiftmod3 = nushift%3;
- 
+
   if (pilots==0)
     return(1);
 
@@ -73,23 +73,23 @@ void generate_64qam_table(void) {
   int a,b,c,index;
 
 
-  for (a=-1;a<=1;a+=2) 
-    for (b=-1;b<=1;b+=2) 
+  for (a=-1;a<=1;a+=2)
+    for (b=-1;b<=1;b+=2)
       for (c=-1;c<=1;c+=2) {
-	index = (1+a)*2 + (1+b) + (1+c)/2;  
+	index = (1+a)*2 + (1+b) + (1+c)/2;
 	qam64_table[index] = -a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
-      } 
+      }
 }
 
 void generate_16qam_table(void) {
 
   int a,b,index;
 
-  for (a=-1;a<=1;a+=2) 
+  for (a=-1;a<=1;a+=2)
     for (b=-1;b<=1;b+=2) {
-	index = (1+a) + (1+b)/2;  
-	qam16_table[index] = -a*(QAM16_n1 + (b*QAM16_n2)); 
-      } 
+	index = (1+a) + (1+b)/2;
+	qam16_table[index] = -a*(QAM16_n1 + (b*QAM16_n2));
+      }
 }
 
 
@@ -120,10 +120,10 @@ void layer1prec2A(int32_t *antenna0_sample, int32_t *antenna1_sample, uint8_t pr
   }
 
   // normalize
-  /*  ((int16_t *)antenna0_sample)[0] = (int16_t)((((int16_t *)antenna0_sample)[0]*ONE_OVER_SQRT2_Q15)>>15);  
-  ((int16_t *)antenna0_sample)[1] = (int16_t)((((int16_t *)antenna0_sample)[1]*ONE_OVER_SQRT2_Q15)>>15);  ((int16_t *)antenna1_sample)[0] = (int16_t)((((int16_t *)antenna1_sample)[0]*ONE_OVER_SQRT2_Q15)>>15);  
+  /*  ((int16_t *)antenna0_sample)[0] = (int16_t)((((int16_t *)antenna0_sample)[0]*ONE_OVER_SQRT2_Q15)>>15);
+  ((int16_t *)antenna0_sample)[1] = (int16_t)((((int16_t *)antenna0_sample)[1]*ONE_OVER_SQRT2_Q15)>>15);  ((int16_t *)antenna1_sample)[0] = (int16_t)((((int16_t *)antenna1_sample)[0]*ONE_OVER_SQRT2_Q15)>>15);
   ((int16_t *)antenna1_sample)[1] = (int16_t)((((int16_t *)antenna1_sample)[1]*ONE_OVER_SQRT2_Q15)>>15);  */
-} 
+}
 
 int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       uint32_t *jj,
@@ -151,7 +151,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   uint8_t qam16_table_offset_im = 0;
   int16_t gain_lin_QPSK;//,gain_lin_16QAM1,gain_lin_16QAM2;
   int16_t re_off=re_offset;
-  gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
   uint8_t first_re,last_re;
   int32_t tmp_sample1,tmp_sample2;
   int16_t tmp_amp=amp;
@@ -160,15 +160,15 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   switch (mod_order) {
   case 2:
     // QPSK single stream
-    
+
     break;
   case 4:
     //16QAM Single stream
     gain_lin_16QAM1 = (int16_t)(((int32_t)amp*QAM16_n1)>>15);
     gain_lin_16QAM2 = (int16_t)(((int32_t)amp*QAM16_n2)>>15);
-    
+
     break;
-    
+
   case 6:
     //64QAM Single stream
     break;
@@ -184,25 +184,25 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   first_re=0;
   last_re=12;
 
-  if (skip_half==1) 
+  if (skip_half==1)
     last_re=6;
   else if (skip_half==2)
     first_re=6;
-  
+
   for (re=first_re;re<last_re;re++) {
-    
+
     if ((skip_dc == 1) && (re==6))
       re_off=re_off - frame_parms->ofdm_symbol_size+1;
-    
+
     tti_offset = symbol_offset + re_off + re;
-    
+
     // check that re is not a pilot
-    if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) { 
+    if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) {
       //     printf("re %d (jj %d)\n",re,*jj);
       *re_allocated = *re_allocated + 1;
-      
+
       if (mimo_mode == SISO) {  //SISO mapping
-	
+
 	switch (mod_order) {
 	case 2:  //QPSK
 	  //	  printf("%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
@@ -215,9 +215,9 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	  //	  printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
 	  break;
-	  
+
 	case 4:  //16QAM
-	  
+
 	  qam16_table_offset_re = 0;
 	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
@@ -226,27 +226,27 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
-	  
-	  
+
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	    ((int16_t *)&txdataF[aa][tti_offset])[0]+=qam_table_s[qam16_table_offset_re];
 	    ((int16_t *)&txdataF[aa][tti_offset])[1]+=qam_table_s[qam16_table_offset_im];
 	    //	    ((int16_t *)&txdataF[aa][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
 	    //	    ((int16_t *)&txdataF[aa][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 	  }
-	  
+
 	  break;
-	  
+
 	case 6:  //64QAM
-	  
-	  
+
+
 	  qam64_table_offset_re = 0;
 	  qam64_table_offset_im = 0;
 
@@ -268,16 +268,16 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	    ((int16_t *)&txdataF[aa][tti_offset])[0]+=qam_table_s[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
 	    ((int16_t *)&txdataF[aa][tti_offset])[1]+=qam_table_s[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 	  }
 	  break;
-	  
+
 	}
       }
-            
+
       else if (mimo_mode == ALAMOUTI){
 
           // normalization for 2 tx antennas
@@ -285,21 +285,21 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	switch (mod_order) {
 	case 2:  //QPSK
-	  
+
 	  // first antenna position n -> x0
-	  
+
       ((int16_t*)&tmp_sample1)[0] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
 	  ((int16_t*)&tmp_sample1)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
-	  
+
 	  // second antenna position n -> -x1*
-	  
+
 	  ((int16_t*)&tmp_sample2)[0] = (output[*jj]==1) ? (gain_lin_QPSK) : -gain_lin_QPSK;
 	  *jj=*jj+1;
 	  ((int16_t*)&tmp_sample2)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
-	  
+
       // normalization for 2 tx antennas
       ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
 	  ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
@@ -307,11 +307,11 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
 	  break;
-	  
+
 	case 4:  //16QAM
-	  
-	  // Antenna 0 position n 
-	  
+
+	  // Antenna 0 position n
+
 	  qam16_table_offset_re = 0;
 	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
@@ -320,20 +320,20 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
-	  
-	  
+
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
 	  ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-	  
+
 	  // Antenna 1 position n Real part -> -x1*
-	  
+
 	  qam16_table_offset_re = 0;
 	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
@@ -342,22 +342,22 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
-	  
-	  
+
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
 	  ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-	  
-	  
+
+
 	  break;
 	case 6:   // 64-QAM
-	  
+
 	  // Antenna 0
 	  qam64_table_offset_re = 0;
 	  qam64_table_offset_im = 0;
@@ -380,11 +380,11 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t *)&txdataF[0][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
 	  ((int16_t *)&txdataF[0][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-	  
-	  
+
+
 	  // Antenna 1 => -x1*
 	  qam64_table_offset_re = 0;
 	  qam64_table_offset_im = 0;
@@ -406,10 +406,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t *)&txdataF[1][tti_offset])[0]+=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
 	  ((int16_t *)&txdataF[1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-	  
+
 	  break;
 	}
 	// fill in the rest of the ALAMOUTI precoding
@@ -429,15 +429,15 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       else if (mimo_mode == ANTCYCLING ) {
 	switch (mod_order) {
 	case 2:  //QPSK
-	  
+
 	  ((int16_t*)&txdataF[re&1][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 	  ((int16_t*)&txdataF[re&1][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 	  break;
-	  
+
 	case 4:  //16QAM
-	  
+
 	  qam16_table_offset_re = 0;
 	  qam16_table_offset_im = 0;
 
@@ -447,23 +447,23 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
-	  
-	  
+
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t *)&txdataF[re&1][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
 	  ((int16_t *)&txdataF[re&1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-	  
-	  
+
+
 	  break;
-	  
+
 	case 6:  //64QAM
-	  
+
 	  qam64_table_offset_re = 0;
 	  qam64_table_offset_im = 0;
 
@@ -485,16 +485,16 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t *)&txdataF[re&1][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
 	  ((int16_t *)&txdataF[re&1][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-	  
+
 	}
       }
-       
+
       else if ((mimo_mode >= UNIFORM_PRECODING11)&&(mimo_mode <= PUSCH_PRECODING1)) {
 	// this is for transmission modes 4-6 (1 layer)
-         
+
           amp = (int16_t)(((int32_t)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
 
 	switch (mod_order) {
@@ -516,9 +516,9 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  }
 
 	  break;
-	  
+
 	case 4:  //16QAM
-	  
+
 	  qam16_table_offset_re = 0;
 	  qam16_table_offset_im = 0;
 
@@ -528,21 +528,21 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
-	  
-	  
+
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	   ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
 	   ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 
 	   ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
 	   ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
-	  
+
 	  if (frame_parms->nb_antennas_tx == 2) {
 	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
 	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
@@ -550,10 +550,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  }
 
 	  break;
-	  
+
 	case 6:  //64QAM
-	  
-	  
+
+
 	  qam64_table_offset_re = 0;
 	  qam64_table_offset_im = 0;
 	  if (output[*jj] == 1)
@@ -574,36 +574,36 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
-	  
+
 	  ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
 	  ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
 	  ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
 	  ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
-	  
+
 	  if (frame_parms->nb_antennas_tx == 2) {
 	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
 	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
 	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
 	  }
-	  
+
 	  break;
-	  
+
 	}
       }
-      
+
       else {
 	msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
 	return(-1);
       }
-      
-     
-    
+
+
+
       if (mimo_mode == ALAMOUTI) {
 	re++;  // adjacent carriers are taken care of by precoding
 	*re_allocated = *re_allocated + 1;
 	if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==0) {
-	  re++;  
+	  re++;
 	  *re_allocated = *re_allocated + 1;
 	}
       }
@@ -633,7 +633,7 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
   uint8_t qam16_table_offset_im = 0;
   int16_t gain_lin_QPSK;//,gain_lin_16QAM1,gain_lin_16QAM2;
   int16_t re_off=re_offset;
-  gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
   uint8_t first_re,last_re;
   int inc;
 #ifdef DEBUG_DLSCH_MODULATION
@@ -650,18 +650,18 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
   else if (l==6) {
     inc=2;
   }
-  
+
   for (re=first_re;re<last_re;re+=inc) {
-    
+
     if ((skip_dc == 1) && (re==(6+first_re)))
       re_off=re_off - frame_parms->ofdm_symbol_size+1;
-    
+
     tti_offset = symbol_offset + re_off + re;
-    
+
     //    printf("re %d (jj %d)\n",re,*jj);
     *re_allocated = *re_allocated + 1;
-    
-    	
+
+
     switch (mod_order) {
     case 2:  //QPSK
       //      printf("%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
@@ -671,12 +671,12 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
 	    ((int16_t*)&txdataF[aa][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
 	  *jj = *jj + 1;
-	  
+
 	  //  printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
 	  break;
-	  
+
     case 4:  //16QAM
-      
+
       qam16_table_offset_re = 0;
       qam16_table_offset_im = 0;
       if (output[*jj] == 1)
@@ -685,30 +685,30 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
       if (output[*jj] == 1)
 	qam16_table_offset_im+=2;
       *jj=*jj+1;
-      
-      
+
+
       if (output[*jj] == 1)
 	qam16_table_offset_re+=1;
       *jj=*jj+1;
       if (output[*jj] == 1)
 	qam16_table_offset_im+=1;
       *jj=*jj+1;
-      
+
       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	((int16_t *)&txdataF[aa][tti_offset])[0]+=qam_table_s[qam16_table_offset_re];
 	((int16_t *)&txdataF[aa][tti_offset])[1]+=qam_table_s[qam16_table_offset_im];
 	//	    ((int16_t *)&txdataF[aa][tti_offset])[0]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
 	//	    ((int16_t *)&txdataF[aa][tti_offset])[1]+=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
       }
-      
+
       break;
-      
+
     case 6:  //64QAM
-      
-      
+
+
       qam64_table_offset_re = 0;
       qam64_table_offset_im = 0;
-      
+
       if (output[*jj] == 1)
 	qam64_table_offset_re+=4;
       *jj=*jj+1;
@@ -727,15 +727,15 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
       if (output[*jj] == 1)
 	qam64_table_offset_im+=1;
       *jj=*jj+1;
-      
+
       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	((int16_t *)&txdataF[aa][tti_offset])[0]+=qam_table_s[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
 	((int16_t *)&txdataF[aa][tti_offset])[1]+=qam_table_s[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
       }
       break;
-      
+
     }
-  }           
+  }
   return(0);
 }
 
@@ -769,7 +769,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   int16_t *qam_table_s;
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
-  
+
   amp_rho_a = (int16_t)(((int32_t)amp*dlsch->sqrt_rho_a)>>13);
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch->sqrt_rho_b)>>13);
   //msg("amp_rho_a %d, amp_rho_b %d\n", amp_rho_a, amp_rho_b);
@@ -782,17 +782,17 @@ int dlsch_modulation(mod_sym_t **txdataF,
     for (i=0;i<8;i++) {
       qam64_table_a[i] = (int16_t)(((int32_t)qam64_table[i]*amp_rho_a)>>15);
       qam64_table_b[i] = (int16_t)(((int32_t)qam64_table[i]*amp_rho_b)>>15);
-    } 
+    }
   //Modulation mapping (difference w.r.t. LTE specs)
-  
+
   jj=0;
   re_allocated=0;
   //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=num_pdcch_symbols;l<nsymb;l++) {
-    
+
 #ifdef DEBUG_DLSCH_MODULATION
     msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
-#endif    
+#endif
 
     if (frame_parms->Ncp==0) { // normal prefix
       if ((l==4)||(l==11))
@@ -829,7 +829,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
 	else
 	  rb_alloc_ind = 0;
-	
+
 	// check for PBCH
 	skip_half=0;
 	if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
@@ -839,22 +839,22 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  else
 	    skip_dc = 0;
 	  // PBCH
-	  if ((subframe_offset==0) && 
-	      (rb>((frame_parms->N_RB_DL>>1)-3)) && 
-	      (rb<((frame_parms->N_RB_DL>>1)+3)) && 
-	      (l>=(nsymb>>1)) && 
+	  if ((subframe_offset==0) &&
+	      (rb>((frame_parms->N_RB_DL>>1)-3)) &&
+	      (rb<((frame_parms->N_RB_DL>>1)+3)) &&
+	      (l>=(nsymb>>1)) &&
 	      (l<((nsymb>>1) + 4))) {
 	    rb_alloc_ind = 0;
 	  }
 	  //PBCH subframe 0, symbols nsymb>>1 ... nsymb>>1 + 3
-	  if ((subframe_offset==0) && 
-	      (rb==((frame_parms->N_RB_DL>>1)-3)) && 
-	      (l>=(nsymb>>1)) && 
+	  if ((subframe_offset==0) &&
+	      (rb==((frame_parms->N_RB_DL>>1)-3)) &&
+	      (l>=(nsymb>>1)) &&
 	      (l<((nsymb>>1) + 4)))
 	    skip_half=1;
 	  else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
 	    skip_half=2;
-	
+
 	  if (frame_parms->frame_type == TDD) { // TDD
 	    //SSS TDD
 	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
@@ -865,7 +865,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	      skip_half=1;
 	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)))
 	      skip_half=2;
-	    
+
 	    //PSS TDD
 	    if (((subframe_offset==1) || (subframe_offset==6)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
 	      rb_alloc_ind = 0;
@@ -878,9 +878,9 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  }
 	  else {
 	    //PSS FDD
-	    if (((subframe_offset==0)||(subframe_offset==5)) && 
-		(rb>((frame_parms->N_RB_DL>>1)-3)) && 
-		(rb<((frame_parms->N_RB_DL>>1)+3)) && 
+	    if (((subframe_offset==0)||(subframe_offset==5)) &&
+		(rb>((frame_parms->N_RB_DL>>1)-3)) &&
+		(rb<((frame_parms->N_RB_DL>>1)+3)) &&
 		(l==((nsymb>>1)-1)) ) {
 	      rb_alloc_ind = 0;
 	    }
@@ -901,32 +901,32 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	      skip_half=2;
 
 	  }
-	  
+
 	}
 	else {  // EVEN N_RB_DL
 	  //PBCH
-	  if ((subframe_offset==0) && 
-	      (rb>=((frame_parms->N_RB_DL>>1)-3)) && 
-	      (rb<((frame_parms->N_RB_DL>>1)+3)) && 
+	  if ((subframe_offset==0) &&
+	      (rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+	      (rb<((frame_parms->N_RB_DL>>1)+3)) &&
 	      (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
 	    rb_alloc_ind = 0;
 	  skip_dc=0;
 	  skip_half=0;
-	  
+
 	  if (frame_parms->frame_type == TDD) { // TDD
 	    //SSS
 	    if (((subframe_offset==0)||
-		 (subframe_offset==5)) && 
-		(rb>=((frame_parms->N_RB_DL>>1)-3)) && 
-		(rb<((frame_parms->N_RB_DL>>1)+3)) && 
+		 (subframe_offset==5)) &&
+		(rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+		(rb<((frame_parms->N_RB_DL>>1)+3)) &&
 		(l==nsymb-1) ) {
 	      rb_alloc_ind = 0;
-	    }	    
+	    }
 	    //PSS
 	    if (((subframe_offset==1)||
-		 (subframe_offset==6)) && 
-		(rb>=((frame_parms->N_RB_DL>>1)-3)) && 
-		(rb<((frame_parms->N_RB_DL>>1)+3)) && 
+		 (subframe_offset==6)) &&
+		(rb>=((frame_parms->N_RB_DL>>1)-3)) &&
+		(rb<((frame_parms->N_RB_DL>>1)+3)) &&
 		(l==2) ) {
 	      rb_alloc_ind = 0;
 	    }
@@ -935,16 +935,16 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	    //SSS
 	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-2)) ) {
 	      rb_alloc_ind = 0;
-	    }	    
+	    }
 	    //PSS
 	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==((nsymb>>1)-1)) ) {
 	      rb_alloc_ind = 0;
 	    }
 	  }
 	}
-	
+
 	if (dlsch->layer_index>1) {
-	  msg("layer_index %d: re_offset %d, symbol %d offset %d\n",dlsch->layer_index,re_offset,l,symbol_offset); 
+	  msg("layer_index %d: re_offset %d, symbol %d offset %d\n",dlsch->layer_index,re_offset,l,symbol_offset);
 	  return(-1);
 	}
 	if (mod_order == 4)
@@ -976,7 +976,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     frame_parms);
       }
 	re_offset+=12; // go to next RB
-	
+
 
 	// check if we crossed the symbol boundary and skip DC
 	if (re_offset >= frame_parms->ofdm_symbol_size) {
@@ -986,15 +986,15 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	    re_offset=7;  // odd number of RBs
 	}
       }
-	
+
   }
-  
+
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,2,0,subframe_offset));
+  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,1,0,subframe_offset));
 #endif
-  
+
   return (re_allocated);
 }
 
@@ -1003,7 +1003,7 @@ int mch_modulation(mod_sym_t **txdataF,
 		   uint32_t subframe_offset,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_eNB_DLSCH_t *dlsch){
-  
+
   uint8_t nsymb,nsymb_pmch;
   uint32_t i,jj,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
@@ -1021,25 +1021,25 @@ int mch_modulation(mod_sym_t **txdataF,
   else if (mod_order == 6)
     for (i=0;i<8;i++) {
       qam64_table_a[i] = (int16_t)(((int32_t)qam64_table[i]*amp)>>15);
-    } 
-  
+    }
+
    jj=0;
   re_allocated=0;
   //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=2;l<nsymb_pmch;l++) {
-    
+
 #ifdef DEBUG_DLSCH_MODULATION
     msg("Generating MCH (mod %d) in %d\n",mod_order, l);
-#endif    
+#endif
 
     re_offset = frame_parms->first_carrier_offset;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 
     for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
-      
+
 
       if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
-	
+
 	if ((rb==frame_parms->N_RB_DL>>1))
 	  skip_dc = 1;
 	else
@@ -1047,7 +1047,7 @@ int mch_modulation(mod_sym_t **txdataF,
 
       }
 
-      
+
       if (mod_order == 4)
 	qam_table_s = qam16_table_a;
       else if (mod_order == 6)
@@ -1068,10 +1068,10 @@ int mch_modulation(mod_sym_t **txdataF,
 			     &re_allocated,
 			     skip_dc,
 			     frame_parms);
-      
+
       re_offset+=12; // go to next RB
-	
-      
+
+
       // check if we crossed the symbol boundary and skip DC
       if (re_offset >= frame_parms->ofdm_symbol_size) {
 	if (skip_dc == 0)  //even number of RBs (doesn't straddle DC)
@@ -1081,14 +1081,14 @@ int mch_modulation(mod_sym_t **txdataF,
       }
     }
   }
-	
 
-  
+
+
 
 
 #ifdef DEBUG_DLSCH_MODULATION
     msg("generate_dlsch(MCH) : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,2,0,subframe_offset));
 #endif
-    
+
     return (re_allocated);
 }

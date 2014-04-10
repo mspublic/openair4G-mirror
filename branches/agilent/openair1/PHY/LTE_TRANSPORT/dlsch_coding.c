@@ -46,11 +46,11 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_CODING 
+//#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
 
 /*
-#define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
+#define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \
 	((pilots==1)&&(first_pilot==1)&&(((re>2)&&(re<6))||((re>8)&&(re<12)))) || \
 	((pilots==1)&&(first_pilot==0)&&(((re<3))||((re>5)&&(re<9)))) \
 */
@@ -88,7 +88,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
 #ifdef DEBUG_DLSCH_FREE
 	    msg("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
 #endif
-	    if (dlsch->harq_processes[i]->c[r]) 
+	    if (dlsch->harq_processes[i]->c[r])
 	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
 	  }
 	}
@@ -97,7 +97,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
     }
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
   }
-  
+
 }
 
 LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, u8 abstraction_flag) {
@@ -105,22 +105,22 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
   LTE_eNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
   unsigned char bw_scaling =1;
-  
+
   switch (N_RB_DL){
-  case 6: 
+  case 6:
     bw_scaling =16;
     break;
   case 25:
     bw_scaling =4;
     break;
-  case 50: 
+  case 50:
     bw_scaling =2;
     break;
   default:
     bw_scaling =1;
     break;
   }
-  
+
   dlsch = (LTE_eNB_DLSCH_t *)malloc16(sizeof(LTE_eNB_DLSCH_t));
   if (dlsch) {
     bzero(dlsch,sizeof(LTE_eNB_DLSCH_t));
@@ -143,7 +143,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
 	if (abstraction_flag==0) {
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling;r++) {
 	    // account for filler in first segment and CRCs for multiple segment case
-	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+ 768);  
+	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+ 768);
 	    if (!dlsch->harq_processes[i]->c[r]) {
 	      msg("Can't get c\n");
 	      exit_flag=2;
@@ -171,15 +171,15 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
   msg("new_eNB_dlsch exit flag %d, size of  %d\n",exit_flag, sizeof(LTE_eNB_DLSCH_t));
   free_eNB_dlsch(dlsch);
   return(NULL);
-  
-  
+
+
 }
 
 void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag) {
 
   unsigned char Mdlharq;
   unsigned char i,j,r;
-  
+
   if (dlsch) {
     Mdlharq = dlsch->Mdlharq;
     dlsch->rnti = 0;
@@ -202,7 +202,7 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag) {
   }
 }
 
- 
+
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
@@ -212,13 +212,13 @@ int dlsch_encoding(unsigned char *a,
 		   time_stats_t *rm_stats,
 		   time_stats_t *te_stats,
 		   time_stats_t *i_stats) {
-  
+
   unsigned int G;
   unsigned int crc=1;
   unsigned short iind;
   unsigned short nb_rb = dlsch->nb_rb;
   unsigned char harq_pid = dlsch->current_harq_pid;
-  unsigned int A; 
+  unsigned int A;
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
@@ -229,7 +229,6 @@ int dlsch_encoding(unsigned char *a,
 
   G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,frame,subframe);
 
-   
   //if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {
 
@@ -258,17 +257,17 @@ int dlsch_encoding(unsigned char *a,
 			 &dlsch->harq_processes[harq_pid]->Cplus,
 			 &dlsch->harq_processes[harq_pid]->Cminus,
 			 &dlsch->harq_processes[harq_pid]->Kplus,
-			 &dlsch->harq_processes[harq_pid]->Kminus,		     
+			 &dlsch->harq_processes[harq_pid]->Kminus,
 			 &dlsch->harq_processes[harq_pid]->F)<0)
       return(-1);
-    
+
     for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
       if (r<dlsch->harq_processes[harq_pid]->Cminus)
 	Kr = dlsch->harq_processes[harq_pid]->Kminus;
       else
 	Kr = dlsch->harq_processes[harq_pid]->Kplus;
       Kr_bytes = Kr>>3;
-      
+
       // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
       if (Kr_bytes<=64)
 	iind = (Kr_bytes-5);
@@ -282,25 +281,25 @@ int dlsch_encoding(unsigned char *a,
 	msg("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
 	return(-1);
       }
-      
-      
+
+
 #ifdef DEBUG_DLSCH_CODING
       printf("Generating Code Segment %d (%d bits)\n",r,Kr);
       // generate codewords
-      
+
       msg("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
       msg("N_RB = %d\n",nb_rb);
       msg("Ncp %d\n",frame_parms->Ncp);
       msg("mod_order %d\n",mod_order);
 #endif
-      
-      
-#ifdef DEBUG_DLSCH_CODING    
+
+
+#ifdef DEBUG_DLSCH_CODING
       msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       start_meas(te_stats);
       threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-				Kr>>3, 
+				Kr>>3,
 				&dlsch->harq_processes[harq_pid]->d[r][96],
 				(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
 				f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
@@ -312,13 +311,13 @@ int dlsch_encoding(unsigned char *a,
 	write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 #endif
       start_meas(i_stats);
-      dlsch->harq_processes[harq_pid]->RTC[r] = 
-	sub_block_interleaving_turbo(4+(Kr_bytes*8), 
-				     &dlsch->harq_processes[harq_pid]->d[r][96], 
+      dlsch->harq_processes[harq_pid]->RTC[r] =
+	sub_block_interleaving_turbo(4+(Kr_bytes*8),
+				     &dlsch->harq_processes[harq_pid]->d[r][96],
 				     dlsch->harq_processes[harq_pid]->w[r]);
       stop_meas(i_stats);
     }
-    
+
   }
 
   // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
@@ -337,7 +336,8 @@ int dlsch_encoding(unsigned char *a,
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
 					G,  //G
 					dlsch->harq_processes[harq_pid]->w[r],
-					&dlsch->e[0],
+					//&dlsch->e[0],
+          &dlsch->e[r_offset],
 					dlsch->harq_processes[harq_pid]->C, // C
 					NSOFT,                    // Nsoft,
 					dlsch->Mdlharq,
@@ -370,7 +370,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     memcpy(dlsch->harq_processes[harq_pid]->b,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d harq pid %d \n", 
+    LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d harq pid %d \n",
 	phy_vars_eNB->Mod_id,
 	  dlsch->harq_processes[harq_pid]->TBS>>3,
 	  harq_pid);
@@ -383,9 +383,9 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	   //	    memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
     	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
-  }  
+  }
   eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]+=dlsch->harq_processes[harq_pid]->TBS>>3;
   //payload_offset +=dlsch->harq_processes[harq_pid]->TBS>>3;
-  
+
 }
 #endif

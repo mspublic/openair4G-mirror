@@ -5,10 +5,10 @@
     - commands from PC->Leon and Leon->PC passed through CONTROL1 register (or new: FIFOs)
     - structure for passing initial (shared PC memory) buffer pointers
     - #defines for buffer sizes
-    
+
     This is now the CENTRAL header file for all structs and defines that are
     requires on both LEON and Kernel and PC Application
-            
+
     Changelog:
     01.12.2012: Fix: RXEN and TXEN were swapped
                 New rf_mode flag: use DMAMODE_RX and DMAMODE_TX to selectively enable DMA transfers (only used on ExpressMIMO2)
@@ -39,7 +39,9 @@
 
 #define FRAME_LENGTH_COMPLEX_SAMPLES   76800
 // Buffer size per channel: FRAME_LENGTH_COMPLEX_SAMPLES+2048 smp/frame: LTE frame+tail, *4 (7.68*4 MsmpPS), *4 Bytes/smp
-#define ADAC_BUFFERSZ_PERCHAN_B  ((FRAME_LENGTH_COMPLEX_SAMPLES+2048)*1*4)
+#define ADAC_BUFFERSZ_PERCHAN_B  ((FRAME_LENGTH_COMPLEX_SAMPLES+2048)*4*4) // for 20MHz BW
+//#define ADAC_BUFFERSZ_PERCHAN_B  ((FRAME_LENGTH_COMPLEX_SAMPLES+2048)*2*4) // for 10MHz BW
+//#define ADAC_BUFFERSZ_PERCHAN_B  ((FRAME_LENGTH_COMPLEX_SAMPLES+2048)*1*4)   // for 5MHz BW
 
 #define BIGSHM_SIZE_PAGES ((( MAX_FIRMWARE_BLOCK_SIZE_B + \
                               MAX_PRINTK_BUFFER_B + \
@@ -51,7 +53,7 @@
 
 /*
  * Commands exchanged between PC <--> LEON
- * 
+ *
  * Idle/Ready: EXMIMO_NOP
  */
 #define EXMIMO_NOP                  0x9999
@@ -104,11 +106,11 @@
 // structures for communication between ExMIMO and kernel
 // -----------------------------------------------------------
 
-/* 
+/*
  * struct exmimo_system_id_t:
  *   Contains information on the bitstream, filled by Leon,
  *   based on data stored in an APB block on FPGA (TODO)
- * 
+ *
  * struct exmimo_id_t:
  *   Compound structure, also includes information
  *   from PCI configuration space (board_)
@@ -189,7 +191,7 @@ typedef struct
 #define LNAMASK     (3<<12)
 #define LNADIS       0
 #define LNA1ON      (1<<12)
-#define LNA2ON      (2<<12) 
+#define LNA2ON      (2<<12)
 #define LNA3ON      (3<<12)
 
 #define LNAGAINMASK (3<<14)
@@ -234,40 +236,40 @@ typedef struct
   uint32_t do_autocal[MAX_ANTENNAS];
   uint32_t rf_freq_rx[MAX_ANTENNAS];
   uint32_t rf_freq_tx[MAX_ANTENNAS];
-  
+
   // TX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
   uint32_t tx_gain[MAX_ANTENNAS][2];
-  
+
   // RX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
   uint32_t rx_gain[MAX_ANTENNAS][2];
-  
+
   //LIME RF modes
   // 21    | 20:19 | 18:16 |15:14  | 13:12|11:8 |  7    |6:3  |2      |1   |0   |
   // TXBYP | RXBYP | RF/BB |LNAMode| LNA  |RXLPF|RXLPFen|TXLPF|TXLPFen|TXen|RXen|
   uint32_t rf_mode[MAX_ANTENNAS];
-  
+
   // LIME LO Calibration Constants
   // | RXLOQ | RXLOI | TXLOQ | TXLOI |
   // | 23:18 | 17:12 | 11:6  | 5:0   |
   uint32_t rf_local[MAX_ANTENNAS];
-  
+
   // LIME RX DC OFFSET
   // | RXDCQ | RXDCI |
   // | 15:8  | 7:0   |
   uint32_t rf_rxdc[MAX_ANTENNAS];
-  
+
   // LIME VCO Calibration Constants
   // | RXVCOCAP | TXVCOCAP |
   // | 11:6     | 5:0      |
   uint32_t rf_vcocal[MAX_ANTENNAS];
-  
+
   // External RF Frontend, as used on ExpressMIMO-2
   uint32_t rffe_gain_txlow[MAX_ANTENNAS];
   uint32_t rffe_gain_txhigh[MAX_ANTENNAS];
   uint32_t rffe_gain_rxfinal[MAX_ANTENNAS];
   uint32_t rffe_gain_rxlow[MAX_ANTENNAS];
   uint32_t rffe_band_mode[MAX_ANTENNAS];
-  
+
 } exmimo_rf_t;
 
 
@@ -307,16 +309,16 @@ typedef struct
 typedef struct
 {
   uint32_t multicard_syncmode;
-  
+
   uint32_t eNB_flag;
-  
+
   uint32_t tdd_config;
-  
+
   uint32_t frame_length;          // e.g. 76800
   uint32_t frame_start;           // e.g. 18
   uint32_t adac_buffer_period;    // e.g. 2048
   uint32_t adac_intr_period;      // e.g. 1024
-  
+
   uint32_t switch_offset[4];      // sample offsets (relative to start of frame) used to control the RX/TX switch in TDD mode
   uint32_t resampling_factor;     // 0=>1, 1=>2, 2=>4, applied equally to each chain and TX/RX
 } exmimo_framing_t;
@@ -335,7 +337,7 @@ typedef struct
  * between Leon, Kernel and Userspace
  */
 
-/* 
+/*
  * struct exmimo_pci_interface_bot_t:
  *   Main structure to exchange physical(DMA) pointers between kernel and Leon
  */

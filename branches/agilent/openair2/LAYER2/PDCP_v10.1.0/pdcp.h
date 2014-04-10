@@ -97,7 +97,6 @@ extern pthread_cond_t pdcp_cond;
 extern int pdcp_instance_cnt;
 #endif
 
-static void *pdcp_thread_main(void* param);
 int init_pdcp_thread(u8 eNB_flag);
 void cleanup_pdcp_thread(void);
 

@@ -64,6 +64,10 @@
 #include "OCG_extern.h"
 #endif
 
+#if defined(ENABLE_SECURITY)
+# include "UTIL/OSA/osa_defs.h"
+#endif
+
 #if defined(ENABLE_USE_MME)
 #include "../../S1AP/s1ap_eNB.h"
 extern char *mme_ip;
@@ -387,7 +391,7 @@ init_MCCH (u8 Mod_id)
 
 void
 init_MBMS (u8 Mod_id, u32 frame)
-{                               // init the configuration for MTCH 
+{                               // init the configuration for MTCH
   //  int j,i, num_mch;
   if (eNB_rrc_inst[Mod_id].MBMS_flag == 1)
     {
@@ -397,7 +401,12 @@ init_MBMS (u8 Mod_id, u32 frame)
 
       rrc_pdcp_config_asn1_req (Mod_id, frame, 1, 0, NULL,      // SRB_ToAddModList
                                 NULL,   // DRB_ToAddModList
-                                (DRB_ToReleaseList_t *) NULL
+                                (DRB_ToReleaseList_t *) NULL,
+                                0xff, // disable security_mode
+                                NULL,
+                                NULL,
+                                NULL
+
 #ifdef Rel10
                                 ,
                                 &(eNB_rrc_inst[Mod_id].mcch_message->
@@ -413,7 +422,7 @@ init_MBMS (u8 Mod_id, u32 frame)
 
 
       //rrc_mac_config_req();
-      // use the same as of DTCH for the moment,need to check the flag for mXch 
+      // use the same as of DTCH for the moment,need to check the flag for mXch
 
     }
 
@@ -421,6 +430,22 @@ init_MBMS (u8 Mod_id, u32 frame)
 
 #endif
 
+/*------------------------------------------------------------------------------*/
+void rrc_lite_eNB_init_security(u8 Mod_id, u8 UE_index)
+{
+#if defined(ENABLE_SECURITY)
+    char ascii_buffer[65];
+    uint8_t i;
+
+    memset(eNB_rrc_inst[Mod_id].kenb[UE_index], UE_index, 32);
+
+    for (i = 0; i < 32; i++) {
+        sprintf(&ascii_buffer[2 * i], "%02X", eNB_rrc_inst[Mod_id].kenb[UE_index][i]);
+    }
+
+    LOG_T(RRC, "[OSA][MOD %02d][UE %02d] kenb    = %s\n", Mod_id, UE_index, ascii_buffer);
+#endif
+}
 /*------------------------------------------------------------------------------*/
 char
 openair_rrc_lite_eNB_init (u8 Mod_id)
@@ -434,6 +459,13 @@ openair_rrc_lite_eNB_init (u8 Mod_id)
 
   for (j = 0; j < NUMBER_OF_UE_MAX; j++)
     eNB_rrc_inst[Mod_id].Info.Status[j] = RRC_IDLE;     //CH_READY;
+
+  /* Init security parameters */
+  for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+    eNB_rrc_inst[Mod_id].ciphering_algorithm[j] = SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
+    eNB_rrc_inst[Mod_id].integrity_algorithm[j] = SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
+    rrc_lite_eNB_init_security(Mod_id, j);
+  }
 
 #if defined(ENABLE_USE_MME)
   /* Connect eNB to MME */
@@ -654,7 +686,7 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
             }
           break;
         case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
-          
+
 #ifdef RRC_MSG_PRINT
           //TODO: Debug rrcConnectionReestablishmentComplete
           msg("RRC Connection Reestablishment Complete\n");
@@ -709,7 +741,7 @@ rrc_eNB_decode_dcch (u8 Mod_id, u32 frame, u8 Srb_id, u8 UE_index,
                          "[MSC_NBOX][FRAME %05d][RRC_eNB][MOD %02d][][Rx RRCConnectionSetupComplete\n"
                          "Now CONNECTED with UE %d][RRC_eNB][MOD %02d][]\n",
                          frame, Mod_id, UE_index, Mod_id);
-                  
+
                 }
             }
           break;
@@ -1025,7 +1057,12 @@ rrc_eNB_decode_ccch (u8 Mod_id, u32 frame, SRB_INFO * Srb_info)
                                         eNB_rrc_inst[Mod_id].
                                         SRB_configList[UE_index],
                                         (DRB_ToAddModList_t *) NULL,
-                                        (DRB_ToReleaseList_t *) NULL
+                                        (DRB_ToReleaseList_t *) NULL,
+                                        0xff, // disable security_mode
+                                        NULL,
+                                        NULL,
+                                        NULL
+
 #ifdef Rel10
                                         , (PMCH_InfoList_r9_t *) NULL
 #endif
@@ -1104,12 +1141,21 @@ rrc_eNB_process_RRCConnectionSetupComplete (u8 Mod_id,
 mui_t rrc_eNB_mui = 0;
 
 void
-rrc_eNB_ind_reconfiguration(u8 Mod_id, u16 UE_index, u8 *nas_pdu, u32 nas_length)
+rrc_eNB_ind_reconfiguration(u8 Mod_id, u16 UE_index, u8 *nas_pdu, u32 nas_length, uint8_t *security_key)
 {
+
+
   eNB_rrc_inst[Mod_id].Info.nas_pdu[UE_index] = nas_pdu;
   eNB_rrc_inst[Mod_id].Info.nas_length[UE_index] = nas_length;
+
+
+#if defined(ENABLE_SECURITY)
+  memcpy((void*)eNB_rrc_inst[Mod_id].kenb[UE_index], (void*)security_key, 32);
+#endif
+
   rrc_eNB_generate_SecurityModeCommand(Mod_id, 0, UE_index);
 }
+
 void
 rrc_eNB_generate_SecurityModeCommand (u8 Mod_id, u32 frame, u16 UE_index)
 {
@@ -1118,6 +1164,62 @@ rrc_eNB_generate_SecurityModeCommand (u8 Mod_id, u32 frame, u16 UE_index)
   uint8_t size;
   int i;
 
+  uint8_t *kRRCenc = NULL;
+  uint8_t *kRRCint = NULL;
+  uint8_t *kUPenc  = NULL;
+
+  DRB_ToAddModList_t *DRB_configList = NULL;//eNB_rrc_inst[Mod_id].DRB_configList[UE_index];
+  SRB_ToAddModList_t *SRB_configList = eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
+#if defined(ENABLE_SECURITY)
+  eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index] = SecurityAlgorithmConfig__cipheringAlgorithm_eea0;      // EEA0
+  eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index] = SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;  // EIA2;
+  /* Derive the keys from kenb */
+  if (DRB_configList != NULL) {
+    derive_key_up_enc(eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
+                      eNB_rrc_inst[Mod_id].kenb[UE_index], &kUPenc);
+  }
+
+  derive_key_rrc_enc(eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
+                     eNB_rrc_inst[Mod_id].kenb[UE_index], &kRRCenc);
+  derive_key_rrc_int(eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index],
+                     eNB_rrc_inst[Mod_id].kenb[UE_index], &kRRCint);
+#if 0
+  {
+    int i;
+    msg("\n\nKeNB:");
+    for(i = 0; i < 32; i++)
+      msg("%02x", eNB_rrc_inst[Mod_id].kenb[UE_index][i]);
+    msg("\n\n");
+
+
+    msg("\n\nKRRCenc:");
+    for(i = 0; i < 32; i++)
+      msg("%02x", kRRCenc[i]);
+    msg("\n\n");
+
+    msg("\n\nKRRCint:");
+    for(i = 0; i < 32; i++)
+      msg("%02x", kRRCint[i]);
+    msg("\n\n");
+
+  }
+#endif //0
+#endif
+
+  // Refresh SRBs/DRBs
+  // apply integrity befor RRC security command mode
+  rrc_pdcp_config_asn1_req (Mod_id, 0, 1, UE_index,
+                            SRB_configList,
+                            DRB_configList, (DRB_ToReleaseList_t *) NULL,
+                            0 |
+                            (eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index] << 4),
+                            kRRCenc,
+                            kRRCint,
+                            kUPenc
+#ifdef Rel10
+                            , (PMCH_InfoList_r9_t *) NULL
+#endif
+    );
   size = do_SecurityModeCommand (Mod_id, buffer, UE_index, 0);
 
 #ifdef RRC_MSG_PRINT
@@ -1142,6 +1244,19 @@ rrc_eNB_generate_SecurityModeCommand (u8 Mod_id, u32 frame, u16 UE_index)
   pdcp_data_req (Mod_id, frame, 1, (UE_index * NB_RB_MAX) + DCCH,
                  rrc_eNB_mui++, 0, size, (char *) buffer, 1);
 
+  // apply ciphering after RRC security command mode
+  rrc_pdcp_config_asn1_req (Mod_id, 0, 1, UE_index,
+                            SRB_configList,
+                            DRB_configList, (DRB_ToReleaseList_t *) NULL,
+                            eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index] |
+                            (eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index] << 4),
+                            kRRCenc,
+                            kRRCint,
+                            kUPenc
+#ifdef Rel10
+                            , (PMCH_InfoList_r9_t *) NULL
+#endif
+    );
   //oai_flag = 1;
 
 }
@@ -1680,7 +1795,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration (u8 Mod_id, u32 frame,
    */
   memset (buffer, 0, 200);
 
-  if (nas_pdu == NULL) 
+  if (nas_pdu == NULL)
   {
     nas_pdu = eNB_rrc_inst[Mod_id].Info.nas_pdu[UE_index];
     nas_length = eNB_rrc_inst[Mod_id].Info.nas_length[UE_index];
@@ -1788,23 +1903,44 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
   int oip_ifup = 0;
   int dest_ip_offset = 0;
 #endif
-  DRB_ToAddModList_t *DRB_configList =
-    eNB_rrc_inst[Mod_id].DRB_configList[UE_index];
-  SRB_ToAddModList_t *SRB_configList =
-    eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
+
+  uint8_t *kRRCenc = NULL;
+  uint8_t *kRRCint = NULL;
+  uint8_t *kUPenc  = NULL;
+
+  DRB_ToAddModList_t *DRB_configList = eNB_rrc_inst[Mod_id].DRB_configList[UE_index];
+  SRB_ToAddModList_t *SRB_configList = eNB_rrc_inst[Mod_id].SRB_configList[UE_index];
+
+#if defined(ENABLE_SECURITY)
+  /* Derive the keys from kenb */
+  if (DRB_configList != NULL) {
+    derive_key_up_enc(eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
+                      eNB_rrc_inst[Mod_id].kenb[UE_index], &kUPenc);
+  }
+
+  derive_key_rrc_enc(eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index],
+                     eNB_rrc_inst[Mod_id].kenb[UE_index], &kRRCenc);
+  derive_key_rrc_int(eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index],
+                     eNB_rrc_inst[Mod_id].kenb[UE_index], &kRRCint);
+#endif
 
   // Refresh SRBs/DRBs
-  
   rrc_pdcp_config_asn1_req (Mod_id, frame, 1, UE_index,
                             SRB_configList,
-                            DRB_configList, (DRB_ToReleaseList_t *) NULL
+                            DRB_configList, (DRB_ToReleaseList_t *) NULL,
+                            //eNB_rrc_inst[Mod_id].ciphering_algorithm[UE_index] |
+                            //(eNB_rrc_inst[Mod_id].integrity_algorithm[UE_index] << 4),
+                            0xff,
+                            kRRCenc,
+                            kRRCint,
+                            kUPenc
 #ifdef Rel10
                             , (PMCH_InfoList_r9_t *) NULL
 #endif
     );
-    
+
   // Refresh SRBs/DRBs
-  
+
   rrc_rlc_config_asn1_req (Mod_id, frame, 1, UE_index,
                            SRB_configList,
                            DRB_configList, (DRB_ToReleaseList_t *) NULL
@@ -1812,7 +1948,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
                            , (MBMS_SessionInfoList_r9_t *) NULL
 #endif
     );
-    
+
 
 
   // Loop through DRBs and establish if necessary
@@ -1853,11 +1989,11 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
                   LOG_I (OIP,
                          "[eNB %d] trying to bring up the OAI interface oai%d\n",
                          Mod_id, Mod_id);
-                  
+
                   oip_ifup = nas_config (Mod_id,        // interface index
                                          Mod_id + 1,    // thrid octet
                                          Mod_id + 1);   // fourth octet
-                  
+
                   oip_ifup = 0;
                   if (oip_ifup == 0)
                     {           // interface is up --> send a config the DRB
@@ -1873,14 +2009,14 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete (u8 Mod_id, u32 frame,
                              (UE_index * NB_RB_MAX) +
                              *DRB_configList->list.array[i]->
                              logicalChannelIdentity);
-                      
+
                       rb_conf_ipv4 (0,  //add
                                     UE_index,   //cx
                                     Mod_id,     //inst
                                     (UE_index * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity, 0, //dscp
                                     ipv4_address (Mod_id + 1, Mod_id + 1),      //saddr
                                     ipv4_address (Mod_id + 1, dest_ip_offset + UE_index + 1));  //daddr
-                      
+
                       LOG_D (RRC, "[eNB %d] State = Attached (UE %d)\n",
                              Mod_id, UE_index);
                     }

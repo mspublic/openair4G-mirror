@@ -57,9 +57,9 @@
 
 
 #define NSOFT 1827072
-#define LTE_NULL 2 
+#define LTE_NULL 2
 
-// maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
+// maximum of 3 segments before each coding block if data length exceeds 6144 bits.
 
 #define MAX_NUM_DLSCH_SEGMENTS 16
 #define MAX_NUM_ULSCH_SEGMENTS MAX_NUM_DLSCH_SEGMENTS
@@ -69,7 +69,7 @@
 #define MAX_NUM_CHANNEL_BITS (14*1200*6)  // 14 symbols, 1200 REs, 12 bits/RE
 #define MAX_NUM_RE (14*1200)
 
-#define SI_RNTI 0xffff 
+#define SI_RNTI 0xffff
 #define P_RNTI  0xfffd
 #define CBA_RNTI 0xfff4
 #define C_RNTI  0x1234
@@ -94,44 +94,44 @@ typedef struct {
   SCH_status_t status;
   /// Transport block size
   uint32_t TBS;
-  /// The payload + CRC size in bits, "B" from 36-212 
-  uint32_t B;  
+  /// The payload + CRC size in bits, "B" from 36-212
+  uint32_t B;
   /// Pointer to the payload
-  uint8_t *b;             
+  uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_DLSCH_SEGMENTS]; 
+  uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
-  /// Index of current HARQ round for this DLSCH                
-  uint8_t round;                
+  /// Index of current HARQ round for this DLSCH
+  uint8_t round;
   /// MCS format for this DLSCH
-  uint8_t mcs;            
+  uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
-  uint8_t d[MAX_NUM_DLSCH_SEGMENTS][(96+3+(3*6144))];  
+  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
+  uint8_t d[MAX_NUM_DLSCH_SEGMENTS][(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
-  uint8_t w[MAX_NUM_DLSCH_SEGMENTS][3*6144]; 
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)            
-  uint32_t C;                         
+  uint8_t w[MAX_NUM_DLSCH_SEGMENTS][3*6144];
+  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus;                    
+  uint32_t Cminus;
   /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cplus;                     
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
-  uint32_t Kminus;                    
+  uint32_t Cplus;
+  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Kminus;
   /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kplus;                     
+  uint32_t Kplus;
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t F;                         
+  uint32_t F;
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Nl;                       
+  uint8_t Nl;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
-  /// Flag indicating that this ULSCH has a new packet (start of new round) 
+  /// Flag indicating that this ULSCH has a new packet (start of new round)
   uint8_t Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
@@ -139,7 +139,7 @@ typedef struct {
   uint8_t subframe_scheduling_flag;
   /// Subframe cba scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_cba_scheduling_flag;
-  /// First Allocated RB 
+  /// First Allocated RB
   uint16_t first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
@@ -147,40 +147,40 @@ typedef struct {
   uint8_t TPC;
   /// Transport block size
   uint32_t TBS;
-  /// The payload + CRC size in bits, "B" from 36-212 
-  uint32_t B;  
+  /// The payload + CRC size in bits, "B" from 36-212
+  uint32_t B;
   /// Length of ACK information (bits)
   uint8_t O_ACK;
   /// Pointer to the payload
-  uint8_t *b;             
+  uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_ULSCH_SEGMENTS]; 
+  uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
-  /// Index of current HARQ round for this ULSCH                
-  uint8_t round;                
+  /// Index of current HARQ round for this ULSCH
+  uint8_t round;
   /// MCS format of this ULSCH
-  uint8_t mcs;            
+  uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
-  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
-  uint8_t d[MAX_NUM_ULSCH_SEGMENTS][(96+3+(3*6144))];  
+  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
+  uint8_t d[MAX_NUM_ULSCH_SEGMENTS][(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
-  uint8_t w[MAX_NUM_ULSCH_SEGMENTS][3*6144]; 
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)            
-  uint32_t C;                         
+  uint8_t w[MAX_NUM_ULSCH_SEGMENTS][3*6144];
+  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus;                    
+  uint32_t Cminus;
   /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cplus;                     
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
-  uint32_t Kminus;                    
+  uint32_t Cplus;
+  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Kminus;
   /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kplus;                     
+  uint32_t Kplus;
   /// Total number of bits across all segments
   uint32_t sumKr;
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t F;                         
+  uint32_t F;
   /// Msc_initial, Initial number of subcarriers for ULSCH (36-212, v8.6 2009-03, p.26-27)
   uint16_t Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
@@ -197,12 +197,12 @@ typedef struct {
 
 typedef struct {
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
-  uint16_t rnti; 
+  uint16_t rnti;
   /// Active flag for baseband transmitter processing
   uint8_t active;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
   uint8_t subframe_tx[10];
-  /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK. 
+  /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
   uint8_t nCCE[10];
   /// Current HARQ process id
   uint8_t current_harq_pid;
@@ -225,22 +225,22 @@ typedef struct {
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Pointers to 8 HARQ processes for the DLSCH
-  LTE_DL_eNB_HARQ_t *harq_processes[8];     
+  LTE_DL_eNB_HARQ_t *harq_processes[8];
   /// Number of soft channel bits
   uint32_t G;
   /// Layer index for this dlsch (0,1)
-  uint8_t layer_index;          
+  uint8_t layer_index;
   /// Codebook index for this dlsch (0,1,2,3)
-  uint8_t codebook_index;          
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  uint8_t codebook_index;
+  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t e[MAX_NUM_CHANNEL_BITS];
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
-  uint8_t Mdlharq;  
+  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
+  uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
   /// downlink power offset field
   uint8_t dl_power_off;
-  /// amplitude of PDSCH (compared to RS) in symbols without pilots 
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
@@ -255,14 +255,14 @@ typedef struct {
   /// SRS active flag
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_UE_HARQ_t *harq_processes[8];     
+  LTE_UL_UE_HARQ_t *harq_processes[8];
   /// Pointer to CQI data
   uint8_t o[MAX_CQI_BYTES];
   /// Length of CQI data (bits)
   uint8_t O;
-  /// Format of CQI data 
+  /// Format of CQI data
   UCI_format_t uci_format;
-  /// Rank information 
+  /// Rank information
   uint8_t o_RI[2];
   /// Length of rank information (bits)
   uint8_t O_RI;
@@ -272,18 +272,18 @@ typedef struct {
   uint8_t O_CQI_MIN;
   /// ACK/NAK Bundling flag
   uint8_t bundling;
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t e[MAX_NUM_CHANNEL_BITS];
-  /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t h[MAX_NUM_CHANNEL_BITS];
-  /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14) 
+  /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_CHANNEL_BITS];
-  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14) 
+  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   mod_sym_t d[MAX_NUM_RE];
-  /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15) 
+  /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
   mod_sym_t z[MAX_NUM_RE];
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
-  uint8_t Mdlharq; 
+  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
+  uint8_t Mdlharq;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
   /// coded and interleaved CQI bits
@@ -312,7 +312,7 @@ typedef struct {
   int16_t Po_PUSCH;
   /// PHR - current power headroom (based on last PUSCH transmission)
   int16_t PHR;
-  /// num active cba group 
+  /// num active cba group
   uint8_t num_active_cba_groups;
   /// num dci found for cba
   uint8_t num_cba_dci[10];
@@ -339,48 +339,48 @@ typedef struct {
   uint8_t phich_ACK;
   /// Last TPC command
   uint8_t TPC;
-  /// First Allocated RB 
+  /// First Allocated RB
   uint16_t first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Transport block size
   uint32_t TBS;
-  /// The payload + CRC size in bits  
-  uint32_t B; 
+  /// The payload + CRC size in bits
+  uint32_t B;
   /// Length of ACK information (bits)
   uint8_t O_ACK;
-  /// The value of DAI in DCI format 0 
+  /// The value of DAI in DCI format 0
   uint8_t V_UL_DAI;
   /// Pointer to the payload
-  uint8_t *b;  
+  uint8_t *b;
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
-  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
-  uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS]; 
+  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
+  uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
   /// Index of current HARQ round for this ULSCH
-  uint8_t round; 
+  uint8_t round;
   /// MCS format for this ULSCH
-  uint8_t mcs; 
+  uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
-  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
-  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
+  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_ULSCH_SEGMENTS];
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
-  uint32_t C;  
+  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus; 
-  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10) 
-  uint32_t Cplus;  
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
-  uint32_t Kminus; 
-  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  uint32_t Cminus;
+  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Cplus;
+  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Kminus;
+  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
   uint32_t Kplus;
-  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)  
-  uint32_t F;  
+  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t F;
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Nl;  
+  uint8_t Nl;
   /// Msc_initial, Initial number of subcarriers for ULSCH (36-212, v8.6 2009-03, p.26-27)
   uint16_t Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
@@ -399,26 +399,26 @@ typedef struct {
   /// SRS active flag
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_eNB_HARQ_t *harq_processes[8];     
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  LTE_UL_eNB_HARQ_t *harq_processes[8];
+  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   int16_t e[MAX_NUM_CHANNEL_BITS];
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
-  uint8_t Mdlharq; 
+  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
+  uint8_t Mdlharq;
   /// Maximum number of iterations used in eNB turbo decoder
   uint8_t max_turbo_iterations;
   /// CQI CRC status
   uint8_t cqi_crc_status;
   /// Pointer to CQI data
   uint8_t o[MAX_CQI_BYTES];
-  /// Format of CQI data 
+  /// Format of CQI data
   UCI_format_t uci_format;
   /// Length of CQI data under RI=1 assumption(bits)
   uint8_t Or1;
   /// Length of CQI data under RI=2 assumption(bits)
   uint8_t Or2;
-  /// Rank information 
+  /// Rank information
   uint8_t o_RI[2];
   /// Length of rank information (bits)
   uint8_t O_RI;
@@ -444,9 +444,9 @@ typedef struct {
   uint16_t beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   uint16_t beta_offset_harqack_times8;
-  /// Flag to indicate that eNB awaits UE Msg3 
+  /// Flag to indicate that eNB awaits UE Msg3
   uint8_t Msg3_active;
-  /// Flag to indicate that eNB should decode UE Msg3 
+  /// Flag to indicate that eNB should decode UE Msg3
   uint8_t Msg3_flag;
   /// Subframe for Msg3
   uint8_t Msg3_subframe;
@@ -458,7 +458,7 @@ typedef struct {
   uint8_t cyclicShift;
   /// cooperation flag
   uint8_t cooperation_flag;
-  /// num active cba group 
+  /// num active cba group
   uint8_t num_active_cba_groups;
   /// allocated CBA RNTI for this ulsch
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
@@ -467,44 +467,44 @@ typedef struct {
 typedef struct {
   /// Flag indicating that this DLSCH has a new transport block
   uint8_t Ndi;
-  /// DLSCH status flag indicating 
+  /// DLSCH status flag indicating
   SCH_status_t status;
   /// Transport block size
   uint32_t TBS;
-  /// The payload + CRC size in bits  
-  uint32_t B; 
+  /// The payload + CRC size in bits
+  uint32_t B;
   /// Pointer to the payload
-  uint8_t *b;  
+  uint8_t *b;
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
-  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
-  uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS]; 
+  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
+  uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
   /// Index of current HARQ round for this DLSCH
-  uint8_t round; 
+  uint8_t round;
   /// MCS format for this DLSCH
-  uint8_t mcs; 
+  uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
-  /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   double w_abs[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
-  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
+  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_DLSCH_SEGMENTS];
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
-  uint32_t C;  
+  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus; 
-  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10) 
-  uint32_t Cplus;  
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
-  uint32_t Kminus; 
-  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  uint32_t Cminus;
+  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Cplus;
+  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Kminus;
+  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
   uint32_t Kplus;
-  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)  
-  uint32_t F;  
+  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t F;
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Nl;
   /// current delta_pucch
@@ -538,14 +538,14 @@ typedef struct {
   /// CRNTI of UE
   uint16_t crnti; ///user id (rnti) of connected UEs
   /// Initial timing offset estimate from PRACH for RAR
-  s32 UE_timing_offset; 
+  s32 UE_timing_offset;
   /// Timing advance estimate from PUSCH for MAC timing advance signalling
-  s32 timing_advance_update; 
+  s32 timing_advance_update;
   /// Current mode of UE (NOT SYCHED, RAR, PUSCH)
   UE_MODE_t mode;
   /// Current sector where UE is attached
   uint8_t sector;
-  /// 
+  ///
   uint32_t dlsch_sliding_cnt;
   ///
   uint32_t dlsch_ACK[8];
@@ -618,11 +618,11 @@ typedef struct {
   /// HARQ-ACKs
   harq_status_t harq_ack[10];
   /// Pointers to up to 8 HARQ processes
-  LTE_DL_UE_HARQ_t *harq_processes[8];   
+  LTE_DL_UE_HARQ_t *harq_processes[8];
   /// Layer index for this DLSCH
-  uint8_t layer_index;              
+  uint8_t layer_index;
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
-  uint8_t Mdlharq;              
+  uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
   /// Maximum number of Turbo iterations
@@ -668,7 +668,7 @@ typedef enum {
 typedef struct {
   /// Length of DCI in bits
   uint8_t dci_length;
-  /// Aggregation level 
+  /// Aggregation level
   uint8_t L;
   /// Position of first CCE of the dci
   unsigned int nCCE;

@@ -36,6 +36,7 @@
  ******************************************************************************/
 #include "s1ap_common.h"
 #include "s1ap_ies_defs.h"
+//#define ZTE_EPC
 
 int s1ap_encode_uecontextreleasecommandies(
     UEContextReleaseCommand_t *ueContextReleaseCommand,
@@ -1915,12 +1916,29 @@ int s1ap_encode_initialcontextsetupresponseies(
 
     IE_t *ie;
 
+    IE_t *buff;
+#ifdef ZTE_EPC
+    if ((buff = malloc(sizeof(IE_t))) == NULL) {
+        // Possible error on malloc
+        return NULL;
+    }
+    memset((void*)buff, 0, sizeof(IE_t));
+
+    buff->id = ProtocolIE_ID_id_MME_UE_S1AP_ID;
+    buff->criticality = Criticality_reject;
+    buff->value.size = 5;
+    buff->value.buf = malloc(5);
+    buff->value.buf[0] = 0xc0;
+    memcpy(&(buff->value.buf[1]), &(initialContextSetupResponseIEs->mme_ue_s1ap_id), 4);
+    ie = buff;
+#else
     if ((ie = s1ap_new_ie(ProtocolIE_ID_id_MME_UE_S1AP_ID,
                           Criticality_ignore,
                           &asn_DEF_MME_UE_S1AP_ID,
                           &initialContextSetupResponseIEs->mme_ue_s1ap_id)) == NULL) {
         return -1;
     }
+#endif
     ASN_SEQUENCE_ADD(&initialContextSetupResponse->initialContextSetupResponse_ies.list, ie);
 
     if ((ie = s1ap_new_ie(ProtocolIE_ID_id_eNB_UE_S1AP_ID,
@@ -2621,12 +2639,31 @@ int s1ap_encode_uplinknastransporties(
 
     IE_t *ie;
 
+    IE_t *buff;
+    // ZTE EPC
+#ifdef ZTE_EPC
+
+    if ((buff = malloc(sizeof(IE_t))) == NULL) {
+        // Possible error on malloc
+        return NULL;
+    }
+    memset((void*)buff, 0, sizeof(IE_t));
+
+    buff->id = ProtocolIE_ID_id_MME_UE_S1AP_ID;
+    buff->criticality = Criticality_reject;
+    buff->value.size = 5;
+    buff->value.buf = malloc(5);
+    buff->value.buf[0] = 0xc0;
+    memcpy(&(buff->value.buf[1]), &(uplinkNASTransportIEs->mme_ue_s1ap_id), 4);
+    ie = buff;
+#else
     if ((ie = s1ap_new_ie(ProtocolIE_ID_id_MME_UE_S1AP_ID,
                           Criticality_reject,
                           &asn_DEF_MME_UE_S1AP_ID,
                           &uplinkNASTransportIEs->mme_ue_s1ap_id)) == NULL) {
         return -1;
     }
+#endif
     ASN_SEQUENCE_ADD(&uplinkNASTransport->uplinkNASTransport_ies.list, ie);
 
     if ((ie = s1ap_new_ie(ProtocolIE_ID_id_eNB_UE_S1AP_ID,
