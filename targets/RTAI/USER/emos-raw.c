@@ -120,7 +120,7 @@ static SEM *mutex;
 //static CND *cond;
 
 static long int thread0;
-static long int thread1;
+//static long int thread1;
 //static long int sync_thread;
 #else
 pthread_t thread0;
@@ -132,6 +132,7 @@ struct sched_param sched_param_dlsch;
 pthread_t  thread2; //xforms
 pthread_t  thread3; //emos
 pthread_t  thread4; //GPS
+pthread_t  thread5; //log
 
 /*
 static int instance_cnt=-1; //0 means worker is busy, -1 means its free
@@ -199,6 +200,7 @@ char *conf_config_file_name = NULL;
 unsigned int lost_bytes=0;
 unsigned int rssi_lin[MAX_CARDS][4],rssi_lin_max[MAX_CARDS],rssi_lin_avg[MAX_CARDS];
 u8 rssi_avg_dB[MAX_CARDS]; 
+long long unsigned int total_bytes=0;
 
 struct timing_info_t {
   //unsigned int frame, hw_slot, last_slot, next_slot;
@@ -220,13 +222,6 @@ int otg_enabled;
 
 int mbox_bounds[20] = {8,16,24,30,38,46,54,60,68,76,84,90,98,106,114,120,128,136,144, 0}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
 //int mbox_bounds[20] = {6,14,22,28,36,44,52,58,66,74,82,88,96,104,112,118,126,134,142, 148}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
-
-int init_dlsch_threads(void);
-void cleanup_dlsch_threads(void);
-s32 init_rx_pdsch_thread(void);
-void cleanup_rx_pdsch_thread(void);
-int init_ulsch_threads(void);
-void cleanup_ulsch_threads(void);
 
 //void setup_ue_buffers(PHY_VARS_UE *phy_vars_ue, LTE_DL_FRAME_PARMS *frame_parms, int carrier);
 //void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_parms, int carrier);
@@ -426,21 +421,70 @@ void* gps_thread (void *arg)
 
 }
 
+void *log_thread (void *arg)
+{
+  //struct tm now_sec;
+  struct timeval now;
+  int card;
+  FILE *logfile_id;
+  char logfile_name[1024];
+  time_t starttime_tmp;
+  struct tm starttime;
+
+  //open file
+  time(&starttime_tmp);
+  localtime_r(&starttime_tmp,&starttime);
+  snprintf(logfile_name,1024,"%s/%s_data_%d%02d%02d_%02d%02d%02d.log",
+	   dumpfile_dir,
+	   (UE_flag==0) ? "eNB" : "UE",
+	   1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
+  logfile_id = fopen(logfile_name,"w");
+  if ((logfile_id == NULL))
+    {
+      fprintf(stderr, "[EMOS] Error opening logfile %s\n",logfile_name);
+      exit(EXIT_FAILURE);
+    }
+
+  fprintf(logfile_id,"#time, frame, total bytes wrote, total bytes lost, GPS time, GPS mode, lat, lon, alt, speed, rssi_lin_max[0], rssi_lin_avg[0], rssi_avg_dBm[0], rssi_avg_dB[0], rx_gain[0], LNA[0], ...\n");
+
+  while (!oai_exit) {
+    gettimeofday(&now,NULL);
+    //localtime_r(&(now.tv_sec),&now_sec);
+    fprintf(logfile_id,"%d.%06d, %d, %llu, %u, %e, %d, %e, %e, %e, %e, ", 
+	    (int) now.tv_sec, (int)now.tv_usec, 
+	    frame, total_bytes,lost_bytes, 
+	    dummy_gps_data.time, dummy_gps_data.mode, dummy_gps_data.latitude, dummy_gps_data.longitude, dummy_gps_data.altitude, dummy_gps_data.speed);
+    for (card=0;card<number_of_cards;card++)
+      if (carrier_freq[card][0] != 0) 
+	fprintf(logfile_id,"%d, %d, %d, %d, %d, %d, ", rssi_lin_max[card], rssi_lin_avg[card], 
+		rssi_avg_dB[card] + rx_total_gain_dB[((openair0_exmimo_pci[card].exmimo_config_ptr->rf.rf_mode[0] & LNAGAINMASK) >> 14)-1] - openair0_exmimo_pci[card].exmimo_config_ptr->rf.rx_gain[0][0],
+		rssi_avg_dB[card], openair0_exmimo_pci[card].exmimo_config_ptr->rf.rx_gain[0][0], (openair0_exmimo_pci[card].exmimo_config_ptr->rf.rf_mode[0] & LNAGAINMASK) >> 14);
+    fprintf(logfile_id,"\n");
+    usleep(10000);
+  } 
+  
+  //close file
+  fclose(logfile_id);
+
+  pthread_exit((void*) arg);
+
+ }
+
 void *emos_thread (void *arg)
 {
   char c;
   char *fifo2file_buffer, *fifo2file_ptr;
 
   int fifo, counter=0, bytes;
-  long long unsigned int total_bytes=0;
 
-  FILE  *dumpfile_id,*logfile_id;
-  char  dumpfile_name[1024],logfile_name[1024];
+  FILE  *dumpfile_id;
+  char  dumpfile_name[1024];
   time_t starttime_tmp;
   struct tm starttime;
   
-  time_t timer;
-  struct tm *now;
+  //time_t timer;
+  struct tm now_sec;
+  struct timeval now;
 
   struct sched_param sched_param;
   int ret;
@@ -455,8 +499,8 @@ void *emos_thread (void *arg)
   
   printf("EMOS thread has priority %d\n",sched_param.sched_priority);
  
-  timer = time(NULL);
-  now = localtime(&timer);
+  //timer = time(NULL);
+  //now = localtime(&timer);
 
   for (card=0; card<number_of_cards; card++) 
     for (ant=0; ant<4; ant++) 
@@ -489,16 +533,11 @@ void *emos_thread (void *arg)
 	   dumpfile_dir,
 	   (UE_flag==0) ? "eNB" : "UE",
 	   1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
-  snprintf(logfile_name,1024,"%s/%s_data_%d%02d%02d_%02d%02d%02d.log",
-	   dumpfile_dir,
-	   (UE_flag==0) ? "eNB" : "UE",
-	   1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec);
 
   dumpfile_id = fopen(dumpfile_name,"w");
-  logfile_id = fopen(logfile_name,"w");
-  if ((dumpfile_id == NULL) || (logfile_id == NULL))
+  if ((dumpfile_id == NULL))
     {
-      fprintf(stderr, "[EMOS] Error opening dumpfile or logfile %s\n",dumpfile_name);
+      fprintf(stderr, "[EMOS] Error opening dumpfile %s\n",dumpfile_name);
       exit(EXIT_FAILURE);
     }
 
@@ -546,34 +585,23 @@ void *emos_thread (void *arg)
 	}
 
       if ((counter%AQU_LENGTH_SLOTS)==0) {
-	time(&starttime_tmp);
-	localtime_r(&starttime_tmp,&starttime);
-	printf("[EMOS] %02d:%02d:%02d, frame %d, total bytes wrote %llu, bytes lost %u\n", starttime.tm_hour, starttime.tm_min, starttime.tm_sec, frame, total_bytes,lost_bytes);
+	//time(&starttime_tmp);
+	gettimeofday(&now,NULL);
+	localtime_r(&(now.tv_sec),&now_sec);
+	printf("[EMOS] %02d:%02d:%02d.%03d, frame %d, total bytes wrote %llu, bytes lost %u\n", 
+	       now_sec.tm_hour, now_sec.tm_min, now_sec.tm_sec, (int)(now.tv_usec/1000), frame, total_bytes,lost_bytes);
 	for (card=0;card<number_of_cards;card++)
 	  if (carrier_freq[card][0] != 0) 
-	    printf("[EMOS] %02d:%02d:%02d, card %d, rssi_lin_max %d, rssi_lin_avg %d, rssi_avg_dBm %d (rssi_avg_dB %d, rx_gain %d, LNA %d)\n", 
-		   starttime.tm_hour, starttime.tm_min, starttime.tm_sec, card, rssi_lin_max[card], rssi_lin_avg[card], 
+	    printf("[EMOS] %02d:%02d:%02d.%03d, card %d, rssi_lin_max %d, rssi_lin_avg %d, rssi_avg_dBm %d (rssi_avg_dB %d, rx_gain %d, LNA %d)\n", 
+		   now_sec.tm_hour, now_sec.tm_min, now_sec.tm_sec, (int)(now.tv_usec/1000), card, rssi_lin_max[card], rssi_lin_avg[card], 
 		   rssi_avg_dB[card] + rx_total_gain_dB[((openair0_exmimo_pci[card].exmimo_config_ptr->rf.rf_mode[0] & LNAGAINMASK) >> 14)-1] - openair0_exmimo_pci[card].exmimo_config_ptr->rf.rx_gain[0][0],
 		   rssi_avg_dB[card], openair0_exmimo_pci[card].exmimo_config_ptr->rf.rx_gain[0][0], (openair0_exmimo_pci[card].exmimo_config_ptr->rf.rf_mode[0] & LNAGAINMASK) >> 14);
 	//printf("[EMOS] %02d:%02d:%02d, frame %d, GPS time %e, GPS mode %d, lat %e, lon %e, alt %e, speed %e\n", starttime.tm_hour, starttime.tm_min, starttime.tm_sec, counter/20, dummy_gps_data.time, dummy_gps_data.mode, dummy_gps_data.latitude, dummy_gps_data.longitude, dummy_gps_data.altitude, dummy_gps_data.speed);
-      }
-      if (counter==0)
-	fprintf(logfile_id,"#time, frame, total bytes wrote, total bytes lost, GPS time, GPS mode, lat, lon, alt, speed, rssi_lin_max[0], rssi_lin_avg[0], rssi_avg_dBm[0], rssi_avg_dB[0], rx_gain[0], LNA[0], ...\n");
-      if ((counter%LTE_SLOTS_PER_FRAME)==0) {
-	fprintf(logfile_id,"%02d:%02d:%02d, %d, %llu, %u, %e, %d, %e, %e, %e, %e, ", starttime.tm_hour, starttime.tm_min, starttime.tm_sec, frame, total_bytes,
-lost_bytes, dummy_gps_data.time, dummy_gps_data.mode, dummy_gps_data.latitude, dummy_gps_data.longitude, dummy_gps_data.altitude, dummy_gps_data.speed);
-	for (card=0;card<number_of_cards;card++)
-	  if (carrier_freq[card][0] != 0) 
-	    fprintf(logfile_id,"%d, %d, %d, %d, %d, %d, ", rssi_lin_max[card], rssi_lin_avg[card], 
-		    rssi_avg_dB[card] + rx_total_gain_dB[((openair0_exmimo_pci[card].exmimo_config_ptr->rf.rf_mode[0] & LNAGAINMASK) >> 14)-1] - openair0_exmimo_pci[card].exmimo_config_ptr->rf.rx_gain[0][0],
-		    rssi_avg_dB[card], openair0_exmimo_pci[card].exmimo_config_ptr->rf.rx_gain[0][0], (openair0_exmimo_pci[card].exmimo_config_ptr->rf.rf_mode[0] & LNAGAINMASK) >> 14);
-	fprintf(logfile_id,"\n");
       }
     }
   
   free(fifo2file_buffer);
   fclose(dumpfile_id);
-  fclose(logfile_id);
   close(fifo);
   
   pthread_exit((void*) arg);
@@ -1272,6 +1300,8 @@ int main(int argc, char **argv) {
   printf("EMOS thread created, ret=%d\n",ret);
   ret = pthread_create(&thread4, NULL, gps_thread, NULL);
   printf("GPS thread created, ret=%d\n",ret);
+  ret = pthread_create(&thread5, NULL, log_thread, NULL);
+  printf("LOG thread created, ret=%d\n",ret);
 #endif
 
   rt_sleep_ns(10*FRAME_PERIOD);
@@ -1405,6 +1435,9 @@ int main(int argc, char **argv) {
   printf("waiting for GPS thread\n");
   pthread_cancel(thread4);
   pthread_join(thread4,&status);
+  printf("waiting for log thread\n");
+  pthread_cancel(thread5);
+  pthread_join(thread5,&status);
 #endif
 
 #ifdef EMOS
