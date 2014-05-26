@@ -59,7 +59,7 @@ extern rlc_op_status_t rlc_data_req(module_id_t, u32_t, u8_t, rb_id_t, mui_t, co
 extern void rrc_lite_data_ind( u8 Mod_id, u32 frame, u8 eNB_flag, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 extern u8 mac_get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index);
 extern char *packet_gen(int src, int dst, int ctime, int *pkt_size);
-extern int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size);
+extern int otg_rx_pkt( int src, int dst, int frame, int ctime, char *buffer_tx, unsigned int size);
 
 //-----------------------------------------------------------------------------
 /*
@@ -251,7 +251,7 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
   u8 pdcp_header_len=0, pdcp_tailer_len=0;
   u16 sequence_number;
 
-  LOG_I(PDCP,"Data indication notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", module_id, rab_id, sdu_buffer_size);
+  LOG_I(PDCP,"Data indication (%p) notification for PDCP entity with module ID %d and radio bearer ID %d rlc sdu size %d\n", sdu_buffer->data, module_id, rab_id, sdu_buffer_size);
 
   if (sdu_buffer_size == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
@@ -332,16 +332,17 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     // free_mem_block(new_sdu);
     return TRUE;
   }
+
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ){
     if (rab_id < NUMBER_OF_UE_MAX * MAX_NUM_RB )
-      src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + 1 :  ((rab_id - DTCH) / MAX_NUM_RB);
+      src_id = (eNB_flag == 1) ? (rab_id - DTCH) / MAX_NUM_RB  /*- NB_eNB_INST */ + NB_eNB_INST :  ((rab_id - DTCH) / MAX_NUM_RB);
     else // fixme 
       src_id =  (module_id ==0)? 1: 0;//((rab_id - (NUMBER_OF_UE_MAX * MAX_NUM_RB) - VLID_OFFSET ) 
   dst_id = (eNB_flag == 1) ? module_id : module_id /*-  NB_eNB_INST*/;
   ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
-  LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d)\n", eNB_flag, module_id, rab_id, src_id, dst_id);
-  if (otg_rx_pkt(src_id, dst_id,ctime,&sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE],
+  LOG_I(OTG,"Check received buffer : enb_flag %d mod id %d, rab id %d (src %d, dst %d, data %p)\n", eNB_flag, module_id, rab_id, src_id, dst_id,sdu_buffer->data);
+  if (otg_rx_pkt(src_id, dst_id,frame, ctime, &sdu_buffer->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE],
 		 sdu_buffer_size - PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE ) == 0 ) {
      free_mem_block(sdu_buffer);
      return TRUE;

@@ -459,6 +459,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
   {
     char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    char *relay_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *background[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     unsigned int aggregation_level[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
@@ -492,6 +493,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
     
     char *application_type[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *source_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+    char *relay_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *destination_id[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *traffic[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
     char *transport_protocol[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];

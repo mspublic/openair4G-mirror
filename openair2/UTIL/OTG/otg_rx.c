@@ -55,9 +55,9 @@ extern unsigned char NB_UE_INST;
 
 
 // Check if the packet is well received or not and extract data
-int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size){
+int otg_rx_pkt( int src, int dst, int frame, int ctime, unsigned char *buffer_tx, unsigned int size){
   
-  int bytes_read=0;
+  int bytes_read=2;//PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
   otg_hdr_info_t * otg_hdr_info_rx;
   otg_hdr_t * otg_hdr_rx;
   int is_size_ok=0;
@@ -67,15 +67,14 @@ int otg_rx_pkt( int src, int dst, int ctime, char *buffer_tx, unsigned int size)
   //float owd_mobile_core=0;
   //float owd_IP_backbone=0;
   //float owd_application=0;
-char * hdr_payload=NULL;
-//int header_size;
+  char * hdr_payload=NULL;
+  //int header_size;
 
   if (buffer_tx!=NULL) { 
+    LOG_I(OTG,"Data pointer is %p \n", buffer_tx);
     otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
     bytes_read += sizeof (otg_hdr_info_t);
-
-
-
+    
     if (((otg_hdr_info_rx->flag == 0xffff)||(otg_hdr_info_rx->flag == 0xbbbb)) && (otg_hdr_info_rx->size ==size )){ //data traffic
       /*is_size_ok= 0;
       if (( otg_hdr_info_rx->size ) == size ) {*/
@@ -84,19 +83,19 @@ char * hdr_payload=NULL;
       LOG_I(OTG,"[SRC %d][DST %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d) \n", src, dst,ctime, otg_hdr_info_rx->flag, otg_hdr_rx->seq_num, otg_hdr_rx->time, otg_hdr_info_rx->size, size);
       bytes_read += sizeof (otg_hdr_t);
 
-	      /*if (( otg_hdr_info_rx->size ) != size ) {
-		header_size=bytes_read;
-		hdr_payload=(char*)malloc((size-bytes_read)*sizeof(char)); //size-bytes_read
-		//char hdr_payload[size-bytes_read];
- 		memcpy(hdr_payload, &buffer_tx[bytes_read], size-bytes_read); 
-		hdr_payload[size-bytes_read-1]=0;
-		printf("[SRC %d][DST %d] FALSE::RX pkt at (time %d, ctime %d) flag 0x %x, seq number %d, 
-                size (hdr %d, pdcp %d, other %d) hdr %d: %s: %c \n", src, dst,otg_hdr_rx->time, ctime, otg_hdr_info_rx->flag, 
-                otg_hdr_rx->seq_num, otg_hdr_info_rx->size,   size, header_size+strlen(hdr_payload),header_size,hdr_payload, buffer_tx[size-2]);
-		printf("PACKET_RX hdr %d , %d, strlen %d  %s end %c \n", bytes_read, size-bytes_read,strlen(hdr_payload), hdr_payload, buffer_tx[size-2]);
-		free(hdr_payload);
-	      }*/
-
+      /*if (( otg_hdr_info_rx->size ) != size ) {
+	header_size=bytes_read;
+	hdr_payload=(char*)malloc((size-bytes_read)*sizeof(char)); //size-bytes_read
+	//char hdr_payload[size-bytes_read];
+	memcpy(hdr_payload, &buffer_tx[bytes_read], size-bytes_read); 
+	hdr_payload[size-bytes_read-1]=0;
+	printf("[SRC %d][DST %d] FALSE::RX pkt at (time %d, ctime %d) flag 0x %x, seq number %d, 
+	size (hdr %d, pdcp %d, other %d) hdr %d: %s: %c \n", src, dst,otg_hdr_rx->time, ctime, otg_hdr_info_rx->flag, 
+	otg_hdr_rx->seq_num, otg_hdr_info_rx->size,   size, header_size+strlen(hdr_payload),header_size,hdr_payload, buffer_tx[size-2]);
+	printf("PACKET_RX hdr %d , %d, strlen %d  %s end %c \n", bytes_read, size-bytes_read,strlen(hdr_payload), hdr_payload, buffer_tx[size-2]);
+	free(hdr_payload);
+	}*/
+      
       if (otg_hdr_info_rx->flag == 0xffff){
 	seq_num_rx=otg_info->seq_num_rx[src][dst];
 	if (src<NB_eNB_INST)
@@ -189,22 +188,22 @@ char * hdr_payload=NULL;
 	otg_info->rx_num_pkt[src][dst]+=1;
 	otg_info->rx_num_bytes[src][dst]+=otg_hdr_info_rx->size;
 	otg_info->seq_num_rx[src][dst]=seq_num_rx;
-	if (src<NB_eNB_INST)
+	if (src<NB_eNB_INST){
 	  otg_info->nb_loss_pkts_dl[src][dst]=nb_loss_pkts;
-	else
+	}else{
 	  otg_info->nb_loss_pkts_ul[src][dst]=nb_loss_pkts;		
-	
-/*Plots of latency and goodput are only plotted for the data traffic */
-		if (g_otg->latency_metric) 
-			if (g_otg->owd_radio_access==0)
-  			add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY); 
-			else
-				add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY); 
-
-  		if (g_otg->throughput_metric)
-  			add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst], OTG_GP);
+	}
+	/*Plots of latency and goodput are only plotted for the data traffic */
+	if (g_otg->latency_metric){ 
+	  if (g_otg->owd_radio_access==0)
+	    add_log_metric(src, dst, otg_hdr_rx->time, otg_info->rx_pkt_owd[src][dst], OTG_LATENCY); 
+	  else
+	    add_log_metric(src, dst, otg_hdr_rx->time, otg_info->radio_access_delay[src][dst], OTG_LATENCY); 
+	}
+	if (g_otg->throughput_metric)
+	  add_log_metric(src, dst, otg_hdr_rx->time, otg_hdr_info_rx->size*8/otg_info->rx_pkt_owd[src][dst], OTG_GP);
         }
-	else{
+      else{
 	  otg_info->rx_num_pkt_background[src][dst]+=1;
 	  otg_info->rx_num_bytes_background[src][dst]+=otg_hdr_info_rx->size;
 	  otg_info->seq_num_rx_background[src][dst]=seq_num_rx;
@@ -219,6 +218,14 @@ char * hdr_payload=NULL;
 	LOG_W(OTG,"[SRC %d][DST %d] RX pkt: seq number %d size mis-matche (hdr %d, pdcp %d) \n", src, dst, otg_hdr_rx->seq_num, otg_hdr_info_rx->size, size);
   otg_info->nb_loss_pkts_otg[src][dst]++;
       }
+      /*      if ((otg_hdr_rx->relay_id >= 0) && (otg_hdr_rx->relay_id < NUMBER_OF_UE_MAX)&& (dst >= NB_eNB_INST)){// || (g_otg->relay_nodes[src][dst][0]>=0)){
+	LOG_I(OTG,"[RX] for src %d dst %d forward / relay the packet to (%d,%d)\n",
+	      src, dst, otg_hdr_rx->relay_id, g_otg->relay_nodes[src][dst][0]);
+	pdcp_data_req(dst, frame, 0, (otg_hdr_rx->relay_id * 11) + 3 , 0, 0,size, buffer_tx, 1);
+	otg_hdr_rx->relay_id=-1;
+	return(1);
+	}
+      */
       return(0);
     } else{
       LOG_W(OTG,"RX: Not an OTG pkt, forward to upper layer (flag %x, size %d, pdcp_size %d) FIX ME \n", otg_hdr_info_rx->flag, otg_hdr_info_rx->size, size);	
