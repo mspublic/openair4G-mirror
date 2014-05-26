@@ -55,9 +55,9 @@ extern unsigned char NB_UE_INST;
 
 
 // Check if the packet is well received or not and extract data
-int otg_rx_pkt( int src, int dst, int frame, int ctime, unsigned char *buffer_tx, unsigned int size){
+int otg_rx_pkt( int src, int dst, int frame, int ctime, char *buffer_tx, unsigned int size){
   
-  int bytes_read=2;//PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+  int bytes_read=0;
   otg_hdr_info_t * otg_hdr_info_rx;
   otg_hdr_t * otg_hdr_rx;
   int is_size_ok=0;
@@ -71,7 +71,6 @@ int otg_rx_pkt( int src, int dst, int frame, int ctime, unsigned char *buffer_tx
   //int header_size;
 
   if (buffer_tx!=NULL) { 
-    LOG_I(OTG,"Data pointer is %p \n", buffer_tx);
     otg_hdr_info_rx = (otg_hdr_info_t *) (&buffer_tx[bytes_read]);
     bytes_read += sizeof (otg_hdr_info_t);
     
