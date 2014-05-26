@@ -576,7 +576,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
   // RadioResourceConfigDedicated
   // RadioResourceConfigDedicated->SRBToAddModList == NULL
   // RadioResourceConfigDedicated->DRBToAddModList == NULL
-  DRB_ToAddModList_t *DRB_list;
+  DRB_ToAddModList_t *DRB_configList;
   struct DRB_ToAddMod **DRB_config = &rrc_inst->CODRB_config[0]; //TCS LOLAmesh
   struct DRB_ToAddMod *DRB_config2;
   struct RLC_Config *DRB_rlc_config;
@@ -595,15 +595,14 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
   /* We generate the RRCConnectionReconfiguration message */
   
   // RadioResourceConfigDedicated->DRBToAddModList
-  DRB_list = CALLOC(1,sizeof(*DRB_list));
+  DRB_configList = CALLOC(1,sizeof(*DRB_configList));
   // If this is not the first RRCConnectionReconfiguration message sent for a collaborative link, we do not need to allocated a new DRB_config
   if (*DRB_config == NULL) {
     DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
-  }
-  *DRB_config = DRB_config2;
-  /*  } else
+    *DRB_config = DRB_config2;
+  } else
     DRB_config2=*DRB_config; 
-  */ 
+  
   // RadioResourceConfigDedicated->DRBToAddModList->DRBToAddMod
   // drb identity
   DRB_config2->drb_Identity = 1; ///TCS LOLAmesh RB_id 0 since this is the first collaborative RB
@@ -637,7 +636,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
   virtualLinkID = CALLOC(1,sizeof(*virtualLinkID));
   *virtualLinkID = vlid;
   DRB_config2->virtualLinkID = (long)virtualLinkID;
-  ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
+  ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config2);
 
   // RadioResourceConfigDedicated->mac-MainConfig
   mac_MainConfig = CALLOC(1,sizeof(*mac_MainConfig));
@@ -663,7 +662,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_co(u8 Mod_id, u16 UE_index, u
 					 UE_index,
 					 0,//Transaction_id,
 					 NULL,//SRB_list
-					 DRB_list,//DRB_list (ToAdd)
+					 DRB_configList,//DRB_list (ToAdd)
 					 NULL, //DRB2_list (ToRelease)
 					 NULL, //sps config
 					 physicalConfigDedicated,//physicalConfigDedicated
