@@ -379,7 +379,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u32 frame,u8 eNB_index,struct DRB_ToAddMod *D
     }
     // We need to configure a DRB
     else {
-      LOG_D(RRC,"[UE %d] Frame %d: RRCConnectionReconfiguration Configuring DRB %ld/LCID %d\n",Mod_id, frame,DRB_id,(int)*DRB_config->logicalChannelIdentity);
+      LOG_D(RRC,"[UE %d] Frame %d: RRCConnectionReconfiguration Configuring DRB %ld/LCID %d\n",Mod_id, frame,DRB_id,(eNB_index * MAX_NUM_RB) + (int)*DRB_config->logicalChannelIdentity);
       LOG_D(RRC,"[UE %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",Mod_id,frame,DRB_id);
       //pdcp_array size is MAX_eNB * MAX_RAB or MAX_UE * MAX_RAB where MAX_RAB = 8 (8*8 = 64), so it includes only DRBs (one UE can have 8 DRBs towards 8 eNB)
       //DRB0 starts at index 0 for UE0, 8 fort UE1...

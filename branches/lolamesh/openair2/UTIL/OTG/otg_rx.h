@@ -62,7 +62,7 @@
 * \note 
 * @ingroup  _otg
 */
-int otg_rx_pkt_packet(int src, int dst, int ctime, char *packet, unsigned int size);
+int otg_rx_pkt(int src, int dst, int frame, int ctime, char *packet, unsigned int size);
 
 
 /*! \fn void owd_const_gen(int src,int dst);

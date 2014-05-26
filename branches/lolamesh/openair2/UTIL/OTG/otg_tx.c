@@ -170,9 +170,6 @@ int adjust_size(int size){
 }
 
 
-
-
-
 unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when pdcp, ctime = frame cnt
 
 
@@ -182,8 +179,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   int state_transition_prob=0;
   int hdr_size;
   unsigned int buffer_size = 0;
-  *pkt_size = 0;
-  set_ctime(ctime);
+  
   unsigned int gen_pkts=0;
   unsigned int background_ok=0; 
   unsigned char flow;
@@ -194,82 +190,83 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   char *payload=NULL;
   char *header=NULL;
   unsigned int i;
-  
+  *pkt_size = 0;
+  set_ctime(ctime);
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
   if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
     //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
     return NULL;	 
   }
 
-	else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][PE_STATE] > 0)) {
-  	state_management(src,dst,ctime);
-    	state=otg_info->state[src][dst];
-		#ifdef STANDALONE
-  	//pre-config for the standalone
-  	if (ctime<otg_info->ptime[src][dst]) //it happends when the emulation was finished
-    	otg_info->ptime[src][dst]=ctime;
-  	if (ctime==0)
-    	otg_info->idt[src][dst]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
+  else if ((g_otg->application_type[src][dst] >0) || (g_otg->idt_dist[src][dst][PE_STATE] > 0)) {
+    state_management(src,dst,ctime);
+    state=otg_info->state[src][dst];
+#ifdef STANDALONE
+    //pre-config for the standalone
+    if (ctime<otg_info->ptime[src][dst]) //it happends when the emulation was finished
+      otg_info->ptime[src][dst]=ctime;
+    if (ctime==0)
+      otg_info->idt[src][dst]=0; //for the standalone mode: the emulation is run several times, we need to initialise the idt to 0 when ctime=0
   	//end pre-config
-		#endif 
-		//LOG_D(OTG,"MY_STATE %d \n", state);
- 
-		if (state==OFF_STATE)
-			return NULL;
-		else{
-
-  		if (((state==PU_STATE)||(state==ED_STATE)) || (otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
-  			LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", 
-				src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
-    		otg_info->ptime[src][dst]=ctime;	
-				if (state==PE_STATE) /* compute the IDT only for PE STATE*/
-    			otg_info->idt[src][dst]=time_dist(src, dst, PE_STATE); // update the idt for the next otg_tx
-    		gen_pkts=1;
-  		}  //check if there is background traffic to generate
-  		else if ((gen_pkts==0) && (g_otg->background[src][dst]==1)&&(background_gen(src, dst, ctime)!=0)){ // the gen_pkts condition could be relaxed here
-    		background_ok=1;
-    		LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d] \n", background_ok, src, dst);
-  		}
-  		else{  
-   			return NULL; // do not generate the packet, and keep the idt
-  		}
-		}	
-
-	}
-	else
-	 return NULL;
+#endif 
+    //LOG_D(OTG,"MY_STATE %d \n", state);
+    
+    if (state==OFF_STATE)
+      return NULL;
+    else{
+      
+      if (((state==PU_STATE)||(state==ED_STATE)) || (otg_info->idt[src][dst]==0) || (( (ctime-otg_info->ptime[src][dst]) >= otg_info->idt[src][dst] ) )) {
+	LOG_D(OTG,"Time To Transmit::OK (Source= %d, Destination= %d,State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n", 
+	      src, dst, state ,otg_info->idt[src][dst], ctime, otg_info->ptime[src][dst]); 
+	otg_info->ptime[src][dst]=ctime;	
+	if (state==PE_STATE) /* compute the IDT only for PE STATE*/
+	  otg_info->idt[src][dst]=time_dist(src, dst, PE_STATE); // update the idt for the next otg_tx
+	gen_pkts=1;
+      }  //check if there is background traffic to generate
+      else if ((gen_pkts==0) && (g_otg->background[src][dst]==1)&&(background_gen(src, dst, ctime)!=0)){ // the gen_pkts condition could be relaxed here
+	background_ok=1;
+	LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d] \n", background_ok, src, dst);
+      }
+      else{  
+	return NULL; // do not generate the packet, and keep the idt
+      }
+    }	
+    
+  }
+  else
+    return NULL;
   hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
-
-if (background_ok==0){
-	for(i=1;i<=g_otg->aggregation_level[src][dst];i++)
-  	size+=size_dist(src, dst, state);
-/* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
-	if (size>PAYLOAD_MAX){
-		size=PAYLOAD_MAX;
-    LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
-	}
-  header = random_string(header_size_gen(src,dst), g_otg->packet_gen_type, HEADER_ALPHABET);
-  payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
-  flag=0xffff;
-  flow=flow_id;
-  seq_num=otg_info->seq_num[src][dst];
-  otg_info->header_type[src][dst]=type_header;
-  otg_info->seq_num[src][dst]+=1;
-  otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
-  otg_info->tx_num_pkt[src][dst]+=1;
-  if (size!=strlen(payload))
-    LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, size, strlen(payload), seq_num, header, payload);
-  else 
-    LOG_T(OTG,"[%d][%d] [0x %x] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime,  size, seq_num,state, header, payload);
   
- } else {
-
-	if ((g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
-		otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst];
-	else{
-		otg_info->size_background[src][dst]=PAYLOAD_MAX;
-    LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
-	}
+  if (background_ok==0){
+    for(i=1;i<=g_otg->aggregation_level[src][dst];i++)
+      size+=size_dist(src, dst, state);
+    /* if the aggregated size is less than PAYLOAD_MAX the traffic is aggregated, otherwise size=PAYLOAD_MAX */
+    if (size>PAYLOAD_MAX){
+      size=PAYLOAD_MAX;
+      LOG_E(OTG,"Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
+    }
+    header = random_string(header_size_gen(src,dst), g_otg->packet_gen_type, HEADER_ALPHABET);
+    payload = random_string(size, g_otg->packet_gen_type, PAYLOAD_ALPHABET);
+    flag=0xffff;
+    flow=flow_id;
+    seq_num=otg_info->seq_num[src][dst];
+    otg_info->header_type[src][dst]=type_header;
+    otg_info->seq_num[src][dst]+=1;
+    otg_info->tx_num_bytes[src][dst]+=  hdr_size + strlen(header) + strlen(payload) ; 
+    otg_info->tx_num_pkt[src][dst]+=1;
+    if (size!=strlen(payload))
+      LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq_num %d packet: |%s|%s| \n", src, dst, flag, size, strlen(payload), seq_num, header, payload);
+    else 
+      LOG_T(OTG,"[%d][%d] [0x %x] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime,  size, seq_num,state, header, payload);
+    
+  } else {
+    
+    if ((g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst])<=PAYLOAD_MAX)
+      otg_info->size_background[src][dst]=g_otg->aggregation_level[src][dst]*otg_info->size_background[src][dst];
+    else{
+      otg_info->size_background[src][dst]=PAYLOAD_MAX;
+      LOG_E(OTG,"[BACKGROUND] Aggregated packet larger than PAYLOAD_MAX, payload is limited to PAYLOAD_MAX \n");
+    }
   header =random_string(header_size_gen_background(src,dst),  g_otg->packet_gen_type, HEADER_ALPHABET);
   payload = random_string(otg_info->size_background[src][dst],  g_otg->packet_gen_type, PAYLOAD_ALPHABET);
   flag=0xbbbb;
@@ -282,17 +279,18 @@ if (background_ok==0){
     LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %d, seq num %d, packet |%s|%s| \n", src, dst, flag, otg_info->size_background[src][dst], strlen(payload), seq_num, header, payload);
   else
     LOG_T(OTG,"[%d][%d][0x %x] The packet at %d size is %d with seq num %d, state=%d : |%s|%s| \n", src, dst, flag,ctime, otg_info->size_background[src][dst], seq_num, state, header, payload);
-}
+  }
  
- buffer_size = hdr_size + strlen(header) + strlen(payload);
- *pkt_size = buffer_size;
-	if (src<NB_eNB_INST)
-		otg_info->tx_total_bytes_dl+=buffer_size;
-	else
-		otg_info->tx_total_bytes_ul+=buffer_size;
-
- return serialize_buffer(header, payload, buffer_size, flag, flow, ctime, seq_num, hdr_type, state, g_otg->aggregation_level[src][dst]);
-
+  buffer_size = hdr_size + strlen(header) + strlen(payload);
+  *pkt_size = buffer_size;
+  if (src<NB_eNB_INST)
+    otg_info->tx_total_bytes_dl+=buffer_size;
+  else
+    otg_info->tx_total_bytes_ul+=buffer_size;
+  
+  return serialize_buffer(header, payload, buffer_size, flag, flow, ctime, seq_num, hdr_type, state, 
+			  g_otg->aggregation_level[src][dst], g_otg->relay_nodes[src][dst][0]);
+  
 }
 
 
@@ -400,7 +398,7 @@ return(size);
 }
 
 
-unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level){
+unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffer_size, int flag, int flow_id, int ctime, int seq_num, int hdr_type, int state, unsigned int aggregation_level, unsigned char relay_id){
  
   unsigned char *tx_buffer=NULL;
   otg_hdr_info_t *otg_hdr_info_p=NULL;
@@ -423,6 +421,7 @@ unsigned char * serialize_buffer(char* header, char* payload, unsigned int buffe
   otg_hdr_p->hdr_type=hdr_type;
   otg_hdr_p->state = state;
   otg_hdr_p->aggregation_level=aggregation_level;
+  otg_hdr_p->relay_id=relay_id;
   byte_tx_count += sizeof(otg_hdr_t);
   
   // copy the header first 
