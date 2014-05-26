@@ -210,7 +210,7 @@ uint8_t get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
       break;
     default:
       LOG_E(PHY,"get_Msg3_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
-      mac_xface->macphy_exit("get_Msg3_harq_pid: Unsupported TDD configuration");
+      mac_xface->macphy_exit("");
       break;
     }
   }
@@ -332,7 +332,7 @@ uint8_t get_ack(LTE_DL_FRAME_PARMS *frame_parms,
       subframe_dl = subframe - 4;
     o_ACK[0] = harq_ack[subframe_dl].ack;
     status = harq_ack[subframe_dl].send_harq_status;
-    //printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
+    printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
   }
   else {
     switch (frame_parms->tdd_config) {
@@ -492,7 +492,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     break;
   default:
     LOG_E(PHY,"subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
-    mac_xface->macphy_exit("subframe x Unsupported TDD configuration");
+    mac_xface->macphy_exit("");
     return(255);
     
   }

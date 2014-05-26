@@ -756,8 +756,6 @@ static int _esm_sap_recv(int msg_type, int is_standalone,
                 esm_proc_data_t data;
                 memset(&data, 0, sizeof(esm_proc_data_t));
 
-                LOG_TRACE(DEBUG, "ESM-SAP   - PDN_CONNECTIVITY_REQUEST pti %u ebi %u", pti, ebi);
-
                 /*
                  * Process PDN connectivity request message received from the UE
                  */
@@ -775,7 +773,6 @@ static int _esm_sap_recv(int msg_type, int is_standalone,
                     /* No ESM status message should be returned */
                     esm_cause = ESM_CAUSE_SUCCESS;
                 } else {
-#if defined(ORIGINAL_CODE)
                     /* Setup PDN type */
                     int pdn_type = -1;
                     if (data.pdn_type == ESM_PDN_TYPE_IPV4) {
@@ -846,18 +843,12 @@ static int _esm_sap_recv(int msg_type, int is_standalone,
                              &esm_msg.activate_dedicated_eps_bearer_context_request,
                              ebi, &qos, &pkfs, 2);
 #endif
-                    esm_procedure = esm_proc_default_eps_bearer_context_request;
-#else
-                    esm_cause = ESM_CAUSE_SUCCESS;
-#endif
                     /* Setup the callback function used to send default EPS bearer
                      * context request message onto the network */
-                    //esm_procedure = esm_proc_default_eps_bearer_context_request;
+                    esm_procedure = esm_proc_default_eps_bearer_context_request;
                 }
-
                 break;
             }
-
 
             case PDN_DISCONNECT_REQUEST:
                 /*

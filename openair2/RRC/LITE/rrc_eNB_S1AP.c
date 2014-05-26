@@ -32,7 +32,7 @@ Address      : EURECOM,
 
 /*! \file rrc_eNB_S1AP.c
  * \brief rrc S1AP procedures for eNB
- * \author Laurent Winckel and Navid Nikaein
+ * \author Laurent Winckel
  * \date 2013
  * \version 1.0
  * \company Eurecom
@@ -50,35 +50,26 @@ Address      : EURECOM,
 #   include "asn1_conversions.h"
 #   include "intertask_interface.h"
 #   include "pdcp.h"
-#   include "pdcp_primitives.h"
 #   include "s1ap_eNB.h"
 # else
 #   include "../../S1AP/s1ap_eNB.h"
 # endif
 
-#if defined(ENABLE_SECURITY)
-#   include "UTIL/OSA/osa_defs.h"
-#endif
-
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
 
 /* Masks for S1AP Encryption algorithms, EEA0 is always supported (not coded) */
-static const uint16_t S1AP_ENCRYPTION_EEA1_MASK = 0x8000;
-static const uint16_t S1AP_ENCRYPTION_EEA2_MASK = 0x4000;
+static const uint16_t S1AP_ENCRYPTION_EEA1_MASK = 0x1;
+static const uint16_t S1AP_ENCRYPTION_EEA2_MASK = 0x2;
 
 /* Masks for S1AP Integrity algorithms, EIA0 is always supported (not coded) */
-static const uint16_t S1AP_INTEGRITY_EIA1_MASK = 0x8000;
-static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
+static const uint16_t S1AP_INTEGRITY_EIA1_MASK = 0x1;
+static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x2;
 
 #ifdef Rel10
 # define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920
 #else
-#ifdef EXMIMO_IOT
-# define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia2
-#else
 # define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_reserved
-#endif
 #endif
 
 # if defined(ENABLE_ITTI)
@@ -151,10 +142,6 @@ static uint8_t get_UE_index_from_eNB_ue_s1ap_id(uint8_t mod_id, uint32_t eNB_ue_
       }
     }
   }
-  LOG_D(RRC,
-      "[eNB %d] return UE_INDEX_INVALID for eNB_ue_s1ap_id %u\n",
-      mod_id,
-      eNB_ue_s1ap_id);
   return UE_INDEX_INVALID;
 }
 
@@ -187,10 +174,6 @@ static uint8_t get_UE_index_from_s1ap_ids(uint8_t mod_id, uint16_t ue_initial_id
  *\return the selected algorithm.
  */
 static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms) {
-  
-#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
-  return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
-
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {
     return SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
   }
@@ -210,7 +193,6 @@ static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(ui
  *\return the selected algorithm.
  */
 static e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms) {
-  
   if (algorithms & S1AP_INTEGRITY_EIA2_MASK) {
     return SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
   }
@@ -239,14 +221,6 @@ static int rrc_eNB_process_security (uint8_t mod_id, uint8_t ue_index, security_
   /* Save security parameters */
   eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities = *security_capabilities;
 
-  // translation
-  LOG_D(RRC,
-      "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %u NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
-      mod_id,
-      eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.encryption_algorithms,
-      eNB_rrc_inst[mod_id].ciphering_algorithm[ue_index],
-      eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.integrity_algorithms,
-      eNB_rrc_inst[mod_id].integrity_algorithm[ue_index]);
   /* Select relevant algorithms */
   cipheringAlgorithm = rrc_eNB_select_ciphering (eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.encryption_algorithms);
   if (eNB_rrc_inst[mod_id].ciphering_algorithm[ue_index] != cipheringAlgorithm) {
@@ -260,8 +234,8 @@ static int rrc_eNB_process_security (uint8_t mod_id, uint8_t ue_index, security_
     changed = TRUE;
   }
 
-  LOG_I (RRC, "[eNB %d][UE %d] Selected security algorithms (%x): %x, %x, %s\n",
-         mod_id, ue_index, security_capabilities, cipheringAlgorithm, integrityProtAlgorithm, changed ? "changed" : "same");
+  LOG_I (RRC, "[eNB %d][UE %d] Selected security algorithms: %x, %x, %s",
+         mod_id, ue_index, cipheringAlgorithm, integrityProtAlgorithm, changed ? "changed" : "same");
 
   return changed;
 }
@@ -285,75 +259,7 @@ static void process_eNB_security_key (uint8_t mod_id, uint8_t ue_index, uint8_t 
   }
   ascii_buffer[2 * i] = '\0';
 
-  LOG_I (RRC, "[eNB %d][UE %d] Saved security key %s\n", mod_id, ue_index, ascii_buffer);
-#endif
-}
-
-
-static void rrc_pdcp_config_security(uint8_t enb_mod_idP, uint8_t ue_mod_idP, uint8_t send_security_mode_command ){
-
-#if defined(ENABLE_SECURITY)
-
-  
-  SRB_ToAddModList_t                 *SRB_configList = eNB_rrc_inst[enb_mod_idP].SRB_configList[ue_mod_idP];
-  uint8_t                            *kRRCenc = NULL;
-  uint8_t                            *kRRCint = NULL;
-  uint8_t                            *kUPenc = NULL;
-  pdcp_t                             *pdcp_p   = NULL;
-  static int                         print_keys= 1;
-  /* Derive the keys from kenb */
-  if (SRB_configList != NULL) {
-    derive_key_up_enc(eNB_rrc_inst[enb_mod_idP].ciphering_algorithm[ue_mod_idP],
-		      eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP], &kUPenc);
-  }
-  
-  derive_key_rrc_enc(eNB_rrc_inst[enb_mod_idP].ciphering_algorithm[ue_mod_idP],
-		     eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP], &kRRCenc);
-  derive_key_rrc_int(eNB_rrc_inst[enb_mod_idP].integrity_algorithm[ue_mod_idP],
-		     eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP], &kRRCint);
-  
-#define DEBUG_SECURITY 1 
- 
-#if defined (DEBUG_SECURITY)
-#define msg printf
-  if (print_keys ==1 ) {
-      print_keys =0;
-      int i;
-      msg("\nKeNB:");
-      for(i = 0; i < 32; i++)
-	msg("%02x", eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP][i]);
-      msg("\n");
-            
-      msg("\nKRRCenc:");
-      for(i = 0; i < 32; i++)
-	msg("%02x", kRRCenc[i]);
-      msg("\n");
-      
-      msg("\nKRRCint:");
-      for(i = 0; i < 32; i++)
-	msg("%02x", kRRCint[i]);
-      msg("\n");
-      
-    }
-#endif //DEBUG_SECURITY
-
-
-    pdcp_p = &pdcp_array_srb_eNB[enb_mod_idP][ue_mod_idP][DCCH-1];
-    
-    pdcp_config_set_security(pdcp_p,
-        enb_mod_idP,
-        ue_mod_idP,
-        0,
-        ENB_FLAG_YES,
-        DCCH,
-        DCCH+2,
-        (send_security_mode_command == TRUE)  ?
-            0 | (eNB_rrc_inst[enb_mod_idP].integrity_algorithm[ue_mod_idP] << 4) :
-            (eNB_rrc_inst[enb_mod_idP].ciphering_algorithm[ue_mod_idP] )         |
-            (eNB_rrc_inst[enb_mod_idP].integrity_algorithm[ue_mod_idP] << 4),
-        kRRCenc,
-        kRRCint,
-        kUPenc);
+  LOG_I (RRC, "[eNB %d][UE %d] Saved security key %s", mod_id, ue_index, ascii_buffer);
 #endif
 }
 
@@ -373,7 +279,9 @@ void rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(uint8_t mod_id, uint8_t ue_ind
       S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].e_rab_id = UE_info->e_rab[e_rab].param.e_rab_id;
       // TODO add other information from S1-U when it will be integrated
           S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].gtp_teid = UE_info->enb_gtp_teid[e_rab];
-          S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr = UE_info->enb_gtp_addrs[e_rab];
+#warning "hardcoded address of S1U enb"
+          //S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr = UE_info->enb_gtp_addrs[e_rab];
+          inet_aton("192.168.13.10", S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.buffer);
           S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length = 4;
     }
     else {
@@ -486,8 +394,6 @@ void rrc_eNB_send_S1AP_NAS_FIRST_REQ(uint8_t mod_id, uint8_t ue_index,
     MessageDef *message_p;
 
     message_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_NAS_FIRST_REQ);
-    memset(&message_p->ittiMsg.s1ap_nas_first_req, 0, sizeof(s1ap_nas_first_req_t));
-
     eNB_rrc_inst[mod_id].Info.UE[ue_index].ue_initial_id = get_next_ue_initial_id (mod_id);
     S1AP_NAS_FIRST_REQ (message_p).ue_initial_id = eNB_rrc_inst[mod_id].Info.UE[ue_index].ue_initial_id;
 
@@ -512,11 +418,6 @@ void rrc_eNB_send_S1AP_NAS_FIRST_REQ(uint8_t mod_id, uint8_t ue_index,
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_s_tmsi;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code = s_TMSI->mme_code;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi = s_TMSI->m_tmsi;
-        LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ with s_TMSI: MME code %u M-TMSI %u ue_index %d\n",
-                mod_id,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi,
-                ue_index);
       }
 
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
@@ -528,27 +429,14 @@ void rrc_eNB_send_S1AP_NAS_FIRST_REQ(uint8_t mod_id, uint8_t ue_index,
           if ((r_mme->plmn_Identity->mcc != NULL) && (r_mme->plmn_Identity->mcc->list.count > 0)) {
             /* Use first indicated PLMN MCC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[0];
-            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue_index %d\n",
-                    mod_id,
-                    S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
-                    ue_index);
           }
           if (r_mme->plmn_Identity->mnc.list.count > 0) {
             /* Use first indicated PLMN MNC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = *r_mme->plmn_Identity->mnc.list.array[0];
-            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue_index %d\n",
-                    mod_id,
-                    S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
-                    ue_index);
           }
         }
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code = BIT_STRING_to_uint8 (&r_mme->mmec);
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id = BIT_STRING_to_uint16 (&r_mme->mmegi);
-        LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI mme_code %u mme_group_id %u ue_index %d\n",
-                mod_id,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id,
-                ue_index);
       }
     }
 
@@ -602,19 +490,11 @@ int rrc_eNB_process_S1AP_DOWNLINK_NAS(MessageDef *msg_p, const char *msg_name, i
     if (eNB_rrc_inst[instance].Info.UE[ue_index].eNB_ue_s1ap_id == 0) {
       eNB_rrc_inst[instance].Info.UE[ue_index].eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
     }
- 
-   /* Create message for PDCP (DLInformationTransfer_t) */
+    /* Create message for PDCP (DLInformationTransfer_t) */
     length = do_DLInformationTransfer (instance, &buffer, rrc_eNB_get_next_transaction_identifier (instance),
                                        S1AP_DOWNLINK_NAS (msg_p).nas_pdu.length,
                                        S1AP_DOWNLINK_NAS (msg_p).nas_pdu.buffer);
 
-#ifdef RRC_MSG_PRINT
-    int i=0;
-    LOG_F(RRC,"[MSG] RRC DL Information Transfer\n");
-    for (i = 0; i < length; i++)
-      LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-    LOG_F(RRC,"\n");
-#endif
     /* Transfer data to PDCP */
     pdcp_rrc_data_req (instance, ue_index, 0 /* TODO put frame number ! */, 1, DCCH, *rrc_eNB_mui++, 0,
                        length, buffer, 1);
@@ -661,7 +541,6 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
             int i;
 
             message_gtpv1u_p = itti_alloc_new_message(TASK_S1AP, GTPV1U_ENB_CREATE_TUNNEL_REQ);
-            memset(&message_gtpv1u_p->ittiMsg.Gtpv1uCreateTunnelReq, 0 , sizeof(gtpv1u_enb_create_tunnel_req_t));
 
             eNB_rrc_inst[instance].Info.UE[ue_index].nb_of_e_rabs = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs;
             for (i = 0; i < eNB_rrc_inst[instance].Info.UE[ue_index].nb_of_e_rabs; i++) {
@@ -671,7 +550,6 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 
                 GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).eps_bearer_id[i]       = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].e_rab_id;
                 GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).sgw_S1u_teid[i]        = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].gtp_teid;
-
                 memcpy(&GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).sgw_addr[i],
                     &S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].sgw_addr,
                     sizeof(transport_layer_addr_t));
@@ -692,26 +570,19 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
         process_eNB_security_key (instance, ue_index, S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
 
         {
-          uint8_t send_security_mode_command = TRUE;
+            uint8_t send_security_mode_command = TRUE;
 
-#ifndef EXMIMO_IOT
-          if ((eNB_rrc_inst[instance].ciphering_algorithm[ue_index] == SecurityAlgorithmConfig__cipheringAlgorithm_eea0)
+            if ((eNB_rrc_inst[instance].ciphering_algorithm[ue_index] == SecurityAlgorithmConfig__cipheringAlgorithm_eea0)
                 && (eNB_rrc_inst[instance].integrity_algorithm[ue_index] == INTEGRITY_ALGORITHM_NONE)) {
                 send_security_mode_command = FALSE;
-          }
-#endif
-          rrc_pdcp_config_security(instance, ue_index,send_security_mode_command);
+            }
 
-          if (send_security_mode_command) {
-
-              rrc_eNB_generate_SecurityModeCommand (instance, 0 /* TODO put frame number ! */, ue_index);
-              send_security_mode_command = FALSE;
-              // apply ciphering after RRC security command mode
-              rrc_pdcp_config_security(instance, ue_index,send_security_mode_command);
-          }
-          else {
-              rrc_eNB_generate_UECapabilityEnquiry (instance, 0 /* TODO put frame number ! */, ue_index);
-          }
+            if (send_security_mode_command) {
+                rrc_eNB_generate_SecurityModeCommand (instance, 0 /* TODO put frame number ! */, ue_index);
+            }
+            else {
+                rrc_eNB_generate_UECapabilityEnquiry (instance, 0 /* TODO put frame number ! */, ue_index);
+            }
         }
         return (0);
     }

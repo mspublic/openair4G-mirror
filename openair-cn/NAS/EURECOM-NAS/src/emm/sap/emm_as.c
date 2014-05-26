@@ -23,7 +23,6 @@ Description Defines the EMMAS Service Access Point that provides
 #include "emm_as.h"
 #include "emm_recv.h"
 #include "emm_send.h"
-#include "emmData.h"
 #include "commonDef.h"
 #include "nas_log.h"
 
@@ -106,20 +105,9 @@ static int _emm_as_data_ind(const emm_as_data_t *msg, int *emm_cause);
  */
 static EMM_msg *_emm_as_set_header(nas_message_t *msg,
                                    const emm_as_security_data_t *security);
-static int
-_emm_as_encode(
-    as_nas_info_t *info,
-    nas_message_t *msg,
-    int length,
-    emm_security_context_t     *emm_security_context);
-
-static int _emm_as_encrypt(
-    as_nas_info_t *info,
-    const nas_message_security_header_t *header,
-    const char *buffer,
-    int length,
-    emm_security_context_t *emm_security_context);
-
+static int _emm_as_encode(as_nas_info_t *info, nas_message_t *msg, int length);
+static int _emm_as_encrypt(as_nas_info_t *info,
+                           const nas_message_security_header_t *header, const char *buffer, int length);
 static int _emm_as_send(const emm_as_t *msg);
 
 #ifdef NAS_UE
@@ -322,31 +310,8 @@ static int _emm_as_recv(unsigned int ueid, const char *msg, int len,
     nas_message_t nas_msg;
     memset(&nas_msg, 0 , sizeof(nas_message_t));
 
-    emm_security_context_t       *security = NULL;    /* Current EPS NAS security context     */
-#if defined(NAS_MME)
-#if defined(EPC_BUILD)
-    emm_data_context_t           *emm_ctx  = NULL;
-#endif
-
-#if defined(EPC_BUILD)
-    emm_ctx = emm_data_context_get(&_emm_data, ueid);
-    if (emm_ctx) {
-        security = emm_ctx->security;
-    }
-#else
-    if (ueid < EMM_DATA_NB_UE_MAX) {
-        emm_ctx = _emm_data.ctx[ueid];
-        if (emm_ctx) {
-            security = emm_ctx->security;
-        }
-    }
-#endif
-#else /* NAS_MME */
-    security = _emm_data.security;
-#endif
-
     /* Decode the received message */
-    decoder_rc = nas_message_decode(msg, &nas_msg, len, security);
+    decoder_rc = nas_message_decode(msg, &nas_msg, len);
 
     if (decoder_rc < 0) {
         LOG_TRACE(WARNING, "EMMAS-SAP - Failed to decode NAS message "
@@ -404,38 +369,33 @@ static int _emm_as_recv(unsigned int ueid, const char *msg, int len,
 #endif
 #ifdef NAS_MME
         case ATTACH_REQUEST:
-            rc = emm_recv_attach_request(
-                ueid,
-                &emm_msg->attach_request,
-                emm_cause);
+            rc = emm_recv_attach_request(ueid,
+                                         &emm_msg->attach_request,
+                                         emm_cause);
             break;
 
         case IDENTITY_RESPONSE:
-            rc = emm_recv_identity_response(
-                ueid,
-                &emm_msg->identity_response,
-                emm_cause);
+            rc = emm_recv_identity_response(ueid,
+                                            &emm_msg->identity_response,
+                                            emm_cause);
             break;
 
         case AUTHENTICATION_RESPONSE:
-            rc = emm_recv_authentication_response(
-                ueid,
-                &emm_msg->authentication_response,
-                emm_cause);
+            rc = emm_recv_authentication_response(ueid,
+                                                  &emm_msg->authentication_response,
+                                                  emm_cause);
             break;
 
         case AUTHENTICATION_FAILURE:
-            rc = emm_recv_authentication_failure(
-                ueid,
-                &emm_msg->authentication_failure,
-                emm_cause);
+            rc = emm_recv_authentication_failure(ueid,
+                                                 &emm_msg->authentication_failure,
+                                                 emm_cause);
             break;
 
         case SECURITY_MODE_COMPLETE:
-            rc = emm_recv_security_mode_complete(
-                ueid,
-                &emm_msg->security_mode_complete,
-                emm_cause);
+            rc = emm_recv_security_mode_complete(ueid,
+                                                 &emm_msg->security_mode_complete,
+                                                 emm_cause);
             break;
 
         case SECURITY_MODE_REJECT:
@@ -504,36 +464,10 @@ static int _emm_as_data_ind(const emm_as_data_t *msg, int *emm_cause)
             char *plain_msg = (char *)malloc(msg->NASmsg.length);
             if (plain_msg) {
                 nas_message_security_header_t header;
-                emm_security_context_t       *security = NULL;    /* Current EPS NAS security context     */
-
-                memset(&header, 0, sizeof(header));
                 /* Decrypt the received security protected message */
-#if defined(NAS_MME)
-                emm_data_context_t           *emm_ctx  = NULL;
-#if defined(EPC_BUILD)
-                if (msg->ueid > 0) {
-                    emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-                    if (emm_ctx) {
-                        security = emm_ctx->security;
-                    }
-                }
-#else
-                if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-                    emm_ctx = _emm_data.ctx[msg->ueid];
-                    if (emm_ctx) {
-                        security = emm_ctx->security;
-                    }
-                }
-#endif
-#else
-                security = _emm_data.security;
-#endif
                 int bytes = nas_message_decrypt((char *)(msg->NASmsg.value),
-                                                plain_msg,
-                                                &header,
-                                                msg->NASmsg.length,
-                                                security
-                                                );
+                                                plain_msg, &header,
+                                                msg->NASmsg.length);
                 if (bytes < 0) {
                     /* Failed to decrypt the message */
                     *emm_cause = EMM_CAUSE_PROTOCOL_ERROR;
@@ -604,11 +538,8 @@ static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
     memset(&nas_msg, 0 , sizeof(nas_message_t));
 
     /* Decode initial NAS message */
-    decoder_rc = nas_message_decode((char *)(msg->NASmsg.value),
-        &nas_msg,
-        msg->NASmsg.length,
-        _emm_data.security);
-
+    decoder_rc = nas_message_decode((char *)(msg->NASmsg.value), &nas_msg,
+                                    msg->NASmsg.length);
     if (decoder_rc < 0) {
         LOG_TRACE(WARNING, "EMMAS-SAP - Failed to decode initial NAS message"
                   "(err=%d)", decoder_rc);
@@ -763,8 +694,6 @@ static int _emm_as_establish_req(const emm_as_establish_t *msg, int *emm_cause)
 {
     LOG_FUNC_IN;
 
-    struct emm_data_context_s *emm_ctx                = NULL;
-    emm_security_context_t    *emm_security_context   = NULL;
     int decoder_rc;
     int rc = RETURNerror;
 
@@ -773,28 +702,9 @@ static int _emm_as_establish_req(const emm_as_establish_t *msg, int *emm_cause)
     nas_message_t nas_msg;
     memset(&nas_msg, 0 , sizeof(nas_message_t));
 
-#if defined(NAS_MME)
-#if defined(EPC_BUILD)
-    emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-    if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-        emm_ctx = _emm_data.ctx[msg->ueid];
-    }
-#endif
-    if (emm_ctx) {
-        emm_security_context = emm_ctx->security;
-    }
-#else /* NAS_MME */
-    security = _emm_data.security;
-#endif
-
-
     /* Decode initial NAS message */
-    decoder_rc = nas_message_decode(
-        (char *)(msg->NASmsg.value),
-        &nas_msg,
-        msg->NASmsg.length,
-        emm_security_context);
+    decoder_rc = nas_message_decode((char *)(msg->NASmsg.value), &nas_msg,
+                                    msg->NASmsg.length);
 
     if (decoder_rc < TLV_DECODE_FATAL_ERROR) {
         *emm_cause = EMM_CAUSE_PROTOCOL_ERROR;
@@ -809,10 +719,8 @@ static int _emm_as_establish_req(const emm_as_establish_t *msg, int *emm_cause)
     EMM_msg *emm_msg = &nas_msg.plain.emm;
     switch (emm_msg->header.message_type) {
         case ATTACH_REQUEST:
-            rc = emm_recv_attach_request(
-                msg->ueid,
-                &emm_msg->attach_request,
-                emm_cause);
+            rc = emm_recv_attach_request(msg->ueid, &emm_msg->attach_request,
+                                         emm_cause);
             break;
 
         case DETACH_REQUEST:
@@ -820,10 +728,9 @@ static int _emm_as_establish_req(const emm_as_establish_t *msg, int *emm_cause)
             break;
 
         case TRACKING_AREA_UPDATE_REQUEST:
-            rc = emm_recv_tracking_area_update_request(
-                msg->ueid,
-                &emm_msg->tracking_area_update_request,
-                emm_cause);
+            rc = emm_recv_tracking_area_update_request(msg->ueid,
+                                                       &emm_msg->tracking_area_update_request,
+                                                       emm_cause);
             break;
 
         case SERVICE_REQUEST:
@@ -1012,19 +919,13 @@ static EMM_msg *_emm_as_set_header(nas_message_t *msg,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int
-_emm_as_encode(
-    as_nas_info_t              *info,
-    nas_message_t              *msg,
-    int                         length,
-    emm_security_context_t     *emm_security_context)
+static int _emm_as_encode(as_nas_info_t *info, nas_message_t *msg, int length)
 {
     LOG_FUNC_IN;
 
     int bytes = 0;
 
-    if (msg->header.security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED)
-    {
+    if (msg->header.security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
         emm_msg_header_t *header = &msg->security_protected.plain.emm.header;
         /* Expand size of protected NAS message */
         length += NAS_MESSAGE_SECURITY_HEADER_SIZE;
@@ -1036,12 +937,7 @@ _emm_as_encode(
     info->data = (Byte_t *)malloc(length * sizeof(Byte_t));
     if (info->data != NULL) {
         /* Encode the NAS message */
-        bytes = nas_message_encode(
-            (char *)(info->data),
-            msg,
-            length,
-            emm_security_context);
-
+        bytes = nas_message_encode((char *)(info->data), msg, length);
         if (bytes > 0) {
             info->length = bytes;
         } else {
@@ -1070,13 +966,9 @@ _emm_as_encode(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int
-_emm_as_encrypt(
-    as_nas_info_t *info,
-    const nas_message_security_header_t *header,
-    const char *msg,
-    int length,
-    emm_security_context_t *emm_security_context)
+static int _emm_as_encrypt(as_nas_info_t *info,
+                           const nas_message_security_header_t *header,
+                           const char *msg, int length)
 {
     LOG_FUNC_IN;
 
@@ -1090,13 +982,7 @@ _emm_as_encrypt(
     info->data = (Byte_t *)malloc(length * sizeof(Byte_t));
     if (info->data != NULL) {
         /* Encrypt the NAS information message */
-        bytes = nas_message_encrypt(
-            msg,
-            (char *)(info->data),
-            header,
-            length,
-            emm_security_context);
-
+        bytes = nas_message_encrypt(msg, (char *)(info->data), header, length);
         if (bytes > 0) {
             info->length = bytes;
         } else {
@@ -1134,60 +1020,51 @@ static int _emm_as_send(const emm_as_t *msg)
 
     switch (msg->primitive) {
         case _EMMAS_DATA_REQ:
-            as_msg.msgID = _emm_as_data_req(
-                &msg->u.data,
-                &as_msg.msg.ul_info_transfer_req);
+            as_msg.msgID = _emm_as_data_req(&msg->u.data,
+                                            &as_msg.msg.ul_info_transfer_req);
             break;
 
         case _EMMAS_STATUS_IND:
-            as_msg.msgID = _emm_as_status_ind(
-                &msg->u.status,
-                &as_msg.msg.ul_info_transfer_req);
+            as_msg.msgID = _emm_as_status_ind(&msg->u.status,
+                                              &as_msg.msg.ul_info_transfer_req);
             break;
 
         case _EMMAS_RELEASE_REQ:
-            as_msg.msgID = _emm_as_release_req(
-                &msg->u.release,
-                &as_msg.msg.nas_release_req);
+            as_msg.msgID = _emm_as_release_req(&msg->u.release,
+                                               &as_msg.msg.nas_release_req);
             break;
 
 #ifdef NAS_UE
         case _EMMAS_SECURITY_RES:
-            as_msg.msgID = _emm_as_security_res(
-                &msg->u.security,
-                &as_msg.msg.ul_info_transfer_req);
+            as_msg.msgID = _emm_as_security_res(&msg->u.security,
+                                                &as_msg.msg.ul_info_transfer_req);
             break;
 
         case _EMMAS_ESTABLISH_REQ:
-            as_msg.msgID = _emm_as_establish_req(
-                &msg->u.establish,
-                &as_msg.msg.nas_establish_req);
+            as_msg.msgID = _emm_as_establish_req(&msg->u.establish,
+                                                 &as_msg.msg.nas_establish_req);
             break;
 
 #endif
 #ifdef NAS_MME
         case _EMMAS_SECURITY_REQ:
-            as_msg.msgID = _emm_as_security_req(
-                &msg->u.security,
-                &as_msg.msg.dl_info_transfer_req);
+            as_msg.msgID = _emm_as_security_req(&msg->u.security,
+                                                &as_msg.msg.dl_info_transfer_req);
             break;
 
         case _EMMAS_SECURITY_REJ:
-            as_msg.msgID = _emm_as_security_rej(
-                &msg->u.security,
-                &as_msg.msg.dl_info_transfer_req);
+            as_msg.msgID = _emm_as_security_rej(&msg->u.security,
+                                                &as_msg.msg.dl_info_transfer_req);
             break;
 
         case _EMMAS_ESTABLISH_CNF:
-            as_msg.msgID = _emm_as_establish_cnf(
-                &msg->u.establish,
-                &as_msg.msg.nas_establish_rsp);
+            as_msg.msgID = _emm_as_establish_cnf(&msg->u.establish,
+                                                 &as_msg.msg.nas_establish_rsp);
             break;
 
         case _EMMAS_ESTABLISH_REJ:
-            as_msg.msgID = _emm_as_establish_rej(
-                &msg->u.establish,
-                &as_msg.msg.nas_establish_rsp);
+            as_msg.msgID = _emm_as_establish_rej(&msg->u.establish,
+                                                 &as_msg.msg.nas_establish_rsp);
             break;
 
         case _EMMAS_PAGE_IND:
@@ -1221,28 +1098,25 @@ static int _emm_as_send(const emm_as_t *msg)
 
         switch (as_msg.msgID) {
             case AS_DL_INFO_TRANSFER_REQ: {
-                nas_itti_dl_data_req(
-                    as_msg.msg.dl_info_transfer_req.UEid,
-                    as_msg.msg.dl_info_transfer_req.nasMsg.data,
-                    as_msg.msg.dl_info_transfer_req.nasMsg.length);
+                nas_itti_dl_data_req(as_msg.msg.dl_info_transfer_req.UEid,
+                                     as_msg.msg.dl_info_transfer_req.nasMsg.data,
+                                     as_msg.msg.dl_info_transfer_req.nasMsg.length);
                 LOG_FUNC_RETURN (RETURNok);
             } break;
 
             case AS_NAS_ESTABLISH_RSP:
             case AS_NAS_ESTABLISH_CNF: {
                 if (as_msg.msg.nas_establish_rsp.errCode != AS_SUCCESS) {
-                    nas_itti_dl_data_req(
-                        as_msg.msg.nas_establish_rsp.UEid,
-                        as_msg.msg.nas_establish_rsp.nasMsg.data,
-                        as_msg.msg.nas_establish_rsp.nasMsg.length);
+                    nas_itti_dl_data_req(as_msg.msg.nas_establish_rsp.UEid,
+                                         as_msg.msg.nas_establish_rsp.nasMsg.data,
+                                         as_msg.msg.nas_establish_rsp.nasMsg.length);
                     LOG_FUNC_RETURN (RETURNok);
                 } else {
                     /* Handle success case */
-                    nas_itti_establish_cnf(
-                        as_msg.msg.nas_establish_rsp.UEid,
-                        as_msg.msg.nas_establish_rsp.errCode,
-                        as_msg.msg.nas_establish_rsp.nasMsg.data,
-                        as_msg.msg.nas_establish_rsp.nasMsg.length);
+                    nas_itti_establish_cnf(as_msg.msg.nas_establish_rsp.UEid,
+                                           as_msg.msg.nas_establish_rsp.errCode,
+                                           as_msg.msg.nas_establish_rsp.nasMsg.data,
+                                           as_msg.msg.nas_establish_rsp.nasMsg.length);
                     LOG_FUNC_RETURN (RETURNok);
                 }
             } break;
@@ -1260,36 +1134,32 @@ static int _emm_as_send(const emm_as_t *msg)
 
         switch (as_msg.msgID) {
             case AS_CELL_INFO_REQ: {
-                nas_itti_cell_info_req(
-                    as_msg.msg.cell_info_req.plmnID,
-                    as_msg.msg.cell_info_req.rat);
+                nas_itti_cell_info_req(as_msg.msg.cell_info_req.plmnID,
+                                       as_msg.msg.cell_info_req.rat);
                 LOG_FUNC_RETURN (RETURNok);
             } break;
 
             case AS_NAS_ESTABLISH_REQ: {
-                nas_itti_nas_establish_req(
-                    as_msg.msg.nas_establish_req.cause,
-                    as_msg.msg.nas_establish_req.type,
-                    as_msg.msg.nas_establish_req.s_tmsi,
-                    as_msg.msg.nas_establish_req.plmnID,
-                    as_msg.msg.nas_establish_req.initialNasMsg.data,
-                    as_msg.msg.nas_establish_req.initialNasMsg.length);
+                nas_itti_nas_establish_req(as_msg.msg.nas_establish_req.cause,
+                                           as_msg.msg.nas_establish_req.type,
+                                           as_msg.msg.nas_establish_req.s_tmsi,
+                                           as_msg.msg.nas_establish_req.plmnID,
+                                           as_msg.msg.nas_establish_req.initialNasMsg.data,
+                                           as_msg.msg.nas_establish_req.initialNasMsg.length);
                 LOG_FUNC_RETURN (RETURNok);
             } break;
 
             case AS_UL_INFO_TRANSFER_REQ: {
-                nas_itti_ul_data_req(
-                    as_msg.msg.ul_info_transfer_req.UEid,
-                    as_msg.msg.ul_info_transfer_req.nasMsg.data,
-                    as_msg.msg.ul_info_transfer_req.nasMsg.length);
+                nas_itti_ul_data_req(as_msg.msg.ul_info_transfer_req.UEid,
+                                     as_msg.msg.ul_info_transfer_req.nasMsg.data,
+                                     as_msg.msg.ul_info_transfer_req.nasMsg.length);
                 LOG_FUNC_RETURN (RETURNok);
             } break;
 
             case AS_RAB_ESTABLISH_RSP: {
-                nas_itti_rab_establish_rsp(
-                    as_msg.msg.rab_establish_rsp.s_tmsi,
-                    as_msg.msg.rab_establish_rsp.rabID,
-                    as_msg.msg.rab_establish_rsp.errCode);
+                nas_itti_rab_establish_rsp(as_msg.msg.rab_establish_rsp.s_tmsi,
+                                           as_msg.msg.rab_establish_rsp.rabID,
+                                           as_msg.msg.rab_establish_rsp.errCode);
                 LOG_FUNC_RETURN (RETURNok);
             } break;
 
@@ -1375,36 +1245,13 @@ static int _emm_as_data_req(const emm_as_data_t *msg,
 
     if (size > 0) {
         int bytes;
-        emm_security_context_t    *emm_security_context   = NULL;
-#if defined(NAS_MME)
-        struct emm_data_context_s *emm_ctx                = NULL;
-#if defined(EPC_BUILD)
-        emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-        if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-            emm_ctx = _emm_data.ctx[msg->ueid];
-        }
-#endif
-        if (emm_ctx) {
-            emm_security_context = emm_ctx->security;
-        }
-#else
-        emm_security_context = _emm_data.security;
-#endif
-
         if (!is_encoded) {
             /* Encode the NAS information message */
-            bytes = _emm_as_encode(&as_msg->nasMsg,
-                &nas_msg,
-                size,
-                emm_security_context);
+            bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         } else {
             /* Encrypt the NAS information message */
-            bytes = _emm_as_encrypt(&as_msg->nasMsg,
-                &nas_msg.header,
-                (char *)(msg->NASmsg.value),
-                size,
-                emm_security_context);
+            bytes = _emm_as_encrypt(&as_msg->nasMsg, &nas_msg.header,
+                                    (char *)(msg->NASmsg.value), size);
         }
         if (bytes > 0) {
 #ifdef NAS_UE
@@ -1464,29 +1311,8 @@ static int _emm_as_status_ind(const emm_as_status_t *msg,
     }
 
     if (size > 0) {
-        emm_security_context_t    *emm_security_context   = NULL;
-#if defined(NAS_MME)
-        struct emm_data_context_s *emm_ctx                = NULL;
-#if defined(EPC_BUILD)
-        emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-        if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-            emm_ctx = _emm_data.ctx[msg->ueid];
-        }
-#endif
-        if (emm_ctx) {
-            emm_security_context = emm_ctx->security;
-        }
-#else
-        emm_security_context = _emm_data.security;
-#endif
         /* Encode the NAS information message */
-        int bytes = _emm_as_encode(
-            &as_msg->nasMsg,
-            &nas_msg,
-            size,
-            emm_security_context);
-
+        int bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         if (bytes > 0) {
 #ifdef NAS_UE
             LOG_FUNC_RETURN (AS_UL_INFO_TRANSFER_REQ);
@@ -1581,32 +1407,26 @@ static int _emm_as_security_res(const emm_as_security_t *msg,
     /* Setup the NAS security message */
     if (emm_msg != NULL) switch (msg->msgType) {
             case EMM_AS_MSG_TYPE_IDENT:
-                size = emm_send_identity_response(
-                    msg,
-                    &emm_msg->identity_response);
+                size = emm_send_identity_response(msg, &emm_msg->identity_response);
                 break;
 
             case EMM_AS_MSG_TYPE_AUTH:
                 if (msg->emm_cause != EMM_CAUSE_SUCCESS) {
-                    size = emm_send_authentication_failure(
-                        msg,
-                        &emm_msg->authentication_failure);
+                    size = emm_send_authentication_failure(msg,
+                                                           &emm_msg->authentication_failure);
                 } else {
-                    size = emm_send_authentication_response(
-                        msg,
-                        &emm_msg->authentication_response);
+                    size = emm_send_authentication_response(msg,
+                                                            &emm_msg->authentication_response);
                 }
                 break;
 
             case EMM_AS_MSG_TYPE_SMC:
                 if (msg->emm_cause != EMM_CAUSE_SUCCESS) {
-                    size = emm_send_security_mode_reject(
-                        msg,
-                        &emm_msg->security_mode_reject);
+                    size = emm_send_security_mode_reject(msg,
+                                                         &emm_msg->security_mode_reject);
                 } else {
-                    size = emm_send_security_mode_complete(
-                        msg,
-                        &emm_msg->security_mode_complete);
+                    size = emm_send_security_mode_complete(msg,
+                                                           &emm_msg->security_mode_complete);
                 }
                 break;
 
@@ -1617,11 +1437,7 @@ static int _emm_as_security_res(const emm_as_security_t *msg,
 
     if (size > 0) {
         /* Encode the NAS security message */
-        int bytes = _emm_as_encode(&as_msg->nasMsg,
-            &nas_msg,
-            size,
-            _emm_data.security);
-
+        int bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         if (bytes > 0) {
             LOG_FUNC_RETURN (AS_UL_INFO_TRANSFER_REQ);
         }
@@ -1681,22 +1497,21 @@ static int _emm_as_establish_req(const emm_as_establish_t *msg,
 
             case EMM_AS_NAS_INFO_DETACH:
                 size = emm_send_initial_detach_request(msg,
-                    &emm_msg->detach_request);
+                                                       &emm_msg->detach_request);
                 break;
 
             case EMM_AS_NAS_INFO_TAU:
                 size = emm_send_initial_tau_request(msg,
-                    &emm_msg->tracking_area_update_request);
+                                                    &emm_msg->tracking_area_update_request);
                 break;
 
             case EMM_AS_NAS_INFO_SR:
-                size = emm_send_initial_sr_request(msg,
-                    &emm_msg->service_request);
+                size = emm_send_initial_sr_request(msg, &emm_msg->service_request);
                 break;
 
             case EMM_AS_NAS_INFO_EXTSR:
                 size = emm_send_initial_extsr_request(msg,
-                    &emm_msg->extended_service_request);
+                                                      &emm_msg->extended_service_request);
                 break;
 
             default:
@@ -1707,12 +1522,7 @@ static int _emm_as_establish_req(const emm_as_establish_t *msg,
 
     if (size > 0) {
         /* Encode the initial NAS information message */
-        int bytes = _emm_as_encode(
-            &as_msg->initialNasMsg,
-            &nas_msg,
-            size,
-            _emm_data.security);
-
+        int bytes = _emm_as_encode(&as_msg->initialNasMsg, &nas_msg, size);
         if (bytes > 0) {
             LOG_FUNC_RETURN (AS_NAS_ESTABLISH_REQ);
         }
@@ -1764,18 +1574,17 @@ static int _emm_as_security_req(const emm_as_security_t *msg,
     /* Setup the NAS security message */
     if (emm_msg != NULL) switch (msg->msgType) {
             case EMM_AS_MSG_TYPE_IDENT:
-                size = emm_send_identity_request(msg,
-                    &emm_msg->identity_request);
+                size = emm_send_identity_request(msg, &emm_msg->identity_request);
                 break;
 
             case EMM_AS_MSG_TYPE_AUTH:
                 size = emm_send_authentication_request(msg,
-                    &emm_msg->authentication_request);
+                                                       &emm_msg->authentication_request);
                 break;
 
             case EMM_AS_MSG_TYPE_SMC:
                 size = emm_send_security_mode_command(msg,
-                    &emm_msg->security_mode_command);
+                                                      &emm_msg->security_mode_command);
                 break;
 
             default:
@@ -1784,26 +1593,8 @@ static int _emm_as_security_req(const emm_as_security_t *msg,
         }
 
     if (size > 0) {
-        struct emm_data_context_s *emm_ctx                = NULL;
-        emm_security_context_t    *emm_security_context   = NULL;
-#if defined(EPC_BUILD)
-        emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-        if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-            emm_ctx = _emm_data.ctx[msg->ueid];
-        }
-#endif
-        if (emm_ctx) {
-            emm_security_context = emm_ctx->security;
-        }
-
         /* Encode the NAS security message */
-        int bytes = _emm_as_encode(
-            &as_msg->nasMsg,
-            &nas_msg,
-            size,
-            emm_security_context);
-
+        int bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         if (bytes > 0) {
             LOG_FUNC_RETURN (AS_DL_INFO_TRANSFER_REQ);
         }
@@ -1863,26 +1654,8 @@ static int _emm_as_security_rej(const emm_as_security_t *msg,
         }
 
     if (size > 0) {
-        struct emm_data_context_s *emm_ctx                = NULL;
-        emm_security_context_t    *emm_security_context   = NULL;
-#if defined(EPC_BUILD)
-        emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-        if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-            emm_ctx = _emm_data.ctx[msg->ueid];
-        }
-#endif
-        if (emm_ctx) {
-            emm_security_context = emm_ctx->security;
-        }
-
         /* Encode the NAS security message */
-        int bytes = _emm_as_encode(
-            &as_msg->nasMsg,
-            &nas_msg,
-            size,
-            emm_security_context);
-
+        int bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         if (bytes > 0) {
             LOG_FUNC_RETURN (AS_DL_INFO_TRANSFER_REQ);
         }
@@ -1935,9 +1708,6 @@ static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
     /* Setup the initial NAS information message */
     if (emm_msg != NULL) switch (msg->NASinfo) {
             case EMM_AS_NAS_INFO_ATTACH:
-                LOG_TRACE(WARNING,
-                    "EMMAS-SAP - emm_as_establish.nasMSG.length=%d",
-                    msg->NASmsg.length);
                 size = emm_send_attach_accept(msg, &emm_msg->attach_accept);
                 break;
 
@@ -1948,33 +1718,8 @@ static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
         }
 
     if (size > 0) {
-        struct emm_data_context_s *emm_ctx                = NULL;
-        emm_security_context_t    *emm_security_context   = NULL;
-#if defined(EPC_BUILD)
-        emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-        if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-            emm_ctx = _emm_data.ctx[msg->ueid];
-        }
-#endif
-        if (emm_ctx) {
-            emm_security_context = emm_ctx->security;
-            if (emm_security_context) {
-                as_msg->nas_ul_count = 0x00000000 |
-                                       (emm_security_context->ul_count.overflow << 8) |
-                                       emm_security_context->ul_count.seq_num;
-                LOG_TRACE(DEBUG, "EMMAS-SAP - NAS UL COUNT %8x",
-                    as_msg->nas_ul_count);
-            }
-        }
-
         /* Encode the initial NAS information message */
-        int bytes = _emm_as_encode(
-            &as_msg->nasMsg,
-            &nas_msg,
-            size,
-            emm_security_context);
-
+        int bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         if (bytes > 0) {
             as_msg->errCode = AS_SUCCESS;
             LOG_FUNC_RETURN (AS_NAS_ESTABLISH_CNF);
@@ -2033,8 +1778,7 @@ static int _emm_as_establish_rej(const emm_as_establish_t *msg,
                 break;
 
             case EMM_AS_NAS_INFO_TAU:
-                size = emm_send_tracking_area_update_reject(msg,
-                    &emm_msg->tracking_area_update_reject);
+                size = emm_send_tracking_area_update_reject(msg, &emm_msg->tracking_area_update_reject);
                 break;
 
             default:
@@ -2044,24 +1788,8 @@ static int _emm_as_establish_rej(const emm_as_establish_t *msg,
         }
 
     if (size > 0) {
-        struct emm_data_context_s *emm_ctx                = NULL;
-        emm_security_context_t    *emm_security_context   = NULL;
-#if defined(EPC_BUILD)
-        emm_ctx = emm_data_context_get(&_emm_data, msg->ueid);
-#else
-        if (msg->ueid < EMM_DATA_NB_UE_MAX) {
-            emm_ctx = _emm_data.ctx[msg->ueid];
-        }
-#endif
-        if (emm_ctx) {
-            emm_security_context = emm_ctx->security;
-        }
         /* Encode the initial NAS information message */
-        int bytes = _emm_as_encode(
-            &as_msg->nasMsg,
-            &nas_msg,
-            size,
-            emm_security_context);
+        int bytes = _emm_as_encode(&as_msg->nasMsg, &nas_msg, size);
         if (bytes > 0) {
             as_msg->errCode = AS_TERMINATED_NAS;
             LOG_FUNC_RETURN (AS_NAS_ESTABLISH_RSP);

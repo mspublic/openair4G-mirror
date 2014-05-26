@@ -348,8 +348,7 @@ int pdcp_fifo_read_input_sdus_remaining_bytes (frame_t frameP, eNB_flag_t enb_fl
                            "UE module id is too high (%u/%d)!\n",
                            ue_inst,
                            NB_eNB_INST + NB_UE_INST);
-              AssertFatal (rb_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
-              AssertFatal (rb_id    > 0     ,                       "RB id is too low (%u/%d)!\n", rab_id, maxDRB);
+              AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
 
               if (pdcp_input_header.rb_id != 0) {
                   LOG_D(PDCP, "[FRAME %5u][%s][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u/%u][RB %u]\n",
@@ -648,7 +647,6 @@ int pdcp_fifo_read_input_sdus (frame_t frameP, eNB_flag_t enb_flagP, module_id_t
 #endif
                   //memcpy(pdcp_read_payload, (unsigned char *)NLMSG_DATA(nas_nlh_rx), nas_nlh_rx->nlmsg_len - sizeof(struct nlmsghdr));
 
-#ifdef OAI_EMU
                   // overwrite function input parameters, because only one netlink socket for all instances
                   if (pdcp_read_header_g.inst < oai_emulation.info.nb_enb_local) {
                       enb_flagP  = 1;
@@ -678,21 +676,12 @@ int pdcp_fifo_read_input_sdus (frame_t frameP, eNB_flag_t enb_flagP, module_id_t
                                ue_mod_idP,
                                oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
                   AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
+#ifdef OAI_EMU
                   /*LGpdcp_read_header.inst = (pdcp_read_header_g.inst >= oai_emulation.info.nb_enb_local) ? \
                           pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
                           pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
 #else
                   pdcp_read_header_g.inst = 0;
-#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
-                  if (enb_flagP) {
-		    ue_mod_idP  = 0;
-		    enb_mod_idP = 0;
-		    rab_id      = pdcp_read_header_g.rb_id % maxDRB;
-		  } else {
-		    ue_mod_idP  = 0;
-		    enb_mod_idP = 0;
-		    rab_id      = pdcp_read_header_g.rb_id % maxDRB;
-		  }
 #endif
 
                   if (enb_flagP) {
@@ -857,7 +846,7 @@ void pdcp_fifo_read_input_sdus_from_otg (frame_t frameP, eNB_flag_t enb_flagP, m
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled ==1 ){
-      module_id = (enb_flagP == 1) ?  enb_mod_idP : ue_mod_idP+NB_eNB_INST;
+      module_id = (enb_flagP == 1) ?  enb_mod_idP : ue_mod_idP;
       //rb_id    = (enb_flagP == 1) ? enb_mod_idP * MAX_NUM_RB + DTCH : (NB_eNB_INST + UE_index -1 ) * MAX_NUM_RB + DTCH ;
       src_id = module_id;
       while ((otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[module_id]))) != NULL) {

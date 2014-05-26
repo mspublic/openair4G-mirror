@@ -1387,6 +1387,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,ui
     /*
     if (phy_vars_eNB->frame > 28000) {
       LOG_E(PHY,"More that 28000 frames reached! Exiting!\n");
+      mac_xface->macphy_exit("");
     } 
     */     
 #endif
@@ -2908,7 +2909,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 #endif
       stop_meas(&phy_vars_eNB->ulsch_decoding_stats);
 
-//#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
       LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
 	  phy_vars_eNB->Mod_id,harq_pid,
 	  frame,last_slot>>1,
@@ -2920,7 +2921,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 	  phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],
 	  phy_vars_eNB->ulsch_eNB[i]->o_ACK[1],
 	  ret);
-//#endif //DEBUG_PHY_PROC
+#endif //DEBUG_PHY_PROC
       /*
 	if ((two_ues_connected==1) && (phy_vars_eNB->cooperation_flag==2)) {
 	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++) {
@@ -3042,6 +3043,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 	  
 
 //	  dump_ulsch(phy_vars_eNB,last_slot>>1,i);
+//	  mac_xface->macphy_exit("");
 	  
 	  if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round== phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
 	    LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mdlharq %d reached\n",
@@ -3054,11 +3056,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid]++;
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]++;
 	    //dump_ulsch(phy_vars_eNB, last_slot>>1, i);
+	    //mac_xface->macphy_exit("");
 	  }
 	
 	  // If we've dropped the UE, go back to PRACH mode for this UE
-//#if !defined(EXMIMO_IOT)
-    if (phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid] == ULSCH_max_consecutive_errors) {
+#if !defined(EXMIMO_IOT)
+    if (phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid] == 20) {
 	    LOG_I(PHY,"[eNB %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, removing UE\n",
 		  phy_vars_eNB->Mod_id,frame,last_slot>>1, i, phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]);
 	    phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
@@ -3070,7 +3073,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 	    remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid]=0;
 	  }
-//#endif
+#endif
 	}
       }  // ulsch in error
       else {
@@ -3090,18 +3093,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 		phy_vars_eNB->Mod_id,
 		frame,harq_pid,i);
 #endif
-	  mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
-			    frame,
-			    phy_vars_eNB->ulsch_eNB[i]->rnti,
-			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
-			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
-	  /*
 	  mac_xface->terminate_ra_proc(phy_vars_eNB->Mod_id,
 				       frame,
 				       phy_vars_eNB->ulsch_eNB[i]->rnti,
 				       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
 				       phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
-	  */
 #endif
 
 	  phy_vars_eNB->eNB_UE_stats[i].mode = PUSCH;
@@ -3130,6 +3126,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 #endif
 #endif
 	  //dump_ulsch(phy_vars_eNB,last_slot>>1,i);
+          //mac_xface->macphy_exit("");
  
 
 #ifdef OPENAIR2

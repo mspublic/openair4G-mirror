@@ -30,7 +30,6 @@ Description Defines EMM procedures executed by the Non-Access Stratum
 
 #include "emm_sap.h"
 #include "esm_sap.h"
-#include "nas_log.h"
 
 #include <string.h> // memset
 
@@ -206,7 +205,7 @@ int lowerlayer_data_ind(unsigned int ueid, const OctetString *data)
     esm_sap_t esm_sap;
     int rc;
 #if defined(NAS_MME)
-    emm_data_context_t *emm_ctx = NULL;
+    emm_data_context_t *emm_ctx;
 #endif
 
     LOG_FUNC_IN;
@@ -458,25 +457,10 @@ void emm_as_set_security_data(emm_as_security_data_t *data, const void *args,
          * into use, UE and MME shall cipher and integrity protect all
          * NAS signalling messages with the selected NAS ciphering and
          * NAS integrity algorithms */
-        LOG_TRACE(WARNING,
-            "EPS security context exists is new %u KSI %u SQN %u count %u knas_int %s",
-            is_new,
-            context->eksi,
-            context->ul_count.seq_num,
-            *(UInt32_t *)(&context->ul_count),
-            context->knas_int.value
-            );
         data->is_new = is_new;
         data->ksi = context->eksi;
-#if defined (NAS_UE)
         data->sqn = context->ul_count.seq_num;
-        // LG data->count = *(UInt32_t *)(&context->ul_count);
-        data->count = 0x00000000 | (context->ul_count.overflow << 8 ) | context->ul_count.seq_num;
-#else
-        data->sqn = context->dl_count.seq_num;
-        // LG data->count = *(UInt32_t *)(&context->ul_count);
-        data->count = 0x00000000 | (context->dl_count.overflow << 8 ) | context->dl_count.seq_num;
-#endif
+        data->count = *(UInt32_t *)(&context->ul_count);
         /* NAS integrity and cyphering keys may not be available if the
          * current security context is a partial EPS security context
          * and not a full native EPS security context */
@@ -489,14 +473,9 @@ void emm_as_set_security_data(emm_as_security_data_t *data, const void *args,
             /* 3GPP TS 24.301, section 5.4.3.2
              * The MME shall send the SECURITY MODE COMMAND message integrity
              * protected and unciphered */
-            LOG_TRACE(WARNING,
-                "EPS security context exists knas_enc %s",
-                context->knas_enc.value
-                );
             data->k_enc = &context->knas_enc;
         }
     } else {
-        LOG_TRACE(WARNING, "EMM_AS_NO_KEY_AVAILABLE");
         /* No valid EPS security context exists */
         data->ksi = EMM_AS_NO_KEY_AVAILABLE;
     }

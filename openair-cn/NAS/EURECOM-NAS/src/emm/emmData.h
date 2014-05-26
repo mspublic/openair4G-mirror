@@ -113,10 +113,6 @@ typedef struct {
         UInt8_t encryption:4;   /* algorithm used for ciphering        */
         UInt8_t integrity:4;    /* algorithm used for integrity protection */
     } capability;       /* UE network capability           */
-    struct {
-        UInt8_t encryption:4;   /* algorithm used for ciphering           */
-        UInt8_t integrity:4;    /* algorithm used for integrity protection */
-    } selected_algorithms;       /* MME selected algorithms                */
 } emm_security_context_t;
 
 /*
@@ -188,17 +184,17 @@ typedef struct {
  * -------------------------
  */
 typedef struct {
-    int                 usim_is_valid;  /* Indication of USIM data validity   */
+    int usim_is_valid;  /* Indication of USIM data validity     */
 
-    imei_t             *imei;   /* IMEI read from the UE's non-volatile memory*/
-    const imsi_t       *imsi; /* The valid IMSI read from the USIM            */
-    GUTI_t             *guti;   /* The valid GUTI read from the USIM          */
-    tai_t              *tai;    /* Last visited registered Tracking Area Id   */
+    imei_t *imei;   /* IMEI read from the UE's non-volatile memory  */
+    const imsi_t *imsi; /* The valid IMSI read from the USIM        */
+    GUTI_t *guti;   /* The valid GUTI read from the USIM        */
+    tai_t  *tai;    /* Last visited registered Tracking Area Id */
 
-    emm_eps_update_t    status;    /* The current EPS update status           */
-    emm_ecm_state_t     ecm_status; /* The EPS Connection Management status   */
-    int                 is_attached;    /* Network attachment indicator       */
-    int                 is_emergency;   /* Emergency bearer services indicator*/
+    emm_eps_update_t status;    /* The current EPS update status    */
+    emm_ecm_state_t ecm_status; /* The EPS Connection Management status */
+    int is_attached;    /* Network attachment indicator         */
+    int is_emergency;   /* Emergency bearer services indicator      */
 
     /* Tracking Areas list the UE is registered to
      * Contains the list of TAIs that identify the tracking areas that
@@ -209,17 +205,17 @@ typedef struct {
 #define EMM_DATA_TAI_MAX        16
     TAI_LIST_T(EMM_DATA_TAI_MAX) ltai;
 
-    int                 plmn_mode;  /* Network selection operating mode       */
-    int                 plmn_index; /* Manually selected PLMN                 */
-    int                 plmn_rat; /* Manually selected Radio Access Technology*/
+    int plmn_mode;  /* Network selection operating mode       */
+    int plmn_index; /* Manually selected PLMN             */
+    int plmn_rat;   /* Manually selected Radio Access Technology      */
 
-    plmn_t              splmn;      /* The currently selected PLMN            */
-    int                 is_rplmn;   /* splmn is the registered PLMN           */
-    int                 is_eplmn; /* splmn is in the list of equivalent PLMNs */
-    Stat_t              stat;    /* Current network registration status       */
-    tac_t               tac;   /* Tracking area code                          */
-    ci_t                ci;    /* GERAN/UTRAN/E-UTRAN serving cell identifier */
-    AcT_t               rat; /* Radio Access Technology of the serving cell   */
+    plmn_t splmn;   /* The currently selected PLMN            */
+    int is_rplmn;   /* splmn is the registered PLMN           */
+    int is_eplmn;   /* splmn is in the list of equivalent PLMNs   */
+    Stat_t stat;    /* Current network registration status        */
+    tac_t tac;      /* Tracking area code                 */
+    ci_t ci;        /* GERAN/UTRAN/E-UTRAN serving cell identifier    */
+    AcT_t rat;      /* Radio Access Technology of the serving cell    */
 
     /* An octet string representation of operators present in the network */
     struct {
@@ -330,30 +326,30 @@ typedef struct emm_data_context_s {
     RB_ENTRY(emm_data_context_s) entries;
 #endif
 
-    unsigned int ueid;        /* UE identifier                                   */
-    int          is_dynamic;  /* Dynamically allocated context indicator         */
-    int          is_attached; /* Attachment indicator                            */
-    int          is_emergency;/* Emergency bearer services indicator             */
+    unsigned int ueid;   /* UE identifier                    */
+    int is_dynamic;  /* Dynamically allocated context indicator      */
+    int is_attached;     /* Attachment indicator                 */
+    int is_emergency;    /* Emergency bearer services indicator          */
 
-    imsi_t      *imsi;        /* The IMSI provided by the UE or the MME          */
-    imei_t      *imei;        /* The IMEI provided by the UE                     */
-    int          guti_is_new; /* New GUTI indicator                              */
-    GUTI_t      *guti;        /* The GUTI assigned to the UE                     */
-    GUTI_t      *old_guti;    /* The old GUTI                                    */
-    int          n_tacs;      /* Number of consecutive tracking areas the UE is
-                               * registered to                                   */
-    tac_t       tac;          /* Code of the first tracking area the UE is
-                               * registered to                                   */
+    imsi_t *imsi;    /* The IMSI provided by the UE or the MME       */
+    imei_t *imei;    /* The IMEI provided by the UE              */
+    int guti_is_new;     /* New GUTI indicator                   */
+    GUTI_t *guti;    /* The GUTI assigned to the UE              */
+    GUTI_t *old_guti;    /* The old GUTI                     */
+    int n_tacs;      /* Number of concecutive tracking areas the UE is
+              * registered to                    */
+    tac_t tac;       /* Code of the first tracking area the UE is
+              * registered to                    */
 
-    int         ksi;          /* Security key set identifier provided by the UE  */
-    int         eea;          /* EPS encryption algorithms supported by the UE   */
-    int         eia;          /* EPS integrity algorithms supported by the UE    */
-    auth_vector_t vector;/* EPS authentication vector                            */
-    emm_security_context_t *security;    /* Current EPS NAS security context     */
-    OctetString esm_msg;      /* ESM message contained within the initial request*/
-    int         emm_cause;    /* EMM failure cause code                          */
+    int ksi;         /* Security key set identifier provided by the UE   */
+    int eea;         /* EPS encryption algorithms supported by the UE    */
+    int eia;         /* EPS integrity algorithms supported by the UE     */
+    auth_vector_t vector;        /* EPS authentication vector        */
+    emm_security_context_t *security;    /* Current EPS NAS security context */
+    OctetString esm_msg; /* ESM message contained within the initial request */
+    int emm_cause;   /* EMM failure cause code               */
 
-    emm_fsm_state_t    _emm_fsm_status;
+    emm_fsm_state_t _emm_fsm_status;
 
     esm_data_context_t esm_data_ctx;
 } emm_data_context_t;

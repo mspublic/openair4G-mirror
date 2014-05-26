@@ -139,26 +139,23 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
 
     if ((encode_result =
          encode_eps_quality_of_service(&activate_default_eps_bearer_context_request->epsqos,
-         0, buffer + encoded, len - encoded)) < 0) {       //Return in case of error
-        LOG_TRACE(ERROR, "ESM  ENCODE epsqos");
+         0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
         return encode_result;
-    } else
+    else
         encoded += encode_result;
 
     if ((encode_result =
          encode_access_point_name(&activate_default_eps_bearer_context_request->accesspointname,
-         0, buffer + encoded, len - encoded)) < 0) {       //Return in case of error
-        LOG_TRACE(ERROR, "ESM  ENCODE accesspointname");
+         0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
         return encode_result;
-    } else
+    else
         encoded += encode_result;
 
     if ((encode_result =
          encode_pdn_address(&activate_default_eps_bearer_context_request->pdnaddress,
-         0, buffer + encoded, len - encoded)) < 0) {       //Return in case of error
-        LOG_TRACE(ERROR, "ESM  ENCODE pdnaddress");
+         0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
         return encode_result;
-    } else
+    else
         encoded += encode_result;
 
     if ((activate_default_eps_bearer_context_request->presencemask & ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_TRANSACTION_IDENTIFIER_PRESENT)
@@ -167,11 +164,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_transaction_identifier(&activate_default_eps_bearer_context_request->transactionidentifier,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_TRANSACTION_IDENTIFIER_IEI,
-             buffer + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE transactionidentifier");
+             buffer + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -181,11 +177,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_quality_of_service(&activate_default_eps_bearer_context_request->negotiatedqos,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_NEGOTIATED_QOS_IEI,
-             buffer + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE negotiatedqos");
+             buffer + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -195,11 +190,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_llc_service_access_point_identifier(&activate_default_eps_bearer_context_request->negotiatedllcsapi,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_NEGOTIATED_LLC_SAPI_IEI,
-             buffer + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE negotiatedllcsapi");
+             buffer + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -209,11 +203,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_radio_priority(&activate_default_eps_bearer_context_request->radiopriority,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_RADIO_PRIORITY_IEI,
-             buffer + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE radiopriority");
+             buffer + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -223,11 +216,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_packet_flow_identifier(&activate_default_eps_bearer_context_request->packetflowidentifier,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_PACKET_FLOW_IDENTIFIER_IEI,
-             buffer + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE packetflowidentifier");
+             buffer + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -237,11 +229,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_apn_aggregate_maximum_bit_rate(&activate_default_eps_bearer_context_request->apnambr,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_APNAMBR_IEI, buffer +
-             encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE apnambr");
+             encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -251,11 +242,10 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_esm_cause(&activate_default_eps_bearer_context_request->esmcause,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_ESM_CAUSE_IEI, buffer
-             + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE esmcause");
+             + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
 
@@ -289,14 +279,13 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
         if ((encode_result =
              encode_protocol_configuration_options(&activate_default_eps_bearer_context_request->protocolconfigurationoptions,
              ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_PROTOCOL_CONFIGURATION_OPTIONS_IEI,
-             buffer + encoded, len - encoded)) < 0) {
-            LOG_TRACE(ERROR, "ESM  ENCODE protocolconfigurationoptions");
+             buffer + encoded, len - encoded)) < 0)
             // Return in case of error
             return encode_result;
-        } else
+        else
             encoded += encode_result;
     }
-    LOG_TRACE(INFO, "ESM  ENCODED activate_default_eps_bearer_context_request");
+
     return encoded;
 }
 

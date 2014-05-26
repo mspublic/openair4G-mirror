@@ -241,7 +241,7 @@ static void *s11_sgw_thread(void *args)
             }
             break;
         }
-        itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), received_message_p);
+        free(received_message_p);
         received_message_p = NULL;
     }
     return NULL;

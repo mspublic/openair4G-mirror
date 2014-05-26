@@ -318,7 +318,6 @@ typedef struct nas_establish_rsp_s {
     as_stmsi_t       s_tmsi;       /* UE identity                 */
     nas_error_code_t errCode;      /* Transaction status          */
     as_nas_info_t    nasMsg;       /* NAS message to transfer     */
-    UInt32_t         nas_ul_count; /* UL NAS COUNT                */
 } nas_establish_rsp_t;
 
 /*
@@ -329,7 +328,6 @@ typedef struct nas_establish_cnf_s {
     UInt32_t         UEid;            /* UE lower layer identifier   */
     nas_error_code_t errCode;         /* Transaction status          */
     as_nas_info_t    nasMsg;          /* NAS message to transfer     */
-    UInt32_t         ul_nas_count;
 } nas_establish_cnf_t;
 
 /*

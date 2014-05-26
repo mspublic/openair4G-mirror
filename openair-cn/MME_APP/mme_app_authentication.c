@@ -1,6 +1,7 @@
 /*******************************************************************************
-Eurecom OpenAirInterface Core Network
-Copyright(c) 1999 - 2014 Eurecom
+
+  Eurecom OpenAirInterface
+  Copyright(c) 1999 - 2013 Eurecom
 
   This program is free software; you can redistribute it and/or modify it
   under the terms and conditions of the GNU General Public License,
@@ -21,13 +22,10 @@ Copyright(c) 1999 - 2014 Eurecom
   Contact Information
   Openair Admin: openair_admin@eurecom.fr
   Openair Tech : openair_tech@eurecom.fr
-Forums       : http://forums.eurecom.fsr/openairinterface
-Address      : EURECOM,
-               Campus SophiaTech,
-               450 Route des Chappes,
-               CS 50193
-               06904 Biot Sophia Antipolis cedex,
-               FRANCE
+  Forums       : http://forums.eurecom.fr/openairinterface
+  Address      : EURECOM, Campus SophiaTech, 450 Route des Chappes
+                 06410 Biot FRANCE
+
 *******************************************************************************/
 
 #include <stdio.h>
@@ -57,8 +55,8 @@ int mme_app_request_authentication_info(const mme_app_imsi_t imsi,
                                         const plmn_t *plmn,
                                         const uint8_t *auts)
 {
-    s6a_auth_info_req_t *auth_info_req = NULL;
-    MessageDef          *message_p     = NULL;
+    s6a_auth_info_req_t *auth_info_req;
+    MessageDef          *message_p;
 
     DevAssert(plmn != NULL);
 
@@ -79,21 +77,20 @@ int mme_app_request_authentication_info(const mme_app_imsi_t imsi,
     return itti_send_msg_to_task(TASK_S6A, INSTANCE_DEFAULT, message_p);
 }
 
-int mme_app_handle_nas_auth_resp(const nas_auth_resp_t * const nas_auth_resp_pP)
+int mme_app_handle_nas_auth_resp(nas_auth_resp_t *nas_auth_resp_p)
 {
-    struct ue_context_s *ue_context = NULL;
-    uint64_t             imsi       = 0;
+    struct ue_context_s *ue_context;
+    uint64_t imsi;
 
-    DevAssert(nas_auth_resp_pP != NULL);
+    DevAssert(nas_auth_resp_p != NULL);
 
-    MME_APP_STRING_TO_IMSI((char *)nas_auth_resp_pP->imsi, &imsi);
+    MME_APP_STRING_TO_IMSI((char *)nas_auth_resp_p->imsi, &imsi);
 
     MME_APP_DEBUG("Handling imsi %"IMSI_FORMAT"\n", imsi);
 
     if ((ue_context = mme_ue_context_exists_imsi(&mme_app_desc.mme_ue_contexts,
                       imsi)) == NULL) {
         MME_APP_ERROR("That's embarrassing as we don't know this IMSI\n");
-        AssertFatal(0, "That's embarrassing as we don't know this IMSI\n");
         return -1;
     }
 
@@ -104,8 +101,8 @@ int mme_app_handle_nas_auth_resp(const nas_auth_resp_t * const nas_auth_resp_pP)
 
     /* Now generate S6A ULR */
     {
-        MessageDef                *message_p = NULL;
-        s6a_update_location_req_t *s6a_ulr   = NULL;
+        MessageDef                *message_p;
+        s6a_update_location_req_t *s6a_ulr;
 
         message_p = itti_alloc_new_message(TASK_MME_APP, S6A_UPDATE_LOCATION_REQ);
 
@@ -115,27 +112,26 @@ int mme_app_handle_nas_auth_resp(const nas_auth_resp_t * const nas_auth_resp_pP)
 
         s6a_ulr = &message_p->ittiMsg.s6a_update_location_req;
 
-        memcpy(s6a_ulr->imsi, nas_auth_resp_pP->imsi, 16);
+        memcpy(s6a_ulr->imsi, nas_auth_resp_p->imsi, 16);
         s6a_ulr->initial_attach = INITIAL_ATTACH;
         s6a_ulr->rat_type = RAT_EUTRAN;
         /* Check if we already have UE data */
-        s6a_ulr->skip_subscriber_data = 0;
+        s6a_ulr->skip_subsriber_data = 0;
 
         return itti_send_msg_to_task(TASK_S6A, INSTANCE_DEFAULT, message_p);
     }
     return -1;
 }
 
-int
-mme_app_handle_authentication_info_answer(
-        const s6a_auth_info_ans_t * const s6a_auth_info_ans_pP)
+int mme_app_handle_authentication_info_answer(s6a_auth_info_ans_t
+        *s6a_auth_info_ans_p)
 {
     struct ue_context_s *ue_context;
     uint64_t imsi;
 
-    DevAssert(s6a_auth_info_ans_pP != NULL);
+    DevAssert(s6a_auth_info_ans_p != NULL);
 
-    MME_APP_STRING_TO_IMSI((char *)s6a_auth_info_ans_pP->imsi, &imsi);
+    MME_APP_STRING_TO_IMSI((char *)s6a_auth_info_ans_p->imsi, &imsi);
 
     MME_APP_DEBUG("Handling imsi %"IMSI_FORMAT"\n", imsi);
 
@@ -145,49 +141,42 @@ mme_app_handle_authentication_info_answer(
         return -1;
     }
 
-    if ((s6a_auth_info_ans_pP->result.present == S6A_RESULT_BASE) &&
-            (s6a_auth_info_ans_pP->result.choice.base == DIAMETER_SUCCESS)) {
+    if ((s6a_auth_info_ans_p->result.present == S6A_RESULT_BASE) &&
+            (s6a_auth_info_ans_p->result.choice.base == DIAMETER_SUCCESS)) {
         /* S6A procedure has succeeded.
          * We have to request UE authentication.
          */
 
         /* Check that list is not empty and contain only one element */
-        DevCheck(s6a_auth_info_ans_pP->auth_info.nb_of_vectors == 1,
-                 s6a_auth_info_ans_pP->auth_info.nb_of_vectors, 1, 0);
+        DevCheck(s6a_auth_info_ans_p->auth_info.nb_of_vectors == 1,
+                 s6a_auth_info_ans_p->auth_info.nb_of_vectors, 1, 0);
 
         if (ue_context->vector_list == NULL) {
             ue_context->vector_list = malloc(sizeof(eutran_vector_t));
             DevAssert(ue_context->vector_list != NULL);
         } else {
             /* Some vector already exist */
-            ue_context->vector_list = realloc(
-                ue_context->vector_list,
-                (ue_context->nb_of_vectors + s6a_auth_info_ans_pP->auth_info.nb_of_vectors) * sizeof(eutran_vector_t));
-
+            ue_context->vector_list = realloc(ue_context->vector_list,
+                                              (ue_context->nb_of_vectors + 1) * sizeof(eutran_vector_t));
             DevAssert(ue_context->vector_list != NULL);
         }
         memcpy(&ue_context->vector_list[ue_context->nb_of_vectors],
-               &s6a_auth_info_ans_pP->auth_info.eutran_vector, sizeof(eutran_vector_t));
+               &s6a_auth_info_ans_p->auth_info.eutran_vector, sizeof(eutran_vector_t));
 
         ue_context->vector_in_use = &ue_context->vector_list[ue_context->nb_of_vectors];
 
-        ue_context->nb_of_vectors += s6a_auth_info_ans_pP->auth_info.nb_of_vectors;
+        ue_context->nb_of_vectors += s6a_auth_info_ans_p->auth_info.nb_of_vectors;
 
-        MME_APP_DEBUG("INFORMING NAS ABOUT AUTH RESP SUCCESS got %u vector(s)\n",
-            s6a_auth_info_ans_pP->auth_info.nb_of_vectors);
-
-        mme_app_itti_auth_rsp(ue_context->ue_id,
-            1,
-            &s6a_auth_info_ans_pP->auth_info.eutran_vector);
+        mme_app_itti_auth_rsp(ue_context->ue_id, 1,
+                              &s6a_auth_info_ans_p->auth_info.eutran_vector);
     } else {
-        MME_APP_ERROR("INFORMING NAS ABOUT AUTH RESP ERROR CODE\n");
         /* Inform NAS layer with the right failure */
-        if (s6a_auth_info_ans_pP->result.present == S6A_RESULT_BASE) {
+        if (s6a_auth_info_ans_p->result.present == S6A_RESULT_BASE) {
             mme_app_itti_auth_fail(ue_context->ue_id, s6a_error_2_nas_cause(
-                s6a_auth_info_ans_pP->result.choice.base, 0));
+                s6a_auth_info_ans_p->result.choice.base, 0));
         } else {
             mme_app_itti_auth_fail(ue_context->ue_id, s6a_error_2_nas_cause(
-                s6a_auth_info_ans_pP->result.choice.experimental, 1));
+                s6a_auth_info_ans_p->result.choice.experimental, 1));
         }
     }
 
@@ -232,7 +221,6 @@ int mme_app_handle_attach_req(nas_attach_req_t *attach_req_p)
 
         ue_context->eNB_ue_s1ap_id = attach_req_p->transparent.eNB_ue_s1ap_id;
         ue_context->mme_ue_s1ap_id = attach_req_p->transparent.mme_ue_s1ap_id;
-        ue_context->ue_id          = attach_req_p->transparent.mme_ue_s1ap_id;
 
 //         STAILQ_INIT(&ue_context->vector_list);
         DevAssert(mme_insert_ue_context(&mme_app_desc.mme_ue_contexts, ue_context) == 0);
@@ -304,9 +292,8 @@ request_auth: {
     return 0;
 }
 #else
-void
-mme_app_handle_nas_auth_param_req(
-        const nas_auth_param_req_t * const nas_auth_param_req_pP)
+void mme_app_handle_nas_auth_param_req(nas_auth_param_req_t
+                                       *nas_auth_param_req_p)
 {
     static const plmn_t visited_plmn_eur = {
         .MCCdigit3 = 2,
@@ -325,35 +312,20 @@ mme_app_handle_nas_auth_param_req(
         .MNCdigit1 = 0xF,
     };
 
-    plmn_t              *visited_plmn  = NULL;
-    struct ue_context_s *ue_context    = NULL;
-    uint64_t             imsi          = 0;
-    plmn_t               visited_plmn_from_req = {
-            .MCCdigit3 = 0,
-            .MCCdigit2 = 0,
-            .MCCdigit1 = 0,
-            .MNCdigit1 = 0,
-            .MNCdigit2 = 0,
-            .MNCdigit3 = 0,
-        };
-    DevAssert(nas_auth_param_req_pP != NULL);
+    plmn_t *visited_plmn;
+    struct ue_context_s *ue_context;
+    uint64_t imsi = 0;
+    DevAssert(nas_auth_param_req_p != NULL);
 
-    //visited_plmn = &visited_plmn_eur;
-    //visited_plmn = &visited_plmn_dongle;
-    visited_plmn = &visited_plmn_from_req;
+#if 1
+    visited_plmn = &visited_plmn_eur;
+#else
+    visited_plmn = &visited_plmn_dongle;
+#endif
 
-#warning "assume MNC on 2 digits only"
-    visited_plmn_from_req.MCCdigit3 = nas_auth_param_req_pP->imsi[0];
-    visited_plmn_from_req.MCCdigit2 = nas_auth_param_req_pP->imsi[1];
-    visited_plmn_from_req.MCCdigit1 = nas_auth_param_req_pP->imsi[2];
-    visited_plmn_from_req.MNCdigit1 = 0;
-    visited_plmn_from_req.MNCdigit2 = nas_auth_param_req_pP->imsi[3];
-    visited_plmn_from_req.MNCdigit3 = nas_auth_param_req_pP->imsi[4];
+    MME_APP_STRING_TO_IMSI(nas_auth_param_req_p->imsi, &imsi);
 
-    MME_APP_STRING_TO_IMSI(nas_auth_param_req_pP->imsi, &imsi);
-
-    MME_APP_DEBUG("%s Handling imsi %"IMSI_FORMAT"\n", __FUNCTION__, imsi);
-    MME_APP_DEBUG("%s Handling imsi from req  %s\n", __FUNCTION__, nas_auth_param_req_pP->imsi);
+    MME_APP_DEBUG("Handling imsi %"IMSI_FORMAT"\n", imsi);
 
     /* Fetch the context associated with this IMSI */
     ue_context = mme_ue_context_exists_imsi(&mme_app_desc.mme_ue_contexts, imsi);
@@ -362,23 +334,18 @@ mme_app_handle_nas_auth_param_req(
         /* Currently no context available -> trigger an authentication request
          * to the HSS.
          */
-        MME_APP_DEBUG("UE context search by IMSI failed, try by ue id\n");
-        ue_context = mme_ue_context_exists_nas_ue_id(&mme_app_desc.mme_ue_contexts, nas_auth_param_req_pP->ue_id);
-        if (ue_context == NULL) {
-            // should have been created by initial ue message
-            MME_APP_ERROR("UE context doesn't exist -> create one\n");
-            if ((ue_context = mme_create_new_ue_context()) == NULL) {
-                /* Error during ue context malloc */
-                /* TODO */
-                DevMessage("mme_create_new_ue_context");
-                return;
-            }
-            ue_context->ue_id          = nas_auth_param_req_pP->ue_id;
-            ue_context->mme_ue_s1ap_id = nas_auth_param_req_pP->ue_id;
-            DevAssert(mme_insert_ue_context(&mme_app_desc.mme_ue_contexts, ue_context) == 0);
+        MME_APP_DEBUG("UE context doesn't exist -> create one\n");
+        if ((ue_context = mme_create_new_ue_context()) == NULL) {
+            /* Error during ue context malloc */
+            /* TODO */
+            DevMessage("mme_create_new_ue_context");
+            return;
         }
-        ue_context->imsi  = imsi;
 
+        ue_context->imsi  = imsi;
+        ue_context->ue_id = nas_auth_param_req_p->ue_id;
+
+        DevAssert(mme_insert_ue_context(&mme_app_desc.mme_ue_contexts, ue_context) == 0);
         /* We have no vector for this UE, send an authentication request
          * to the HSS.
          */
@@ -393,7 +360,7 @@ mme_app_handle_nas_auth_param_req(
     } else {
         memcpy(&ue_context->guti.gummei.plmn, visited_plmn, sizeof(plmn_t));
 
-        mme_app_request_authentication_info(imsi, 1, visited_plmn, nas_auth_param_req_pP->auts);
+        mme_app_request_authentication_info(imsi, 1, visited_plmn, nas_auth_param_req_p->auts);
     }
 }
 #endif

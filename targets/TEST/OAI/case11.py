@@ -42,10 +42,10 @@ makerr1 = '***'
 makerr2 = 'Error 1'
 
 
-def execute(oai, user, pw, host,logfile,logdir,debug):
+def execute(oai, user, pw, logfile,logdir):
     
     case = '101'
-    rv  = 1; 
+     
     oai.send('cd $OPENAIR1_DIR;')     
     oai.send('cd SIMULATION/LTE_PHY;')   
 
@@ -56,14 +56,12 @@ def execute(oai, user, pw, host,logfile,logdir,debug):
         trace = logdir + '/log_' + case + test + '.txt;'
         tee = ' 2>&1 | tee ' + trace
         diag = 'check the compilation errors for dlsim in $OPENAIR1_DIR/SIMULATION/LTE_PHY'
-        oai.send('make cleanall;')
-        oai.send('rm -f ./dlsim.rel8.'+host)
+        oai.send('make clean;')
+        oai.send('rm -f ./dlsim.rel8;')
         oai.send_expect_false('make dlsim -j4' + tee, makerr1,  1500)
-        oai.send('cp ./dlsim ./dlsim.rel8.'+host)
-                   
+        oai.send('cp ./dlsim ./dlsim.rel8;')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile,trace)
-        rv =0
     else:
         log.ok(case, test, name, conf, '', logfile)
 
@@ -74,14 +72,13 @@ def execute(oai, user, pw, host,logfile,logdir,debug):
         trace = logdir + '/log_' + case + test + '.txt;'
         tee = ' 2>&1 | tee ' + trace
         diag = 'check the compilation errors for ulsim in $OPENAIR1_DIR/SIMULATION/LTE_PHY'
-        oai.send('make cleanall;')
-        oai.send('rm -f ./ulsim.rel8.'+host)
+        oai.send('make clean;')
+        oai.send('rm -f ./ulsim.rel8;')
         oai.send_expect_false('make ulsim -j4' + tee, makerr1,  1500)
-        oai.send('cp ./ulsim ./ulsim.rel8.'+host)
+        oai.send('cp ./ulsim ./ulsim.rel8;')
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile,trace)
-        rv = 0
     else:
         log.ok(case, test, name, conf, '', logfile)
     
-    return rv
+

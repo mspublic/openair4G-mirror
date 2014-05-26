@@ -39,14 +39,13 @@
 # INPUT OF THIS SCRIPT:
 # THE DIRECTORY WHERE ARE LOCATED THE CONFIGURATION FILES
 #########################################
-# This script start  ENB  
+# This script start  ENB+UE (all in one executable, on one host)
 # Depending on configuration files, it can be instanciated a virtual switch 
-# setting or a VLAN setting for the networking between eNB and MME.
+# setting or a VLAN setting.
 # MME+SP-GW executable have to be launched on the same host by your own (start_epc.bash) before this script is invoked.
-# UE executable have to be launched on another host by your own (start_ue.bash) after this script is invoked.
 #
 ###########################################################################################################################
-#                                    VIRTUAL SWITCH SETTING (PROBLEM WHITH SCTP, USE VLAN, TBC)
+#                                    VIRTUAL SWITCH SETTING
 ###########################################################################################################################
 #
 #                                                                           hss.eur
@@ -94,10 +93,14 @@
 ###########################################################
 # Parameters
 ###########################################################
-declare EMULATION_DEV_INTERFACE="eth2"
-
-declare MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim DEBUG=1 ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 NAS=1 Rel10=1 SECU=1 RRC_MSG_PRINT=1"
-declare MAKE_LTE_ACCESS_STRATUM_TARGET_RT="lte-softmodem HARD_RT=1 ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 DISABLE_XER_PRINT=1 SECU=1 RRC_MSG_PRINT=1 "
+declare MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 NAS=1 Rel10=1 ASN_DEBUG=1 EMIT_ASN_DEBUG=1"
+declare MAKE_IP_DRIVER_TARGET="ue_ip.ko"
+declare IP_DRIVER_NAME="ue_ip"
+declare LTEIF="oip1"
+declare UE_IPv4="10.0.0.8"
+declare UE_IPv6="2001:1::8"
+declare UE_IPv6_CIDR=$UE_IPv6"/64"
+declare UE_IPv4_CIDR=$UE_IPv4"/24"
 
 
 ###########################################################
@@ -116,19 +119,45 @@ else
 fi
 
 
-#check_install_epc_software
+test_command_install_package "tshark"   "tshark" "--force-yes"
+test_command_install_package "gccxml"   "gccxml" "--force-yes"
+test_command_install_package "vconfig"  "vlan"
+test_command_install_package "iptables" "iptables"
+test_command_install_package "iperf"    "iperf"
+test_command_install_package "ip"       "iproute"
+#test_command_install_script  "ovs-vsctl" "$OPENAIRCN_DIR/SCRIPTS/install_openvswitch1.9.0.bash"
+test_command_install_package "tunctl"  "uml-utilities"
+#test_command_install_lib     "/usr/lib/libconfig.so"  "libconfig-dev"
+
+
+test_command_install_script   "asn1c" "$OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash"
+
+# One mor check about version of asn1c
+ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE="ASN.1 Compiler, v0.9.24"
+ASN1C_COMPILER_VERSION_MESSAGE=`asn1c -h 2>&1 | grep -i ASN\.1\ Compiler`
+##ASN1C_COMPILER_VERSION_MESSAGE=`trim $ASN1C_COMPILER_VERSION_MESSAGE`
+if [ "$ASN1C_COMPILER_VERSION_MESSAGE" != "$ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE" ]
+then
+    diff <(echo -n "$ASN1C_COMPILER_VERSION_MESSAGE") <(echo -n "$ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE")
+    echo_error "Version of asn1c is not the required one, do you want to install the required one (overwrite installation) ? (Y/n)"
+    echo_error "$ASN1C_COMPILER_VERSION_MESSAGE"
+    while read -r -n 1 -s answer; do
+        if [[ $answer = [YyNn] ]]; then
+            [[ $answer = [Yy] ]] && $OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash
+            [[ $answer = [Nn] ]] && echo_error "Version of asn1c is not the required one, exiting." && exit 1
+            break
+        fi
+    done
+fi
 
 
 
 cd $THIS_SCRIPT_PATH
-
-EMULATION_DEV_ADDRESS=`ifconfig $EMULATION_DEV_INTERFACE | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'`
-
 #######################################################
 # FIND CONFIG FILE
 #######################################################
 SEARCHED_CONFIG_FILE_ENB="enb*.conf"
-CONFIG_FILE_ENB=$THIS_SCRIPT_PATH/`find $CONFIG_FILE_DIR -iname $SEARCHED_CONFIG_FILE_ENB`
+CONFIG_FILE_ENB=`find $CONFIG_FILE_DIR -iname $SEARCHED_CONFIG_FILE_ENB`
 if [ -f $CONFIG_FILE_ENB ]; then
     echo_warning "eNB config file found is now $CONFIG_FILE_ENB"
 else
@@ -144,8 +173,7 @@ VARIABLES="
            ENB_INTERFACE_NAME_FOR_S1_MME\|\
            ENB_IPV4_ADDRESS_FOR_S1_MME\|\
            ENB_INTERFACE_NAME_FOR_S1U\|\
-           ENB_IPV4_ADDRESS_FOR_S1U\|\
-           hard_real_time"
+           ENB_IPV4_ADDRESS_FOR_S1U"
 
 VARIABLES=$(echo $VARIABLES | sed -e 's/\\r//g')
 VARIABLES=$(echo $VARIABLES | tr -d ' ')
@@ -172,95 +200,98 @@ else
         build_enb_vlan_network
         test_enb_vlan_network
     else
-        is_real_interface  $ENB_INTERFACE_NAME_FOR_S1_MME \
-                      $ENB_INTERFACE_NAME_FOR_S1U
-        if [ $? -eq 1 ]; then
-            echo_success "Found standart network configuration"
-        else
-            echo_error "Cannot find open-vswitch network configuration or VLAN network configuration or standard network configuration"
-            exit 1
-        fi
+        echo_error "Cannot find open-vswitch network configuration or VLAN network configuration"
+        exit 1
     fi 
 fi
 
 
+#######################################################
+# USIM, NVRAM files
+#######################################################
+export NVRAM_DIR=$THIS_SCRIPT_PATH
+
+if [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data ]; then
+    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS veryveryclean
+    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS PROCESS=UE
+    rm .ue.nvram
+fi
+if [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data ]; then
+    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS veryveryclean
+    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS PROCESS=UE
+    rm .usim.nvram
+fi
+if [ ! -f .ue.nvram ]; then
+    # generate .ue_emm.nvram .ue.nvram
+    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
+fi
+
+if [ ! -f .usim.nvram ]; then
+    # generate .usim.nvram
+    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
+fi
+$OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --print
+$OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --print
+
 ##################################################
 # LAUNCH eNB + UE executable
 ##################################################
+echo "Bringup UE interface"
 pkill oaisim
-pkill tshark
+bash_exec "rmmod $IP_DRIVER_NAME" > /dev/null 2>&1
+
+cecho "make $MAKE_IP_DRIVER_TARGET $MAKE_LTE_ACCESS_STRATUM_TARGET ....." $green
+#bash_exec "make --directory=$OPENAIR2_DIR $MAKE_IP_DRIVER_TARGET "
+make --directory=$OPENAIR2_DIR $MAKE_IP_DRIVER_TARGET || exit 1
+
+#bash_exec "make --directory=$OPENAIR_TARGETS/SIMU/USER $MAKE_LTE_ACCESS_STRATUM_TARGET "
+make --directory=$OPENAIR_TARGETS/SIMU/USER $MAKE_LTE_ACCESS_STRATUM_TARGET -j`grep -c ^processor /proc/cpuinfo ` || exit 1
 
 
-if [ x$hard_real_time != "xyes" ]; then
-    ITTI_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/itti_enb_ue.$HOSTNAME.log
-    rotate_log_file $ITTI_LOG_FILE
-    
-    STDOUT_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/stdout_enb_ue.$HOSTNAME.log
-    rotate_log_file $STDOUT_LOG_FILE
-    rotate_log_file $STDOUT_LOG_FILE.filtered
-    
-    PCAP_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/tshark_enb_ue.$HOSTNAME.pcap
-    rotate_log_file $PCAP_LOG_FILE
-else 
-    ITTI_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/itti_enb_rf.$HOSTNAME.log
-    rotate_log_file $ITTI_LOG_FILE
-    
-    STDOUT_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/stdout_enb_rf.$HOSTNAME.log
-    rotate_log_file $STDOUT_LOG_FILE
-    rotate_log_file $STDOUT_LOG_FILE.filtered
-    
-    PCAP_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/tshark_enb_rf.$HOSTNAME.pcap
-    rotate_log_file $PCAP_LOG_FILE
+bash_exec "insmod  $OPENAIR2_DIR/NETWORK_DRIVER/UE_IP/$IP_DRIVER_NAME.ko"
+
+bash_exec "ip route flush cache"
+
+#bash_exec "ip link set $LTEIF up"
+sleep 1
+#bash_exec "ip addr add dev $LTEIF $UE_IPv4_CIDR"
+#bash_exec "ip addr add dev $LTEIF $UE_IPv6_CIDR"
+
+sleep 1
+
+bash_exec "sysctl -w net.ipv4.conf.all.log_martians=1"
+assert "  `sysctl -n net.ipv4.conf.all.log_martians` -eq 1" $LINENO
+
+echo "   Disabling reverse path filtering"
+bash_exec "sysctl -w net.ipv4.conf.all.rp_filter=0"
+assert "  `sysctl -n net.ipv4.conf.all.rp_filter` -eq 0" $LINENO
+
+
+bash_exec "ip route flush cache"
+
+# Check table 200 lte in /etc/iproute2/rt_tables
+fgrep lte /etc/iproute2/rt_tables  > /dev/null 
+if [ $? -ne 0 ]; then
+    echo "200 lte " >> /etc/iproute2/rt_tables
 fi
+ip rule add fwmark 5 table lte
+ip route add default dev $LTEIF table lte
 
+ITTI_LOG_FILE=./itti_enb.$HOSTNAME.log
+rotate_log_file $ITTI_LOG_FILE
+STDOUT_LOG_FILE=./stdout_enb_ue.log
+
+rotate_log_file $STDOUT_LOG_FILE
+rotate_log_file $STDOUT_LOG_FILE.filtered
+rotate_log_file tshark.pcap
 
 cd $THIS_SCRIPT_PATH
 
-if [ x$ENB_INTERFACE_NAME_FOR_S1_MME == x$ENB_INTERFACE_NAME_FOR_S1U ]; then 
-    nohup tshark -i $ENB_INTERFACE_NAME_FOR_S1_MME -w $PCAP_LOG_FILE &
-else
-    nohup tshark -i $ENB_INTERFACE_NAME_FOR_S1_MME -i $ENB_INTERFACE_NAME_FOR_S1U -w $PCAP_LOG_FILE &
-fi
+nohup tshark -i $ENB_INTERFACE_NAME_FOR_S1_MME -i $ENB_INTERFACE_NAME_FOR_S1U -w tshark.pcap &
 
+nohup xterm -e $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/UserProcess &
 
-if [ x$hard_real_time != "xyes" ]; then
-    echo_warning "USER MODE"
-    make --directory=$OPENAIR_TARGETS/SIMU/USER $MAKE_LTE_ACCESS_STRATUM_TARGET -j`grep -c ^processor /proc/cpuinfo ` || exit 1
-    bash_exec "ip route add 239.0.0.160/28 dev $EMULATION_DEV_INTERFACE"
-    gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -a  -l9 -u0 -b1 -M0 -p2  -g1 -D $EMULATION_DEV_ADDRESS -K $ITTI_LOG_FILE --enb-conf $CONFIG_FILE_ENB 2>&1 | tee $STDOUT_LOG_FILE 
-else
-    echo_warning "HARD REAL TIME MODE"
-    PATH=$PATH:/usr/realtime/bin
-    
-    #make --directory=$OPENAIR_TARGETS/RTAI/USER drivers  || exit 1
-    # 2 lines below replace the line above
-    cd $OPENAIR_TARGETS/ARCH/EXMIMO/DRIVER/eurecom && make clean && make   || exit 1
-    cd $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make   || exit 1
-    cd $THIS_SCRIPT_PATH
-    
-    make --directory=$OPENAIR_TARGETS/RTAI/USER $MAKE_LTE_ACCESS_STRATUM_TARGET_RT -j`grep -c ^processor /proc/cpuinfo ` || exit 1
-    
-    if [ ! -f /tmp/init_rt_done.tmp ]; then
-        echo_warning "STARTING REAL TIME (RTAI)"
-        insmod /usr/realtime/modules/rtai_hal.ko     > /dev/null 2>&1
-        insmod /usr/realtime/modules/rtai_sched.ko   > /dev/null 2>&1
-        insmod /usr/realtime/modules/rtai_sem.ko     > /dev/null 2>&1
-        insmod /usr/realtime/modules/rtai_fifos.ko   > /dev/null 2>&1
-        insmod /usr/realtime/modules/rtai_mbx.ko     > /dev/null 2>&1
-        echo "1" > /sys/bus/pci/rescan
-        touch /tmp/init_rt_done.tmp
-        chmod 666 /tmp/init_rt_done.tmp
-    else
-        echo_warning "REAL TIME FOUND STARTED (RTAI)"
-    fi
-    
-    cd $OPENAIR_TARGETS/RTAI/USER
-    bash ./init_exmimo2.sh
-    echo_warning "STARTING SOFTMODEM..."
-    ./lte-softmodem -K $ITTI_LOG_FILE -O $CONFIG_FILE_ENB 2>&1
-    #cat /dev/rtf62 > $STDOUT_LOG_FILE
-    cd $THIS_SCRIPT_PATH
-fi
+gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -a -u1 -l9 -K $ITTI_LOG_FILE --enb-conf $CONFIG_FILE_ENB 2>&1 | tee $STDOUT_LOG_FILE 
 
 pkill tshark
 

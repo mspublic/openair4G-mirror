@@ -112,8 +112,52 @@ else
 fi
 
 
+test_command_install_package "tshark"   "tshark" "--force-yes"
+test_command_install_package "gccxml"   "gccxml" "--force-yes"
+test_command_install_package "gcc"      "gcc"      "--force-yes"
+test_command_install_package "g++"      "g++"      "--force-yes"
+test_command_install_package "automake" "automake" "--force-yes"
+test_command_install_package "vconfig"  "vlan" "--force-yes"
+test_command_install_package "iptables" "iptables"
+test_command_install_package "iperf"    "iperf" "--force-yes"
+test_command_install_package "ip"       "iproute"
+test_command_install_script   "ovs-vsctl" "$OPENAIRCN_DIR/SCRIPTS/install_openvswitch1.9.0.bash"
+test_command_install_package  "tunctl"  "uml-utilities"
+test_command_install_package "bison"    "bison"     "--force-yes"
+test_command_install_package "flex"     "flex"      "--force-yes"
+test_command_install_package "libtool"  "libtool"   "--force-yes"
+#test_command_install_lib     "/usr/lib/libconfig.so"      "libconfig-dev"  "--force-yes"
+#test_command_install_lib     "/usr/lib/libsctp-dev.so"    "libsctp-dev"    "--force-yes"
+#test_command_install_lib     "/usr/lib/libsctp.so"        "libsctp1"       "--force-yes"
+#test_command_install_lib     "/usr/lib/libpthread-stubs0-dev.so" "libpthread-stubs0-dev"    "--force-yes"
+if [ ! -d /usr/local/etc/freeDiameter ]
+    then
+        # This script make certificates also
+        cd $OPENAIRCN_DIR/S6A/freediameter && ./install_freediameter.sh
+    else
+        echo_success "freediameter is installed"
+        check_s6a_certificate
+fi
 
-#check_install_epc_software
+test_command_install_script   "asn1c" "$OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash"
+
+# One mor check about version of asn1c
+ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE="ASN.1 Compiler, v0.9.24"
+ASN1C_COMPILER_VERSION_MESSAGE=`asn1c -h 2>&1 | grep -i ASN\.1\ Compiler`
+##ASN1C_COMPILER_VERSION_MESSAGE=`trim $ASN1C_COMPILER_VERSION_MESSAGE`
+if [ "$ASN1C_COMPILER_VERSION_MESSAGE" != "$ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE" ]
+then
+    diff <(echo -n "$ASN1C_COMPILER_VERSION_MESSAGE") <(echo -n "$ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE")
+    echo_error "Version of asn1c is not the required one, do you want to install the required one (overwrite installation) ? (Y/n)"
+    echo_error "$ASN1C_COMPILER_VERSION_MESSAGE"
+    while read -r -n 1 -s answer; do
+        if [[ $answer = [YyNn] ]]; then
+            [[ $answer = [Yy] ]] && $OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash
+            [[ $answer = [Nn] ]] && echo_error "Version of asn1c is not the required one, exiting." && exit 1
+            break
+        fi
+    done
+fi
 
 
 ##################################
@@ -146,7 +190,6 @@ else
 fi
 
 pkill oai_epc
-pkill tshark
 
 if [ -f Makefile ]
 then
@@ -271,14 +314,8 @@ else
         clean_epc_vlan_network
         build_mme_spgw_vlan_network
     else
-        is_real_interface $MME_IPV4_ADDRESS_FOR_S11_MME  \
-                               $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP
-        if [ $? -eq 1 ]; then
-            echo_success "Found standart network configuration"
-        else
-            echo_error "Cannot find open-vswitch network configuration or VLAN network configuration or standart network configuration"
-            exit 1
-        fi
+        echo_error "Cannot find open-vswitch network configuration or VLAN network configuration"
+        exit 1
     fi 
 fi
 
@@ -286,26 +323,11 @@ fi
 # LAUNCH MME + S+P-GW executable
 ##################################################
 
-cd $THIS_SCRIPT_PATH
-if [ ! -d "OUTPUT/"$HOSTNAME ]
-then
-    bash_exec "mkdir -m 777 ./OUTPUT/$HOSTNAME"
-    echo_success "Created OUTPUT/$HOSTNAME directory"
-fi
-
-
-ITTI_LOG_FILE=./itti_mme.$HOSTNAME.log
-rotate_log_file $ITTI_LOG_FILE
-
-STDOUT_LOG_FILE=./stdout_mme.$HOSTNAME.log
-rotate_log_file $STDOUT_LOG_FILE
-
-PCAP_LOG_FILE=./tshark_mme.$HOSTNAME.pcap
-rotate_log_file $PCAP_LOG_FILE
-
 cd $OPENAIRCN_DIR/$OBJ_DIR
 
-nohup tshark -i MME_INTERFACE_NAME_FOR_S1_MME -w $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$PCAP_LOG_FILE &
+ITTI_LOG_FILE=./itti_mme.log
+rotate_log_file $ITTI_LOG_FILE
+STDOUT_LOG_FILE=./stdout_mme.log
+rotate_log_file $STDOUT_LOG_FILE
 
-
-gdb --args $OPENAIRCN_DIR/$OBJ_DIR/OAI_EPC/oai_epc -K $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$ITTI_LOG_FILE -c $THIS_SCRIPT_PATH/$CONFIG_FILE_EPC  2>&1 | tee $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$STDOUT_LOG_FILE 
+gdb --args $OPENAIRCN_DIR/$OBJ_DIR/OAI_EPC/oai_epc -K $ITTI_LOG_FILE -c $THIS_SCRIPT_PATH/$CONFIG_FILE_EPC  2>&1 | tee $STDOUT_LOG_FILE 

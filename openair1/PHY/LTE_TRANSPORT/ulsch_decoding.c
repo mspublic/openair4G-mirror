@@ -235,7 +235,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   unsigned int sumKr=0;
   unsigned int Qprime,L,G,Q_CQI,Q_RI,H,Hprime,Hpp,Cmux,Rmux_prime,O_RCC;
   unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK=0,len_RI=0;
-  //  uint8_t q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
+  uint8_t q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
   int metric,metric_new;
   uint8_t o_flip[8];
   uint32_t x1, x2, s=0;
@@ -341,7 +341,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 	ulsch->harq_processes[harq_pid]->O_ACK,
 	G,
 	subframe);
-    mac_xface->macphy_exit("ulsch_decoding.c: FATAL sumKr is 0!");
+    mac_xface->macphy_exit("");
     return(-1);
   }
     
@@ -437,8 +437,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   start_meas(&phy_vars_eNB->ulsch_demultiplexing_stats);
 
   i=0;
-  memset(y,LTE_NULL,Q_m*Hpp);
-  /*
   //  Do RI coding
   if (ulsch->O_RI == 1) {
     switch (Q_m) {
@@ -469,7 +467,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     LOG_E(PHY,"ulsch_decoding: FATAL, RI cannot be more than 1 bit yet\n");
     return(-1);
   }
- 
+
   // 1-bit ACK/NAK
   if (ulsch->harq_processes[harq_pid]->O_ACK == 1) {
     switch (Q_m) {
@@ -553,13 +551,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     LOG_E(PHY,"ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet\n");
     return(-1);
   }
-
-
   // RI BITS 
-
+  memset(y,LTE_NULL,Q_m*Hpp);
   //  memset(ytag2,0,Q_m*Hpp);
 
-  */
+
   // read in buffer and unscramble llrs for everything but placeholder bits
   // llrs stored per symbol correspond to columns of interleaving matrix
 

@@ -158,9 +158,14 @@ Node_list remove_node_entry(NodePtr node, Node_list Node_Vector){
 // display list of nodes
 void display_node_list(Node_list Node_Vector){
     Node_list tmp = Node_Vector;
-    
-    while ((tmp != NULL) &&
-	   (tmp->node != NULL)){
+    if (tmp == NULL){
+      #ifdef STANDALONE  
+        printf("Empty Node_list\n");
+      #else
+        LOG_I(OMG, "Empty Node_list\n");
+      #endif
+    }	
+    while (tmp != NULL){
       LOG_I(OMG,"[%s][%s] Node of ID %d is %s. Now, it is at location (%.3f, %.3f)\n", 
 	    map_int_to_str(mob_type, tmp->node->generator),
 	    map_int_to_str(nodes_type, tmp->node->type),  

@@ -223,7 +223,6 @@ boolean_t pdcp_data_req(
               pdu_header.sn = pdcp_get_next_tx_seq_number(pdcp_p);
               current_sn = pdu_header.sn;
               memset(&pdu_header.mac_i[0],0,PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE);
-              memset(&pdcp_pdu_p->data[sdu_buffer_sizeP + pdcp_header_len],0,PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE);
               if (pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer((unsigned char*)pdcp_pdu_p->data, &pdu_header) == FALSE) {
                   LOG_E(PDCP, "Cannot fill PDU buffer with relevant header fields!\n");
                   if (enb_flagP == ENB_FLAG_NO)
@@ -274,28 +273,22 @@ boolean_t pdcp_data_req(
 
 #if defined(ENABLE_SECURITY)
           if ((pdcp_p->security_activated != 0) &&
-              (((pdcp_p->cipheringAlgorithm) != 0) ||
-              ((pdcp_p->integrityProtAlgorithm) != 0))) {
+              ((pdcp_p->cipheringAlgorithm) != 0) &&
+              ((pdcp_p->integrityProtAlgorithm) != 0)) {
 
-              if (enb_flagP == ENB_FLAG_NO)
-                start_meas(&eNB_pdcp_stats[enb_mod_idP].apply_security);
-              else
-                start_meas(&UE_pdcp_stats[ue_mod_idP].apply_security);
+	    if (enb_flagP == ENB_FLAG_NO)
+	      start_meas(&eNB_pdcp_stats[enb_mod_idP].apply_security);
+	    else
+	      start_meas(&UE_pdcp_stats[ue_mod_idP].apply_security);
 
-              pdcp_apply_security(pdcp_p,
-				  srb_flagP,
-				  rb_idP % maxDRB,
-				  pdcp_header_len,
-				  current_sn,
-				  pdcp_pdu_p->data,
-				  sdu_buffer_sizeP);
-
-              if (enb_flagP == ENB_FLAG_NO)
-                stop_meas(&eNB_pdcp_stats[enb_mod_idP].apply_security);
-              else
-                stop_meas(&UE_pdcp_stats[ue_mod_idP].apply_security);
+	    pdcp_apply_security(pdcp_p, rb_idP % maxDRB,
+				pdcp_header_len, current_sn, pdcp_pdu_p->data,
+				sdu_buffer_sizeP);
+	    if (enb_flagP == ENB_FLAG_NO)
+	      stop_meas(&eNB_pdcp_stats[enb_mod_idP].apply_security);
+	    else
+	      stop_meas(&UE_pdcp_stats[ue_mod_idP].apply_security);
           }
-
 #endif
 
           /* Print octets of outgoing data in hexadecimal form */
@@ -323,15 +316,7 @@ boolean_t pdcp_data_req(
        * Ask sublayer to transmit data and check return value
        * to see if RLC succeeded
        */
-#ifdef PDCP_MSG_PRINT
-      int i=0;
-      LOG_F(PDCP,"[MSG] PDCP DL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
-      for (i = 0; i < pdcp_pdu_size; i++)
-	LOG_F(PDCP,"%02x ", ((uint8_t*)pdcp_pdu_p->data)[i]);
-      LOG_F(PDCP,"\n");
-#endif 
       rlc_status = rlc_data_req(enb_mod_idP, ue_mod_idP, frameP, enb_flagP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-
   }
   switch (rlc_status) {
   case RLC_OP_STATUS_OK:
@@ -432,14 +417,6 @@ boolean_t pdcp_data_ind(
           oai_emulation.info.first_ue_local);
   }
 #endif
-#ifdef PDCP_MSG_PRINT
-      int i=0;
-      LOG_F(PDCP,"[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
-      for (i = 0; i < sdu_buffer_sizeP; i++)
-	LOG_F(PDCP,"%02x ", ((uint8_t*)sdu_buffer_pP->data)[i]);
-      LOG_F(PDCP,"\n");
-#endif 
-
   if (MBMS_flagP) {
       AssertError (rb_idP < NB_RB_MBMS_MAX, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, NB_RB_MBMS_MAX, ue_mod_idP, enb_mod_idP);
       if (enb_flagP == ENB_FLAG_NO) {
@@ -454,7 +431,6 @@ boolean_t pdcp_data_ind(
   } else {
       rb_id = rb_idP % maxDRB;
       AssertError (rb_id < maxDRB, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_id, maxDRB, ue_mod_idP, enb_mod_idP);
-      AssertError (rb_id > 0, return FALSE, "RB id is too low (%u/%d) %u %u!\n", rb_id, maxDRB, ue_mod_idP, enb_mod_idP);
 
       if (enb_flagP == ENB_FLAG_NO) {
           if (srb_flagP) {
@@ -487,6 +463,7 @@ boolean_t pdcp_data_ind(
 
   sdu_list_p = &pdcp_sdu_list;
 
+
   if (sdu_buffer_sizeP == 0) {
       LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!\n");
       if (enb_flagP)
@@ -497,34 +474,18 @@ boolean_t pdcp_data_ind(
   }
 
   /*
-   * Parse the PDU placed at the beginning of SDU to check
-   * if incoming SN is in line with RX window
+   * Check if incoming SDU is long enough to carry a PDU header
    */
-  
   if (MBMS_flagP == 0 ) {
-    if (srb_flagP) { //SRB1/2
-      pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
-      pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
-      sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer_pP->data);
-    } else { // DRB
-      pdcp_tailer_len = 0;
-      if (pdcp_p->seq_num_size == PDCP_SN_7BIT){
-	pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_SHORT_SN_HEADER_SIZE;
-	sequence_number =     pdcp_get_sequence_number_of_pdu_with_short_sn((unsigned char*)sdu_buffer_pP->data);
-      }else if (pdcp_p->seq_num_size == PDCP_SN_12BIT){
-	pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
-	sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer_pP->data);
+      if (srb_flagP) {
+          pdcp_header_len = PDCP_CONTROL_PLANE_DATA_PDU_SN_SIZE;
+          pdcp_tailer_len = PDCP_CONTROL_PLANE_DATA_PDU_MAC_I_SIZE;
       } else {
-	//sequence_number = 4095;
-	LOG_E(PDCP,"wrong sequence number  (%d) for this pdcp entity \n", pdcp_p->seq_num_size);
+          pdcp_header_len = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
+          pdcp_tailer_len = 0;
       }
-      //uint8_t dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer_pP->data);
-    }
-    
-    /*
-     * Check if incoming SDU is long enough to carry a PDU header
-     */
-    if (sdu_buffer_sizeP < pdcp_header_len + pdcp_tailer_len ) {
+
+      if (sdu_buffer_sizeP < pdcp_header_len + pdcp_tailer_len ) {
           LOG_W(PDCP, "Incoming (from RLC) SDU is short of size (size:%d)! Ignoring...\n", sdu_buffer_sizeP);
           free_mem_block(sdu_buffer_pP);
           if (enb_flagP)
@@ -533,111 +494,95 @@ boolean_t pdcp_data_ind(
             stop_meas(&UE_pdcp_stats[ue_mod_idP].data_ind);
           return FALSE;
       }
-  
-    if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp_p, srb_flagP) == TRUE) {
-      LOG_D(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window\n", sequence_number);
-      /* if (dc == PDCP_DATA_PDU )
-	 LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
-	 else
-	 LOG_D(PDCP, "Passing piggybacked SDU to RRC ...\n");*/
-    } else {
-      LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
+
       /*
-       * XXX Till we implement in-sequence delivery and duplicate discarding
-       * mechanism all out-of-order packets will be delivered to RRC/IP
+       * Parse the PDU placed at the beginning of SDU to check
+       * if incoming SN is in line with RX window
        */
+
+      if (pdcp_header_len == PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) { // DRB
+          sequence_number =     pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)sdu_buffer_pP->data);
+          //       uint8_t dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer->data);
+      } else { //SRB1/2
+          sequence_number =   pdcp_get_sequence_number_of_pdu_with_SRB_sn((unsigned char*)sdu_buffer_pP->data);
+      }
+      if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp_p) == TRUE) {
+          LOG_D(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window\n", sequence_number);
+          /* if (dc == PDCP_DATA_PDU )
+	   LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
+	   else
+	   LOG_D(PDCP, "Passing piggybacked SDU to RRC ...\n");*/
+      } else {
+          LOG_W(PDCP, "Incoming PDU has an unexpected sequence number (%d), RX window snychronisation have probably been lost!\n", sequence_number);
+          /*
+           * XXX Till we implement in-sequence delivery and duplicate discarding
+           * mechanism all out-of-order packets will be delivered to RRC/IP
+           */
 #if 0
-      LOG_D(PDCP, "Ignoring PDU...\n");
-      free_mem_block(sdu_buffer);
-      return FALSE;
+          LOG_D(PDCP, "Ignoring PDU...\n");
+          free_mem_block(sdu_buffer);
+          return FALSE;
 #else
-      LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
+          LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
 #endif
-    }
+      }
       // SRB1/2: control-plane data
-    if (srb_flagP){
+      if (srb_flagP){
+#if defined(ENABLE_SECURITY)
+	if (pdcp_p->security_activated == 1) {
+	  if (enb_flagP == ENB_FLAG_NO)
+	    start_meas(&eNB_pdcp_stats[enb_mod_idP].validate_security);
+	  else
+	    start_meas(&UE_pdcp_stats[ue_mod_idP].validate_security);
+
+	  pdcp_validate_security(pdcp_p, rb_idP, pdcp_header_len,
+				 sequence_number, sdu_buffer_pP->data,
+				 sdu_buffer_sizeP - pdcp_tailer_len);
+	  if (enb_flagP == ENB_FLAG_NO)
+	    stop_meas(&eNB_pdcp_stats[enb_mod_idP].validate_security);
+	  else
+	    stop_meas(&UE_pdcp_stats[ue_mod_idP].validate_security);
+
+	}
+#endif
+//rrc_lite_data_ind(module_id, //Modified MW - L2 Interface
+          pdcp_rrc_data_ind(enb_mod_idP,
+              ue_mod_idP,
+              frameP,
+              enb_flagP,
+              rb_id,
+              sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
+              (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
+          free_mem_block(sdu_buffer_pP);
+          // free_mem_block(new_sdu);
+          if (enb_flagP)
+            stop_meas(&eNB_pdcp_stats[enb_mod_idP].data_ind);
+          else
+            stop_meas(&UE_pdcp_stats[ue_mod_idP].data_ind);
+          return TRUE;
+      }
+      payload_offset=PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 #if defined(ENABLE_SECURITY)
       if (pdcp_p->security_activated == 1) {
-	if (enb_flagP == ENB_FLAG_NO)
-	  start_meas(&eNB_pdcp_stats[enb_mod_idP].validate_security);
-	else
-	  start_meas(&UE_pdcp_stats[ue_mod_idP].validate_security);
-	
-	pdcp_validate_security(pdcp_p, 
-			       srb_flagP,
-			       rb_idP, 
-			       pdcp_header_len,
-			       sequence_number, 
-			       sdu_buffer_pP->data,
-			       sdu_buffer_sizeP - pdcp_tailer_len);
-	if (enb_flagP == ENB_FLAG_NO)
-	  stop_meas(&eNB_pdcp_stats[enb_mod_idP].validate_security);
-	else
-	  stop_meas(&UE_pdcp_stats[ue_mod_idP].validate_security);
-	
+          pdcp_validate_security(pdcp_p, rb_idP % maxDRB, pdcp_header_len,
+              sequence_number, sdu_buffer_pP->data,
+              sdu_buffer_sizeP - pdcp_tailer_len);
       }
-#endif
-      //rrc_lite_data_ind(module_id, //Modified MW - L2 Interface
-      pdcp_rrc_data_ind(enb_mod_idP,
-			ue_mod_idP,
-			frameP,
-			enb_flagP,
-			rb_id,
-			sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
-			(uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
-      free_mem_block(sdu_buffer_pP);
-      // free_mem_block(new_sdu);
-      if (enb_flagP)
-	stop_meas(&eNB_pdcp_stats[enb_mod_idP].data_ind);
-      else
-	stop_meas(&UE_pdcp_stats[ue_mod_idP].data_ind);
-      return TRUE;
-    }
-  /*
-   * DRBs 
-   */
-    payload_offset=pdcp_header_len;// PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
-#if defined(ENABLE_SECURITY)
-    if (pdcp_p->security_activated == 1) {
-      if (enb_flagP == ENB_FLAG_NO)
-	start_meas(&eNB_pdcp_stats[enb_mod_idP].validate_security);
-      else
-	start_meas(&UE_pdcp_stats[ue_mod_idP].validate_security);
-      
-      pdcp_validate_security(pdcp_p, 
-			     srb_flagP,
-			     rb_idP, 
-			     pdcp_header_len,
-			     sequence_number, 
-			     sdu_buffer_pP->data,
-			     sdu_buffer_sizeP - pdcp_tailer_len);
-      if (enb_flagP == ENB_FLAG_NO)
-	stop_meas(&eNB_pdcp_stats[enb_mod_idP].validate_security);
-      else
-	stop_meas(&UE_pdcp_stats[ue_mod_idP].validate_security);
-      
-    }
-    
 #endif
   } else {
       payload_offset=0;
   }
-  
 #if defined(USER_MODE) && defined(OAI_EMU)
   if (oai_emulation.info.otg_enabled == 1) {
       module_id_t src_id, dst_id;
       int    ctime;
-   
-      if (pdcp_p->rlc_mode == RLC_MODE_AM ) {
-	pdcp_p->last_submitted_pdcp_rx_sn = sequence_number; 
-      }
-   
+
       rlc_util_print_hex_octets(PDCP,
                                 (unsigned char*)&sdu_buffer_pP->data[payload_offset],
                                 sdu_buffer_sizeP - payload_offset);
 
-      src_id = (enb_flagP == ENB_FLAG_NO) ?  enb_mod_idP : ue_mod_idP +   NB_eNB_INST;
-      dst_id = (enb_flagP == ENB_FLAG_NO) ? ue_mod_idP +  NB_eNB_INST: enb_mod_idP;
+      src_id = (enb_flagP != 0) ? ue_mod_idP : enb_mod_idP;
+      dst_id = (enb_flagP == ENB_FLAG_NO) ? ue_mod_idP : enb_mod_idP;
       ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
       LOG_D(PDCP, "Check received buffer : enb_flag %d  rab id %d (src %d, dst %d)\n",
           enb_flagP, rb_id, src_id, dst_id);
@@ -666,9 +611,6 @@ boolean_t pdcp_data_ind(
   new_sdu_p = get_free_mem_block(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t));
 
   if (new_sdu_p) {
-    if (pdcp_p->rlc_mode == RLC_MODE_AM ) {
-      pdcp_p->last_submitted_pdcp_rx_sn = sequence_number; 
-    }
       /*
        * Prepend PDCP indication header which is going to be removed at pdcp_fifo_flush_sdus()
        */
@@ -833,17 +775,15 @@ void pdcp_run (
 
 #if defined(USER_MODE) && defined(OAI_EMU)
   pdcp_t            *pdcp_p          = NULL;
-  int               drb_id=0 ;
-    // add other rb_ids
-    for (drb_id=0; drb_id < DTCH; drb_id++) {
-      if (enb_flagP == ENB_FLAG_NO) {
-	pdcp_p = &pdcp_array_drb_ue[ue_mod_idP][drb_id];
-      } else {
-	pdcp_p = &pdcp_array_drb_eNB[enb_mod_idP][ue_mod_idP][drb_id];
-      }
-      if (pdcp_p->instanciated_instance  == TRUE )
-	pdcp_fifo_read_input_sdus_from_otg(frameP, enb_flagP, ue_mod_idP, enb_mod_idP);
-    }
+  // add other rb_ids
+  if (enb_flagP == ENB_FLAG_NO) {
+      pdcp_p = &pdcp_array_drb_ue[ue_mod_idP][DTCH-1];
+  } else {
+      pdcp_p = &pdcp_array_drb_eNB[enb_mod_idP][ue_mod_idP][DTCH-1];
+  }
+
+  if (pdcp_p->instanciated_instance  == TRUE )
+    pdcp_fifo_read_input_sdus_from_otg(frameP, enb_flagP, ue_mod_idP, enb_mod_idP);
 #endif
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
@@ -897,7 +837,7 @@ boolean_t rrc_pdcp_config_asn1_req (
   rlc_mode_t      rlc_type       = RLC_MODE_NONE;
   DRB_Identity_t  drb_id         = 0;
   DRB_Identity_t *pdrb_id_p      = NULL;
-  uint8_t         drb_sn         = 12;
+  uint8_t         drb_sn         = 0;
   uint8_t         srb_sn         = 5; // fixed sn for SRBs
   uint8_t         drb_report     = 0;
   long int        cnt            = 0;
@@ -987,7 +927,7 @@ boolean_t rrc_pdcp_config_asn1_req (
 
           drb_toaddmod_p = drb2add_list_pP->list.array[cnt];
 
-          drb_id = drb_toaddmod_p->drb_Identity;// + drb_id_offset;
+          drb_id = drb_toaddmod_p->drb_Identity ;// + drb_id_offset;
 
           lc_id = drb_id + 2;
 
@@ -1011,8 +951,7 @@ boolean_t rrc_pdcp_config_asn1_req (
               }
               if (drb_toaddmod_p->pdcp_Config->rlc_AM) {
                   drb_report = drb_toaddmod_p->pdcp_Config->rlc_AM->statusReportRequired;
-		  drb_sn = PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits; // default SN size 
-                  rlc_type = RLC_MODE_AM;
+                  rlc_type =RLC_MODE_AM;
               }
               if (drb_toaddmod_p->pdcp_Config->rlc_UM){
                   drb_sn = drb_toaddmod_p->pdcp_Config->rlc_UM->pdcp_SN_Size;
@@ -1193,35 +1132,32 @@ boolean_t pdcp_config_req_asn1 (pdcp_t   *pdcp_pP,
     pdcp_pP->header_compression_profile = header_compression_profileP;
     pdcp_pP->status_report              = rb_reportP;
 
-    if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits) {
-        pdcp_pP->seq_num_size = PDCP_SN_12BIT;
-    } else if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
-        pdcp_pP->seq_num_size = PDCP_SN_7BIT;
+    if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+        pdcp_pP->seq_num_size = 7;
+    } else if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits) {
+        pdcp_pP->seq_num_size = 12;
     } else {
-        pdcp_pP->seq_num_size = PDCP_SN_5BIT;
+        pdcp_pP->seq_num_size = 5;
     }
 
+    pdcp_pP->rlc_mode                  = rlc_modeP;
+    pdcp_pP->next_pdcp_tx_sn           = 0;
+    pdcp_pP->next_pdcp_rx_sn           = 0;
+    pdcp_pP->tx_hfn                    = 0;
+    pdcp_pP->rx_hfn                    = 0;
+    pdcp_pP->last_submitted_pdcp_rx_sn = 4095;
+    pdcp_pP->first_missing_pdu         = -1;
 
-    pdcp_pP->rlc_mode                         = rlc_modeP;
-    pdcp_pP->next_pdcp_tx_sn                  = 0;
-    pdcp_pP->next_pdcp_rx_sn                  = 0;
-    pdcp_pP->next_pdcp_rx_sn_before_integrity = 0;
-    pdcp_pP->tx_hfn                           = 0;
-    pdcp_pP->rx_hfn                           = 0;
-    pdcp_pP->last_submitted_pdcp_rx_sn        = 4095;
-    pdcp_pP->first_missing_pdu                = -1;
-    pdcp_pP->rx_hfn_offset                    = 0;
-    
     if (enb_flagP == ENB_FLAG_NO) {
         LOG_I(PDCP, "[UE %d] Config request : Action ADD for eNB %d: Frame %d LCID %d (rb id %d) "
             "configured with SN size %d bits and RLC %s\n",
             ue_mod_idP, enb_mod_idP, frameP, lc_idP, rb_idP, pdcp_pP->seq_num_size,
-            (rlc_modeP == RLC_MODE_AM ) ? "AM" : (rlc_modeP == RLC_MODE_TM) ? "TM" : "UM");
+            (rlc_modeP == 1) ? "AM" : (rlc_modeP == 2) ? "TM" : "UM");
     } else {
         LOG_I(PDCP, "[eNB %d] Config request : Action ADD for UE %d: Frame %d LCID %d (rb id %d) "
             "configured with SN size %d bits and RLC %s\n",
             enb_mod_idP, ue_mod_idP, frameP, lc_idP, rb_idP, pdcp_pP->seq_num_size,
-            (rlc_modeP == RLC_MODE_AM) ? "AM" : (rlc_modeP == RLC_MODE_TM) ? "TM" : "UM");
+            (rlc_modeP == 1) ? "AM" : (rlc_modeP == 2) ? "TM" : "UM");
     }
 
     /* Setup security */
@@ -1255,12 +1191,12 @@ boolean_t pdcp_config_req_asn1 (pdcp_t   *pdcp_pP,
         LOG_I(PDCP,"[UE %d] Config request : Action MODIFY for eNB %d: Frame %d LCID %d "
             "RB id %d configured with SN size %d and RLC %s \n",
             ue_mod_idP, enb_mod_idP, frameP, lc_idP, rb_idP, rb_snP,
-            (rlc_modeP == RLC_MODE_AM) ? "AM" : (rlc_modeP == RLC_MODE_TM) ? "TM" : "UM");
+            (rlc_modeP == 1) ? "AM" : (rlc_modeP == 2) ? "TM" : "UM");
     } else {
         LOG_I(PDCP,"[eNB %d] Config request : Action MODIFY for UE %d: Frame %d LCID %d "
             "RB id %d configured with SN size %d and RLC %s \n",
             enb_mod_idP, ue_mod_idP, frameP, lc_idP, rb_idP, rb_snP,
-            (rlc_modeP == RLC_MODE_AM) ? "AM" : (rlc_modeP == RLC_MODE_TM) ? "TM" : "UM");
+            (rlc_modeP == 1) ? "AM" : (rlc_modeP == 2) ? "TM" : "UM");
     }
     break;
   case CONFIG_ACTION_REMOVE:
@@ -1522,10 +1458,10 @@ void pdcp_layer_init(void)
 
   for (instance = 0; instance < NUMBER_OF_UE_MAX; instance++) {
       for (rb_id = 0; rb_id < maxDRB; rb_id++) {
-          memset(&pdcp_array_drb_ue[instance][rb_id], 0, sizeof(pdcp_t));
+          memset(&pdcp_array_drb_ue[instance][rb_id-1], 0, sizeof(pdcp_t));
       }
       for (rb_id = 0; rb_id < 2; rb_id++) {
-          memset(&pdcp_array_srb_ue[instance][rb_id], 0, sizeof(pdcp_t));
+          memset(&pdcp_array_srb_ue[instance][rb_id-1], 0, sizeof(pdcp_t));
       }
 #if defined(Rel10)
       for (service_id = 0; service_id < maxServiceCount; service_id++) {
@@ -1538,10 +1474,10 @@ void pdcp_layer_init(void)
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
       for (instance2 = 0; instance2 < NUMBER_OF_UE_MAX; instance2++) {
           for (rb_id = 0; rb_id < maxDRB; rb_id++) {
-              memset(&pdcp_array_drb_eNB[instance][instance2][rb_id], 0, sizeof(pdcp_t));
+              memset(&pdcp_array_drb_eNB[instance][instance2][rb_id-1], 0, sizeof(pdcp_t));
           }
           for (rb_id = 0; rb_id < 2; rb_id++) {
-              memset(&pdcp_array_srb_eNB[instance][instance2][rb_id], 0, sizeof(pdcp_t));
+              memset(&pdcp_array_srb_eNB[instance][instance2][rb_id-1], 0, sizeof(pdcp_t));
           }
       }
 #if defined(Rel10)

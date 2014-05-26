@@ -983,11 +983,9 @@ int emm_recv_authentication_failure(unsigned int ueid,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int
-emm_recv_security_mode_complete(
-    unsigned int                ueid,
-    security_mode_complete_msg *msg,
-    int                        *emm_cause)
+int emm_recv_security_mode_complete(unsigned int ueid,
+                                    security_mode_complete_msg *msg,
+                                    int *emm_cause)
 {
     LOG_FUNC_IN;
 

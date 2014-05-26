@@ -1,33 +1,3 @@
-/*******************************************************************************
-
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2014 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -167,7 +137,6 @@ void get_simulation_options(int argc, char *argv[]) {
 
     LONG_OPTION_PDNC_PERIOD,
     LONG_OPTION_OMG_PERIOD,
-    LONG_OPTION_OEH_ENABLED,
 
     LONG_OPTION_ENB_RAL_LISTENING_PORT,
     LONG_OPTION_ENB_RAL_IP_ADDRESS,
@@ -191,9 +160,8 @@ void get_simulation_options(int argc, char *argv[]) {
   static struct option long_options[] = {
       {"enb-conf",               required_argument, 0, LONG_OPTION_ENB_CONF},
 
-      {"pdcp-period",            required_argument, 0, LONG_OPTION_PDNC_PERIOD},
-      {"omg-period",             required_argument, 0, LONG_OPTION_OMG_PERIOD},
-      {"oeh-enabled",            no_argument, 0, LONG_OPTION_OEH_ENABLED},
+      {"pdcp_period",            required_argument, 0, LONG_OPTION_PDNC_PERIOD},
+      {"omg_period",             required_argument, 0, LONG_OPTION_OMG_PERIOD},
 
       {"enb-ral-listening-port", required_argument, 0, LONG_OPTION_ENB_RAL_LISTENING_PORT},
       {"enb-ral-ip-address",     required_argument, 0, LONG_OPTION_ENB_RAL_IP_ADDRESS},
@@ -212,7 +180,6 @@ void get_simulation_options(int argc, char *argv[]) {
       {"ue-mihf-remote-port",    required_argument, 0, LONG_OPTION_UE_MIHF_REMOTE_PORT},
       {"ue-mihf-ip-address",     required_argument, 0, LONG_OPTION_UE_MIHF_IP_ADDRESS},
       {"ue-mihf-id",             required_argument, 0, LONG_OPTION_UE_MIHF_ID},
-
       {NULL, 0, NULL, 0}
   };
 
@@ -238,10 +205,7 @@ void get_simulation_options(int argc, char *argv[]) {
             printf("OMG period is %d\n", omg_period);
         }
         break;
-      
-      case LONG_OPTION_OEH_ENABLED:
-	oai_emulation.info.oeh_enabled = 1;
-	break;
+
 #if defined(ENABLE_RAL)
       case LONG_OPTION_ENB_RAL_LISTENING_PORT:
         if (optarg) {
@@ -511,11 +475,11 @@ void get_simulation_options(int argc, char *argv[]) {
         }
         oai_emulation.info.opt_mode = opt_type;
         break;
-      case 'q':
-        // openair performane profiler 
-        oai_emulation.info.opp_enabled = 1; // this var is used for OCG
-        opp_enabled = 1; // this is the global var used by oaisim 
-        break;
+    case 'q':
+      // openair performane profiler 
+      oai_emulation.info.opp_enabled = 1; // this var is used for OCG
+      opp_enabled = 1; // this is the global var used by oaisim 
+      break;
       case 'Q':
         //eMBMS_active=1;
         // 0 : not used (default), 1: eMBMS and RRC enabled, 2: eMBMS relaying and RRC enabled, 3: eMBMS enabled, RRC disabled, 4: eMBMS relaying enabled, RRC disabled
@@ -548,7 +512,7 @@ void get_simulation_options(int argc, char *argv[]) {
         break;
 
       case 't':
-        target_ul_mcs = atoi (optarg);
+	target_ul_mcs = atoi (optarg);
         break;
 
       case 'T':
@@ -1091,15 +1055,15 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime) {
 
                   if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
                       otg_times += 1;
-                      (otg_pkt->otg_pkt).rb_id = DTCH-2; // app could be binded to a given DRB
+                      (otg_pkt->otg_pkt).rb_id = DTCH; // app could be binded to a given DRB
                       (otg_pkt->otg_pkt).module_id = enb_module_idP;
                       (otg_pkt->otg_pkt).dst_id = dst_id;
                       (otg_pkt->otg_pkt).is_ue = 0;
                       (otg_pkt->otg_pkt).mode = PDCP_TRANSMISSION_MODE_DATA;
                       //Adding the packet to the OTG-PDCP buffer
-#warning "Strange code: To be verifed"
+#warning "Strange code"
                       pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[enb_module_idP]));
-                      LOG_I(EMU,"[eNB %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d for app id %d \n",
+                      LOG_I(EMU, "[eNB %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d for app id %d \n",
                           (otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id, app_id);
                   } else {
                       free(otg_pkt);
@@ -1181,7 +1145,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime) {
               otg_pkt = malloc (sizeof(Packet_otg_elt_t));
               (otg_pkt->otg_pkt).sdu_buffer = packet_gen(module_instP, dst_id, ctime, &pkt_size);
               if (otg_pkt != NULL) {
-                  rb_id = DTCH-2;
+                  rb_id = dst_id * NB_RB_MAX + DTCH;
                   (otg_pkt->otg_pkt).rb_id     = rb_id;
                   (otg_pkt->otg_pkt).module_id = module_idP;
                   (otg_pkt->otg_pkt).is_ue     = FALSE;
@@ -1220,7 +1184,7 @@ void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime) {
               (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(src_id, dst_id, 0, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
 
               if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-                  (otg_pkt->otg_pkt).rb_id     = DTCH-2;
+                  (otg_pkt->otg_pkt).rb_id     = DTCH;
                   (otg_pkt->otg_pkt).module_id = module_id;
                   (otg_pkt->otg_pkt).dst_id    = dst_id;
                   (otg_pkt->otg_pkt).is_ue     = 1;

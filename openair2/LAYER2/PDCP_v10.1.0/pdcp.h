@@ -151,14 +151,11 @@ typedef struct pdcp_t {
    */
   pdcp_sn_t next_pdcp_tx_sn;
   pdcp_sn_t next_pdcp_rx_sn;
-  pdcp_sn_t next_pdcp_rx_sn_before_integrity;
   /*
    * TX and RX Hyper Frame Numbers
    */
   pdcp_hfn_t tx_hfn;
   pdcp_hfn_t rx_hfn;
-  pdcp_hfn_offset_t rx_hfn_offset; // related to sn mismatch
-  
   /*
    * SN of the last PDCP SDU delivered to upper layers
    */
@@ -175,11 +172,6 @@ typedef struct pdcp_t {
    * which is not also a valid sequence number
    */
   short int first_missing_pdu;
-  /*
-   * decipher using a different rx_hfn
-   */
-  
-  
 } pdcp_t;
 
 #if defined(Rel10)
@@ -447,27 +439,12 @@ typedef struct pdcp_missing_pdu_info_t {
 #define PDCP_MAX_SN_7BIT  127  // 2^7-1
 #define PDCP_MAX_SN_12BIT 4095 // 2^12-1
 
-/*
- * Reordering_Window: half of the PDCP SN space
- */ 
-#define REORDERING_WINDOW_SN_5BIT 16
-#define REORDERING_WINDOW_SN_7BIT 64
-#define REORDERING_WINDOW_SN_12BIT 2048
-
-/* 
- * SN size 
- */
-#define PDCP_SN_5BIT  5
-#define PDCP_SN_7BIT  7
-#define PDCP_SN_12BIT 12
- 
-
 protected_pdcp(signed int             pdcp_2_nas_irq;)
 public_pdcp(pdcp_stats_t              UE_pdcp_stats[NUMBER_OF_UE_MAX];)
 public_pdcp(pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];)
 protected_pdcp(pdcp_t                 pdcp_array_srb_ue[NUMBER_OF_UE_MAX][2];)
 protected_pdcp(pdcp_t                 pdcp_array_drb_ue[NUMBER_OF_UE_MAX][maxDRB];)
-public_pdcp(pdcp_t                 pdcp_array_srb_eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][2];)
+protected_pdcp(pdcp_t                 pdcp_array_srb_eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][2];)
 protected_pdcp(pdcp_t                 pdcp_array_drb_eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][maxDRB];)
 #if defined(Rel10)
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h

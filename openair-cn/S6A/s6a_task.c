@@ -94,7 +94,7 @@ void *s6a_thread(void *args)
                           ITTI_MSG_ID(received_message_p), ITTI_MSG_NAME(received_message_p));
             } break;
         }
-        itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), received_message_p);
+        free(received_message_p);
         received_message_p = NULL;
     }
     return NULL;

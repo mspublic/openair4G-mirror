@@ -12,7 +12,7 @@ Product     NAS stack
 
 Subsystem   EPS Core Network
 
-Author      Sebastien Roux, Lionel GAUTHIER
+Author      Sebastien Roux
 
 Description
 

@@ -46,7 +46,6 @@ import math #from time import clock
 import log
 import case11
 import case12
-import case13
 
 
 from  openair import *
@@ -55,8 +54,6 @@ debug = 0
 prompt = '$'
 pw =''
 i = 0
-clean = 0 
-start_case  = 0
 for arg in sys.argv:
     if arg == '-d':
         debug = 1
@@ -66,27 +63,21 @@ for arg in sys.argv:
         prompt = sys.argv[i+1]
     elif arg == '-w' :
         pw = sys.argv[i+1]
-    elif arg == '-c' :
-        clean = 1
-    elif arg == '-s' :
-        start_case = sys.argv[i+1]
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
         print "-p:  set the prompt"
         print "-w:  set the password for ssh to localhost"
-        print "-c: clean the log directory "
         sys.exit()
     i= i + 1     
 
-host = os.uname()[1]
 # get the oai object
 oai = openair('localdomain','localhost')
 #start_time = time.time()  # datetime.datetime.now()
 try: 
     user = getpass.getuser()
     print '\n******* Note that the user <'+user+'> should be a sudoer *******\n'
-    print '******* Connecting to the localhost <'+host+'> to perform the test *******\n'
+    print '******* Connecting to the localhost to perform the test *******\n'
    
     if not pw :
         print "username: " + user 
@@ -105,30 +96,21 @@ except :
 
 test = 'test02'
 ctime=datetime.datetime.utcnow().strftime("%Y-%m-%d.%Hh%M")
-logdir = os.getcwd() + '/PERF_'+host;
+logdir = os.getcwd() + '/PERF';
 logfile = logdir+'/'+user+'.'+test+'.'+ctime+'.txt'  
-#oai.send_nowait('mkdir -p -m 755' + logdir + ';')
-oai.create_dir(logdir,debug)  
+oai.send_nowait('mkdir -p -m 755' + logdir + ';')
+  
 #print '=================start the ' + test + ' at ' + ctime + '=================\n'
 #print 'Results will be reported in log file : ' + logfile
 log.writefile(logfile,'====================start'+test+' at ' + ctime + '=======================\n')
 log.set_debug_level(debug)
 
-oai.kill(user, pw)
-if clean == 1 :
-    oai.cleandir(logdir,debug)   
-
+oai.kill(user, pw)   
 #oai.rm_driver(oai,user,pw)
 
 # start te test cases 
-#compile 
-
-rv=case11.execute(oai, user, pw, host,logfile,logdir,debug)
-if rv != 0 :
-    case12.execute(oai, user, pw, host,logfile,logdir,debug)
-    case13.execute(oai, user, pw, host,logfile,logdir,debug)
-else :
-    print 'Compilation error: skip case 12 and 13'
+case11.execute(oai, user, pw, logfile,logdir)
+case12.execute(oai, user, pw, logfile,logdir)
 
 oai.kill(user, pw) 
 #oai.rm_driver(oai,user,pw)

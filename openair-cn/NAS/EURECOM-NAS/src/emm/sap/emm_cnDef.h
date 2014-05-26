@@ -12,7 +12,7 @@ Product     NAS stack
 
 Subsystem   EPS Core Network
 
-Author      Sebastien Roux, Lionel GAUTHIER
+Author      Sebastien Roux
 
 Description
 
@@ -31,17 +31,13 @@ typedef enum emmcn_primitive_s {
     _EMMCN_AUTHENTICATION_PARAM_RES,
     _EMMCN_AUTHENTICATION_PARAM_FAIL,
     _EMMCN_DEREGISTER_UE,
-    _EMMCN_PDN_CONNECTIVITY_RES, // LG
-    _EMMCN_PDN_CONNECTIVITY_FAIL,// LG
 #endif
     _EMMCN_END
 } emm_cn_primitive_t;
 
 #if defined(EPC_BUILD)
-typedef nas_auth_param_rsp_t        emm_cn_auth_res_t;
-typedef nas_auth_param_fail_t       emm_cn_auth_fail_t;
-typedef nas_pdn_connectivity_rsp_t  emm_cn_pdn_res_t;
-typedef nas_pdn_connectivity_fail_t emm_cn_pdn_fail_t;
+typedef nas_auth_param_rsp_t  emm_cn_auth_res_t;
+typedef nas_auth_param_fail_t emm_cn_auth_fail_t;
 
 typedef struct emm_cn_deregister_ue_s {
     UInt32_t UEid;
@@ -53,8 +49,6 @@ typedef struct emm_mme_ul_s {
         emm_cn_auth_res_t       *auth_res;
         emm_cn_auth_fail_t      *auth_fail;
         emm_cn_deregister_ue_t   deregister;
-        emm_cn_pdn_res_t        *emm_cn_pdn_res;
-        emm_cn_pdn_fail_t       *emm_cn_pdn_fail;
     } u;
 } emm_cn_t;
 #endif

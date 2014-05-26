@@ -375,7 +375,7 @@ void sctp_send_data(instance_t instance, task_id_t task_id, sctp_data_req_t *sct
                      sctp_data_req_p->buffer_length, NULL, 0,
                      htonl(sctp_cnx->ppid), 0, sctp_data_req_p->stream, 0, 0) < 0) {
         SCTP_ERROR("Sctp_sendmsg failed: %s\n", strerror(errno));
-        /* TODO: notify upper layer */
+        /* TODO: notify upper lkayer */
         return;
     }
 
@@ -549,7 +549,7 @@ inline void sctp_eNB_read_from_socket(struct sctp_cnx_list_elm_s *sctp_cnx)
     } else {
         sctp_cnx->nb_messages++;
 
-        if (ntohl(sinfo.sinfo_ppid) != sctp_cnx->ppid) {
+        if (sinfo.sinfo_ppid != sctp_cnx->ppid) {
             /* Mismatch in Payload Protocol Identifier,
              * may be we received unsollicited traffic from stack other than S1AP.
              */

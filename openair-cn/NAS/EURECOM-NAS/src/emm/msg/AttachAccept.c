@@ -157,45 +157,39 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     int encoded = 0;
     int encode_result = 0;
 
-    LOG_FUNC_IN;
-
     /* Checking IEI and pointer */
     CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, ATTACH_ACCEPT_MINIMUM_LENGTH, len);
 
     *(buffer + encoded) = (encode_u8_eps_attach_result(&attach_accept->epsattachresult) & 0x0f);
     encoded++;
     if ((encode_result = encode_gprs_timer(&attach_accept->t3412value, 0, buffer
-         + encoded, len - encoded)) < 0) {        //Return in case of error
-        LOG_TRACE(WARNING, "Failed encode_gprs_timer");
-        LOG_FUNC_RETURN(encode_result);
-    } else
+         + encoded, len - encoded)) < 0)        //Return in case of error
+        return encode_result;
+    else
         encoded += encode_result;
 
     if ((encode_result =
          encode_tracking_area_identity_list(&attach_accept->tailist, 0, buffer
-         + encoded, len - encoded)) < 0) {       //Return in case of error
-        LOG_TRACE(WARNING, "Failed encode_tracking_area_identity_list");
-        LOG_FUNC_RETURN(encode_result);
-    } else
+         + encoded, len - encoded)) < 0)        //Return in case of error
+        return encode_result;
+    else
         encoded += encode_result;
 
     if ((encode_result =
          encode_esm_message_container(&attach_accept->esmmessagecontainer, 0,
-         buffer + encoded, len - encoded)) < 0) {       //Return in case of error
-        LOG_TRACE(WARNING, "Failed encode_esm_message_container");
-        LOG_FUNC_RETURN(encode_result);
-    } else
+         buffer + encoded, len - encoded)) < 0)        //Return in case of error
+        return encode_result;
+    else
         encoded += encode_result;
 
     if ((attach_accept->presencemask & ATTACH_ACCEPT_GUTI_PRESENT)
         == ATTACH_ACCEPT_GUTI_PRESENT)
     {
         if ((encode_result = encode_eps_mobile_identity(&attach_accept->guti,
-             ATTACH_ACCEPT_GUTI_IEI, buffer + encoded, len - encoded)) < 0) {
+             ATTACH_ACCEPT_GUTI_IEI, buffer + encoded, len - encoded)) < 0)
             // Return in case of error
-            LOG_TRACE(WARNING, "Failed encode_eps_mobile_identity");
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -205,11 +199,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
         if ((encode_result =
              encode_location_area_identification(&attach_accept->locationareaidentification,
              ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_IEI, buffer + encoded,
-             len - encoded)) < 0) {
-            LOG_TRACE(WARNING, "Failed encode_location_area_identification");
+             len - encoded)) < 0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -218,11 +211,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     {
         if ((encode_result = encode_mobile_identity(&attach_accept->msidentity,
              ATTACH_ACCEPT_MS_IDENTITY_IEI, buffer + encoded, len - encoded)) <
-             0) {
-            LOG_TRACE(WARNING, "Failed encode_mobile_identity");
+             0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -231,10 +223,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     {
         if ((encode_result = encode_emm_cause(&attach_accept->emmcause,
              ATTACH_ACCEPT_EMM_CAUSE_IEI, buffer + encoded, len - encoded)) <
-             0) {
+             0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -243,11 +235,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     {
         if ((encode_result = encode_gprs_timer(&attach_accept->t3402value,
              ATTACH_ACCEPT_T3402_VALUE_IEI, buffer + encoded, len - encoded)) <
-             0) {
-            LOG_TRACE(WARNING, "Failed encode_gprs_timer");
+             0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -256,11 +247,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     {
         if ((encode_result = encode_gprs_timer(&attach_accept->t3423value,
              ATTACH_ACCEPT_T3423_VALUE_IEI, buffer + encoded, len - encoded)) <
-             0) {
-            LOG_TRACE(WARNING, "Failed encode_gprs_timer");
+             0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -269,11 +259,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
     {
         if ((encode_result = encode_plmn_list(&attach_accept->equivalentplmns,
              ATTACH_ACCEPT_EQUIVALENT_PLMNS_IEI, buffer + encoded, len -
-             encoded)) < 0) {
-            LOG_TRACE(WARNING, "Failed encode_plmn_list");
+             encoded)) < 0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -283,11 +272,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
         if ((encode_result =
              encode_emergency_number_list(&attach_accept->emergencynumberlist,
              ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_IEI, buffer + encoded, len -
-             encoded)) < 0) {
-            LOG_TRACE(WARNING, "Failed encode_emergency_number_list");
+             encoded)) < 0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -297,11 +285,10 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
         if ((encode_result =
              encode_eps_network_feature_support(&attach_accept->epsnetworkfeaturesupport,
              ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_IEI, buffer + encoded,
-             len - encoded)) < 0) {
-            LOG_TRACE(WARNING, "Failed encode_eps_network_feature_support");
+             len - encoded)) < 0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
@@ -311,14 +298,13 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
         if ((encode_result =
              encode_additional_update_result(&attach_accept->additionalupdateresult,
              ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_IEI, buffer + encoded, len
-             - encoded)) < 0) {
-            LOG_TRACE(WARNING, "Failed encode_additional_update_result");
+             - encoded)) < 0)
             // Return in case of error
-            LOG_FUNC_RETURN(encode_result);
-        } else
+            return encode_result;
+        else
             encoded += encode_result;
     }
 
-    LOG_FUNC_RETURN(encoded);
+    return encoded;
 }
 

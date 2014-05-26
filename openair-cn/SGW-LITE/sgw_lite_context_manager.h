@@ -192,7 +192,7 @@ typedef struct sgw_eps_bearer_context_information_s {
     void                  *trxn;
     uint32_t               peer_ip;
 
-    SgwCreateSessionRequest saved_message;
+    MessageDef*      initial_message_p;
 } sgw_eps_bearer_context_information_t;
 
 /********************************
