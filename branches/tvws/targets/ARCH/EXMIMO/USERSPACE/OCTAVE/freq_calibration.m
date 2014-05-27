@@ -11,7 +11,7 @@ cables_loss_dB = 6;    % we need to account for the power loss between the signa
 dual_tx = 0;
 tdd = 1;
 
-fc = 1907600e3;   % this has to be the same as in the config file
+fc = 1912600e3;   % this has to be the same as in the config file
 fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;
@@ -56,7 +56,9 @@ do
   fc
   freq_rx = fc*[1 0 0 0];
   freq_tx = freq_rx+1920000;
+
   oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rx_gain,tx_gain,0,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal);
+
 
   i=i+1;
   sleep(1);

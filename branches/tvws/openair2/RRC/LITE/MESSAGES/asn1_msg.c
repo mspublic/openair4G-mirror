@@ -981,8 +981,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
     sib2_mbsfn_SubframeConfig1= CALLOC(1,sizeof(*sib2_mbsfn_SubframeConfig1));
     memset((void*)sib2_mbsfn_SubframeConfig1,0,sizeof(*sib2_mbsfn_SubframeConfig1));
     
-    sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
-    sib2_mbsfn_SubframeConfig1->radioframeAllocationOffset= 1;
+    sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n1;
+    sib2_mbsfn_SubframeConfig1->radioframeAllocationOffset= 0;
     sib2_mbsfn_SubframeConfig1->subframeAllocation.present= MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
     sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf= MALLOC(1);
     sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.size= 1;
@@ -991,7 +991,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x08<<2;// shift 2 cuz 2last bits are unused.
     } 
     else {/// 111000
-      sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x38<<2;
+      sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x3F<<2;
     }
     ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
     
@@ -1002,7 +1002,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       memset((void*)sib2_mbsfn_SubframeConfig2,0,sizeof(*sib2_mbsfn_SubframeConfig2));
     
       sib2_mbsfn_SubframeConfig2->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
-      sib2_mbsfn_SubframeConfig2->radioframeAllocationOffset= 1;
+      sib2_mbsfn_SubframeConfig2->radioframeAllocationOffset= 0;
       sib2_mbsfn_SubframeConfig2->subframeAllocation.present= MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
       sib2_mbsfn_SubframeConfig2->subframeAllocation.choice.oneFrame.buf= MALLOC(1);
       sib2_mbsfn_SubframeConfig2->subframeAllocation.choice.oneFrame.size= 1;
@@ -2003,8 +2003,8 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
     mbsfn_SubframeConfig1= CALLOC(1,sizeof(*mbsfn_SubframeConfig1));
     memset((void*)mbsfn_SubframeConfig1,0,sizeof(*mbsfn_SubframeConfig1));
     // 
-    mbsfn_SubframeConfig1->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
-    mbsfn_SubframeConfig1->radioframeAllocationOffset= 1;
+    mbsfn_SubframeConfig1->radioframeAllocationPeriod= MBSFN_SubframeConfig__radioframeAllocationPeriod_n1;
+    mbsfn_SubframeConfig1->radioframeAllocationOffset= 0;
     mbsfn_SubframeConfig1->subframeAllocation.present= MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
     mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf= MALLOC(1);
     mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.size= 1;
@@ -2016,7 +2016,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 	mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x08<<2;// shift 2bits cuz 2last bits are unused.
       } 
       else {   //111000
-	mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x38<<2;
+	mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x3F<<2;
       }
       break;
     case 1:

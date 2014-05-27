@@ -29,7 +29,8 @@ UE1noL2:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue1 
 UE2:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2;sleep 1;popall:control_c
 UE2prach:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --debug-ue-prach;sleep 1;popall:control_c
 UE2noL2:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -U -d -C 1907600000 -F ue2 --no-L2-connect;sleep 1;popall:control_c
-#eNB0:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -C 1907600000 -d -V;sleep 1;popall:control_c
+eNB0:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -C 1551800000 -d -D50000000 -M;sleep 1;popall:control_c
+eNB0_tvws:lxrt+sem+mbx+fifos+msg+fifos:!sudo ./lte-softmodem -c 58 -g 25 -d -M;sleep 1;popall:control_c
 #eNB0:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -C 1907598252 -d -V;sleep 1;popall:control_c
 eNB0:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -d -O../../PROJECTS/GENERIC-LTE-EPC/CONF/enb.sfr.sud.conf -V -K /tmp/itti_eNB0.log;sleep 1;popall:control_c
 eNB1:lxrt+sem+mbx+msg+fifos:!sudo ./lte-softmodem -C 1907600000 -F ex2_2 -d;sleep 1;popall:control_c
@@ -38,4 +39,3 @@ dot11:lxrt+sem+mbx+msg+fifos:!sudo ./dot11 -C 1907600000 -d;sleep 1;popall:contr
 dot11_tx_test: lxrt+sem+mbx+msg+fifos:!sudo ./dot11 -C 1907600000 -d -t;sleep 1;popall:control_c
 eNB2_750:lxrt+sem+mbx+msg+fifos:!sudo ./synctest_eNB -C 746000000 -F enb1tx_750 -d;sleep 1;popall:control_c
 eNB2_1900:lxrt+sem+mbx+msg+fifos:!sudo ./synctest_eNB -C 19076000000 -F enb1tx_1900 -d;sleep 1;popall:control_c
-emos-raw:lxrt+sem+mbx+msg+fifos:!sudo ./emos-raw -d -V;sleep 1;popall:control_c

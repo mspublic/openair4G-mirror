@@ -1,12 +1,13 @@
-%fc  = 2660000000;
-fc  = 1907600000;
-%fc = 859.5e6;
 
+%fc  = 2660000000;
+%fc  = 1907600000;
+%fc = 859.5e6;
+fc = 1551800000;
 rxgain=0;
-txgain=25;
+txgain=20;
 eNB_flag = 0;
 card = 0;
-active_rf = [1 1 1 0];
+active_rf = [1 0 0 0];
 autocal = [1 1 1 1];
 resampling_factor = [2 2 2 2];
 limeparms;
@@ -35,15 +36,21 @@ rffe_rxg_final = 61*[1 1 1 1];
 rffe_band = B19G_TDD*[1 1 1 1];
 
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal,resampling_factor);
-amp = pow2(14)-1;
+amp = 32768; %pow2(14)-1;
 n_bit = 16;
 
 s = zeros(76800*4,4);
 
-select = 1;
+select = 0;
 
 switch(select)
 
+case 0
+  s(1:76800,1) = floor(amp * OFDM_TX_FRAME(512,199,128,120,1))*2;
+  s(1:76800,2) = amp * OFDM_TX_FRAME(512,199,128,120,1);
+s(1:76800,3) = zeros(1,76800);
+s(1:76800,4) = zeros(1,76800);
+ 
 case 1
   s(:,1) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
   s(:,2) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
