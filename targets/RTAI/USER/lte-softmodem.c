@@ -205,6 +205,7 @@ static uint32_t                      downlink_frequency[4] =     {1907600000,190
 static int32_t                      uplink_frequency_offset[4]= {-120000000,-120000000,-120000000,-120000000};
 static char                    *conf_config_file_name = NULL;
 
+
 static char                    *itti_dump_file = NULL;
 
 static char                     rxg_fname[100];
@@ -234,7 +235,7 @@ static uint32_t                      rf_vcocal[4] =      {910,910,910,910};
 static uint32_t                      rf_vcocal_850[4] =  {2015, 2015, 2015, 2015};
 static uint32_t                      rf_rxdc[4] =        {32896,32896,32896,32896};
 static uint32_t                      rxgain[4] =         {20,20,20,20};
-static uint32_t                      txgain[4] =         {20,20,20,20};
+static uint32_t                      txgain[4] =         {25,25,25,25};
 
 static runmode_t                mode;
 static int                      rx_input_level_dBm;
@@ -250,6 +251,9 @@ static int                      mbox_bounds[20] =   {8,16,24,30,38,46,54,60,68,7
 //static int                      mbox_bounds[20] =   {6,14,22,28,36,44,52,58,66,74,82,88,96,104,112,118,126,134,142, 148}; ///boundaries of slots in terms ob mbox counter rounded up to even numbers
 
 static LTE_DL_FRAME_PARMS      *frame_parms;
+
+int tvws_flag=0;
+int eMBMS_active = 0;
 
 unsigned int build_rflocal(int txi, int txq, int rxi, int rxq)
 {
@@ -762,7 +766,6 @@ static void *eNB_thread(void *arg)
             if (fs4_test==0)
               {
                 phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[0], 0, no_relay,NULL);
-#ifndef IFFT_FPGA
                 slot_offset_F = (next_slot)*
                                 (PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size)*
                                 ((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7);
@@ -775,63 +778,89 @@ static void *eNB_thread(void *arg)
 
                     for (aa=0; aa<PHY_vars_eNB_g[0]->lte_frame_parms.nb_antennas_tx; aa++)
                       {
-                        if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == 1)
-                          {
-                            PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
-#ifdef BIT8_TX
-                                         &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
-#else
-                                         dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
-#endif
-                                         PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
-                                         6,
-                                         PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
-                                         PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
-                                         PHY_vars_eNB_g[0]->lte_frame_parms.rev,
-                                         CYCLIC_PREFIX);
-                          }
-                        else
-                          {
-                            normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
-#ifdef BIT8_TX
-                                              &PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset>>1],
-#else
-                                              dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
-#endif
-                                              7,
-                                              &(PHY_vars_eNB_g[0]->lte_frame_parms));
-                          }
+			if (is_pmch_subframe(frame,next_slot>>1,frame_parms)) {
+			  if ((next_slot%2)==0) {
+			    PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],        // input
+					 dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[aa][slot_offset],         // output
+					 frame_parms->log2_symbol_size,                // log2_fft_size
+					 12,                 // number of symbols
+					 frame_parms->ofdm_symbol_size>>2,               // number of prefix samples
+					 frame_parms->twiddle_ifft,  // IFFT twiddle factors
+					 frame_parms->rev,           // bit-reversal permutation
+					 CYCLIC_PREFIX);
+			    
+			    if (frame_parms->Ncp == EXTENDED)
+			      PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],        // input
+					   dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[aa][slot_offset],         // output
+					   frame_parms->log2_symbol_size,                // log2_fft_size
+					   2,                 // number of symbols
+					   frame_parms->nb_prefix_samples,               // number of prefix samples
+					   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+					   frame_parms->rev,           // bit-reversal permutation
+					   CYCLIC_PREFIX);
+			    else {
+			      normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+						dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[aa][slot_offset],
+						2,
+						frame_parms);
+			    }      
+			  }
+			}
+			else { // not MBSFN
+			  if (PHY_vars_eNB_g[0]->lte_frame_parms.Ncp == EXTENDED)
+			    {
+			      PHY_ofdm_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+					   dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+					   PHY_vars_eNB_g[0]->lte_frame_parms.log2_symbol_size,
+					   6,
+					   PHY_vars_eNB_g[0]->lte_frame_parms.nb_prefix_samples,
+					   PHY_vars_eNB_g[0]->lte_frame_parms.twiddle_ifft,
+					   PHY_vars_eNB_g[0]->lte_frame_parms.rev,
+					   CYCLIC_PREFIX);
+			    }
+			  else
+			    {
+			      normal_prefix_mod(&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
+						dummy_tx_buffer,//&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][slot_offset],
+						7,
+						&(PHY_vars_eNB_g[0]->lte_frame_parms));
+			    }
+			}
 #ifdef EXMIMO
-                        for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti/2; i++)
-                          {
-                            tx_offset = (int)slot_offset+time_offset[aa]+i;
-                            if (tx_offset<0)
-                              tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
-                            if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti))
-                              tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
-                            ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
-                              ((short*)dummy_tx_buffer)[2*i]<<4;
-                            ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
-                              ((short*)dummy_tx_buffer)[2*i+1]<<4;
-                          }
+			if (tvws_flag == 0) {
+			  for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti/2; i++)
+			    {
+			      tx_offset = (int)slot_offset+time_offset[aa]+i;
+			      if (tx_offset<0)
+				tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
+			      if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti))
+				tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
+			      ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
+				((short*)dummy_tx_buffer)[2*i]<<4;
+			      ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
+				((short*)dummy_tx_buffer)[2*i+1]<<4;
+			    }
+			}
+			else {  // Conjugate signal for negative spectral image
+			  for (i=0; i<PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti/2; i++)
+			    {
+			      tx_offset = (int)slot_offset+time_offset[aa]+i;
+			      if (tx_offset<0)
+				tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
+			      if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti))
+				tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNB_g[0]->lte_frame_parms.samples_per_tti;
+			      ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
+				((short*)dummy_tx_buffer)[2*i]<<4;
+			      ((short*)&PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
+				-((short*)dummy_tx_buffer)[2*i+1]<<4;
+			    }
+			}
 #endif //EXMIMO
                       }
                   }
               }
-
-#endif //IFFT_FPGA
-            /*
-            if (frame%100==0)
-              LOG_D(HW,"hw_slot %d (after): DAQ_MBOX %d\n",hw_slot,DAQ_MBOX[0]);
-            */
-          }
-
-        /*
-        if ((slot%2000)<10)
-        LOG_D(HW,"fun0: doing very hard work\n");
-        */
-
-        slot++;
+	  }
+	slot++;
         if (slot==20) {
           slot=0;
           frame++;
@@ -1097,16 +1126,14 @@ static void get_options (int argc, char **argv)
   char                          line[1000];
   int                           l;
   const Enb_properties_array_t *enb_properties;
+  char scpi_cmd_string[1000];
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
-
     LONG_OPTION_CALIB_UE_RX,
     LONG_OPTION_CALIB_UE_RX_MED,
     LONG_OPTION_CALIB_UE_RX_BYP,
-
     LONG_OPTION_DEBUG_UE_PRACH,
-
     LONG_OPTION_NO_L2_CONNECT,
   };
 
@@ -1118,7 +1145,7 @@ static void get_options (int argc, char **argv)
     {"no-L2-connect",   no_argument,        NULL, LONG_OPTION_NO_L2_CONNECT},
     {NULL, 0, NULL, 0}};
 
-  while ((c = getopt_long (argc, argv, "C:dF:K:qO:ST:UV",long_options,NULL)) != -1)
+  while ((c = getopt_long (argc, argv, "C:dF:K:qO:ST:UVg:c:M",long_options,NULL)) != -1)
     {
       switch (c)
         {
@@ -1165,7 +1192,7 @@ static void get_options (int argc, char **argv)
           do_forms=1;
 #endif
           break;
-
+	  
         case 'F':
           sprintf(rxg_fname,"%srxg.lime",optarg);
           rxg_fd = fopen(rxg_fname,"r");
@@ -1225,6 +1252,29 @@ static void get_options (int argc, char **argv)
             printf("%s not found, running with defaults\n",rfdc_fname);
           break;
 
+        case 'g':
+          txgain[0] = (uint32_t) atol(optarg);
+          txgain[1] = (uint32_t) atol(optarg);
+          txgain[2] = (uint32_t) atol(optarg);
+          txgain[3] = (uint32_t) atol(optarg);
+          break;
+        case 'c':  // This is for TVWS generation on LIMES 0-3 + external mixer
+	  // LIMES 0-2 are at 1910 MHz, LIME 3 is at RF + 1910MHz
+          downlink_frequency[0] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000;
+	  downlink_frequency[1] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000;
+          downlink_frequency[2] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000;
+          downlink_frequency[3] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000; 
+	  sprintf(scpi_cmd_string,"EthernetRawCommand 192.168.12.202 \"SOURce:FREQuency:CW %u\"",1551800000+474000000+(atol(optarg)-21)*8000000);
+	  printf("SCPI String for SMB100A : %s\n",scpi_cmd_string);
+	  system((const char*)scpi_cmd_string);
+	  tvws_flag = 1;
+	  txgain[3] = (uint32_t) 15;
+          break;
+	case 'M':
+#ifdef OPENAIR2
+          eMBMS_active=1;
+#endif
+	  break;
         case 'K':
 #if defined(ENABLE_ITTI)
           itti_dump_file = strdup(optarg);
@@ -1320,9 +1370,9 @@ int main(int argc, char **argv) {
 
   frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
   /* Set some default values that may be overwritten while reading options */
-  frame_parms->frame_type         = 1; /* TDD */
-  frame_parms->tdd_config         = 3;
-  frame_parms->tdd_config_S       = 0;
+  frame_parms->frame_type         = FDD; /* FDD */
+  //  frame_parms->tdd_config         = 3;
+  //  frame_parms->tdd_config_S       = 0;
 
   get_options (argc, argv); //Command-line options
 
@@ -1603,7 +1653,7 @@ int main(int argc, char **argv) {
   // check if the software matches firmware
   if (p_exmimo_id->board_swrev!=BOARD_SWREV_CNTL2) {
     printf("Software revision %d and firmware revision %d do not match. Please update either the firmware or the software!\n",BOARD_SWREV_CNTL2,p_exmimo_id->board_swrev);
-    exit(-1);
+//    exit(-1);
   }
 
   if (p_exmimo_id->board_swrev>=9)
@@ -1625,13 +1675,20 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rf_mode[ant] += (TXEN + DMAMODE_TX);
   for (ant=0;ant<frame_parms->nb_antennas_rx;ant++)
     p_exmimo_config->rf.rf_mode[ant] += (RXEN + DMAMODE_RX);
-  for (ant=max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant<4;ant++) {
-    p_exmimo_config->rf.rf_mode[ant] = 0;
-    carrier_freq[ant] = 0; //this turns off all other LIMEs
+  if (tvws_flag == 0) {
+    for (ant=max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant<4;ant++) {
+      p_exmimo_config->rf.rf_mode[ant] = 0;
+      carrier_freq[ant] = 0; //this turns off all other LIMEs
+    }
     downlink_frequency[ant] = 0; //this turns off all other LIMEs
     uplink_frequency_offset[ant] = 0;
   }
-
+  else {
+    for (ant=max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant<3;ant++) {
+      p_exmimo_config->rf.rf_mode[ant] = 0;
+      carrier_freq[ant] = 0; //this turns off all other LIMEs
+    }
+  }
   /*
   ant_offset = 0;
   for (ant=0; ant<4; ant++) {
@@ -1650,6 +1707,7 @@ int main(int argc, char **argv) {
 
   for (ant = 0; ant<4; ant++) { 
     p_exmimo_config->rf.do_autocal[ant] = 1;
+
     if (UE_flag==0) {
       /* eNB */
       if (frame_parms->frame_type == FDD) {
@@ -1667,6 +1725,7 @@ int main(int argc, char **argv) {
         p_exmimo_config->rf.rf_freq_tx[ant] = carrier_freq[ant];
       }
     }
+
 
     p_exmimo_config->rf.rx_gain[ant][0] = rxgain[ant];
     p_exmimo_config->rf.tx_gain[ant][0] = txgain[ant];
@@ -1698,7 +1757,7 @@ int main(int argc, char **argv) {
   mac_xface = malloc(sizeof(MAC_xface));
   
 #ifdef OPENAIR2
-  int eMBMS_active=0;
+
 
   l2_init(frame_parms,eMBMS_active,
           0,// cba_group_active
@@ -1795,6 +1854,12 @@ int main(int argc, char **argv) {
           ((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+6] = 0;
         }
     }
+      if (tvws_flag==1) {
+	p_exmimo_config->rf.rf_mode[3] += (TXEN + DMAMODE_TX);
+	for (i=0; i<frame_parms->samples_per_tti*10; i++) {
+	  PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][3][i] = 0x80008000;
+	}
+      }
   }
 
   openair0_dump_config(card);
@@ -1817,6 +1882,16 @@ int main(int argc, char **argv) {
          p_exmimo_config->rf.rf_rxdc[0],
          p_exmimo_config->rf.rf_local[0],
          p_exmimo_config->rf.rf_vcocal[0]);
+
+  printf("EXMIMO_CONFIG: freq_tx %ud %ud %ud %ud, freq_rx %ud %ud %ud %ud\n",
+	 p_exmimo_config->rf.rf_freq_tx[0],
+	 p_exmimo_config->rf.rf_freq_tx[1],
+	 p_exmimo_config->rf.rf_freq_tx[2],
+	 p_exmimo_config->rf.rf_freq_tx[3],
+	 p_exmimo_config->rf.rf_freq_rx[0],
+	 p_exmimo_config->rf.rf_freq_rx[1],
+	 p_exmimo_config->rf.rf_freq_rx[2],
+	 p_exmimo_config->rf.rf_freq_rx[3]);
   
   for (ant=0;ant<4;ant++)
     p_exmimo_config->rf.do_autocal[ant] = 0;
@@ -2131,7 +2206,7 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
         phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j] = 16-j;
       }
     }
-    for (i=0;i<frame_parms->nb_antennas_tx;i++) {
+    for (i=0;i<4;i++){ //frame_parms->nb_antennas_tx;i++) {
       free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
       phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (int32_t*) openair0_exmimo_pci[card].dac_head[i+carrier];
 

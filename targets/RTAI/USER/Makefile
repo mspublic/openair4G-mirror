@@ -266,8 +266,8 @@ drivers:
 run: condtest
 	rtai-load condtest --verbose
 
-run_eNB_test: 
-	rtai-load eNB_test --verbose
+run_eNB0_tvws: 
+	rtai-load eNB0_tvws --verbose
 
 run_eNB: 
 	rtai-load eNB --verbose
@@ -322,6 +322,9 @@ run_UE2:
 
 run_eNB0:
 	rtai-load eNB0 --verbose
+
+run_eNB0test:
+	rtai-load eNB0test --verbose
 
 run_eNB1:
 	rtai-load eNB1 --verbose

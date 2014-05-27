@@ -3113,12 +3113,15 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,uint8_t last_slot, PHY_VARS_UE *phy_v
 			       0,
 			       0,0);
 	}
+#ifdef PHY_ABSTRACTION
 	else { // abstraction
+
 	  ret = dlsch_decoding_emul(phy_vars_ue,
 				    (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),
 				    5, // PMCH
 				    eNB_id);
 	}
+#endif
 	if (mcch_active == 1)
 	  phy_vars_ue->dlsch_mcch_trials[sync_area][0]++;
 	else 

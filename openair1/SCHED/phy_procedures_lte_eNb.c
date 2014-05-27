@@ -1033,8 +1033,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,ui
   uint32_t ul_frame;
 #ifdef Rel10
   MCH_PDU *mch_pduP;
-  MCH_PDU  mch_pdu;
+  MCH_PDU  mch_pdu,dummy_mch_pdu;
   uint8_t sync_area=255;
+
+  dummy_mch_pdu.mcch_active=0;
+  dummy_mch_pdu.msi_active=0;
+  dummy_mch_pdu.sync_area = 0;
+  dummy_mch_pdu.mcs = 9;
+  dummy_mch_pdu.Pdu_size = TBStable[get_I_TBS(dummy_mch_pdu.mcs)][phy_vars_eNB->lte_frame_parms.N_RB_DL-1];
 #endif
 #if defined(SMBV) && !defined(EXMIMO)
   // counts number of allocations in subframe
@@ -1096,10 +1102,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 		    phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,mch_pduP->mcs,
 		    phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->TBS>>3);
 	    else {
-	      LOG_D(PHY,"[DeNB %d] Frame %d subframe %d : Do not transmit MCH pdu for MBSFN sync area %d (%s)\n",
+	      LOG_I(PHY,"[DeNB %d] Frame %d subframe %d : Do not transmit MCH pdu for MBSFN sync area %d (%s)\n",
 		    phy_vars_eNB->Mod_id,phy_vars_eNB->frame,next_slot>>1,mch_pduP->sync_area,
 		    (mch_pduP->Pdu_size == 0)? "Empty MCH PDU":"Let RN transmit for the moment");
-	      mch_pduP = NULL;
+	      mch_pduP = &dummy_mch_pdu;//NULL;
 	    }
 	    break;
 	  case multicast_relay:
