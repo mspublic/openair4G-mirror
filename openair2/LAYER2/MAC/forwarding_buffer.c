@@ -438,51 +438,41 @@ mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_
    return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
  }
  else{ // size 
- 	if(!(seq_num<0) && !(HARQ_proccess_ID<0)){
- 		ptr_t = avl_tree_find(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, seq_num);
- 		if(ptr_t!=NULL){
- 			ptr_k = ptr_t->packet->avl_node_pdu_size;
- 			if( ptr_k!=NULL && ptr_t->key == ptr_t->packet->seq_num && ptr_t->packet->HARQ_proccess_ID==HARQ_proccess_ID){
- 				if(ptr_k->key!=ptr_t->key){
- 				//printf("Error data_req ptr_k->key!=ptr_t->key (%d, %d)\n",ptr_k->key,ptr_t->key);
- 					LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() mismatch/incompatible keys in the avl_trees\n");
- 					mac_xface->macphy_exit("mac_buffer_data_req() mismatch/incompatible keys in the avl_trees");
- 				}
- 				if(ptr_k->packet!=ptr_t->packet){
- 				//printf("Error data_req ptr_k->packet!=ptr_t->packet\n");
- 				LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() mismatch/incompatible packet in the avl_trees\n");
- 				mac_xface->macphy_exit("mac_buffer_data_req() mismatch/incompatible packet in the avl_trees");
- 				}
- 				if(ptr_t->packet->pdu_size == ptr_k->packet->pdu_size){ 
- 					if(ptr_t->packet->pdu_size <= buflen){
- 						if(ptr_t->packet==help_head){
- 							return  (mem_element_t*)(mac_buffer_remove_head(Mod_id, b_index, ptr_t, ptr_k));
- 						}
- 						else if(ptr_t->packet==help_tail){
- 							return  (mem_element_t*)(mac_buffer_remove_tail(Mod_id, b_index, ptr_t, ptr_k));
- 						}
-	 					else{			 
-	 						return (mem_element_t*) (mac_buffer_remove_middle(Mod_id, b_index, ptr_t->packet, ptr_t, ptr_k));
-	 					}
-	 				}
-	 				else{
-					       LOG_E(MAC,"[WARNING] (pdu_size %d > buflen %d) mac_buffer_data_req() packet not found for given seq_num %d and HARQ_proccess_ID %d \n",ptr_t->packet->pdu_size, buflen,seq_num,HARQ_proccess_ID);
-					       return  NULL;	 				
-					   }
-				}
-				else{
-					LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() SIZE mismatch/incompatible packet in the avl_trees\n");
-	  			 	mac_xface->macphy_exit("mac_buffer_data_req() SIZE mismatch/incompatible packet in the avl_trees");
-	 			}
-    		}
-    		else{
-    		 LOG_E(MAC,"[WARNING] mac_buffer_data_req() B packet not found for given seq_num %d and HARQ_proccess_ID %d \n",seq_num,HARQ_proccess_ID);
-       		 return  NULL;
-    		}
-    }else{
+   if(!(seq_num<0) && !(HARQ_proccess_ID<0)){
+     ptr_t = avl_tree_find(mac_buffer_u[Mod_id].mac_buffer_g[b_index]->tree_pdu_seqn, seq_num);
+     if(ptr_t!=NULL){
+       ptr_k = ptr_t->packet->avl_node_pdu_size;
+       if( ptr_k!=NULL && ptr_t->key == ptr_t->packet->seq_num && ptr_t->packet->HARQ_proccess_ID==HARQ_proccess_ID){
+	 if(ptr_k->key!=ptr_t->key){
+	   //printf("Error data_req ptr_k->key!=ptr_t->key (%d, %d)\n",ptr_k->key,ptr_t->key);
+	   LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() mismatch/incompatible keys in the avl_trees\n");
+	   mac_xface->macphy_exit("mac_buffer_data_req() mismatch/incompatible keys in the avl_trees");
+	 }
+	 if(ptr_k->packet!=ptr_t->packet){
+	   //printf("Error data_req ptr_k->packet!=ptr_t->packet\n");
+	   LOG_E(MAC,"[MEM_MGT][WARNING] mac_buffer_data_req() mismatch/incompatible packet in the avl_trees\n");
+	   mac_xface->macphy_exit("mac_buffer_data_req() mismatch/incompatible packet in the avl_trees");
+	 }
+	 if(ptr_t->packet->pdu_size == ptr_k->packet->pdu_size){ 
+	   if(ptr_t->packet->pdu_size <= buflen){
+	     if(ptr_t->packet==help_head){
+	       return  (mem_element_t*)(mac_buffer_remove_head(Mod_id, b_index, ptr_t, ptr_k));
+	     }
+	     else if(ptr_t->packet==help_tail){
+	       return  (mem_element_t*)(mac_buffer_remove_tail(Mod_id, b_index, ptr_t, ptr_k));
+	     }
+	     else{			 
+	       return (mem_element_t*) (mac_buffer_remove_middle(Mod_id, b_index, ptr_t->packet, ptr_t, ptr_k));
+	     }
+	   }
+	   LOG_W(MAC,"ptr_t->packet->pdu_size %d > buflen %d  \n", ptr_t->packet->pdu_size, buflen);
+	 }
+	 LOG_W(MAC,"ptr_t->packet->pdu_size %d != ptr_k->packet->pdu_size %d \n", ptr_t->packet->pdu_size, ptr_k->packet->pdu_size);
+       }
+     }else{
        // I didn't find anything so I return NULL;
        //printf("I did not find a packet anything\n");
-       LOG_E(MAC,"[WARNING] mac_buffer_data_req() C packet not found for given seq_num %d and HARQ_proccess_ID %d \n",seq_num,HARQ_proccess_ID);
+       LOG_E(MAC,"[WARNING] mac_buffer_data_req() packet not found for given seq_num %d and HARQ_proccess_ID %d \n",seq_num,HARQ_proccess_ID);
        return  NULL;
      }
    }
@@ -511,8 +501,6 @@ mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_
    }//end if requested_size<0 
  }//end else
 }
-
-
 
 
 void packet_list_add_tail_2(mem_element_t * elementP, packet_list_t * listP){

@@ -483,7 +483,7 @@ pdcp_run (u32_t frame, u8 eNB_flag, u8 UE_index, u8 eNB_index) {
       }
       for (dst_id = 0; dst_id < NB_eNB_INST; dst_id++) {
 	// generate traffic if the ue is rrc reconfigured state 
-	if ((frame > 200) && dst_id != module_id && eNB_flag) { 
+	if ((frame > 210) && dst_id != module_id && eNB_flag) { 
 	  otg_pkt=(u8*) packet_gen(module_id, dst_id, ctime, &pkt_size);
 	  if (otg_pkt != NULL) {
 	    rab_id = (MAX_NUM_RB * NUMBER_OF_UE_MAX) + VLID_OFFSET; 

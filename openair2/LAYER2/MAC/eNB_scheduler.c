@@ -1634,11 +1634,11 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 //} 
  u16 nb_available_rb=0;
  int nb_rbg = 0;
- nb_rbg = get_nb_rbg(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL);
+ nb_rbg = get_nb_rbg(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1);
  
   for(i = 0; i < nb_rbg; i++){
     if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i])
-      nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL, i);
+      nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1, i);
     
     //  LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, nb_rbg %d,dl_rbg_mask[%d] %d ,nb_available_rb %d  \n",
     //	  Mod_id,frame,subframe,nb_rbg, i, mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i], nb_available_rb);
@@ -1647,31 +1647,43 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
   first_rb = (Mod_id ==0 ) ? 1 : nb_available_rb + 1 ; 
   LOG_I(MAC,"[eNB %d][schedule_ulsch] first rb %d\n", Mod_id, first_rb);
 
- for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-  
-  //We allocate the corntis first
-  // i is the lcid for collaborative channel
-  for (i=0;i<eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;i++) {
-    cornti = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i];
-    if (cornti == 0) continue;
-    cornti_served =0;
-    for (ii=0 ; ii< MAX_VLINK_PER_CH;ii++){
-      if (served_cornti[ii] == cornti ){
-       // cornti_index = ii;
-        cornti_served =1;
-        break;
-      }
-    }
-    if (! cornti_served){
-         LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling ULSCH UE %d, cornti %x, ncc %d  first_rb %d \n",
-          Mod_id,frame,subframe,UE_id,cornti, *nCCE,  first_rb);
-     // schedule_ue(Mod_id,cornti,1,UE_id,frame,subframe,pre_nb_available_rbs,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
-      schedule_ulsch_cornti(Mod_id, cornti, cooperation_flag, frame, subframe, sched_subframe, DCI_pdu, nCCE, &nCCE_available, &first_rb,&nb_available_rb);
-      served_cornti[i]=cornti;
+  int ul_sr_active =0;
+  for (UE_id=0;UE_id<granted_UEs;UE_id++) {
+    if (eNB_mac_inst[Mod_id].UE_template[UE_id].ul_SR) {
+      ul_sr_active =1;
+      break;
     }
   }
- }
+
  
+  if (ul_sr_active==0) {
+ 
+   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
+     
+     //We allocate the corntis first
+     // i is the lcid for collaborative channel
+     for (i=0;i<eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.count;i++) {
+       cornti = eNB_mac_inst[Mod_id].UE_template[UE_id].corntis.array[i];
+       if (cornti == 0) continue;
+       cornti_served =0;
+       for (ii=0 ; ii< MAX_VLINK_PER_CH;ii++){
+	 if (served_cornti[ii] == cornti ){
+	   // cornti_index = ii;
+	   cornti_served =1;
+	   break;
+	 }
+       }
+       if (! cornti_served){
+	 LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, scheduling ULSCH UE %d, cornti %x, ncc %d  first_rb %d \n",
+	       Mod_id,frame,subframe,UE_id,cornti, *nCCE,  first_rb);
+	 // schedule_ue(Mod_id,cornti,1,UE_id,frame,subframe,pre_nb_available_rbs,rballoc_sub,dl_pow_off,nCCE_used,nb_available_rb,nCCE);
+	 schedule_ulsch_cornti(Mod_id, cornti, cooperation_flag, frame, subframe, sched_subframe, DCI_pdu, nCCE, &nCCE_available, &first_rb,&nb_available_rb);
+	 served_cornti[i]=cornti;
+       }
+     }
+   }
+ }
+
  first_rb++;
  
  for (i=0;i<NB_RA_PROC_MAX;i++) {
@@ -1683,10 +1695,14 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
    }
  }
  // only allocate normal uplink if there is no cooperation: to simplify 
- if (nCCE_available_before_sched == nCCE_available)
-   schedule_ulsch_rnti(Mod_id, cooperation_flag,  frame, subframe, sched_subframe,  DCI_pdu, nCCE, &nCCE_available, &first_rb, &nb_available_rb);
- 
+ if (nCCE_available_before_sched == nCCE_available) 
+ schedule_ulsch_rnti(Mod_id, cooperation_flag,  frame, subframe, sched_subframe,  DCI_pdu, nCCE, &nCCE_available, &first_rb, &nb_available_rb);
+
 }
+
+
+ 
+
 
 
 
@@ -1764,7 +1780,7 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
        else  // increment RV
 	 mcs = round + 28; 
        
-       LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
+       LOG_D(MAC,"[eNB %d] ULSCH scheduler rnti : Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
        
        LOG_N(MAC,"[eNB %d] Limit the MCS for the ULSCH  links to 15 \n", Mod_id);
        mcs = 15;
@@ -2003,7 +2019,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	 }
 	 else  // increment RV
 	   mcs = round + 28; 
-	 LOG_D(MAC,"[eNB %d] ULSCH scheduler for CORNTI: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
+	 LOG_D(MAC,"[eNB %d] ULSCH scheduler CORNTI: Ndi %d, mcs %d\n",Mod_id,ndi,mcs);
 	 
 	 LOG_N(MAC,"[eNB %d] Limit the MCS for the ULSCH collaborative links to 15 \n", Mod_id);
 	 mcs = 15;
@@ -5285,10 +5301,10 @@ void schedule_ue_spec(unsigned char Mod_id,u32 frame, unsigned char subframe,u16
   //  for (UE_id=0;(UE_id<granted_UEs) && (nCCE > aggregation);UE_id++) {
 
   // set current available nb_rb and nCCE to maximum
-  nb_rbg = get_nb_rbg(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL);
+  nb_rbg = get_nb_rbg(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1);
   for(i = 0; i < nb_rbg; i++){
     if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i])
-      nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL, i);
+      nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1, i);
   
     //  LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, nb_rbg %d,dl_rbg_mask[%d] %d ,nb_available_rb %d  \n",
     //	  Mod_id,frame,subframe,nb_rbg, i, mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i], nb_available_rb);
@@ -5589,9 +5605,9 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag, u32 frame, u8 subf
     else if 	((mac_xface->lte_frame_parms[Mod_id]->tdd_config == TDD) || //TDD
 		 (mac_xface->lte_frame_parms[Mod_id]->tdd_config == 3) ||
 		 (mac_xface->lte_frame_parms[Mod_id]->tdd_config == 6))
-      //schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag);
-      // schedule_ue_spec(Mod_id,subframe,nprb,&nCCE);
-      fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
+      schedule_ulsch(Mod_id,frame,cooperation_flag,subframe,4,&nCCE);//,calibration_flag); // nn 
+    schedule_ue_spec(Mod_id,frame,subframe,nprb,&nCCE); // nn
+    fill_DLSCH_dci(Mod_id,frame,subframe,RBalloc,0);
     break;
   case 1:
     // TDD, schedule UL for subframe 7 (TDD config 0,1) / subframe 8 (TDD Config 6)
