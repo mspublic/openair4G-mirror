@@ -173,6 +173,6 @@ void mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 *number_of_pac
 
 
 
-mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_num, int requested_size, int HARQ_proccess_ID); 
+mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_num, int requested_size, int HARQ_proccess_ID, int buflen); 
 int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq_num, int pdu_size, int HARQ_proccess_ID);// returns 1 for success otherwise 0 //
 #endif

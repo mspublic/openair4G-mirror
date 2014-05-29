@@ -710,31 +710,31 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
   if (seq_num >= 0) { // only one sdu with the given sn is allowed and HARQ_PID == 0
     LOG_D(MAC,"ue_get_sdu_co() -> mac_buffer_print_all_per_MR() (seq_num>0)\n");
     mac_buffer_print_all_per_MR(Mod_id);
-    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, seq_num, -1, 0); 
+    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, seq_num, -1, 0, buflen); 
     
   }else { // if seq num not defined, multiplex multiple MAC PDUs into ULSCH buffer until the buflen is reached
     // for the moment, we consider only one MAC PDU avoiding additional header generation
     LOG_D(MAC,"ue_get_sdu_co() -> mac_buffer_print_all_per_MR()\n");
     mac_buffer_print_all_per_MR(Mod_id);
-    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, -1, buflen, -1); 
+    element = mac_buffer_data_req(Mod_id, eNB_index, cornti, -1, buflen, -1, buflen); 
   }
 
   if(element!=NULL){
     LOG_D(MAC,"[UE %d] Requested...!!! MAC PDU with sn %d for eNB index %d and cornti %x (element %p)\n", 
           Mod_id, seq_num, eNB_index, cornti, element);
-  if ((element->data != NULL) && (element->pdu_size <= buflen)) {
-      // no need to generate the header  or send the seq num 
-      memcpy (ulsch_buffer, element->data, element->pdu_size);
-      LOG_D(MAC,"[UE %d][vLINK] Generate ULSCH: buflen %d MAC PDU size %d\n ", buflen, element->pdu_size);
-  }
-  else {
-    if (element->pdu_size > buflen)
-      LOG_E(MAC,"the MAC PDU is greater than the ULSCH buffer \n");
-    else 
-      LOG_I(MAC,"MAC buffer is emety\n");
-  }
-  LOG_D(MAC,"[UE %d]dumping the outgoing mac buffer pdu size %d\n", Mod_id, element->pdu_size);
-  for (i=0; i < element->pdu_size; i++)
+    if ((element->data != NULL) && (element->pdu_size <= buflen)) {
+        // no need to generate the header  or send the seq num 
+        memcpy (ulsch_buffer, element->data, element->pdu_size);
+        LOG_D(MAC,"[UE %d][vLINK] Generate ULSCH: buflen %d MAC PDU size %d\n ", Mod_id, buflen, element->pdu_size);
+    }
+    else{
+      if (element->pdu_size > buflen)
+        LOG_E(MAC,"the MAC PDU is greater than the ULSCH buffer \n");
+      else 
+        LOG_I(MAC,"MAC buffer is empty\n");
+    }
+    LOG_D(MAC,"[UE %d]dumping the outgoing mac buffer pdu size %d\n", Mod_id, element->pdu_size);
+    for (i=0; i < element->pdu_size; i++)
       msg("%x.", ulsch_buffer[i]);
     msg("\n");
  
@@ -742,9 +742,9 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
   for (i=0;i<(buflen-element->pdu_size);i++)
       ulsch_buffer[element->pdu_size+i] = (char)(taus()&0xff);
  
-  LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",Mod_id);
-  UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
-  UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
+    LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",Mod_id);
+    UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
+    UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
   }
   else{
     LOG_D(MAC, "ue_get_sdu_co DATA ELEMENT is NULL\n" );

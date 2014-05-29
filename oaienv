@@ -6,7 +6,6 @@ export OPENAIR3_DIR=$OPENAIR_HOME/openair3
 export OPENAIR_TARGETS=$OPENAIR_HOME/targets
 
 alias  oai='cd $OPENAIR_HOME'
-alias oai0='cd $OPENAIR0_DIR'
 alias oai1='cd $OPENAIR1_DIR'
 alias oai2='cd $OPENAIR2_DIR'
 alias oai3='cd $OPENAIR3_DIR'
