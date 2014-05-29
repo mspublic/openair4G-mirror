@@ -44,8 +44,10 @@
 #include "PHY/CODING/extern.h"
 #include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
-//#define DEBUG_DLSCH_DECODING
 
+#define DEBUG_DLSCH_DECODING
+
+extern double desired_bler;
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
@@ -401,6 +403,28 @@ u32  dlsch_decoding(short *dlsch_llr,
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #endif
+
+
+/*
+ int BLER_MCS[27]={0.09,0.08,0.08,0.08,0.07,0.07,0.07,0.07, 0.06,0.06,
+		   0.05,0.05,0.04,0.04,0.04,0.04,0.04,
+		   0.1, 0.1,0.01,
+ }
+*/
+
+
+ int dlsch_abstraction_bler(u8 mcs, double bler) {
+
+   if (uniformrandom() < bler) {
+     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, bler=%f)\n",mcs,bler);
+    return(0);
+  }
+  else {
+    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, bler=%f)\n",mcs,bler);
+    return(1);
+  }
+
+}
 
  int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, u32 rb_alloc[4], u8 mcs) {
 
@@ -837,8 +861,14 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    ue_id= find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
     *rnti = find_cornti(phy_vars_ue->dlsch_ue[(u32)eNB_id][0]->rnti,PHY_vars_eNB_g[eNB_id2]);
+    if (*rnti) // becasue the template of last ue is selected for  boradcast transmissio
+      ue_id = find_ue(*rnti,PHY_vars_eNB_g[eNB_id2]);
+    else 
+       ue_id= find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    if (ue_id < 0)
+      LOG_E(PHY,"invalid ue id\n");
+    
     // check with cornti
     
     /*    if (ue_id < 0){
@@ -850,19 +880,27 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 	  break;
 	}
       }
-      }*/
-    
+      }
+    if (*rnti != 0x0) 
+      dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_co[0][0];
+    else 
+    */
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
-
+    msg("eNB id %d ue (%d,%x,%x), size %d %d data:  %d %p %p %p \n",
+	eNB_id2, ue_id,phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,*rnti, 
+	dlsch_ue->harq_processes[harq_pid]->TBS>>3,dlsch_eNB->harq_processes[harq_pid]->TBS>>3,
+	PHY_vars_eNB_g[eNB_id2], PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0], dlsch_eNB);
 #ifdef DEBUG_DLSCH_DECODING
     for (i=0;i<dlsch_ue->harq_processes[harq_pid]->TBS>>3;i++)
       msg("%x.",dlsch_eNB->harq_processes[harq_pid]->b[i]);
-    msg("\n current harq pid is %d ue id %d \n", harq_pid, ue_id);
+    msg("\n current harq pid is %d ue id %d enb_id %d\n", harq_pid, ue_id, eNB_id2);
 #endif
 
     // apaposto //
-    if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+    // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
    // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+    
+    if ((dlsch_abstraction_bler(dlsch_eNB->harq_processes[harq_pid]->mcs, desired_bler) == 1) || (*rnti==0x0) )  {
       // reset HARQ 
       dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
       dlsch_ue->harq_processes[harq_pid]->round  = 0;
@@ -877,11 +915,16 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     }
     else {
       // retransmission
-      dlsch_ue->harq_processes[harq_pid]->status = ACTIVE;
+      if (*rnti){
+	dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
+	dlsch_ue->harq_ack[subframe].send_harq_status = 0;
+      }else{
+	dlsch_ue->harq_processes[harq_pid]->status = ACTIVE;
+	dlsch_ue->harq_ack[subframe].send_harq_status = 1;
+      }
       dlsch_ue->harq_processes[harq_pid]->round++;
       dlsch_ue->harq_ack[subframe].ack = 0;
       dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
-      dlsch_ue->harq_ack[subframe].send_harq_status = 1;
       return(1+MAX_TURBO_ITERATIONS);
       }
 

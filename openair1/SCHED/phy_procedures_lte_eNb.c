@@ -1288,7 +1288,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       else {
 	dlsch_encoding_emul(phy_vars_eNB,
 			    DLSCH_pdu,
-			    phy_vars_eNB->dlsch_eNB_SI);
+			    phy_vars_eNB->dlsch_eNB_SI,
+			    0);
       }
 #endif
       phy_vars_eNB->dlsch_eNB_SI->active = 0;
@@ -1385,7 +1386,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       else {
 	dlsch_encoding_emul(phy_vars_eNB,
 			    dlsch_input_buffer,
-			    phy_vars_eNB->dlsch_eNB_ra);
+			    phy_vars_eNB->dlsch_eNB_ra,
+			    0);
       }
 #endif
       LOG_D(PHY,"[eNB %d][RAPROC] Frame %d subframe %d Deactivating DLSCH RA\n",phy_vars_eNB->Mod_id,
@@ -1496,10 +1498,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  }
 	}
 #ifdef PHY_ABSTRACTION
-	else {
+	else { 
 	  dlsch_encoding_emul(phy_vars_eNB,
 			      DLSCH_pdu,
-			      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]);
+			      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0],
+			      phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->cornti_active);
+	  phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->cornti_active = 0; 
 	}
 #endif
 	phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->active = 0;
@@ -2316,8 +2320,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status == 1) {
 #ifdef DEBUG_PHY_PROC
 	//if (((phy_vars_eNB->frame%10) == 0) || (phy_vars_eNB->frame < 50)) 
-	  print_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,0);
+
 #endif
+	print_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,0);
 	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,&phy_vars_eNB->eNB_UE_stats[i]);
 	phy_vars_eNB->eNB_UE_stats[i].rank = phy_vars_eNB->ulsch_eNB[i]->o_RI[0];
       }

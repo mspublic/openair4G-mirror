@@ -61,16 +61,19 @@ forwarding_Table UE_forwardingTable[NB_MAX_MR];
 //LOLAmesh
 void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
   int i,j,k;
-  LOG_D(MAC,"[eNB][VLINK] initilizing ... \n");  
+
+  //vlinksTable[Mod_id].array[i].MRarray.array[j];
+
+  LOG_D(MAC,"[eNB][VLINK] initilizing nb_vlink_eNB %d nb_ue_per_vlink %d ... \n", nb_vlink_eNB, nb_ue_per_vlink);  
   for (i=0; i< NB_eNB_INST;i++ ){ 
     vlinksTable[i].count = nb_vlink_eNB; // Nb of virtual links
-    for (j=0; j < nb_vlink_eNB; j++) {
+    for (j=0; j < nb_vlink_eNB; j++) {  // -w 
       vlinksTable[i].array[j].vlinkID = j; 
       vlinksTable[i].array[j].PCellIddestCH = i; // dummy value
       vlinksTable[i].array[j].PCellIdsourceCH = (i+1)%2; // dummy value
       vlinksTable[i].array[j].status = VLINK_NOT_CONNECTED; // Virtual link state
       vlinksTable[i].array[j].MRarray.count = nb_ue_per_vlink; // Nb of MRs in the virtual link
-      for (k=0; k<nb_ue_per_vlink; k++ ) {
+      for (k=0; k<nb_ue_per_vlink; k++ ) { // -W
 	vlinksTable[i].array[j].MRarray.array[k] = k; 
       }
     }
@@ -169,7 +172,6 @@ int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe ){
       /* If the VL is ready to be established */
       if (vlink_status == 1) {
 	
-	LOG_D(MAC,"[eNB %d][VLINK] Frame %d, Subframe %d, VLINK %d ready to be established\n",Mod_id, frame, subframe, vlid);
 	/* We chose the cornti randomly */
 	  cornti = (u16)taus();
 	  
@@ -183,13 +185,18 @@ int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe ){
 	  PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.array[nb_corntis] = cornti;
 	  PHY_vars_eNB_g[Mod_id]->dlsch_eNB[UE_index][0]->corntis.count++;
 	  */	  
-	  rrc_mac_config_co_req (Mod_id, 1,UE_index,cornti, vlid);
+	  
 	  /* For all the MR of the VL we establish a CO-DRB */
 	  for (j=0;j<vlinksTable[Mod_id].array[i].MRarray.count;j++) {
 
+	    
 	    /* We get the UE_index of the MR */
 	    UE_index = vlinksTable[Mod_id].array[i].MRarray.array[j];
-	    
+	    LOG_D(MAC,"[eNB %d][VLINK] Frame %d, Subframe %d, VLINK %d nb_vlink_enb %d nb_ue_per_vlink %d/%d ready to be established (UE_index %d)\n",
+		  Mod_id, frame, subframe, vlid,  i, j, vlinksTable[Mod_id].array[i].MRarray.count, UE_index);
+
+	    rrc_mac_config_co_req (Mod_id, 1,UE_index,cornti, vlid);
+
 	    // Generate and send RRCConnectionReconfiguration
 	    rrc_eNB_generate_RRCConnectionReconfiguration_co(Mod_id,UE_index,frame,cornti,vlid);
 	    

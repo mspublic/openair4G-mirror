@@ -112,7 +112,8 @@ s32 dlsch_encoding(u8 *a,
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
-			 LTE_eNB_DLSCH_t *dlsch);
+			 LTE_eNB_DLSCH_t *dlsch,
+			 u8 cornti_active);
 
 
 // Functions below implement 36-211
@@ -1093,7 +1094,8 @@ s32 generate_ue_dlsch_params_from_dci(u8 subframe,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 				      u16 si_rnti,
 				      u16 ra_rnti,
-				      u16 p_rnti);
+				      u16 p_rnti,
+				      u16 co_rnti_flag);
 
 s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       void *dci_pdu,

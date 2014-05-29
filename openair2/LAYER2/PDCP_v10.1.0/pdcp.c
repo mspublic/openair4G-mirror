@@ -169,7 +169,7 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     /* Print octets of outgoing data in hexadecimal form */
     LOG_D(PDCP, "Following content with size %d will be sent over RLC (PDCP PDU header is the first two bytes)\n",
 	  pdcp_pdu_size);
-    //util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
+    util_print_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
     util_flush_hex_octets(PDCP, (unsigned char*)pdcp_pdu->data, pdcp_pdu_size);
 
 #ifdef PDCP_UNIT_TEST
@@ -181,6 +181,13 @@ BOOL pdcp_data_req(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
 
     return TRUE;
 #else
+
+      int i=0;
+      msg("[MSG] PDCP DL %s PDU on rb_id %d\n", ((rab_id % MAX_NUM_RB) < DTCH)? "CONTROL" : "DATA", rab_id);
+      for (i = 0; i < pdcp_pdu_size; i++)
+	msg("%02x ", ((uint8_t*)pdcp_pdu->data)[i]);
+      msg("\n");
+
     /*
      * Ask sublayer to transmit data and check return value
      * to see if RLC succeeded
@@ -257,6 +264,13 @@ BOOL pdcp_data_ind(module_id_t module_id, u32_t frame, u8_t eNB_flag, rb_id_t ra
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!");
     return FALSE;
   }
+
+  int i=0;
+  msg("[MSG] PDCP UL %s PDU on rb_id %d\n", ((rab_id % MAX_NUM_RB) < DTCH)? "CONTROL" : "DATA", rab_id);
+  for (i = 0; i < sdu_buffer_size; i++)
+    msg("%02x ", ((uint8_t*)sdu_buffer->data)[i]);
+  msg("\n");
+
 
   /*
    * Check if incoming SDU is long enough to carry a PDU header
