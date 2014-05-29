@@ -803,7 +803,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
 	 
 #ifdef OPENAIR2
-	  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs (eNB_id %d)\n",phy_vars_ue->Mod_id, eNB_id);
+	  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs (eNB_id %d, harq %d)\n",phy_vars_ue->Mod_id, eNB_id,harq_pid);
 	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) { 
 	    //if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
 	    
@@ -1754,7 +1754,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    phy_vars_ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
-					    P_RNTI)==0) {
+					    P_RNTI,
+					    0)==0) {
 
 	dump_dci(phy_vars_ue->lte_frame_parms[eNB_id],(void *)&dci_alloc_rx[i]);
 
@@ -1812,10 +1813,11 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    format1A,
 					    &phy_vars_ue->dlsch_ue_SI[eNB_id], 
 					    phy_vars_ue->lte_frame_parms[eNB_id],
-                        phy_vars_ue->pdsch_config_dedicated,
+					    phy_vars_ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
-					    P_RNTI)==0) {
+					    P_RNTI,
+					    0)==0) {
 
 	phy_vars_ue->dlsch_SI_received[eNB_id]++;
 
@@ -1854,7 +1856,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      phy_vars_ue->pdsch_config_dedicated,
 					      SI_RNTI,
 					      phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
-					      P_RNTI)==0) {
+					      P_RNTI,
+					      0)==0) {
 	  
 	  phy_vars_ue->dlsch_ra_received[eNB_id]++;
 	  
@@ -1881,7 +1884,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    phy_vars_ue->pdsch_config_dedicated,
 					    SI_RNTI,
 					    0,
-					    P_RNTI)==0) {
+					    P_RNTI,
+					    1)==0) {
 
 	dump_dci(phy_vars_ue->lte_frame_parms[eNB_id],(void *)&dci_alloc_rx[i]);
 
@@ -1956,7 +1960,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      0)==0) {
 	  
 #ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[UE  %d] Generate UE ULSCH CO_RNTI format 0A (subframe %d)\n",phy_vars_ue->Mod_id,last_slot>>1);
+	  LOG_D(PHY,"[UE  %d] Generate UE ULSCH CO_RNTI format 0A from eNB %d(subframe %d)\n",phy_vars_ue->Mod_id,eNB_id, last_slot>>1);
 #endif
 	  
 	}

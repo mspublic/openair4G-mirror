@@ -206,6 +206,8 @@ typedef struct {
   cornti_array_t corntis;
   /// Active flag for baseband transmitter processing
   u8 active;
+  /// cornti Active flag for baseband transmitter processing
+  u8 cornti_active;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
   u8 subframe_tx[10];
   /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK. 

@@ -249,9 +249,21 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
   u16 dst_cornti=0x0;
   u16 dst_eNB=0;
   int i;
-  lcid = ((SCH_SUBHEADER_FIXED *)payload_ptr)->LCID;
-  LOG_I (MAC,"[UE %d] received sdu form eNb index %d with the  cornti %x\n",
-	 Mod_id, eNB_index, cornti);
+
+  msg("[MAC][UE %d] First 16 bytes of DLSCH : \n",Mod_id);
+  for (i=0;i<16;i++)
+    msg("%x.",sdu[i]);
+  msg("\n");
+
+  lcid = ((SCH_SUBHEADER_LONG *)payload_ptr)->LCID;
+  LOG_I (MAC,"[UE %d] vlink received sdu form eNb index %d with the  cornti %x len %d\n",
+	 Mod_id, eNB_index, cornti, sdu_len);
+  /* if (lcid == SHORT_PADDING) {
+    payload_ptr+=1; // for short padding
+    size = sdu_len-1;
+    lcid = ((SCH_SUBHEADER_FIXED *)payload_ptr)->LCID;
+    }*/
+
   if (lcid == CO_SEQ_NUM_LCID) {
     /*  payload_ptr+=1; // 1 bytes for HDR
 	UE_mac_inst[Mod_id].corntis.sn[eNB_index]=(((payload_ptr[1]&0xff) <<8)  | (payload_ptr[0]&0xff));*/
@@ -1140,7 +1152,9 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
     }
     update_bsr(Mod_id, frame, lcid, eNB_index);
   }
+  
   for (i=0;i<UE_mac_inst[Mod_id].corntis.count;i++) {
+    
     cornti = UE_mac_inst[Mod_id].corntis.array[i];
     nb_elements = mac_buffer_nb_elements(Mod_id, eNB_index, cornti);
     if (nb_elements > 0 ) {
@@ -1148,6 +1162,7 @@ UE_L2_STATE_t ue_scheduler(u8 Mod_id,u32 frame, u8 subframe, lte_subframe_t dire
       LOG_D(MAC,"[MAC][UE %d][SR] Frame %d subframe %d SR for MAC buffer is pending eNB %d and cornti %x PUSCH, total elements of %d\n",
 	    Mod_id, frame,subframe,eNB_index, cornti,nb_elements);
     }
+  
     update_cobsr (Mod_id, eNB_index, cornti,i);
   }
   // UE has no valid phy config dedicated ||  no valid/released  SR
@@ -1327,6 +1342,9 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
 	    j, UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j],co_seq_num[j],
 	    eNB_index, nb_elements);
     } else {
+      /*     LOG_D(MAC,"[UE %d/%x/%d] nb element %d  j %d \n", 
+	    Mod_id,cornti, cornti_index, nb_elements, j);
+      */
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]=0;
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=0;
     }

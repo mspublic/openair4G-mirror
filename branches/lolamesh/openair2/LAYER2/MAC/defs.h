@@ -701,8 +701,8 @@ void schedule_ulsch_tdd16(u8 Mod_id,u32 frame,u8 cooperation_flag, u8 subframe, 
 
 void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_flag,unsigned char subframe,unsigned char sched_subframe,unsigned int *nCCE);
 
-void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
-void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb);
+void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb, u16 *nb_available_rb);
+void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb,u16 *nb_available_rb);
 u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 UE_id_ar[], u8 cornti_index_of_UE_id_ar[], u8 seq_num_of_UE_id_ar[], u8 bsr_of_UE_id_ar[],  u8 *num_of_UE_id_ar);
 //u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar);
 

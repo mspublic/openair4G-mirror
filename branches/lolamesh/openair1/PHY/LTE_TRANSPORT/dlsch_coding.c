@@ -333,7 +333,8 @@ int dlsch_encoding(unsigned char *a,
 #ifdef PHY_ABSTRACTION
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
-			 LTE_eNB_DLSCH_t *dlsch) {
+			 LTE_eNB_DLSCH_t *dlsch,
+			 u8 cornti_active) {
 
   //int payload_offset = 0;
   unsigned char harq_pid = dlsch->current_harq_pid;
@@ -344,10 +345,14 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	   DLSCH_pdu,
 	   dlsch->harq_processes[harq_pid]->TBS>>3);
 
-
-
+     
+    /*if (cornti_active)
+      memcpy(phy_vars_eNB->dlsch_eNB_co[0][0]->harq_processes[harq_pid]->b,
+	      DLSCH_pdu,
+	      dlsch->harq_processes[harq_pid]->TBS>>3);
+    */
     LOG_D(PHY, "eNB %d dlsch_encoding_emul, tbs is %d harq pid %d \n", 
-	phy_vars_eNB->Mod_id,
+	  phy_vars_eNB->Mod_id,
 	  dlsch->harq_processes[harq_pid]->TBS>>3,
 	  harq_pid);
 

@@ -102,6 +102,8 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
 
+double desired_bler =0.1;
+
 extern void kpi_gen();
 
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
@@ -637,8 +639,8 @@ main (int argc, char **argv)
   u8 ue_connection_test=0;
   u8 set_seed=0;
   u8 cooperation_flag;		// for cooperative communication
-  u8 target_dl_mcs = 4;
-  u8 target_ul_mcs = 2;
+  u8 target_dl_mcs = 15;
+  u8 target_ul_mcs = 15;
   u8 rate_adaptation_flag;
 
   u8 abstraction_flag = 0, ethernet_flag = 0;
@@ -781,6 +783,10 @@ main (int argc, char **argv)
     case 'm':
       target_dl_mcs = atoi (optarg);
       break;
+    
+    case 't':
+        target_ul_mcs = atoi (optarg);
+        break;
     case 'r':
       rate_adaptation_flag = 1;
       break;
@@ -804,14 +810,9 @@ main (int argc, char **argv)
       oai_emulation.info.ocm_enabled=0;
       break;
     case 'k':
-      //ricean_factor = atof (optarg);
-      LOG_E(EMU,"[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
-      exit(-1);
-      break;
-    case 't':
-      //Td = atof (optarg);
-      LOG_E(EMU,"[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
-      exit(-1);
+      desired_bler = atof (optarg);
+      if (desired_bler >= 1.0)
+	desired_bler = 0.9;
       break;
     case 'f':
       forgetting_factor = atof (optarg);
