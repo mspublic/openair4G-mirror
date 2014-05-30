@@ -1987,7 +1987,26 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
       continue;
     }
     // could be done outside of the loop, and potentially combined with min_sn func
-    if ( CORNTI_is_to_be_scheduled(Mod_id, cornti, &next_ue, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0){
+    if ( (CORNTI_is_to_be_scheduled(Mod_id, cornti, &next_ue, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0)){
+       
+      /*
+       * this part can be done in CORNTI_is_to_be_scheduled function 
+       * nte: we are not handling the missing sn
+       */
+      if (eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0] == 
+	   eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn_served[0]){
+	LOG_I(MAC, "the requested sn %d is already serverd %d \n", eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0], 
+	      eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn_served[0]);
+	return;
+      }else {
+	if (eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0] > 
+	   eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn_served[0] + 1 )
+	  LOG_W(MAC, "missing SN: requested sn %d, served sn %d \n ", eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0],
+	      eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn_served[0]);
+	else 
+	  LOG_I(MAC, "requested sn %d, served sn %d \n ", eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0],
+	      eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn_served[0]);
+      }
       
       // Packets are to be scheduled with same cornti, however since there are different UEs belonging on the same cornti the cornti_index can be differerent(the cornti remains the same)
      // next_ue = find_UE_min_seq_num_that_belong_on_the_same_cornti(Mod_id, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar, &num_of_UE_id_ar);
@@ -2105,6 +2124,8 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	   /* BYPASS PHY THIS function normally should be called by the PHY at CH, however we call it here */
 	   rx_sdu_co (Mod_id, frame, cornti,ulsch_buffer_test,TBS);
 #endif	   
+
+	   eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[cornti_index].sn_served[0] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[cornti_index].sn[0];
 	   if (mac_xface->lte_frame_parms[Mod_id]->frame_type == TDD) { 
 	     ULSCH_dci_tdd16 = (DCI0A_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[(int)next_ue].ULSCH_DCI[(int)harq_pid];
 	     
