@@ -306,6 +306,7 @@ typedef struct {
 } eNB_DLSCH_INFO;
 
 typedef struct  {
+  u16 sn_served[4];
   u16 sn[4];
   u16 cornti;
   u16 bsr[4];
@@ -360,7 +361,7 @@ typedef struct{
   
   /// UE coBSR info for each logical channel keep the info for each cornti
   COBSR_INFO cobsr_info[MAX_VLINK_PER_CH]; 
-
+ 
   /// phr information 
    u8 phr_info; 
 } UE_TEMPLATE;
