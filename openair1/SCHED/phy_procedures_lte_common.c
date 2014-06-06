@@ -568,9 +568,16 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
     //  if( i < 2) LOG_D(PHY,"UE %d rnti %x \n", i, phy_vars_eNB->dlsch_eNB[i][0]->rnti);
     
     if ((phy_vars_eNB->dlsch_eNB[i]) && 
-	(phy_vars_eNB->dlsch_eNB[i][0]) && 
-	(phy_vars_eNB->dlsch_eNB[i][0]->rnti==rnti)) {
+	(phy_vars_eNB->dlsch_eNB[i][0]) &&
+	(phy_vars_eNB->dlsch_eNB[i][0]->rnti == rnti))  {
       return(i);
+      
+      /*for (j=0; j < 8 ; j++ ){
+	if ((phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[j]->rnti ==rnti) || 
+	    (phy_vars_eNB->dlsch_eNB[i][0]->rnti == rnti))  {
+	  return(i);
+	  }
+	}*/
     }
     // We look for the cornti
     if ((phy_vars_eNB->dlsch_eNB[i]) && (phy_vars_eNB->dlsch_eNB[i][0])) {
@@ -588,36 +595,65 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   return(-1);
 }
 
-//TCS LOLAmesh
-s8 find_last_ue_id(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
+s8 find_ue_with_active_cornti(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   u8 i,j;
   u8 nb_corntis;
 
-  for (i=NUMBER_OF_UE_MAX-1;i>=0;i--) {
-  	// We look for the rnti
-    //  if( i < 2) LOG_D(PHY,"UE %d rnti %x \n", i, phy_vars_eNB->dlsch_eNB[i][0]->rnti);
+  for (i=0;i<=NUMBER_OF_UE_MAX;i++) {
     
     if ((phy_vars_eNB->dlsch_eNB[i]) && 
 	(phy_vars_eNB->dlsch_eNB[i][0]) && 
-	(phy_vars_eNB->dlsch_eNB[i][0]->rnti==rnti)) {
-      return(i);
-    }
-    // We look for the cornti
-    if ((phy_vars_eNB->dlsch_eNB[i]) && (phy_vars_eNB->dlsch_eNB[i][0])) {
+	(phy_vars_eNB->dlsch_eNB[i][0]->cornti_active > 0) ) {
+      
+      // phy_vars_eNB->dlsch_eNB[i][0]->cornti_active=0;
       nb_corntis = phy_vars_eNB->dlsch_eNB[i][0]->corntis.count;
-       
+      
       for (j=0;j<nb_corntis;j++) {
-	//	LOG_D(PHY,"[eNB] nb cornti %d for UE %d %x\n", nb_corntis, i, phy_vars_eNB->dlsch_eNB[i][0]->corntis.array[j]);
-	if ((phy_vars_eNB->dlsch_eNB[i][0]->corntis.array[j] == rnti)) {
-	  return i;//return(j);
+	if (phy_vars_eNB->dlsch_eNB[i][0]->corntis.array[j] == rnti) {
+	  return i;
 	}
       }
     }// if ((phy_vars_eNB->dlsch_eNB[i]) && (phy_vars_eNB->dlsch_eNB[i][0]))
   }// for (i=0;i<NUMBER_OF_UE_MAX;i++)
-
+  
   return(-1);
 }
+u16 find_ue_cornti (u16 rnti, u8 UE_index, PHY_VARS_eNB *phy_vars_eNB) {
 
+  u8 i,j;
+  
+  if ((phy_vars_eNB->dlsch_eNB[UE_index]) && 
+      (phy_vars_eNB->dlsch_eNB[UE_index][0]) ){
+    // &&  (phy_vars_eNB->dlsch_eNB[UE_index][0]->rnti)) {
+    
+    for (j=0;j<phy_vars_eNB->dlsch_eNB[UE_index][0]->corntis.count;j++) {
+      if ((phy_vars_eNB->dlsch_eNB[UE_index][0]->corntis.array[j] == rnti)) {
+	return rnti;
+      }
+    }
+  }
+  
+  return(0x0);
+  
+}
+
+u16 find_ue_with_active_cornti_ul (u16 rnti, u8 UE_index, PHY_VARS_eNB *phy_vars_eNB) {
+
+  u8 i,j;
+  
+  if ((phy_vars_eNB->ulsch_eNB[UE_index])) {
+    // &&  (phy_vars_eNB->dlsch_eNB[UE_index][0]->rnti)) {
+    
+    for (j=0;j<phy_vars_eNB->dlsch_eNB[UE_index][0]->corntis.count;j++) {
+      if ((phy_vars_eNB->dlsch_eNB[UE_index][0]->corntis.array[j] == rnti)) {
+	return rnti;
+      }
+    }
+  }
+  
+  return(0x0);
+  
+}
 u16 find_cornti (u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   u8 i,j;
   

@@ -426,14 +426,15 @@ mem_element_t *mac_buffer_get_head(u8 Mod_id, u8 b_index){
 mem_element_t *mac_buffer_data_req(u8 Mod_id, u8 eNB_index, u16 cornti, int seq_num, int requested_size, int HARQ_proccess_ID, int buflen){
  
  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
- mem_element_t *help_head = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
- mem_element_t *help_tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
  struct avl_node_t *ptr_t,*ptr_k;
 
  if(b_index == -1){
    LOG_W(MAC,"[UE %d] Buffer for eNB_index %d and cornti %x does not exist\n",Mod_id,eNB_index,cornti); 
    return NULL;
  } 
+ mem_element_t *help_head = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->head;
+ mem_element_t *help_tail = mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->tail;
+ 
  if(help_head==NULL){
    return NULL; // empty list no packet seq_num exists, it returns 0 !!!    
  }
@@ -681,7 +682,7 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
  elementP->data = (char *)malloc(sizeof(char)*pdu_size);
 
  
- if (elementP == NULL || elementP->data == NULL|| mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
+ if (elementP == NULL || elementP->data == NULL || mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
    LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
    return 0;
  } 
@@ -691,7 +692,8 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
    elementP->HARQ_proccess_ID = HARQ_proccess_ID;
    memcpy(elementP->data,data,pdu_size*sizeof(char));
    
-   LOG_D(MAC,"mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d\n",	elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID);	
+   LOG_D(MAC,"[UE %d] mac_buffer_data_ind  PACKET seq_num %d, pdu_size %d, HARQ_proccess_ID %d, b_index %d\n",     
+	 Mod_id, elementP->seq_num, elementP->pdu_size, elementP->HARQ_proccess_ID, b_index);	
    
    if(mac_buffer_add_tail(Mod_id, b_index, elementP) == 1)
      return 1;

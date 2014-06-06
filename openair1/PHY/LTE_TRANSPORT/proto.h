@@ -1095,7 +1095,7 @@ s32 generate_ue_dlsch_params_from_dci(u8 subframe,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
-				      u16 co_rnti_flag);
+				      u16 co_rnti);
 
 s32 generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       void *dci_pdu,
@@ -1126,6 +1126,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
+				      u16 co_rnti, 
                                       u8 eNB_id,
 				      u8 use_srs);
 

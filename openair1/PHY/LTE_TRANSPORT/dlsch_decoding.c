@@ -47,7 +47,7 @@
 
 #define DEBUG_DLSCH_DECODING
 
-extern double desired_bler;
+extern double desired_dl_bler;
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
@@ -413,19 +413,20 @@ u32  dlsch_decoding(short *dlsch_llr,
 */
 
 
- int dlsch_abstraction_bler(u8 mcs, double bler) {
-
-   if (uniformrandom() < bler) {
-     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, bler=%f)\n",mcs,bler);
-    return(0);
-  }
-  else {
-    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, bler=%f)\n",mcs,bler);
-    return(1);
-  }
-
-}
-
+  int dlsch_abstraction_bler(u8 mcs, double bler) {
+   
+    double  bler_rng= (double)( (double)(taus()%0xffffffff)/(double)0xffffffff);
+    LOG_I(OCM,"Calculated DL BLER is %f\n", bler_rng) ;
+    if (bler_rng  < bler) {
+    
+     return(0);
+   }
+   else {
+     return(1);
+   }
+   
+ }
+ 
  int dlsch_abstraction_EESM(double* sinr_dB, u8 TM, u32 rb_alloc[4], u8 mcs) {
 
    int index,ii;
@@ -809,8 +810,9 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
   u8 eNB_id2;
-  s8 ue_id;
+  s8 ue_id=-1;
   u8 j;
+  u16 cornti=0x0;
 #ifdef DEBUG_DLSCH_DECODING
   u16 i;
 #endif
@@ -861,14 +863,27 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    *rnti = find_cornti(phy_vars_ue->dlsch_ue[(u32)eNB_id][0]->rnti,PHY_vars_eNB_g[eNB_id2]);
-    if (*rnti) // becasue the template of last ue is selected for  boradcast transmissio
-      ue_id = find_ue(*rnti,PHY_vars_eNB_g[eNB_id2]);
-    else 
-       ue_id= find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
-    if (ue_id < 0)
-      LOG_E(PHY,"invalid ue id\n");
     
+    //  *rnti = find_cornti(dlsch_ue->rnti,PHY_vars_eNB_g[eNB_id2]);
+    // becasue the template of last ue is selected for  boradcast transmissio
+
+    //  if (dlsch_ue->rnti == phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti)  OR 
+    *rnti = dlsch_ue->harq_processes[harq_pid]->rnti;
+    if (*rnti != 0x0) 
+      ue_id = find_ue_with_active_cornti(dlsch_ue->harq_processes[harq_pid]->rnti,PHY_vars_eNB_g[eNB_id2]);
+    if (ue_id < 0 ){
+      *rnti = 0x0;
+      ue_id= find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2]);
+    }
+
+    if (ue_id < 0){
+      LOG_E(PHY,"invalid ue id\n");
+      exit(0);
+    }
+
+    LOG_I(PHY,"dlsch_decoding_emul: UE %d/%d rnti %x, %x %x \n", ue_id, phy_vars_ue->Mod_id, dlsch_ue->rnti, 
+	  phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti, *rnti);
+
     // check with cornti
     
     /*    if (ue_id < 0){
@@ -886,7 +901,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     else 
     */
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0];
-    msg("eNB id %d ue (%d,%x,%x), size %d %d data:  %d %p %p %p \n",
+    msg("dlsch_decoding_emul: eNB id %d ue (%d,%x,%x), size %d %d data:  %d %p %p %p \n",
 	eNB_id2, ue_id,phy_vars_ue->lte_ue_pdcch_vars[(u32)eNB_id]->crnti,*rnti, 
 	dlsch_ue->harq_processes[harq_pid]->TBS>>3,dlsch_eNB->harq_processes[harq_pid]->TBS>>3,
 	PHY_vars_eNB_g[eNB_id2], PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[ue_id][0], dlsch_eNB);
@@ -900,8 +915,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
    // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
     
-    if ((dlsch_abstraction_bler(dlsch_eNB->harq_processes[harq_pid]->mcs, desired_bler) == 1) || (*rnti==0x0) )  {
-      // reset HARQ 
+    if ((dlsch_abstraction_bler(dlsch_eNB->harq_processes[harq_pid]->mcs, desired_dl_bler) == 1) || (*rnti==0x0) )  {
+      //if ((*rnti == 0x0) || (phy_vars_ue->Mod_id > 0))  {
+       // reset HARQ 
+      LOG_I(OCM,"abstraction_decoding dlsch_decoding_emul abstraction successful (mcs=%d, bler=%f)\n",
+	    dlsch_eNB->harq_processes[harq_pid]->mcs, desired_dl_bler);
       dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
       dlsch_ue->harq_processes[harq_pid]->round  = 0;
       dlsch_ue->harq_ack[subframe].ack = 1;
@@ -914,6 +932,12 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       return(1);
     }
     else {
+      dlsch_ue->errors +=1;
+      LOG_I(OCM,"[UE %d/%d] abstraction_decoding dlsch_decoding_emul abstraction failed for eNB %d (mcs=%d, bler=%f, err %d)\n",
+	    ue_id, 
+	    phy_vars_ue->Mod_id,
+	    eNB_id, dlsch_eNB->harq_processes[harq_pid]->mcs, desired_dl_bler, 
+	    dlsch_ue->errors);
       // retransmission
       if (*rnti){
 	dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;

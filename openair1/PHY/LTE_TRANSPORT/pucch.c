@@ -938,6 +938,7 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
   u16 rnti;
   u8 eNB_id = phy_vars_eNB->Mod_id;
   
+ 
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNB_id]->crnti)
@@ -951,6 +952,8 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
     LOG_E(PHY,"rx_pucch_emul: FATAL, didn't find UE with rnti %x\n",rnti);
     return(-1);
   }
+  UE_id = UE_index;
+  LOG_N(PHY,"rx_pucch_emul:find UE %d/%d with rnti %x, setting UE_id to UE_index \n",UE_index, UE_id, rnti);
 
   if (fmt == pucch_format1) {
     payload[0] = PHY_vars_UE_g[UE_id]->sr[eNB_id][subframe];

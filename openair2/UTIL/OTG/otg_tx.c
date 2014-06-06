@@ -193,8 +193,16 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   *pkt_size = 0;
   set_ctime(ctime);
   // do not generate packet for this pair of src, dst : no app type and/or no idt are defined	
-  if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
-    //LOG_D(OTG,"Do not generate packet for this pair of src=%d, dst =%d\n", src, dst); 
+  if (g_otg->flow_start[src][dst] >  ctime ){
+    LOG_T(OTG,"Flow start time not reached : do not generate packet for this pair of src=%d, dst =%d, start %d < ctime %d \n", 
+	  src, dst,g_otg->flow_start[src][dst], ctime);
+    return NULL;
+  } else if ( g_otg->flow_duration[src][dst] +  g_otg->flow_start[src][dst]  < ctime ){
+    LOG_T(OTG,"Flow duration reached: do not generate packet for this pair of src=%d, dst =%d, duration %d < ctime %d + start %d\n", 
+	  src, dst,g_otg->flow_duration[src][dst], ctime, g_otg->flow_start[src][dst]); 
+    return NULL;
+  } else if ((g_otg->application_type[src][dst]==0)&&(g_otg->idt_dist[src][dst][PE_STATE]==0)){  
+    LOG_T(OTG,"Do not generate packet for this pair of src=%d, dst =%d, IDT zero : APP type not specificed\n", src, dst); 
     return NULL;	 
   }
 
@@ -235,6 +243,7 @@ unsigned char *packet_gen(int src, int dst, int ctime, int * pkt_size){ // when 
   }
   else
     return NULL;
+  
   hdr_size=sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t); 
   
   if (background_ok==0){
@@ -466,7 +475,7 @@ int j;
 				
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
        break;
      case MCBR :
@@ -482,7 +491,7 @@ int j;
        LOG_I(OTG,"OTG_CONFIG MCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
        break;
      case BCBR :
@@ -498,7 +507,7 @@ int j;
        LOG_I(OTG,"OTG_CONFIG BCBR, src = %d, dst = %d, dist type for size = %d\n", i, j, g_otg->size_dist[i][j][PE_STATE]);
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif  
        break;
      case AUTO_PILOT : 
@@ -518,7 +527,7 @@ int j;
 
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
        break;
      case BICYCLE_RACE :  
@@ -538,7 +547,7 @@ int j;
 
 #ifdef STANDALONE
        g_otg->dst_port[i] = 302;
-       g_otg->duration[i] = 1000;
+       g_otg->flow_duration[i] = 1000;
 #endif 
        break;
      case OPENARENA : 
@@ -558,7 +567,7 @@ int j;
 
 #ifdef STANDALONE
        g_otg->dst_port[i] = 302;
-       g_otg->duration[i] = 1000;
+       g_otg->flow_duration[i] = 1000;
 #endif 
        break;  
      case TEAM_FORTRESS : 
@@ -578,7 +587,7 @@ int j;
 
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
        break;
      case NO_PREDEFINED_TRAFFIC : 
@@ -593,7 +602,7 @@ int j;
        g_otg->size_max[i][j][PE_STATE] = 0;
 #ifdef STANDALONE
        g_otg->dst_port[i] = 302;
-       g_otg->duration[i] = 1000;
+       g_otg->flow_duration[i] = 1000;
 #endif 
        break;
    case M2M_TRAFFIC : 
@@ -624,7 +633,7 @@ int j;
        g_otg->holding_time_pe_off[i][j]=30;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 case AUTO_PILOT_L : 
        LOG_I(OTG,"AUTO PILOT LOW SPEEDS, src = %d, dst = %d, application type = %d\n", i, j, g_otg->application_type[i][j]);
@@ -651,7 +660,7 @@ case AUTO_PILOT_L :
        g_otg->holding_time_pe_off[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -676,7 +685,7 @@ case AUTO_PILOT_L :
        g_otg->holding_time_pe_off[j][i]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case AUTO_PILOT_M : 
@@ -704,7 +713,7 @@ case AUTO_PILOT_M :
        g_otg->holding_time_pe_off[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -729,7 +738,7 @@ case AUTO_PILOT_M :
        g_otg->holding_time_pe_off[j][i]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case AUTO_PILOT_H : 
@@ -757,7 +766,7 @@ case AUTO_PILOT_H :
        g_otg->holding_time_pe_off[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -782,7 +791,7 @@ case AUTO_PILOT_H :
        g_otg->holding_time_pe_off[j][i]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case AUTO_PILOT_E : 
@@ -810,7 +819,7 @@ case AUTO_PILOT_E :
        g_otg->holding_time_pe_off[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -835,7 +844,7 @@ case AUTO_PILOT_E :
        g_otg->holding_time_pe_off[j][i]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 302;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_L : 
@@ -848,7 +857,7 @@ case VIRTUAL_GAME_L :
        g_otg->holding_time_off_pu[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -858,7 +867,7 @@ case VIRTUAL_GAME_L :
        g_otg->holding_time_off_pu[j][i]=500;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_M : 
@@ -871,7 +880,7 @@ case VIRTUAL_GAME_M :
        g_otg->holding_time_off_pu[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -881,7 +890,7 @@ case VIRTUAL_GAME_M :
        g_otg->holding_time_off_pu[j][i]=150;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_H : 
@@ -894,7 +903,7 @@ case VIRTUAL_GAME_H :
        g_otg->holding_time_off_pu[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -904,7 +913,7 @@ case VIRTUAL_GAME_H :
        g_otg->holding_time_off_pu[j][i]=100;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case VIRTUAL_GAME_F : 
@@ -917,7 +926,7 @@ case VIRTUAL_GAME_F :
        g_otg->holding_time_off_pu[i][j]=1000;
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 302;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
 			 /* UL SCENARIO*/
        g_otg->trans_proto[j][i] = 2;
@@ -927,7 +936,7 @@ case VIRTUAL_GAME_F :
        g_otg->holding_time_off_pu[j][i]=70;
 #ifdef STANDALONE
        g_otg->dst_port[j][i] = 303;
-       g_otg->duration[j][i] = 1000;
+       g_otg->flow_duration[j][i] = 1000;
 #endif 
  			break; 
 case ALARM_HUMIDITY : 
@@ -944,7 +953,7 @@ case ALARM_HUMIDITY :
        g_otg->holding_time_off_ed[i][j]=32400000;  	/* 9 hours*/
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
  			break; 
 case ALARM_SMOKE : 
@@ -961,7 +970,7 @@ case ALARM_SMOKE :
        g_otg->holding_time_off_ed[i][j]=43200000;  	/* 12 hours*/
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
  			break; 
 case ALARM_TEMPERATURE : 
@@ -978,7 +987,7 @@ case ALARM_TEMPERATURE :
        g_otg->holding_time_off_ed[i][j]=18000000;  	/* 5 hours*/
 #ifdef STANDALONE
        g_otg->dst_port[i][j] = 303;
-       g_otg->duration[i][j] = 1000;
+       g_otg->flow_duration[i][j] = 1000;
 #endif 
  			break; 
      default:

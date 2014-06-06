@@ -725,6 +725,7 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 			u8 control_only_flag) {
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
+  int i;
 
   LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
 
@@ -732,8 +733,11 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
-
-     
+#ifdef DEBUG_PHY
+  for (i=0; i < phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3; i++)
+    msg("%x.",phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b[i]);
+  msg("\n");
+#endif     
   //memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks[UE_transport_info_TB_index[phy_vars_ue->Mod_id]],
   memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks,
 	 ulsch_buffer,

@@ -102,7 +102,8 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][16];
 
-double desired_bler =0.1;
+double desired_dl_bler =0.1;
+double desired_ul_bler =0.1;
 
 extern void kpi_gen();
 
@@ -639,8 +640,8 @@ main (int argc, char **argv)
   u8 ue_connection_test=0;
   u8 set_seed=0;
   u8 cooperation_flag;		// for cooperative communication
-  u8 target_dl_mcs = 15;
-  u8 target_ul_mcs = 15;
+  u8 target_dl_mcs = 0;
+  u8 target_ul_mcs = 0;
   u8 rate_adaptation_flag;
 
   u8 abstraction_flag = 0, ethernet_flag = 0;
@@ -740,7 +741,7 @@ main (int argc, char **argv)
   }
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:K:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:")) != -1) {
 
     switch (c) {
 
@@ -810,9 +811,14 @@ main (int argc, char **argv)
       oai_emulation.info.ocm_enabled=0;
       break;
     case 'k':
-      desired_bler = atof (optarg);
-      if (desired_bler >= 1.0)
-	desired_bler = 0.9;
+      desired_dl_bler = atof (optarg);
+      if (desired_dl_bler >= 1.0)
+	desired_dl_bler = 0.9;
+      break;
+    case 'K':
+      desired_ul_bler = atof (optarg);
+      if (desired_ul_bler >= 1.0)
+	desired_ul_bler = 0.9;
       break;
     case 'f':
       forgetting_factor = atof (optarg);
@@ -1101,6 +1107,7 @@ main (int argc, char **argv)
   LOG_I(EMU,"Total number of eNB %d (local %d, remote %d) mobility %s \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote, oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option);
   LOG_I(OCM,"Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d, channel %s\n",
   	 oai_emulation.info.frame_type, oai_emulation.info.Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag,oai_emulation.environment_system_config.fading.small_scale.selected_option);
+  LOG_I(EMU,"Desired DL BLER  %f, and UL BLER %f \n ", desired_dl_bler, desired_ul_bler);
   
   if(set_seed){
     randominit (oai_emulation.info.seed);

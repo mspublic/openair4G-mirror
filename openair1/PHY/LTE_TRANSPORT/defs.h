@@ -90,6 +90,8 @@ typedef struct {
   u8 Ndi;
   /// Status Flag indicating for this DLSCH (idle,active,disabled)
   SCH_status_t status;
+  // rnti used for this pid
+  u16 rnti;
   /// Transport block size
   u32 TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
@@ -133,6 +135,8 @@ typedef struct {
   u8 Ndi;
   /// the request sn for the ULSCH collaborative transmission
   u16 sn;
+  /// RNTI attributed to this ULSCH
+  u16 rnti;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
@@ -214,7 +218,9 @@ typedef struct {
   u8 nCCE[10];
   /// Current HARQ process id
   u8 current_harq_pid;
-  /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
+  /// Allocated CRNTI 
+  //u16 crnti; 
+   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
   u8 harq_ids[10];
   /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
   u8 ra_window_size;
@@ -331,10 +337,14 @@ typedef struct {
   u8 Ndi;
   /// the requested sequence number for the collaborative uplink transmission  
   u16 sn;
+  /// RNTI attributed to this ULSCH
+  u16 rnti;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   u8 subframe_scheduling_flag;
+  /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
+  u8 subframe_co_scheduling_flag;
   /// PHICH active flag
   u8 phich_active;
   /// PHICH ACK
@@ -399,7 +409,9 @@ typedef struct {
   /// SRS active flag
   u8 srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_eNB_HARQ_t *harq_processes[8];     
+  LTE_UL_eNB_HARQ_t *harq_processes[8];  
+  /// num errors 
+  int errors;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   s16 e[MAX_NUM_CHANNEL_BITS];
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
@@ -463,6 +475,8 @@ typedef struct {
   u8 Ndi;
   /// DLSCH status flag indicating 
   SCH_status_t status;
+  /// rnti for this harq 
+  u16 rnti;
   /// Transport block size
   u32 TBS;
   /// The payload + CRC size in bits  
@@ -580,6 +594,8 @@ typedef struct {
   cornti_array_t corntis; 
   /// Active flag for DLSCH demodulation
   u8 active;
+  /// num error
+  u8 errors;
   /// Transmission mode
   u8 mode1_flag;
   /// downlink power offset field

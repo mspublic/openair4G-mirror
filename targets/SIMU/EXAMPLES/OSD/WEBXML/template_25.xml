@@ -21,7 +21,7 @@
     <MOBILITY> 
       <UE_MOBILITY>
 	<RANDOM_UE_DISTRIBUTION>
-	  <NUMBER_OF_NODES>3</NUMBER_OF_NODES>
+	  <NUMBER_OF_NODES>1</NUMBER_OF_NODES>
 	</RANDOM_UE_DISTRIBUTION>
 	<UE_MOBILITY_TYPE>STATIC</UE_MOBILITY_TYPE>
       </UE_MOBILITY>
@@ -36,42 +36,42 @@
   </TOPOLOGY_CONFIG>
 
   <APPLICATION_CONFIG>
-    <!-- eNB0 to eNB1 traffic --> 
+    <!-- eNB0 to UE0 : high data rate  MCS 22 --> 
     <CUSTOMIZED_TRAFFIC>	 
       <SOURCE_ID>0</SOURCE_ID> 		
       <TRANSPORT_PROTOCOL>udp</TRANSPORT_PROTOCOL> 
       <IP_VERSION>ipv4</IP_VERSION> 
-      <DESTINATION_ID>1</DESTINATION_ID> 
+      <DESTINATION_ID>2</DESTINATION_ID> 
       <FLOW_START_ms>4000</FLOW_START_ms> <!-- not less than 310 --> 
-      <FLOW_DURATION_ms>4000</FLOW_DURATION_ms>  <!-- less than simu time - FLOW_START_ms  -->
+      <FLOW_DURATION_ms>2000</FLOW_DURATION_ms>  <!-- less than simu time - FLOW_START_ms  -->
       <IDT_DIST>fixed</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
-      <IDT_MIN_ms>100</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
+      <IDT_MIN_ms>20</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
       <IDT_MAX_ms>160</IDT_MAX_ms>  <!--MAximum IDT values in milliseconds-->
       <SIZE_DIST>uniform</SIZE_DIST>   <!-- available distributions: none (default), uniform, poission, gaussian,exponential,pareto, cauchy,fixed, weibull, gammav-->
       <SIZE_MIN_byte>768</SIZE_MIN_byte>  <!--Minimum PAYLOAD size values in bytes-->
-      <SIZE_MAX_byte>1400</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
+      <SIZE_MAX_byte>1428</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
     </CUSTOMIZED_TRAFFIC>
    
-    <!-- eNB1 to eNB0 traffic  -->
+    <!-- eNB1 to UE0 : high data rate  MCS 0 : to override, use option -m 22 -->    
      <CUSTOMIZED_TRAFFIC>	 
       <SOURCE_ID>1</SOURCE_ID> 		
       <TRANSPORT_PROTOCOL>udp</TRANSPORT_PROTOCOL> 
       <IP_VERSION>ipv4</IP_VERSION> 
-      <DESTINATION_ID>0</DESTINATION_ID> 
+      <DESTINATION_ID>2</DESTINATION_ID> 
       <FLOW_START_ms>4000</FLOW_START_ms> 
-      <FLOW_DURATION_ms>4000</FLOW_DURATION_ms>
+      <FLOW_DURATION_ms>2000</FLOW_DURATION_ms>
       <IDT_DIST>fixed</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
       <IDT_MIN_ms>100</IDT_MIN_ms>  <!--Minimum IDT values in milliseconds-->
       <IDT_MAX_ms>160</IDT_MAX_ms>  <!--MAximum IDT values in milliseconds-->
       <SIZE_DIST>uniform</SIZE_DIST>   <!-- available distributions: none (default), uniform, poission, gaussian,exponential,pareto, cauchy,fixed, weibull, gammav-->
-      <SIZE_MIN_byte>768</SIZE_MIN_byte>  <!--Minimum PAYLOAD size values in bytes-->
-      <SIZE_MAX_byte>1400</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
+      <SIZE_MIN_byte>256</SIZE_MIN_byte>  <!--Minimum PAYLOAD size values in bytes-->
+      <SIZE_MAX_byte>1024</SIZE_MAX_byte>  <!--MAximum PAYLOAD size values in bytes-->
     </CUSTOMIZED_TRAFFIC>
 
   </APPLICATION_CONFIG>
   
   <EMULATION_CONFIG>
-    <EMULATION_TIME_ms>12000</EMULATION_TIME_ms> <!--set to infinity--> 
+    <EMULATION_TIME_ms>10000</EMULATION_TIME_ms> <!--set to infinity--> 
     <PERFORMANCE_METRICS>
       <THROUGHPUT>1</THROUGHPUT>
       <LATENCY>1</LATENCY>
@@ -85,5 +85,5 @@
     
   </EMULATION_CONFIG>
  
-  <PROFILE>MESH_eNB_X2</PROFILE>	
+  <PROFILE>MESH_UE_THROUGHPUT</PROFILE>	
 </OAI_EMULATION>

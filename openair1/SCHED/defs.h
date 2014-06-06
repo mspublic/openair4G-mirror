@@ -359,7 +359,8 @@ u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
 
 
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
-s8 find_last_ue_id(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
+s8 find_ue_with_active_cornti(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
+u16 find_ue_cornti (u16 rnti, u8 UE_index, PHY_VARS_eNB *phy_vars_eNB);
 u16 find_cornti(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
