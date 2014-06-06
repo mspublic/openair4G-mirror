@@ -45,7 +45,7 @@
 #include "PHY/vars.h"
 #endif
 
-#define DEBUG_DCI
+#define DEBUG_DCI 1
 
 u32  localRIV2alloc_LUT25[512];
 u32  distRIV2alloc_LUT25[512];
@@ -357,8 +357,10 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch0 = dlsch[0];
     
    
-      dlsch[0]->rnti = rnti;
-
+    dlsch[0]->rnti = rnti;
+    //dlsch[0]->crnti = rnti;
+    dlsch[0]->harq_processes[harq_pid]->rnti = rnti;
+    
     dlsch[0]->harq_ids[subframe] = harq_pid;
     if (dlsch[0]->harq_processes[harq_pid]->Ndi == 1)
       dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
@@ -431,12 +433,16 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     dlsch0 = dlsch[0];
     
-    if (rnti != co_rnti){
-      dlsch[0]->rnti = rnti;
+    if (co_rnti!= 0x0){
       dlsch[0]->cornti_active = 1; 
-    } else 
+    } else {
       dlsch[0]->cornti_active = 0; 
-
+      //dlsch[0]->crnti = rnti;
+      dlsch[0]->rnti = rnti;
+    }
+    
+    dlsch[0]->harq_processes[harq_pid]->rnti = rnti;
+    
     // else 
     // LOG_D(PHY,"[DCI] collaborative rnti %s\n", rnti);
 
@@ -695,7 +701,8 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
   }
 #ifdef DEBUG_DCI
   if (dlsch0) {
-    
+    if  (dlsch[0]->cornti_active )
+      msg("dlsch0 eNB: cornti  %x\n",dlsch[0]->harq_processes[harq_pid]->rnti );
     msg("dlsch0 eNB: rnti     %x\n",dlsch0->rnti);
     msg("dlsch0 eNB: NBRB     %d\n",dlsch0->nb_rb);
     msg("dlsch0 eNB: rballoc  %x\n",dlsch0->rb_alloc[0]);
@@ -871,7 +878,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 				      u16 si_rnti,
 				      u16 ra_rnti,
 				      u16 p_rnti,
-				      u16 co_rnti_flag) {
+				      u16 co_rnti) {
 
   u8 harq_pid=0;
   u16 rballoc=0;
@@ -924,7 +931,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       return(-1);
     }
 
-    if ((rnti==si_rnti) || (rnti==p_rnti) || (co_rnti_flag)){  //
+    if ((rnti==si_rnti) || (rnti==p_rnti) ){  //
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
       NPRB      = (TPC&1) + 2;
@@ -1058,7 +1065,11 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->active = 1;
 
     dlsch[0]->rnti = rnti;
-
+    
+    if ((co_rnti !=0) && (co_rnti != rnti))
+      dlsch[0]->harq_processes[harq_pid]->rnti = co_rnti;	
+    else 
+      dlsch[0]->harq_processes[harq_pid]->rnti = 0x0;	
     dlsch0 = dlsch[0];
 
     break;
@@ -1837,7 +1848,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      LTE_UE_DLSCH_t **dlsch,
 				      u16 si_rnti,
 				      u16 ra_rnti,
-				      u16 p_rnti,
+				      u16 p_rnti, 
+				      u16 co_rnti,
 				      u8 eNB_id,
 				      u8 use_srs) {
 
@@ -1967,7 +1979,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   ulsch->harq_processes[harq_pid]->n_DMRS                                = cshift;     
 
   ulsch->rnti = rnti;
-
+  if (dci_format == format0A)
+    ulsch->harq_processes[harq_pid]->rnti = co_rnti;      
+  else 
+    ulsch->harq_processes[harq_pid]->rnti = 0x0;  
     //    msg("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
     //	   ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
@@ -2168,8 +2183,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
-    msg("Format 0/0A DCI : ulsch (ue): rballoc   %d\n",rballoc);
-    msg("Format 0/0A DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    if (dci_format == format0A)
+      msg("Format 0/0A DCI : ulsch (ue): cornti     %x\n",ulsch->harq_processes[harq_pid]->rnti);
+    msg("Format 0/0A DCI : ulsch (ue): rnti       %x\n",ulsch->rnti);
+    msg("Format 0/0A DCI : ulsch (ue): rballoc    %d\n",rballoc);
+    msg("Format 0/0A DCI : ulsch (ue): NBRB       %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("Format 0/0A DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("Format 0/0A DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
     msg("Format 0/0A DCI :ulsch (ue): Ndi         %d\n",ulsch->harq_processes[harq_pid]->Ndi);
@@ -2279,10 +2297,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   }
   
   harq_pid = subframe2harq_pid(frame_parms,			      
-				 pdcch_alloc2ul_frame(frame_parms,
-						      phy_vars_eNB->frame,
-						      subframe),
-				 pdcch_alloc2ul_subframe(frame_parms,subframe));
+			       pdcch_alloc2ul_frame(frame_parms,
+						    phy_vars_eNB->frame,
+						    subframe),
+			       pdcch_alloc2ul_subframe(frame_parms,subframe));
 
     rb_alloc = rballoc;
     if (rb_alloc>RIV_max) {
@@ -2421,10 +2439,15 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       //      ulsch->harq_processes[harq_pid]->round++;
     }
     ulsch->rnti = rnti;
-
+    if (dci_format == format0A)
+      ulsch->harq_processes[harq_pid]->rnti = rnti;
+    else 
+      ulsch->harq_processes[harq_pid]->rnti = 0x0;
+   
     //ulsch->n_DMRS2 = cshift;
 
 #ifdef DEBUG_DCI
+    msg("ulsch (eNB): rnti          %x\n",rnti);
     msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (eNB): first_rb      %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("ulsch (eNB): harq_pid      %d\n",harq_pid);

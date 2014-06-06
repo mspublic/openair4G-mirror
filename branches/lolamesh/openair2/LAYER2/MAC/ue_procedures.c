@@ -268,7 +268,6 @@ void ue_send_sdu_co(u8 Mod_id,u32 frame,u8 *sdu,u16 sdu_len,u8 eNB_index, u16 co
     /*  payload_ptr+=1; // 1 bytes for HDR
 	UE_mac_inst[Mod_id].corntis.sn[eNB_index]=(((payload_ptr[1]&0xff) <<8)  | (payload_ptr[0]&0xff));*/
     UE_mac_inst[Mod_id].corntis.sn[eNB_index]= ((SCH_SUBHEADER_LONG *)payload_ptr)->L;
-    LOG_D(MAC,"[UE %d]dumping the mac buffer pdu size %d\n", Mod_id, size);
     
     LOG_I(MAC,"[UE %d][VLINK] Frame %d : received sequence number %d \n",
 	  Mod_id,frame,UE_mac_inst[Mod_id].corntis.sn[eNB_index]);
@@ -694,7 +693,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
 }
 // tx to the dst CH
-void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u16 cornti, s16 seq_num) {
+int ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u16 cornti, s16 seq_num) {
  
   /*  u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
@@ -725,7 +724,7 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
   if ((element->data != NULL) && (element->pdu_size <= buflen)) {
       // no need to generate the header  or send the seq num 
       memcpy (ulsch_buffer, element->data, element->pdu_size);
-      LOG_D(MAC,"[UE %d][vLINK] Generate ULSCH: buflen %d MAC PDU size %d\n ", buflen, element->pdu_size);
+      LOG_D(MAC,"[UE %d][vLINK] Generate ULSCH: buflen %d MAC PDU size %d\n ", Mod_id, buflen, element->pdu_size);
   }
   else {
     if (element->pdu_size > buflen)
@@ -738,16 +737,22 @@ void ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,
       msg("%x.", ulsch_buffer[i]);
     msg("\n");
  
-    // no perform the padding 
+    // now perform the padding 
   for (i=0;i<(buflen-element->pdu_size);i++)
       ulsch_buffer[element->pdu_size+i] = (char)(taus()&0xff);
- 
+  if (i>0)
+    LOG_N(MAC,"[UE %d] padding mac pdu with %d byte \n",Mod_id, i);
+  
   LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",Mod_id);
   UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
   UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
+  return 1;
   }
   else{
+    //UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
+    //UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
     LOG_D(MAC, "ue_get_sdu_co DATA ELEMENT is NULL\n" );
+    return 0;
   }
 }
 

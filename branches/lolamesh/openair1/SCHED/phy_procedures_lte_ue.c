@@ -530,6 +530,7 @@ int dummy_tx_buffer[3840*4] __attribute__((aligned(16)));
 void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag,runmode_t mode) {
   
   int i_d;
+  int ret=0;
   u16 first_rb, nb_rb;
   u8 harq_pid;
   unsigned int input_buffer_length;
@@ -803,19 +804,29 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
 	 
 #ifdef OPENAIR2
-	  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs (eNB_id %d, harq %d)\n",phy_vars_ue->Mod_id, eNB_id,harq_pid);
+	  LOG_D(PHY,"[UE  %d] ULSCH : Searching for MAC SDUs (eNB_id %d, harq %d) (rnti %x, rnti %x)\n",
+		phy_vars_ue->Mod_id, eNB_id,harq_pid,
+		phy_vars_ue->ulsch_ue[eNB_id]->rnti,
+		phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rnti);
 	  if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1) { 
 	    //if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->calibration_flag == 0) {
 	    
-	    if (find_cornti_ue(phy_vars_ue->ulsch_ue[eNB_id]->rnti, phy_vars_ue)){
-	      mac_xface->ue_get_sdu_co(phy_vars_ue->Mod_id,
+	    if ( /*(find_cornti_ue(phy_vars_ue->ulsch_ue[eNB_id]->rnti, phy_vars_ue)) || */ 
+		(find_cornti_ue(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rnti, phy_vars_ue)) ){
+	      ret = mac_xface->ue_get_sdu_co(phy_vars_ue->Mod_id,
 				       phy_vars_ue->frame,
 				       eNB_id,
 				       ulsch_input_buffer,
 				       input_buffer_length,
-				       phy_vars_ue->ulsch_ue[eNB_id]->rnti,
+				       phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rnti, // phy_vars_ue->ulsch_ue[eNB_id]->rnti,
 				       phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->sn);
 	    
+	      if (ret == 0 ){
+		memset (ulsch_input_buffer, 0, input_buffer_length);
+		LOG_N(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU NULL, \n", phy_vars_ue->frame,next_slot>>1);
+		//return;
+	      }
+
 	    }
 	    else {
 	      mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,
@@ -837,8 +848,12 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    }
 	    */
 	  }
-#ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+
+	  
+#ifdef DEBUG_PHY_PROC	 
+	  LOG_D(PHY,"[UE] Frame %d, subframe %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) (buffer %p): \n",
+		phy_vars_ue->frame,next_slot>>1,harq_pid, phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3,
+		ulsch_input_buffer);
 	  for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
 	    LOG_T(PHY,"%x.",ulsch_input_buffer[i]);
 	  LOG_D(PHY,"\n");
@@ -1877,7 +1892,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 #endif     
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (void *)&dci_alloc_rx[i].dci_pdu,
-					    dci_alloc_rx[i].rnti,
+					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					    dci_alloc_rx[i].format,
 					    phy_vars_ue->dlsch_ue[eNB_id],
 					    phy_vars_ue->lte_frame_parms[eNB_id],
@@ -1885,7 +1900,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					    SI_RNTI,
 					    0,
 					    P_RNTI,
-					    1)==0) {
+					    dci_alloc_rx[i].rnti) == 0) {
 
 	dump_dci(phy_vars_ue->lte_frame_parms[eNB_id],(void *)&dci_alloc_rx[i]);
 
@@ -1931,6 +1946,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      SI_RNTI,
 					      0,
 					      P_RNTI,
+					      0,
 					      eNB_id,
 					      0)==0) {
 	  
@@ -1947,7 +1963,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	
 #endif  
 	if (generate_ue_ulsch_params_from_dci((void *)&dci_alloc_rx[i].dci_pdu,
-					      dci_alloc_rx[i].rnti, //phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+					      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					      last_slot>>1,
 					      format0A,
 					      phy_vars_ue,
@@ -1956,6 +1972,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 					      SI_RNTI,
 					      0,
 					      P_RNTI,
+					      dci_alloc_rx[i].rnti,
 					      eNB_id,
 					      0)==0) {
 	  

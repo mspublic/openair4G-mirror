@@ -948,7 +948,7 @@ void ue_get_sdu(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 @param subframe subframe number
 
 */
-void ue_get_sdu_co(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen, u16 cornti, s16 seq_num);
+int ue_get_sdu_co(u8 Mod_id, u32 frame, u8 CH_index,u8 *ulsch_buffer,u16 buflen, u16 cornti, s16 seq_num);
 
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)

@@ -131,7 +131,7 @@ typedef struct
     void (*ue_get_sdu)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
     
     /// Retrieve ULSCH sdu from MAC for a virtual link
-    void (*ue_get_sdu_co)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen,u16 cornti, u16 seq_num);
+    int (*ue_get_sdu_co)(u8 Mod_id,u32 frame,u8 CH_index,u8 *ulsch_buffer,u16 buflen,u16 cornti, u16 seq_num);
 
     /// Retrieve RRCConnectionReq from MAC
     PRACH_RESOURCES_t* (*ue_get_rach)(u8 Mod_id,u32 frame,u8 Msg3_flag,u8 subframe);

@@ -173,7 +173,7 @@ typedef struct
   LTE_eNB_ULSCH_t  *ulsch_eNB_co[MAX_VLINK_PER_CH];     // Cooperative logical channel (cooperation phase)
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats *eNB_UE_stats_ptr[NUMBER_OF_UE_MAX];
-
+  
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
   

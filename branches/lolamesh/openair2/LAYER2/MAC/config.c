@@ -184,6 +184,7 @@ int rrc_mac_config_co_req(u8 Mod_id,
       LOG_E(MAC,"[UE %d] failed to instantiate mac buffer CORNTI %x with index %d for eNB %d\n", Mod_id,co_RNTI,nb_corntis, index);
   } else { // this is an eNB
     nb_corntis = eNB_mac_inst[Mod_id].UE_template[index].corntis.count;
+    //LOG_D(MAC,"[eNB %d] before configuring CORNTI %x with index %d for UE %d\n", Mod_id,co_RNTI,nb_corntis, index);
     eNB_mac_inst[Mod_id].UE_template[index].corntis.array[nb_corntis] = co_RNTI;
     mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI, virtualLinkID);  
     nb_corntis = eNB_mac_inst[Mod_id].UE_template[index].corntis.count++;

@@ -330,3 +330,25 @@ print:
 
 showcflags:
 	@echo $(CFLAGS)
+
+
+otg_all: otg_latency otg_gp
+
+# need to check if the file exists before calling otgplot
+otg_latency:
+	export TITLE="Application OWD(ms)"
+	cp /tmp/otg_latency.dat /tmp/onewaydelay.dat
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency.dat" "[$(COL1):$(COL2)]"
+otg_latency_bg:
+	export TITLE="Background OWD(ms)"
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_latency_bg.dat" "[$(COL1):$(COL2)]"
+otg_gp:
+	export TITLE="Application Goodput(Kb/s)"
+	cp /tmp/otg_GP.dat /tmp/goodput.dat
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/goodput.dat" "[$(COL1):$(COL2)]"
+otg_gp_bg:
+	export TITLE="Background Goodput(Kb/s)"
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_GP_bg.dat" "[$(COL1):$(COL2)]"
+otg_jitter:
+	export TITLE="Aplication Jitter(ms)"
+	$(OPENAIR2_DIR)/UTIL/OTG/OTGplot "/tmp/otg_jitter.dat" "[$(COL1):$(COL2)]"
