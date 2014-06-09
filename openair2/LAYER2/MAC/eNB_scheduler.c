@@ -1195,8 +1195,10 @@ u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_inde
   /*  if (*cornti_index >= 255)
       return 0;*/
   for (UE_id=0;UE_id<granted_UEs;UE_id++){
+     //for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++){
     for (j=0;j<MAX_VLINK_PER_CH;j++){
-      if (eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].cornti==cornti && eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0]!=0 ){
+      if (eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].cornti==cornti && 
+	  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0]!=0 ){
         UE_id_ar[(int)*num_of_UE_id_ar]=UE_id;
         cornti_index_of_UE_id_ar[(int)*num_of_UE_id_ar]=j;
         bsr_of_UE_id_ar[(int)*num_of_UE_id_ar] = eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[j].bsr[0];
@@ -1265,16 +1267,17 @@ void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *
     }
   }
   if (cornti_found){ 
-  // you may sort the table based on the SN each time you receive a COBSR (This is only for the long bsr to be implemented apaposto)
-  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].sn[0]    = ptr->SN;
-  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].cornti= ptr->CORNTI;
-  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[0]= ptr->Buffer_size;
-  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[1]=0; // not sure 
-  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[2]=0;
-  eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[3]=0;
-
-  LOG_I(MAC,"[eNB %d] MAC CE_LCID %d :Received COBSR short (sn %d, cornti %x, bsr %d)\n", 
-        Mod_id, rx_ces,ptr->SN,ptr->CORNTI, ptr->Buffer_size);
+    // you may sort the table based on the SN each time you receive a COBSR 
+    // (This is only for the long bsr to be implemented apaposto)
+    eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].sn[0]    = ptr->SN;
+    eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].cornti= ptr->CORNTI;
+    eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[0]= ptr->Buffer_size;
+    eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[1]=0; // not sure 
+    eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[2]=0;
+    eNB_mac_inst[Mod_id].UE_template[UE_id].cobsr_info[i].bsr[3]=0;
+    
+    LOG_I(MAC,"[eNB %d] MAC CE_LCID %d for UE %d :Received COBSR short (sn %d, cornti %d/%x, bsr %d)\n", 
+	  Mod_id,  rx_ces, UE_id,ptr->SN,i,ptr->CORNTI, ptr->Buffer_size);
   } else {
     LOG_E(MAC,"[eNB %d] COBSR cornti %x for UE %d not found \n", Mod_id,ptr->CORNTI,UE_id);
   }
@@ -1612,7 +1615,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 // u32 buffer_occupancy;
 // u32 tmp_bsr;
  //u32 cqi_req,cshift,ndi,mcs,rballoc;
- 
+ //*nCCE=0;
  granted_UEs = find_ulgranted_UEs(Mod_id);
  nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
  nCCE_available_before_sched = nCCE_available;
@@ -1648,13 +1651,13 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
  int nb_rbg = 0;
  nb_rbg = get_nb_rbg(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1);
  
-  for(i = 0; i < nb_rbg; i++){
-    if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i])
-      nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1, i);
-    
+ for(i = 0; i < nb_rbg; i++){
+   if(mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i])
+     nb_available_rb += get_rbg_size(mac_xface->lte_frame_parms[Mod_id]->N_RB_DL-1, i);
+   
     //  LOG_D(MAC,"[eNB %d] Frame %d, subframe %d, nb_rbg %d,dl_rbg_mask[%d] %d ,nb_available_rb %d  \n",
     //	  Mod_id,frame,subframe,nb_rbg, i, mac_xface->lte_frame_parms[Mod_id]->dl_rbg_mask[i], nb_available_rb);
-  }
+ }
 #warning "only works for 2 eNB"
   first_rb = (Mod_id ==0 ) ? 1 : nb_available_rb + 1 ; 
   LOG_I(MAC,"[eNB %d][schedule_ulsch] first rb %d\n", Mod_id, first_rb);
@@ -1744,9 +1747,11 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
  aggregation = 2; // set to maximum aggregation level
 
  for (UE_id=0;UE_id<granted_UEs && (*nCCE_available > (1<<aggregation));UE_id++) {
- 
-   if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0))) { //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))  
-  // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
+   // if (1){
+      if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || 
+       (openair_daq_vars.target_ul_sched_policy == 1 )) { //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))  
+	
+// if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
      
      next_ue = UE_id;//schedule_next_ulue(Mod_id,UE_id,subframe);
      rnti = find_UE_RNTI(Mod_id,next_ue);
@@ -2074,7 +2079,7 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	 if (openair_daq_vars.target_ue_dl_mcs > 0) {
 	   mcs = openair_daq_vars.target_ue_dl_mcs;
 	 } else { 
-	   mcs =  (int)(10 * ((double)(taus()%0xffffffff)/(double)0xffffffff)) + 6;;
+	   mcs =  (int)(10 * ((double)(taus()%0xffffffff)/(double)0xffffffff)) + 6;
 	 }
 	 mcs = cmin(mcs,16);
 	 max_mcs = 16;
@@ -2144,8 +2149,8 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 	     
 	     //eNB_mac_inst[Mod_id].UE_template[UE_id_ar[i]].cobsr_info[cornti_index_of_UE_id_ar[i]].bsr[0]=0;
 	     //eNB_mac_inst[Mod_id].UE_template[UE_id_ar[i]].cobsr_info[cornti_index_of_UE_id_ar[i]].sn_served[0] = eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0];
-	     eNB_mac_inst[Mod_id].UE_template[UE_id_ar[i]].cobsr_info[cornti_index].bsr[0]=0;
-	     eNB_mac_inst[Mod_id].UE_template[UE_id_ar[i]].cobsr_info[cornti_index].sn_served[0] = eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0];
+	     eNB_mac_inst[Mod_id].UE_template[UE_id_ar[i]].cobsr_info[cornti_index_of_UE_id_ar[i]].bsr[0]=0;
+	     eNB_mac_inst[Mod_id].UE_template[UE_id_ar[i]].cobsr_info[cornti_index_of_UE_id_ar[i]].sn_served[0] = eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0];
 	   
 	   }
 	   /*for (i=0; i < NUMBER_OF_UE_MAX; i ++) {
