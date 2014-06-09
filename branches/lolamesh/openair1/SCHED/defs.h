@@ -93,6 +93,7 @@ typedef struct {
   u32  channel_vacant[4];  
   u32  target_ue_dl_mcs;
   u32  target_ue_ul_mcs;
+  u32  target_ul_sched_policy;
   u32  ue_ul_nb_rb;
   u32  ue_dl_rb_alloc;
   u32  dlsch_rate_adaptation;

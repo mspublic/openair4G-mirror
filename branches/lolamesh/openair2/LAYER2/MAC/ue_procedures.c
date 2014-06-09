@@ -744,8 +744,8 @@ int ue_get_sdu_co(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen,u
     LOG_N(MAC,"[UE %d] padding mac pdu with %d byte \n",Mod_id, i);
   
   LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",Mod_id);
-  UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
-  UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
+  //  UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
+  //UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
   return 1;
   }
   else{

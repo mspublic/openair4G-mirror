@@ -915,7 +915,9 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
    // if (dlsch_abstraction_EESM(phy_vars_ue->sinr_dB[eNB_id], phy_vars_ue->transmission_mode[eNB_id], dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
     
-    if ((dlsch_abstraction_bler(dlsch_eNB->harq_processes[harq_pid]->mcs, desired_dl_bler) == 1) || (*rnti==0x0) )  {
+    if ((dlsch_abstraction_bler(dlsch_eNB->harq_processes[harq_pid]->mcs, desired_dl_bler) == 1) || 
+	//	(*rnti==0x0) 
+	(phy_vars_ue->frame < 400 ))  {
       //if ((*rnti == 0x0) || (phy_vars_ue->Mod_id > 0))  {
        // reset HARQ 
       LOG_I(OCM,"abstraction_decoding dlsch_decoding_emul abstraction successful (mcs=%d, bler=%f)\n",

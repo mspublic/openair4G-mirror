@@ -642,6 +642,8 @@ main (int argc, char **argv)
   u8 cooperation_flag;		// for cooperative communication
   u8 target_dl_mcs = 0;
   u8 target_ul_mcs = 0;
+  u8 target_ul_sched_policy = 0;
+
   u8 rate_adaptation_flag;
 
   u8 abstraction_flag = 0, ethernet_flag = 0;
@@ -741,7 +743,7 @@ main (int argc, char **argv)
   }
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:K:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:K:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:Y:")) != -1) {
 
     switch (c) {
 
@@ -814,6 +816,9 @@ main (int argc, char **argv)
       desired_dl_bler = atof (optarg);
       if (desired_dl_bler >= 1.0)
 	desired_dl_bler = 0.9;
+      break;
+    case 'Y' :
+      target_ul_sched_policy =  atoi (optarg);
       break;
     case 'K':
       desired_ul_bler = atof (optarg);
@@ -1214,6 +1219,8 @@ main (int argc, char **argv)
 
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
+  openair_daq_vars.target_ul_sched_policy = target_ul_sched_policy;
+
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.ue_ul_nb_rb = 2;
 

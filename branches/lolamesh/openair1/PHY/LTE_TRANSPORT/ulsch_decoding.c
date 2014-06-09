@@ -1097,7 +1097,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	  subframe, (*cornti==rnti)?"CO":"C",rnti,*cornti,UE_id, UE_index, harq_pid,eNB_id);
   }
    
-  UE_id = UE_index;
+  //UE_id = UE_index;
   LOG_N(PHY,"rx_pucch_emul:find UE %d/%d with rnti %x, setting UE_id to UE_index \n",UE_index, UE_id, rnti);
   
   // Do abstraction here to determine if packet it in error
