@@ -1,0 +1,30 @@
+{
+  "id": 1,
+  "method": "getSpectrum",
+  "params": {
+    "location": {
+      "point": {
+        "center": {
+          "longitude": 22.253150939941406,
+          "latitude": 60.45146165591333
+        }
+      }
+    },
+    "deviceDesc": {
+      "fccId": "65",
+      "serialNumber": "g55-99-77-55"
+    },
+    "capabilities": {
+      "frequencyRanges": [
+        {
+          "startHz": 470000000,
+          "stopHz": 790000000
+        }
+      ]
+    },
+    "type": "AVAIL_SPECTRUM_REQ",
+    "antenna": {
+      "height": 10.2,
+      "heightType": "AGL"
+    },
+    "version": "1.0"},"jsonrpc": "2.0"}
