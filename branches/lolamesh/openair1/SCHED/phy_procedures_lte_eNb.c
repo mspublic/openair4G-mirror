@@ -95,34 +95,35 @@ extern int rx_sig_fifo;
 static unsigned char I0_clear = 1;
 
 u8 is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,u8 UE_id,u8 subframe) {
-  /*
-  msg("[PHY][eNB %d][SR %x] Frame %d subframe %d Checking for SR TXOp(sr_ConfigIndex %d)\n",
-      phy_vars_eNB->Mod_id,phy_vars_eNB->ulsch_eNB[UE_id]->rnti,phy_vars_eNB->frame,subframe,
-      phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex);
-  */
-  if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex < 5) {        // 5 ms SR period
+  
+  LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking for SR TXOp(sr_ConfigIndex %d)\n",
+    phy_vars_eNB->Mod_id,phy_vars_eNB->ulsch_eNB[UE_id]->rnti,phy_vars_eNB->frame,subframe,
+    phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex);
+  
+  if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex <= 4) {        // 5 ms SR period
     if ((subframe%5) == phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex)
       return(1);
   }
-  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex < 14) {  // 10 ms SR period
+  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex <= 14) {  // 10 ms SR period
     if (subframe==(phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex-5))
       return(1);
   }
-  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex < 34) { // 20 ms SR period
+  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex <= 34) { // 20 ms SR period
     if ((10*(phy_vars_eNB->frame&1)+subframe) == (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex-15))
       return(1);
   }
-  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex < 74) { // 40 ms SR period
+  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex <= 74) { // 40 ms SR period
     if ((10*(phy_vars_eNB->frame&3)+subframe) == (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex-35))
       return(1);
   }
-  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex < 154) { // 80 ms SR period
+  else if (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex <= 154) { // 80 ms SR period
     if ((10*(phy_vars_eNB->frame&7)+subframe) == (phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex-75))
       return(1);
   }
 
   return(0);
 }
+ 
 
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   u8 i;

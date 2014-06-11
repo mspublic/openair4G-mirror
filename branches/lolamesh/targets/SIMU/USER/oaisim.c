@@ -660,7 +660,7 @@ main (int argc, char **argv)
 
   u8 nb_connected_eNB=1, nb_vlink_eNB=0, nb_ue_per_vlink=0;
   u8 operation_mode_read; 
-  
+  u8 mac_buffer_capacity=40;
   
   
   // omv related info
@@ -743,7 +743,7 @@ main (int argc, char **argv)
   }
 
    // get command-line options
-  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:K:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:Y:")) != -1) {
+  while ((c = getopt (argc, argv, "aA:b:B:c:C:d:eE:f:FGg:hH:iIJk:K:l:m:M:n:N:oO:p:P:rR:s:S:t:T:u:U:vVx:X:z:Z:w:W:L:y:Y:")) != -1) {
 
     switch (c) {
 
@@ -816,6 +816,9 @@ main (int argc, char **argv)
       desired_dl_bler = atof (optarg);
       if (desired_dl_bler >= 1.0)
 	desired_dl_bler = 0.9;
+      break;
+    case 'y' :
+      mac_buffer_capacity =  atoi (optarg);
       break;
     case 'Y' :
       target_ul_sched_policy =  atoi (optarg);
@@ -1322,7 +1325,7 @@ main (int argc, char **argv)
 	}*/
   mac_xface->macphy_exit = exit_fun;
   // initilizing the virtula link creation
-  mac_xface->vlink_init(nb_connected_eNB, nb_vlink_eNB, nb_ue_per_vlink);
+  mac_xface->vlink_init(nb_connected_eNB, nb_vlink_eNB, nb_ue_per_vlink, mac_buffer_capacity);
   
 #endif
 

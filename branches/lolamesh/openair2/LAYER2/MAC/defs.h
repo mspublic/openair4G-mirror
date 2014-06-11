@@ -186,8 +186,8 @@ typedef struct {
 
 typedef struct {
   u16 CORNTI:16;
-  u8 SN:8;
-  u8 Buffer_size:8; // CONECT: get the total size, LOLA: get the first element SN an
+  u16 SN:16;
+  u16 Buffer_size:16; // CONECT: get the total size, LOLA: get the first element SN an
 } __attribute__((__packed__))COBSR_SHORT;
 
 typedef struct {
@@ -585,6 +585,8 @@ typedef struct{
   u8 power_backoff_db[NUMBER_OF_eNB_MAX]; 
   // CO-RNTIs of the UE
   cornti_array corntis;
+  // mac buffer capacity
+  u16 mac_buffer_capacity;
 }UE_MAC_INST;
 
 typedef struct {
@@ -597,10 +599,10 @@ u16 co_seq_num[MAX_NB_ELEMENTS_MAC_COBSR];
 u16 co_size[MAX_NB_ELEMENTS_MAC_COBSR];
 
 
-u8 UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH];     
-u8 cornti_index_of_UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH]; 
-u8 seq_num_of_UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH];
-u8 bsr_of_UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH];
+u16 UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH];     
+u16 cornti_index_of_UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH]; 
+u16 seq_num_of_UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH];
+u16 bsr_of_UE_id_ar[MAX_VLINK_PER_CH*MAX_VLINK_PER_CH];
 
 /* \brief Generate header for DL-SCH.  This function parses the desired control elements and sdus and generates the header as described
 in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
@@ -704,7 +706,7 @@ void schedule_ulsch(unsigned char Mod_id,u32 frame,unsigned char cooperation_fla
 
 void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb, u16 *nb_available_rb);
 void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, unsigned char subframe, unsigned char sched_subframe, DCI_PDU *DCI_pdu, unsigned int *nCCE, unsigned int *nCCE_available, u16 *first_rb,u16 *nb_available_rb);
-u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 UE_id_ar[], u8 cornti_index_of_UE_id_ar[], u8 seq_num_of_UE_id_ar[], u8 bsr_of_UE_id_ar[],  u8 *num_of_UE_id_ar);
+u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u16 UE_id_ar[], u16 cornti_index_of_UE_id_ar[], u16 seq_num_of_UE_id_ar[], u16 bsr_of_UE_id_ar[],  u8 *num_of_UE_id_ar);
 //u8 find_UE_min_seq_num_that_belong_on_the_same_cornti(u8 Mod_id, u8 *cornti_index, u8 **UE_id_ar, u8 **cornti_index_of_UE_id_ar, u8 **seq_num_of_UE_id_ar, u8 **bsr_of_UE_id_ar,  u8 *num_of_UE_id_ar);
 
 void update_cobsr_info( u8 Mod_id, u8 UE_id, unsigned char rx_ces, COBSR_SHORT *ptr);
@@ -1184,7 +1186,7 @@ int mac_forwarding_get_output_CORNTI(u8 Mod_id, u8 eNB_flag, u8 vlid, u16 cornti
 
 int mac_forwarding_get_output_eNB(u8 Mod_id, u16 eNB_index, u8 vlid);
 
-void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink);
+void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink,u16 mac_buffer_capacity);
 int  vlink_setup(u8 Mod_id, u32 frame, u8 subframe );
 
 /*@}*/

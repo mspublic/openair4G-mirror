@@ -170,7 +170,7 @@ typedef struct
     void (*ra_failed)(u8 Mod_id,u8 eNB_index);
 
     /// Function to configure the virtual link creation
-    void (*vlink_init)(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink);
+    void (*vlink_init)(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink, u16 mac_buffer_capacity);
 
     /// Function to indicate the transmission of msg1/rach to MAC
     void (*Msg1_transmitted)(u8 Mod_id,u32 frame,u8 eNB_id);

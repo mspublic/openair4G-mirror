@@ -83,8 +83,11 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     if (eNB_flag==0){
       LOG_I(MAC,"[CONFIG][UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].macConfig=mac_MainConfig;
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].measGapConfig=measGapConfig;
-      
+      if (measGapConfig !=NULL) {
+	UE_mac_inst[Mod_id].scheduling_info[eNB_index].measGapConfig=measGapConfig;
+      } else {
+	UE_mac_inst[Mod_id].scheduling_info[eNB_index].measGapConfig=NULL;
+      }
       if (mac_MainConfig->ul_SCH_Config) {
 	
 	if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
@@ -107,6 +110,8 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 	UE_mac_inst[Mod_id].scheduling_info[eNB_index].sr_ProhibitTimer  = (u16) *mac_MainConfig->sr_ProhibitTimer_r9;
       else
 	UE_mac_inst[Mod_id].scheduling_info[eNB_index].sr_ProhibitTimer  = (u16) 0;
+#else 
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].sr_ProhibitTimer  = (u16) 0;
 #endif
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_id].scheduling_info[eNB_index].periodicBSR_Timer);
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_id].scheduling_info[eNB_index].retxBSR_Timer);
@@ -170,7 +175,6 @@ int rrc_mac_config_co_req(u8 Mod_id,
   
   ret = mac_forwarding_add_entry(Mod_id, eNB_flag, index, virtualLinkID, co_RNTI);
   
- 
   
   if (eNB_flag == 0 ) { // this is a UE
     nb_corntis = UE_mac_inst[Mod_id].corntis.count;
@@ -178,8 +182,9 @@ int rrc_mac_config_co_req(u8 Mod_id,
     mac_xface->phy_config_cornti(Mod_id, eNB_flag, index, co_RNTI,virtualLinkID); 
     UE_mac_inst[Mod_id].corntis.count++;
     LOG_D(MAC,"[UE %d] configuring CORNTI %x with index %d for eNB %d\n", Mod_id,co_RNTI,nb_corntis, index);
-    if ((ret = mac_buffer_instantiate (Mod_id, index, co_RNTI)) == 1 )
-      LOG_D(MAC,"[UE %d] mac buffer instantiated  CORNTI %x with index %d for eNB %d\n", Mod_id,co_RNTI,nb_corntis, index);
+    if ((ret = mac_buffer_instantiate (Mod_id, index, co_RNTI, UE_mac_inst[Mod_id].mac_buffer_capacity)) == 1 )
+      LOG_D(MAC,"[UE %d] mac buffer instantiated  CORNTI %x with index %d for eNB %d with capacity %d pdus\n", 
+	    Mod_id,co_RNTI,nb_corntis, index, UE_mac_inst[Mod_id].mac_buffer_capacity);
     else 
       LOG_E(MAC,"[UE %d] failed to instantiate mac buffer CORNTI %x with index %d for eNB %d\n", Mod_id,co_RNTI,nb_corntis, index);
   } else { // this is an eNB

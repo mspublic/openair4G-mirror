@@ -47,7 +47,7 @@
 #include "avl_tree.h" 
 
 #define LIST_NAME_MAX_CHAR 32
-#define MAC_BUFFER_MAXIMUM_CAPACITY 40
+//#define MAC_BUFFER_MAXIMUM_CAPACITY 180
 #include <stdint.h>
 //typedef uint8_t u8;
 //#define NB_UE_INST 4
@@ -113,8 +113,8 @@ MAC_BUFFER_UE *mac_buffer_u;
 
 
 void mac_buffer_top_init();
-int mac_buffer_instantiate (u8 Mod_id, u8 eNB_index, u16 cornti);
-MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 eNB_index, u16 cornti); 
+int mac_buffer_instantiate (u8 Mod_id, u8 eNB_index, u16 cornti, u16 capacity);
+MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 eNB_index, u16 cornti, u16 capacity); 
 void packet_list_init (packet_list_t*, char *nameP);
 void packet_list_free (packet_list_t* listP);
 void mac_buffer_free(u8 Mod_id, u8 b_index);
@@ -166,6 +166,7 @@ void mac_buffer_print_all_per_MR(u8 Mod_id); // used also for debugging
 // MAC API
 int  mac_buffer_total_size(u8 Mod_id, u8 eNB_index, u16 cornti);
 int  mac_buffer_nb_elements(u8 Mod_id, u8 eNB_index, u16 cornti); 
+int  mac_buffer_capacity(u8 Mod_id, u8 eNB_index, u16 cornti); 
 
 // just return the pointer to the element for consulting, do not remove from the buffer
 //mem_element_t *mac_buffer_stat_ind(u8 Mod_id, u8 eNB_index, u16 cornti, u16 eid);
