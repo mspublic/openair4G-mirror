@@ -44,7 +44,7 @@
 #include "forwarding_buffer.h"
 #include "avl_tree.h"
 
-int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
+int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti, u16 capacity){
   int b_index,i; 
 	int flag = 1;
 	char *string=malloc(sizeof(char)*20);
@@ -92,9 +92,10 @@ int mac_buffer_instantiate(u8 Mod_id, u8 eNB_index, u16 cornti){
 		strcpy(string2,"packet_list: ");
 		strcat(string1,string);
 		strcat(string2,string);
-		LOG_I(MAC, "[UE %d] instantiate the buffer for eNB %d and cornti %x \n", Mod_id, eNB_index, cornti);
+		LOG_I(MAC, "[UE %d] instantiate the buffer for eNB %d and cornti %x with capacity %d\n", 
+		      Mod_id, eNB_index, cornti, capacity);
 		b_index = mac_buffer_u[Mod_id].total_number_of_buffers_allocated;
-		mac_buffer_u[Mod_id].mac_buffer_g[b_index] =  mac_buffer_init(string1, string2, eNB_index, cornti);
+		mac_buffer_u[Mod_id].mac_buffer_g[b_index] =  mac_buffer_init(string1, string2, eNB_index, cornti, capacity);
 		mac_buffer_u[Mod_id].total_number_of_buffers_allocated +=1;
 		string[0]='\0'; // flush string buffer
 		string1[0]='\0';
@@ -135,7 +136,7 @@ void mac_buffer_top_init(){
 	}
 }
 
-MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 eNB_index, u16 cornti){
+MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 eNB_index, u16 cornti, u16 capacity){
  
  MAC_BUFFER * mac_buff;
  mac_buff = malloc(sizeof(MAC_BUFFER));
@@ -146,7 +147,7 @@ MAC_BUFFER *mac_buffer_init(char *nameB, char *nameP, u8 eNB_index, u16 cornti){
  }
  strcpy(mac_buff->name, nameB);
 
- mac_buff->maximum_capacity = MAC_BUFFER_MAXIMUM_CAPACITY;
+ mac_buff->maximum_capacity = capacity ; // MAC_BUFFER_MAXIMUM_CAPACITY;
  mac_buff->cornti=cornti;
  mac_buff->eNB_index=eNB_index;
  
@@ -682,8 +683,9 @@ int mac_buffer_data_ind(u8 Mod_id, u8 eNB_index, u16 cornti, char *data, int seq
  elementP->data = (char *)malloc(sizeof(char)*pdu_size);
 
  
- if (elementP == NULL || elementP->data == NULL || mac_buffer_nb_elements(Mod_id, eNB_index, cornti)==MAC_BUFFER_MAXIMUM_CAPACITY){
-   LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity is reached\n)");	
+ if (elementP == NULL || elementP->data == NULL || mac_buffer_nb_elements(Mod_id, eNB_index, cornti)== mac_buffer_capacity(Mod_id, eNB_index, cornti)){
+   LOG_E(MAC," failed to allocate the memory or buffer overflow (maximum capacity of %d is reached) %p %p\n",
+	 mac_buffer_capacity(Mod_id, eNB_index, cornti), elementP, elementP->data);	
    return 0;
  } 
  else{
@@ -732,6 +734,17 @@ int  mac_buffer_nb_elements(u8 Mod_id, u8 eNB_index, u16 cornti){
   s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
    if (b_index != -1 )
      return mac_buffer_u[Mod_id].mac_buffer_g[b_index]->my_p->nb_elements;
+   else {
+     //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
+     return 0;
+   }
+}
+
+
+int  mac_buffer_capacity(u8 Mod_id, u8 eNB_index, u16 cornti){
+  s8 b_index=mac_buffer_return_b_index(Mod_id, eNB_index, cornti);
+   if (b_index != -1 )
+     return mac_buffer_u[Mod_id].mac_buffer_g[b_index]->maximum_capacity;
    else {
      //LOG_W(MAC,"[UE %d] buffer does not exist for eNB %d and cornti %x\n", Mod_id, eNB_index, cornti );
      return 0;

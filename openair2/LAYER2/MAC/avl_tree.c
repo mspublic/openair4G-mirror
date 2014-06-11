@@ -641,7 +641,7 @@ void avl_tree_level_order_print_pdu_size(struct avl_node_t *t, packet_list_t *q)
 void avl_tree_level_order(struct avl_node_t *t){
  MAC_BUFFER *mac_q;
  packet_list_t *q;
- mac_q = mac_buffer_init("q","q",1,1);
+ mac_q = mac_buffer_init("q","q",1,1,40);
  q=mac_q->my_p;
  if(t->second_key!=-1){
 	printf("LEVEL ORDER -- PDU SIZE\n");

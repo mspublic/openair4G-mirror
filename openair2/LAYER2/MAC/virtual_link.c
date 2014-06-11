@@ -59,7 +59,7 @@ forwarding_Table UE_forwardingTable[NB_MAX_MR];
 //struct cornti_array corntis;
 
 //LOLAmesh
-void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
+void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink, u16 mac_buffer_capacity){
   int i,j,k;
 
   //vlinksTable[Mod_id].array[i].MRarray.array[j];
@@ -104,16 +104,19 @@ void vlink_init(u8 nb_connected_eNB, u8 nb_vlink_eNB, u8 nb_ue_per_vlink){
   vlinksTable[1].array[0].MRarray.array[0] = 1; // UE_index of the MR
 
   */
+  
 
   /* CORNTIs tables initialization */
-  for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
+  for (j=0;j<NUMBER_OF_UE_MAX;j++) {
+      UE_mac_inst[j].corntis.count = 0;
+      UE_mac_inst[j].mac_buffer_capacity = (mac_buffer_capacity < 40) ? 40 : mac_buffer_capacity;
+      
+    for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
     //eNB_mac_inst[i].corntis.count=0;
-    for (j=0;j<NUMBER_OF_UE_MAX;j++) {
       //MAC layer structure :
 		if(i > 2)
 			continue;
       eNB_mac_inst[i].UE_template[j].corntis.count = 0;
-      UE_mac_inst[j].corntis.count = 0;
       
       //PHY layer structure
       // mac_xface->phy_config_cornti(i, 1, j, j,j);

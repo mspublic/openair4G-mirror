@@ -238,6 +238,7 @@ typedef struct{
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
   MeasGapConfig_t                 *measGapConfig[NB_CNX_UE];
+  
 }UE_RRC_INST;
 
 //main.c

@@ -1183,7 +1183,7 @@ u8 UE_is_to_be_scheduled(u8 Mod_id,u8 UE_id) {
 }
 
 
-u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u8 UE_id_ar[], u8 cornti_index_of_UE_id_ar[], u8 seq_num_of_UE_id_ar[], u8 bsr_of_UE_id_ar[],  u8 *num_of_UE_id_ar){
+u8 CORNTI_is_to_be_scheduled(u8 Mod_id, u16 cornti, u8 *next_ue, u8 *cornti_index, u16 UE_id_ar[], u16 cornti_index_of_UE_id_ar[], u16 seq_num_of_UE_id_ar[], u16 bsr_of_UE_id_ar[],  u8 *num_of_UE_id_ar){
   
   u8 UE_id,j;
   u16 granted_UEs;
@@ -1748,8 +1748,8 @@ void schedule_ulsch_rnti(u8 Mod_id, unsigned char cooperation_flag, u32 frame, u
 
  for (UE_id=0;UE_id<granted_UEs && (*nCCE_available > (1<<aggregation));UE_id++) {
    // if (1){
-      if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) || 
-       (openair_daq_vars.target_ul_sched_policy == 1 )) { //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))  
+   if (((UE_is_to_be_scheduled(Mod_id,UE_id)>0)) ) { 
+     // || (openair_daq_vars.target_ul_sched_policy == 1 )) { //|| (frame%10==0)) && ((UE_id%2)==(sched_subframe%2)))  
 	
 // if there is information on bsr of DCCH, DTCH or if there is UL_SR. the second condition will make UEs with odd IDs go into odd subframes and UEs with even IDs in even subframes. the third condition 
      
@@ -2008,7 +2008,8 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
       continue;
     }
     // could be done outside of the loop, and potentially combined with min_sn func
-    if ( (CORNTI_is_to_be_scheduled(Mod_id, cornti, &next_ue, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0)){
+    if ( (CORNTI_is_to_be_scheduled(Mod_id, cornti, &next_ue, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar,  &num_of_UE_id_ar) > 0)
+	 ){
       
       
       for (i=0; i < num_of_UE_id_ar; i++){
@@ -2041,7 +2042,12 @@ void schedule_ulsch_cornti(u8 Mod_id, u16 cornti, unsigned char cooperation_flag
 		eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn[0],
 		eNB_mac_inst[Mod_id].UE_template[next_ue].cobsr_info[cornti_index].sn_served[0]);
       }
-      
+      /*
+       * semi persistant allocation for CO_BSR 
+       */
+      if (openair_daq_vars.target_ul_sched_policy == 1)
+	eNB_mac_inst[Mod_id].UE_template[next_ue].ul_SR = 1; 
+
       // Packets are to be scheduled with same cornti, however since there are different UEs belonging on the same cornti the cornti_index can be differerent(the cornti remains the same)
      // next_ue = find_UE_min_seq_num_that_belong_on_the_same_cornti(Mod_id, &cornti_index, UE_id_ar, cornti_index_of_UE_id_ar, seq_num_of_UE_id_ar, bsr_of_UE_id_ar, &num_of_UE_id_ar);
 

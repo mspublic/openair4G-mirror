@@ -107,6 +107,9 @@ void ue_init_mac(){
 	UE_mac_inst[i].scheduling_info[j].Bj[k]=-1;
 	UE_mac_inst[i].scheduling_info[j].bucket_size[k]=-1;
       }
+
+      for (k=0; k < MAX_VLINK_PER_MR; k++)
+	UE_mac_inst[i].scheduling_info[j].cobsr_info[k].sn_served[0]=0;
     }
   }
 }
@@ -235,6 +238,8 @@ u32 ue_get_SR(u8 Mod_id,u32 frame,u8 eNB_id,u16 rnti, u8 subframe) {
     // notify RRC to relase PUCCH/SRS
     // clear any configured dl/ul
     // initiate RA
+    LOG_D(MAC,"[UE %d][SR %x] Frame %d subframe %d : Clear SR (%d) for eNB %d\n",
+	  Mod_id,rnti,frame,subframe, eNB_id, UE_mac_inst[Mod_id].scheduling_info[eNB_id].SR_pending);
     UE_mac_inst[Mod_id].scheduling_info[eNB_id].SR_pending=0;
     UE_mac_inst[Mod_id].scheduling_info[eNB_id].SR_COUNTER=0;
     return(0);
@@ -933,17 +938,33 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   }else
     phr_p=NULL;
   
-  if ( (cobsr_ce_len == sizeof(CO_BSR_SHORT)) || 
-       (cobsr_ce_len == sizeof(CO_BSR_LONG))) {
+  if ( (cobsr_ce_len == sizeof(COBSR_SHORT)) || 
+       (cobsr_ce_len == sizeof(COBSR_LONG))) {
+
+    for (j=0; j <  MAX_NB_ELEMENTS_MAC_COBSR; j ++) {
+      if (UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j] > 
+	  UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn_served[0])
+	break;
+    }
+    if (j == MAX_NB_ELEMENTS_MAC_COBSR -1 )
+      LOG_N(MAC,"Sending CO_BSR of the last served sn %d\n", 
+	    UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn_served[0]);
+    
     cobsr_l = NULL;
     cobsr_s->CORNTI=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].cornti;
-    cobsr_s->SN=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[0];
-    cobsr_s->Buffer_size=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[0];
-    LOG_D(MAC,"[UE %d] COBSR cornti %x SN %d BSR level %d for cornti index %d\n",
-	  Mod_id, cobsr_s->CORNTI,cobsr_s->SN,cobsr_s->Buffer_size,cornti_index );
+    cobsr_s->SN=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j];
+    cobsr_s->Buffer_size=UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j];
+    LOG_D(MAC,"[UE %d] COBSR cornti %x SN %d/%d BSR level %d/%d for cornti index %d\n",
+	  Mod_id, cobsr_s->CORNTI,
+	  cobsr_s->SN,UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j],
+	  cobsr_s->Buffer_size,UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j],
+	  cornti_index );
     //  } else if (cobsr_ce_len == sizeof(CO_BSR_LONG)){
     //cobsr_s = NULL;
-    
+    // setting the last sn served
+    UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn_served[0] = 
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j];
+ 
     }  else {
     cobsr_s = NULL;
     cobsr_l = NULL ;
@@ -1034,8 +1055,8 @@ void ue_get_sdu(u8 Mod_id,u32 frame,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   
     LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
 	  Mod_id,payload_offset, sdu_length_total);
-    UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
-    UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
+    //UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_pending=0;
+    //UE_mac_inst[Mod_id].scheduling_info[eNB_index].SR_COUNTER=0;
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
 }
 
@@ -1339,7 +1360,7 @@ void update_cobsr (u8 Mod_id, u8 eNB_index, u16 cornti, u8 cornti_index) {
   for (j=0; j <  MAX_NB_ELEMENTS_MAC_COBSR; j ++) {
     if (j < nb_elements ) {
       UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].bsr[j]= locate (BSR_TABLE,BSR_TABLE_SIZE, co_size[j]);
-      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=  (u8) co_seq_num[j];
+      UE_mac_inst[Mod_id].scheduling_info[eNB_index].cobsr_info[cornti_index].sn[j]=   co_seq_num[j];
      
       LOG_D(MAC,"[UE %d/%x/%d] updating COBSR%d to (level %d, bytes %d) and COSN%d (%d,%d) for eNB %d (nb element %d)\n", 
 	    Mod_id,cornti, cornti_index, 
