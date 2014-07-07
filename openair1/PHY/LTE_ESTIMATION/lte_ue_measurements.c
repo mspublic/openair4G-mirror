@@ -55,9 +55,9 @@ int16_t get_PL(uint8_t Mod_id,uint8_t eNB_index) {
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
   int RSoffset;
     
-  LOG_D(PHY,"get_PL : Frame %d : rssi %d, eNB power %d\n", phy_vars_ue->frame,
+  LOG_D(PHY,"get_PL : Frame %d : rssi %d, eNB power %d, rsrp %d, rsrq %d\n", phy_vars_ue->frame,
 	dB_fixed(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,
-    phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower);
+    phy_vars_ue->lte_frame_parms.pdsch_config_common.referenceSignalPower, phy_vars_ue->PHY_measurements.rsrp[0], phy_vars_ue->PHY_measurements.rsrq[0]);
   
   if (phy_vars_ue->lte_frame_parms.mode1_flag == 1)
     RSoffset = 6;

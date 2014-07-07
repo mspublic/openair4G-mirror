@@ -40,8 +40,9 @@
 #####################################################
 # VARIABLES TO BE FILLED WITH RIGHT VALUES:
 #####################################################
-export BOOST_ROOT=/usr/local/src/boost_1_49_0
-export ODTONE_ROOT=/usr/local/src/ODTONE
+export BOOST_ROOT=/root/SPECTRA/boost_1_48_0
+# /usr/local/src/boost_1_49_0
+export ODTONE_ROOT=/root/SPECTRA/odtone
 
 export MIH_F=odtone-mihf
 export ENB_MIH_F_CONF_FILE=odtone_enb.conf
