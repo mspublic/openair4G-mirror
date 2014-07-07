@@ -1,45 +1,8 @@
 #!/bin/bash
-################################################################################
-# Eurecom OpenAirInterface core network
-# Copyright(c) 1999 - 2014 Eurecom
-#
-# This program is free software; you can redistribute it and/or modify it
-# under the terms and conditions of the GNU General Public License,
-# version 2, as published by the Free Software Foundation.
-#
-# This program is distributed in the hope it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-# more details.
-#
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# The full GNU General Public License is included in this distribution in
-# the file called "COPYING".
-#
-# Contact Information
-# Openair Admin: openair_admin@eurecom.fr
-# Openair Tech : openair_tech@eurecom.fr
-# Forums       : http://forums.eurecom.fsr/openairinterface
-# Address      : EURECOM,
-#                Campus SophiaTech,
-#                450 Route des Chappes,
-#                CS 50193
-#                06904 Biot Sophia Antipolis cedex,
-#                FRANCE
-################################################################################
-# file start_ue.bash
-# brief
-# author Lionel Gauthier
-# company Eurecom
-# email: lionel.gauthier@eurecom.fr
-#
-#------------------------------------------------
-# OAI NETWORKING
-#------------------------------------------------
-declare -x EMULATION_DEV_INTERFACE="eth1"
+# Author Lionel GAUTHIER
+
+# OAI NETWORKING--------------------------------
+declare -x EMULATION_DEV_INTERFACE="eth0"
 declare -x IP_DRIVER_NAME="oai_nw_drv"
 declare -x LTEIF="oai0"
 declare -x UE_IPv4="10.0.0.2"
@@ -47,17 +10,11 @@ declare -x UE_IPv6="2001:1::2"
 declare -x UE_IPv6_CIDR=$UE_IPv6"/64"
 declare -x UE_IPv4_CIDR=$UE_IPv4"/24"
 declare -a NAS_IMEI=( 3 9 1 8 3 6 7 3 0 2 0 0 0 0 )
-declare -x IP_DEFAULT_MARK="3"
-
-#------------------------------------------------
-# OAI MIH
-#------------------------------------------------
+# OAI MIH----------------------------------------
 declare -x UE_MIHF_IP_ADDRESS="127.0.0.1"
 declare -x UE_RAL_IP_ADDRESS="127.0.0.1"
-LOG_FILE="/tmp/oai_sim_enb.log"
-
 #------------------------------------------------
-MIH_LOG_FILE="mih-f_ue.log"
+LOG_FILE="/tmp/oai_sim_ue.log"
 
 
 ###########################################################
@@ -90,8 +47,6 @@ cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
 echo "Bringup UE interface"
 pkill oaisim             > /dev/null 2>&1
 pkill oaisim             > /dev/null 2>&1
-pkill $MIH_F             > /dev/null 2>&1
-pkill $UE_MIH_USER       > /dev/null 2>&1
 rmmod -f $IP_DRIVER_NAME > /dev/null 2>&1
 
 bash_exec "insmod  $OPENAIR2_DIR/NAS/DRIVER/LITE/$IP_DRIVER_NAME.ko oai_nw_drv_IMEI=${NAS_IMEI[0]},${NAS_IMEI[1]},${NAS_IMEI[2]},${NAS_IMEI[3]},${NAS_IMEI[4]},${NAS_IMEI[5]},${NAS_IMEI[6]},${NAS_IMEI[7]},${NAS_IMEI[8]},${NAS_IMEI[9]},${NAS_IMEI[10]},${NAS_IMEI[11]},${NAS_IMEI[12]},${NAS_IMEI[13]}"
@@ -107,35 +62,21 @@ bash_exec "sysctl -w net.ipv4.conf.all.rp_filter=0"
 assert "  `sysctl -n net.ipv4.conf.all.rp_filter` -eq 0" $LINENO
 bash_exec "ip route flush cache"
 
+# please add table 200 lte in file /etc/iproute2/rt_tables
 # Check table 200 lte in /etc/iproute2/rt_tables
 fgrep lte /etc/iproute2/rt_tables  > /dev/null 
 if [ $? -ne 0 ]; then
-    echo '200 lte ' >> /etc/iproute2/rt_tables
+    echo "200 lte " >> /etc/iproute2/rt_tables
 fi
-ip rule add fwmark $IP_DEFAULT_MARK  table lte
+ip rule add fwmark 5 table lte
 ip -4 route add default dev $LTEIF table lte
 ip -6 route add default dev $LTEIF table lte
 ip route add 239.0.0.160/28 dev $EMULATION_DEV_INTERFACE
 
-/sbin/ip6tables -A OUTPUT -t mangle -o oai0 -m pkttype --pkt-type multicast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/iptables  -A OUTPUT -t mangle -o oai0 -m pkttype --pkt-type broadcast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/iptables  -A OUTPUT -t mangle -o oai0 -m pkttype --pkt-type multicast -j MARK --set-mark $IP_DEFAULT_MARK
-
-/sbin/ip6tables -A POSTROUTING -t mangle -o oai0 -m pkttype --pkt-type multicast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/iptables  -A POSTROUTING -t mangle -o oai0 -m pkttype --pkt-type broadcast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/iptables  -A POSTROUTING -t mangle -o oai0 -m pkttype --pkt-type multicast -j MARK --set-mark $IP_DEFAULT_MARK
-
-#All other traffic is sent on the RAB you want (mark = RAB ID)
-/sbin/ip6tables -A POSTROUTING -t mangle -o oai0 -m pkttype --pkt-type unicast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/ip6tables -A OUTPUT      -t mangle -o oai0 -m pkttype --pkt-type unicast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/iptables  -A POSTROUTING -t mangle -o oai0 -m pkttype --pkt-type unicast -j MARK --set-mark $IP_DEFAULT_MARK
-/sbin/iptables  -A OUTPUT      -t mangle -o oai0 -m pkttype --pkt-type unicast -j MARK --set-mark $IP_DEFAULT_MARK
-
-rotate_log_file $MIH_LOG_FILE
-
 # start MIH-F
-#xterm -hold -e 
-$ODTONE_MIH_EXE_DIR/$MIH_F --log 4 --conf.file $ODTONE_MIH_EXE_DIR/$UE_MIH_F_CONF_FILE > $MIH_LOG_FILE 2>&1 &
+# xterm  -hold -e $ODTONE_MIH_EXE_DIR/$MIH_F --log 4 --conf.file $ODTONE_MIH_EXE_DIR/$UE_MIH_F_CONF_FILE &
+
+gnome-terminal -t MIHF -x  $ODTONE_MIH_EXE_DIR/$MIH_F --log 4 --conf.file $ODTONE_MIH_EXE_DIR/$UE_MIH_F_CONF_FILE &
 wait_process_started $MIH_F
 sleep 3
 
@@ -156,13 +97,14 @@ UE_MIHF_REMOTE_PORT=`cat $ODTONE_MIH_EXE_DIR/$UE_MIH_F_CONF_FILE | grep local_po
 UE_MIHF_ID=`cat $ODTONE_MIH_EXE_DIR/$UE_MIH_F_CONF_FILE | grep id | grep \= | grep -v \# | tr -d " "  | cut -d'=' -f2`
 
 #xterm -hold -e gdb --args 
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -K $LOG_FILE -l9 -u1 -b0 -M1 -p2 -g1 -D $EMULATION_DEV_INTERFACE  \
+# $EMULATION_DEV_INTERFACE -D192.168.13.2
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -K $LOG_FILE -l9 -u1 -b0 -M1 -p2 -g1 -D eth0   \
              --ue-ral-listening-port   $UE_RAL_LISTENING_PORT \
              --ue-ral-link-id          $UE_RAL_LINK_ID_STRIPPED \
              --ue-ral-ip-address       $UE_RAL_IP_ADDRESS \
              --ue-mihf-remote-port     $UE_MIHF_REMOTE_PORT \
              --ue-mihf-ip-address      $UE_MIHF_IP_ADDRESS \
-             --ue-mihf-id              $UE_MIHF_ID  | grep  "RAL\|PDCP" &
+             --ue-mihf-id              $UE_MIHF_ID &
              
 wait_process_started oaisim
 
@@ -172,8 +114,8 @@ wait_process_started oaisim
 #  wait for emulation start
 tshark -c 500 -i $EMULATION_DEV_INTERFACE > /dev/null 2>&1
 sleep 5
-
-xterm -hold -e $ODTONE_MIH_EXE_DIR/$UE_MIH_USER --conf.file $ODTONE_MIH_EXE_DIR/$UE_MIH_USER_CONF_FILE &
+# xterm -hold -e $ODTONE_MIH_EXE_DIR/$UE_MIH_USER --conf.file $ODTONE_MIH_EXE_DIR/$UE_MIH_USER_CONF_FILE &
+gnome-terminal -t MIH_USER -x  $ODTONE_MIH_EXE_DIR/$UE_MIH_USER --conf.file $ODTONE_MIH_EXE_DIR/$UE_MIH_USER_CONF_FILE &
 wait_process_started $UE_MIH_USER
 
 sleep 100000

@@ -3166,6 +3166,7 @@ void                               *rrc_enb_task(
     MessageDef                         *msg_p;
     const char                         *msg_name_p;
     instance_t                          instance;
+    unsigned int  ue_mod_id;
     int                                 result;
     SRB_INFO                           *srb_info_p;
 
@@ -3247,6 +3248,12 @@ void                               *rrc_enb_task(
             case RRC_CONFIGURATION_REQ:
                 LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
                 openair_rrc_lite_eNB_configuration(instance, &RRC_CONFIGURATION_REQ(msg_p));
+                break;
+
+            case RRC_RAL_CONNECTION_RECONFIGURATION_REQ:
+                ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
+                LOG_I(RRC, "[eNB %d] Send RRC_RAL_CONNECTION_RECONFIGURATION_REQ to UE %s\n", instance, msg_name_p);
+                rrc_eNB_generate_defaultRRCConnectionReconfiguration(instance, 0/* TODO put frameP number ! */, ue_mod_id, eNB_rrc_inst[instance].HO_flag);
                 break;
 
 #   ifdef ENABLE_RAL

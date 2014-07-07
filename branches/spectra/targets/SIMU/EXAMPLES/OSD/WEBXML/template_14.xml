@@ -1,13 +1,13 @@
 <OAI_EMULATION>
   <TOPOLOGY_CONFIG>	
     <AREA>			
-      <X_m>500</X_m>
-      <Y_m>500</Y_m>	
+      <X_m>5</X_m>
+      <Y_m>5</Y_m>	
     </AREA>
     <MOBILITY> 
       <UE_MOBILITY>
 	<RANDOM_UE_DISTRIBUTION>
-	  <NUMBER_OF_NODES>1</NUMBER_OF_NODES>
+	  <NUMBER_OF_NODES>2</NUMBER_OF_NODES>
 	</RANDOM_UE_DISTRIBUTION>
 	<UE_MOBILITY_TYPE>STATIC</UE_MOBILITY_TYPE>  <!-- STATIC --> 
       </UE_MOBILITY>
@@ -27,10 +27,10 @@
 
 
 <CUSTOMIZED_TRAFFIC>	 
-      <SOURCE_ID>0</SOURCE_ID> 		
+      <SOURCE_ID>1</SOURCE_ID> 		
       <TRANSPORT_PROTOCOL>tcp</TRANSPORT_PROTOCOL> <!-- OPTIONS: tcp (default), udp -->
       <IP_VERSION>ipv4</IP_VERSION> <!-- OPTIONS: ipv4 (default), ipv6 -->
-      <DESTINATION_ID>1</DESTINATION_ID> 
+      <DESTINATION_ID>2</DESTINATION_ID> 
        <BACKGROUND_TRAFFIC>disable</BACKGROUND_TRAFFIC> <!-- options: enable, disable. If enable, it generates a background traffic corresponding to the traffic direction-->
       <AGGREGATION_LEVEL>1</AGGREGATION_LEVEL>     <!-- options: default=1, the number of traffic to aggregate-->
       <IDT_DIST>uniform</IDT_DIST>  <!-- available distributions: none (default), uniform, poission, gaussian, exponential,pareto, cauchy,fixed, weibull, gammav-->
@@ -53,6 +53,8 @@
       	<THROUGHPUT>enable</THROUGHPUT>	<!-- option: enable, disable. If enable, throughput measurements are plotted in real time-->
       	<LATENCY>enable</LATENCY>        <!-- option: enable, disable. If enable, latency measurements are plotted in real time-->
        	<OWD_RADIO_ACCESS>disable</OWD_RADIO_ACCESS>  <!-- option: enable, disable. If enable owd curve shows the one way radio access delay, else it shows end to end owd -->
+        <LOSS_RATE>enable</LOSS_RATE>
+        <SIGNALLING_OVERHEAD>enable</SIGNALLING_OVERHEAD>
     </PERFORMANCE_METRICS>
     <LOG>  <!-- set the global log level -->
       <LEVEL>trace</LEVEL>
