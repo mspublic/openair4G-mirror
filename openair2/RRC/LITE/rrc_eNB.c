@@ -61,6 +61,10 @@
 
 //#ifdef Rel10
 #include "MeasResults.h"
+//FH added for carrier aggregation
+#ifdef Rel10
+#include "SCellToAddMod-r10.h"
+#endif
 //#endif
 
 #ifdef USER_MODE
@@ -294,6 +298,11 @@ static void init_SI(
                            (RadioResourceConfigCommonSIB_t *) &
                            eNB_rrc_inst[enb_mod_idP].sib2->radioResourceConfigCommon,
                            (struct PhysicalConfigDedicated *)NULL,
+                           
+//FH  carrier aggregation added
+#ifdef Rel10
+                           (SCellToAddMod_r10_t *)NULL,
+#endif
                            (MeasObjectToAddMod_t **) NULL,
                            (MAC_MainConfig_t *) NULL, 0,
                            (struct LogicalChannelConfig *)NULL,
@@ -617,7 +626,7 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
     uint8_t                             buffer[RRC_BUF_SIZE];
     uint16_t                            size;
     int                                 i;
-
+    
     // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
     eNB_RRC_INST                       *rrc_inst = &eNB_rrc_inst[enb_mod_idP];
 
@@ -651,6 +660,7 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
     MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
 #if Rel10
     long                               *sr_ProhibitTimer_r9              = NULL;
+    uint8_t sCellIndexToAdd = 0;
 #endif
 
     long                               *logicalchannelgroup, *logicalchannelgroup_drb;
@@ -1138,7 +1148,14 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 #ifdef EXMIMO_IOT
         NULL, NULL, NULL, NULL,NULL,
 #else
-        physicalConfigDedicated[ue_mod_idP], MeasObj_list, ReportConfig_list, quantityConfig, MeasId_list,
+        physicalConfigDedicated[ue_mod_idP], 
+       
+//FH added for carrier aggregation add + NULL ifdef EXMIMO_IOT
+#ifdef Rel10
+        eNB_rrc_inst[/*Mod_id*/enb_mod_idP].sCell_config[/*UE_index replaced by ue_mod_idP TOCHECK*/ue_mod_idP][sCellIndexToAdd],
+#endif
+        
+        MeasObj_list, ReportConfig_list, quantityConfig, MeasId_list,
 #endif
         mac_MainConfig, NULL, NULL, Sparams, rsrp, cba_RNTI, dedicatedInfoNASList);
 
@@ -1347,6 +1364,60 @@ void check_handovers(
             }
         }
     }
+}
+
+//FH added
+//Generate RRC Conenction Reconfiguration with carrier aggragation parameters
+int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(uint8_t Mod_id, uint32_t frame, uint16_t UE_index, uint32_t dl_CarrierFreq_r10) {
+
+  uint8_t size;
+  uint8_t buffer[100];
+  uint8_t sCellIndexToAdd = 0; //one SCell so far
+
+  if (eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]) {
+    eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd]->cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
+  }
+  else {
+    LOG_E(RRC,"Scell not configured!\n");
+    return(-1);
+  }
+
+  size = do_RRCConnectionReconfiguration(Mod_id,
+                                         buffer,
+                                         UE_index,
+                                         /*0*/rrc_eNB_get_next_transaction_identifier(Mod_id),//Transaction_id,
+                                         NULL,
+                                         (SRB_ToAddModList_t*)NULL,
+                                         (DRB_ToAddModList_t*)NULL,
+                                         (DRB_ToReleaseList_t*)NULL,
+                                         (struct SPS_Config*)NULL,
+                                         (struct PhysicalConfigDedicated*)NULL,
+                                         
+//FH added for carrier aggregation
+#ifdef Rel10
+                     eNB_rrc_inst[Mod_id].sCell_config[UE_index][sCellIndexToAdd],
+#endif
+                                         (MeasObjectToAddModList_t*)NULL,
+                                         (ReportConfigToAddModList_t*)NULL,
+                                         (QuantityConfig_t*)NULL, 
+                                         (MeasIdToAddModList_t*)NULL,
+                                         (MAC_MainConfig_t*)NULL,
+                                         (MeasGapConfig_t*)NULL,
+                                         (MobilityControlInfo_t*)NULL,
+                                         (struct MeasConfig__speedStatePars*)NULL,
+                                         (RSRP_Range_t*)NULL;
+                                         (C_RNTI_t*)NULL;
+                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL); 
+
+  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
+        Mod_id,frame, size, UE_index);
+
+  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
+        frame, Mod_id, size, UE_index, rrc_eNB_mui, Mod_id, (UE_index*MAX_NUM_RB)+DCCH);
+  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+  pdcp_data_req(Mod_id, frame, 1, (UE_index * MAX_NUM_RB) + DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
+
+  return(0);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -2377,6 +2448,11 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(
                         0,
                         (RadioResourceConfigCommonSIB_t *) NULL,
                         eNB_rrc_inst[enb_mod_idP].physicalConfigDedicated[ue_mod_idP],
+                        
+//FH added for carreier aggregation
+#ifdef Rel10
+                        eNB_rrc_inst[/*Mod_id*/enb_mod_idP].sCell_config[/*UE_index replaced by ue_mod_idP TO CHECK*/ue_mod_idP][0],
+#endif
                         (MeasObjectToAddMod_t **) NULL,
                         eNB_rrc_inst[enb_mod_idP].mac_MainConfig[ue_mod_idP],
                         DRB2LCHAN[i],
@@ -2415,6 +2491,11 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(
                                        0,
                                        (RadioResourceConfigCommonSIB_t *) NULL,
                                        eNB_rrc_inst[enb_mod_idP].physicalConfigDedicated[ue_mod_idP],
+                                       
+//FH added for carrier aggregation
+#ifdef Rel10
+                                       eNB_rrc_inst[/*Mod_id*/enb_mod_idP].sCell_config[/*UE_index replaced by ue_mod_idP TO CHECK*/ue_mod_idP][0],
+#endif
                                        (MeasObjectToAddMod_t **) NULL,
                                        eNB_rrc_inst[enb_mod_idP].mac_MainConfig[ue_mod_idP],
                                        DRB2LCHAN[i],
