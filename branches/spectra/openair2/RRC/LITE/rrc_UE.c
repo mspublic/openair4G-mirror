@@ -98,6 +98,11 @@ extern UE_MAC_INST *UE_mac_inst;
 extern void *bigphys_malloc(int);
 #endif
 
+//FH addded for carrier aggregation
+#ifdef Rel10
+#include "SCellToAddMod-r10.h"
+#endif
+
 //#define XER_PRINT
 
 extern inline unsigned int taus(void);

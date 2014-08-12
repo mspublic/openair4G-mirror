@@ -106,6 +106,14 @@ int errno;
 # endif
 #endif
 
+//FH added for carrier aggregation
+#ifdef Rel10
+#include <SCellToAddMod-r10.h>
+#include <RadioResourceConfigCommonSCell-r10.h>
+#include <RadioResourceConfigDedicatedSCell-r10.h>
+#endif
+
+
 typedef struct xer_sprint_string_s
 {
     char *string;
@@ -1843,6 +1851,10 @@ uint16_t do_RRCConnectionReconfiguration(uint8_t                             Mod
                                          DRB_ToReleaseList_t                *DRB_list2,
                                          struct SPS_Config                  *sps_Config,
                                          struct PhysicalConfigDedicated     *physicalConfigDedicated,
+//FH added for carrier aggregation
+#ifdef Rel10
+										 SCellToAddMod_r10_t               *sCell_config,
+#endif
                                          MeasObjectToAddModList_t           *MeasObj_list,
                                          ReportConfigToAddModList_t         *ReportConfig_list,
                                          QuantityConfig_t                   *quantityConfig,
@@ -1868,6 +1880,27 @@ uint16_t do_RRCConnectionReconfiguration(uint8_t                             Mod
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
+
+//FH added for carrier aggregation
+#ifdef Rel10
+  if (sCell_config != NULL) {
+	  //physicalConfigDedicatedSCell1	= rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->SCellToAddMod_r10_t.radioResourceConfigDedicatedSCell_r10.physicalConfigDedicatedSCell_r10;
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension));
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->lateNonCriticalExtension = NULL;
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension = CALLOC(1,sizeof(RRCConnectionReconfiguration_v920_IEs_t));
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension = CALLOC(1,sizeof(RRCConnectionReconfiguration_v1020_IEs_t));
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = CALLOC(1,sizeof(SCellToAddModList_r10_t));
+	  ASN_SEQUENCE_ADD(&rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10->list,sCell_config);
+
+	  /*
+	  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10 = CALLOC(1,sizeof(SCellToAddModList_r10_t));
+	  memcpy((void *)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sCellToAddModList_r10, (void *)sCellToAddList, sizeof(SCellToAddModList_r10_t));
+  	  */
+	  // Why does this give an error?
+	  // LOG_W(RRC,"Adding SCell configuration in RRC Reconfig Req with index %d ...\n",sCell_config->sCellIndex_r10);
+
+  }
+#endif
 
   // RRCConnectionReconfiguration
   rrcConnectionReconfiguration->rrc_TransactionIdentifier = Transaction_id;
