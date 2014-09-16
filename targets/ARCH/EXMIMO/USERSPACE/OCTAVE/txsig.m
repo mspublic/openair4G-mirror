@@ -1,10 +1,11 @@
-
 %fc  = 2660000000;
 %fc  = 1907600000;
 %fc = 859.5e6;
 fc = 1551800000;
+ch = 37;
+
 rxgain=0;
-txgain=20;
+txgain=21;
 eNB_flag = 0;
 card = 0;
 active_rf = [1 0 0 0];
@@ -34,6 +35,10 @@ syncmode = SYNCMODE_FREE;
 rffe_rxg_low = 61*[1 1 1 1];
 rffe_rxg_final = 61*[1 1 1 1];
 rffe_band = B19G_TDD*[1 1 1 1];
+
+flo = 1551800000+474000000+(ch-21)*8000000;
+s = sprintf("EthernetRawCommand 192.168.12.202 \"SOURce:FREQuency:CW %u\"",flo);
+system(s);
 
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal,resampling_factor);
 amp = 32768; %pow2(14)-1;

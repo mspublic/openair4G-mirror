@@ -35,7 +35,7 @@ def periodic_ofcom():
     weblist = response.read()
     print (weblist)
     if not DB_URL in weblist:
-        print("kill lte-softmodem")
+        print("problem getting TVWSDB; kill lte-softmodem")
         #sys.exit()
     for item in weblist.split("\n"):
         if "refresh_rate" in item:
@@ -73,7 +73,7 @@ def set_sdr_freq(lat,lon):
         modem_params = query_db(lat,lon)
         print "exec ./lte-softmodem -P %s -C %s" % (modem_params['dbm'],modem_params['hz'])
     except:
-        print "kill lte-softmodem"
+        print "problem querying database; kill lte-softmodem"
         #sys.exit()
 
 def periodic_database():

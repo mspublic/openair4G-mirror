@@ -1265,6 +1265,7 @@ static void get_options (int argc, char **argv)
           downlink_frequency[2] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000;
           downlink_frequency[3] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000; 
 	  sprintf(scpi_cmd_string,"EthernetRawCommand 192.168.12.202 \"SOURce:FREQuency:CW %u\"",1551800000+474000000+(atol(optarg)-21)*8000000);
+	  // set level (was 15dBm) and RF on!!! (and RF off when stopping)
 	  printf("SCPI String for SMB100A : %s\n",scpi_cmd_string);
 	  system((const char*)scpi_cmd_string);
 	  tvws_flag = 1;
