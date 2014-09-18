@@ -63,8 +63,16 @@ int openair0_close(void);
 
 // trigger config update on card
 // return 0 on success
-int openair0_dump_config(openair0_config_t *openair0_cfg, int UE_flag);
-//int openair0_dump_config(int card);
+int openair0_dump_config(int card);
+
+// wrapper function for openair0_open (defined in common_lib.h)
+// int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg);
+
+// copies data from openair0_cfg into exmimo_config and calls openair0_dump_config (for all cards)
+int openair0_config(openair0_config_t *openair0_cfg, int UE_flag);
+
+// copies data from openair0_cfg into exmimo_config (frequencies and gains only); does not call openair0_dump_configu (no IOCTL)
+int openair0_reconfig(openair0_config_t *openair0_cfg);
 
 // triggers recording of exactly 1 frame
 // in case of synchronized multiple cards, send this only to the master card

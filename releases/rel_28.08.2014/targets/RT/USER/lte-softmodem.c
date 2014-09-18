@@ -1666,7 +1666,7 @@ static void *UE_thread(void *arg) {
 	      openair0_cfg[card].tx_freq[i] = carrier_freq[card][i]+openair_daq_vars.freq_offset;
 	    }
 	  }
-	  openair0_dump_config(&openair0_cfg[0],UE_flag);
+	  openair0_config(&openair0_cfg[0],UE_flag);
 #endif
 	  rt_sleep_ns(FRAME_PERIOD);
 	}
@@ -2400,7 +2400,7 @@ int main(int argc, char **argv) {
     }
   }
 #ifndef USRP
-  openair0_dump_config(&openair0_cfg[0],UE_flag);
+  openair0_config(&openair0_cfg[0],UE_flag);
 #endif
 
   /*  
