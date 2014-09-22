@@ -1476,23 +1476,19 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
 
   if (l==(4-frame_parms->Ncp)) {
 
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_IN);
+
     ue_rrc_measurements(phy_vars_ue,
 			slot_rx,
 			abstraction_flag);
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_RRC_MEASUREMENTS, VCD_FUNCTION_OUT);
 
-    if (abstraction_flag==1)
-      phy_vars_ue->sinr_eff =  sinr_eff_cqi_calc(phy_vars_ue, 0);
+    //phy_vars_ue->sinr_eff =  sinr_eff_cqi_calc(phy_vars_ue, 0);
 
   }  
 
   if ((slot_rx==1) && (l==(4-frame_parms->Ncp))) {
     
     // AGC
-
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
-#if defined EXMIMO  
+#ifdef EXMIMO    
 
     if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
 	(mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
@@ -1503,8 +1499,7 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
     phy_adjust_gain (phy_vars_ue,0);
 
 #endif
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
+
     eNB_id = 0;
     
     if (abstraction_flag == 0) 
@@ -1513,7 +1508,6 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
                          eNB_id,
                          0,
                          16384);
-    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
     
     /* if (openair_daq_vars.auto_freq_correction == 1) {
       if (frame_rx % 100 == 0) {
@@ -2355,7 +2349,6 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
       n_symb = 0;   	
   }
   else {
-    /*
     if (is_pmch_subframe(frame_rx,subframe_rx,&phy_vars_ue->lte_frame_parms)) {
       if ((slot_rx%2)==0) {
 	n_symb=2;
@@ -2364,7 +2357,7 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
       else
 	n_symb=0;
     }
-    else*/
+    else
       n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
   }
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2376,13 +2369,11 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
   for (l=0;l<n_symb;l++) {
     if (abstraction_flag == 0) {
       start_meas(&phy_vars_ue->ofdm_demod_stats);
-      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
       slot_fep(phy_vars_ue,
 	       l,
 	       slot_rx,
 	       phy_vars_ue->rx_offset,
 	       0);
-      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
       stop_meas(&phy_vars_ue->ofdm_demod_stats);
     }
   
@@ -3311,7 +3302,7 @@ void phy_UE_lte_measurement_thresholds_test_and_report(instance_t instanceP, ral
 
         memcpy(&PHY_MEAS_REPORT_IND (message_p).link_param,
                 &threshold_phy_pP->link_param,
-                sizeof(PHY_MEAS_REPORT_IND (message_p).link_param));
+                sizeof(PHY_MEAS_REPORT_IND (message_p).link_param));\
 
         switch (threshold_phy_pP->link_param.choice) {
             case RAL_LINK_PARAM_CHOICE_LINK_PARAM_VAL:
@@ -3322,7 +3313,6 @@ void phy_UE_lte_measurement_thresholds_test_and_report(instance_t instanceP, ral
                 AssertFatal (1 == 0, "TO DO RAL_LINK_PARAM_CHOICE_QOS_PARAM_VAL\n");
                 break;
         }
-	//LOG_I(PHY,"[XXX] Sending link parameters report msg message to RRC\n");
         itti_send_msg_to_task(TASK_RRC_UE, instanceP, message_p);
     }
 }
@@ -3347,8 +3337,6 @@ void phy_UE_lte_check_measurement_thresholds(instance_t instanceP, ral_threshold
                     break;
                 case RAL_LINK_PARAM_GEN_THROUGHPUT:
                     break;
-		default:;
-	    }
             break;
 
         case RAL_LINK_PARAM_TYPE_CHOICE_LTE:
@@ -3381,14 +3369,13 @@ void phy_UE_lte_check_measurement_thresholds(instance_t instanceP, ral_threshold
                     break;
                 case RAL_LINK_PARAM_LTE_NUM_ACTIVE_EMBMS_RECEIVERS_PER_FLOW:
                     break;
-                default:
-		    LOG_W(PHY,"unknown message %d\n", threshold_phy_pP->link_param.link_param_type._union.link_param_gen);
+                default:;
             }
             break;
 
-        default:
-	 LOG_W(PHY,"unknown message %d\n", threshold_phy_pP->link_param.link_param_type.choice);
-   }
+        default:;
+	    }
+    }
 }
 #   endif
 #endif
@@ -3470,8 +3457,8 @@ void phy_UE_lte_check_measurement_thresholds(instance_t instanceP, ral_threshold
             // check if it is a measurement timer
         {
             hashtable_rc_t       hashtable_rc;
+
             hashtable_rc = hashtable_is_key_exists(PHY_vars_UE_g[Mod_id][CC_id]->ral_thresholds_timed, (uint64_t)(TIMER_HAS_EXPIRED(msg_p).timer_id));
-	    LOG_I(PHY, "[UE %d] Received TIMER HAS EXPIRED: (hash_rc %d, HASH_TABLE_OK %d)\n", Mod_id, hashtable_rc, HASH_TABLE_OK);	
             if (hashtable_rc == HASH_TABLE_OK) {
                 phy_UE_lte_check_measurement_thresholds(instance, (ral_threshold_phy_t*)TIMER_HAS_EXPIRED(msg_p).arg);
             }
@@ -3522,7 +3509,6 @@ void phy_UE_lte_check_measurement_thresholds(instance_t instanceP, ral_threshold
                                               &PHY_vars_UE_g[Mod_id][CC_id]->ral_thresholds_lte_polled[PHY_MEAS_THRESHOLD_REQ(msg_p).cfg_param.link_param_type._union.link_param_lte],
                                               threshold_phy_p,
                                               ral_thresholds);
-//LOG_E(PHY, "[UE %d] NORMAL/ONE SHOT - TIMER NULL - type LTE in %s\n", Mod_id, msg_name);
                                           break;
 
                                       default:
@@ -3545,7 +3531,6 @@ void phy_UE_lte_check_measurement_thresholds(instance_t instanceP, ral_threshold
                                       hashtable_rc = hashtable_insert(PHY_vars_UE_g[Mod_id][CC_id]->ral_thresholds_timed, (uint64_t )timer_id, (void*)threshold_phy_p);
                                       if (hashtable_rc == HASH_TABLE_OK) {
                                           threshold_phy_p->timer_id = timer_id;
-					LOG_I(PHY, "[UE %d] NORMAL/ONE SHOT - TIMER CHOICE - OK - in Hash %s\n", Mod_id, msg_name);
                                       } else {
                                           LOG_E(PHY, "[UE %d]  %s: Error in hashtable. Could not configure threshold index %d \n",
                                                   Mod_id, msg_name, index);

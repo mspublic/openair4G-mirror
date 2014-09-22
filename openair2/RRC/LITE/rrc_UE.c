@@ -910,11 +910,6 @@ rrc_ue_process_radioResourceConfigDedicated(module_id_t ue_mod_idP, frame_t fram
 #endif
       );
 
-#ifdef ENABLE_RAL
-	// first msg that includes srb config	
-	UE_rrc_inst[ue_mod_idP].num_srb=radioResourceConfigDedicated->srb_ToAddModList->list.count;
-#endif 
-
       for (cnt=0;cnt<radioResourceConfigDedicated->srb_ToAddModList->list.count;cnt++) {
 	//	connection_reestablishment_ind.num_srb+=1;
           SRB_id = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -1394,14 +1389,10 @@ void rrc_ue_process_rrcConnectionReconfiguration(module_id_t ue_mod_idP, frame_t
                 connection_reestablishment_ind.num_drb      = 0;
             }
             if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList != NULL) {
-                connection_reestablishment_ind.num_srb      = rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList->list.count + UE_rrc_inst[ue_mod_idP].num_srb;
-		
+                connection_reestablishment_ind.num_srb      = rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList->list.count;
             } else {
- 	              connection_reestablishment_ind.num_srb      += UE_rrc_inst[ue_mod_idP].num_srb;
+                connection_reestablishment_ind.num_srb      = 0;
             }
-	   if (connection_reestablishment_ind.num_srb > 2) // fixme: only 2 srbs can exist, adjust the value
-		connection_reestablishment_ind.num_srb =2;
-		
             memcpy (&message_ral_p->ittiMsg, (void *) &connection_reestablishment_ind, sizeof(rrc_ral_connection_reestablishment_ind_t));
             //#warning "ue_mod_idP ? for instance ? => YES"
             LOG_I(RRC, "Sending RRC_RAL_CONNECTION_REESTABLISHMENT_IND to mRAL\n");
@@ -1707,12 +1698,10 @@ void  rrc_ue_decode_dcch(module_id_t ue_mod_idP, frame_t frameP,uint8_t Srb_id, 
                       connection_reconfiguration_ho_ind.num_drb      = 0;
                   }
                   if (dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList != NULL) {
-                      connection_reconfiguration_ho_ind.num_srb      = dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList->list.count + UE_rrc_inst[ue_mod_idP].num_srb;
+                      connection_reconfiguration_ho_ind.num_srb      = dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList->list.count;
                   } else {
-                      connection_reconfiguration_ho_ind.num_srb      += UE_rrc_inst[ue_mod_idP].num_srb;
+                      connection_reconfiguration_ho_ind.num_srb      = 0;
                   }
-		  if (connection_reconfiguration_ho_ind.num_srb > 2 )
-         		connection_reconfiguration_ho_ind.num_srb =2;
                   memcpy (&message_ral_p->ittiMsg, (void *) &connection_reconfiguration_ho_ind, sizeof(rrc_ral_connection_reconfiguration_ho_ind_t));
                   //#warning "ue_mod_idP ? for instance ? => YES"
                   LOG_I(RRC, "Sending RRC_RAL_CONNECTION_RECONFIGURATION_HO_IND to mRAL\n");
@@ -1747,12 +1736,10 @@ void  rrc_ue_decode_dcch(module_id_t ue_mod_idP, frame_t frameP,uint8_t Srb_id, 
                       connection_reconfiguration_ind.num_drb      = 0;
                   }
                   if (dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList != NULL) {
-                      connection_reconfiguration_ind.num_srb      = dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList->list.count + UE_rrc_inst[ue_mod_idP].num_srb;
+                      connection_reconfiguration_ind.num_srb      = dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList->list.count;
                   } else {
-                      connection_reconfiguration_ind.num_srb      +=UE_rrc_inst[ue_mod_idP].num_srb;
+                      connection_reconfiguration_ind.num_srb      = 0;
                   }
-		  if (connection_reconfiguration_ind.num_srb > 2 )
-			connection_reconfiguration_ind.num_srb =2;
                   memcpy (&message_ral_p->ittiMsg, (void *) &connection_reconfiguration_ind, sizeof(rrc_ral_connection_reconfiguration_ind_t));
                   //#warning "ue_mod_idP ? for instance ? => YES"
                   LOG_I(RRC, "Sending RRC_RAL_CONNECTION_RECONFIGURATION_IND to mRAL\n");
@@ -3076,7 +3063,7 @@ void *rrc_ue_task(void *args_p) {
                   LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
                   break;
               }
-              break; // PHY_FIND_CELL_IND
+              break;
 
               case PHY_MEAS_REPORT_IND:
                 {
@@ -3090,8 +3077,7 @@ void *rrc_ue_task(void *args_p) {
                   memcpy(&RRC_RAL_MEASUREMENT_REPORT_IND (message_p).link_param,
                       &PHY_MEAS_REPORT_IND(msg_p).link_param,
                       sizeof(RRC_RAL_MEASUREMENT_REPORT_IND (message_p).link_param));
-		
-		  LOG_I(RRC, "[UE %d] PHY_MEAS_REPORT_IN: sending msg %s to %s \n", ue_mod_id, "RRC_RAL_MEASUREMENT_REPORT_IND", "TASK_RAL_UE");
+
                   itti_send_msg_to_task(TASK_RAL_UE, instance, message_p);
                   break;
                 }

@@ -2,18 +2,18 @@ fc  = 2680000000;
 %fc  = 1907600000;
 %fc = 859.5e6;
 
-rxgain=0;
-txgain=20;
-eNB_flag = 0;
+rxgain=10;
+txgain=10;
+eNB_flag = 1;
 card = 0;
-active_rf = [1 0 0 0];
+active_rf = [1 1 0 0];
 autocal = [1 1 1 1];
-resampling_factor = [0 0 0 0];
+resampling_factor = [2 2 2 2];
 limeparms;
-rf_mode   = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF10+RXLPFNORM+RXLPFEN+RXLPF10+LNA1ON+LNAMax+RFBBNORM) * active_rf;
+rf_mode = (RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAMax+RFBBNORM) * active_rf;
 rf_mode = rf_mode + (DMAMODE_RX + DMAMODE_TX)*active_rf;
 %rf_mode = rf_mode + (DMAMODE_TX)*active_rf + DMAMODE_RX*active_rf;
-%rf_mode   = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
+%rf_mode = RXEN+TXEN+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNAByp+RFBBLNA1;
 %rf_local= [8253704   8253704   8257340   8257340]; %eNB2tx %850MHz
 %rf_local= [8255004   8253440   8257340   8257340]; % ex2 700 MHz
 rf_local = [8254744   8255063   8257340   8257340]; %eNB2tx 1.9GHz
@@ -29,22 +29,22 @@ freq_tx = fc.*active_rf;
 freq_rx = freq_tx;
 %freq_rx = freq_tx-120000000*chan_sel;
 %freq_tx = freq_rx+1920000;
-%tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
-tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
+tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
+%tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
 syncmode = SYNCMODE_FREE;
 rffe_rxg_low = 61*[1 1 1 1];
 rffe_rxg_final = 61*[1 1 1 1];
 rffe_band = B19G_TDD*[1 1 1 1];
 
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal,resampling_factor);
-amp = pow2(14)-1;
+amp = pow2(11)-1;
 n_bit = 16;
 
 length = 307200/pow2(resampling_factor(1));
 
 s = zeros(length,4);
 
-select = 6;
+select = 1;
 
 switch(select)
 
@@ -55,10 +55,10 @@ case 0
   s(:,4) = amp * ones(1,length);
 
 case 1
-  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((length*4)-1))/4)));
-  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((length*4)-1))/4)));
-  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((length*4)-1))/4)));
-  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((length*4)-1))/4)));
+  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/400)));
+  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/400)));
+  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/400)));
+  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((length)-1))/400)));
 
 case 2
   s(38400+128,1)= 80-1j*40;
@@ -107,22 +107,29 @@ case 6
   
   s(:,1) = OFDM_TX_FRAME(num_carriers,num_zeros,prefix_length,num_symbols_frame,preamble_length);
   s(:,1) = floor(amp*(s(:,1)./max([real(s(:,1)); imag(s(:,1))])));
-  
+ 
+case 7
+
+  eNBtxsig20MHz
+  s(:,1) = txs2;
 
 otherwise 
   error('unknown case')
 
 end %switch
 
-s = s*2;
+s = s*32;
+s(1:length/2,1)=1+1j; %set first half of frame to RX
+s(length/2+1:end,2)=1+1j; %set second half of frame to RX
+s(:,3:end)=1+1j;
 
 oarf_send_frame(card,s,n_bit);
 
-%sleep (1)
-%r = oarf_get_frame(card);
+sleep (1)
+r = oarf_get_frame(-2);
 
 figure(1)
 hold off
-plot(real(s(:,1)),'r')
-%hold on
-%plot(imag(s(:,2)),'b')
+plot(real(r(:,1)),'r')
+hold on
+plot(imag(r(:,2)),'b')

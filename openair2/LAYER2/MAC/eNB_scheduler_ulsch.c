@@ -499,7 +499,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   UE_list_t         *UE_list=&eNB->UE_list;
   UE_TEMPLATE       *UE_template;
 
-  int rvidx_tab[4] = {0,3,1,2};
+  int rvidx_tab[4] = {0,2,3,1};
 
 
   // loop over all active UEs

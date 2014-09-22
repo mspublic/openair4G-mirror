@@ -76,15 +76,15 @@ if(paramsinitialized)
         %% ------- Node A to B transmission ------- %%
         oarf_send_frame(card,signalA2B,n_bit);
         %keyboard
-        sleep(0.01);
+        sleep(0.1);
         receivedA2B=oarf_get_frame(card);
         %oarf_stop(card); %not good, since it does a reset
-        sleep(0.01);
+        sleep(0.1);
         
         %%----------Node B to A transmission---------%%
         oarf_send_frame(card,signalB2A,n_bit);
         %keyboard
-        sleep(0.01);
+        sleep(0.1);
         receivedB2A=oarf_get_frame(card);
         %oarf_stop(card); %not good, since it does a reset
         
@@ -148,7 +148,7 @@ if(paramsinitialized)
     %% estimate the noise
     no_signal=repmat(1+1j,76800,4);
     oarf_send_frame(card,no_signal,n_bit);
-    sleep(0.01);
+    sleep(0.1);
     noise_received=oarf_get_frame(card);
     % estimate noise in frequency domain
     noise_f = zeros(120,301,4);

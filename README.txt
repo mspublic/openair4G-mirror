@@ -21,4 +21,3 @@ see README files in these subdirectories for more information
 
 see also https://twiki.eurecom.fr/twiki/bin/view/OpenAirInterface/WebHome
 
-

@@ -159,7 +159,7 @@ mkdir -m 777 -p bin
 build_date=`date +%Y_%m_%d`
 oai_build_date="oai_built_${build_date}"
 touch bin/${oai_build_date} 
-touch bin/install_log.txt
+
 ################################
 # cleanup first 
 ################################
@@ -242,7 +242,8 @@ echo "OAISIM Compilation directive:    $OAISIM_DIRECTIVES" >>  bin/${oai_build_d
 
 echo_info "3. Setting the OAI PATHS ..."
 
-set_openair_env 
+output=$(set_openair_env 2>&1) 
+
 cecho "OPENAIR_HOME    = $OPENAIR_HOME" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
@@ -264,7 +265,8 @@ echo "OPENAIR_TARGETS = $OPENAIR_TARGETS"  >>  bin/${oai_build_date}
 
 echo_info "6. Checking the installation ..."
 
-check_install_oai_software  
+output=$(check_install_oai_software >>  bin/install_log.txt  2>&1 )
+
 
 ############################################
 # compile 
@@ -277,18 +279,18 @@ oaisim_compiled=1
 unisim_compiled=1
 
 if [ $TARGET = "ALL" ]; then
-    echo "############# compile_ltesoftmodem #############" 
-    output=$(compile_ltesoftmodem $OAI_CLEAN  )
+    echo "############# compile_ltesoftmodem #############" >> bin/install_log.txt
+    output=$(compile_ltesoftmodem $OAI_CLEAN >> bin/install_log.txt  2>&1 )
     softmodem_compiled=$?
     check_for_ltesoftmodem_executable
     
-    echo "################ compile_oaisim #################" 
-    output=$(compile_oaisim   $OAI_CLEAN      )
+    echo "################ compile_oaisim #################" >> bin/install_log.txt
+    output=$(compile_oaisim   $OAI_CLEAN     >> bin/install_log.txt  2>&1 )
     oaisim_compiled=$?
     check_for_oaisim_executable
 
-    echo "################## compile_unisim ##################" 
-    output=$(compile_unisim  $OAI_CLEAN      )
+    echo "################## compile_unisim ##################" >> bin/install_log.txt
+    output=$(compile_unisim  $OAI_CLEAN      >> bin/install_log.txt  2>&1 )
     unisim_compiled=$?
     check_for_dlsim_executable
     check_for_ulsim_executable
@@ -301,20 +303,20 @@ if [ $TARGET = "ALL" ]; then
 else
     
     if [ $TARGET = "SOFTMODEM" ]; then 
-	echo "################ compile_ltesoftmodem #################" 
-	output=$(compile_ltesoftmodem  $OAI_CLEAN  )
+	echo "################ compile_ltesoftmodem #################" >> bin/install_log.txt
+	output=$(compile_ltesoftmodem  $OAI_CLEAN >> bin/install_log.txt 2>&1 )
 	softmodem_compiled=$?
 	check_for_ltesoftmodem_executable
     fi
     if [ $TARGET = "OAISIM" ]; then 
-	echo "################ compile_oaisim ###############" 
-	output=$(compile_oaisim  $OAI_CLEAN )
+	echo "################ compile_oaisim ###############" >> bin/install_log.txt
+	output=$(compile_oaisim  $OAI_CLEAN >> bin/install_log.txt 2>&1 )
 	oaisim_compiled=$?	
 	check_for_oaisim_executable
     fi
     if [ $TARGET = "UNISIM" ]; then 
-	echo "################ compile_unisim ###############"
-	output=$(compile_unisim  $OAI_CLEAN )
+	echo "################ compile_unisim ###############" >> bin/install_log.txt
+	output=$(compile_unisim  $OAI_CLEAN >> bin/install_log.txt 2>&1 )
 	unisim_compiled=$?
 	check_for_dlsim_executable
 	check_for_ulsim_executable
@@ -336,20 +338,19 @@ echo_info "8. Installing ..."
 if [ $softmodem_compiled = 0 ]; then 
     echo_success "target lte-softmodem built "
     echo "target lte-softmodem built "  >>  bin/${oai_build_date}
-    output=$(install_ltesoftmodem $RT $HW $ENB_S1 )
+    output=$(install_ltesoftmodem $RT $HW $ENB_S1 >> bin/install_log.txt 2>&1)
 fi
 if [ $oaisim_compiled = 0 ]; then 
     echo_success "target oaisim built "
     echo "target oaisim built "  >>  bin/${oai_build_date}
-    output=$(install_oaisim $ENB_S1 )
+    output=$(install_oaisim $ENB_S1 >> bin/install_log.txt 2>&1 )
 fi 
 if [ $unisim_compiled =  0 ]; then 
     echo_success "target unisim built "
     echo "target unisim built "  >>  bin/${oai_build_date}
 fi 
 
-echo_info "build terminated, binaries are located in bin/"
-echo_info "build terminated, logs are located in bin/${oai_build_date}"
+echo_info "build terminated, see logs is $OPENAIR_TARGETS/bin/install_log.txt"
 
    
 

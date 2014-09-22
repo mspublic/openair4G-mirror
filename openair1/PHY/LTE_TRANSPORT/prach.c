@@ -801,12 +801,28 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
   uint8_t new_dft=0;
   uint8_t aa;
   int32_t lev;
-  int16_t levdB;
+  int8_t levdB;
   int fft_size,log2_ifft_size;
   uint8_t nb_ant_rx = 1; //phy_vars_eNB->lte_frame_parms.nb_antennas_rx;
+  int32_t N_TA_offset = 0;
 
+  // the USRP already does this in the signal aquisition - we should harmonize this later
+#ifndef USRP
+  if (phy_vars_eNB->lte_frame_parms.frame_type == TDD) {
+    if (phy_vars_eNB->lte_frame_parms.N_RB_DL == 100)
+      N_TA_offset = 624;
+    else if (phy_vars_eNB->lte_frame_parms.N_RB_DL == 50)
+      N_TA_offset = 624/2;
+    else if (phy_vars_eNB->lte_frame_parms.N_RB_DL == 25)
+      N_TA_offset = 624/4;
+  }
+  else {
+    N_TA_offset = 0;
+  }
+#endif
+  
   for (aa=0;aa<nb_ant_rx;aa++) {
-    prach[aa] = (int16_t*)&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti];
+    prach[aa] = (int16_t*)&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti-N_TA_offset];
     //    remove_625_Hz(phy_vars_eNB,prach[aa]);
   }
   // First compute physical root sequence
@@ -1121,7 +1137,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
       for (aa=0; aa<nb_ant_rx; aa++) {            
 	lev += (int32_t)prach_ifft[aa][(preamble_shift2+i)<<2]*prach_ifft[aa][(preamble_shift2+i)<<2] + (int32_t)prach_ifft[aa][1+((preamble_shift2+i)<<2)]*prach_ifft[aa][1+((preamble_shift2+i)<<2)];
       }
-      levdB = dB_fixed_times10(lev);        
+      levdB = dB_fixed(lev);        
 
       if (levdB>preamble_energy_list[preamble_index] ) {
 	preamble_energy_list[preamble_index]  = levdB;
