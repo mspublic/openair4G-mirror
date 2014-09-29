@@ -558,7 +558,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	      if (status < RRC_CONNECTED)
 		cqi_req = 0;
 	      else
-		cqi_req = 0;
+		cqi_req = 1;
 
 
 
