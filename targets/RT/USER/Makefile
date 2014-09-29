@@ -341,7 +341,9 @@ run_eNB1:
 run_eNB2:
 	rtai-load eNB2 --verbose
 
-clean: common-clean
+clean: cleanmodem common-clean
+
+cleanmodem:
 	@$(RM_F_V) $(OBJ) $(RTAI_OBJ) $(OBJ_EMOS) $(OBJ_SYNC) $(USRP_OBJ)
 	@$(RM_F_V) $(OBJ:.o=.d) $(RTAI_OBJ:.o=.d) $(OBJ_EMOS:.o=.d) $(OBJ_SYNC:.o=.d)
 	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1_msg.o $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1_msg.d
@@ -364,7 +366,7 @@ cleancell:
 	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.o
 	rm -f $(OPENAIR2_DIR)/NAS/SIMU_CELLULAR/*.d
 
-cleanalmostall: clean 
+cleanalmostall: cleanmodem 
 	rm -f $(ASN1_MSG_OBJS1)
 	rm -rf condtest synctest lte-softmodem
 	rm -rf synctest_eNB synctest_UE
