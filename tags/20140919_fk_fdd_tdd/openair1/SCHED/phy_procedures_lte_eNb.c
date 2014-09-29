@@ -1625,6 +1625,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 	      subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,
 				pdcch_alloc2ul_frame(&phy_vars_eNB->lte_frame_parms,(((subframe)==0)?1:0)+phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
 				pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,subframe)),
+	      //phy_vars_eNB->proc[sched_subframe].frame_tx,
 	      pdcch_alloc2ul_frame(&phy_vars_eNB->lte_frame_parms,(((subframe)==0)?1:0)+phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
 	      subframe,DCI_pdu->dci_alloc[i].rnti,
 	      *(unsigned int *)&DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -2297,6 +2298,9 @@ void process_HARQ_feedback(uint8_t UE_id,
 	else	
 	  dlsch_ACK[m] = 0;
       }
+
+      //
+
       if (dl_harq_pid[m]<dlsch->Mdlharq) {
 	dlsch_harq_proc = dlsch->harq_processes[dl_harq_pid[m]];
 #ifdef DEBUG_PHY_PROC	
@@ -2906,7 +2910,7 @@ void phy_procedures_eNB_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 			     i,
 			     sched_subframe,
 			     0, // control_only_flag
-			     0, //Nbundled, to be updated!!!!
+			     phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI, //Nbundled, to be updated!!!!
 			     0);  
       }
 #ifdef PHY_ABSTRACTION
@@ -3107,14 +3111,8 @@ void phy_procedures_eNB_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 			    frame,
 			    phy_vars_eNB->ulsch_eNB[i]->rnti,
 			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
-			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
-	  /*
-	    mac_xface->terminate_ra_proc(phy_vars_eNB->Mod_id,
-	    frame,
-	    phy_vars_eNB->ulsch_eNB[i]->rnti,
-	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
-	    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
-	  */
+			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3,
+			    harq_pid);
 #endif
 
 	  phy_vars_eNB->eNB_UE_stats[i].mode = PUSCH;
@@ -3167,7 +3165,8 @@ void phy_procedures_eNB_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 			    frame,
 			    phy_vars_eNB->ulsch_eNB[i]->rnti,
 			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
-			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
+			    phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3,
+			    harq_pid);
 	  //}
 	  /*
 	    else {
@@ -3636,7 +3635,8 @@ void phy_procedures_eNB_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 			      frame,
 			      phy_vars_eNB->ulsch_eNB[i]->rnti,
 			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
-			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
+			      phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3,
+			      harq_pid);
 	    phy_vars_eNB->cba_last_reception[i%num_active_cba_groups]=1;//(subframe);
 	  } else {
 	    LOG_N(PHY,"[eNB %d] Frame %d subframe %d : CBA collision detected for UE%d for group %d, set the SR for this UE \n ",

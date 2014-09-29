@@ -164,7 +164,8 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
     last_size=1;
     //    msg("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
     ((TIMING_ADVANCE_CMD *)ce_ptr)->R=0;
-    ((TIMING_ADVANCE_CMD *)ce_ptr)->TA=timing_advance_cmd&0x3f;
+    //((TIMING_ADVANCE_CMD *)ce_ptr)->TA=timing_advance_cmd&0x3f;
+    ((TIMING_ADVANCE_CMD *)ce_ptr)->TA=(timing_advance_cmd+31)&0x3f; //in the agilent branch
     LOG_I(MAC,"timing advance =%d (%d)\n",timing_advance_cmd,((TIMING_ADVANCE_CMD *)ce_ptr)->TA);
     ce_ptr+=sizeof(TIMING_ADVANCE_CMD);
     //msg("offset %d\n",ce_ptr-mac_header_control_elements);
@@ -291,6 +292,82 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 }
 
 
+void set_ul_DAI(int module_idP,int UE_idP, int CC_idP,  int frameP, int subframeP, LTE_DL_FRAME_PARMS  *frame_parms[MAX_NUM_CCs]) {
+
+  eNB_MAC_INST         *eNB      = &eNB_mac_inst[module_idP];
+  UE_list_t            *UE_list  = &eNB->UE_list;
+  unsigned char         DAI;
+ 
+  if (frame_parms[CC_idP]->frame_type == TDD) {
+    DAI = (UE_list->UE_template[CC_idP][UE_idP].DAI-1)&3;
+    LOG_D(MAC,"[eNB %d] Frame %d, subframe %d: DAI %d for UE %d\n",module_idP,frameP,subframeP,DAI,UE_idP);
+    // Save DAI for Format 0 DCI
+    
+    switch (frame_parms[CC_idP]->tdd_config) {
+    case 0:
+      //      if ((subframeP==0)||(subframeP==1)||(subframeP==5)||(subframeP==6))
+      break;
+    case 1:
+      switch (subframeP) {
+      case 1:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[7] = DAI;
+	break;
+      case 4:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[8] = DAI;
+	break;
+      case 6:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[2] = DAI;
+	break;
+      case 9:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[3] = DAI;
+	break;
+      }
+    case 2:
+      //      if ((subframeP==3)||(subframeP==8))
+      //	UE_list->UE_template[CC_idP][UE_idP].DAI_ul = DAI;
+      break;
+    case 3:
+      //if ((subframeP==6)||(subframeP==8)||(subframeP==0)) {
+      //  LOG_D(MAC,"schedule_ue_spec: setting UL DAI to %d for subframeP %d => %d\n",DAI,subframeP, ((subframeP+8)%10)>>1);
+      //  UE_list->UE_template[CC_idP][UE_idP].DAI_ul[((subframeP+8)%10)>>1] = DAI;
+      //}
+      switch (subframeP) {
+      case 5:
+      case 6:
+      case 1:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[2] = DAI;
+	break;
+      case 7:
+      case 8:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[3] = DAI;
+	break;
+      case 9:
+      case 0:
+	UE_list->UE_template[CC_idP][UE_idP].DAI_ul[4] = DAI;
+	break;
+      default:
+	break;
+      }
+      
+      break;
+    case 4:
+      //      if ((subframeP==8)||(subframeP==9))
+      //	UE_list->UE_template[CC_idP][UE_idP].DAI_ul = DAI;
+      break;
+    case 5:
+      //      if (subframeP==8)
+      //	UE_list->UE_template[CC_idP][UE_idP].DAI_ul = DAI;
+      break;
+    case 6:
+      //      if ((subframeP==1)||(subframeP==4)||(subframeP==6)||(subframeP==9))
+      //	UE_list->UE_template[CC_idP][UE_idP].DAI_ul = DAI;
+      break;
+    default:
+      break;
+    }
+  }
+}
+
 void schedule_ue_spec(module_id_t   module_idP,
                       frame_t       frameP,
                       sub_frame_t   subframeP,
@@ -314,7 +391,6 @@ void schedule_ue_spec(module_id_t   module_idP,
   void                 *DLSCH_dci        = NULL;
   LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
   uint16_t              sdu_length_total = 0;
-  unsigned char         DAI;
   int                   i                = 0;
   uint8_t               dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   unsigned char         rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX];
@@ -373,6 +449,7 @@ void schedule_ue_spec(module_id_t   module_idP,
       continue;
     for (UE_id=UE_list->head;UE_id>=0;UE_id=UE_list->next[UE_id]) {
 
+
       rnti = UE_RNTI(module_idP,UE_id);
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
       if (rnti==0) {
@@ -401,12 +478,16 @@ void schedule_ue_spec(module_id_t   module_idP,
 			  S_DL_NONE);
 	continue;
       }
-      if (frame_parms[CC_id]->frame_type == TDD) 
+
+      if (frame_parms[CC_id]->frame_type == TDD)  {
 	set_ue_dai (subframeP,
 		    frame_parms[CC_id]->tdd_config,
 		    UE_id,
 		    CC_id,
 		    UE_list);
+	// set UL DAI in case UE is not scheduled
+	set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP,frame_parms);
+      }
       
       nb_available_rb = pre_nb_available_rbs[CC_id][UE_id];
       UE_list->eNB_UE_stats[CC_id][UE_id].crnti= rnti;
@@ -929,7 +1010,7 @@ void schedule_ue_spec(module_id_t   module_idP,
 	  
 	  if (frame_parms[CC_id]->frame_type == TDD) {
 	    UE_list->UE_template[CC_id][UE_id].DAI++;
-	    //	printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
+	    LOG_D(MAC,"DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
 #warning only for 5MHz channel 
 	    update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
 	  }
@@ -1063,7 +1144,9 @@ void schedule_ue_spec(module_id_t   module_idP,
 
 	}
       }
-      if (frame_parms[CC_id]->frame_type == TDD) {
+      // update UL DAI after DLSCH scheduling
+      set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP,frame_parms);
+      /*      if (frame_parms[CC_id]->frame_type == TDD) {
 	DAI = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
 	LOG_D(MAC,"[eNB %d] Frame %d: DAI %d for UE %d\n",module_idP,frameP,DAI,UE_id);
 	// Save DAI for Format 0 DCI
@@ -1092,10 +1175,28 @@ void schedule_ue_spec(module_id_t   module_idP,
 	  //	UE_list->UE_template[CC_id][UE_id].DAI_ul = DAI;
 	  break;
 	case 3:
-	  if ((subframeP==6)||(subframeP==8)||(subframeP==0)) {
-	    LOG_D(MAC,"schedule_ue_spec: setting UL DAI to %d for subframeP %d => %d\n",DAI,subframeP, ((subframeP+8)%10)>>1);
-	    UE_list->UE_template[CC_id][UE_id].DAI_ul[((subframeP+8)%10)>>1] = DAI;
+	  //if ((subframeP==6)||(subframeP==8)||(subframeP==0)) {
+	  //  LOG_D(MAC,"schedule_ue_spec: setting UL DAI to %d for subframeP %d => %d\n",DAI,subframeP, ((subframeP+8)%10)>>1);
+	  //  UE_list->UE_template[CC_id][UE_id].DAI_ul[((subframeP+8)%10)>>1] = DAI;
+	  //}
+	  switch (subframeP) {
+          case 5:
+          case 6:
+          case 1:
+            UE_list->UE_template[CC_id][UE_id].DAI_ul[2] = DAI;
+            break;
+          case 7:
+          case 8:
+            UE_list->UE_template[CC_id][UE_id].DAI_ul[3] = DAI;
+            break;
+          case 9:
+          case 0:
+            UE_list->UE_template[CC_id][UE_id].DAI_ul[4] = DAI;
+            break;
+          default:
+            break;
 	  }
+
 	  break;
 	case 4:
 	  //      if ((subframeP==8)||(subframeP==9))
@@ -1113,6 +1214,7 @@ void schedule_ue_spec(module_id_t   module_idP,
 	  break;
 	}
       }
+      */
     }
   }
   //printf("MAC nCCE : %d\n",*nCCE_used);
@@ -1701,6 +1803,8 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP
 	    LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,frameP,subframeP);
 	    RA_template->wait_ack_Msg4=0;
 	    RA_template->RA_active=FALSE;
+	    UE_id = find_UE_id(module_idP,RA_template->rnti);
+	    eNB_mac_inst[module_idP].UE_list.UE_template[UE_PCCID(module_idP,UE_id)][UE_id].configured=TRUE;
 	  }
 	}
       }
