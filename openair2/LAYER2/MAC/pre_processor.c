@@ -55,8 +55,8 @@
 
 
 
-#define DEBUG_eNB_SCHEDULER 1
-#define DEBUG_HEADER_PARSING 1
+//#define DEBUG_eNB_SCHEDULER 1
+//#define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
 //#define ICIC 0
@@ -125,14 +125,14 @@ void store_dlsch_buffer (module_id_t Mod_id,
 #endif
       
     }
-    //#ifdef DEBUG_eNB_SCHEDULER
+#ifdef DEBUG_eNB_SCHEDULER
     if ( UE_template->dl_buffer_total>0)
       LOG_D(MAC,"[eNB %d] Frame %d Subframe %d : RLC status for UE %d : total DL buffer size %d and total number of pdu %d \n",
 	    Mod_id, frameP, subframeP, UE_id,
 	    UE_template->dl_buffer_total,
 	    UE_template->dl_pdus_total
 	    );
-    //#endif   
+#endif   
   }
 }
 
@@ -624,7 +624,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   }
   
 #endif 
-
+#ifdef DEBUG_eNB_SCHEDULER
   for(i=UE_list->head; i>=0;i=UE_list->next[i]) {
     for (ii=0;ii<UE_num_active_CC(UE_list,UE_id);ii++) {
       CC_id = UE_list->ordered_CCids[ii][UE_id];
@@ -641,6 +641,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       LOG_D(MAC,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[CC_id][UE_id]);
     }
   }
+#endif
 }
 
 

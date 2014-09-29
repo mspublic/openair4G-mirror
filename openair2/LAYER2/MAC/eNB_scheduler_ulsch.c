@@ -73,7 +73,8 @@
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[33] = {1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,25,27,30,32,36,40,45,48,50,54,60,72,75,80,81,90,96,100};
 
-void rx_sdu(module_id_t enb_mod_idP,int CC_id,frame_t frameP,rnti_t rntiP,uint8_t *sdu, uint16_t sdu_len) {
+//TODO: if CRNTI CE is received, this function should return something so that the PHY can remove UE
+void rx_sdu(module_id_t enb_mod_idP,int CC_id,frame_t frameP,rnti_t rntiP,uint8_t *sdu, uint16_t sdu_len,int harq_pid) {
 
   unsigned char  rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char  rx_lcids[NB_RB_MAX];
@@ -105,8 +106,8 @@ void rx_sdu(module_id_t enb_mod_idP,int CC_id,frame_t frameP,rnti_t rntiP,uint8_
       payload_ptr+=sizeof(POWER_HEADROOM_CMD);
       break;
     case CRNTI:
-      LOG_D(MAC, "[eNB] MAC CE_LCID %d : Received CRNTI %d \n", rx_ces[i], payload_ptr[0]);
-      payload_ptr+=1;
+      LOG_D(MAC, "[eNB] MAC CE_LCID %d : Received CRNTI %2x%2x \n", rx_ces[i], payload_ptr[0],payload_ptr[1]);
+      payload_ptr+=1; //+=2???
       break;
     case TRUNCATED_BSR:
     case SHORT_BSR: {
@@ -166,7 +167,7 @@ void rx_sdu(module_id_t enb_mod_idP,int CC_id,frame_t frameP,rnti_t rntiP,uint8_
 	    memcpy(&eNB->common_channels[CC_id].RA_template[ii].cont_res_id[0],payload_ptr,6);
 	    LOG_I(MAC,"[eNB %d][RAPROC] Frame %d CCCH: Received RRCConnectionRequest: length %d, offset %d\n",
                   enb_mod_idP,frameP,rx_lengths[ii],payload_ptr-sdu);
-	    if ((UE_id=add_new_ue(enb_mod_idP,CC_id,eNB->common_channels[CC_id].RA_template[ii].rnti)) == -1 )
+	    if ((UE_id=add_new_ue(enb_mod_idP,CC_id,eNB->common_channels[CC_id].RA_template[ii].rnti,harq_pid)) == -1 )
 	      mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
 	    else 
 	      LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Added user with rnti %x => UE %d\n",
@@ -516,6 +517,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       DCI_pdu = &eNB->common_channels[CC_id].DCI_pdu;
       UE_template = &UE_list->UE_template[CC_id][UE_id];
 
+      if (UE_template->configured == FALSE)
+	continue;
 
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
       if (eNB_UE_stats==NULL)
@@ -547,7 +550,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	      // reset the scheduling request
 	      UE_template->ul_SR = 0;
 
-	      aggregation = process_ue_cqi(module_idP,UE_id); // =2 by default!!
+	      aggregation = 1; //process_ue_cqi(module_idP,UE_id); // =2 by default!!
 	      //    msg("[MAC][eNB] subframeP %d: aggregation %d\n",subframeP,aggregation);
 
 	      status = mac_get_rrc_status(module_idP,1,UE_id);
@@ -555,7 +558,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	      if (status < RRC_CONNECTED)
 		cqi_req = 0;
 	      else
-		cqi_req = 1;
+		cqi_req = 0;
 
 
 
@@ -572,7 +575,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		mcs = openair_daq_vars.target_ue_ul_mcs;
 	      }
 
-	      LOG_D(MAC,"[eNB %d] ULSCH scheduler: Ndi %d, mcs %d\n",module_idP,ndi,mcs);
+	      LOG_D(MAC,"[eNB %d] ULSCH scheduler: harq_pid %d, Ndi %d, mcs %d\n",module_idP,harq_pid,ndi,mcs);
 
 	      /*	      if((cooperation_flag > 0) && (UE_id == 1)) { // Allocation on same set of RBs
 		// RIV:resource indication value // function in openair1/PHY/LTE_TRANSPORT/dci_tools.c
@@ -623,11 +626,12 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		}
 		//rb_table_index = 8;
 
-		LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframeP %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+		LOG_I(MAC,"[eNB %d][PUSCH %d/%x] Frame %d subframeP %d Scheduled UE (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d,DAI %d)\n",
 		      module_idP,harq_pid,rnti,frameP,subframeP,mcs,
 		      *first_rb,rb_table[rb_table_index],
 		      rb_table_index,mac_xface->get_TBS_UL(mcs,rb_table[rb_table_index]),
-		      harq_pid);
+		      harq_pid,
+		      UE_template->DAI_ul[sched_subframe]);
 
 		rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 						*first_rb,

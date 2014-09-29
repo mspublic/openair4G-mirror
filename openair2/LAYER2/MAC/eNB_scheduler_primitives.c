@@ -203,7 +203,7 @@ void dump_ue_list(UE_list_t *listP) {
   }
 }
 
-int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP) {
+int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pid) {
   int UE_id;
   int j;
 
@@ -227,10 +227,14 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP) {
     UE_list->num_UEs++;
     UE_list->active[UE_id]                   = TRUE;
 
+    UE_list->UE_template[cc_idP][UE_id].configured         = FALSE;
+
     for (j=0;j<8;j++) {
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0 
-      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = 0;
+      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j==harq_pid)?0:1; // 1st transmission is with Msg3
     }
+    //UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[harq_pid] = 0;   
+
     eNB_ulsch_info[mod_idP][UE_id].status = S_UL_WAITING;
     eNB_dlsch_info[mod_idP][UE_id].status = S_UL_WAITING;
     LOG_D(MAC,"[eNB %d] Add UE_id %d on Primary CC_id %d: rnti %x\n",mod_idP,UE_id,cc_idP,rntiP);
