@@ -53,8 +53,7 @@
 
 //unsigned short phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
-
-uint8_t rv_table[4] = {0, 2, 3, 1};
+uint8_t rv_table[4] = {0, 2, 3, 1}; //36.321 5.4.2.2
 
 uint8_t get_mi(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
@@ -1307,7 +1306,6 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
     }
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag =0;
     ulsch->harq_processes[harq_pid]->status = IDLE;
-    ulsch->harq_processes[harq_pid]->round  = 0;
     // inform MAC?
     phy_vars_ue->ulsch_ue_Msg3_active[eNB_id] = 0;
   }

@@ -3678,7 +3678,7 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 
 }
 
-uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n){
+uint8_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n){
 
   if ((frame_parms->frame_type == TDD) && 
       (frame_parms->tdd_config == 1) &&
@@ -4199,17 +4199,14 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (ulsch->harq_processes[harq_pid]->first_tx==1) {
       //      ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
       ulsch->harq_processes[harq_pid]->first_tx=0;
-      ulsch->harq_processes[harq_pid]->round = 0;
     }
     else {
       if (ulsch->harq_processes[harq_pid]->DCINdi!=ndi) { // new SDU opportunity
 	//	ulsch->harq_processes[harq_pid]->Ndi = 1;
 	ulsch->harq_processes[harq_pid]->DCINdi= ndi;
-	ulsch->harq_processes[harq_pid]->round = 0;
       }
       else {
 	//	ulsch->harq_processes[harq_pid]->Ndi = 0;
-	//	ulsch->harq_processes[harq_pid->round++;  // This is done in phich RX
       }
     }
     ulsch->harq_processes[harq_pid]->n_DMRS                                = cshift;     
@@ -4240,6 +4237,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     else if(cshift == 7)
       ulsch->harq_processes[harq_pid]->n_DMRS2 = 9;
 
+    LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d, subframe %d : Programming PUSCH with n_DMRS2 %d (cshift %d)\n",
+	  phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame_rx,subframe,ulsch->harq_processes[harq_pid]->n_DMRS2,cshift);
 
     //reserved for cooperative communication
     /*
@@ -4401,24 +4400,15 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       // msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
       dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
     */
-
-        // check this (see comment in generate_ue_ulsch_params_from_dci)
-    if (frame_parms->frame_type == FDD) {
-      int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
-      if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[dl_subframe].send_harq_status>0) { // we have downlink transmission
-	ulsch->harq_processes[harq_pid]->O_ACK = 1;
-      }
-      else {
-	ulsch->harq_processes[harq_pid]->O_ACK = 0;
-      }
-    } else {
-      if (ulsch->bundling)
-	ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
-      else
-	ulsch->harq_processes[harq_pid]->O_ACK = (dai+1)&3;
-      
-      //      ulsch->harq_processes[harq_pid]->V_UL_DAI = dai+1;
-    }
+    /*
+      if (frame_parms->frame_type == TDD) 
+      // 2bits if together with SR
+      // 1 bit if ACK only?
+      // check dai business
+      ulsch->harq_processes[harq_pid]->O_ACK                                 = 1; //(dai+1)&3;
+      else 
+    */  ulsch->harq_processes[harq_pid]->O_ACK                                 = 1;
+    
 
     ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index];//18;
     ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_ue->pusch_config_dedicated[eNB_id].betaOffset_RI_Index];//10;
@@ -4458,9 +4448,6 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       if (mcs>28) ulsch->harq_processes[harq_pid]->rvidx = mcs - 28;
       //      ulsch->harq_processes[harq_pid]->round++;
     }
-
-    LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d, subframe %d : Programming PUSCH with n_DMRS2 %d (cshift %d), nb_rb %d, first_rb %d, round %d, rv %d\n",
-	  phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame_rx,subframe,ulsch->harq_processes[harq_pid]->n_DMRS2,cshift,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb,ulsch->harq_processes[harq_pid]->round,ulsch->harq_processes[harq_pid]->rvidx);
 
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
@@ -4663,7 +4650,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     }
 
     //#ifdef DEBUG_DCI
-    LOG_I(PHY,"generate_eNB_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d,ndi %d,cqi_req %d\n",subframe,rnti,harq_pid,ndi,cqi_req);
+    LOG_I(PHY,"Frame %d: generate_eNB_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d,ndi %d,cqi_req %d\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,rnti,harq_pid,ndi,cqi_req);
     //#endif
 
     ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;
@@ -4767,7 +4754,16 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->uci_format                            = HLC_subband_cqi_nopmi;
     }
 
-    if (frame_parms->frame_type == FDD) {
+    ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
+    ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index];//10;
+    ulsch->beta_offset_harqack_times8            = beta_ack[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index];//16;
+
+    ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
+    ulsch->srs_active                            = use_srs;
+    ulsch->bundling = 1-AckNackFBMode;
+
+    // check this (see comment in generate_ue_ulsch_params_from_dci)
+    if(frame_parms->frame_type == FDD) {
       int dl_subframe = (subframe<4) ? (subframe+6) : (subframe-4);
       if (phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[dl_subframe]>0) { // we have downlink transmission
 	ulsch->harq_processes[harq_pid]->O_ACK = 1;
@@ -4780,17 +4776,11 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 	ulsch->harq_processes[harq_pid]->O_ACK = (dai == 3)? 0 : 1;
       else
 	ulsch->harq_processes[harq_pid]->O_ACK = (dai+1)&3;
-      
+
       ulsch->harq_processes[harq_pid]->V_UL_DAI = dai+1;
     }
 
-    ulsch->beta_offset_cqi_times8                = beta_cqi[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index];//18;
-    ulsch->beta_offset_ri_times8                 = beta_ri[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index];//10;
-    ulsch->beta_offset_harqack_times8            = beta_ack[phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index];//16;
 
-    ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
-    ulsch->srs_active                            = use_srs;
-    ulsch->bundling = 1-AckNackFBMode;
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(cshift == 0)
       ulsch->harq_processes[harq_pid]->n_DMRS2 = 0;
@@ -4863,8 +4853,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (eNB): Or1           %d\n",ulsch->Or1);
     msg("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
     msg("ulsch (eNB): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
-#else
-    UNUSED_VARIABLE(dai);
+    if (frame_parms->frame_type == TDD)
+      msg("ulsch (eNB); DAI %d\n\n",dai);
 #endif
     return(0);
   }

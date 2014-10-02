@@ -3,10 +3,10 @@ fc  = 1907600000;
 %fc = 859.5e6;
 
 rxgain=0;
-txgain=25;
+txgain=10;
 eNB_flag = 0;
 card = 0;
-active_rf = [1 1 0 0];
+active_rf = [1 1 1 1];
 autocal = [1 1 1 1];
 resampling_factor = [2 2 2 2];
 limeparms;
@@ -28,7 +28,7 @@ freq_tx = fc*active_rf;
 freq_rx = freq_tx;
 %freq_rx = freq_tx-120000000*chan_sel;
 %freq_tx = freq_rx+1920000;
-tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_TESTTX;
+tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
 syncmode0 = SYNCMODE_MASTER;
 syncmode1 = SYNCMODE_SLAVE;
 rffe_rxg_low = 61*[1 1 1 1];
@@ -48,10 +48,10 @@ select = 1;
 switch(select)
 
 case 1
-  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
-  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
-  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
-  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/7680)));
+  s(:,1) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/4)));
+  s(:,2) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/4)));
+  s(:,3) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/4)));
+  s(:,4) = floor(amp * (exp(1i*2*pi*(0:((76800*4)-1))/4)));
 
 case 2
   s(38400+128,1)= 80-1j*40;
@@ -104,8 +104,9 @@ endswitch
 s = s*2;
 
 
-%s(38400:end,1) = (1+1j);
-%s(38400:end,2) = (1+1j);
+s(1:38400,1) = (1+1j);
+s(38401:end,2) = (1+1j);
+s(:,3:end)=1+1j;
 
 sleep (1)
 %keyboard
@@ -113,9 +114,10 @@ sleep (1)
 oarf_send_frame(0,s,n_bit);
 sleep(1);
 oarf_send_frame(1,s,n_bit);
-%r = oarf_get_frame(card);
+sleep(1)
+r = oarf_get_frame(-2);
 figure(1)
 hold off
-plot(real(s(:,1)),'r')
-%hold on
-%plot(imag(s(:,2)),'b')
+plot(real(r(:,1)),'r')
+figure(2)
+plot(imag(r(:,2)),'b')

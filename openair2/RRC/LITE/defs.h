@@ -71,7 +71,6 @@
 #ifdef Rel10
 #include "MCCH-Message.h"
 #include "MBSFNAreaConfiguration-r9.h"
-#include "SCellToAddMod-r10.h"
 #endif
 #include "AS-Config.h"
 #include "AS-Context.h"
@@ -313,9 +312,6 @@ typedef struct eNB_RRC_INST_s {
   uint8_t                           *SIB23;
   uint8_t                           sizeof_SIB23;
   uint16_t                          physCellId;
-#ifdef Rel10
-  SCellToAddMod_r10_t              sCell_config[NUMBER_OF_UE_MAX][2];
-#endif
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
   BCCH_DL_SCH_Message_t             systemInformation;
@@ -422,7 +418,6 @@ typedef struct UE_RRC_INST_s {
   uint8_t                         num_active_cba_groups;
   uint16_t                        cba_rnti[NUM_MAX_CBA_GROUP];
 #endif
-  uint8_t                         num_srb;
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];

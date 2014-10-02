@@ -190,11 +190,7 @@ uint16_t do_RRCConnectionReconfiguration(uint8_t                             Mod
                                          RSRP_Range_t                       *rsrp,
                                          C_RNTI_t                           *cba_rnti,
                                          struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList
-                                                                            *dedicatedInfoNASList
-#ifdef Rel10
-					 , SCellToAddMod_r10_t  *SCell_config
-#endif
-					 );
+                                                                            *dedicatedInfoNASList);
 
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
@@ -222,7 +218,7 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
 
-OAI_UECapability_t *fill_ue_capability(void);
+OAI_UECapability_t *fill_ue_capability();
 
 uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
                                uint8_t *buffer,

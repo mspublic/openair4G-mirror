@@ -202,6 +202,7 @@ if(paramsinitialized)
 	  plot(20*log10(abs(fchanestsB2A(:,m,n,t))))
 	  hold on
 	  plot(20*log10(abs(fchanestsA2B(:,m,n,t))),'r')
+	  hold off
 	  ylim([0 80])
 	  i=i+1;
 	end

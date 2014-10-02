@@ -537,7 +537,6 @@ void rrc_eNB_free_UE_index(
           eNB_rrc_inst[enb_mod_idP].Info.UE_list[ue_mod_idP]);
     eNB_rrc_inst[enb_mod_idP].Info.UE[ue_mod_idP].Status = RRC_IDLE;
     eNB_rrc_inst[enb_mod_idP].Info.UE_list[ue_mod_idP] = 0;
-    free(eNB_rrc_inst[enb_mod_idP].SRB_configList[ue_mod_idP]);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -664,8 +663,6 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
     MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
 #if Rel10
     long                               *sr_ProhibitTimer_r9              = NULL;
-//     uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
-    uint8_t                            sCellIndexToAdd = 0;
 #endif
 
     long                               *logicalchannelgroup, *logicalchannelgroup_drb;
@@ -1157,11 +1154,7 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 #else
 					   physicalConfigDedicated[ue_mod_idP], MeasObj_list, ReportConfig_list, quantityConfig, MeasId_list,
 #endif
-					   mac_MainConfig, NULL, NULL, Sparams, rsrp, cba_RNTI, dedicatedInfoNASList
-#ifdef Rel10
-					   , NULL //SCellToAddMod_r10_t  
-#endif
-					   );
+					   mac_MainConfig, NULL, NULL, Sparams, rsrp, cba_RNTI, dedicatedInfoNASList);
 
 #ifdef RRC_MSG_PRINT
     LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
@@ -1192,65 +1185,6 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
     //rrc_rlc_data_req(enb_mod_idP,frameP, 1,(ue_mod_idP*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
     pdcp_rrc_data_req(enb_mod_idP, ue_mod_idP, frameP, 1, DCCH, rrc_eNB_mui++, 0, size, buffer, 1);
 }
-
-
-
-int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frame, uint32_t dl_CarrierFreq_r10) {
-
-  uint8_t size;
-  uint8_t buffer[100];
-  
-#ifdef Rel10
-  uint8_t sCellIndexToAdd = 0; //one SCell so far
-//   uint8_t sCellIndexToAdd;
-//   sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
-//  if (eNB_rrc_inst[enb_mod_idP].sCell_config[ue_mod_idP][sCellIndexToAdd] ) {
-  if (eNB_rrc_inst[enb_mod_idP].sCell_config != NULL) {
-    eNB_rrc_inst[enb_mod_idP].sCell_config[ue_mod_idP][sCellIndexToAdd].cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
-  }
-  else {
-    LOG_E(RRC,"Scell not configured!\n");
-    return(-1);
-  }  
-#endif
-  size = do_RRCConnectionReconfiguration(enb_mod_idP,
-                                         buffer,
-                                         ue_mod_idP,
-                                         rrc_eNB_get_next_transaction_identifier(enb_mod_idP),//Transaction_id,
-                                         (SRB_ToAddModList_t*)NULL,
-                                         (DRB_ToAddModList_t*)NULL,
-                                         (DRB_ToReleaseList_t*)NULL,
-                                         (struct SPS_Config*)NULL,
-                                         (struct PhysicalConfigDedicated*)NULL,
-                                         (MeasObjectToAddModList_t*)NULL,
-                                         (ReportConfigToAddModList_t*)NULL,
-                                         (QuantityConfig_t*)NULL, 
-                                         (MeasIdToAddModList_t*)NULL,
-                                         (MAC_MainConfig_t*)NULL,
-                                         (MeasGapConfig_t*)NULL,
-                                         (MobilityControlInfo_t*)NULL,
-                                         (struct MeasConfig__speedStatePars*)NULL,
-                                         (RSRP_Range_t*)NULL,
-                                         (C_RNTI_t*)NULL,
-                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL
-
-#ifdef Rel10
-					 , eNB_rrc_inst[enb_mod_idP].sCell_config
-#endif
-					 ); 
-
-  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
-        enb_mod_idP,frame, size, ue_mod_idP);
-
-  LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
-        frame, enb_mod_idP, size, ue_mod_idP, rrc_eNB_mui, enb_mod_idP, /*(ue_mod_idP*MAX_NUM_RB)+*/DCCH);
-  //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-//   pdcp_data_req(enb_mod_idP, ue_mod_idP, frame, 1, /*(UE_index * MAX_NUM_RB) + */DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
-    pdcp_rrc_data_req(enb_mod_idP, ue_mod_idP, frame, 1, DCCH, rrc_eNB_mui++, 0, size, buffer, 1);
-
-  return(0);
-}
-
 
 /*------------------------------------------------------------------------------*/
 void rrc_eNB_process_MeasurementReport(
@@ -2214,11 +2148,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(
                                            NULL,    //*sps_Config,
                                            physicalConfigDedicated[ue_mod_idP], MeasObj_list, ReportConfig_list, NULL,    //quantityConfig,
                                            MeasId_list, mac_MainConfig, NULL, mobilityInfo, Sparams,
-                                           NULL, NULL, dedicatedInfoNASList
-#ifdef Rel10
-					   , NULL   // SCellToAddMod_r10_t  
-#endif
-					   );
+                                           NULL, NULL, dedicatedInfoNASList);
 
     LOG_I(RRC,
           "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for handover (bytes %d, UE id %d)\n",
@@ -3268,7 +3198,6 @@ void                               *rrc_enb_task(
     MessageDef                         *msg_p;
     const char                         *msg_name_p;
     instance_t                          instance;
-    unsigned int  ue_mod_id;
     int                                 result;
     SRB_INFO                           *srb_info_p;
 
@@ -3357,18 +3286,6 @@ void                               *rrc_enb_task(
                 rrc_enb_ral_handle_configure_threshold_request(instance, msg_p);
                 break;
 #   endif
-
-                //SPECTRA: Add the RRC connection reconfiguration with Second cell configuration
-            case RRC_RAL_CONNECTION_RECONFIGURATION_REQ:
-//                 ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
-                LOG_I(RRC, "[eNB %d] Send RRC_RAL_CONNECTION_RECONFIGURATION_REQ to UE %s\n", instance, msg_name_p);
-                //Method RRC connection reconfiguration command with Second cell configuration
-#   ifdef ENABLE_RAL
-                rrc_eNB_generate_RRCConnectionReconfiguration_SCell(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, 36126);
-#   else
-                rrc_eNB_generate_defaultRRCConnectionReconfiguration(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, eNB_rrc_inst[instance].HO_flag);
-#   endif
-                break;
 
             default:
                 LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);

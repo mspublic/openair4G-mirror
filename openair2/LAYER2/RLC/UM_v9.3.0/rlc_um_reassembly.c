@@ -33,9 +33,6 @@
 #ifdef USER_MODE
 #include <string.h>
 #endif
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
 #include "assertions.h"
 #include "rlc.h"
 #include "rlc_um.h"

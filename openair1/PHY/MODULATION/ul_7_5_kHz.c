@@ -161,6 +161,23 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot) {
   uint8_t aa;
   uint32_t i;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
+  int32_t N_TA_offset = 0;
+
+  // the USRP already does this in the signal aquisition - we should harmonize this later
+#ifndef USRP
+  if (phy_vars_eNB->lte_frame_parms.frame_type == TDD) {
+    if (phy_vars_eNB->lte_frame_parms.N_RB_DL == 100)
+      N_TA_offset = 624;
+    else if (phy_vars_eNB->lte_frame_parms.N_RB_DL == 50)
+      N_TA_offset = 624/2;
+    else if (phy_vars_eNB->lte_frame_parms.N_RB_DL == 25)
+      N_TA_offset = 624/4;
+  }
+  else {
+    N_TA_offset = 0;
+  }
+#endif
+
 
   switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
     
@@ -188,7 +205,7 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot) {
   }
 
  
-  slot_offset = (uint32_t)slot * phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
+  slot_offset = (uint32_t)slot * phy_vars_eNB->lte_frame_parms.samples_per_tti/2-N_TA_offset;
   slot_offset2 = (uint32_t)(slot&1) * phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
 
   len = phy_vars_eNB->lte_frame_parms.samples_per_tti/2;

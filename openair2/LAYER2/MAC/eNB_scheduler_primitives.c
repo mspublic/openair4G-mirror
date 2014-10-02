@@ -195,70 +195,67 @@ uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP, int CC_id,unsign
 }
 #endif
 
-void dump_ue_list(UE_list_t *listP, int ul_flag) {
+void dump_ue_list(UE_list_t *listP) {
   int j;
-  if ( ul_flag == 0 ){
-    for (j=listP->head;j>=0;j=listP->next[j]) {
-      LOG_T(MAC,"node %d => %d\n",j,listP->next[j]);
-    }
-  } else {
-    for (j=listP->head_ul;j>=0;j=listP->next_ul[j]) {
-      LOG_T(MAC,"node %d => %d\n",j,listP->next_ul[j]);
-    }
+
+  for (j=listP->head;j>=0;j=listP->next[j]) {
+    LOG_T(MAC,"node %d => %d\n",j,listP->next[j]);
   }
 }
 
-int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP) {
+int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pid) {
   int UE_id;
   int j;
 
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
   
   LOG_D(MAC,"[eNB %d, CC_id %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",mod_idP,cc_idP,rntiP,UE_list->avail,UE_list->num_UEs);
-  dump_ue_list(UE_list,0);
+  dump_ue_list(UE_list);
 
   if (UE_list->avail>=0) {
     UE_id = UE_list->avail;
     UE_list->avail = UE_list->next[UE_list->avail];
     UE_list->next[UE_id] = UE_list->head;
-    UE_list->next_ul[UE_id] = UE_list->head;
     UE_list->head = UE_id;
-    UE_list->head_ul = UE_id;
-    UE_list->UE_template[cc_idP][UE_id].rnti       = rntiP;
-    UE_list->UE_template[cc_idP][UE_id].configured = FALSE;
-    UE_list->numactiveCCs[UE_id]                   = 1;
-    UE_list->numactiveULCCs[UE_id]                 = 1;
-    UE_list->pCC_id[UE_id]                         = cc_idP;
-    UE_list->ordered_CCids[0][UE_id]               = cc_idP;
-    UE_list->ordered_ULCCids[0][UE_id]             = cc_idP;
+ 
+    UE_list->UE_template[cc_idP][UE_id].rnti = rntiP;
+    UE_list->numactiveCCs[UE_id]             = 1;
+    UE_list->numactiveULCCs[UE_id]           = 1;
+    UE_list->pCC_id[UE_id]                   = cc_idP;
+    UE_list->ordered_CCids[0][UE_id]         = cc_idP;
+    UE_list->ordered_ULCCids[0][UE_id]       = cc_idP;
     UE_list->num_UEs++;
-    UE_list->active[UE_id]                         = TRUE;
+    UE_list->active[UE_id]                   = TRUE;
+
+    UE_list->UE_template[cc_idP][UE_id].configured         = FALSE;
 
     for (j=0;j<8;j++) {
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0 
-      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j==harq_pidP)?0:1; // 1st transmission is with Msg3;
+      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j==harq_pid)?0:1; // 1st transmission is with Msg3
     }
+    //UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[harq_pid] = 0;   
+
     eNB_ulsch_info[mod_idP][UE_id].status = S_UL_WAITING;
     eNB_dlsch_info[mod_idP][UE_id].status = S_UL_WAITING;
     LOG_D(MAC,"[eNB %d] Add UE_id %d on Primary CC_id %d: rnti %x\n",mod_idP,UE_id,cc_idP,rntiP);
-    dump_ue_list(UE_list,0);
+    dump_ue_list(UE_list);
     return(UE_id);
   }
 
   LOG_E(MAC,"error in add_new_ue(), could not find space in UE_list, Dumping UE list\n");
-  dump_ue_list(UE_list,0);
+  dump_ue_list(UE_list);
   return(-1);
 }
 
 int mac_remove_ue(module_id_t mod_idP, int ue_idP) {
 
-  int prev,i, ret=-1;
+  int prev,i;
 
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
   int pCC_id = UE_PCCID(mod_idP,ue_idP);
 
   LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",ue_idP,pCC_id, UE_list->UE_template[pCC_id][ue_idP].rnti);
-  dump_ue_list(UE_list,0);
+  dump_ue_list(UE_list);
 
   // clear all remaining pending transmissions
   UE_list->UE_template[pCC_id][ue_idP].bsr_info[LCGID0]  = 0;
@@ -289,32 +286,15 @@ int mac_remove_ue(module_id_t mod_idP, int ue_idP) {
       UE_list->avail = i;
       UE_list->active[i] = FALSE;
       UE_list->num_UEs--;  
-      ret=0;
-      break;
+    return(0);
     }
     prev=i;
   }
-  // do the same for UL
-  prev = UE_list->head_ul;
-  for (i=UE_list->head_ul;i>=0;i=UE_list->next_ul[i]) {
-    if (i == ue_idP) {
-      // link prev to next in Active list
-      if (prev==UE_list->head_ul)
-	UE_list->head_ul = UE_list->next_ul[i];
-      else
-	UE_list->next_ul[prev] = UE_list->next_ul[i];
-      // add UE id (i)to available 
-      UE_list->next_ul[i] = UE_list->avail;
-      ret = 0;
-      break;
-    }
-    prev=i;
-  }
-  if (ret == 0)
-    return (0);
+
+
   
   LOG_E(MAC,"error in mac_remove_ue(), could not find previous to %d in UE_list, should never happen, Dumping UE list\n",ue_idP);
-  dump_ue_list(UE_list,0);
+  dump_ue_list(UE_list);
   mac_xface->macphy_exit("");    
   return(-1);
 
@@ -322,146 +302,84 @@ int mac_remove_ue(module_id_t mod_idP, int ue_idP) {
 
 
 
-int prev(UE_list_t *listP, int nodeP, int ul_flag) {
+int prev(UE_list_t *listP, int nodeP) {
   int j;
-  
-  if (ul_flag == 0 ) {
-    if (nodeP==listP->head)
-      return(nodeP);
-    for (j=listP->head;j>=0;j=listP->next[j]) {
-      if (listP->next[j]==nodeP)
-	return(j);
-    }
-  } else {
-    if (nodeP==listP->head_ul)
-      return(nodeP);
-    for (j=listP->head_ul;j>=0;j=listP->next_ul[j]) {
-      if (listP->next_ul[j]==nodeP)
-	return(j);
-    }
+
+  if (nodeP==listP->head)
+    return(nodeP);
+  for (j=listP->head;j>=0;j=listP->next[j]) {
+    if (listP->next[j]==nodeP)
+      return(j);
   }
 
-
   
-  LOG_E(MAC,"error in prev(), could not find previous to %d in UE_list %s, should never happen, Dumping UE list\n",
-	nodeP, (ul_flag == 0)? "DL" : "UL");
-  dump_ue_list(listP, ul_flag);
+  LOG_E(MAC,"error in prev(), could not find previous to %d in UE_list, should never happen, Dumping UE list\n",nodeP);
+  dump_ue_list(listP);
 
 
   return(-1);
 }
 
-void swap_UEs(UE_list_t *listP,int nodeiP, int nodejP, int ul_flag) {
+void swap_UEs(UE_list_t *listP,int nodeiP, int nodejP) {
 
   int prev_i,prev_j,next_i,next_j;
 
-  LOG_T(MAC,"Swapping UE %d,%d\n",nodeiP,nodejP);
-  dump_ue_list(listP,ul_flag);
+  LOG_D(MAC,"Swapping UE %d,%d\n",nodeiP,nodejP);
+  dump_ue_list(listP);
 
-  prev_i = prev(listP,nodeiP,ul_flag);
-  prev_j = prev(listP,nodejP,ul_flag);
+  prev_i = prev(listP,nodeiP);
+  prev_j = prev(listP,nodejP);
   if ((prev_i<0) || (prev_j<0))
     mac_xface->macphy_exit("");    
 
-  if (ul_flag == 0){
-    next_i = listP->next[nodeiP];
-    next_j = listP->next[nodejP];
-  } else {
-    next_i = listP->next_ul[nodeiP];
-    next_j = listP->next_ul[nodejP];
+  next_i = listP->next[nodeiP];
+  next_j = listP->next[nodejP];
+  LOG_D(MAC,"next_i %d, next_i, next_j %d, head %d\n",next_i,next_j,listP->head);
+
+
+  if (next_i == nodejP) {   // case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...
+    LOG_D(MAC,"Case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...\n");
+
+    listP->next[nodeiP] = next_j;
+    listP->next[nodejP] = nodeiP;
+    if (nodeiP==listP->head)  // case i j n(j)
+      listP->head = nodejP;
+    else
+      listP->next[prev_i] = nodejP;
+  }
+  else if (next_j == nodeiP) {    // case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...
+    LOG_D(MAC,"Case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...\n");
+    listP->next[nodejP] = next_i;
+    listP->next[nodeiP] = nodejP;
+    if (nodejP==listP->head)  // case j i n(i)
+      listP->head = nodeiP;
+    else
+      listP->next[prev_j] = nodeiP;
+  }
+  else {    // case ...  p(i) i n(i) ... p(j) j n(j) ...
+
+    listP->next[nodejP] = next_i;
+    listP->next[nodeiP] = next_j;
+
+ 
+    if (nodeiP==listP->head) {
+      LOG_D(MAC,"changing head to %d\n",nodejP);
+      listP->head=nodejP;
+      listP->next[prev_j] = nodeiP;
+    }
+    else if (nodejP==listP->head){
+      LOG_D(MAC,"changing head to %d\n",nodeiP);
+      listP->head=nodeiP;
+      listP->next[prev_i] = nodejP;
+    }
+    else {
+      listP->next[prev_i] = nodejP;
+      listP->next[prev_j] = nodeiP;
+    }
   }
 
-  LOG_T(MAC,"[%s] next_i %d, next_i, next_j %d, head %d \n",
-	(ul_flag == 0)? "DL" : "UL",
-	next_i,next_j,listP->head);
-
-  if (ul_flag == 0 ) {
-
-    if (next_i == nodejP) {   // case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...
-      LOG_T(MAC,"Case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...\n");
-      
-      listP->next[nodeiP] = next_j;
-      listP->next[nodejP] = nodeiP;
-      if (nodeiP==listP->head)  // case i j n(j)
-	listP->head = nodejP;
-      else
-	listP->next[prev_i] = nodejP;
-    }
-    else if (next_j == nodeiP) {    // case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...
-      LOG_T(MAC,"Case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...\n");
-      listP->next[nodejP] = next_i;
-      listP->next[nodeiP] = nodejP;
-      if (nodejP==listP->head)  // case j i n(i)
-	listP->head = nodeiP;
-      else
-	listP->next[prev_j] = nodeiP;
-    }
-    else {    // case ...  p(i) i n(i) ... p(j) j n(j) ...
-      
-      listP->next[nodejP] = next_i;
-      listP->next[nodeiP] = next_j;
-      
-      
-      if (nodeiP==listP->head) {
-	LOG_T(MAC,"changing head to %d\n",nodejP);
-	listP->head=nodejP;
-	listP->next[prev_j] = nodeiP;
-      }
-      else if (nodejP==listP->head){
-	LOG_D(MAC,"changing head to %d\n",nodeiP);
-	listP->head=nodeiP;
-	listP->next[prev_i] = nodejP;
-      }
-      else {
-	listP->next[prev_i] = nodejP;
-	listP->next[prev_j] = nodeiP;
-      }
-    }
-  } else { // ul_flag
-
-    if (next_i == nodejP) {   // case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...
-      LOG_T(MAC,"[UL] Case ... p(i) i j n(j) ... => ... p(j) j i n(i) ...\n");
-      
-      listP->next_ul[nodeiP] = next_j;
-      listP->next_ul[nodejP] = nodeiP;
-      if (nodeiP==listP->head_ul)  // case i j n(j)
-	listP->head_ul = nodejP;
-      else
-	listP->next_ul[prev_i] = nodejP;
-    }
-    else if (next_j == nodeiP) {    // case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...
-      LOG_T(MAC,"[UL]Case ... p(j) j i n(i) ... => ... p(i) i j n(j) ...\n");
-      listP->next_ul[nodejP] = next_i;
-      listP->next_ul[nodeiP] = nodejP;
-      if (nodejP==listP->head_ul)  // case j i n(i)
-	listP->head_ul = nodeiP;
-      else
-	listP->next_ul[prev_j] = nodeiP;
-    }
-    else {    // case ...  p(i) i n(i) ... p(j) j n(j) ...
-      
-      listP->next_ul[nodejP] = next_i;
-      listP->next_ul[nodeiP] = next_j;
-      
-      
-      if (nodeiP==listP->head_ul) {
-	LOG_T(MAC,"[UL]changing head to %d\n",nodejP);
-	listP->head_ul=nodejP;
-	listP->next_ul[prev_j] = nodeiP;
-      }
-      else if (nodejP==listP->head_ul){
-	LOG_T(MAC,"[UL]changing head to %d\n",nodeiP);
-	listP->head_ul=nodeiP;
-	listP->next_ul[prev_i] = nodejP;
-      }
-      else {
-	listP->next_ul[prev_i] = nodejP;
-	listP->next_ul[prev_j] = nodeiP;
-      }
-    }
-  }
-  LOG_T(MAC,"After swap\n");
-  dump_ue_list(listP,ul_flag);
+  LOG_D(MAC,"After swap\n");
+  dump_ue_list(listP);
 }
 
 void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP) {

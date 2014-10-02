@@ -75,16 +75,14 @@ struct vcd_module_s {
 } vcd_module_s;
  
 const char* eurecomVariablesNames[] = {
-    "frame_number_TX_eNB",
-    "frame_number_RX_eNB",
+    "frame_number_eNB",
+    "slot_number_eNB",
     "frame_number_UE",
     "slot_number_UE",
     "daq_mbox",
     "diff2",
     "hw_subframe",
     "hw_frame",
-    "txcnt",
-    "rxcnt",
     "itti_send_msg",
     "itti_poll_msg",
     "itti_recv_msg",
@@ -120,10 +118,6 @@ const char* eurecomFunctionsNames[] = {
     "eNB_thread_rx9",
     
     /* PHY signals  */
-    "ue_slot_fep",
-    "ue_rrc_measurements",
-    "ue_gain_control",
-    "ue_adjust_synch",
     "lte_ue_measurement_procedures",
     "lte_ue_pdcch_procedures",
     "lte_ue_pbch_procedures",
