@@ -1,0 +1,42 @@
+X2AP-CommonDataTypes {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0) 
+eps-Access (21) modules (3) x2ap (2) version1 (1) x2ap-CommonDataTypes (3)  }
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+-- **************************************************************
+--
+-- Extension constants
+--
+-- **************************************************************
+
+x2ap-maxPrivateIEs 									INTEGER ::= 65535
+x2ap-maxProtocolExtensions 							INTEGER ::= 65535
+x2ap-maxProtocolIEs									INTEGER ::= 65535
+
+-- **************************************************************
+--
+-- Common Data Types
+--
+-- **************************************************************
+
+X2ap-Criticality		::= ENUMERATED { reject, ignore, notify }
+
+X2ap-Presence		::= ENUMERATED { optional, conditional, mandatory }
+
+X2ap-PrivateIE-ID	::= CHOICE {
+	local				INTEGER (0.. x2ap-maxPrivateIEs),
+	global				OBJECT IDENTIFIER
+}
+
+X2ap-ProcedureCode		::= INTEGER (0..255)
+
+
+X2ap-ProtocolIE-ID		::= INTEGER (0..x2ap-maxProtocolIEs)
+
+
+X2ap-TriggeringMessage	::= ENUMERATED { initiating-message, successful-outcome, unsuccessful-outcome}
+
+END
