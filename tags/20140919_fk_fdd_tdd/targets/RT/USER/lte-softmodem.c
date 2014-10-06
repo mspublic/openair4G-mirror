@@ -420,6 +420,32 @@ static void set_latency_target(void)
 }
 
 #ifdef XFORMS
+
+void reset_stats(FL_OBJECT *button, long arg) {
+  int i,j,k;
+  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
+  for (k=0;k<8;k++) {//harq_processes
+    for (j=0;j<phy_vars_eNB->dlsch_eNB[i][0]->Mdlharq;j++) {
+      phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK[k][j]=0;
+      phy_vars_eNB->eNB_UE_stats[i].dlsch_ACK[k][j]=0;
+      phy_vars_eNB->eNB_UE_stats[i].dlsch_trials[k][j]=0;
+    }
+    phy_vars_eNB->eNB_UE_stats[i].dlsch_l2_errors[k]=0;
+    phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[k]=0;
+    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
+    for (j=0;j<phy_vars_eNB->ulsch_eNB[i]->Mdlharq;j++) {
+      phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[k][j]=0;
+      phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
+      phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[k][j]=0;
+      phy_vars_eNB->eNB_UE_stats[i].ulsch_round_fer[k][j]=0;
+    }
+  }
+  phy_vars_eNB->eNB_UE_stats[i].dlsch_sliding_cnt=0;
+  phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK_round0=0;
+  phy_vars_eNB->eNB_UE_stats[i].dlsch_mcs_offset=0;
+  
+}
+
 static void *scope_thread(void *arg) {
   char stats_buffer[16384];
 # ifdef ENABLE_XFORMS_WRITE_STATS
