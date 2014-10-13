@@ -51,7 +51,6 @@
 #define S1AP_DOWNLINK_NAS(mSGpTR)               (mSGpTR)->ittiMsg.s1ap_downlink_nas
 #define S1AP_INITIAL_CONTEXT_SETUP_REQ(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_initial_context_setup_req
 #define S1AP_UE_CTXT_MODIFICATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.s1ap_ue_ctxt_modification_req
-#define S1AP_UE_CONTEXT_RELEASE_COMMAND(mSGpTR) (mSGpTR)->ittiMsg.s1ap_ue_release_command
 #define S1AP_PAGIND_IND(mSGpTR)                 (mSGpTR)->ittiMsg.s1ap_paging_ind
 
 #define S1AP_UE_CONTEXT_RELEASE_REQ(mSGpTR)     (mSGpTR)->ittiMsg.s1ap_ue_release_req
@@ -467,13 +466,6 @@ typedef struct s1ap_paging_ind_s {
 
     paging_priority_t paging_priority;
 } s1ap_paging_ind_t;
-
-typedef struct s1ap_ue_release_command_s {
-
-    unsigned eNB_ue_s1ap_id:24;
-
-} s1ap_ue_release_command_t;
-
 
 //-------------------------------------------------------------------------------------------//
 // S1AP <-> RRC messages
