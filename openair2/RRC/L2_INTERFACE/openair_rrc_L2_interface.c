@@ -87,15 +87,15 @@
 #include "openair_rrc_L2_interface.h"
  
 /********************************************************************************************************************/
-int8_t mac_rrc_data_req(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t nb_tbP,uint8_t *buffer_pP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP, uint8_t mbsfn_sync_areaP){
+int8_t mac_rrc_data_req(module_id_t module_idP, int CC_idP, frame_t frameP, rb_id_t srb_idP, uint8_t nb_tbP,uint8_t *buffer_pP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP, uint8_t mbsfn_sync_areaP){
 /********************************************************************************************************************/
-  return(mac_rrc_lite_data_req(module_idP,frameP,srb_idP,nb_tbP,buffer_pP,eNB_flagP,eNB_indexP,mbsfn_sync_areaP));
+  return(mac_rrc_lite_data_req(module_idP,CC_idP, frameP,srb_idP,nb_tbP,buffer_pP,eNB_flagP,eNB_indexP,mbsfn_sync_areaP));
 }   
 
 /********************************************************************************************************************/
-int8_t mac_rrc_data_ind(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t *sduP, sdu_size_t sdu_lenP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP,uint8_t mbsfn_sync_area){
+int8_t mac_rrc_data_ind(module_id_t module_idP, int CC_idP, frame_t frameP, rb_id_t srb_idP, uint8_t *sduP, sdu_size_t sdu_lenP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP,uint8_t mbsfn_sync_area){
 /********************************************************************************************************************/
-  return(mac_rrc_lite_data_ind(module_idP,frameP,srb_idP,sduP,sdu_lenP,eNB_flagP,eNB_indexP,mbsfn_sync_area));
+  return(mac_rrc_lite_data_ind(module_idP,CC_idP,frameP,srb_idP,sduP,sdu_lenP,eNB_flagP,eNB_indexP,mbsfn_sync_area));
 }
 
 /********************************************************************************************************************/
@@ -114,7 +114,7 @@ uint8_t pdcp_rrc_data_req(module_id_t enb_instP, module_id_t ue_instP, frame_t f
 /********************************************************************************************************************/
 void pdcp_rrc_data_ind(module_id_t enb_instP, module_id_t ue_instP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t srb_idP, sdu_size_t sdu_sizeP,uint8_t *buffer_pP){
 /********************************************************************************************************************/
-  rrc_lite_data_ind(enb_instP, ue_instP,frameP,eNB_flagP,srb_idP,sdu_sizeP,buffer_pP);
+  rrc_lite_data_ind(enb_instP, ue_instP, frameP,eNB_flagP,srb_idP,sdu_sizeP,buffer_pP);
 }
 
 /********************************************************************************************************************/

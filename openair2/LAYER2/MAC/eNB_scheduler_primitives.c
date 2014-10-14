@@ -208,7 +208,22 @@ void dump_ue_list(UE_list_t *listP, int ul_flag) {
   }
 }
 
+
+int is_CCid_active(module_id_t mod_idP, int UE_idP, int cc_idP) {
+
+  UE_list_t            *UE_list  = &eNB_mac_inst[mod_idP].UE_list;
+  int UE_id, CC_id;
+
+  for (CC_id=0;CC_id<UE_list->numactiveCCs[UE_idP];CC_id++) {
+    if (cc_idP == CC_id)
+      return(1);
+  }  
+  return(0);
+}
+
+
 int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP) {
+
   int UE_id;
   int j;
 
@@ -238,6 +253,8 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP) {
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0 
       UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j==harq_pidP)?0:1; // 1st transmission is with Msg3;
     }
+    UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[harq_pidP] = 1; // 1 because first transmission is with RAR (Msg3)
+
     eNB_ulsch_info[mod_idP][UE_id].status = S_UL_WAITING;
     eNB_dlsch_info[mod_idP][UE_id].status = S_UL_WAITING;
     LOG_D(MAC,"[eNB %d] Add UE_id %d on Primary CC_id %d: rnti %x\n",mod_idP,UE_id,cc_idP,rntiP);
@@ -274,7 +291,7 @@ int mac_remove_ue(module_id_t mod_idP, int ue_idP) {
   eNB_dlsch_info[mod_idP][ue_idP].rnti                        = 0;
   eNB_dlsch_info[mod_idP][ue_idP].status                      = S_DL_NONE;
 
-  rrc_eNB_free_UE_index(mod_idP,ue_idP);
+  rrc_eNB_free_UE_index(mod_idP,pCC_id,ue_idP);
 
   prev = UE_list->head;
   for (i=UE_list->head;i>=0;i=UE_list->next[i]) {

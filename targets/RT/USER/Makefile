@@ -87,10 +87,10 @@ include $(OPENAIR3_DIR)/RAL-LTE/Makefile.inc
 
 ifeq ($(USRP),1)
 
-include $(OPENAIR_TARGETS)/ARCH/USRP/USERSPACE/LIB/Makefile.inc
-CFLAGS += -I/opt/include/uhd -L/opt/lib -luhd -lpthread -lstdc++
+#include $(OPENAIR_TARGETS)/ARCH/USRP/USERSPACE/LIB/Makefile.inc
+#CFLAGS += -I/opt/include/uhd -L/opt/lib -luhd -lpthread -lstdc++
 CFLAGS += -DUSRP
-LDFLAGS += -L/opt/lib -luhd -lpthread -lstdc++ 
+#LDFLAGS += -L/opt/lib -luhd -lpthread -lstdc++ 
 endif
 
 OBJ +=  $(ENB_APP_OBJS)

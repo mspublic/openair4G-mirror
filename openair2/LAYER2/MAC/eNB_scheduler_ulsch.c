@@ -200,7 +200,7 @@ void rx_sdu(module_id_t enb_mod_idP,int CC_idP,frame_t frameP,rnti_t rntiP,uint8
 	  }
 	  
 	  if (Is_rrc_registered == 1)
-	    mac_rrc_data_ind(enb_mod_idP,frameP,CCCH,(uint8_t *)payload_ptr,rx_lengths[ii],1,enb_mod_idP,0);
+	    mac_rrc_data_ind(enb_mod_idP,CC_idP,frameP,CCCH,(uint8_t *)payload_ptr,rx_lengths[ii],1,enb_mod_idP,0);
 	  
 	  
           if (num_ce >0) {  // handle msg3 which is not RRCConnectionRequest

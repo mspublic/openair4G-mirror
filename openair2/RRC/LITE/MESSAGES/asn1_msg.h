@@ -69,12 +69,13 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId);
 
 /** 
 \brief Generate a default configuration for SIB1 (eNB).
+@param eNBP Pointer to eNB RRC instance
 @param frame_parms Used to store some basic parameters from PHY configuration
 @param buffer Pointer to PER-encoded ASN.1 description of SIB1
 @param sib1 Pointer to asn1c C representation of SIB1
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
+uint8_t do_SIB1(eNB_RRC_INST *eNB, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
                 BCCH_DL_SCH_Message_t *bcch_message,
                 SystemInformationBlockType1_t **sib1
 #if defined(ENABLE_ITTI)
@@ -84,7 +85,7 @@ uint8_t do_SIB1(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer
 
 /** 
 \brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
-@param Mod_id Index of eNB (used to derive some parameters)
+@param eNBP Pointer to eNB RRC instance
 @param buffer Pointer to PER-encoded ASN.1 description of SI PDU
 @param systemInformation Pointer to asn1c C representation of SI PDU
 @param sib2 Pointer (returned) to sib2 component withing SI PDU
@@ -93,7 +94,7 @@ uint8_t do_SIB1(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer
 @param MBMS_flag Indicates presence of MBMS system information (when 1)
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB23(uint8_t Mod_id,
+uint8_t do_SIB23(eNB_RRC_INST *eNB,
                  LTE_DL_FRAME_PARMS *frame_parms,
                  uint8_t *buffer,
                  BCCH_DL_SCH_Message_t *systemInformation,
@@ -112,35 +113,35 @@ uint8_t do_SIB23(uint8_t Mod_id,
 /** 
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This 
 routine only generates an mo-data establishment cause.
+@param eNBP Pointer to eNB RRC instance
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @param rv 5 byte random string or S-TMSI
 @returns Size of encoded bit stream in bytes*/
 
-uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv);
+uint8_t do_RRCConnectionRequest(uint8_t module_idP, uint8_t *buffer,uint8_t *rv);
 
 /** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS);
+uint8_t do_RRCConnectionSetupComplete(uint8_t module_idP, uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS);
 
 /** \brief Generate an RRCConnectionReconfigurationComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionReconfigurationComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id);
+uint8_t do_RRCConnectionReconfigurationComplete(uint8_t module_idP, uint8_t *buffer, const uint8_t Transaction_id);
 
 /** 
 \brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and 
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
-@param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
 @param SRB_configList Pointer (returned) to SRB1_config/SRB2_config(later) IEs for this UE
+@param frame_parms Pointer to DL frame parms for this CC_id
 @param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
+uint8_t do_RRCConnectionSetup(eNB_RRC_INST *eNB,
                               uint8_t *buffer,
-                              uint8_t transmission_mode,
                               uint8_t UE_id,
                               uint8_t Transaction_id,
                               LTE_DL_FRAME_PARMS *frame_parms,
@@ -150,7 +151,7 @@ uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
 /** 
 \brief Generate an RRCConnectionReconfiguration DL-DCCH-Message (eNB).  This routine configures SRBToAddMod (SRB2) and one DRBToAddMod 
 (DRB3).  PhysicalConfigDedicated is not updated.
-@param Mod_id Module ID of this eNB Instance
+@param eNB eNB Instance
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param UE_id UE index for this message
 @param Transaction_id Transaction_ID for this message
@@ -170,7 +171,7 @@ uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
 @param cba_rnti RNTI for the cba transmission 
 @returns Size of encoded bit stream in bytes*/
 
-uint16_t do_RRCConnectionReconfiguration(uint8_t                             Mod_id,
+uint16_t do_RRCConnectionReconfiguration(eNB_RRC_INST                       *eNB,
                                          uint8_t                            *buffer,
                                          uint8_t                             UE_id,
                                          uint8_t                             Transaction_id,
@@ -208,7 +209,7 @@ uint8_t do_MCCHMessage(uint8_t *buffer);
  * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
  * @returns Size of encoded bit stream in bytes
 */
-uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
+uint8_t do_MBSFNAreaConfig(eNB_RRC_INST *eNB,
                            LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t sync_area,
                            uint8_t *buffer,
@@ -216,20 +217,20 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            MBSFNAreaConfiguration_r9_t **mbsfnAreaConfiguration);
 #endif 
 
-uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
+uint8_t do_MeasurementReport(uint8_t module_idP, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
 
-uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
+uint8_t do_DLInformationTransfer(eNB_RRC_INST *eNB, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
 
 OAI_UECapability_t *fill_ue_capability(void);
 
-uint8_t do_UECapabilityEnquiry(uint8_t Mod_id,
+uint8_t do_UECapabilityEnquiry(eNB_RRC_INST *eNB,
                                uint8_t *buffer,
                                uint8_t UE_id,
                                uint8_t Transaction_id);
 
-uint8_t do_SecurityModeCommand(uint8_t Mod_id,
+uint8_t do_SecurityModeCommand(eNB_RRC_INST *eNB,
                                uint8_t *buffer,
                                uint8_t UE_id,
                                uint8_t Transaction_id,

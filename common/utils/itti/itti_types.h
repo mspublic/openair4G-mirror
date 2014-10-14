@@ -77,6 +77,7 @@ typedef struct {
 #define INSTANCE_ALL        (UINT16_MAX)
 
 typedef uint16_t instance_t;
+typedef uint32_t cc_id_t;
 
 #endif
 

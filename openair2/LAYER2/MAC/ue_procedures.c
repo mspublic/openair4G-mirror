@@ -367,9 +367,10 @@ void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frameP,uint8_t *s
           LOG_T(MAC,"\n");
 #endif
           mac_rrc_data_ind(module_idP,
-              frameP,
-              CCCH,
-              (uint8_t *)payload_ptr,rx_lengths[i],0,eNB_index,0);
+			   0,
+			   frameP,
+			   CCCH,
+			   (uint8_t *)payload_ptr,rx_lengths[i],0,eNB_index,0);
 
       }
       else if (rx_lcids[i] == DCCH) {
@@ -388,15 +389,15 @@ void ue_send_sdu(module_id_t module_idP, uint8_t CC_id,frame_t frameP,uint8_t *s
       else if (rx_lcids[i] == DCCH1) {
           LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i], eNB_index,rx_lengths[i]);
           mac_rlc_data_ind(eNB_index,
-              module_idP,
-              frameP,
-              ENB_FLAG_NO,
-              MBMS_FLAG_NO,
-              DCCH1,
-              (char *)payload_ptr,
-              rx_lengths[i],
-              1,
-              NULL);
+			   module_idP,
+			   frameP,
+			   ENB_FLAG_NO,
+			   MBMS_FLAG_NO,
+			   DCCH1,
+			   (char *)payload_ptr,
+			   rx_lengths[i],
+			   1,
+			   NULL);
       }
       else if (rx_lcids[i] == DTCH) {
           LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", module_idP, frameP,rx_lcids[i], eNB_index,rx_lengths[i]);
@@ -433,13 +434,14 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
   LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (LCID Id %d,len %d)\n",module_idP,frameP,BCCH,len);
 
   mac_rrc_data_ind(module_idP,
-      frameP,
-      BCCH,
-      (uint8_t *)pdu,
-      len,
-      0,
-      eNB_index,
-      0);
+		   0,
+		   frameP,
+		   BCCH,
+		   (uint8_t *)pdu,
+		   len,
+		   0,
+		   eNB_index,
+		   0);
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].rx_si);
 }
@@ -520,9 +522,10 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, uint
       else if (rx_lcids[i] == MCCH_LCHANID) {
           LOG_I(MAC,"[UE %d] Frame %d : SDU %d MCH->MCCH for sync area %d (eNB %d, %d bytes)\n",module_idP,frameP, i, sync_area, eNB_index, rx_lengths[i]);
           mac_rrc_data_ind(module_idP,
-              frameP,
-              MCCH,
-              payload_ptr, rx_lengths[i], 0, eNB_index, sync_area);
+			   0,
+			   frameP,
+			   MCCH,
+			   payload_ptr, rx_lengths[i], 0, eNB_index, sync_area);
       }
       else if (rx_lcids[i] == MTCH) {
           if (UE_mac_inst[module_idP].msi_status==1) {
@@ -1372,12 +1375,13 @@ UE_L2_STATE_t ue_scheduler(module_id_t module_idP,frame_t frameP, sub_frame_t su
   UE_mac_inst[module_idP].subframe = subframeP;
 
 #ifdef CELLULAR
-  rrc_rx_tx(module_idP, frameP, 0, eNB_indexP);
+  rrc_rx_tx(module_idP, 0, frameP, 0, eNB_indexP);
 #else
-  switch (rrc_rx_tx(module_idP,
-      frameP,
-      0,
-      eNB_indexP)) {
+  switch (rrc_rx_tx(module_idP, 
+		    0,
+		    frameP,
+		    0,
+		    eNB_indexP)) {
   case RRC_OK:
     break;
   case RRC_ConnSetup_failed:

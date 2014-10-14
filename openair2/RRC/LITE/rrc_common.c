@@ -56,16 +56,18 @@ extern mui_t rrc_eNB_mui;
 
 //configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
 void openair_rrc_on(module_id_t Mod_id, const eNB_flag_t eNB_flag) {
+
   unsigned short i;
+  int CC_id;
 
   if (eNB_flag == 1) {
     LOG_I(RRC, "[eNB %d] OPENAIR RRC IN....\n", Mod_id);
-
-    rrc_config_buffer (&eNB_rrc_inst[Mod_id].SI, BCCH, 1);
-    eNB_rrc_inst[Mod_id].SI.Active = 1;
-    rrc_config_buffer (&eNB_rrc_inst[Mod_id].Srb0, CCCH, 1);
-    eNB_rrc_inst[Mod_id].Srb0.Active = 1;
-
+    for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+      rrc_config_buffer (&eNB_rrc_inst[Mod_id][CC_id].SI, BCCH, 1);
+      eNB_rrc_inst[Mod_id][CC_id].SI.Active = 1;
+      rrc_config_buffer (&eNB_rrc_inst[Mod_id][CC_id].Srb0, CCCH, 1);
+      eNB_rrc_inst[Mod_id][CC_id].Srb0.Active = 1;
+    }
   }
   else {
     LOG_I(RRC, "[UE %d] OPENAIR RRC IN....\n", Mod_id);
@@ -212,6 +214,7 @@ void openair_rrc_top_init(int eMBMS_active, uint8_t cba_group_active,uint8_t HO_
   module_id_t         module_id;
   OAI_UECapability_t *UECap     = NULL;
   //  uint8_t dummy_buffer[100];
+  int CC_id;
 
   LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n", NB_UE_INST, NB_eNB_INST);
 
@@ -242,25 +245,25 @@ void openair_rrc_top_init(int eMBMS_active, uint8_t cba_group_active,uint8_t HO_
     UE_rrc_inst = NULL;
 
   if (NB_eNB_INST > 0) {
-    eNB_rrc_inst = (eNB_RRC_INST*) malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
-    memset (eNB_rrc_inst, 0, NB_eNB_INST * sizeof(eNB_RRC_INST));
+    eNB_rrc_inst = (eNB_RRC_INST**) malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST*));
+    memset (eNB_rrc_inst, 0, NB_eNB_INST * sizeof(eNB_RRC_INST*));
     LOG_I(RRC,"[eNB] handover active state is %d \n", HO_active);
     for (module_id=0;module_id<NB_eNB_INST;module_id++) {
-      eNB_rrc_inst[module_id].HO_flag   = (uint8_t)HO_active;
-    }
+      eNB_rrc_inst[module_id] = (eNB_RRC_INST*)malloc16(MAX_NUM_CCs*sizeof(eNB_RRC_INST));
+      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++){
+	eNB_rrc_inst[module_id][CC_id].HO_flag   = (uint8_t)HO_active;
 #ifdef Rel10
-    LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
-    for (module_id=0;module_id<NB_eNB_INST;module_id++) {
-      eNB_rrc_inst[module_id].MBMS_flag = (uint8_t)eMBMS_active;
-    }
+	LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
+	eNB_rrc_inst[module_id][CC_id].MBMS_flag = (uint8_t)eMBMS_active;
 #endif 
 #ifdef CBA
-    for (module_id=0;module_id<NB_eNB_INST;module_id++) {
-      eNB_rrc_inst[module_id].num_active_cba_groups = cba_group_active;
-    }
+	eNB_rrc_inst[module_id][CC_id].num_active_cba_groups = cba_group_active;
 #endif
+      }
+    }
+    
     LOG_D(RRC,
-          "ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n", (unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)), eNB_rrc_inst);
+	  "ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n", (unsigned int)(NB_eNB_INST*MAX_NUM_CCs*sizeof(eNB_RRC_INST)), eNB_rrc_inst);
   }
   else
     eNB_rrc_inst = NULL;
@@ -318,7 +321,7 @@ void rrc_t310_expiration(const frame_t frameP, uint8_t Mod_id, uint8_t eNB_index
   }
 }
 
-RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eNB_flagP,uint8_t index){
+RRC_status_t rrc_rx_tx(uint8_t Mod_id, int CC_id, const frame_t frameP, const eNB_flag_t eNB_flagP,uint8_t index){
   
   if(eNB_flagP == 0) {
     // check timers
@@ -394,7 +397,7 @@ RRC_status_t rrc_rx_tx(uint8_t Mod_id, const frame_t frameP, const eNB_flag_t eN
 
   }
   else {
-    check_handovers(Mod_id,frameP);
+    check_handovers(&eNB_rrc_inst[Mod_id][CC_id],frameP);
   }
   
   return (RRC_OK);

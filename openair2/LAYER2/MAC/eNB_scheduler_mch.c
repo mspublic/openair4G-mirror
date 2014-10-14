@@ -364,12 +364,13 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
           module_idP,frameP, subframeP, i, j);
 
       mcch_sdu_length = mac_rrc_data_req(module_idP,
-          frameP,
-          MCCH,1,
-          &eNB_mac_inst[module_idP].common_channels[CC_id].MCCH_pdu.payload[0],
-          1,// this is eNB
-          module_idP, // index
-          i); // this is the mbsfn sync area index
+					 CC_id,
+					 frameP,
+					 MCCH,1,
+					 &eNB_mac_inst[module_idP].common_channels[CC_id].MCCH_pdu.payload[0],
+					 1,// this is eNB
+					 module_idP, // index
+					 i); // this is the mbsfn sync area index
 
       if (mcch_sdu_length > 0) {
           LOG_D(MAC,"[eNB %d] Frame %d subframeP %d : MCCH->MCH, Received %d bytes from RRC \n",module_idP,frameP,subframeP,mcch_sdu_length);

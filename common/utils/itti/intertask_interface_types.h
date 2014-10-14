@@ -137,7 +137,7 @@ typedef struct MessageHeader_s
         task_id_t  originTaskId;        /**< ID of the sender task */
         task_id_t  destinationTaskId;   /**< ID of the destination task */
         instance_t instance;            /**< Task instance for virtualization */
-
+        cc_id_t    CC_id;               /**< Component Carrier ID */    
         MessageHeaderSize ittiMsgSize;         /**< Message size (not including header size) */
 
         itti_lte_time_t lte_time;       /**< Reference LTE time */
