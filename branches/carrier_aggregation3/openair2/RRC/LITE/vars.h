@@ -44,8 +44,10 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
-eNB_RRC_INST *eNB_rrc_inst;
+eNB_RRC_INST **eNB_rrc_inst;
 UE_RRC_INST *UE_rrc_inst;
+int pcc_ids[NUMBER_OF_UE_MAX];
+
 //RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
 //MAC_RLC_XFACE *Mac_rlc_xface;

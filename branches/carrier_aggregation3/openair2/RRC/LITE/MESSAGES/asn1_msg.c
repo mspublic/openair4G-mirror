@@ -188,109 +188,6 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId) {
   return 0xFF; //error!
 }
 
-/*
-uint8_t do_SIB1(LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
-		SystemInformationBlockType1_t *sib1) {
-
-
-  PLMN_IdentityInfo_t PLMN_identity_info;
-  MCC_MNC_Digit_t dummy;
-  asn_enc_rval_t enc_rval;
-  SchedulingInfo_t schedulingInfo;
-  SIB_Type_t sib_type;
-
-  memset(sib1,0,sizeof(SystemInformationBlockType1_t));
-  memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
-  memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
-  memset(&sib_type,0,sizeof(SIB_Type_t));
-
-  PLMN_identity_info.plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
-  memset(PLMN_identity_info.plmn_Identity.mcc,0,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
-
-  asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;
-
-  dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
-  dummy=6;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
-  dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
-
-  PLMN_identity_info.plmn_Identity.mnc.list.size=0;
-  PLMN_identity_info.plmn_Identity.mnc.list.count=0;
-  dummy=8;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy);
-  dummy=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy);
-  //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
-  PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
-
-  ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
-
-
-  // 16 bits
-  sib1->cellAccessRelatedInfo.trackingAreaCode.buf = MALLOC(2);
-  sib1->cellAccessRelatedInfo.trackingAreaCode.buf[0]=0x00;
-  sib1->cellAccessRelatedInfo.trackingAreaCode.buf[1]=0x10;
-  sib1->cellAccessRelatedInfo.trackingAreaCode.size=2;
-  sib1->cellAccessRelatedInfo.trackingAreaCode.bits_unused=0;
-
-  // 28 bits
-  sib1->cellAccessRelatedInfo.cellIdentity.buf = MALLOC(8);
-  sib1->cellAccessRelatedInfo.cellIdentity.buf[0]=0x01;
-  sib1->cellAccessRelatedInfo.cellIdentity.buf[1]=0x48;
-  sib1->cellAccessRelatedInfo.cellIdentity.buf[2]=0x0f;
-  sib1->cellAccessRelatedInfo.cellIdentity.buf[3]=0x03;
-  sib1->cellAccessRelatedInfo.cellIdentity.size=4;
-  sib1->cellAccessRelatedInfo.cellIdentity.bits_unused=4;
-
-  //  assign_enum(&sib1->cellAccessRelatedInfo.cellBarred,SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred);
-  sib1->cellAccessRelatedInfo.cellBarred=SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred;
-
-  //  assign_enum(&sib1->cellAccessRelatedInfo.intraFreqReselection,SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_allowed);
-  sib1->cellAccessRelatedInfo.intraFreqReselection=SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_allowed;
-  sib1->cellAccessRelatedInfo.csg_Indication=0;
-
-  sib1->cellSelectionInfo.q_RxLevMin=-70;
-  sib1->cellSelectionInfo.q_RxLevMinOffset=NULL;
-
-  sib1->freqBandIndicator = 2;
-
-  //  assign_enum(&schedulingInfo.si_Periodicity,SchedulingInfo__si_Periodicity_rf8);
-  schedulingInfo.si_Periodicity=SchedulingInfo__si_Periodicity_rf8;
-
-  //  assign_enum(&sib_type,SIB_Type_sibType3);
-  sib_type=SIB_Type_sibType3;
-
-  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&sib1->schedulingInfoList.list,&schedulingInfo);
-
-  sib1->tdd_Config = CALLOC(1,sizeof(struct TDD_Config));
-
-  //assign_enum(&sib1->tdd_Config->subframeAssignment,TDD_Config__subframeAssignment_sa3);
-  sib1->tdd_Config->subframeAssignment=frame_parms->tdd_config; //TDD_Config__subframeAssignment_sa3;
-
-  //  assign_enum(&sib1->tdd_Config->specialSubframePatterns,TDD_Config__specialSubframePatterns_ssp0);
-  sib1->tdd_Config->specialSubframePatterns=frame_parms->tdd_config_S;//TDD_Config__specialSubframePatterns_ssp0;
-
-  //  assign_enum(&sib1->si_WindowLength,SystemInformationBlockType1__si_WindowLength_ms10);
-  sib1->si_WindowLength=SystemInformationBlockType1__si_WindowLength_ms10;
-  sib1->systemInfoValueTag=0;
-  //  sib1.nonCriticalExtension = calloc(1,sizeof(*sib1.nonCriticalExtension));
-
-#ifdef USER_MODE
-  xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
-#endif
-
-  enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformationBlockType1,
-				   (void*)sib1,
-				   buffer,
-				   200);
-#ifdef USER_MODE
-  LOG_D(RRC,"[eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
-
-  if (enc_rval.encoded==-1)
-    return(-1);
-  return((enc_rval.encoded+7)/8);
-}
-*/
-// AT4 packet
 uint8_t do_MIB(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t *buffer) {
 
   asn_enc_rval_t enc_rval;
@@ -590,7 +487,7 @@ uint8_t do_SIB1(uint8_t Mod_id, LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_SIB23(uint8_t Mod_id,
+uint8_t do_SIB23(eNB_RRC_INST *eNB,
                  LTE_DL_FRAME_PARMS *frame_parms,
                  uint8_t *buffer,
                  BCCH_DL_SCH_Message_t *bcch_message,
@@ -617,23 +514,23 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (bcch_message) 
     memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
   else {
-    LOG_E(RRC,"[eNB %d] BCCH_MESSAGE is null, exiting\n", Mod_id);
+    LOG_E(RRC,"[eNB %d] BCCH_MESSAGE is null, exiting\n", eNB->mod_id);
     exit(-1);
   }
 
   if (!sib2) {
-    LOG_E(RRC,"[eNB %d] sib2 is null, exiting\n", Mod_id);
+    LOG_E(RRC,"[eNB %d] sib2 is null, exiting\n", eNB->mod_id);
     exit(-1);
   }
 
   if (!sib3) {
-    LOG_E(RRC,"[eNB %d] sib3 is null, exiting\n", Mod_id);
+    LOG_E(RRC,"[eNB %d] sib3 is null, exiting\n", eNB->mod_id);
     exit(-1);
   }
 #ifdef Rel10
-  LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", Mod_id, MBMS_flag);
+  LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", eNB->mod_id, MBMS_flag);
 #else
-  LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", Mod_id);
+  LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", eNB->mod_id);
 #endif
   sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs_sib_TypeAndInfo_Member));
   sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs_sib_TypeAndInfo_Member));
@@ -663,6 +560,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
   (*sib2)->ac_BarringForCSFB_r10 = NULL;
 #endif
+
 
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles=RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL;
@@ -698,7 +596,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.pcch_Config.nB=PCCH_Config__nB_oneT;
 
   // PRACH-Config
-  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex=Mod_id;//0;//384;
+  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex=eNB->mod_id;//0;//384;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex = 0;//3;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag = 0;
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig = 1;//12;
@@ -969,7 +867,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       msg_p->ittiMsg.rrc_dl_bcch.size = message_string_size;
       memcpy(&msg_p->ittiMsg.rrc_dl_bcch.text, message_string, message_string_size);
 
-      itti_send_msg_to_task(TASK_UNKNOWN, Mod_id, msg_p);
+      itti_send_msg_to_task(TASK_UNKNOWN, eNB->mod_id, msg_p);
     }
   }
 # endif
@@ -1205,9 +1103,8 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t Mod_id, uint8_t *buffer,
 }
 
 
-uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
+uint8_t do_RRCConnectionSetup(eNB_RRC_INST *eNB,
                               uint8_t *buffer,
-                              uint8_t transmission_mode,
                               uint8_t UE_id,
                               uint8_t Transaction_id,
                               LTE_DL_FRAME_PARMS *frame_parms,
@@ -1401,23 +1298,17 @@ uint8_t do_RRCConnectionSetup(uint8_t Mod_id,
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
   //     AntennaInfoDedicated__transmissionMode_tm2);
 
-  switch (transmission_mode){
+  switch (frame_parms->nb_antennas_tx) {
+  default:
   case 1:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
   case 2:
+  case 4:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
     break;
-  case 4:
-    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm4;
-    break;
-  case 5:
-    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm5;
-    break;
-  case 6:
-    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm6;
-    break;
   }
+
 
 
   physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.present = AntennaInfoDedicated__ue_TransmitAntennaSelection_PR_release;

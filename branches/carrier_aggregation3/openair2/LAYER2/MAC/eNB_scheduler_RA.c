@@ -10,7 +10,7 @@
 
     OpenAirInterface is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    MERCHANTABILITY or FITNESS FOR A PARTIBCULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
@@ -108,6 +108,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 
 	    // Get RRCConnectionSetup for Piggyback
 	    rrc_sdu_length = mac_rrc_data_req(module_idP,
+					      CC_id,
 					      frameP,
 					      CCCH,1,
 					      &eNB->common_channels[CC_id].CCCH_pdu.payload[0],

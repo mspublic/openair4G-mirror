@@ -656,12 +656,17 @@ void get_simulation_options(int argc, char *argv[]) {
       AssertFatal (oai_emulation.info.nb_enb_local <= enb_properties->number,
           "Number of eNB is greater than eNB defined in configuration file %s (%d/%d)!",
           conf_config_file_name, oai_emulation.info.nb_enb_local, enb_properties->number);
-
+ 
       /* Update some simulation parameters */
-      oai_emulation.info.frame_type[0] =           enb_properties->properties[0]->frame_type[0];
-      oai_emulation.info.tdd_config[0] =           enb_properties->properties[0]->tdd_config[0];
-      oai_emulation.info.tdd_config_S[0] =         enb_properties->properties[0]->tdd_config_s[0];
-      oai_emulation.info.extended_prefix_flag[0] = enb_properties->properties[0]->prefix_type[0];
+      int i;
+      for (i=0;i<MAX_NUM_CCs;i++) {
+	printf("Configuring CC_id %d from %s\n",i,conf_config_file_name);
+	oai_emulation.info.frame_type[i] =           enb_properties->properties[0]->frame_type[i];
+	oai_emulation.info.tdd_config[i] =           enb_properties->properties[0]->tdd_config[i];
+	oai_emulation.info.tdd_config_S[i] =         enb_properties->properties[0]->tdd_config_s[i];
+	oai_emulation.info.extended_prefix_flag[i] = enb_properties->properties[0]->prefix_type[i];
+	oai_emulation.info.N_RB_DL[i] = enb_properties->properties[0]->N_RB_DL[i];
+      }
     }
 }
 
@@ -810,9 +815,17 @@ void init_openair1(void) {
   int list_index;
 #endif
   // change the nb_connected_eNB
-  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
-    init_lte_vars (&frame_parms[CC_id], oai_emulation.info.frame_type[CC_id], oai_emulation.info.tdd_config[CC_id], oai_emulation.info.tdd_config_S[CC_id],oai_emulation.info.extended_prefix_flag[CC_id],oai_emulation.info.N_RB_DL[CC_id], Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode[CC_id], abstraction_flag,nb_antennas_rx, oai_emulation.info.eMBMS_active_state);
-  }
+
+  init_lte_vars (frame_parms, 
+		 oai_emulation.info.frame_type, 
+		 oai_emulation.info.tdd_config, 
+		 oai_emulation.info.tdd_config_S,
+		 oai_emulation.info.extended_prefix_flag,
+		 oai_emulation.info.N_RB_DL, 
+		 Nid_cell, cooperation_flag, 
+		 oai_emulation.info.transmission_mode, 
+		 abstraction_flag,nb_antennas_rx, oai_emulation.info.eMBMS_active_state);
+  
 
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
       for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
@@ -1276,7 +1289,7 @@ void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime) {
       src_id = module_id;
 
       for (dst_id=0;dst_id<NUMBER_OF_eNB_MAX;dst_id++) {
-          if (mac_get_rrc_status(ue_mod_idP, 0, dst_id ) > 2 /*RRC_CONNECTED*/) {
+          if (mac_get_rrc_status(ue_mod_idP,  0, dst_id ) > 2 /*RRC_CONNECTED*/) {
               Packet_otg_elt_t *otg_pkt = malloc (sizeof(Packet_otg_elt_t));
               if (otg_pkt!=NULL)
                 memset(otg_pkt,0,sizeof(Packet_otg_elt_t));

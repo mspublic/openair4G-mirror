@@ -64,34 +64,36 @@ extern UE_MAC_INST *UE_mac_inst;
 mui_t mui=0;
 
 //-------------------------------------------------------------------------------------------//
-int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_id, uint8_t Nb_tb, uint8_t *buffer_pP, eNB_flag_t enb_flagP, uint8_t eNB_index,
+int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, int CC_idP, frame_t frameP, uint16_t Srb_id, uint8_t Nb_tb, uint8_t *buffer_pP, eNB_flag_t enb_flagP, uint8_t eNB_index,
                          uint8_t mbsfn_sync_area) {
 //-------------------------------------------------------------------------------------------//
   SRB_INFO *Srb_info;
   uint8_t Sdu_size=0;
 
+  eNB_RRC_INST *eNB = &eNB_rrc_inst[Mod_idP][CC_idP];
+
 #ifdef DEBUG_RRC
   int i;
-  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
+  LOG_D(RRC,"[eNB %d] CC_id %d mac_rrc_data_req to SRB ID=%d\n",Mod_idP,CC_idP,Srb_id);
 #endif
 
   if( enb_flagP == ENB_FLAG_YES){
 
     if((Srb_id & RAB_OFFSET) == BCCH){
-      if(eNB_rrc_inst[Mod_idP].SI.Active==0) return 0;
+      if(eNB->SI.Active==0) return 0;
 
       // All even frames transmit SIB in SF 5
-      if (eNB_rrc_inst[Mod_idP].sizeof_SIB1 == 255) {
+      if (eNB->sizeof_SIB1 == 255) {
 	LOG_E(RRC,"[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_idP);
 	mac_xface->macphy_exit("");
       }
       if ((frameP%2) == 0) {
-        memcpy(&buffer_pP[0],eNB_rrc_inst[Mod_idP].SIB1,eNB_rrc_inst[Mod_idP].sizeof_SIB1);
+        memcpy(&buffer_pP[0],eNB->SIB1,eNB->sizeof_SIB1);
 
 #if defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
-        int sib1_size = eNB_rrc_inst[Mod_idP].sizeof_SIB1;
+        int sib1_size = eNB->sizeof_SIB1;
         int sdu_size = sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu);
 
         if (sib1_size > sdu_size)
@@ -104,7 +106,7 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
         RRC_MAC_BCCH_DATA_REQ (message_p).frame    = frameP;
         RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib1_size;
         memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu));
-        memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, eNB_rrc_inst[Mod_idP].SIB1, sib1_size);
+        memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, eNB->SIB1, sib1_size);
         RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
 
         itti_send_msg_to_task (TASK_MAC_ENB, Mod_idP, message_p);
@@ -113,20 +115,20 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 
 #ifdef DEBUG_RRC
 	LOG_D(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
-	for (i=0;i<eNB_rrc_inst[Mod_idP].sizeof_SIB1;i++)
+	for (i=0;i<eNB->sizeof_SIB1;i++)
 	  LOG_T(RRC,"%x.",buffer_pP[i]);
 	LOG_T(RRC,"\n");
 #endif
 
-	return (eNB_rrc_inst[Mod_idP].sizeof_SIB1);
+	return (eNB->sizeof_SIB1);
       } // All RFN mod 8 transmit SIB2-3 in SF 5
       else if ((frameP%8) == 1){
-	memcpy(&buffer_pP[0],eNB_rrc_inst[Mod_idP].SIB23,eNB_rrc_inst[Mod_idP].sizeof_SIB23);
+	memcpy(&buffer_pP[0],eNB->SIB23,eNB->sizeof_SIB23);
 
 #if defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
-        int sib23_size = eNB_rrc_inst[Mod_idP].sizeof_SIB23;
+        int sib23_size = eNB->sizeof_SIB23;
         int sdu_size = sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu);
 
         if (sib23_size > sdu_size)
@@ -139,7 +141,7 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
         RRC_MAC_BCCH_DATA_REQ (message_p).frame = frameP;
         RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib23_size;
         memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu));
-        memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, eNB_rrc_inst[Mod_idP].SIB23, sib23_size);
+        memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, eNB->SIB23, sib23_size);
         RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
 
         itti_send_msg_to_task (TASK_MAC_ENB, Mod_idP, message_p);
@@ -148,11 +150,11 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 
 #ifdef DEBUG_RRC
 	LOG_D(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_idP,frameP);
-	for (i=0;i<eNB_rrc_inst[Mod_idP].sizeof_SIB23;i++)
+	for (i=0;i<eNB->sizeof_SIB23;i++)
 	  LOG_T(RRC,"%x.",buffer_pP[i]);
 	LOG_T(RRC,"\n");
 #endif
-	return(eNB_rrc_inst[Mod_idP].sizeof_SIB23);
+	return(eNB->sizeof_SIB23);
       }
       else
 	return(0);
@@ -160,13 +162,13 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 
 
     if( (Srb_id & RAB_OFFSET ) == CCCH){
-      LOG_D(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
+      LOG_D(RRC,"[eNB %d] CC_id %d Frame %d CCCH request (Srb_id %d)\n",Mod_idP,CC_idP,frameP, Srb_id);
 
-      if(eNB_rrc_inst[Mod_idP].Srb0.Active==0) {
+      if(eNB->Srb0.Active==0) {
 	LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
 	return -1;
       }
-      Srb_info=&eNB_rrc_inst[Mod_idP].Srb0;
+      Srb_info=&eNB->Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.payload_size>0){//Fill buffer
@@ -204,7 +206,7 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 
 #ifdef Rel10
     if((Srb_id & RAB_OFFSET) == MCCH){
-      if(eNB_rrc_inst[Mod_idP].MCCH_MESS[mbsfn_sync_area].Active==0) return 0; // this parameter is set in function init_mcch in rrc_eNB.c
+      if(eNB->MCCH_MESS[mbsfn_sync_area].Active==0) return 0; // this parameter is set in function init_mcch in rrc_eNB.c
       // this part not needed as it is done in init_mcch 
       /*     if (eNB_rrc_inst[Mod_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area] == 255) {
 	LOG_E(RRC,"[eNB %d] MAC Request for MCCH MESSAGE and MCCH MESSAGE is not initialized\n",Mod_id);
@@ -215,7 +217,7 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 #if defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
-        int mcch_size = eNB_rrc_inst[Mod_idP].sizeof_MCCH_MESSAGE[mbsfn_sync_area];
+        int mcch_size = eNB->sizeof_MCCH_MESSAGE[mbsfn_sync_area];
         int sdu_size = sizeof(RRC_MAC_MCCH_DATA_REQ (message_p).sdu);
 
         if (mcch_size > sdu_size) {
@@ -227,7 +229,7 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
         RRC_MAC_MCCH_DATA_REQ (message_p).frame = frameP;
         RRC_MAC_MCCH_DATA_REQ (message_p).sdu_size = mcch_size;
         memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu));
-        memcpy (RRC_MAC_MCCH_DATA_REQ (message_p).sdu, eNB_rrc_inst[Mod_idP].MCCH_MESSAGE[mbsfn_sync_area], mcch_size);
+        memcpy (RRC_MAC_MCCH_DATA_REQ (message_p).sdu, eNB->MCCH_MESSAGE[mbsfn_sync_area], mcch_size);
         RRC_MAC_MCCH_DATA_REQ (message_p).enb_index = eNB_index;
         RRC_MAC_MCCH_DATA_REQ (message_p).mbsfn_sync_area = mbsfn_sync_area;
 
@@ -236,17 +238,17 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 #endif
 
       memcpy(&buffer_pP[0],
-	     eNB_rrc_inst[Mod_idP].MCCH_MESSAGE[mbsfn_sync_area],
-	     eNB_rrc_inst[Mod_idP].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+	     eNB->MCCH_MESSAGE[mbsfn_sync_area],
+	     eNB->sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
       
 #ifdef DEBUG_RRC
       LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
-      for (i=0;i<eNB_rrc_inst[Mod_idP].sizeof_MCCH_MESSAGE[mbsfn_sync_area];i++)
+      for (i=0;i<eNB->sizeof_MCCH_MESSAGE[mbsfn_sync_area];i++)
 	LOG_T(RRC,"%x.",buffer_pP[i]);
       LOG_T(RRC,"\n");
 #endif
       
-      return (eNB_rrc_inst[Mod_idP].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+      return (eNB->sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
       //      }
       //else
       //return(0);
@@ -299,7 +301,7 @@ int8_t mac_rrc_lite_data_req(module_id_t Mod_idP, frame_t frameP, uint16_t Srb_i
 }
 
 //-------------------------------------------------------------------------------------------//
-int8_t mac_rrc_lite_data_ind(module_id_t Mod_idP, frame_t frameP, rb_id_t Srb_id, uint8_t *Sdu, sdu_size_t sdu_size,eNB_flag_t enb_flagP,uint8_t eNB_index,uint8_t mbsfn_sync_area){
+int8_t mac_rrc_lite_data_ind(module_id_t Mod_idP, int CC_idP, frame_t frameP, rb_id_t Srb_id, uint8_t *Sdu, sdu_size_t sdu_size,eNB_flag_t enb_flagP,uint8_t eNB_index,uint8_t mbsfn_sync_area){
 //-------------------------------------------------------------------------------------------//
   SRB_INFO *Srb_info;
   /*
@@ -401,6 +403,7 @@ int8_t mac_rrc_lite_data_ind(module_id_t Mod_idP, frame_t frameP, rb_id_t Srb_id
           memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, Sdu, sdu_size);
           RRC_MAC_CCCH_DATA_IND (message_p).enb_index = eNB_index;
 
+
           itti_send_msg_to_task (TASK_RRC_UE, Mod_idP + NB_eNB_INST, message_p);
       }
 #else
@@ -448,7 +451,7 @@ int8_t mac_rrc_lite_data_ind(module_id_t Mod_idP, frame_t frameP, rb_id_t Srb_id
   }
 
   else{  // This is an eNB
-    Srb_info = &eNB_rrc_inst[Mod_idP].Srb0;
+    Srb_info = &eNB_rrc_inst[Mod_idP][CC_idP].Srb0;
     LOG_T(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",Mod_idP,Srb_info->Srb_id);
     
 #if defined(ENABLE_ITTI)
@@ -465,6 +468,7 @@ int8_t mac_rrc_lite_data_ind(module_id_t Mod_idP, frame_t frameP, rb_id_t Srb_id
           message_p = itti_alloc_new_message (TASK_MAC_ENB, RRC_MAC_CCCH_DATA_IND);
           RRC_MAC_CCCH_DATA_IND (message_p).frame = frameP;
           RRC_MAC_CCCH_DATA_IND (message_p).sdu_size = sdu_size;
+	  RRC_MAC_CCCH_DATA_IND (message_p).cc_id      = CC_idP;
           memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, sizeof(RRC_MAC_CCCH_DATA_IND (message_p).sdu));
           memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, Sdu, sdu_size);
 
@@ -473,10 +477,10 @@ int8_t mac_rrc_lite_data_ind(module_id_t Mod_idP, frame_t frameP, rb_id_t Srb_id
 #else
     //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     if (sdu_size > 0) {
-	 		memcpy(Srb_info->Rx_buffer.Payload,Sdu,sdu_size);
-			Srb_info->Rx_buffer.payload_size = sdu_size;
-    	rrc_eNB_decode_ccch(Mod_idP,frameP,Srb_info);
-		}
+      memcpy(Srb_info->Rx_buffer.Payload,Sdu,sdu_size);
+      Srb_info->Rx_buffer.payload_size = sdu_size;
+      rrc_eNB_decode_ccch(&eNB_rrc_inst[Mod_idP][CC_idP],frameP,Srb_info);
+    }
 #endif
   }
 
@@ -528,6 +532,7 @@ uint8_t rrc_lite_data_req(module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame
 void rrc_lite_data_ind(module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, eNB_flag_t enb_flagP,rb_id_t Srb_id, sdu_size_t sdu_sizeP,uint8_t *buffer_pP){
 //-------------------------------------------------------------------------------------------//
   rb_id_t    DCCH_index = Srb_id;
+
 #if defined(ENABLE_ITTI)
   instance_t instance;
 #endif
@@ -543,7 +548,7 @@ void rrc_lite_data_ind(module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t 
       instance = enb_mod_idP;
 #endif
       LOG_N(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %d\n",
-          enb_mod_idP, frameP, DCCH_index,Srb_id-1,sdu_sizeP, ue_mod_idP);
+	    enb_mod_idP, frameP, DCCH_index,Srb_id-1,sdu_sizeP, ue_mod_idP);
   }
 
 #if defined(ENABLE_ITTI)
@@ -567,7 +572,7 @@ void rrc_lite_data_ind(module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t 
   }
 #else
   if (enb_flagP == ENB_FLAG_YES) {
-    rrc_eNB_decode_dcch(enb_mod_idP,frameP,DCCH_index,ue_mod_idP,buffer_pP,sdu_sizeP);
+    rrc_eNB_decode_dcch(&eNB_rrc_inst[enb_mod_idP][pcc_ids[ue_mod_idP]],frameP,DCCH_index,ue_mod_idP,buffer_pP,sdu_sizeP);
   }
   else {
     rrc_ue_decode_dcch(ue_mod_idP,frameP,DCCH_index,buffer_pP,enb_mod_idP);
@@ -623,7 +628,7 @@ void rrc_lite_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_
 int mac_get_rrc_lite_status(module_id_t Mod_idP,eNB_flag_t enb_flagP,uint8_t index){
 //-------------------------------------------------------------------------------------------//
   if(enb_flagP == ENB_FLAG_YES)
-    return(eNB_rrc_inst[Mod_idP].Info.UE[index].Status);
+    return(eNB_rrc_inst[Mod_idP][pcc_ids[index]].Info.UE[index].Status);
   else
     return(UE_rrc_inst[Mod_idP].Info[index].State);
 }

@@ -138,7 +138,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
             // TODO process BCCH data req.
             break;
-
           case RRC_MAC_CCCH_DATA_REQ:
             LOG_D(MAC, "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
                 msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
@@ -188,20 +187,23 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   //#endif
 
   // check HO
-  rrc_rx_tx(module_idP,
-	    frameP,
-	    1,
-	    module_idP);
-
-#ifdef Rel10
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    rrc_rx_tx(module_idP,
+	      CC_id,
+	      frameP,
+	      1,
+	      module_idP);
+    
+#ifdef Rel10
+    
     if (eNB_mac_inst[module_idP].common_channels[CC_id].MBMS_flag >0) {
       start_meas(&eNB_mac_inst[module_idP].schedule_mch);
       mbsfn_status[CC_id] = schedule_MBMS(module_idP,CC_id,frameP,subframeP);
       stop_meas(&eNB_mac_inst[module_idP].schedule_mch);
     }
-  }
+ 
 #endif
+  }
   // refresh UE list based on UEs dropped by PHY in previous subframe
   i=UE_list->head;
   while (i>=0) {

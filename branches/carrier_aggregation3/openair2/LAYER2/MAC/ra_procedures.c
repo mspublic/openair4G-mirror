@@ -277,11 +277,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
 	    printf("RA not active\n");
               // check if RRC is ready to initiate the RA procedure
               Size = mac_rrc_data_req(module_idP,
-                  frameP,
-                  CCCH,1,
-                  &UE_mac_inst[module_idP].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)+1],0,
-                  eNB_indexP,
-                  0);
+				      0,
+				      frameP,
+				      CCCH,1,
+				      &UE_mac_inst[module_idP].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)+1],0,
+				      eNB_indexP,
+				      0);
               Size16 = (uint16_t)Size;
 
               //	LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",module_idP,frameP,Size);

@@ -189,13 +189,13 @@ PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
   return (PHY_vars_RN);
 }
 void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
-		   uint8_t frame_type,
-		   uint8_t tdd_config,
-		   uint8_t tdd_config_S,
-		   uint8_t extended_prefix_flag, 
-		   uint8_t N_RB_DL,
+		   uint8_t *frame_type,
+		   uint8_t *tdd_config,
+		   uint8_t *tdd_config_S,
+		   uint8_t *extended_prefix_flag, 
+		   uint8_t *N_RB_DL,
 		   uint16_t Nid_cell,
-		   uint8_t cooperation_flag,uint8_t transmission_mode,uint8_t abstraction_flag,
+		   uint8_t cooperation_flag,uint8_t *transmission_mode,uint8_t abstraction_flag,
 		   int nb_antennas_rx, uint8_t eMBMS_active_state) {
 
   uint8_t eNB_id,UE_id,RN_id,CC_id;
@@ -204,24 +204,25 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
 
   memset(mac_xface, 0, sizeof(MAC_xface));
 
-  LOG_I(PHY,"init lte parms: Nid_cell %d, Frame type %d, N_RB_DL %d\n",Nid_cell,frame_type,N_RB_DL);
+
 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    LOG_I(PHY,"init lte parms CC_id %d: Nid_cell %d, Frame type %d, N_RB_DL %d\n",CC_id,Nid_cell,frame_type[CC_id],N_RB_DL[CC_id]);
     frame_parms[CC_id] = calloc(1, sizeof(LTE_DL_FRAME_PARMS));
-    (frame_parms[CC_id])->frame_type         = frame_type;
-    (frame_parms[CC_id])->tdd_config         = tdd_config;
-    (frame_parms[CC_id])->tdd_config_S       = tdd_config_S;
-    (frame_parms[CC_id])->N_RB_DL            = N_RB_DL;
+    (frame_parms[CC_id])->frame_type         = frame_type[CC_id];
+    (frame_parms[CC_id])->tdd_config         = tdd_config[CC_id];
+    (frame_parms[CC_id])->tdd_config_S       = tdd_config_S[CC_id];
+    (frame_parms[CC_id])->N_RB_DL            = N_RB_DL[CC_id];
     (frame_parms[CC_id])->N_RB_UL            = (frame_parms[CC_id])->N_RB_DL;
     (frame_parms[CC_id])->phich_config_common.phich_resource = oneSixth;
     (frame_parms[CC_id])->phich_config_common.phich_duration = normal;
-    (frame_parms[CC_id])->Ncp                = extended_prefix_flag;
+    (frame_parms[CC_id])->Ncp                = extended_prefix_flag[CC_id];
     (frame_parms[CC_id])->Nid_cell           = Nid_cell;
     (frame_parms[CC_id])->nushift            = (Nid_cell%6);
-    (frame_parms[CC_id])->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-    (frame_parms[CC_id])->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
-    (frame_parms[CC_id])->nb_antennas_rx     = (transmission_mode == 1) ? 1 : 2;
-    (frame_parms[CC_id])->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+    (frame_parms[CC_id])->nb_antennas_tx     = (transmission_mode[CC_id] == 1) ? 1 : 2;
+    (frame_parms[CC_id])->nb_antennas_tx_eNB = (transmission_mode[CC_id] == 1) ? 1 : 2;
+    (frame_parms[CC_id])->nb_antennas_rx     = (transmission_mode[CC_id] == 1) ? 1 : 2;
+    (frame_parms[CC_id])->mode1_flag = (transmission_mode[CC_id] == 1) ? 1 : 0;
     
     init_frame_parms(frame_parms[CC_id],1);
     
@@ -241,6 +242,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
   for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 
     PHY_vars_eNB_g[eNB_id] = (PHY_VARS_eNB**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_eNB*));
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      LOG_I(PHY,"Doing eNB_id %d CC_id %d\n",eNB_id,CC_id);
       PHY_vars_eNB_g[eNB_id][CC_id] = init_lte_eNB(frame_parms[CC_id],eNB_id,Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
       PHY_vars_eNB_g[eNB_id][CC_id]->Mod_id=eNB_id;
       PHY_vars_eNB_g[eNB_id][CC_id]->CC_id=CC_id;
@@ -252,6 +254,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
     PHY_vars_UE_g[UE_id] = (PHY_VARS_UE**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_UE*));
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      LOG_I(PHY,"Doing UE_id %d CC_id %d\n",UE_id,CC_id);
       (frame_parms[CC_id])->nb_antennas_tx     = 1;
       (frame_parms[CC_id])->nb_antennas_rx     = nb_antennas_rx;
 

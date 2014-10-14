@@ -41,10 +41,10 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "COMMON/platform_types.h"
 
-int8_t mac_rrc_data_req(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t nb_tbP, uint8_t *buffer_pP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP,
+int8_t mac_rrc_data_req(module_id_t module_idP, int CC_idP, frame_t frameP, rb_id_t srb_idP, uint8_t nb_tbP, uint8_t *buffer_pP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP,
                     uint8_t mbsfn_sync_areaP);
 
-int8_t mac_rrc_data_ind(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t *sduP, sdu_size_t sdu_lenP, eNB_flag_t eNB_flagP, uint8_t eNB_index,
+int8_t mac_rrc_data_ind(module_id_t module_idP, int CC_idP, frame_t frameP, rb_id_t srb_idP, uint8_t *sduP, sdu_size_t sdu_lenP, eNB_flag_t eNB_flagP, uint8_t eNB_index,
                     uint8_t mbsfn_sync_areaP);
 
 void mac_lite_sync_ind(module_id_t module_idP, uint8_t statusP);
