@@ -2825,6 +2825,8 @@ int rrc_eNB_decode_ccch(
 		      ((rrcConnectionReestablishmentRequest->reestablishmentCause == ReestablishmentCause_otherFailure) ?    "Other Failure" :
 		       (rrcConnectionReestablishmentRequest->reestablishmentCause == ReestablishmentCause_handoverFailure) ? "Handover Failure" : 
 		                                                                                                            "reconfigurationFailure"));
+		return(-1); //for now
+
 		/*
 		{
 		  uint64_t                            c_rnti = 0;
@@ -2840,8 +2842,8 @@ int rrc_eNB_decode_ccch(
 		}else {
 		  rrc_eNB_generate_RRCConnectionReestablishementReject(enb_mod_idP, frameP, ue_mod_id);
 		}
-                break;
 		*/
+                break;
             case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
 #ifdef RRC_MSG_PRINT
 	      LOG_F(RRC,"[MSG] RRC Connection Request\n");

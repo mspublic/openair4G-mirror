@@ -252,14 +252,15 @@ static char                    *itti_dump_file = NULL;
 #endif
 
 #ifndef USRP
-double tx_gain[MAX_NUM_CCs][4] = {{20,20,0,0},{20,20,0,0}};
-double rx_gain[MAX_NUM_CCs][4] = {{20,20,0,0},{20,20,0,0}};
+double tx_gain[MAX_NUM_CCs][4] = {{30,30,0,0},{20,20,0,0}};
+double rx_gain[MAX_NUM_CCs][4] = {{25,25,0,0},{20,20,0,0}};
 // these are for EXMIMO2 target only
 /*
 static unsigned int             rxg_max[4] =    {133,133,133,133};
 static unsigned int             rxg_med[4] =    {127,127,127,127};
 static unsigned int             rxg_byp[4] =    {120,120,120,120};
 */
+/*
 // these are for EXMIMO2 card 39
 static unsigned int             rxg_max[4] =    {128,128,128,126};
 static unsigned int             rxg_med[4] =    {122,123,123,120};
@@ -267,6 +268,16 @@ static unsigned int             rxg_byp[4] =    {116,117,116,116};
 static unsigned int             nf_max[4] =    {7,9,16,12};
 static unsigned int             nf_med[4] =    {12,13,22,17};
 static unsigned int             nf_byp[4] =    {15,20,29,23};
+*/
+
+// these are for EXMIMO2 card 13 (v1 without amps)
+static unsigned int             rxg_max[4] =    {103,107,106,104};
+static unsigned int             rxg_med[4] =    {98,101,100,98};
+static unsigned int             rxg_byp[4] =    {94,97,96,94};
+static unsigned int             nf_max[4] =    {35,39,25,27};
+static unsigned int             nf_med[4] =    {40,44,41,44};
+static unsigned int             nf_byp[4] =    {42,46,44,46};
+
 static rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain},{max_gain,max_gain,max_gain,max_gain}};
 #else
 double tx_gain[MAX_NUM_CCs][4] = {{120,0,0,0}};
@@ -906,11 +917,10 @@ static void * eNB_thread_tx(void *param) {
 #endif
 
  
-
-#if defined(ENABLE_ITTI)
-  /* Wait for eNB application initialization to be complete (eNB registration to MME) */
+/*#if defined(ENABLE_ITTI)
+  // Wait for eNB application initialization to be complete (eNB registration to MME)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-#endif
+#endif*/
 
 #ifdef RTAI
   sprintf(task_name,"TXC%dS%d",proc->CC_id,proc->subframe);
@@ -1036,10 +1046,10 @@ static void * eNB_thread_rx(void *param) {
   char task_name[8];
 #endif
 
-#if defined(ENABLE_ITTI)
-  /* Wait for eNB application initialization to be complete (eNB registration to MME) */
+/*#if defined(ENABLE_ITTI)
+  // Wait for eNB application initialization to be complete (eNB registration to MME) 
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-#endif
+#endif*/
 
 #ifdef RTAI
   sprintf(task_name,"RXC%1dS%1d",proc->CC_id,proc->subframe);
@@ -3174,6 +3184,13 @@ int main(int argc, char **argv) {
 #endif
 #endif
 
+  /*#if defined(ENABLE_ITTI)
+  // Wait for eNB application initialization to be complete (eNB registration to MME)
+  if (UE_flag==0) {
+    printf("Waiting for eNB application to be ready\n");
+    wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+  }
+  #endif*/
 
 
   // this starts the DMA transfers

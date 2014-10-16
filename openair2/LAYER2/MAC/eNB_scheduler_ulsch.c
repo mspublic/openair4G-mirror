@@ -570,7 +570,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   uint16_t                TBS,i;
   int32_t                buffer_occupancy=0;
   uint32_t                cqi_req,cshift,ndi,mcs,rballoc,tpc;
-  int32_t                 normalized_rx_power, target_rx_power=-85;
+  int32_t                 normalized_rx_power, target_rx_power=-80;
 
   int n,CC_id;
   eNB_MAC_INST      *eNB=&eNB_mac_inst[module_idP];
@@ -669,7 +669,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	      else 
 		tpc = 1; //0
 
-	      //	      LOG_I(MAC,"[eNB %d] ULSCH scheduler: harq_pid %d, Ndi %d, mcs %d, tpc %d, normalized/target rx power %d/%d\n",module_idP,harq_pid,ndi,mcs,tpc,normalized_rx_power,target_rx_power);
+	      LOG_D(MAC,"[eNB %d] ULSCH scheduler: harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",module_idP,harq_pid,tpc,normalized_rx_power,target_rx_power);
 
 	      	      
 	      // new transmission 
@@ -682,7 +682,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		if (UE_template->pre_allocated_rb_table_index_ul >=0)
 		  rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
 		else {// NN-->RK: check this condition
-		  mcs=10;rb_table_index=5; // for PHR
+		  mcs=8;rb_table_index=3; // for PHR
 		}
 		buffer_occupancy = UE_template->ul_total_buffer;
 		
