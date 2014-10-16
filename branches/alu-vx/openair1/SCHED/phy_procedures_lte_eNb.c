@@ -1395,11 +1395,14 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   ul_subframe = pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,subframe);
-  ul_frame = pdcch_alloc2ul_frame(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->proc[sched_subframe].frame_rx,subframe);
+  ul_frame = pdcch_alloc2ul_frame(&phy_vars_eNB->lte_frame_parms,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
   
   if ((subframe_select(&phy_vars_eNB->lte_frame_parms,ul_subframe)==SF_UL) ||
       (phy_vars_eNB->lte_frame_parms.frame_type == FDD)) {
     harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,ul_frame,ul_subframe);
+
+    LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d: ul_frame %d, ul_subframe %d\n", phy_vars_eNB->Mod_id, harq_pid, phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,ul_frame,ul_subframe);
+
     for (i=0;i<NUMBER_OF_UE_MAX;i++)
       if (phy_vars_eNB->ulsch_eNB[i]) {
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->dci_alloc=0;
@@ -3095,12 +3098,15 @@ void phy_procedures_eNB_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 	  if (phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors == ULSCH_max_consecutive_errors) {
 	    LOG_I(PHY,"[eNB %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, removing UE\n",
 		  phy_vars_eNB->Mod_id,frame,subframe, i, phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors);
+
+	    //mac_xface->macphy_exit("removing UE");
 	    phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
 #ifdef OPENAIR2
 	    /*	    mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
 				      frame,
 				      phy_vars_eNB->eNB_UE_stats[i].crnti);*/
 #endif
+
 	    remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
 	    phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
 	  }

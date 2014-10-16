@@ -706,7 +706,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // PDSCH-Config
 #ifdef EXMIMO  // This corresponds to raw output of ExpressMIMO2 v2
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=-24;
+  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=-50; //-24;
 #else
   (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=0;  // corresponds to 24.7 dBm 5 MHz/ 27.7 10 MHz/ 30.7 20 MHz
 #endif
@@ -740,8 +740,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // uplinkPowerControlCommon
 
 #ifdef EXMIMO
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH =-98;//-90; 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -98;//-96;
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH =-94;//-90; 
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -96;//-96;
 #else
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -108;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -108;
