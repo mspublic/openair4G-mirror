@@ -156,8 +156,8 @@ unsigned char                   scope_enb_num_ue = 1;
 static SEM                     *mutex;
 //static CND *cond;
 
-static int                      thread0;
-static int                      thread1;
+static long                     thread0;
+static long                     thread1;
 //static int sync_thread;
 #else
 pthread_t                       thread0;
@@ -1264,7 +1264,7 @@ static void get_options (int argc, char **argv)
 	  downlink_frequency[1] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000;
           downlink_frequency[2] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000;
           downlink_frequency[3] = 1551800000;//(u32) 474000000+(atol(optarg)-21)*8000000; 
-	  sprintf(scpi_cmd_string,"EthernetRawCommand 192.168.12.202 \"SOURce:FREQuency:CW %u\"",1551800000+474000000+(atol(optarg)-21)*8000000);
+	  sprintf(scpi_cmd_string,"../../TEST/ROHDE_SCHWARZ/EthernetRawCommand 192.168.12.201 \"SOURce:FREQuency:CW %u\"",1551800000+474000000+(atol(optarg)-21)*8000000);
 	  // set level (was 15dBm) and RF on!!! (and RF off when stopping)
 	  printf("SCPI String for SMB100A : %s\n",scpi_cmd_string);
 	  system((const char*)scpi_cmd_string);
@@ -1676,20 +1676,20 @@ int main(int argc, char **argv) {
     p_exmimo_config->rf.rf_mode[ant] += (TXEN + DMAMODE_TX);
   for (ant=0;ant<frame_parms->nb_antennas_rx;ant++)
     p_exmimo_config->rf.rf_mode[ant] += (RXEN + DMAMODE_RX);
-  if (tvws_flag == 0) {
+  /*if (tvws_flag == 0) {*/
     for (ant=max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant<4;ant++) {
       p_exmimo_config->rf.rf_mode[ant] = 0;
       carrier_freq[ant] = 0; //this turns off all other LIMEs
     }
     downlink_frequency[ant] = 0; //this turns off all other LIMEs
     uplink_frequency_offset[ant] = 0;
-  }
+    /*}
   else {
     for (ant=max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);ant<3;ant++) {
       p_exmimo_config->rf.rf_mode[ant] = 0;
       carrier_freq[ant] = 0; //this turns off all other LIMEs
-    }
-  }
+      }
+    }*/
   /*
   ant_offset = 0;
   for (ant=0; ant<4; ant++) {
@@ -1706,7 +1706,7 @@ int main(int argc, char **argv) {
   }
   */
 
-  for (ant = 0; ant<4; ant++) { 
+  for (ant = 0; ant<max(frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx); ant++) { 
     p_exmimo_config->rf.do_autocal[ant] = 1;
 
     if (UE_flag==0) {
@@ -1855,12 +1855,14 @@ int main(int argc, char **argv) {
           ((short*)PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][aa])[2*j+6] = 0;
         }
     }
+    /*
       if (tvws_flag==1) {
 	p_exmimo_config->rf.rf_mode[3] += (TXEN + DMAMODE_TX);
 	for (i=0; i<frame_parms->samples_per_tti*10; i++) {
 	  PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][3][i] = 0x80008000;
 	}
       }
+    */
   }
 
   openair0_dump_config(card);
@@ -2207,7 +2209,7 @@ void setup_eNB_buffers(PHY_VARS_eNB *phy_vars_eNB, LTE_DL_FRAME_PARMS *frame_par
         phy_vars_eNB->lte_eNB_common_vars.rxdata[0][i][j] = 16-j;
       }
     }
-    for (i=0;i<4;i++){ //frame_parms->nb_antennas_tx;i++) {
+    for (i=0;i<frame_parms->nb_antennas_tx;i++) {
       free(phy_vars_eNB->lte_eNB_common_vars.txdata[0][i]);
       phy_vars_eNB->lte_eNB_common_vars.txdata[0][i] = (int32_t*) openair0_exmimo_pci[card].dac_head[i+carrier];
 

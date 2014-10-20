@@ -236,7 +236,7 @@
 #ifdef BIT8_TX
 #define AMP 128 
 #else
-#define AMP 680 //512//1024 //4096
+#define AMP 512 //1024 //4096
 #endif
 
 #define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)

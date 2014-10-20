@@ -1010,6 +1010,19 @@ void phy_eNB_lte_check_measurement_thresholds(instance_t instanceP, ral_threshol
 #   endif
 #endif
 
+void fill_dummy_subframe(int* txdataF,LTE_DL_FRAME_PARMS *frame_parms)
+{
+  int i,j,k;
+
+  for (i=0;i<frame_parms->symbols_per_tti;i++) {
+    for (k=0,j=frame_parms->first_carrier_offset; k<frame_parms->N_RB_DL*12;j++,k++) {
+      if (j==frame_parms->ofdm_symbol_size) j=1; //skip DC
+      txdataF[i*frame_parms->ofdm_symbol_size+j] = QPSK[taus()&2];
+    }
+  }
+}
+
+
 void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,
 			   relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn) {
   uint8_t *pbch_pdu=&phy_vars_eNB->pbch_pdu[0];
@@ -1074,7 +1087,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,ui
 #else
 	  memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],
 		 0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
-
+	  fill_dummy_subframe(&phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id][aa][next_slot*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti>>1)],&phy_vars_eNB->lte_frame_parms);
 #endif
 	}
       }
