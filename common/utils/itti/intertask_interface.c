@@ -144,13 +144,13 @@ typedef struct thread_desc_s {
 
     int epoll_nb_events;
 
-#ifdef RTAI
+//#ifdef RTAI
     /* Flag to mark real time thread */
     unsigned real_time;
 
     /* Counter to indicate from RTAI threads that messages are pending for the thread */
     unsigned messages_pending;
-#endif
+//#endif
 } thread_desc_t;
 
 typedef struct task_desc_s {
@@ -443,8 +443,13 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
         else
         {
             /* We cannot send a message if the task is not running */
-            AssertFatal (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_READY, "Cannot send message %d to thread %d, it is not in ready state (%d)!\n",
-                         message_id, destination_thread_id, itti_desc.threads[destination_thread_id].task_state);
+            AssertFatal (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_READY,
+                    "Task %s Cannot send message %s (%d) to thread %d, it is not in ready state (%d)!\n",
+                    itti_get_task_name(origin_task_id),
+                    itti_desc.messages_info[message_id].name,
+                    message_id,
+                    destination_thread_id,
+                    itti_desc.threads[destination_thread_id].task_state);
 
             /* Allocate new list element */
             new = (message_list_t *) itti_malloc (origin_task_id, destination_task_id, sizeof(struct message_list_s));
@@ -735,7 +740,7 @@ int itti_create_task(task_id_t task_id, void *(*start_routine)(void *), void *ar
     return 0;
 }
 
-#ifdef RTAI
+//#ifdef RTAI 
 void itti_set_task_real_time(task_id_t task_id)
 {
     thread_id_t thread_id = TASK_GET_THREAD_ID(task_id);
@@ -744,14 +749,17 @@ void itti_set_task_real_time(task_id_t task_id)
 
     itti_desc.threads[thread_id].real_time = TRUE;
 }
-#endif
+//#endif
 
 void itti_wait_ready(int wait_tasks)
 {
     itti_desc.wait_tasks = wait_tasks;
 
-    ITTI_DEBUG(ITTI_DEBUG_INIT, " wait for tasks: %s, created tasks %d, ready tasks %d\n", itti_desc.wait_tasks ? "yes" : "no",
-        itti_desc.created_tasks, itti_desc.ready_tasks);
+    ITTI_DEBUG(ITTI_DEBUG_INIT,
+            " wait for tasks: %s, created tasks %d, ready tasks %d\n",
+            itti_desc.wait_tasks ? "yes" : "no",
+            itti_desc.created_tasks,
+            itti_desc.ready_tasks);
 
     AssertFatal (itti_desc.created_tasks == itti_desc.ready_tasks, "Number of created tasks (%d) does not match ready tasks (%d), wait task %d!\n",
                  itti_desc.created_tasks, itti_desc.ready_tasks, itti_desc.wait_tasks);

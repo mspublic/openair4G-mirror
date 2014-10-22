@@ -105,7 +105,7 @@ double        forgetting_factor     = 0.0;
 uint8_t            beta_ACK              = 0;
 uint8_t            beta_RI               = 0;
 uint8_t            beta_CQI              = 2;
-uint8_t            target_ul_mcs         = 4;
+uint8_t            target_ul_mcs         = 16;
 LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 int           map1,map2;
 double      **ShaF                  = NULL;
@@ -850,9 +850,42 @@ void init_openair1(void) {
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.use_ia_receiver = 0;
 
+  //N_TA_offset
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    for (UE_id=0; UE_id<NB_UE_INST;UE_id++){
+      if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.frame_type == TDD) {
+	if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 100)
+	  PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624;
+	else if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 50)
+	  PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624/2;
+	else if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 25)
+	  PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624/4;
+      }
+      else {
+	PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 0;
+      }
+    }
+    for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
+      if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.frame_type == TDD) {
+	if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL == 100)
+	  PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 624;
+	else if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL == 50)
+	  PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 624/2;
+	else if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL == 25)
+	  PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 624/4;
+      }
+      else {
+	PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 0;
+      }
+    }
+  } 
+
   // init_ue_status();
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++) 
     for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++){
+
+      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=23;
+
       PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=160;
       // update UE_mode for each eNB_id not just 0
       if (abstraction_flag == 0)
@@ -883,7 +916,7 @@ void init_openair2(void) {
   module_id_t enb_id;
   module_id_t UE_id;
   int CC_id;
-
+#warning "eNB index is hard coded to zero"
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
     l2_init (&PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
 	     oai_emulation.info.eMBMS_active_state,

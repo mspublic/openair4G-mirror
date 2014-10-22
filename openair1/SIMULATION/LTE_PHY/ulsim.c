@@ -618,11 +618,11 @@ int main(int argc, char **argv) {
   // NN: N_RB_UL has to be defined in ulsim
   PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,max_turbo_iterations,N_RB_DL,0);
   PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,N_RB_DL,0);
-  /*
+  
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
-    PHY_vars_eNB->dlsch_eNB[0][i] = new_eNB_dlsch(1,8,0);
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,0);
+    PHY_vars_eNB->dlsch_eNB[0][i] = new_eNB_dlsch(1,8,N_RB_DL,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,N_RB_DL,0);
   
     if (!PHY_vars_eNB->dlsch_eNB[0][i]) {
       printf("Can't get eNB dlsch structures\n");
@@ -638,7 +638,7 @@ int main(int argc, char **argv) {
     PHY_vars_UE->dlsch_ue[0][i]->rnti   = 14;
 
   }
-  */
+  
 
   switch (PHY_vars_eNB->lte_frame_parms.N_RB_UL) {
   case 6:
@@ -745,6 +745,9 @@ int main(int argc, char **argv) {
   PHY_vars_eNB->proc[subframe].frame_rx = PHY_vars_UE->frame_tx;
   if (ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe) > subframe) // allocation was in previous frame
     PHY_vars_eNB->proc[ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)].frame_tx = (PHY_vars_UE->frame_tx-1)&1023;
+
+  PHY_vars_UE->dlsch_ue[0][0]->harq_ack[ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)].send_harq_status = 1;
+
 
   //  printf("UE frame %d, eNB frame %d (eNB frame_tx %d)\n",PHY_vars_UE->frame,PHY_vars_eNB->proc[subframe].frame_rx,PHY_vars_eNB->proc[ul_subframe2pdcch_alloc_subframe(&PHY_vars_eNB->lte_frame_parms,subframe)].frame_tx);
   PHY_vars_UE->frame_tx = (PHY_vars_UE->frame_tx-1)&1023;
@@ -1187,10 +1190,10 @@ int main(int argc, char **argv) {
 	  stop_meas(&PHY_vars_eNB->phy_proc_rx);
 	  if (cqi_flag > 0) {
 	    cqi_error = 0;
-	    if (PHY_vars_eNB->ulsch_eNB[0]->Or1 < 32) {
+	    if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Or1 < 32) {
 	      for (i=2;i<4;i++) {
 		//	      	      printf("cqi %d : %d (%d)\n",i,PHY_vars_eNB->ulsch_eNB[0]->o[i],PHY_vars_UE->ulsch_ue[0]->o[i]);
-		if (PHY_vars_eNB->ulsch_eNB[0]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
+		if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
 		  cqi_error = 1;
 	      }
 	    }
@@ -1199,15 +1202,15 @@ int main(int argc, char **argv) {
 	    }
 	    if (cqi_error == 1) {
 	      cqi_errors++;
-	      if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 1)
+	      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status == 1)
 		cqi_crc_falsepositives++;
 	    }
 	    else {
-	      if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 0)
+	      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status == 0)
 		cqi_crc_falsenegatives++;
 	    }
 	  }
-	  if (PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
+	  if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
 	    ack_errors++;
 	  //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
       
@@ -1218,9 +1221,10 @@ int main(int argc, char **argv) {
 	    iter_trials++;
 
 	    if (n_frames==1) {
-	      printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
-	      if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
-		print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
+	      printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status);
+	      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status==1)
+		print_CQI(PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o,
+			  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->uci_format,0);
 	      dump_ulsch(PHY_vars_eNB,subframe,0);
 	      exit(-1);
 	    }
@@ -1232,7 +1236,7 @@ int main(int argc, char **argv) {
 
 	    errs[round]++;
 	    if (n_frames==1) {
-	      printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
+	      printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0]);
 
 	      for (s=0;s<PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->C;s++) {
 		if (s<PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Cminus)
@@ -1306,7 +1310,7 @@ int main(int argc, char **argv) {
 	       cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
 	       cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
       }
-      if (PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0] > 0) 
+      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] > 0) 
 	printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
 
 

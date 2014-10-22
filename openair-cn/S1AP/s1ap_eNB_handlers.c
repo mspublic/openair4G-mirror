@@ -71,6 +71,11 @@ int s1ap_eNB_handle_initial_context_request(uint32_t               assoc_id,
                                             uint32_t               stream,
                                             struct s1ap_message_s *message_p);
 
+static
+int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
+                                            uint32_t               stream,
+                                            struct s1ap_message_s *s1ap_message_p);
+
 /* Handlers matrix. Only eNB related procedure present here */
 s1ap_message_decoded_callback messages_callback[][3] = {
     { 0, 0, 0 }, /* HandoverPreparation */
@@ -96,7 +101,7 @@ s1ap_message_decoded_callback messages_callback[][3] = {
     { 0, 0, 0 }, /* UplinkS1cdma2000tunneling */
     { 0, 0, 0 }, /* UEContextModification */
     { 0, 0, 0 }, /* UECapabilityInfoIndication */
-    { 0, 0, 0 }, /* UEContextRelease */
+    { s1ap_eNB_handle_ue_context_release_command, 0, 0 }, /* UEContextRelease */
     { 0, 0, 0 }, /* eNBStatusTransfer */
     { 0, 0, 0 }, /* MMEStatusTransfer */
     { s1ap_eNB_handle_deactivate_trace, 0, 0 }, /* DeactivateTrace */
@@ -511,3 +516,64 @@ int s1ap_eNB_handle_initial_context_request(uint32_t               assoc_id,
 
     return 0;
 }
+
+
+static
+int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
+                                            uint32_t               stream,
+                                            struct s1ap_message_s *s1ap_message_p)
+{
+    s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
+    s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
+    MessageDef            *message_p        = NULL;
+
+    S1ap_UEContextReleaseCommandIEs_t *ueContextReleaseCommand_p;
+    DevAssert(s1ap_message_p != NULL);
+
+    ueContextReleaseCommand_p = &s1ap_message_p->msg.s1ap_UEContextReleaseCommandIEs;
+
+    if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+        S1AP_ERROR("[SCTP %d] Received UE context release command for non "
+                   "existing MME context\n", assoc_id);
+        return -1;
+    }
+
+    S1ap_MME_UE_S1AP_ID_t    mme_ue_s1ap_id;
+    S1ap_ENB_UE_S1AP_ID_t    enb_ue_s1ap_id;
+
+    switch (ueContextReleaseCommand_p->uE_S1AP_IDs.present) {
+        case S1ap_UE_S1AP_IDs_PR_uE_S1AP_ID_pair:
+            enb_ue_s1ap_id = ueContextReleaseCommand_p->uE_S1AP_IDs.choice.uE_S1AP_ID_pair.eNB_UE_S1AP_ID;
+            mme_ue_s1ap_id = ueContextReleaseCommand_p->uE_S1AP_IDs.choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
+
+            if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
+                    enb_ue_s1ap_id)) == NULL) {
+                S1AP_ERROR("[SCTP %d] Received UE context release command for non "
+                "existing UE context 0x%06x\n",
+                assoc_id,
+                enb_ue_s1ap_id);
+                /*MessageDef *msg_complete_p;
+                msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
+                S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
+                itti_send_msg_to_task(TASK_S1AP, ue_desc_p->eNB_instance->instance <=> 0, msg_complete_p);
+                */
+                return -1;
+            } else {
+                message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_UE_CONTEXT_RELEASE_COMMAND);
+                S1AP_UE_CONTEXT_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
+                itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
+                return 0;
+            }
+            break;
+
+#warning "TODO mapping mme_ue_s1ap_id  enb_ue_s1ap_id?"
+        case S1ap_UE_S1AP_IDs_PR_mME_UE_S1AP_ID:
+            mme_ue_s1ap_id = ueContextReleaseCommand_p->uE_S1AP_IDs.choice.mME_UE_S1AP_ID;
+            S1AP_ERROR("TO DO mapping mme_ue_s1ap_id  enb_ue_s1ap_id");
+        case S1ap_UE_S1AP_IDs_PR_NOTHING:
+        default:
+            S1AP_ERROR("S1AP_UE_CONTEXT_RELEASE_COMMAND not processed, missing info elements");
+            return -1;
+    }
+}
+
