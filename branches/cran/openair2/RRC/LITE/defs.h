@@ -71,6 +71,7 @@
 #ifdef Rel10
 #include "MCCH-Message.h"
 #include "MBSFNAreaConfiguration-r9.h"
+#include "SCellToAddMod-r10.h"
 #endif
 #include "AS-Config.h"
 #include "AS-Context.h"
@@ -312,6 +313,9 @@ typedef struct eNB_RRC_INST_s {
   uint8_t                           *SIB23;
   uint8_t                           sizeof_SIB23;
   uint16_t                          physCellId;
+#ifdef Rel10
+  SCellToAddMod_r10_t              sCell_config[NUMBER_OF_UE_MAX][2];
+#endif
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
   BCCH_DL_SCH_Message_t             systemInformation;
@@ -599,6 +603,12 @@ void rrc_eNB_process_RRCConnectionSetupComplete(module_id_t module_idP, frame_t 
    \param ue_module_idP Index of UE transmitting the messages
    \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
 void rrc_eNB_process_RRCConnectionReconfigurationComplete(module_id_t module_idP,frame_t frameP,module_id_t ue_module_idP,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
+
+/**\brief Generate the RRCConnectionRelease 
+   \param module_idP Instance ID for eNB
+   \param frame Frame index
+   \param ue_module_idP Index of UE receiving the message*/
+void rrc_eNB_generate_RRCConnectionRelease(module_id_t module_idP,frame_t frameP, ue_id_t ue_idP);
 
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.

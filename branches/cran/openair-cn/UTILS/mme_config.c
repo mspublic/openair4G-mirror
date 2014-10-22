@@ -48,6 +48,46 @@
 
 mme_config_t mme_config;
 
+int mme_config_find_mnc_length(const char mcc_digit1P,
+        const char mcc_digit2P,
+        const char mcc_digit3P,
+        const char mnc_digit1P,
+        const char mnc_digit2P,
+        const char mnc_digit3P) {
+
+    uint16_t mcc = 100*mcc_digit1P + 10*mcc_digit2P + mcc_digit3P;
+    uint16_t mnc3= 100*mnc_digit1P + 10*mnc_digit2P + mnc_digit3P;
+    uint16_t mnc2=                   10*mnc_digit1P + mnc_digit2P;
+    int  plmn_index = 0;
+
+    AssertFatal((mcc_digit1P >= 0) && (mcc_digit1P <= 9)
+             && (mcc_digit2P >= 0) && (mcc_digit2P <= 9)
+             && (mcc_digit3P >= 0) && (mcc_digit3P <= 9) ,
+            "BAD MCC PARAMETER (%d%d%d)!\n",
+            mcc_digit1P, mcc_digit2P, mcc_digit3P);
+
+    AssertFatal((mnc_digit2P >= 0) && (mnc_digit2P <= 9)
+            && (mnc_digit1P >= 0) && (mnc_digit1P <= 9) ,
+            "BAD MNC PARAMETER (%d.%d.%d)!\n",
+            mnc_digit1P, mnc_digit2P, mnc_digit3P);
+
+
+    while (plmn_index < mme_config.gummei.nb_plmns) {
+        if (mme_config.gummei.plmn_mcc[plmn_index] == mcc) {
+            if ((mme_config.gummei.plmn_mnc[plmn_index] == mnc2) &&
+                    (mme_config.gummei.plmn_mnc_len[plmn_index] == 2)) {
+                return 2;
+            } else if ((mme_config.gummei.plmn_mnc[plmn_index] == mnc3) &&
+            (mme_config.gummei.plmn_mnc_len[plmn_index] == 3)) {
+                    return 3;
+            }
+        }
+        plmn_index += 1;
+    }
+    return 0;
+}
+
+
 static
 void mme_config_init(mme_config_t *mme_config_p)
 {
@@ -229,8 +269,8 @@ static int config_parse_file(mme_config_t *mme_config_p)
             if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_S1AP_OUTCOME_TIMER, &alongint) )) {
                 mme_config_p->s1ap_config.outcome_drop_timer_sec = (uint8_t)alongint;
             }
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_SCTP_OUTSTREAMS, &alongint) )) {
-                mme_config_p->sctp_config.out_streams = (uint16_t)alongint;
+            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_S1AP_PORT, &alongint) )) {
+            	mme_config_p->s1ap_config.port_number = (uint16_t)alongint;
             }
         }
 
@@ -388,6 +428,7 @@ static int config_parse_file(mme_config_t *mme_config_p)
                             (const char **)&sgw_ip_address_for_S1u_S12_S4_up)
                     && config_setting_lookup_string( subsetting, SGW_CONFIG_STRING_SGW_IPV4_ADDRESS_FOR_S11,
                             (const char **)&sgw_ip_address_for_S11)
+                    && config_setting_lookup_int( setting, SGW_CONFIG_STRING_SGW_PORT_FOR_S1U_S12_S4_UP, &alongint)
                   )
               ) {
                 cidr = strdup(sgw_ip_address_for_S1u_S12_S4_up);
@@ -399,6 +440,8 @@ static int config_parse_file(mme_config_t *mme_config_p)
                 address = strtok(cidr, "/");
                 IPV4_STR_ADDR_TO_INT_NWBO ( address, mme_config_p->ipv4.sgw_ip_address_for_S11, "BAD IP ADDRESS FORMAT FOR SGW S11 !\n" )
                 free(cidr);
+
+                mme_config_p->gtpv1u_config.port_number = (uint16_t) alongint;
             }
         }
     }

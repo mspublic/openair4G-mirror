@@ -75,11 +75,14 @@ void dl_phy_sync_success(module_id_t   module_idP,
     unsigned char eNB_index,
     uint8_t            first_sync){  //init as MR
   LOG_D(MAC,"[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n", module_idP, frameP, eNB_index);
+#if ! defined(ENABLE_USE_MME)
   if (first_sync==1) {
       layer2_init_UE(module_idP);
       openair_rrc_ue_init(module_idP,eNB_index);
   }
-  else {
+  else
+#endif
+  {
       mac_in_sync_ind(module_idP,frameP,eNB_index);
   }
 
@@ -157,11 +160,14 @@ int mac_top_init(int eMBMS_active, uint8_t cba_group_active, uint8_t HO_active){
 
     UE_list->num_UEs=0;
     UE_list->head=-1;
+    UE_list->head_ul=-1; 
     UE_list->avail=0;
     for (list_el=0;list_el<NUMBER_OF_UE_MAX-1;list_el++) {
       UE_list->next[list_el]=list_el+1;
+      UE_list->next_ul[list_el]=list_el+1;
     }
     UE_list->next[list_el]=-1;
+    UE_list->next_ul[list_el]=-1;
     
 #ifdef PHY_EMUL
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
@@ -417,7 +423,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, uint8_t cba_group_
   mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
   mac_xface->get_dci_sdu               = get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
-  mac_xface->terminate_ra_proc         = terminate_ra_proc;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
   mac_xface->cancel_ra_proc            = cancel_ra_proc;
   mac_xface->SR_indication             = SR_indication;
@@ -482,6 +487,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, uint8_t cba_group_
 #ifdef CBA
   mac_xface->phy_config_cba_rnti         = phy_config_cba_rnti ;
 #endif 
+  mac_xface->estimate_ue_tx_power        = estimate_ue_tx_power;
   mac_xface->phy_config_meas_ue          = phy_config_meas_ue;
   mac_xface->phy_reset_ue		 = phy_reset_ue;
 
@@ -490,6 +496,8 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, uint8_t cba_group_
 
   mac_xface->get_lte_frame_parms        = get_lte_frame_parms;
   mac_xface->get_mu_mimo_mode           = get_mu_mimo_mode;
+
+  mac_xface->get_hundred_times_delta_TF = get_hundred_times_delta_IF_mac;
 
 #ifdef Rel10
   mac_xface->get_mch_sdu                 = get_mch_sdu;

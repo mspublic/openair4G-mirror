@@ -75,9 +75,6 @@ typedef struct
     /// Fill random access response sdu, passing timing advance
     uint16_t (*fill_rar)(module_id_t Mod_id,int CC_id,frame_t frameP,uint8_t *dlsch_buffer,uint16_t N_RB_UL, uint8_t input_buffer_length);
 
-    /// Terminate the RA procedure upon reception of l3msg on ulsch
-    void (*terminate_ra_proc)(module_id_t Mod_id,int CC_id,frame_t frameP,uint16_t UE_id, uint8_t *l3msg, uint16_t l3msg_len);
-
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
     void (*initiate_ra_proc)(module_id_t Mod_id,int CC_id,frame_t frameP,uint16_t preamble,int16_t timing_offset,uint8_t sect_id,sub_frame_t subframe,uint8_t f_id);
 
@@ -91,7 +88,7 @@ typedef struct
     uint8_t* (*get_dlsch_sdu)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,uint8_t TB_index);
 
     /// Send ULSCH sdu to MAC for given rnti
-    void (*rx_sdu)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti, uint8_t *sdu,uint16_t sdu_len);
+      void (*rx_sdu)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti, uint8_t *sdu,uint16_t sdu_len, int harq_pid,uint8_t *msg3_flag);
 
     /// Indicate failure to synch to external source
     void (*mrbch_phy_sync_failure) (module_id_t Mod_id,frame_t frameP, uint8_t free_eNB_index);
@@ -134,6 +131,10 @@ typedef struct
 #endif
     // configure the cba rnti at the physical layer 
     void (*phy_config_cba_rnti)(module_id_t Mod_id,eNB_flag_t eNB_flag, uint8_t index, uint16_t cba_rnti, uint8_t cba_group_id, uint8_t num_active_cba_groups);
+    /// get delta mcs for fast UL AMC
+    // uint8_t eNB_id,uint8_t harq_pid, uint8_t UE_id,
+    int16_t (*estimate_ue_tx_power)(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs);
+
 
     /// UE functions
     
@@ -306,6 +307,8 @@ typedef struct
     LTE_DL_FRAME_PARMS* (*get_lte_frame_parms)(module_id_t Mod_id, uint8_t CC_id);
 
     MU_MIMO_mode* (*get_mu_mimo_mode) (module_id_t Mod_id, uint8_t CC_id);
+
+    int16_t (*get_hundred_times_delta_TF) (module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid);
 
     unsigned char is_cluster_head;
     unsigned char is_primary_cluster_head;

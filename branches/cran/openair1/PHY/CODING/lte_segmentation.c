@@ -32,6 +32,7 @@
    date: 21.10.2009 
 */
 #include "PHY/defs.h"
+#include "SCHED/extern.h"
 
 //#define DEBUG_SEGMENTATION
 
@@ -165,6 +166,7 @@ int lte_segmentation(unsigned char *input_buffer,
   }
   return(0);
 }
+
 
 
 #ifdef MAIN

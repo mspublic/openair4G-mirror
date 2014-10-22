@@ -40,7 +40,7 @@ typedef struct openair0_device_t openair0_device;
 /* structrue holds the parameters to configure USRP devices
  */
 
-#ifdef USRP
+#ifndef EXMIMO 
 #define MAX_CARDS 1
 #endif
 
@@ -50,6 +50,8 @@ typedef enum {
 
 
 typedef struct {
+  /* Module ID for this configuration */
+  int Mod_id;
   /* the sample rate for both transmit and receive. */
   double sample_rate;
   /* number of RX channels (=RX antennas) */
@@ -70,6 +72,10 @@ typedef struct {
   double rx_bw;
   /* TX bandwidth in Hz */
   double tx_bw;
+  /* RRH IP addr for Ethernet interface */
+  char *rrh_ip;
+  /* RRH port number for Ethernet interface */
+  int rrh_port;
 } openair0_config_t;
 
 typedef struct {
@@ -82,9 +88,12 @@ typedef struct {
 
 
 struct openair0_device_t {
-  /* USRP RF frontend parameters set by application */
-  openair0_config_t openair0_cfg;
+  /* Module ID of this device */
+  int Mod_id;
 
+  /* RF frontend parameters set by application */
+  openair0_config_t openair0_cfg;
+  
   /* Can be used by driver to hold internal structure*/
   void *priv;
 
@@ -117,11 +126,15 @@ extern "C"
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
 openair0_timestamp get_usrp_time(openair0_device *device);
   int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
+
+int openair0_set_gains(openair0_device* device, openair0_config_t *openair0_cfg);
 }
 #else
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
 openair0_timestamp get_usrp_time(openair0_device *device);
 int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
+int openair0_set_gains(openair0_device* device, openair0_config_t *openair0_cfg);
 #endif
 
 #endif // COMMON_LIB_H
+ 
