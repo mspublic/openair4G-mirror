@@ -1,11 +1,13 @@
+command = [getenv('OPENAIR_TARGETS') '/TEST/ROHDE_SCHWARZ/EthernetRawCommand'];
 %fc  = 2660000000;
 %fc  = 1907600000;
+%fc = 747.5e6;
 %fc = 859.5e6;
 fc = 1551800000;
-ch = 37;
+ch = 56 %min 21, max 60
 
 rxgain=0;
-txgain=21;
+txgain=22
 eNB_flag = 0;
 card = 0;
 active_rf = [1 0 0 0];
@@ -37,11 +39,15 @@ rffe_rxg_final = 61*[1 1 1 1];
 rffe_band = B19G_TDD*[1 1 1 1];
 
 flo = 1551800000+474000000+(ch-21)*8000000;
-s = sprintf("EthernetRawCommand 192.168.12.202 \"SOURce:FREQuency:CW %u\"",flo);
+f_out = 474000000+(ch-21)*8000000
+
+s = sprintf("%s 192.168.12.201 \"SOURce:FREQuency:CW %u\"",command,flo);
+system(s);
+s = sprintf("%s 192.168.12.201 \"POW 15dBm\"",command);
 system(s);
 
 oarf_config_exmimo(card, freq_rx,freq_tx,tdd_config,syncmode,rxgain,txgain,eNB_flag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal,resampling_factor);
-amp = 32768; %pow2(14)-1;
+amp = pow2(14)-1;
 n_bit = 16;
 
 s = zeros(76800*4,4);
@@ -51,8 +57,9 @@ select = 0;
 switch(select)
 
 case 0
-  s(1:76800,1) = floor(amp * OFDM_TX_FRAME(512,199,128,120,1))*2;
-  s(1:76800,2) = amp * OFDM_TX_FRAME(512,199,128,120,1);
+  tmp = OFDM_TX_FRAME(512,211,128,120,1);
+s(1:76800,1) = floor(amp*(tmp./max([real(tmp(:)); imag(tmp(:))])));
+s(1:76800,2) = zeros(1,76800);
 s(1:76800,3) = zeros(1,76800);
 s(1:76800,4) = zeros(1,76800);
  
@@ -109,20 +116,14 @@ otherwise
   error('unknown case')
 endswitch
 
-%s = s*2 - 2**15 -1i*(2**15);
-s = s*2;
-
-
-%s(38400:end,1) = (1+1j);
-%s(38400:end,2) = (1+1j);
-
-sleep (1)
-%keyboard
+s = s*2; %make sure LSB=0
 
 oarf_send_frame(card,s,n_bit);
-%r = oarf_get_frame(card);
+
 figure(1)
 hold off
 plot(real(s(:,1)),'r')
 %hold on
 %plot(imag(s(:,2)),'b')
+
+%r = oarf_get_frame(card);
