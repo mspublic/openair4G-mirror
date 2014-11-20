@@ -130,7 +130,7 @@ if rv != 0 :
     case02.execute(oai, user, pw, host, logfile,logdir,debug)
     case03.execute(oai, user, pw, host, logfile,logdir,debug)
     case04.execute(oai, user, pw, host, logfile,logdir,debug)
-#case05.execute(oai, user, pw, host, logfile,logdir,debug)
+    #case05.execute(oai, user, pw, host, logfile,logdir,debug)
 else :
     print 'Compilation error: skip test case 02,03,04,05'
 

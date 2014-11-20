@@ -247,7 +247,8 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
             LOG_W(UDP_, "Recvfrom returned 0\n");
         	return;
         } else{
-            forwarded_buffer = calloc(n, sizeof(uint8_t));
+            forwarded_buffer = itti_malloc(TASK_UDP, udp_sock_pP->task_id, n*sizeof(uint8_t));
+            DevAssert(forwarded_buffer != NULL);
             memcpy(forwarded_buffer, l_buffer, n);
             message_p = itti_alloc_new_message(TASK_UDP, UDP_DATA_IND);
             DevAssert(message_p != NULL);
@@ -333,7 +334,7 @@ void *udp_eNB_task(void *args_p)
                                 ITTI_MSG_ORIGIN_ID(received_message_p));
                         pthread_mutex_unlock(&udp_socket_list_mutex);
                         if (udp_data_req_p->buffer) {
-                            free(udp_data_req_p->buffer);
+                            itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), udp_data_req_p->buffer);
                         }
                         goto on_error;
                     }
@@ -348,11 +349,13 @@ void *udp_eNB_task(void *args_p)
 
                     bytes_written = sendto(
                         udp_sd,
-                        udp_data_req_p->buffer,
+                        &udp_data_req_p->buffer[udp_data_req_p->buffer_offset],
                         udp_data_req_p->buffer_length,
                         0,
                         (struct sockaddr *)&peer_addr,
                         sizeof(struct sockaddr_in));
+
+                    itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), udp_data_req_p->buffer);
 
                     if (bytes_written != udp_data_req_p->buffer_length) {
                         LOG_E(UDP_, "There was an error while writing to socket "
