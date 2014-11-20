@@ -43,6 +43,10 @@
 # include <rtai_shm.h>
 #endif
 
+#if !defined(TRUE)
+#define TRUE 1
+#endif
+
 #include "liblfds611.h"
 
 #include "assertions.h"
@@ -1041,7 +1045,7 @@ void itti_wait_tasks_end(void) {
         if (ready_tasks > 0) {
             usleep (100 * 1000);
         }
-    } while ((ready_tasks > 0) && (retries--));
+    } while ((ready_tasks > 0) && (retries--) && (!end));
 
     itti_desc.running = 0;
 

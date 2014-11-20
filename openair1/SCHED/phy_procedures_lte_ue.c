@@ -3427,7 +3427,9 @@ void phy_UE_lte_check_measurement_thresholds(instance_t instanceP, ral_threshold
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
 #ifdef EXMIMO
 #ifndef USRP
+#ifndef CPRIGW
   vcd_signal_dumper_dump_variable_by_name(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[0].rxcnt_ptr[0]));
+#endif
 #endif
 #endif
   start_meas(&phy_vars_ue->phy_proc);	

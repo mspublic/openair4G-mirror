@@ -28,6 +28,8 @@
  *******************************************************************************/
 #include <string.h>
 
+#if defined(ENABLE_ITTI)
+
 #include "intertask_interface.h"
 #include "nas_itti_messaging.h"
 
@@ -275,4 +277,6 @@ int nas_itti_rab_establish_rsp(const as_stmsi_t s_tmsi, const as_rab_id_t rabID,
 
     return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
 }
+#endif
+
 #endif

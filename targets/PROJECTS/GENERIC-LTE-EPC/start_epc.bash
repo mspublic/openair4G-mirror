@@ -106,29 +106,6 @@
 # |                                                                           |
 # +---------------------------------------------------------------------------+
 #
-###########################################################################################################################
-#                                    VLAN SETTING
-###########################################################################################################################
-#   each box is a host                                                        hss.eur
-#                                                                             |
-#        +-----------+                                +-----------+           v   +----------+
-#        |  eNB      +------+            VLAN 1+------+    MME    +----+      +---+   HSS    |
-#        |           |ethx.1+------------------+ethy.1|           |    +------+   |          |
-#        |           +------+                  +------+           +----+      +---+          |
-#        |           |ethx.2+-------+                 |           |               +----------+
-#        |           +------+       |                 +-+-------+-+
-#        |           |              |                   | s11mme|    
-#        |           |              |                   +---+---+    
-#        |           |              |             (optional)|   VLAN 3
-#        +-----------+              |                   +---+---+    
-#                                   |                   | s11sgw|            router.eur
-#                                   |                 +-+-------+-+              |   +--------------+
-#                                   |                 |  S+P-GW   |              v   |   ROUTER     |
-#                                   |  VLAN2   +------+           +-------+     +----+              +----+
-#                                   +----------+ethy.2|           |sgi    +-...-+    |              |    +---...Internet
-#                                              +------+           +-------+     +----+              +----+
-#                                                     |           |      11 VLANS    |              |
-#                                                     +-----------+   ids=[5..15]    +--------------+
 
 ###########################################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
@@ -190,7 +167,7 @@ then
     bash_exec "./autogen.sh"
     cd ./$OBJ_DIR
     echo_success "Invoking configure"
-    ../configure HAVE_CHECK=true --enable-standalone-epc --enable-raw-socket-for-sgi  LDFLAGS=-L/usr/local/lib
+    ../configure HAVE_CHECK=true --enable-debug --enable-standalone-epc --enable-raw-socket-for-sgi  LDFLAGS=-L/usr/local/lib
 else
     cd ./$OBJ_DIR
 fi
@@ -252,6 +229,8 @@ VARIABLES="
            MME_IPV4_ADDRESS_FOR_S1_MME\|\
            MME_INTERFACE_NAME_FOR_S11_MME\|\
            MME_IPV4_ADDRESS_FOR_S11_MME\|\
+           HSS_INTERFACE_NAME_FOR_S6A\|\
+           HSS_IPV4_ADDRESS_FOR_S6A\|\
            SGW_INTERFACE_NAME_FOR_S11\|\
            SGW_IPV4_ADDRESS_FOR_S11\|\
            SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP\|\
@@ -273,6 +252,7 @@ declare ENB_IPV4_NETMASK_FOR_S1_MME=$(       echo $ENB_IPV4_ADDRESS_FOR_S1_MME  
 declare ENB_IPV4_NETMASK_FOR_S1U=$(          echo $ENB_IPV4_ADDRESS_FOR_S1U           | cut -f2 -d '/')
 declare MME_IPV4_NETMASK_FOR_S1_MME=$(       echo $MME_IPV4_ADDRESS_FOR_S1_MME        | cut -f2 -d '/')
 declare MME_IPV4_NETMASK_FOR_S11_MME=$(      echo $MME_IPV4_ADDRESS_FOR_S11_MME       | cut -f2 -d '/')
+declare MME_IPV4_NETMASK_FOR_S6A=$(          echo $MME_IPV4_ADDRESS_FOR_S6A           | cut -f2 -d '/')
 declare SGW_IPV4_NETMASK_FOR_S11=$(          echo $SGW_IPV4_ADDRESS_FOR_S11           | cut -f2 -d '/')
 declare SGW_IPV4_NETMASK_FOR_S1U_S12_S4_UP=$(echo $SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP | cut -f2 -d '/')
 declare SGW_IPV4_NETMASK_FOR_S5_S8_UP=$(     echo $SGW_IPV4_ADDRESS_FOR_S5_S8_UP      | cut -f2 -d '/')
@@ -284,6 +264,7 @@ ENB_IPV4_ADDRESS_FOR_S1U=$(                  echo $ENB_IPV4_ADDRESS_FOR_S1U     
 MME_IPV4_ADDRESS_FOR_S1_MME=$(               echo $MME_IPV4_ADDRESS_FOR_S1_MME        | cut -f1 -d '/')
 MME_IPV4_ADDRESS_FOR_S11_MME=$(              echo $MME_IPV4_ADDRESS_FOR_S11_MME       | cut -f1 -d '/')
 SGW_IPV4_ADDRESS_FOR_S11=$(                  echo $SGW_IPV4_ADDRESS_FOR_S11           | cut -f1 -d '/')
+SGW_IPV4_ADDRESS_FOR_S6A=$(                  echo $SGW_IPV4_ADDRESS_FOR_S6A           | cut -f1 -d '/')
 SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP=$(        echo $SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP | cut -f1 -d '/')
 SGW_IPV4_ADDRESS_FOR_S5_S8_UP=$(             echo $SGW_IPV4_ADDRESS_FOR_S5_S8_UP      | cut -f1 -d '/')
 PGW_IPV4_ADDRESS_FOR_S5_S8=$(                echo $PGW_IPV4_ADDRESS_FOR_S5_S8         | cut -f1 -d '/')
@@ -299,8 +280,10 @@ PGW_IPV4_ADDR_FOR_SGI=$(                     echo $PGW_IPV4_ADDR_FOR_SGI        
 #        build_mme_spgw_vlan_network
 #else
 #   clean_epc_vlan_network
-#   create_sgi_vlans
+#create_sgi_vlans
+delete_sgi_vlans
 #fi
+
 get_mac_router
 
 ##################################################
@@ -329,6 +312,8 @@ PCAP_S6A_LOG_FILE=tshark_mme_s6a.$HOSTNAME.pcap
 
 PCAP_S6A_S1C_LOG_FILE=tshark_mme_s6a_s1c.$HOSTNAME.pcap
 
+PCAP_SGI_LOG_FILE=tshark_mme_sgi.$HOSTNAME.pcap
+
 
 touch $THIS_SCRIPT_PATH/kill_epc.bash
 echo '#!/bin/bash' > $THIS_SCRIPT_PATH/kill_epc.bash
@@ -338,18 +323,45 @@ chmod 777 $THIS_SCRIPT_PATH/kill_epc.bash
 
 trap control_c SIGINT
 
+echo_success "Resolving hss.eur"
 HSS_IP=$(get_ip hss.eur)
 echo_success "HSS_IP: $HSS_IP"
-MME_INTERFACE_NAME_FOR_S6A=`ip route get $HSS_IP | grep $HSS_IP | cut -d ' ' -f 3`
+
+HSS_ROUTE=$(ip route get $HSS_IP | grep $HSS_IP )
+HSS_ROUTE_IS_LOCAL=`echo $HSS_ROUTE | cut -d ' ' -f 1`
+if [ "x$HSS_ROUTE_IS_LOCAL" == "xlocal" ]; then 
+    MME_INTERFACE_NAME_FOR_S6A=`ip route get $HSS_IP | grep $HSS_IP | cut -d ' ' -f 4`
+else
+    MME_INTERFACE_NAME_FOR_S6A=`ip route get $HSS_IP | grep $HSS_IP | cut -d ' ' -f 3`
+fi
 
 echo_success "MME_INTERFACE_NAME_FOR_S1_MME : $MME_INTERFACE_NAME_FOR_S1_MME"
 echo_success "MME_INTERFACE_NAME_FOR_S6A    : $MME_INTERFACE_NAME_FOR_S6A"
+
+# see http://www.coverfire.com/articles/queueing-in-the-linux-network-stack/
+bash_exec "ethtool -A $MME_INTERFACE_NAME_FOR_S1_MME autoneg off rx off tx off"
+bash_exec "ethtool -G $MME_INTERFACE_NAME_FOR_S1_MME rx 4096 tx 4096"
+bash_exec "ethtool -C $MME_INTERFACE_NAME_FOR_S1_MME rx-usecs 3"
+bash_exec "ifconfig   $MME_INTERFACE_NAME_FOR_S1_MME txqueuelen 1000"
+
+if [ x$MME_INTERFACE_NAME_FOR_S1_MME != x$SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP ]; then 
+    bash_exec "ethtool -A $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP autoneg off rx off tx off"
+    bash_exec "ethtool -G $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP rx 4096 tx 4096"
+    bash_exec "ethtool -C $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP rx-usecs 3"
+    bash_exec "ifconfig   $SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP txqueuelen 1000"
+fi
+
 if [ x$MME_INTERFACE_NAME_FOR_S1_MME == x$MME_INTERFACE_NAME_FOR_S6A ]; then 
     nohup tshark -i $MME_INTERFACE_NAME_FOR_S1_MME -f "not port 22" -w $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$PCAP_S6A_S1C_LOG_FILE &
 else
     nohup tshark -i $MME_INTERFACE_NAME_FOR_S1_MME -f "not port 22" -w $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$PCAP_S1C_LOG_FILE &
     nohup tshark -i $MME_INTERFACE_NAME_FOR_S6A    -f "not port 22" -w $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$PCAP_S6A_LOG_FILE &
 fi
+
+if [ x$PGW_INTERFACE_NAME_FOR_SGI != xnone ]; then 
+    nohup tshark -i $PGW_INTERFACE_NAME_FOR_SGI -f "not port 22" -w $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$PCAP_SGI_LOG_FILE &
+fi
+
 wait_process_started tshark
 
 
@@ -359,10 +371,10 @@ echo "GNU_DEBUGGER:"$GNU_DEBUGGER
 if [ "x$GNU_DEBUGGER" == "xyes" ]; then
     echo_success "Running with GDB"
     touch .gdbinit
-    echo "file $OPENAIRCN_DIR/$OBJ_DIR/OAI_EPC/oai_epc" > .gdbinit
-    echo "set args -K $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$ITTI_LOG_FILE -c $THIS_SCRIPT_PATH/$CONFIG_FILE_EPC" >> .gdbinit
-#    echo "b encode_eps_mobile_identity" >> .gdbinit
-    echo "run" >> .gdbinit
+    echo "file $OPENAIRCN_DIR/$OBJ_DIR/OAI_EPC/oai_epc" > ~/.gdbinit
+    echo "set args -K $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$ITTI_LOG_FILE -c $THIS_SCRIPT_PATH/$CONFIG_FILE_EPC" >> ~/.gdbinit
+#    echo "b encode_eps_mobile_identity" >> ~/.gdbinit
+    echo "run" >> ~/.gdbinit
     gdb 2>&1 | tee $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/$STDOUT_LOG_FILE
 else 
     echo_success "Running without GDB"

@@ -1205,13 +1205,13 @@ unsigned char get_I_TBS_UL(unsigned char I_MCS);
     @param I_MCS
     @param nb_rb
     @return Transport block size */
-uint64_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
+uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
 
 /** \brief Compute Q (modulation order) based on uplink I_MCS. Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS
     @param nb_rb
     @return Transport block size */
-uint64_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
+uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
 
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
    @param vrb_type VRB type (0=localized,1=distributed)
@@ -1222,7 +1222,7 @@ uint32_t get_rballoc(uint8_t vrb_type,uint16_t rb_alloc_dci);
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
    @returns Transmission mode (1-7)
 */
-uint8_t get_transmission_mode(uint16_t Mod_id, uint8_t CC_id, uint16_t rnti);
+uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
 
 
 /* \brief 
@@ -1536,21 +1536,21 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
 */
 uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);;
 
-void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id);
+void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
 
 void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats,uint16_t * crnti, uint8_t * access_mode);
 
-void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,uint8_t eNB_id, rnti_t rnti, uint8_t trans_mode,double sinr_eff);
+void fill_CQI(LTE_UE_ULSCH_t *ulsch,PHY_MEASUREMENTS *meas,uint8_t eNB_id, int N_RB_DL, rnti_t rnti, uint8_t trans_mode,double sinr_eff);
 void reset_cba_uci(void *o);
 
-uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id);
-uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id);
+uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_subbands);
+uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
 
-uint32_t pmi2hex_2Ar1(uint16_t pmi);
+uint64_t pmi2hex_2Ar1(uint32_t pmi);
 
-uint32_t pmi2hex_2Ar2(uint8_t pmi);
+uint64_t pmi2hex_2Ar2(uint32_t pmi);
 
-uint32_t cqi2hex(uint16_t cqi);
+uint64_t cqi2hex(uint32_t cqi);
 
 uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 

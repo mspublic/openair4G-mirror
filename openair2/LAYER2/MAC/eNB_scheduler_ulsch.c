@@ -570,7 +570,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   uint16_t                TBS,i;
   int32_t                buffer_occupancy=0;
   uint32_t                cqi_req,cshift,ndi,mcs,rballoc,tpc;
-  int32_t                 normalized_rx_power, target_rx_power=-80;
+  int32_t                 normalized_rx_power, target_rx_power=-75;
+  static int32_t          tpc_accumulated=0;
 
   int n,CC_id;
   eNB_MAC_INST      *eNB=&eNB_mac_inst[module_idP];
@@ -654,23 +655,26 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	      //compute the expected ULSCH RX power (for the stats)
 
 	      // this is the normalized RX power and this should be constant (regardless of mcs
-	      //todo: put this function into mac_xface
-	      normalized_rx_power = eNB_UE_stats->UL_rssi[0] -  
-		mac_xface->get_hundred_times_delta_TF(module_idP,CC_id,rnti,harq_pid)/100; 
+	      normalized_rx_power = eNB_UE_stats->UL_rssi[0];   
+	      target_rx_power = mac_xface->get_target_ul_rx_power(module_idP,CC_id);
 	      // this assumes accumulated tpc
 	      if (subframeP==0) {
-		if (normalized_rx_power>(target_rx_power+1))
+		if (normalized_rx_power>(target_rx_power+1)) {
 		  tpc = 0; //-1
-		else if (normalized_rx_power<(target_rx_power-1))
+		  tpc_accumulated--;
+		}
+		else if (normalized_rx_power<(target_rx_power-1)) {
 		  tpc = 2; //+1
+		  tpc_accumulated++;
+		}
 		else 
 		  tpc = 1; //0
 	      }
 	      else 
 		tpc = 1; //0
 
-	      LOG_D(MAC,"[eNB %d] ULSCH scheduler: harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",module_idP,harq_pid,tpc,normalized_rx_power,target_rx_power);
-
+	      LOG_D(MAC,"[eNB %d] ULSCH scheduler: subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",module_idP,subframeP,harq_pid,tpc,tpc_accumulated,normalized_rx_power,target_rx_power);
+ 
 	      	      
 	      // new transmission 
 	      if (round==0) {

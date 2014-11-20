@@ -72,6 +72,7 @@ nwGtpv1uTrxnSendMsgRetransmission(NwGtpv1uTrxnT *thiz)
     rc = thiz->pStack->udp.udpDataReqCallback(thiz->pStack->udp.hUdp,
             thiz->pMsg->msgBuf,
             thiz->pMsg->msgLen,
+            thiz->pMsg->msgBufOffset,
             thiz->peerIp,
             thiz->peerPort);
 
@@ -320,7 +321,8 @@ nwGtpv1uTrxnCreateAndSendMsg( NW_IN  NwGtpv1uStackT *thiz,
     NW_ASSERT(thiz);
     NW_ASSERT(pMsg);
 
-    msgHdr = pMsg->msgBuf;
+    msgHdr = &pMsg->msgBuf[pMsg->msgBufOffset];
+
     NW_ASSERT(msgHdr != NULL);
 
     *(msgHdr++)         = (pMsg->version << 5)            |
@@ -364,6 +366,7 @@ nwGtpv1uTrxnCreateAndSendMsg( NW_IN  NwGtpv1uStackT *thiz,
     rc = thiz->udp.udpDataReqCallback(thiz->udp.hUdp,
                                       pMsg->msgBuf,
                                       pMsg->msgLen,
+                                      pMsg->msgBufOffset,
                                       peerIp,
                                       peerPort);
 

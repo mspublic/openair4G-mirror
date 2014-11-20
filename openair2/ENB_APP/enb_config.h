@@ -40,6 +40,7 @@
 #include  <netinet/in.h>
 
 #include "commonDef.h"
+#include "platform_types.h"
 #include "PHY/impl_defs_lte.h"
 #include "s1ap_messages_types.h"
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
@@ -106,6 +107,8 @@ typedef struct Enb_properties_s {
   int16_t                 N_RB_DL[1+MAX_NUM_CCs];// for testing, change later
   int	                  nb_antennas_tx[1+MAX_NUM_CCs];   
   int                     nb_antennas_rx[1+MAX_NUM_CCs];   
+  int	                  tx_gain[1+MAX_NUM_CCs];   
+  int                     rx_gain[1+MAX_NUM_CCs];   
   long                    prach_root[1+MAX_NUM_CCs];   
   long                    prach_config_index[1+MAX_NUM_CCs]; 
   BOOLEAN_t               prach_high_speed[1+MAX_NUM_CCs]; 
@@ -173,6 +176,7 @@ typedef struct Enb_properties_s {
 
   char               *enb_interface_name_for_S1U;
   in_addr_t           enb_ipv4_address_for_S1U;
+  tcp_udp_port_t      enb_port_for_S1U;
 
   char               *enb_interface_name_for_S1_MME;
   in_addr_t           enb_ipv4_address_for_S1_MME;
@@ -192,6 +196,10 @@ typedef struct Enb_properties_s {
   int16_t           pdcp_log_verbosity;
   int16_t           rrc_log_level;
   int16_t           rrc_log_verbosity;
+  int16_t           gtpu_log_level;
+  int16_t           gtpu_log_verbosity;
+  int16_t           udp_log_level;
+  int16_t           udp_log_verbosity;
 
 } Enb_properties_t;
 

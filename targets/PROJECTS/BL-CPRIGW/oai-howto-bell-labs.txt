@@ -1,0 +1,267 @@
+# ---------------------------------------------------------------------------
+# OAI how-to - Bell Labs custom
+#
+# By:
+# bruno.mongazon-cazavet@alcatel-lucent.com (initial)
+# ivaylo.haratcherev@alcatel-lucent.com (for use with B210 USRP)
+# Last update: 20/11/2014
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Setup a target system as explained on Eurecom site.
+# At Bell Labs we use a non-realtime target (no RTAI modules, no RT_PREEMPT
+# kernel).
+# The target system used for this version is Ubuntu 14.10 (utopic)
+# with 3.16.0-24-lowlatency or above kernel
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Log as root on your oai target (a lot better than plenty of sudo)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Set Up a WWW internet connection
+# ---------------------------------------------------------------------------
+service network-manager start
+
+# ---------------------------------------------------------------------------
+# Get essential packages
+# ---------------------------------------------------------------------------
+
+apt-get install libblas*
+apt-get install libforms*
+apt-get install libconfig8*
+
+# Check you have nettle and ssl dev packages
+
+# In addition, for USRP install additional packages
+
+apt-get install python libboost-all-dev libusb-1.0-0-dev
+
+# ---------------------------------------------------------------------------
+# Get Ettus SW needed for the B210 card (driver + FW + utilities)
+# ---------------------------------------------------------------------------
+
+echo "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/trusty trusty main" > /etc/apt/sources.list.d/ettus.list
+
+# NOTE: at the time of editing, "utopic" release was not yet available on the 
+# Ettus website, therefore "trusty" release is used here 
+
+apt-get update
+apt-get install uhd
+
+# uhd for "trusty" expects earlier versions for the libboost library,
+# so make the following links if necessary 
+
+cd /usr/lib/x86_64-linux-gnu
+ln -s libboost_date_time.so.1.55.0 libboost_date_time.so.1.54.0
+ln -s libboost_filesystem.so.1.55.0 libboost_filesystem.so.1.54.0
+ln -s libboost_program_options.so.1.55.0 libboost_program_options.so.1.54.0
+ln -s libboost_regex.so.1.55.0 libboost_regex.so.1.54.0
+ln -s libboost_serialization.so.1.55.0 libboost_serialization.so.1.54.0
+ln -s libboost_system.so.1.55.0 libboost_system.so.1.54.0
+ln -s libboost_thread.so.1.55.0 libboost_thread.so.1.54.0
+ln -s libboost_timer.so.1.55.0 libboost_timer.so.1.54.0
+
+# ---------------------------------------------------------------------------
+#  Connect the B210 card to the PC and test it. Regarding the RF connection,
+#  use both connectors of channel A with a splitter (combiner)
+# ---------------------------------------------------------------------------
+uhd_usrp_probe
+
+# it should load the FW to the card and spill out couple of info messages
+
+# ---------------------------------------------------------------------------
+# Download oai software
+# (use -r vvvv to retrieve a particular svn revision, i.e. -r 5764
+#  or current trunk revision)
+# ---------------------------------------------------------------------------
+
+# In the following, <somewhere> is a directory that must exist and owned
+# by root
+
+# To get OAI branch (trunk)
+svn co http://svn.eurecom.fr/openairsvn/openair4G/trunk --username xxxx
+# => as a result you have <somewhere>/trunk as the top directory of OAI
+# software
+
+# To get Bell Labs branch
+svn co http://svn.eurecom.fr/openairsvn/openair4G/branches/alu-vx --username xxxx
+# => as a result you have <somewhere>/alu-vx as the top directory of OAI software
+
+# Merge trunk in alu-vx
+cd <somewhere>/alu-vx
+svn merge http://svn.eurecom.fr/openairsvn/openair4G/trunk --username
+
+# Commit alu-vx
+cd <somewhere>/alu-vx
+
+# ---------------------------------------------------------------------------
+# Setup environment (top-level OAI software)
+# ---------------------------------------------------------------------------
+export OAI_SRC_ROOT=<somewhere>/trunk  (to work on trunk)
+export OAI_SRC_ROOT=<somewhere>/alu-vx (to work on Bell Labs branch)
+
+
+# ---------------------------------------------------------------------------
+# Setup environment and update any related packages
+# (keep Internet connection at this stage, it might be used during check steps
+#  to install/update dependent software)
+# ---------------------------------------------------------------------------
+
+cd $OAI_SRC_ROOT/targets/PROJECTS/GENERIC-LTE-EPC
+source utils.bash
+check_install_epc_software
+
+# ---------------------------------------------------------------------------
+# Install asn1c and patch it (first time only, check_install from previous
+# step will tell is asn1c is available or not)
+#
+# see instructions in $OAI_SRC_ROOT/openair-cn/S1AP/MESSAGES/ASN1/README
+# q: is this required if we use only eNB software ?
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Starting from here, the Internet connection can be teardown
+# ---------------------------------------------------------------------------
+service network-manager stop
+
+# ---------------------------------------------------------------------------
+# Compile oai - takes 4 minutes in non-debug mode
+# (type make clean if rebuild is necessary)
+# (ignore huge number of warnings)
+# (the make command has to be done twice, the first time is always on error ??, s1ap related ??)
+# (add LIBCONFIG_LONG=1 on 12.0.4 Ubuntu, for other distribs ??)
+# Other compile flags:
+#       DEBUG=1          debug mode
+#       RRC_MSG_PRINT=1  print RRC messages
+#       PRINT_STATS=1    inline stats printing
+#       XFORMS=1         with softscope (the use -d option when running)
+#       MSG_PRINT=1      print the RRC and PDCP messages
+#       LIBCONFIG_LONG=1 if you have earlier version than Ubuntu 14.04 TLS
+#       CPRIGW=1         to have CPRI GW interface 
+#       EXMIMO=1         for Express Mimo2 board
+#       USRP=1           for the B210 USB USRP interface
+#       ETHERNET=1       for Ethernet transport (like CPRI-GW)
+#       ENABLE_ITTI=1    to use ITTI (then use -K option when running)
+#                        -- just omit ENABLE_ITTI option not to use ITTI
+# ---------------------------------------------------------------------------
+
+cd $OAI_SRC_ROOT/targets/RT/USER
+
+# to compile without realtime for USRP
+make lte-softmodem RTAI=0 ENABLE_ITTI=1 USE_MME=R10 DISABLE_XER_PRINT=1 LINK_PDCP_TO_GTPV1U=1 SECU=1 USRP=1 -j4
+
+# to compile without realtime for CPRIGW
+make lte-softmodem RTAI=0 ENABLE_ITTI=1 USE_MME=R10 DISABLE_XER_PRINT=1 LINK_PDCP_TO_GTPV1U=1 SECU=1 CPRIGW=1 -j4
+
+# to compile without realtime for Express Mimo 2 card
+make lte-softmodem RTAI=0 ENABLE_ITTI=1 USE_MME=R10 DISABLE_XER_PRINT=1 LINK_PDCP_TO_GTPV1U=1 SECU=1 EXMIMO=1 -j4
+
+# to clean
+make cleanall
+
+# ---------------------------------------------------------------------------
+# Configure eNB
+# we use configuration files from a safe place
+# ---------------------------------------------------------------------------
+
+# for EXMIMO 2a board
+cd $OAI_SRC_ROOT/targets/PROJECTS/GENERIC-LTE-EPC/CONF
+cp $OAI_SRC_ROOT/targets/PROJECTS/BL-CPRIGW/enb.alu.2a.conf ./enb.alu.conf
+
+# for USRP board
+cd $OAI_SRC_ROOT/targets/PROJECTS/GENERIC-LTE-EPC/CONF
+cp $OAI_SRC_ROOT/targets/PROJECTS/BL-CPRIGW/enb.band7.usrpb210.conf ./enb.alu.conf
+
+# for USRP with openstack version
+cp $OAI_SRC_ROOT/targets/PROJECTS/BL-CPRIGW/enb.band7.usrpb210_openstack.conf ./enb.alu.conf
+
+# configure target ethernet interface(s) accordingly
+ifconfig eth0 192.168.13.10/24 up
+
+# ---------------------------------------------------------------------------
+# start eNB
+# (use -d for softscope, if compiled with XFORMS=1)
+# (use -V for gtkwave analysis)
+# (use -K for ITTI analysis, if compiled with ENABLE_ITTI=1 and ITTI trace expected)
+# (use -t8 or -t5 for express mimo2 when radio is bad)
+# (use -F exmimo2_2a for ex mimo2 first generation board)
+#
+# prefix with taskset -c 2,3 possibly
+# use --ulsch-max-errors 100000 not to exit on ulsch frequent errors (bad radio?)
+# ---------------------------------------------------------------------------
+
+# USRP
+cd $OAI_SRC_ROOT/alu-vx/targets/RT/USER
+./lte-softmodem -K /tmp/itti_enbalu.log -O ../../PROJECTS/GENERIC-LTE-EPC/CONF/enb.alu.conf
+
+# EXMIMO 2a
+cd $OAI_SRC_ROOT/alu-vx/targets/RT/USER
+./lte-softmodem --ulsch-max-errors 100000 -F exmimo2_2a -O ../../PROJECTS/GENERIC-LTE-EPC/CONF/enb.alu.conf
+
+# ---------------------------------------------------------------------------
+# known problems
+# ---------------------------------------------------------------------------
+
+- does not support UE detach => core dump
+- does not support GUTI reattach => display some errors but does not exit
+
+# ---------------------------------------------------------------------------
+# kernel performance optimization
+# shall be performed if no realtime is used
+# ---------------------------------------------------------------------------
+#
+echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+#
+echo N > /sys/module/drm_kms_helper/parameters/poll
+#
+service bluetooth stop
+
+# --------------------------------
+# CPRIGW specific
+# --------------------------------
+
+export LIBCPGW_CFGFILE=$OAI_SRC_ROOT/targets/PROJECTS/BL-CPRIGW/enb_cprigw10.cfg
+
+# ---------------------------------------------------------------------------
+# install RTAI modules (once per target boot, if RTAI is used only)
+# ---------------------------------------------------------------------------
+
+insmod /usr/realtime/modules/rtai_hal.ko
+insmod /usr/realtime/modules/rtai_sched.ko
+insmod /usr/realtime/modules/rtai_sem.ko
+insmod /usr/realtime/modules/rtai_fifos.ko
+insmod /usr/realtime/modules/rtai_mbx.ko
+
+# ---------------------------------------------------------------------------
+# setup fifos RT_PREEMPT only
+# ---------------------------------------------------------------------------
+
+cd $OAI_SRC_ROOT/targets/RT
+make fifos
+
+# ---------------------------------------------------------------------------
+# Build openair rf module and firmware updater (ignore warnings)
+# ---------------------------------------------------------------------------
+
+cd $OAI_SRC_ROOT/targets/RT/USER
+make drivers NAS=0
+
+# this is needed if you use Ubuntu 14.04 TLS and should be modified according to
+# your linux distribution 
+
+ln -s /usr/src/linux-headers-3.17.1-031701-lowlatency/include/generated/autoconf.h /lib/modules/3.17.1-031701-lowlatency/build/include/linux/autoconf.h
+
+# ---------------------------------------------------------------------------
+# Setup RF card (expressMimo2 case)
+# ---------------------------------------------------------------------------
+
+cd $OAI_SRC_ROOT/targets/RT/USER
+bash ./init_exmimo2.sh
+
+
+

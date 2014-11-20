@@ -618,14 +618,36 @@ void rrc_eNB_generate_UECapabilityEnquiry(
 
 }
 
+void rrc_eNB_generate_RRCConnectionRelease(module_id_t enb_mod_idP,
+					   frame_t frameP,
+					   ue_id_t ue_idP) {
+
+    uint8_t                             buffer[RRC_BUF_SIZE];
+    uint16_t                            size;
+
+    memset(buffer, 0, RRC_BUF_SIZE);
+
+    size = do_RRCConnectionRelease(enb_mod_idP, buffer,rrc_eNB_get_next_transaction_identifier(enb_mod_idP));
+
+    LOG_I(RRC,
+          "[eNB %d] Frame %d Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d, UE id %d)\n",
+          enb_mod_idP, frameP, size, ue_idP);
+
+    LOG_D(RRC,
+          "[FRAME %05d][RRC_eNB][MOD %u/%u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease to UE %d MUI %d) --->][PDCP][MOD %u/%u][RB %u]\n",
+          frameP, enb_mod_idP, ue_idP, size, ue_idP, rrc_eNB_mui, enb_mod_idP, ue_idP, DCCH);
+    //rrc_rlc_data_req(enb_mod_idP,frameP, 1,(ue_idP*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+    pdcp_rrc_data_req(enb_mod_idP, ue_idP, frameP, 1, DCCH, rrc_eNB_mui++, 0, size, buffer, 1);
+}
+						  
 /*------------------------------------------------------------------------------*/
 static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
-    module_id_t enb_mod_idP,
-    frame_t     frameP,
-    module_id_t ue_mod_idP,
-    uint8_t ho_state) {
+								 module_id_t enb_mod_idP,
+								 frame_t     frameP,
+								 module_id_t ue_mod_idP,
+								 uint8_t ho_state) {
 #if defined(ENABLE_ITTI)
-    eNB_RRC_UE_INFO                    *UE_info = &eNB_rrc_inst[enb_mod_idP].Info.UE[ue_mod_idP];
+  eNB_RRC_UE_INFO                    *UE_info = &eNB_rrc_inst[enb_mod_idP].Info.UE[ue_mod_idP];
 #endif
     uint8_t                             buffer[RRC_BUF_SIZE];
     uint16_t                            size;
@@ -1364,7 +1386,7 @@ void rrc_eNB_generate_HandoverPreparationInformation(
             memcpy((void *)&eNB_rrc_inst[mod_id_target].handover_info[UE_id_target]->as_config,
                    (void *)&eNB_rrc_inst[enb_mod_idP].handover_info[ue_mod_idP]->as_config, sizeof(AS_Config_t));
 
-            eNB_rrc_inst[mod_id_target].handover_info[UE_id_target]->ho_prepare = 0xFF;
+            eNB_rrc_inst[mod_id_target].handover_info[UE_id_target]->ho_prepare = 0x00;// 0xFF;
             eNB_rrc_inst[mod_id_target].handover_info[UE_id_target]->ho_complete = 0;
 
             eNB_rrc_inst[enb_mod_idP].handover_info[ue_mod_idP]->modid_t = mod_id_target;
@@ -2821,7 +2843,7 @@ int rrc_eNB_decode_ccch(
 		rrcConnectionReestablishmentRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionReestablishmentRequest.criticalExtensions.choice.rrcConnectionReestablishmentRequest_r8;
 
                 LOG_I(RRC, "[eNB %d] Frame %d UE %d: RRCConnectionReestablishmentRequest cause %s\n", enb_mod_idP,
-                      frameP, 
+                      frameP, ue_mod_id,
 		      ((rrcConnectionReestablishmentRequest->reestablishmentCause == ReestablishmentCause_otherFailure) ?    "Other Failure" :
 		       (rrcConnectionReestablishmentRequest->reestablishmentCause == ReestablishmentCause_handoverFailure) ? "Handover Failure" : 
 		                                                                                                            "reconfigurationFailure"));
@@ -3340,6 +3362,10 @@ void                               *rrc_enb_task(
 
             case S1AP_UE_CONTEXT_RELEASE_REQ:
                 rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ(msg_p, msg_name_p, instance);
+                break;
+
+            case S1AP_UE_CONTEXT_RELEASE_COMMAND:
+                rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
                 break;
 
             case GTPV1U_ENB_CREATE_TUNNEL_RESP:

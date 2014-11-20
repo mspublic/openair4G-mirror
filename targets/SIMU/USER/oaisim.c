@@ -713,13 +713,12 @@ void *l2l1_task(void *args_p) {
 	      update_otg_eNB (eNB_inst, oai_emulation.info.time_ms);
 
 	      //IP/OTG to PDCP and PDCP to IP operation
-	      pdcp_run (frame, 1, 0, eNB_inst); //PHY_vars_eNB_g[eNB_id]->Mod_id
+	      //	      pdcp_run (frame, 1, 0, eNB_inst); //PHY_vars_eNB_g[eNB_id]->Mod_id
 #endif
 
 	      // PHY_vars_eNB_g[eNB_id]->frame = frame;
 	      if ((slot&1) == 0) 
 		phy_procedures_eNB_lte (slot>>1,PHY_vars_eNB_g[eNB_inst], abstraction_flag, no_relay, NULL);
-
 #ifdef PRINT_STATS
 	      if(last_slot==9 && frame%10==0)
 		if(eNB_avg_thr) 

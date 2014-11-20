@@ -39,7 +39,9 @@
 
 
 #include "sgi.h"
+#include "gtpv1u.h"
 #include "intertask_interface.h"
+#include "assertions.h"
 
 #include <netinet/ip6.h>
 #include <netinet/ip.h>
@@ -81,8 +83,6 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     u_int32_t            dest4_addr;
     struct in_addr       in_dest_addr;
 
-    SGI_IF_DEBUG("--------------------------------------------------------------\n%s :\n", __FUNCTION__);
-    sgi_print_hex_octets(data_pP, packet_sizeP);
 
     switch (htons(eh_p->ether_type)) {
 
@@ -93,14 +93,16 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         dest4_addr = iph_p->daddr;
         if (hashtable_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) == HASH_TABLE_OK) {
             memcpy(eh_p->ether_dhost, addr_mapping_p->ue_mac_addr, ETH_ALEN);
+            //SGI_IF_DEBUG("--------------------------------------------------------------\n%s :\n", __FUNCTION__);
+            //sgi_print_hex_octets(data_pP, packet_sizeP);
 
         } else {
             if (sgi_data_pP->ipv4_addr == dest4_addr) {
-                SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
+                //SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
                 return;
             } else {
                 in_dest_addr.s_addr = dest4_addr;
-                SGI_IF_WARNING("%s Dropping incoming egress IPV4 packet, IPV4 dest %s not found \n", __FUNCTION__, inet_ntoa(in_dest_addr));
+                //SGI_IF_WARNING("%s Dropping incoming egress IPV4 packet, IPV4 dest %s not found \n", __FUNCTION__, inet_ntoa(in_dest_addr));
                 return;
             }
         }
@@ -114,8 +116,10 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         memcpy(dest6_addr.__in6_u.__u6_addr8, ip6h_p->daddr.__in6_u.__u6_addr8, 16);
         if (obj_hashtable_get(sgi_data_pP->addr_v6_mapping, (void*)&dest6_addr, sizeof(struct in6_addr), (void**)&addr_mapping_p) == HASH_TABLE_OK) {
             memcpy(eh_p->ether_dhost, addr_mapping_p->ue_mac_addr, ETH_ALEN);
+            //SGI_IF_DEBUG("--------------------------------------------------------------\n%s :\n", __FUNCTION__);
+            //sgi_print_hex_octets(data_pP, packet_sizeP);
         } else {
-            SGI_IF_WARNING("%s Dropping incoming egress IPV6 packet, IPV6 dest %X:%X:%X:%X:%X:%X:%X:%X not found \n", __FUNCTION__, NIP6ADDR(&dest6_addr));
+            //SGI_IF_WARNING("%s Dropping incoming egress IPV6 packet, IPV6 dest %X:%X:%X:%X:%X:%X:%X:%X not found \n", __FUNCTION__, NIP6ADDR(&dest6_addr));
             return;
         }
         break;
@@ -144,11 +148,11 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
             memcpy(eh_p->ether_dhost, addr_mapping_p->ue_mac_addr, ETH_ALEN);
         } else {
             if (sgi_data_pP->ipv4_addr == dest4_addr) {
-                SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
+                //SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
                 return;
             } else {
                 in_dest_addr.s_addr = dest4_addr;
-                SGI_IF_WARNING("%s Dropping incoming egress IPV4 packet, IPV4 dest %s not found \n", __FUNCTION__, inet_ntoa(in_dest_addr));
+                //SGI_IF_WARNING("%s Dropping incoming egress IPV4 packet, IPV4 dest %s not found \n", __FUNCTION__, inet_ntoa(in_dest_addr));
                 return;
             }
         }
@@ -185,7 +189,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         SGI_IF_ERROR("%s OUT OF MEMORY DROP EGRESS PACKET\n", __FUNCTION__);
         return;
     }
-    message_payload_p = malloc(packet_sizeP);
+    message_payload_p = itti_malloc(TASK_FW_IP, TASK_GTPV1_U, packet_sizeP);
     if (message_payload_p == NULL) {
         SGI_IF_ERROR("%s OUT OF MEMORY DROP EGRESS PACKET\n", __FUNCTION__);
         return;
@@ -199,7 +203,7 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     gtpv1u_tunnel_data_req_p->local_S1u_teid = addr_mapping_p->sgw_S1U_teid;
     gtpv1u_tunnel_data_req_p->length       = packet_sizeP;
     gtpv1u_tunnel_data_req_p->buffer       = message_payload_p;
-    SGI_IF_DEBUG("%s send GTPV1U_TUNNEL_DATA_REQ to GTPV1U S1u_enb_teid %u local_S1u_teid %u size %u\n", __FUNCTION__, gtpv1u_tunnel_data_req_p->S1u_enb_teid, gtpv1u_tunnel_data_req_p->local_S1u_teid, packet_sizeP);
+    SGI_IF_DEBUG("%s ETHER send GTPV1U_TUNNEL_DATA_REQ to GTPV1U S1u_enb_teid %u local_S1u_teid %u size %u\n", __FUNCTION__, gtpv1u_tunnel_data_req_p->S1u_enb_teid, gtpv1u_tunnel_data_req_p->local_S1u_teid, packet_sizeP);
 
     itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
 
@@ -220,10 +224,9 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
     u_int32_t            src4_addr;
     struct in_addr       in_dest_addr;
 
-    SGI_IF_DEBUG("--------------------------------------------------------------\n%s :\n", __FUNCTION__);
-    sgi_print_hex_octets(data_pP, packet_sizeP);
 
     switch (htons(eh_p->ether_type)) {
+    //sgi_print_hex_octets(data_pP, packet_sizeP);
 
     //*******************
     case ETHERTYPE_IP:
@@ -232,11 +235,11 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         dest4_addr = iph_p->daddr;
         if (hashtable_get(sgi_data_pP->addr_v4_mapping, dest4_addr, (void**)&addr_mapping_p) != HASH_TABLE_OK) {
             if (sgi_data_pP->ipv4_addr == dest4_addr) {
-                SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
+                //SGI_IF_DEBUG("%s Dropping incoming egress IPV4 packet not UE IP flow\n", __FUNCTION__);
                 return;
             } else {
                 in_dest_addr.s_addr = dest4_addr;
-                SGI_IF_WARNING("%s Dropping incoming egress IPV4 packet, IPV4 dest %s not found \n", __FUNCTION__, inet_ntoa(in_dest_addr));
+                //SGI_IF_WARNING("%s Dropping incoming egress IPV4 packet, IPV4 dest %s not found \n", __FUNCTION__, inet_ntoa(in_dest_addr));
                 return;
             }
         }
@@ -309,30 +312,38 @@ void sgi_process_raw_packet(sgi_data_t *sgi_data_pP, unsigned char* data_pP, int
         break;
 
     default:
-        SGI_IF_ERROR("%s UNHANDLED ether type %d of incoming egress packet\n", __FUNCTION__, eh_p->ether_type);
+        //SGI_IF_ERROR("%s UNHANDLED ether type %d of incoming egress packet\n", __FUNCTION__, eh_p->ether_type);
         return;
     }
+    //SGI_IF_DEBUG("--------------------------------------------------------------\n%s :\n", __FUNCTION__);
+    //sgi_print_hex_octets(data_pP+sizeof(sgi_data_pP->eh), packet_sizeP - sizeof(sgi_data_pP->eh));
 
     message_p               = itti_alloc_new_message(TASK_FW_IP, GTPV1U_TUNNEL_DATA_REQ);
     if (message_p == NULL) {
         SGI_IF_ERROR("%s OUT OF MEMORY DROP EGRESS PACKET\n", __FUNCTION__);
         return;
     }
-    message_payload_p = malloc(packet_sizeP - sizeof(sgi_data_pP->eh));
+    AssertFatal((packet_sizeP - sizeof(sgi_data_pP->eh)) > 20, "BAD IP PACKET SIZE");
+    message_payload_p = itti_malloc(TASK_FW_IP, TASK_GTPV1_U, packet_sizeP - sizeof(sgi_data_pP->eh) + GTPU_HEADER_OVERHEAD_MAX);
     if (message_payload_p == NULL) {
         SGI_IF_ERROR("%s OUT OF MEMORY DROP EGRESS PACKET\n", __FUNCTION__);
         return;
     }
-    memcpy(message_payload_p, data_pP+sizeof(sgi_data_pP->eh), packet_sizeP - sizeof(sgi_data_pP->eh));
+    memcpy(message_payload_p + GTPU_HEADER_OVERHEAD_MAX, data_pP+sizeof(sgi_data_pP->eh), packet_sizeP - sizeof(sgi_data_pP->eh));
 
     gtpv1u_tunnel_data_req_p = &message_p->ittiMsg.gtpv1uTunnelDataReq;
     gtpv1u_tunnel_data_req_p->S1u_enb_teid   = addr_mapping_p->enb_S1U_teid;
 //#warning forced S1u_enb_teid to 1 for testing, waiting for MODIFY_BEARER REQUEST
 //    gtpv1u_tunnel_data_req_p->S1u_enb_teid   = 1;
     gtpv1u_tunnel_data_req_p->local_S1u_teid = addr_mapping_p->sgw_S1U_teid;
-    gtpv1u_tunnel_data_req_p->length       = packet_sizeP;
+    gtpv1u_tunnel_data_req_p->length       = packet_sizeP - sizeof(sgi_data_pP->eh);
+    gtpv1u_tunnel_data_req_p->offset       = GTPU_HEADER_OVERHEAD_MAX;
     gtpv1u_tunnel_data_req_p->buffer       = message_payload_p;
-    SGI_IF_DEBUG("%s send GTPV1U_TUNNEL_DATA_REQ to GTPV1U S1u_enb_teid %u local_S1u_teid %u size %u\n", __FUNCTION__, gtpv1u_tunnel_data_req_p->S1u_enb_teid, gtpv1u_tunnel_data_req_p->local_S1u_teid, packet_sizeP);
+    SGI_IF_DEBUG("%s send GTPV1U_TUNNEL_DATA_REQ to GTPV1U S1u_enb_teid %u local_S1u_teid %u size %u\n",
+            __FUNCTION__,
+            gtpv1u_tunnel_data_req_p->S1u_enb_teid,
+            gtpv1u_tunnel_data_req_p->local_S1u_teid,
+            gtpv1u_tunnel_data_req_p->length);
 
     itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
 

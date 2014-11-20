@@ -1,14 +1,27 @@
 clear all
 close all
 
-top_dir = 'P:\florian\CORRIDOR\trials2 train'; % needs to be updated according to your computer
+top_dir = 'E:\EMOS\CORRIDOR\trials2 train'; % needs to be updated according to your computer
 d1 = dir(fullfile(top_dir,'UHF','*.log'));
 d2 = dir(fullfile(top_dir,'2.6GHz','*.log'));
 
 
+load exmimo2_39_0.8G.mat
+G0 = permute(G0,[2 1 3]);
+G0_800_interp = interp1(ALL_gain,G0,0:30);
+G0_800_interp = permute(G0_800_interp,[2 1 3]);
+NF0 = permute(NF0,[2 1 3]);
+NF0_800_interp = interp1(ALL_gain,NF0,0:30);
+NF0_800_interp = permute(NF0_800_interp,[2 1 3]);
+load exmimo2_39_2.6G_v2.mat
+G0 = permute(G0,[2 1 3]);
+G0_2600_interp = interp1(ALL_gain,G0,0:30);
+G0_2600_interp = permute(G0_2600_interp,[2 1 3]);
+NF0 = permute(NF0,[2 1 3]);
+NF0_2600_interp = interp1(ALL_gain,NF0,0:30);
+NF0_2600_interp = permute(NF0_2600_interp,[2 1 3]);
 
-
-
+%%
 start_time = [1.400489088000000e+09 1.400493112000000e+09 1.400499696000000e+09 1.400506864000000e+09];
 
 for idx=1:length(d1)
@@ -29,8 +42,26 @@ for idx=1:length(d1)
     rtime1 = data1{idx}(:,1) - data1{idx}(1,1);
     rtime2 = data2{idx}(:,1) - data2{idx}(1,1);
     
+    %% compute the noise level based on the AGC values and the calibrated noise figures
+    data1{idx}(data1{idx}(:,16)==0,16) = 1;
+    data2{idx}(data2{idx}(:,16)==0,16) = 1;
+    data2{idx}(data2{idx}(:,22)==0,22) = 1;
+    data2{idx}(data2{idx}(:,28)==0,28) = 1;
+    NF1=[NF0_800_interp(sub2ind(size(NF0_800_interp),data1{idx}(:,16),data1{idx}(:,15)+1,ones(length(data1{idx}),1)))];
+    NF2=[NF0_2600_interp(sub2ind(size(NF0_2600_interp),data2{idx}(:,16),data2{idx}(:,15)+1,ones(length(data2{idx}),1))) ...
+        NF0_2600_interp(sub2ind(size(NF0_2600_interp),data2{idx}(:,22),data2{idx}(:,21)+1,ones(length(data2{idx}),1))) ...
+        NF0_2600_interp(sub2ind(size(NF0_2600_interp),data2{idx}(:,28),data2{idx}(:,27)+1,ones(length(data2{idx}),1)))];
+    G1=[G0_800_interp(sub2ind(size(G0_800_interp),data1{idx}(:,16),data1{idx}(:,15)+1,ones(length(data1{idx}),1)))];
+    G2=[G0_2600_interp(sub2ind(size(G0_2600_interp),data2{idx}(:,16),data2{idx}(:,15)+1,ones(length(data2{idx}),1))) ...
+        G0_2600_interp(sub2ind(size(G0_2600_interp),data2{idx}(:,22),data2{idx}(:,21)+1,ones(length(data2{idx}),1))) ...
+        G0_2600_interp(sub2ind(size(G0_2600_interp),data2{idx}(:,28),data2{idx}(:,27)+1,ones(length(data2{idx}),1)))];
+    % digital noise power in dB
+    N1 = -174 + 10*log10(7.68e6) + NF1 + G1; 
+    N2 = repmat(-174+10*log10([30.72e6 30.72e6 15.36e6]),length(NF2),1) + NF2 + G2; 
+    
+    
     %% plot gps coordinates
-    figure(idx*10+1);
+    h=figure(idx*10+1);
     hold off
     plot(data1{idx}(1:100:end,7),data1{idx}(1:100:end,8),'rx')
     hold on
@@ -39,10 +70,12 @@ for idx=1:length(d1)
     ylabel('lon [deg]')
     legend('UHF','2.6GHz')
     title(sprintf('Run %d',idx));
+    saveas(h,sprintf('figures/gps_trace_run%d.eps',idx));
+
     
     %% plot RSSI
     % TODO: convert time (in unix epoch) into something more meaninful
-    figure(idx*10+2);
+    h=figure(idx*10+2);
     hold off
     plot(rtime1,smooth(data1{idx}(:,13),100),'r')
     hold on
@@ -53,7 +86,22 @@ for idx=1:length(d1)
     xlabel('time [seconds]')
     ylabel('RSSI [dBm]')
     title(sprintf('Run %d',idx));
+    saveas(h,sprintf('figures/rssi_vs_time_run%d.eps',idx),'epsc2');
     
+    %% plot NF
+    % TODO: convert time (in unix epoch) into something more meaninful
+    h=figure(idx*10+5);
+    hold off
+    plot(rtime1,smooth(N1,100),'r')
+    hold on
+    plot(rtime2,smooth(N2(:,1),100),'b')
+    plot(rtime2,smooth(N2(:,2),100),'c')
+    plot(rtime2,smooth(N2(:,3),100),'m')
+    legend('UHF','2.6GHz card 1','2.6GHz card 2','2.6GHz card 3');
+    xlabel('time [seconds]')
+    ylabel('NF [dB]')
+    title(sprintf('Run %d',idx));
+    saveas(h,sprintf('figures/nf_vs_time_run%d.eps',idx),'epsc2');
     
     
     %% measured distance (km)
@@ -69,7 +117,7 @@ for idx=1:length(d1)
     end
     
     
-    figure (100+idx)
+    figure (10*idx+6)
     subplot(1,2,1)
     plot(rtime1,distances1,'r',rtime1,smooth(data1{idx}(:,13),100),'b')
     title(sprintf('Run %d with the measured distance : UHF',idx));
@@ -104,7 +152,7 @@ for idx=1:length(d1)
         new_distances2=(TGV_speed*abs(rtime2-time02))/1000+min(distances2)*ones(length(rtime2),1);% distance in km
     end
     
-    figure (200+idx)
+    figure (10*idx+7)
     subplot(1,2,1)
     plot(rtime1,new_distances1,'r',rtime1,smooth(data1{idx}(:,13),100),'b')
     title(sprintf('Run %d with the estimated distance : UHF',idx));
@@ -263,7 +311,7 @@ for idx=1:length(d1)
     
     
     if idx==1 || idx ==2
-        figure(idx*10+3)
+        h=figure(idx*10+3);
         
         
         
@@ -282,17 +330,18 @@ for idx=1:length(d1)
         display(sprintf('Run %d :slope 2.6GHz : %f',idx,linearCoef2(1)))
         
         
-        title(sprintf('Run %d: With the data  the passing of the train',idx))
-        legend('UHF','UHF:linear fitting','2.6GHz card 1','2.6GHz card 1:linear fitting');
+        title(sprintf('Run %d',idx))
+        legend('UHF','UHF linear fit','2.6GHz','2.6GHz linear fit');
         xlabel('distance [km]')
         ylabel('RSSI [dBm]')
         
-        
+        saveas(h,sprintf('figures/rssi_vs_dist_run%d.eps',idx),'epsc2');
+
         
         
         % Zoom on the linear fitting
         
-        figure(idx*10+4)
+        h=figure(idx*10+4);
         
         
         
@@ -311,20 +360,21 @@ for idx=1:length(d1)
         semilogx(new_distances2(index_break2_end:index_break2_start),data2{idx}(index_break2_end:index_break2_start,13),'bx',new_distances2(index_break2_end:index_break2_start),linearFit2,'b-')
         %display(sprintf('Run %d :slope 2.6GHz : %f',idx,linearCoef2(1)))
         
-        title(sprintf('Run %d: ',idx))
-        legend('UHF','UHF:linear fitting','2.6GHz card 1','2.6GHz card 1:linear fitting');
+        title(sprintf('Run %d',idx))
+        legend('UHF','UHF linear fit','2.6GHz','2.6GHz linear fit');
         xlabel('distance [km]')
         ylabel('RSSI [dBm]')
-        
+ 
+        saveas(h,sprintf('figures/rssi_vs_dist_zoom_run%d.eps',idx),'epsc2');
         
     end
     
-    
+   
     
     if idx==3 || idx==4
         
         
-        figure(idx*10+3)
+        h=figure(idx*10+3);
         
         
         subplot(2,1,1)
@@ -368,10 +418,11 @@ for idx=1:length(d1)
         xlabel('distance [km]')
         ylabel('RSSI [dBm]')
         
+        saveas(h,sprintf('figures/rssi_vs_dist_run%d.eps',idx),'epsc2');        
         
         % Zoom on the linear fitting
         
-        figure(idx*10+4)
+        h=figure(idx*10+4);
         
         
         subplot(2,1,1)
@@ -415,12 +466,9 @@ for idx=1:length(d1)
         xlabel('distance [km]')
         ylabel('RSSI [dBm]')
         
+        saveas(h,sprintf('figures/rssi_vs_dist_zoom_run%d.eps',idx),'epsc2');
+        
     end
-    
-    
-    
-    
-    
     
     
     

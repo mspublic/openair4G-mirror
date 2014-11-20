@@ -269,8 +269,8 @@ static int config_parse_file(mme_config_t *mme_config_p)
             if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_S1AP_OUTCOME_TIMER, &alongint) )) {
                 mme_config_p->s1ap_config.outcome_drop_timer_sec = (uint8_t)alongint;
             }
-            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_SCTP_OUTSTREAMS, &alongint) )) {
-                mme_config_p->sctp_config.out_streams = (uint16_t)alongint;
+            if(  (config_setting_lookup_int( setting, MME_CONFIG_STRING_S1AP_PORT, &alongint) )) {
+            	mme_config_p->s1ap_config.port_number = (uint16_t)alongint;
             }
         }
 
@@ -428,6 +428,7 @@ static int config_parse_file(mme_config_t *mme_config_p)
                             (const char **)&sgw_ip_address_for_S1u_S12_S4_up)
                     && config_setting_lookup_string( subsetting, SGW_CONFIG_STRING_SGW_IPV4_ADDRESS_FOR_S11,
                             (const char **)&sgw_ip_address_for_S11)
+                    && config_setting_lookup_int( subsetting, SGW_CONFIG_STRING_SGW_PORT_FOR_S1U_S12_S4_UP, &alongint)
                   )
               ) {
                 cidr = strdup(sgw_ip_address_for_S1u_S12_S4_up);
@@ -439,6 +440,8 @@ static int config_parse_file(mme_config_t *mme_config_p)
                 address = strtok(cidr, "/");
                 IPV4_STR_ADDR_TO_INT_NWBO ( address, mme_config_p->ipv4.sgw_ip_address_for_S11, "BAD IP ADDRESS FORMAT FOR SGW S11 !\n" )
                 free(cidr);
+
+                mme_config_p->gtpv1u_config.port_number = (uint16_t) alongint;
             }
         }
     }
@@ -480,9 +483,8 @@ static void config_display(mme_config_t *mme_config_p)
     fprintf(stdout, "    port number ......: %d\n", mme_config_p->s1ap_config.port_number);
     fprintf(stdout, "- IP:\n");
     //fprintf(stdout, "    s1-u iface .......: %s\n", mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up);
-    //fprintf(stdout, "    s1-u ip ..........: %s/%d\n",
-    //        inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up)),
-    //        mme_config_p->ipv4.sgw_ip_netmask_for_S1u_S12_S4_up);
+    fprintf(stdout, "    s1-u ip ..........: %s\n",
+            inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up)));
     //fprintf(stdout, "    sgi iface ........: %s\n", mme_config_p->ipv4.pgw_interface_name_for_SGI);
     //fprintf(stdout, "    sgi ip ...........: %s/%d\n",
     //        inet_ntoa(*((struct in_addr *)&mme_config_p->ipv4.pgw_ip_addr_for_SGI)),
