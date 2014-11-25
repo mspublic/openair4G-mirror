@@ -193,7 +193,7 @@ ifconfig eth0 192.168.13.10/24 up
 # ---------------------------------------------------------------------------
 
 # USRP
-cd $OAI_SRC_ROOT/alu-vx/targets/RT/USER
+cd $OAI_SRC_ROOT/targets/RT/USER
 ./lte-softmodem -K /tmp/itti_enbalu.log -O ../../PROJECTS/GENERIC-LTE-EPC/CONF/enb.alu.conf
 
 # EXMIMO 2a
