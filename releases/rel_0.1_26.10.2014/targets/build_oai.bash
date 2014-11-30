@@ -67,6 +67,7 @@ ITTI_ANALYZER=0
 VCD_TIMING=0
 WIRESHARK=0
 TIME_MEAS=0
+DOXYGEN=0
 DEV=0
 
 EMULATION_DEV_INTERFACE="eth0"
@@ -86,8 +87,12 @@ fi
 #    echo "i is : $i"
 #    case $i in
 
-while getopts "bcdmsxzhe:l:w:r:t:" OPTION; do
+while getopts "abcdmsxzhe:l:w:r:t:" OPTION; do
    case "$OPTION" in
+       a)
+	 DOXYGEN=1
+	 echo "setting doxygen flag to: $DOXYGEN"
+	 ;;
        b)
 	   ENB_S1=0
 	   echo "disable eNB S1 flag"
@@ -269,11 +274,13 @@ build_enb(){
 	fi
     fi
     
-    output=$(check_for_machine_type 2>&1) 
-    MACHINE_ARCH=$?
-    if [ $MACHINE_ARCH -eq 64 ]; then
-	SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES LIBCONFIG_LONG=1 "
-	OAISIM_DIRECTIVES="$OASIM_DIRECTIVES LIBCONFIG_LONG=1 "
+    if [ $UBUNTU_REL = "12.04" ]; then 
+	output=$(check_for_machine_type 2>&1) 
+	MACHINE_ARCH=$?
+   	if [ $MACHINE_ARCH -eq 64 ]; then
+	    SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES LIBCONFIG_LONG=1 "
+	    OAISIM_DIRECTIVES="$OASIM_DIRECTIVES LIBCONFIG_LONG=1 "
+	fi
     fi
     
     echo_success "SOFTMODEM Compilation directives: $SOFTMODEM_DIRECTIVES"
@@ -387,21 +394,6 @@ build_enb(){
     echo_info "build terminated, binaries are located in bin/"
     echo_info "build terminated, logs are located in bin/${oai_build_date} and bin/install_log.txt"
     
-############################################
-# testing
-############################################
-    
-    if [ $OAI_TEST = 1 ]; then 
-	echo_info "9. Testing ..."
-	python $OPENAIR_TARGETS/TEST/OAI/test01.py
-    else 
-	echo_info "9. Bypassing the Tests ..."
-    fi 
-    
-############################################
-# run 
-############################################
-    echo_info "10. Running ... To be done"
 
 
 }
@@ -452,14 +444,15 @@ build_epc(){
 	echo_success "target epc built and installed in the bin directory"
 	echo "target epc built and installed in the bin directory"  >>  bin/${oai_build_date}
 	cp -f $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/epc.generic.conf  $OPENAIR_TARGETS/bin
+	cp -f $OPENAIRCN_DIR/objs/UTILS/CONF/s6a.conf  $OPENAIR_TARGETS/bin
     fi
     
 ######################################
-# run
+# run 
 ######################################
     echo_info "7. run EPC (check the bin/epc.generic.conf params)"
-
-    sudo bin/oai_epc -c bin/epc.generic.conf  -K /tmp/itti.log
+    cd bin/
+    $SUDO ./oai_epc -c ./epc.generic.conf  -K /tmp/itti.log
 
 }
 
@@ -550,7 +543,40 @@ case "$BUILD_LTE" in
 	echo_warning "build HSS: Experimental"
 	build_hss 
 	;;
+    'NONE')
+	;;
     *)
 	echo_error "Unknown option $BUILD_LTE: do not build"
 	;;
 esac
+
+# Additional operation 
+
+############################################
+# Generate doxygen documentation
+############################################
+    
+    if [ $DOXYGEN = 1 ]; then 
+	echo_info "9. Generate doxygen documentation ..."
+	doxygen $OPENAIR_TARGETS/DOCS/Doxyfile
+	echo_info "9.1 use your navigator to open $OPENAIR_TARGETS/DOCS/html/index.html "
+    else 
+	echo_info "9. Bypassing doxygen documentation ..."
+    fi 
+
+
+############################################
+# testing
+############################################
+    
+    if [ $OAI_TEST = 1 ]; then 
+	echo_info "10. Testing ..."
+	python $OPENAIR_TARGETS/TEST/OAI/test01.py
+    else 
+	echo_info "10. Bypassing the Tests ..."
+    fi 
+    
+############################################
+# run 
+############################################
+    echo_info "11. Running ... To be done"

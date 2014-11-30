@@ -73,7 +73,7 @@ test_install_package() {
       } || {
           echo "$1 is not installed." 
 	  OAI_INSTALLED=0
-          $SUDO apt-get install --force-yes $1  
+          $SUDO apt-get install -y $@
       }
   fi
 }
@@ -282,6 +282,13 @@ check_install_oai_software() {
     
     if [ ! -f ./.lock_oaibuild ]; then 
 	$SUDO apt-get update
+	if [ $UBUNTU_REL = "12.04" ]; then 
+	    test_uninstall_package nettle-dev
+	    test_uninstall_package nettle-bin
+        else 
+            test_install_package nettle-dev
+            test_install_package nettle-bin
+	fi 
 	test_install_package autoconf 
 	test_install_package automake 
 	test_install_package bison 
@@ -294,6 +301,7 @@ check_install_oai_software() {
 	test_install_package cmake
 	test_install_package openssh-client
 	test_install_package openssh-server
+        sudo service ssh start
 	test_install_package unzip 
 	test_install_package autoconf
 	test_install_package automake
@@ -344,7 +352,9 @@ check_install_oai_software() {
 	test_install_package sshfs
 	test_install_package subversion
 	test_install_package valgrind
-
+	test_install_package doxygen
+	test_install_package graphviz
+	
 # TODO: install the USRP UHD packages 
 #	test_install_package libboost-all-dev
 	
@@ -364,6 +374,9 @@ check_install_hss_software() {
 	if [ $UBUNTU_REL = "12.04" ]; then 
 	    test_uninstall_package nettle-dev
 	    test_uninstall_package nettle-bin
+        else 
+            test_install_package nettle-dev
+            test_install_package nettle-bin
 	fi 
 	test_install_package autoconf 
 	test_install_package automake 
@@ -394,6 +407,7 @@ check_install_hss_software() {
 	test_install_package mysql-server-5.5 
 	test_install_package openssh-client
 	test_install_package openssh-server
+        sudo service ssh start
 	test_install_package phpmyadmin
 	test_install_package python-dev 
 	test_install_package sshfs
@@ -420,6 +434,9 @@ check_install_epc_software() {
 	if [ $UBUNTU_REL = "12.04" ]; then 
 	    test_uninstall_package nettle-dev
 	    test_uninstall_package nettle-bin
+        else 
+            test_install_package nettle-dev
+            test_install_package nettle-bin
 	fi 
 	test_install_package autoconf
 	test_install_package automake
@@ -468,6 +485,7 @@ check_install_epc_software() {
 	test_install_package make
 	test_install_package openssh-client
 	test_install_package openssh-server
+        sudo service ssh start
 	test_install_package openssl
 	test_install_package openvpn
 	test_install_package pkg-config
@@ -834,7 +852,7 @@ create_hss_database(){
 	rv=1
     fi
 
-    set_openair
+    set_openair_env
     
     Q1="CREATE DATABASE IF NOT EXISTS ${BTICK}oai_db${BTICK};"
     SQL="${Q1}"
@@ -868,22 +886,23 @@ create_hss_database(){
 }
 
 ################################
-# set_openair
+# set_openair_env
 ###############################
 set_openair_env(){
 
-    index=`pwd | grep -b -o /targets | cut -d: -f1`
-    if [ $index = "" ] ; then
-	echo_error "Please run the script from targets directory or any child directories"
-    else 
-	oai_path=`pwd | cut -c1-$index`
-	export OPENAIR_HOME=$oai_path
-	export OPENAIR1_DIR=$oai_path/openair1
-	export OPENAIR2_DIR=$oai_path/openair2
-	export OPENAIR3_DIR=$oai_path/openair3
-	export OPENAIR_TARGETS=$oai_path/targets
-	export OPENAIRCN_DIR=$oai_path/openair-cn
-    fi
+    fullpath=`readlink -f $BASH_SOURCE`
+    [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
+    openair_path=${fullpath%/targets/*}
+    openair_path=${openair_path%/openair-cn/*}
+    openair_path=${openair_path%/openair[123]/*}
+
+    export OPENAIR_DIR=$openair_path
+    export OPENAIRge_HOME=$openair_path
+    export OPENAIR1_DIR=$openair_path/openair1
+    export OPENAIR2_DIR=$openair_path/openair2
+    export OPENAIR3_DIR=$openair_path/openair3
+    export OPENAIRCN_DIR=$openair_path/openair-cn
+    export OPENAIR_TARGETS=$openair_path/targets
 
 }
 
@@ -893,15 +912,16 @@ set_openair_env(){
 
 print_help(){
     echo_success "Name : build_oai  - install and build OAI"
-    echo_success "Usage: build_oai.bash -b -c -d -eRTAI -m -rREL8 -s -tOAISIM -wEXMIMO -x"
+    echo_success "Usage: build_oai.bash -a -b -c -d -eRTAI -m -rREL8 -s -tOAISIM -wEXMIMO -x"
+    echo_success "-a   : enable doxygen for documentation (default disabled)"
     echo_success "-b   : disables S1 interface for eNB (default enabled)"
     echo_success "-c   : enables clean OAI build (default disabled)"
     echo_success "-d   : enables debug mode (default disabled)"
     echo_success "-e   : sets realtime mode: RTAI, NONE (default NONE)"
-    echo_success "-l   : sets the LTE build target: ENB,EPC,HSS (default ENB)"
+    echo_success "-l   : sets the LTE build target: ENB,EPC,HSS,NONE (default ENB)"
     echo_success "-m   : enables build from the makefile (default disabled)"
     echo_success "-r   : sets the release: REL8, REL10 (default REL8)"
-    echo_success "-s   : enables OAI sanity check (default disabled)"
+    echo_success "-s   : enables OAI testing and sanity check (default disabled)"
     echo_success "-t   : sets the eNB build target: ALL, SOFTMODEM,OAISIM,UNISIM (default ALL)"
     echo_success "-w   : sets the hardware platform: EXMIMO, USRP, ETHERNET NONE, (default EXMIMO)"
     echo_success "-x   : enables xforms (default disabled)"
