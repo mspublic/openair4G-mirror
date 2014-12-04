@@ -695,7 +695,7 @@ compile_ltesoftmodem() {
 	make  $SOFTMODEM_DIRECTIVES 
 	make -j $NUM_CPU $SOFTMODEM_DIRECTIVES 
         if [ $? -ne 0 ]; then
-            if [ ! -f ./lte-softmodem ];
+            if [ ! -f ./lte-softmodem ]; then 
 		echo_error "Build lte-softmodem failed, returning"
 		return 1
 	    else 
