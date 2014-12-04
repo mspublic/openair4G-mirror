@@ -46,6 +46,7 @@ BUILD_FROM_MAKEFILE=0
 SUDO=''
 PW=''
 UBUNTU_REL=`lsb_release -r | cut  -f2`
+UBUNTU_REL_NAME=`lsb_release -cs`
 
 set_build_from_makefile(){
     BUILD_FROM_MAKEFILE=$1   
@@ -156,6 +157,54 @@ make_certs(){
 
 }
 
+check_install_nettle(){
+
+    if [ $UBUNTU_REL = "12.04" ]; then 
+	test_uninstall_package nettle-dev
+	test_uninstall_package nettle-bin
+	
+	if [ ! -d /usr/local/src/ ]; then
+	    echo "/usr/local/src/ doesn't exist please create one"
+	    exit -1
+	fi
+	
+	if [ ! -w /usr/local/src/ ];  then
+	    echo "You don't have permissions to write to /usr/local/src/, installing as a sudoer"
+#	exit -1
+	fi
+	
+	cd /usr/local/src/
+	
+	echo "Downloading nettle archive"
+	
+	if [ -f nettle-2.5.tar.gz ]; then
+	    $SUDO rm -f nettle-2.5.tar.gz
+	fi
+	if [ -f nettle-2.5.tar ]; then
+	    $SUDO rm -f nettle-2.5.tar
+	fi
+	if [ -d nettle-2.5 ];  then
+	    $SUDO rm -rf nettle-2.5/
+	fi
+	
+	
+	$SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz 
+	$SUDO gunzip nettle-2.5.tar.gz 
+	$SUDO echo "Uncompressing nettle archive"
+	$SUDO tar -xf nettle-2.5.tar
+	cd nettle-2.5/
+	$SUDO ./configure --disable-openssl --enable-shared --prefix=/usr 
+	if [ $? -ne 0 ]; then
+	    exit -1
+	fi
+	echo "Compiling nettle"
+	$SUDO make -j $NUM_CPU  
+	$SUDO make check 
+	$SUDO make install 
+	cd ../
+    fi
+
+}
 check_install_freediamter(){
     
     if [ $UBUNTU_REL = "12.04" ]; then 
@@ -278,11 +327,23 @@ check_s6a_certificate() {
     return 1
 }
 
+check_install_usrp_uhd_driver(){
+    if [ ! -f /etc/apt/sources.list.d/ettus.list ] ; then 
+	$SUDO bash -c 'echo "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/`lsb_release -cs` `lsb_release -cs` main" >> /etc/apt/sources.list.d/ettus.list'
+	$SUDO apt-get update
+    fi 
+    $SUDO apt-get install -t $UBUNTU_REL_NAME uhd
+    test_install_package python 
+    test_install_package libboost-all-dev 
+    test_install_package libusb-1.0-0-dev
+    #test_install_package uhd
+}
+
 check_install_oai_software() {
     
     if [ ! -f ./.lock_oaibuild ]; then 
 	$SUDO apt-get update
-	if [ $UBUNTU_REL = "12.04" ]; then 
+      	if [ $UBUNTU_REL = "12.04" ]; then 
 	    test_uninstall_package nettle-dev
 	    test_uninstall_package nettle-bin
         else 
@@ -356,6 +417,8 @@ check_install_oai_software() {
 	test_install_package graphviz
 	
 # TODO: install the USRP UHD packages 
+#	if [ $1 = "USRP" ] ; then 
+	
 #	test_install_package libboost-all-dev
 	
 	if [ $OAI_INSTALLED = 1 ]; then 
@@ -897,7 +960,7 @@ set_openair_env(){
     openair_path=${openair_path%/openair[123]/*}
 
     export OPENAIR_DIR=$openair_path
-    export OPENAIRge_HOME=$openair_path
+    export OPENAIR_HOME=$openair_path
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
     export OPENAIR3_DIR=$openair_path/openair3
@@ -923,7 +986,7 @@ print_help(){
     echo_success "-r   : sets the release: REL8, REL10 (default REL8)"
     echo_success "-s   : enables OAI testing and sanity check (default disabled)"
     echo_success "-t   : sets the eNB build target: ALL, SOFTMODEM,OAISIM,UNISIM (default ALL)"
-    echo_success "-w   : sets the hardware platform: EXMIMO, USRP, ETHERNET NONE, (default EXMIMO)"
+    echo_success "-w   : sets the hardware platform: EXMIMO, USRP (also installs UHD driver), ETHERNET, NONE, (default EXMIMO)"
     echo_success "-x   : enables xforms (default disabled)"
     echo_success "-z   : sets the default build options"
 }
