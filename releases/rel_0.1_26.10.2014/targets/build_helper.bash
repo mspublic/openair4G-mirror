@@ -158,53 +158,54 @@ make_certs(){
 }
 
 check_install_nettle(){
-
-    if [ $UBUNTU_REL = "12.04" ]; then 
-	test_uninstall_package nettle-dev
-	test_uninstall_package nettle-bin
+    if [ ! -f ./.lock_oaibuild ]; then 
+	if [ $UBUNTU_REL = "12.04" ]; then 
+	    test_uninstall_package nettle-dev
+	    test_uninstall_package nettle-bin
 	
-	if [ ! -d /usr/local/src/ ]; then
-	    echo "/usr/local/src/ doesn't exist please create one"
-	    exit -1
+	    if [ ! -d /usr/local/src/ ]; then
+		echo "/usr/local/src/ doesn't exist please create one"
+		exit -1
+	    fi
+	    
+	    if [ ! -w /usr/local/src/ ];  then
+		echo "You don't have permissions to write to /usr/local/src/, installing as a sudoer"
+		#	exit -1
+	    fi
+	    
+	    cd /usr/local/src/
+	    
+	    echo "Downloading nettle archive"
+	    
+	    if [ -f nettle-2.5.tar.gz ]; then
+		$SUDO rm -f nettle-2.5.tar.gz
+	    fi
+	    if [ -f nettle-2.5.tar ]; then
+		$SUDO rm -f nettle-2.5.tar
+	    fi
+	    if [ -d nettle-2.5 ];  then
+		$SUDO rm -rf nettle-2.5/
+	    fi
+	    
+	    
+	    $SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz 
+	    $SUDO gunzip nettle-2.5.tar.gz 
+	    $SUDO echo "Uncompressing nettle archive"
+	    $SUDO tar -xf nettle-2.5.tar
+	    cd nettle-2.5/
+	    $SUDO ./configure --disable-openssl --enable-shared --prefix=/usr 
+	    if [ $? -ne 0 ]; then
+		exit -1
+	    fi
+	    echo "Compiling nettle"
+	    $SUDO make -j $NUM_CPU  
+	    $SUDO make check 
+	    $SUDO make install 
+	    cd ../
 	fi
-	
-	if [ ! -w /usr/local/src/ ];  then
-	    echo "You don't have permissions to write to /usr/local/src/, installing as a sudoer"
-#	exit -1
-	fi
-	
-	cd /usr/local/src/
-	
-	echo "Downloading nettle archive"
-	
-	if [ -f nettle-2.5.tar.gz ]; then
-	    $SUDO rm -f nettle-2.5.tar.gz
-	fi
-	if [ -f nettle-2.5.tar ]; then
-	    $SUDO rm -f nettle-2.5.tar
-	fi
-	if [ -d nettle-2.5 ];  then
-	    $SUDO rm -rf nettle-2.5/
-	fi
-	
-	
-	$SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz 
-	$SUDO gunzip nettle-2.5.tar.gz 
-	$SUDO echo "Uncompressing nettle archive"
-	$SUDO tar -xf nettle-2.5.tar
-	cd nettle-2.5/
-	$SUDO ./configure --disable-openssl --enable-shared --prefix=/usr 
-	if [ $? -ne 0 ]; then
-	    exit -1
-	fi
-	echo "Compiling nettle"
-	$SUDO make -j $NUM_CPU  
-	$SUDO make check 
-	$SUDO make install 
-	cd ../
     fi
-
 }
+
 check_install_freediamter(){
     
     if [ $UBUNTU_REL = "12.04" ]; then 
