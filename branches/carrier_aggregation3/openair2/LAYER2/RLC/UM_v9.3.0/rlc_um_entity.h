@@ -38,6 +38,7 @@
 #    ifndef __RLC_UM_ENTITY_H__
 #        define __RLC_UM_ENTITY_H__
 
+#        include <pthread.h>
 #        include "platform_types.h"
 #        include "platform_constants.h"
 #        include "list.h"
@@ -93,11 +94,9 @@ typedef struct rlc_um_entity_s {
   // tranmission
   //-----------------------------
   // sdu communication;
-  mem_block_t        **input_sdus;                /*!< \brief Input SDU buffer (for SDUs coming from upper layers). Should be accessed as an array. */
-  uint16_t             size_input_sdus_buffer;    /*!< \brief Size of the input SDU buffer. */
-  uint16_t             nb_sdu;                    /*!< \brief Total number of SDUs in input_sdus[] */
-  uint16_t             next_sdu_index;            /*!< \brief Next SDU index for a new incomin SDU in input_sdus[]. */
-  uint16_t             current_sdu_index;         /*!< \brief Current SDU index in input_sdus array to be segmented. */
+  //pthread_spinlock_t lock_input_sdus;
+  pthread_mutex_t      lock_input_sdus;
+  list_t               input_sdus;                /*!< \brief Input SDU buffer (for SDUs coming from upper layers). Should be accessed as an array. */
   rlc_buffer_occupancy_t buffer_occupancy;          /*!< \brief Number of bytes contained in input_sdus buffer.*/
   uint32_t             nb_bytes_requested_by_mac; /*!< \brief Number of bytes requested by lower layer for next transmission. */
   list_t               pdus_to_mac_layer;         /*!< \brief PDUs buffered for transmission to MAC layer. */
@@ -107,6 +106,9 @@ typedef struct rlc_um_entity_s {
   mem_block_t      *output_sdu_in_construction;     /*!< \brief Memory area where a complete SDU is reassemblied before being send to upper layers. */
   sdu_size_t        output_sdu_size_to_write;       /*!< \brief Size of the reassemblied SDU. */
 
+
+  //pthread_spinlock_t lock_dar_buffer;
+  pthread_mutex_t      lock_dar_buffer;
   mem_block_t     **dar_buffer;                     /*!< \brief Array of rx PDUs. */
   list_t            pdus_from_mac_layer;            /*!< \brief Not Used. */
 

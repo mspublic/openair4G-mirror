@@ -51,6 +51,12 @@
 #include "sgw_lite_defs.h"
 #include "intertask_interface.h"
 
+#ifdef LIBCONFIG_LONG
+#define libconfig_int long
+#else
+#define libconfig_int int
+#endif
+
 #define NIPADDR(addr) \
         (uint8_t)(addr & 0x000000FF), \
         (uint8_t)((addr & 0x0000FF00) >> 8), \
@@ -125,42 +131,139 @@ sgw_ipv6_mask_in6_addr(
 }
 
 
-/*int is_valid_ip_address(char *addr_pP, int ai_familyP , struct sockaddr *sock_addr_pP) {
-    struct addrinfo      hints;
-    struct addrinfo     *result, *rp;
-    int                  sfd, s;
+int spgw_system(char *command_pP, int abort_on_errorP) {
+  int ret = -1;
+  if (command_pP) {
+      SPGW_APP_INFO("system command: %s\n",command_pP);
+      ret = system(command_pP);
+      if (ret < 0) {
+          SPGW_APP_ERROR("ERROR in system command %s: %d\n",
+                     command_pP,ret);
+          if (abort_on_errorP) {
+              exit(-1); // may be not exit
+          }
+      }
+  }
+  return ret;
+}
 
-    if (addr_pP == NULL) {
-        SPGW_APP_ERROR("Bad parameter addr is NULL\n");
-        return 0;
-    }
-    if ((ai_familyP != AF_INET) && (ai_familyP != AF_INET6)) {
-        SPGW_APP_ERROR("Bad parameter ai_family:%d\n", ai_familyP);
-        return 0;
-    }
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family    = ai_familyP;    //  AF_INET, AF_INET6
-    hints.ai_socktype  = 0;             // UDP or TCP
-    hints.ai_flags     = AI_PASSIVE;    // For wildcard IP address
-    hints.ai_protocol  = 0;             // Any protocol
-    hints.ai_canonname = NULL;
-    hints.ai_addr      = NULL;
-    hints.ai_next      = NULL;
+int spgw_config_process(spgw_config_t* config_pP) {
+  char              system_cmd[256];
+  struct in_addr    inaddr;
+  int               ret = 0;
 
-    s = getaddrinfo(NULL, addr_pP, &hints, &result);
-    if (s != 0) {
-        SPGW_APP_ERROR("getaddrinfo: %s\n", gai_strerror(s));
-        return 0;
+  if (strncasecmp("tun",config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up, strlen("tun")) == 0) {
+        if (snprintf(system_cmd, 256,
+                "ip link set %s down ;openvpn --rmtun --dev %s",
+                config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up,
+                config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up
+                ) > 0) {
+            ret += spgw_system(system_cmd, 1);
+        } else {
+            SPGW_APP_ERROR("Del %s\n", config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up);
+            ret = -1;
+        }
+        if (snprintf(system_cmd, 256,
+                "openvpn --mktun --dev %s;sync;ifconfig  %s up;sync",
+                config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up,
+                config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up) > 0) {
+            ret += spgw_system(system_cmd, 1);
+        } else {
+            SPGW_APP_ERROR("Create %s\n", config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up);
+            ret = -1;
+        }
+        inaddr.s_addr = config_pP->sgw_config.ipv4.sgw_ipv4_address_for_S1u_S12_S4_up;
+        if (snprintf(system_cmd, 256,
+                "ip -4 addr add %s/%d  dev %s",
+                inet_ntoa(inaddr),
+                config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S1u_S12_S4_up,
+                config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up) > 0) {
+        	ret += spgw_system(system_cmd, 1);
+        } else {
+            SPGW_APP_ERROR("Set IPv4 address on %s\n", config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up);
+            ret = -1;
+        }
+
+        if (snprintf(system_cmd, 128,
+            "iptables -t filter -I INPUT -i lo -d %s --protocol sctp -j DROP",
+            inet_ntoa(inaddr)) > 0) {
+            ret += spgw_system(system_cmd, 1);
+        } else {
+            SPGW_APP_ERROR("Drop SCTP traffic on S1U\n");
+            ret = -1;
+        }
+        if (snprintf(system_cmd, 128,
+            "iptables -t filter -I INPUT -i lo -s %s --protocol sctp -j DROP",
+            inet_ntoa(inaddr)) > 0) {
+            ret += spgw_system(system_cmd, 1);
+        } else {
+            SPGW_APP_ERROR("Drop SCTP traffic on S1U\n");
+            ret = -1;
+        }
     }
 
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        memcpy(sock_addr_pP, (char*)rp->ai_addr, rp->ai_addrlen);
-        printf ("Found sock addr length %d\n", rp->ai_addrlen);
-        freeaddrinfo(result);
-        return 1;
+#if defined (ENABLE_USE_GTPU_IN_KERNEL)
+  ret += spgw_system("echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects", 1);
+#endif
+
+    if (snprintf(system_cmd, 256,
+            "ip link set dev %s mtu %u",
+            config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up,
+            config_pP->sgw_config.sgw_interface_mtu_for_S1u_S12_S4_up) > 0) {
+        SPGW_APP_INFO("Set S1U interface MTU: %s\n",system_cmd);
+        ret += spgw_system(system_cmd, 1);
+    } else {
+        SPGW_APP_ERROR("Set S1U interface MTU\n");
+        ret = -1;
     }
-    return 0;
-}*/
+
+    if (config_pP->sgw_config.sgw_drop_uplink_traffic) {
+    	if (snprintf(system_cmd, 128,
+    			"iptables -t raw -I PREROUTING  -i %s --protocol udp --destination-port 2152  -j DROP",
+    			config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up) > 0) {
+    		SPGW_APP_INFO("Drop uplink traffic: %s\n",system_cmd);
+    		ret += spgw_system(system_cmd, 1);
+    	} else {
+    	   SPGW_APP_ERROR("Drop uplink traffic\n");
+           ret = -1;
+    	}
+    }
+
+    if (config_pP->pgw_config.pgw_masquerade_SGI) {
+    	if (snprintf(system_cmd, 128,
+    			"iptables -t nat -A POSTROUTING  -o %s  ! --protocol sctp -j MASQUERADE",
+    			config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI) > 0) {
+    		SPGW_APP_INFO("Masquerade SGI: %s\n",system_cmd);
+    		ret += spgw_system(system_cmd,1);
+    	} else {
+    		SPGW_APP_ERROR("Masquerade SGI\n");
+            ret = -1;
+    	}
+    }
+#if defined (ENABLE_USE_GTPU_IN_KERNEL)
+    if (snprintf(system_cmd, 128,
+    		//"iptables -I POSTROUTING -t mangle -o %s -m state --state NEW  -m mark ! --mark 0 ! --protocol sctp  -j CONNMARK --save-mark",
+    		"iptables -I POSTROUTING -t mangle -o %s -m mark ! --mark 0 ! --protocol sctp  -j CONNMARK --save-mark",
+    		config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI) > 0) {
+    	SPGW_APP_INFO("Save mark: %s\n",system_cmd);
+    	ret += spgw_system(system_cmd, 1);
+    } else {
+    	SPGW_APP_ERROR("Save mark\n");
+        ret = -1;
+    }
+    if (snprintf(system_cmd, 128,
+    		"iptables -I PREROUTING -t mangle -i %s ! --protocol sctp   -j CONNMARK --restore-mark",
+    		config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI) > 0) {
+    	SPGW_APP_INFO("Restore mark: %s\n",system_cmd);
+    	ret += spgw_system(system_cmd, 1);
+    } else {
+        SPGW_APP_ERROR("Restore mark\n");
+        ret = -1;
+    }
+#endif
+   return ret;
+}
+
 
 int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
 
@@ -172,6 +275,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
   char             *sgw_ipv4_address_for_S5_S8_up        = NULL;
   char             *sgw_interface_name_for_S11           = NULL;
   char             *sgw_ipv4_address_for_S11             = NULL;
+  char             *sgw_drop_uplink_s1u_traffic          = NULL;
+  char             *sgw_drop_downlink_s1u_traffic        = NULL;
+  libconfig_int     sgw_interface_mtu_for_S1u_S12_S4_up  = 1500;
 
   config_setting_t *setting_pgw                  = NULL;
   config_setting_t *subsetting                   = NULL;
@@ -180,9 +286,10 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
   char             *pgw_ipv4_address_for_S5_S8   = NULL;
   char             *pgw_interface_name_for_SGI   = NULL;
   char             *pgw_ipv4_address_for_SGI     = NULL;
+  char             *pgw_masquerade_SGI           = NULL;
+  char             *pgw_default_dns_ipv4_address = NULL;
+  char             *pgw_default_dns_sec_ipv4_address = NULL;
 
-  char             *delimiters=NULL;
-  char             *saveptr1 = NULL;
   char             *astring  = NULL;
   char             *atoken   = NULL;
   char             *atoken2  = NULL;
@@ -191,7 +298,6 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
   char             *mask     = NULL;
   int               num      = 0;
   int               i        = 0;
-  int               jh, jn;
   unsigned char     buf_in6_addr[sizeof(struct in6_addr)];
   struct in6_addr   addr6_start;
   struct in6_addr   addr6_mask;
@@ -202,7 +308,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
   struct in_addr    addr_mask;
   pgw_lite_conf_ipv4_list_elm_t *ip4_ref = NULL;
   pgw_lite_conf_ipv6_list_elm_t *ip6_ref = NULL;
-
+#if defined (ENABLE_USE_GTPU_IN_KERNEL)
+  char              system_cmd[256];
+#endif
 
   memset((char*)config_pP, 0 , sizeof(spgw_config_t));
   STAILQ_INIT(&config_pP->pgw_config.pgw_lite_ipv4_pool_list);
@@ -251,9 +359,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
 
               in_addr_var.s_addr = config_pP->sgw_config.ipv4.sgw_ipv4_address_for_S1u_S12_S4_up;
               SPGW_APP_INFO("Parsing configuration file found sgw_ipv4_address_for_S1u_S12_S4_up: %s/%d on %s\n",
-            		  inet_ntoa(in_addr_var),
-            		  config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S1u_S12_S4_up,
-            		  config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up);
+                      inet_ntoa(in_addr_var),
+                      config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S1u_S12_S4_up,
+                      config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up);
 
 
               config_pP->sgw_config.ipv4.sgw_interface_name_for_S5_S8_up = strdup(sgw_interface_name_for_S5_S8_up);
@@ -265,9 +373,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
               free(cidr);
               in_addr_var.s_addr = config_pP->sgw_config.ipv4.sgw_ipv4_address_for_S5_S8_up;
               SPGW_APP_INFO("Parsing configuration file found sgw_ipv4_address_for_S5_S8_up: %s/%d on %s\n",
-            		  inet_ntoa(in_addr_var),
-            		  config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S5_S8_up,
-            		  config_pP->sgw_config.ipv4.sgw_interface_name_for_S5_S8_up);
+                      inet_ntoa(in_addr_var),
+                      config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S5_S8_up,
+                      config_pP->sgw_config.ipv4.sgw_interface_name_for_S5_S8_up);
 
               config_pP->sgw_config.ipv4.sgw_interface_name_for_S11 = strdup(sgw_interface_name_for_S11);
               cidr = strdup(sgw_ipv4_address_for_S11);
@@ -278,9 +386,35 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
               free(cidr);
               in_addr_var.s_addr = config_pP->sgw_config.ipv4.sgw_ipv4_address_for_S11;
               SPGW_APP_INFO("Parsing configuration file found sgw_ipv4_address_for_S11: %s/%d on %s\n",
-            		  inet_ntoa(in_addr_var),
-            		  config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S11,
-            		  config_pP->sgw_config.ipv4.sgw_interface_name_for_S11);
+                      inet_ntoa(in_addr_var),
+                      config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S11,
+                      config_pP->sgw_config.ipv4.sgw_interface_name_for_S11);
+          }
+          // optional
+          if(config_setting_lookup_int(
+                  subsetting,
+                  SGW_CONFIG_STRING_SGW_INTERFACE_MTU_FOR_S1U_S12_S4_UP,
+                  &sgw_interface_mtu_for_S1u_S12_S4_up)
+            ) {
+                config_pP->sgw_config.sgw_interface_mtu_for_S1u_S12_S4_up = sgw_interface_mtu_for_S1u_S12_S4_up;
+          }
+      }
+      if(  (
+               config_setting_lookup_string( setting_sgw, SGW_CONFIG_STRING_SGW_DROP_UPLINK_S1U_TRAFFIC,
+                       (const char **)&sgw_drop_uplink_s1u_traffic)
+              && config_setting_lookup_string( setting_sgw, SGW_CONFIG_STRING_SGW_DROP_DOWNLINK_S1U_TRAFFIC,
+                      (const char **)&sgw_drop_downlink_s1u_traffic)
+            )
+        ) {
+          if (strcasecmp(sgw_drop_uplink_s1u_traffic, "yes") == 0) {
+              config_pP->sgw_config.sgw_drop_uplink_traffic=1;
+          } else {
+              config_pP->sgw_config.sgw_drop_uplink_traffic=0;
+          }
+          if (strcasecmp(sgw_drop_downlink_s1u_traffic, "yes") == 0) {
+              config_pP->sgw_config.sgw_drop_downlink_traffic=1;
+          } else {
+              config_pP->sgw_config.sgw_drop_downlink_traffic=0;
           }
       }
   }
@@ -303,6 +437,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
                   && config_setting_lookup_string(subsetting,
                           PGW_CONFIG_STRING_PGW_IPV4_ADDR_FOR_SGI,
                           (const char **)&pgw_ipv4_address_for_SGI)
+                  &&  config_setting_lookup_string(subsetting,
+                          PGW_CONFIG_STRING_PGW_MASQUERADE_SGI,
+                          (const char **)&pgw_masquerade_SGI)
                 )
             ) {
               config_pP->pgw_config.ipv4.pgw_interface_name_for_S5_S8 = strdup(pgw_interface_name_for_S5_S8);
@@ -314,9 +451,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
               free(cidr);
               in_addr_var.s_addr = config_pP->pgw_config.ipv4.pgw_ipv4_address_for_S5_S8;
               SPGW_APP_INFO("Parsing configuration file found pgw_ipv4_address_for_S5_S8: %s/%d on %s\n",
-            		  inet_ntoa(in_addr_var),
-            		  config_pP->pgw_config.ipv4.pgw_ip_netmask_for_S5_S8,
-            		  config_pP->pgw_config.ipv4.pgw_interface_name_for_S5_S8);
+                      inet_ntoa(in_addr_var),
+                      config_pP->pgw_config.ipv4.pgw_ip_netmask_for_S5_S8,
+                      config_pP->pgw_config.ipv4.pgw_interface_name_for_S5_S8);
 
               config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI = strdup(pgw_interface_name_for_SGI);
               cidr = strdup(pgw_ipv4_address_for_SGI);
@@ -327,15 +464,27 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
               free(cidr);
               in_addr_var.s_addr = config_pP->pgw_config.ipv4.pgw_ipv4_address_for_SGI;
               SPGW_APP_INFO("Parsing configuration file found pgw_ipv4_address_for_SGI: %s/%d on %s\n",
-            		  inet_ntoa(in_addr_var),
-            		  config_pP->pgw_config.ipv4.pgw_ip_netmask_for_SGI,
-            		  config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI);
+                      inet_ntoa(in_addr_var),
+                      config_pP->pgw_config.ipv4.pgw_ip_netmask_for_SGI,
+                      config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI);
+
+              if (strcasecmp(pgw_masquerade_SGI, "yes") == 0) {
+                  config_pP->pgw_config.pgw_masquerade_SGI=1;
+              } else {
+                  config_pP->pgw_config.pgw_masquerade_SGI=0;
+                  SPGW_APP_INFO("No masquerading for SGI\n");
+              }
           } else {
               SPGW_APP_WARN("CONFIG P-GW / NETWORK INTERFACES parsing failed\n");
           }
       } else {
           SPGW_APP_WARN("CONFIG P-GW / NETWORK INTERFACES not found\n");
       }
+
+      //!!!------------------------------------!!!
+      spgw_config_process(config_pP);
+      //!!!------------------------------------!!!
+
       subsetting = config_setting_get_member (setting_pgw, PGW_CONFIG_STRING_IP_ADDRESS_POOL);
       if(subsetting != NULL) {
           sub2setting = config_setting_get_member (subsetting, PGW_CONFIG_STRING_IPV4_ADDRESS_LIST);
@@ -352,6 +501,36 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
                               memcpy (&addr_start, buf_in_addr, sizeof(struct in_addr));
                               // valid address
                               atoken2 = strtok(NULL, PGW_CONFIG_STRING_IPV4_PREFIX_DELIMITER);
+#if defined (ENABLE_USE_GTPU_IN_KERNEL)
+                              if (snprintf(system_cmd, 128, "ip route add %s/%s dev %s",
+                                      astring,
+                                      atoken2,
+                                      config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up) > 0) {
+                                  SPGW_APP_INFO("Add route: %s\n",system_cmd);
+                                  spgw_system(system_cmd, 1);
+                              } else {
+                                  SPGW_APP_ERROR("Add route: for %s\n", astring);
+                              }
+
+                              if (config_pP->sgw_config.sgw_drop_downlink_traffic) {
+                                  if (snprintf(system_cmd, 128,
+                                          "iptables -t filter -I FORWARD  -d %s/%s  -j DROP",
+                                          astring, atoken2) > 0) {
+                                      SPGW_APP_INFO("Drop downlink traffic: %s\n",system_cmd);
+                                      spgw_system(system_cmd, 1);
+                                  } else {
+                                      SPGW_APP_ERROR("Drop downlink traffic\n");
+                                  }
+                                  if (snprintf(system_cmd, 128,
+                                          "iptables -t filter -I OUTPUT  -d %s/%s  -j DROP",
+                                          astring, atoken2) > 0) {
+                                      SPGW_APP_INFO("Drop downlink traffic: %s\n",system_cmd);
+                                      spgw_system(system_cmd, 1);
+                                  } else {
+                                      SPGW_APP_ERROR("Drop downlink traffic\n");
+                                  }
+                              }
+#endif
                               prefix_mask = atoi(atoken2);
                               if ((prefix_mask >= 2)&&(prefix_mask < 32)) {
                                   memcpy (&addr_start, buf_in_addr, sizeof(struct in_addr));
@@ -365,9 +544,9 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
                                   }
 
                                   counter64 = 0x00000000FFFFFFFF >> prefix_mask; // address Prefix_mask/0..0 not valid
-                                  counter64 = counter64 - 1;
+                                  counter64 = counter64 - 2;
                                   do {
-                                      addr_start.s_addr = addr_start.s_addr + htonl(1);
+                                      addr_start.s_addr = addr_start.s_addr + htonl(2);
                                       ip4_ref = calloc(1, sizeof(pgw_lite_conf_ipv4_list_elm_t));
                                       ip4_ref->addr       = addr_start;
 
@@ -385,6 +564,16 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
                           ip4_ref = calloc(1, sizeof(pgw_lite_conf_ipv4_list_elm_t));
                           ip4_ref->addr = addr_start;
                           STAILQ_INSERT_TAIL(&config_pP->pgw_config.pgw_lite_ipv4_pool_list, ip4_ref, ipv4_entries);
+#if defined (ENABLE_USE_GTPU_IN_KERNEL)
+                          if (snprintf(system_cmd, 128, "ip route add %s dev %s",
+                                  buf_in_addr,
+                                  config_pP->sgw_config.ipv4.sgw_interface_name_for_S1u_S12_S4_up) > 0) {
+                              SPGW_APP_INFO("Add route: %s\n",system_cmd);
+                              spgw_system(system_cmd, 1);
+                          } else {
+                              SPGW_APP_ERROR("Add route: for %s\n", buf_in_addr);
+                          }
+#endif
                       }
                   }
               }
@@ -427,6 +616,17 @@ int spgw_config_init(char* lib_config_file_name_pP, spgw_config_t* config_pP) {
                       }
                   }
               }
+          }
+          if(
+                  config_setting_lookup_string(subsetting,
+                          PGW_CONFIG_STRING_DEFAULT_DNS_IPV4_ADDRESS,
+                          (const char **)&pgw_default_dns_ipv4_address)
+                  && config_setting_lookup_string(subsetting,
+                          PGW_CONFIG_STRING_DEFAULT_DNS_SEC_IPV4_ADDRESS,
+                          (const char **)&pgw_default_dns_sec_ipv4_address)) {
+              config_pP->pgw_config.ipv4.pgw_interface_name_for_S5_S8 = strdup(pgw_interface_name_for_S5_S8);
+              IPV4_STR_ADDR_TO_INT_NWBO ( pgw_default_dns_ipv4_address,     config_pP->pgw_config.ipv4.default_dns_v4, "BAD IPv4 ADDRESS FORMAT FOR DEFAULT DNS !\n" )
+              IPV4_STR_ADDR_TO_INT_NWBO ( pgw_default_dns_sec_ipv4_address, config_pP->pgw_config.ipv4.default_dns_sec_v4, "BAD IPv4 ADDRESS FORMAT FOR DEFAULT DNS SEC!\n" )
           }
       }
   } else {

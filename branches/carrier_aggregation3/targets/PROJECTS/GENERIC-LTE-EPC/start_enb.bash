@@ -34,7 +34,7 @@
 # email: lionel.gauthier@eurecom.fr
 ###########################################
 # INPUT OF THIS SCRIPT:
-# THE DIRECTORY WHERE ARE LOCATED THE CONFIGURATION FILES
+# The eNB config file
 #########################################
 # This script start  ENB  
 # Depending on configuration files, it can be instanciated a virtual switch 
@@ -48,10 +48,11 @@
 ###########################################################
 declare EMULATION_DEV_INTERFACE="eth1"
 declare EMULATION_MULTICAST_GROUP=1
+declare EMULATION_DEV_ADDRESS=`ifconfig $EMULATION_DEV_INTERFACE | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'`
 
-declare MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim DEBUG=1 ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 NAS=1 Rel10=1 SECU=1 RRC_MSG_PRINT=1"
-declare MAKE_LTE_ACCESS_STRATUM_TARGET_RT="lte-softmodem DEBUG=1  RTAI=1 HARD_RT=1 ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 DISABLE_XER_PRINT=1 SECU=1 RRC_MSG_PRINT=1 "
-
+declare MAKE_LTE_ACCESS_STRATUM_TARGET="oaisim DEBUG=1 ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 NAS=1 SECU=1 RRC_MSG_PRINT=1"
+declare MAKE_LTE_ACCESS_STRATUM_TARGET_RTAI="lte-softmodem DEBUG=1  RTAI=1 HARD_RT=1 EXMIMO=1  ENABLE_ITTI=1 USE_MME=R10 LINK_PDCP_TO_GTPV1U=1 DISABLE_XER_PRINT=1 SECU=1 RRC_MSG_PRINT=1 "
+declare MAKE_LTE_ACCESS_STRATUM_TARGET_LINUX_KERNEL="lte-softmodem  DEBUG=0 XFORMS=0 USE_MME=R10 ENABLE_ITTI=1 LINK_PDCP_TO_GTPV1U=1 SECU=1 DISABLE_XER_PRINT=1 EXMIMO=1  Rel8=1  RTAI=0"
 
 ###########################################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
@@ -59,35 +60,21 @@ THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 . $THIS_SCRIPT_PATH/interfaces.bash
 . $THIS_SCRIPT_PATH/networks.bash
 ###########################################################
-if [ $# -eq 1 ]; then
-    declare -x CONFIG_FILE_DIR=$1
-    if [ ! -d $CONFIG_FILE_DIR ]; then
-        echo_error "ERROR while invoking this script, as first argument to this script you have to provide the path to a directory (./CONF/VLAN.VIRTUAL.$HOSTNAME for example) containing valid epc and enb config files"
-        exit 1
-    fi
-else
-    echo_error "ERROR while invoking this script, as first argument to this script you have to provide the path to a directory  (./CONF/VLAN.VIRTUAL.$HOSTNAME for example) containing valid epc and enb config files"
-    exit 1
-fi
-
-
 #check_install_epc_software
-
-
-
 cd $THIS_SCRIPT_PATH
-
-EMULATION_DEV_ADDRESS=`ifconfig $EMULATION_DEV_INTERFACE | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'`
 
 #######################################################
 # FIND CONFIG FILE
 #######################################################
-SEARCHED_CONFIG_FILE_ENB="enb*.conf"
-CONFIG_FILE_ENB=$THIS_SCRIPT_PATH/`find $CONFIG_FILE_DIR -iname $SEARCHED_CONFIG_FILE_ENB`
+DEFAULT_CONFIG_FILE="enb.`hostname -s`.conf"
+CONFIG_FILE_ENB=${1:-DEFAULT_CONFIG_FILE}
+CONFIG_FILE_ENB=`readlink -m $CONFIG_FILE_ENB`
+
+echo "CONFIG_FILE_ENB=$CONFIG_FILE_ENB"
 if [ -f $CONFIG_FILE_ENB ]; then
-    echo_warning "eNB config file found is now $CONFIG_FILE_ENB"
+    echo_warning "ENB config file found is now $CONFIG_FILE_ENB"
 else
-    echo_error "eNB config file not found, exiting"
+    echo_error "ENB config file not found, exiting (searched for $CONFIG_FILE_ENB)"
     exit 1
 fi
 
@@ -95,11 +82,7 @@ fi
 # SOURCE CONFIG FILE
 #######################################################
 rm -f /tmp/source.txt
-VARIABLES="
-           ENB_INTERFACE_NAME_FOR_S1_MME\|\
-           ENB_IPV4_ADDRESS_FOR_S1_MME\|\
-           ENB_INTERFACE_NAME_FOR_S1U\|\
-           ENB_IPV4_ADDRESS_FOR_S1U\|\
+VARIABLES="GNU_DEBUGGER\|\
            real_time"
 
 VARIABLES=$(echo $VARIABLES | sed -e 's/\\r//g')
@@ -107,63 +90,23 @@ VARIABLES=$(echo $VARIABLES | tr -d ' ')
 cat $CONFIG_FILE_ENB | grep -w "$VARIABLES"| tr -d " " | tr -d ";" > /tmp/source.txt
 source /tmp/source.txt
 
-declare ENB_IPV4_NETMASK_FOR_S1_MME=$(       echo $ENB_IPV4_ADDRESS_FOR_S1_MME        | cut -f2 -d '/')
-declare ENB_IPV4_NETMASK_FOR_S1U=$(          echo $ENB_IPV4_ADDRESS_FOR_S1U        | cut -f2 -d '/')
-
-ENB_IPV4_ADDRESS_FOR_S1_MME=$(               echo $ENB_IPV4_ADDRESS_FOR_S1_MME        | cut -f1 -d '/')
-ENB_IPV4_ADDRESS_FOR_S1U=$(                  echo $ENB_IPV4_ADDRESS_FOR_S1U           | cut -f1 -d '/')
-
-
 ##################################################
 # LAUNCH eNB executable
 ##################################################
-pkill oaisim
-pkill tshark
+echo "GNU_DEBUGGER:"$GNU_DEBUGGER
 
-if [ ! -d $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME ]; then 
-    mkdir -m 777 -p $THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME
-fi
-
-if [ x$real_time != "xhard" ]; then
-    ITTI_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/itti_enb_ue.$HOSTNAME.log
-    #rotate_log_file $ITTI_LOG_FILE
-    
-    STDOUT_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/stdout_enb_ue.$HOSTNAME.log
-    #rotate_log_file $STDOUT_LOG_FILE
-    #rotate_log_file $STDOUT_LOG_FILE.filtered
-    
-    PCAP_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/tshark_enb_ue.$HOSTNAME.pcap
-    #rotate_log_file $PCAP_LOG_FILE
-else 
-    ITTI_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/itti_enb_rf.$HOSTNAME.log
-    #rotate_log_file $ITTI_LOG_FILE
-    
-    STDOUT_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/stdout_enb_rf.$HOSTNAME.log
-    #rotate_log_file $STDOUT_LOG_FILE
-    #rotate_log_file $STDOUT_LOG_FILE.filtered
-    
-    PCAP_LOG_FILE=$THIS_SCRIPT_PATH/OUTPUT/$HOSTNAME/tshark_enb_rf.$HOSTNAME.pcap
-    #rotate_log_file $PCAP_LOG_FILE
-fi
-
-
-cd $THIS_SCRIPT_PATH
-
-if [ x$ENB_INTERFACE_NAME_FOR_S1_MME == x$ENB_INTERFACE_NAME_FOR_S1U ]; then 
-    nohup tshark -i $ENB_INTERFACE_NAME_FOR_S1_MME -w $PCAP_LOG_FILE &
-else
-    nohup tshark -i $ENB_INTERFACE_NAME_FOR_S1_MME -i $ENB_INTERFACE_NAME_FOR_S1U -w $PCAP_LOG_FILE &
-fi
-
-
-if [ x$real_time == "xno" ]; then
-    echo_warning "USER MODE"
+if [ x$real_time == "xemulation" ]; then
+    echo_warning "emulation mode"
     make --directory=$OPENAIR_TARGETS/SIMU/USER $MAKE_LTE_ACCESS_STRATUM_TARGET -j`grep -c ^processor /proc/cpuinfo ` || exit 1
     bash_exec "ip route add 239.0.0.160/28 dev $EMULATION_DEV_INTERFACE"
-    gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -a  -l9 -u0 -b1 -M0 -p2  -g$EMULATION_MULTICAST_GROUP -D $EMULATION_DEV_ADDRESS -K $ITTI_LOG_FILE --enb-conf $CONFIG_FILE_ENB 2>&1 | tee $STDOUT_LOG_FILE 
+    if [ "x$GNU_DEBUGGER" == "xyes" ]; then
+        gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim -a  -l9 -u0 -b1 -M0 -p2  -g$EMULATION_MULTICAST_GROUP -D $EMULATION_DEV_ADDRESS -K /tmp/itti_enb_emul.log --enb-conf $CONFIG_FILE_ENB 2>&1 | tee /tmp/stdout_enb_emul.log
+    else
+        $OPENAIR_TARGETS/SIMU/USER/oaisim -a  -l9 -u0 -b1 -M0 -p2  -g$EMULATION_MULTICAST_GROUP -D $EMULATION_DEV_ADDRESS -K /tmp/itti_enb_emul.log --enb-conf $CONFIG_FILE_ENB 2>&1 | tee /tmp/stdout_enb_emul.log
+    fi 
 else
-    if [ x$real_time == "xhard" ]; then
-        echo_warning "HARD REAL TIME MODE"
+    if [ x$real_time == "xrtai" ]; then
+        echo_warning "rtai mode"
         PATH=$PATH:/usr/realtime/bin
 
         #make --directory=$OPENAIR_TARGETS/RT/USER drivers  || exit 1
@@ -172,7 +115,7 @@ else
         cd $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make   || exit 1
         cd $THIS_SCRIPT_PATH
 
-        make --directory=$OPENAIR_TARGETS/RT/USER $MAKE_LTE_ACCESS_STRATUM_TARGET_RT -j`grep -c ^processor /proc/cpuinfo ` || exit 1
+        make --directory=$OPENAIR_TARGETS/RT/USER $MAKE_LTE_ACCESS_STRATUM_TARGET_RTAI -j`grep -c ^processor /proc/cpuinfo ` || exit 1
 
         if [ ! -f /tmp/init_rt_done.tmp ]; then
             echo_warning "STARTING REAL TIME (RTAI)"
@@ -191,18 +134,51 @@ else
         bash ./init_exmimo2.sh
         echo_warning "STARTING SOFTMODEM..."
         #cat /dev/rtf62 > $STDOUT_LOG_FILE &
-        gdb --args ./lte-softmodem -K $ITTI_LOG_FILE -V  -O $CONFIG_FILE_ENB  2>&1
-        cd $THIS_SCRIPT_PATH
+        if [ "x$GNU_DEBUGGER" == "xyes" ]; then
+            touch ~/.gdbinit
+            echo "file $OPENAIR_TARGETS/RT/USER/lte-softmodem" > ~/.gdbinit
+            echo "set args -K /tmp/itti_enb_rtai.log -V  -O $CONFIG_FILE_ENB" >> ~/.gdbinit
+            echo "run" >> ~/.gdbinit
+            gdb  2>&1 
+             #> $STDOUT_LOG_FILE
+            #gdb --args ./lte-softmodem -K /tmp/itti_enb_rtai.log -V  -O $CONFIG_FILE_ENB  2>&1
+            cd $THIS_SCRIPT_PATH
+        else
+            $OPENAIR_TARGETS/RT/USER/lte-softmodem -K $/tmp/itti_enb_rtai.log -V  -O $CONFIG_FILE_ENB
+        fi
     else
-        if [ x$real_time == "xrt-preempt" ]; then
-            echo_fatal "TODO RT-PREEMT"
+        if [ x$real_time == "xlinux-kernel" ]; then
+            echo_warning "LINUX_KERNEL MODE"
+
+            #make --directory=$OPENAIR_TARGETS/RT/USER drivers  || exit 1
+            # 2 lines below replace the line above
+            cd $OPENAIR_TARGETS/ARCH/EXMIMO/DRIVER/eurecom && make clean && make   || exit 1
+            cd $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make   || exit 1
+            cd $THIS_SCRIPT_PATH
+
+            make --directory=$OPENAIR_TARGETS/RT/USER $MAKE_LTE_ACCESS_STRATUM_TARGET_LINUX_KERNEL -j`grep -c ^processor /proc/cpuinfo ` || exit 1
+
+            cd $OPENAIR_TARGETS/RT/USER
+            bash ./init_exmimo2.sh
+            echo_warning "STARTING SOFTMODEM..."
+            if [ "x$GNU_DEBUGGER" == "xyes" ]; then
+                touch .gdbinit_enb
+                echo "file $OPENAIR_TARGETS/RT/USER/lte-softmodem" > ~/.gdbinit_enb
+                echo "set args -K /tmp/itti_enb_low_latency.log -V  -O $CONFIG_FILE_ENB" >> ~/.gdbinit_enb
+                echo "run" >> ~/.gdbinit_enb
+                gdb -nh -x ~/.gdbinit_enb 2>&1 
+                #> /tmp/stdout_enb_low_latency.log 
+            else
+                $OPENAIR_TARGETS/RT/USER/lte-softmodem  -K /tmp/itti_enb_low_latency.log -V  -O $CONFIG_FILE_ENB
+            fi
+            cd $THIS_SCRIPT_PATH
+        else
+            echo_error "UNKNOWN REAL-TIME MODE real_time"
         fi
     fi
 fi
 
-pkill tshark
-
-cat $STDOUT_LOG_FILE |  grep -v '[PHY]' | grep -v '[MAC]' | grep -v '[EMU]' | \
-                        grep -v '[OCM]' | grep -v '[OMG]' | \
-                        grep -v 'RLC not configured' | grep -v 'check if serving becomes' | \
-                        grep -v 'mac_rrc_data_req'   | grep -v 'BCCH request =>' > $STDOUT_LOG_FILE.filtered
+#cat $STDOUT_LOG_FILE |  grep -v '[PHY]' | grep -v '[MAC]' | grep -v '[EMU]' | \
+#                        grep -v '[OCM]' | grep -v '[OMG]' | \
+#                        grep -v 'RLC not configured' | grep -v 'check if serving becomes' | \
+#                        grep -v 'mac_rrc_data_req'   | grep -v 'BCCH request =>' > $STDOUT_LOG_FILE.filtered

@@ -109,10 +109,22 @@ typedef struct {
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Number of layers for this PDSCH transmission
-  uint8_t Nlayers;
-  /// First layer for this PSCH transmission
-  uint8_t first_layer;
+  /// Current RB allocation
+  uint32_t rb_alloc[4];
+  /// Current subband PMI allocation
+  uint16_t pmi_alloc;
+  /// Current subband RI allocation
+  uint32_t ri_alloc;
+  /// Current subband CQI1 allocation
+  uint32_t cqi_alloc1;
+  /// Current subband CQI2 allocation
+  uint32_t cqi_alloc2;
+  /// Current Number of RBs
+  uint16_t nb_rb;
+  /// downlink power offset field
+  uint8_t dl_power_off;
+  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  uint8_t e[MAX_NUM_CHANNEL_BITS];
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
   uint8_t d[MAX_NUM_DLSCH_SEGMENTS][(96+3+(3*6144))];  
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
@@ -129,8 +141,12 @@ typedef struct {
   uint32_t Kplus;                     
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
   uint32_t F;                         
-  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
+  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17, TM3-4)
   uint8_t Nl;                       
+  /// Number of layers for this PDSCH transmission (TM8-10)
+  uint8_t Nlayers;
+  /// First layer for this PSCH transmission
+  uint8_t first_layer;
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
@@ -221,34 +237,16 @@ typedef struct {
   uint8_t ra_window_size;
   /// First-round error threshold for fine-grain rate adaptation
   uint8_t error_threshold;
-  /// Current RB allocation
-  uint32_t rb_alloc[4];
-  /// Current subband PMI allocation
-  uint16_t pmi_alloc;
-  /// Current subband RI allocation
-  uint32_t ri_alloc;
-  /// Current subband CQI1 allocation
-  uint32_t cqi_alloc1;
-  /// Current subband CQI2 allocation
-  uint32_t cqi_alloc2;
-  /// Current Number of RBs
-  uint16_t nb_rb;
   /// Pointers to 8 HARQ processes for the DLSCH
   LTE_DL_eNB_HARQ_t *harq_processes[8];     
   /// Number of soft channel bits
   uint32_t G;
-  /// Layer index for this dlsch (0,1)
-  uint8_t layer_index;          
   /// Codebook index for this dlsch (0,1,2,3)
   uint8_t codebook_index;          
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
-  uint8_t e[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   uint8_t Mdlharq;  
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
-  /// downlink power offset field
-  uint8_t dl_power_off;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots 
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
@@ -355,16 +353,52 @@ typedef struct {
   uint32_t TBS;
   /// The payload + CRC size in bits  
   uint32_t B; 
+  /// CQI CRC status
+  uint8_t cqi_crc_status;
+  /// Pointer to CQI data
+  uint8_t o[MAX_CQI_BYTES];
+  /// Format of CQI data 
+  UCI_format_t uci_format;
+  /// Length of CQI data under RI=1 assumption(bits)
+  uint8_t Or1;
+  /// Length of CQI data under RI=2 assumption(bits)
+  uint8_t Or2;
+  /// Rank information 
+  uint8_t o_RI[2];
+  /// Length of rank information (bits)
+  uint8_t O_RI;
+  /// Pointer to ACK
+  uint8_t o_ACK[4];
   /// Length of ACK information (bits)
   uint8_t O_ACK;
   /// The value of DAI in DCI format 0 
   uint8_t V_UL_DAI;
+  /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
+  int8_t q[MAX_CQI_PAYLOAD];
+  /// number of coded CQI bits after interleaving
+  uint8_t o_RCC;
+  /// coded and interleaved CQI bits
+  int8_t o_w[(MAX_CQI_BITS+8)*3];
+  /// coded CQI bits
+  int8_t o_d[96+((MAX_CQI_BITS+8)*3)];
+  /// coded ACK bits
+  int16_t q_ACK[MAX_ACK_PAYLOAD];
+  /// coded RI bits
+  int16_t q_RI[MAX_RI_PAYLOAD];
+  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  int16_t e[MAX_NUM_CHANNEL_BITS];
+  /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
+  uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Pointer to the payload
   uint8_t *b;  
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
   uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS]; 
+  /// Current Number of Symbols
+  uint8_t Nsymb_pusch;
+  /// SRS active flag
+  uint8_t srs_active;
   /// Index of current HARQ round for this ULSCH
   uint8_t round; 
   /// MCS format for this ULSCH
@@ -404,50 +438,14 @@ typedef struct {
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {
-  /// Current Number of Symbols
-  uint8_t Nsymb_pusch;
-  /// SRS active flag
-  uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_eNB_HARQ_t *harq_processes[8];     
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
-  int16_t e[MAX_NUM_CHANNEL_BITS];
-  /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
-  uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   uint8_t Mdlharq; 
   /// Maximum number of iterations used in eNB turbo decoder
   uint8_t max_turbo_iterations;
-  /// CQI CRC status
-  uint8_t cqi_crc_status;
-  /// Pointer to CQI data
-  uint8_t o[MAX_CQI_BYTES];
-  /// Format of CQI data 
-  UCI_format_t uci_format;
-  /// Length of CQI data under RI=1 assumption(bits)
-  uint8_t Or1;
-  /// Length of CQI data under RI=2 assumption(bits)
-  uint8_t Or2;
-  /// Rank information 
-  uint8_t o_RI[2];
-  /// Length of rank information (bits)
-  uint8_t O_RI;
-  /// Pointer to ACK
-  uint8_t o_ACK[4];
   /// ACK/NAK Bundling flag
   uint8_t bundling;
-  /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
-  int8_t q[MAX_CQI_PAYLOAD];
-  /// number of coded CQI bits after interleaving
-  uint8_t o_RCC;
-  /// coded and interleaved CQI bits
-  int8_t o_w[(MAX_CQI_BITS+8)*3];
-  /// coded CQI bits
-  int8_t o_d[96+((MAX_CQI_BITS+8)*3)];
-  /// coded ACK bits
-  int16_t q_ACK[MAX_ACK_PAYLOAD];
-  /// coded RI bits
-  int16_t q_RI[MAX_RI_PAYLOAD];
   /// beta_offset_cqi times 8
   uint16_t beta_offset_cqi_times8;
   /// beta_offset_ri times 8
@@ -637,8 +635,6 @@ typedef struct {
   harq_status_t harq_ack[10];
   /// Pointers to up to 8 HARQ processes
   LTE_DL_UE_HARQ_t *harq_processes[8];   
-  /// Layer index for this DLSCH
-  uint8_t layer_index;              
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
   uint8_t Mdlharq;              
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
@@ -650,7 +646,6 @@ typedef struct {
 typedef enum {format0,
 	      format1,
 	      format1A,
-	      format1A_RA,
 	      format1B,
 	      format1C,
 	      format1D,

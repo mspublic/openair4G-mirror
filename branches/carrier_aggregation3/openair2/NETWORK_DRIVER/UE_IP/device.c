@@ -48,6 +48,7 @@
 #include "proto_extern.h"
 
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/moduleparam.h>
@@ -320,11 +321,7 @@ void ue_ip_init(struct net_device *dev_pP){
         priv_p = netdev_priv(dev_pP);
         memset(priv_p, 0, sizeof(ue_ip_priv_t));
         spin_lock_init(&priv_p->lock);
-        #ifdef KERNEL_VERSION_GREATER_THAN_2629
         dev_pP->netdev_ops = &ue_ip_netdev_ops;
-        #else
-        #error "KERNEL VERSION MUST BE NEWER THAN 2.6.29"
-        #endif
         dev_pP->hard_header_len = 0;
         dev_pP->addr_len = UE_IP_ADDR_LEN;
         dev_pP->flags = IFF_BROADCAST|IFF_MULTICAST|IFF_NOARP;
@@ -348,7 +345,11 @@ int init_module (void) {
   for (inst=0;inst<UE_IP_NB_INSTANCES_MAX;inst++) {
     printk("[UE_IP_DRV][%s] begin init instance %d\n", __FUNCTION__,inst);
     sprintf(devicename,"oip%d",inst);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     ue_ip_dev[inst]  = alloc_netdev(sizeof(ue_ip_priv_t),devicename, ue_ip_init);
+#else
+    ue_ip_dev[inst]  = alloc_netdev(sizeof(ue_ip_priv_t),devicename, NET_NAME_PREDICTABLE,ue_ip_init);
+#endif
     //netif_stop_queue(ue_ip_dev[inst]);
     if (ue_ip_dev[inst] == NULL) {
          printk("[UE_IP_DRV][%s][INST %02d] alloc_netdev FAILED\n", __FUNCTION__,inst);

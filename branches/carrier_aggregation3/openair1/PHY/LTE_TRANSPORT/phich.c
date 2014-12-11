@@ -1283,6 +1283,9 @@ void rx_phich(PHY_VARS_UE *phy_vars_ue,
       //      ulsch->harq_processes[harq_pid]->Ndi = 0;
       ulsch->harq_processes[harq_pid]->round++;
       ulsch->harq_processes[harq_pid]->rvidx = rv_table[ulsch->harq_processes[harq_pid]->round&3];
+      ulsch->O_RI = 0;
+      ulsch->O    = 0;
+      ulsch->uci_format = HLC_subband_cqi_nopmi;
     }
 
 
@@ -1346,11 +1349,9 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
     if ((ulsch_eNB[UE_id])&&(ulsch_eNB[UE_id]->rnti>0)) {
-      LOG_D(PHY,"[eNB][PUSCH %d/%x] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
-	    harq_pid,ulsch_eNB[UE_id]->rnti,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,pusch_subframe,pusch_frame,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active);      
       if (ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active == 1) {
 
-      LOG_D(PHY,"[eNB][PUSCH %d/%x] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
+	LOG_D(PHY,"[eNB][PUSCH %d/%x] Frame %d subframe %d (pusch_subframe %d,pusch_frame %d) phich active %d\n",
 	    harq_pid,ulsch_eNB[UE_id]->rnti,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,pusch_subframe,pusch_frame,ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_active);
       
 	ngroup_PHICH = (ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb + 
@@ -1395,6 +1396,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			      subframe);
 	  */
 	}
+
 	// if no format0 DCI was transmitted by MAC, prepare the 
 	// MCS parameters for the retransmission
 
@@ -1407,6 +1409,11 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 	    //	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->Ndi = 0;
 	    //	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->round++; //this is already done in phy_procedures
 	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->rvidx = rv_table[ulsch_eNB[UE_id]->harq_processes[harq_pid]->round&3];
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->O_RI                                  = 0;
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->Or2                                   = 0;
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->Or1                                   = 0;//sizeof_HLC_subband_cqi_nopmi_5MHz;
+	    ulsch_eNB[UE_id]->harq_processes[harq_pid]->uci_format                            = HLC_subband_cqi_nopmi;
+	    
 	  }
 	  else {
 	    LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d PHICH ACK (no format0 DCI) Clearing subframe_scheduling_flag, setting round to 0\n",

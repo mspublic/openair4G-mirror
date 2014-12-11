@@ -47,7 +47,6 @@
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
@@ -521,8 +520,11 @@ int main(int argc, char **argv) {
     hostname[1023] = '\0';
     gethostname(hostname, 1023);
     printf("Hostname: %s\n", hostname);
-    sprintf(time_meas_fname,"%s//SIMU/USER/pre-ci-logs-%s/time_meas_prb%d_mcs%d_antrx%d_channel%s_tx%d.csv",
-	    getenv("OPENAIR_TARGETS"),hostname,
+    char dirname[FILENAME_MAX];
+    sprintf(dirname, "%s//SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname);
+    mkdir(dirname, 0777);
+    sprintf(time_meas_fname,"%s/time_meas_prb%d_mcs%d_antrx%d_channel%s_tx%d.csv",
+	    dirname,
 	    N_RB_DL,mcs,n_rx,channel_model_input,transmission_mode);
     time_meas_fd = fopen(time_meas_fname,"w");
   }
@@ -959,7 +961,7 @@ int main(int argc, char **argv) {
 	    if ((cqi_flag == 1) && (n_frames == 1) ) {
 	      printf("CQI information (O %d) %d %d\n",PHY_vars_UE->ulsch_ue[0]->O,
 		     PHY_vars_UE->ulsch_ue[0]->o[0],PHY_vars_UE->ulsch_ue[0]->o[1]);
-	      print_CQI(PHY_vars_UE->ulsch_ue[0]->o,PHY_vars_UE->ulsch_ue[0]->uci_format,0);
+	      print_CQI(PHY_vars_UE->ulsch_ue[0]->o,PHY_vars_UE->ulsch_ue[0]->uci_format,PHY_vars_UE->lte_frame_parms.N_RB_DL,0);
 	    }
 
 	    PHY_vars_UE->ulsch_ue[0]->o_ACK[0] = taus()&1;
@@ -1190,10 +1192,10 @@ int main(int argc, char **argv) {
 	  stop_meas(&PHY_vars_eNB->phy_proc_rx);
 	  if (cqi_flag > 0) {
 	    cqi_error = 0;
-	    if (PHY_vars_eNB->ulsch_eNB[0]->Or1 < 32) {
+	    if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Or1 < 32) {
 	      for (i=2;i<4;i++) {
 		//	      	      printf("cqi %d : %d (%d)\n",i,PHY_vars_eNB->ulsch_eNB[0]->o[i],PHY_vars_UE->ulsch_ue[0]->o[i]);
-		if (PHY_vars_eNB->ulsch_eNB[0]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
+		if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o[i] != PHY_vars_UE->ulsch_ue[0]->o[i])
 		  cqi_error = 1;
 	      }
 	    }
@@ -1202,15 +1204,15 @@ int main(int argc, char **argv) {
 	    }
 	    if (cqi_error == 1) {
 	      cqi_errors++;
-	      if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 1)
+	      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status == 1)
 		cqi_crc_falsepositives++;
 	    }
 	    else {
-	      if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status == 0)
+	      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status == 0)
 		cqi_crc_falsenegatives++;
 	    }
 	  }
-	  if (PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
+	  if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
 	    ack_errors++;
 	  //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
       
@@ -1221,9 +1223,10 @@ int main(int argc, char **argv) {
 	    iter_trials++;
 
 	    if (n_frames==1) {
-	      printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status);
-	      if (PHY_vars_eNB->ulsch_eNB[0]->cqi_crc_status==1)
-		print_CQI(PHY_vars_eNB->ulsch_eNB[0]->o,PHY_vars_eNB->ulsch_eNB[0]->uci_format,0);
+	      printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0],PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status);
+	      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->cqi_crc_status==1)
+		print_CQI(PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o,
+			  PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->uci_format,0,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
 	      dump_ulsch(PHY_vars_eNB,subframe,0);
 	      exit(-1);
 	    }
@@ -1235,7 +1238,7 @@ int main(int argc, char **argv) {
 
 	    errs[round]++;
 	    if (n_frames==1) {
-	      printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0]);
+	      printf("ULSCH errors found o_ACK[0]= %d\n",PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0]);
 
 	      for (s=0;s<PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->C;s++) {
 		if (s<PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->Cminus)
@@ -1309,7 +1312,7 @@ int main(int argc, char **argv) {
 	       cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
 	       cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
       }
-      if (PHY_vars_eNB->ulsch_eNB[0]->o_ACK[0] > 0) 
+      if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] > 0) 
 	printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
 
 

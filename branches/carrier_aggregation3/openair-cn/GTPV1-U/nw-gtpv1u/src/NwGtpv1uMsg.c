@@ -42,6 +42,7 @@
 #include "NwGtpv1u.h"
 #include "NwGtpv1uPrivate.h"
 #include "NwGtpv1uMsg.h"
+#include "assertions.h"
 
 #include "gtpv1u.h"
 #if defined(ENB_MODE)
@@ -117,10 +118,13 @@ nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
                     NW_IN NwU16T    seqNum,
                     NW_IN NwU8T    *tpdu,
                     NW_IN NwU16T    tpduLength,
+                    NW_IN NwU32T    tpduOffset,
                     NW_OUT NwGtpv1uMsgHandleT *phMsg)
 {
     NwGtpv1uStackT *pStack = (NwGtpv1uStackT *) hGtpuStackHandle;
-    NwGtpv1uMsgT *pMsg;
+    NwGtpv1uMsgT   *pMsg;
+    NwU32T          header_len  = 0;
+    NwU32T          msgExtraLen = 0;
 
     if(gpGtpv1uMsgPool) {
         pMsg = gpGtpv1uMsgPool;
@@ -130,26 +134,70 @@ nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
     }
 
     if(pMsg) {
+        msgExtraLen        = (((seqNumFlag) || (NW_FALSE) || (NW_FALSE) ) ?
+                                (NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE - NW_GTPV1U_EPC_MIN_HEADER_SIZE)  : 0);
+        AssertFatal((msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE) <= tpduOffset,
+                "Mismatch GTPU len, msgExtraLen %u tpduOffset %u",
+                msgExtraLen,
+                tpduOffset);
+        pMsg->msgBuf       = tpdu;
+        pMsg->msgBufLen    = tpduLength + msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE;
+        pMsg->msgBufOffset = tpduOffset - (msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE);
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+        GTPU_DEBUG("MSG length %u, offset %u -> length %u offset %u\n",
+                tpduLength, tpduOffset,
+                pMsg->msgBufLen, pMsg->msgBufOffset);
+#endif
+
+        // Version field: This field is used to determine the version of the GTP-U protocol.
+        // The version number shall be set to '1'.
         pMsg->version       = NW_GTPU_VERSION;
+        // Protocol Type (PT): This bit is used as a protocol discriminator between GTP (when PT is '1')
+        // and GTP' (when PT is '0'). GTP is described in this document and the GTP' protocol in 3GPP TS 32.295 [8].
+        // Note that the interpretation of the header fields may be different in GTP' than in GTP.
         pMsg->protocolType  = NW_GTP_PROTOCOL_TYPE_GTP;
+        // Extension Header flag (E): This flag indicates the presence of a meaningful value of the Next Extension
+        // Header field. When it is set to '0', the Next Extension Header field either is not present or, if present,
+        // shall not be interpreted.
         pMsg->extHdrFlag    = NW_FALSE;
+        // Sequence number flag (S): This flag indicates the presence of a meaningful value of the Sequence Number field.
+        // When it is set to '0', the Sequence Number field either is not present or, if present, shall not be interpreted.
+        // When it is set to '1', the Sequence Number field is present, and shall be interpreted, as described below in
+        // this section.
+        // For the Echo Request, Echo Response, Error Indication and Supported Extension Headers Notification
+        // messages, the S flag shall be set to '1'. Since the use of Sequence Numbers is optional for G-PDUs, the PGW,
+        // SGW, ePDG and eNodeB should set the flag to '0'. However, when a G-PDU (T-PDU+header) is being relayed
+        // by the Indirect Data Forwarding for Inter RAT HO procedure, then if the received G-PDU has the S flag set to
+        // '1', then the relaying entity shall set S flag to '1' and forward the G-PDU (T-PDU+header). In an End marker
+        // message the S flag shall be set to '0'.
         pMsg->seqNumFlag    = (seqNumFlag? NW_TRUE : NW_FALSE);
-        pMsg->npduNumFlag   = NW_FALSE;
-        pMsg->msgType       = NW_GTP_GPDU;
-        pMsg->teid          = teid;
         pMsg->seqNum        = seqNum;
+        // N-PDU Number flag (PN): This flag indicates the presence of a meaningful value of the N-PDU Number field.
+        // When it is set to '0', the N-PDU Number field either is not present, or, if present, shall not be interpreted.
+        // When it is set to '1', the N-PDU Number field is present, and shall be interpreted.
+        pMsg->npduNumFlag   = NW_FALSE;
         pMsg->npduNum       = 0x00;
+        // Message Type: This field indicates the type of GTP-U message.
+        pMsg->msgType       = NW_GTP_GPDU;
+        // Length: This field indicates the length in octets of the payload, i.e. the rest of the packet following the
+        // mandatory part of the GTP header (that is the first 8 octets).
+        // The Sequence Number, the N-PDU Number or any Extension headers shall be considered to be part of the payload,
+        // i.e. included in the length count.
+        //header_len          = ((pMsg->seqNumFlag || pMsg->npduNumFlag || pMsg->extHdrFlag ) ?
+        //                        NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE : NW_GTPV1U_EPC_MIN_HEADER_SIZE);
+        pMsg->msgLen        = msgExtraLen + tpduLength;
+
+        // Tunnel Endpoint Identifier (TEID): This field unambiguously identifies a tunnel endpoint in the receiving
+        // GTP-U protocol entity. The receiving end side of a GTP tunnel locally assigns the TEID value the transmitting
+        // side has to use. The TEID shall be used by the receiving entity to find the PDP context, except for the
+        // following cases:
+        // - The Echo Request/Response and Supported Extension Headers notification messages, where the Tunnel
+        //      Endpoint Identifier shall be set to all zeroes.
+        // - The Error Indication message where the Tunnel Endpoint Identifier shall be set to all zeros.
+        pMsg->teid          = teid;
         pMsg->nextExtHdrType= 0x00;
-        pMsg->msgLen        = ((pMsg->seqNumFlag || pMsg->npduNumFlag
-                                || pMsg->extHdrFlag ) ?
-                               NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE : (NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE - 4));
 
-        memcpy(pMsg->msgBuf + pMsg->msgLen, tpdu, tpduLength);
-        pMsg->msgLen        += tpduLength;
-        pMsg->msgLen        = pMsg->msgLen - ((pMsg->seqNumFlag || pMsg->npduNumFlag
-            || pMsg->extHdrFlag ) ?
-           NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE : (NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE - 4));
-
+        //memcpy(pMsg->msgBuf + header_len, tpdu, tpduLength);
         *phMsg = (NwGtpv1uMsgHandleT) pMsg;
         return NW_GTPV1U_OK;
     }
@@ -199,8 +247,7 @@ nwGtpv1uMsgFromBufferNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 
     if(pMsg) {
-        memcpy(pMsg->msgBuf, pBuf, bufLen);
-        pMsg->msgLen = bufLen;
+        pMsg->msgBuf    =  pBuf;
 
         pMsg->version       = ((*pBuf) & 0xE0) >> 5;
         pMsg->protocolType  = ((*pBuf) & 0x10) >> 4;
@@ -223,6 +270,13 @@ nwGtpv1uMsgFromBufferNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
             pMsg->npduNum             = *(pBuf++);
             pMsg->nextExtHdrType      = *(pBuf++);
         }
+        pMsg->msgBufOffset = (NwU32T)(pBuf - pMsg->msgBuf);
+        pMsg->msgBufLen = bufLen - pMsg->msgBufOffset;
+        pMsg->msgLen    = bufLen;
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+        GTPU_DEBUG("nwGtpv1uMsgFromBufferNew() msgLen %u msgBufLen %u msgBufOffset %u ",
+                pMsg->msgLen, pMsg->msgBufLen, pMsg->msgBufOffset);
+#endif
         *phMsg = (NwGtpv1uMsgHandleT) pMsg;
         return NW_GTPV1U_OK;
     }
@@ -250,7 +304,9 @@ nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T teid)
 {
     NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
     thiz->teid = teid;
+#if defined(LOG_GTPU) && LOG_GTPU > 0
     GTPU_DEBUG("nwGtpv1uMsgSetTeid() teid %u", teid);
+#endif
     return NW_GTPV1U_OK;
 }
 

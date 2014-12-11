@@ -10,7 +10,7 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS = -g -ggdb -Wno-strict-aliasing -rdynamic -DMAX_NUM_CCs=1 -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 $(CPUFLAGS) -DMALLOC_CHECK_=1 -DENABLE_VCD_FIFO # -Wno-packed-bitfield-compat
+CFLAGS = -O2 -g -ggdb -Wno-strict-aliasing -rdynamic -DMAX_NUM_CCs=1 -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 $(CPUFLAGS) -DMALLOC_CHECK_=1 -DENABLE_VCD_FIFO # -Wno-packed-bitfield-compat
 
 
 # DCI Debug
@@ -102,7 +102,6 @@ endif
 
 include $(COMMON_UTILS_DIR)/Makefile.inc
 include $(TOP_DIR)/PHY/Makefile.inc
-SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o #$(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 include $(TOP_DIR)/SCHED/Makefile.inc
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
@@ -197,6 +196,9 @@ cleanall : clean
 showflags :
 	@echo $(CFLAGS)
 	@echo $(LFLAGS)
+
+showobj:
+	@echo $(SCHED_OBJS)
 
 run: syncsim
 	rtai-load --verbose

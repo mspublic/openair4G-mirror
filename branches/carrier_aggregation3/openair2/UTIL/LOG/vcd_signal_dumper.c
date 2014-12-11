@@ -204,6 +204,10 @@ const char* eurecomFunctionsNames[] = {
     "mac_rlc_status_ind",
     "mac_rlc_data_req",
     "mac_rlc_data_ind",
+    "rlc_um_try_reassembly",
+    "rlc_um_check_timer_dar_time_out",
+    "rlc_um_receive_process_dar",
+
     /* PDCP signals   */
     "pdcp_run",
     "pdcp_data_req",
@@ -214,7 +218,12 @@ const char* eurecomFunctionsNames[] = {
     "rrc_mac_config_req",
     "rrc_ue_decode_sib1",
     "rrc_ue_decode_si",
-    
+    /* GTPV1U signals */
+    "gtpv1u_enb_task",
+    "gtpv1u_process_udp_req",
+    "gtpv1u_process_tunnel_data_req",
+    /* UDP signals */
+    "udp_enb_task",
     /* MISC signals  */
     "emu_transport",
     "log_record",
@@ -245,7 +254,7 @@ RTIME start;
 
 # define VCD_POLL_DELAY         (500)           // Poll delay in micro-seconds
 # define VCD_MAX_WAIT_DELAY     (200 * 1000)    // Maximum data ready wait delay in micro-seconds
-# define VCD_FIFO_NB_ELEMENTS   (1 << 20)       // Must be a power of 2
+# define VCD_FIFO_NB_ELEMENTS   (1 << 24)       // Must be a power of 2
 # define VCD_FIFO_MASK          (VCD_FIFO_NB_ELEMENTS - 1)
 
 typedef struct vcd_queue_user_data_s {

@@ -177,31 +177,18 @@ rotate_log_file () {
 }
 
 set_openair() {
-    path=`pwd`
-    declare -i length_path
-    declare -i index
-    length_path=${#path}
+    fullpath=`readlink -f $BASH_SOURCE`
+    [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
+    openair_path=${fullpath%/targets/*}
 
-    for i in 'openair1' 'openair2' 'openair3' 'openair-cn' 'targets'
-    do
-        index=`echo $path | grep -b -o $i | cut -d: -f1`
-        #echo ${path%$token*}
-        if [[ $index -lt $length_path  && index -gt 0 ]]
-           then
-               index=`expr $index - 1`
-               openair_path=`echo $path | cut -c1-$index`
-               #openair_path=`echo ${path:0:$index}`
-               export OPENAIR_DIR=$openair_path
-               export OPENAIR_HOME=$openair_path
-               export OPENAIR1_DIR=$openair_path/openair1
-               export OPENAIR2_DIR=$openair_path/openair2
-               export OPENAIR3_DIR=$openair_path/openair3
-               export OPENAIRCN_DIR=$openair_path/openair-cn
-               export OPENAIR_TARGETS=$openair_path/targets
-               return 0
-           fi
-    done
-    return -1
+    export OPENAIR_DIR=$openair_path
+    export OPENAIR_HOME=$openair_path
+    export OPENAIR1_DIR=$openair_path/openair1
+    export OPENAIR2_DIR=$openair_path/openair2
+    export OPENAIR3_DIR=$openair_path/openair3
+    export OPENAIRCN_DIR=$openair_path/openair-cn
+    export OPENAIR_TARGETS=$openair_path/targets
+    export CDPATH=$CDPATH:$openair_path
 }
 
 wait_process_started () {
@@ -347,24 +334,43 @@ stop_openswitch_daemon() {
 }
 
 
-check_s6a_certificate() {
+check_epc_s6a_certificate() {
     if [ -d /usr/local/etc/freeDiameter ]
     then
         if [ -f /usr/local/etc/freeDiameter/user.cert.pem ]
         then
             full_hostname=`cat /usr/local/etc/freeDiameter/user.cert.pem | grep "Subject" | grep "CN" | cut -d '=' -f6`
-            if [ a$full_hostname == a`hostname`.eur ]
+            if [ a$full_hostname == a`hostname`.${1:-'eur'} ]
             then
-                echo_success "S6A: Found valid certificate in /usr/local/etc/freeDiameter"
+                echo_success "MME S6A: Found valid certificate in /usr/local/etc/freeDiameter"
                 return 1
             fi
         fi
     fi
-    echo_error "S6A: Did not find valid certificate in /usr/local/etc/freeDiameter"
-    echo_warning "S6A: generatting new certificate in /usr/local/etc/freeDiameter..."
+    echo_error "MME S6A: Did not find valid certificate in /usr/local/etc/freeDiameter"
+    echo_warning "MME S6A: generatting new certificate in /usr/local/etc/freeDiameter..."
     cd $OPENAIRCN_DIR/S6A/freediameter
-    ./make_certs.sh
-    check_s6a_certificate
+    ./make_certs.sh ${1:-'eur'}
+    check_epc_s6a_certificate ${1:-'eur'}
+    return 1
+}
+
+check_hss_s6a_certificate() {
+        if [ -f $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.cert.pem ]
+        then
+            full_hostname=`cat $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.cert.pem | grep "Subject" | grep "CN" | cut -d '=' -f6`
+            # we should replace 'hss' with hostname 
+            if [ a$full_hostname == ahss.${1:-'eur'} ]
+            then
+                echo_success "HSS S6A: Found valid certificate in $OPENAIRCN_DIR/OPENAIRHSS/conf/"
+                return 1
+            fi
+        fi
+    echo_error "HSS S6A: Did not find valid certificate in $OPENAIRCN_DIR/OPENAIRHSS/conf"
+    echo_warning "HSS S6A: generatting new certificate in $OPENAIRCN_DIR/OPENAIRHSS/conf..."
+    cd $OPENAIRCN_DIR/OPENAIRHSS/conf
+    ./make_certs.sh ${1:-'eur'}
+    check_hss_s6a_certificate ${1:-'eur'}
     return 1
 }
 
@@ -484,9 +490,11 @@ check_install_epc_software() {
     test_install_package gccxml
     test_install_package gdb 
     test_install_package guile-2.0-dev
+    test_install_package gtkwave
     test_install_package iperf
     test_install_package iproute
     test_install_package iptables
+    test_install_package iptables-dev
     test_install_package libatlas-base-dev
     test_install_package libatlas-dev
     test_install_package libblas
@@ -534,7 +542,7 @@ check_install_epc_software() {
             cd $OPENAIRCN_DIR/S6A/freediameter && ./install_freediameter.sh
         else
             echo_success "freediameter is installed"
-            check_s6a_certificate
+            check_epc_s6a_certificate
     fi
 
     test_command_install_script   "asn1c" "$OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash"

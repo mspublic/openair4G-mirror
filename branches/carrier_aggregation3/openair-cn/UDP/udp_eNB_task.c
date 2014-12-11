@@ -50,6 +50,7 @@
 #include "udp_eNB_task.h"
 
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
 #define IPV4_ADDR_FORMAT(aDDRESS)               \
@@ -111,11 +112,15 @@ struct udp_socket_desc_s *udp_eNB_get_socket_desc(task_id_t task_id)
 {
     struct udp_socket_desc_s *udp_sock_p = NULL;
 
-    LOG_I(UDP_, "Looking for task %d\n", task_id);
+#if defined(LOG_UDP) && LOG_UDP > 0
+    LOG_T(UDP_, "Looking for task %d\n", task_id);
+#endif
 
     STAILQ_FOREACH(udp_sock_p, &udp_socket_list, entries) {
         if (udp_sock_p->task_id == task_id) {
-            LOG_I(UDP_, "Found matching task desc\n");
+#if defined(LOG_UDP) && LOG_UDP > 0
+            LOG_T(UDP_, "Found matching task desc\n");
+#endif
             break;
         }
     }
@@ -134,7 +139,9 @@ void udp_eNB_process_file_descriptors(struct epoll_event *events, int nb_events)
     for (i = 0; i < nb_events; i++) {
         STAILQ_FOREACH(udp_sock_p, &udp_socket_list, entries) {
             if (udp_sock_p->sd == events[i].data.fd) {
+#if defined(LOG_UDP) && LOG_UDP > 0
                 LOG_D(UDP_, "Found matching task desc\n");
+#endif
                 udp_eNB_receiver(udp_sock_p);
                 break;
             }
@@ -219,9 +226,11 @@ udp_eNB_send_to(
               sd, IPV4_ADDR_FORMAT(address), port, length);
         return -1;
     }
+#if defined(LOG_UDP) && LOG_UDP > 0
     LOG_I(UDP_, "[SD %d] Successfully sent to "IPV4_ADDR
           " on port %d, buffer size %u, buffer address %x\n",
           sd, IPV4_ADDR_FORMAT(address), port, length, buffer);
+#endif
     return 0;
 }
 
@@ -247,7 +256,8 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
             LOG_W(UDP_, "Recvfrom returned 0\n");
         	return;
         } else{
-            forwarded_buffer = calloc(n, sizeof(uint8_t));
+            forwarded_buffer = itti_malloc(TASK_UDP, udp_sock_pP->task_id, n*sizeof(uint8_t));
+            DevAssert(forwarded_buffer != NULL);
             memcpy(forwarded_buffer, l_buffer, n);
             message_p = itti_alloc_new_message(TASK_UDP, UDP_DATA_IND);
             DevAssert(message_p != NULL);
@@ -257,8 +267,10 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
             udp_data_ind_p->peer_port     = htons(addr.sin_port);
             udp_data_ind_p->peer_address  = addr.sin_addr.s_addr;
 
+#if defined(LOG_UDP) && LOG_UDP > 0
             LOG_I(UDP_, "Msg of length %d received from %s:%u\n",
                       n, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+#endif
             if (itti_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
                 LOG_I(UDP_, "Failed to send message %d to task %d\n",
                           UDP_DATA_IND,
@@ -288,7 +300,10 @@ void *udp_eNB_task(void *args_p)
     itti_mark_task_ready(TASK_UDP);
     while(1) {
         itti_receive_msg(TASK_UDP, &received_message_p);
+        vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UDP_ENB_TASK, VCD_FUNCTION_IN);
+#if defined(LOG_UDP) && LOG_UDP > 0
         LOG_D(UDP_, "Got message %p\n", &received_message_p);
+#endif
         if (received_message_p != NULL) {
 
             msg_name = ITTI_MSG_NAME (received_message_p);
@@ -307,7 +322,9 @@ void *udp_eNB_task(void *args_p)
                 } break;
 
                 case UDP_DATA_REQ: {
-                	LOG_D(UDP_, "Received UDP_DATA_REQ\n");
+#if defined(LOG_UDP) && LOG_UDP > 0
+                    LOG_D(UDP_, "Received UDP_DATA_REQ\n");
+#endif
                     int     udp_sd = -1;
                     ssize_t bytes_written;
 
@@ -333,26 +350,29 @@ void *udp_eNB_task(void *args_p)
                                 ITTI_MSG_ORIGIN_ID(received_message_p));
                         pthread_mutex_unlock(&udp_socket_list_mutex);
                         if (udp_data_req_p->buffer) {
-                            free(udp_data_req_p->buffer);
+                            itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), udp_data_req_p->buffer);
                         }
                         goto on_error;
                     }
                     udp_sd = udp_sock_p->sd;
                     pthread_mutex_unlock(&udp_socket_list_mutex);
 
+#if defined(LOG_UDP) && LOG_UDP > 0
                     LOG_D(UDP_, "[%d] Sending message of size %u to "IPV4_ADDR" and port %u\n",
                             udp_sd,
                             udp_data_req_p->buffer_length,
                           IPV4_ADDR_FORMAT(udp_data_req_p->peer_address),
                           udp_data_req_p->peer_port);
-
+#endif
                     bytes_written = sendto(
                         udp_sd,
-                        udp_data_req_p->buffer,
+                        &udp_data_req_p->buffer[udp_data_req_p->buffer_offset],
                         udp_data_req_p->buffer_length,
                         0,
                         (struct sockaddr *)&peer_addr,
                         sizeof(struct sockaddr_in));
+
+                    itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), udp_data_req_p->buffer);
 
                     if (bytes_written != udp_data_req_p->buffer_length) {
                         LOG_E(UDP_, "There was an error while writing to socket "
@@ -380,9 +400,12 @@ on_error:
         nb_events = itti_get_events(TASK_UDP, &events);
         /* Now handle notifications for other sockets */
         if (nb_events > 0) {
-        	LOG_D(UDP_, "UDP task Process %d events\n",nb_events);
+#if defined(LOG_UDP) && LOG_UDP > 0
+            LOG_D(UDP_, "UDP task Process %d events\n",nb_events);
+#endif
             udp_eNB_process_file_descriptors(events, nb_events);
         }
+        vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UDP_ENB_TASK, VCD_FUNCTION_OUT);
     }
     LOG_N(UDP_, "Task UDP eNB exiting\n");
     return NULL;

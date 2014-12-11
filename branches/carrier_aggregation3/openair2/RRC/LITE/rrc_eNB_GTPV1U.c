@@ -45,7 +45,7 @@
 #   include "intertask_interface.h"
 # endif
 
-int rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *msg_name_pP, instance_t instanceP) {
+int rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *msg_name_pP, eNB_RRC_INST *eNB) {
   uint8_t                ue_index;
   int                    i;
 
@@ -56,19 +56,16 @@ int rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *ms
 
       ue_index = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).ue_index;
 
-      // !!!
-      instanceP = 0;
-
       for (i = 0; i < GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).num_tunnels; i++) {
           LOG_D(RRC, "[eNB] instance %u ue index %u rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel %u bearer index %u id %u\n",
-              instanceP,
+              eNB->mod_id,
               ue_index,
               GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_S1u_teid[i],
               i,
               GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).eps_bearer_id[i]);
-          eNB_rrc_inst[instanceP].Info.UE[ue_index].enb_gtp_teid[i]  = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_S1u_teid[i];
-          eNB_rrc_inst[instanceP].Info.UE[ue_index].enb_gtp_addrs[i] = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_addr;
-          eNB_rrc_inst[instanceP].Info.UE[ue_index].enb_gtp_ebi[i]   = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).eps_bearer_id[i];
+          eNB->Info.UE[ue_index].enb_gtp_teid[i]  = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_S1u_teid[i];
+          eNB->Info.UE[ue_index].enb_gtp_addrs[i] = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_addr;
+          eNB->Info.UE[ue_index].enb_gtp_ebi[i]   = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).eps_bearer_id[i];
       }
       LOG_D(RRC, "[eNB] RX %s END\n");
       return 0;

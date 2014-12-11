@@ -59,8 +59,6 @@
 //#endif
 #include "RRC/NAS/nas_config.h"
 
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
-
 #ifdef IFFT_FPGA
 //#include "PHY/LTE_REFSIG/mod_table.h"
 #endif //IFFT_FPGA
@@ -567,8 +565,7 @@ void *l2l1_task(void *args_p) {
   start_meas(&oaisim_stats);
   for (frame = 0; (l2l1_state != L2L1_TERMINATED) && (frame < oai_emulation.info.n_frames); frame++) {
 
-    start_meas(&oaisim_stats_f);
-
+ 
 #if defined(ENABLE_ITTI)
     do {
       // Checks if a message has been sent to L2L1 task
@@ -662,7 +659,9 @@ void *l2l1_task(void *args_p) {
     update_ocm ();
 
     for (slot = 0; slot < 20; slot++) {
-	
+      if (slot%2==0)
+	start_meas(&oaisim_stats_f);
+
       wait_for_slot_isr ();
 
 #if defined(ENABLE_ITTI)
@@ -713,13 +712,12 @@ void *l2l1_task(void *args_p) {
 	      update_otg_eNB (eNB_inst, oai_emulation.info.time_ms);
 
 	      //IP/OTG to PDCP and PDCP to IP operation
-	      pdcp_run (frame, 1, 0, eNB_inst); //PHY_vars_eNB_g[eNB_id]->Mod_id
+	      //	      pdcp_run (frame, 1, 0, eNB_inst); //PHY_vars_eNB_g[eNB_id]->Mod_id
 #endif
 
 	      // PHY_vars_eNB_g[eNB_id]->frame = frame;
 	      if ((slot&1) == 0) 
 		phy_procedures_eNB_lte (slot>>1,PHY_vars_eNB_g[eNB_inst], abstraction_flag, no_relay, NULL);
-
 #ifdef PRINT_STATS
 	      if(last_slot==9 && frame%10==0)
 		if(eNB_avg_thr) 
@@ -980,7 +978,8 @@ void *l2l1_task(void *args_p) {
 	    }
 	  */
 	} // if Channel_Flag==0
-    
+      if (slot%2==1)
+	stop_meas(&oaisim_stats_f);
     }//end of slot
 
     if ((frame >= 10) && (frame <= 11) && (abstraction_flag == 0)
@@ -1031,8 +1030,9 @@ void *l2l1_task(void *args_p) {
       smbv_frame_cnt++;
     }
 #endif
+ 
   }
-  stop_meas(&oaisim_stats_f);
+  
   //end of frame
       
   stop_meas(&oaisim_stats);
@@ -1270,12 +1270,26 @@ void reset_opp_meas(void){
     reset_meas(&UE_pdcp_stats[UE_id].pdcp_ip);
     reset_meas(&UE_pdcp_stats[UE_id].ip_pdcp);
     
-    for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
+      
+  }
+  for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
+      
+      for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
+	  reset_meas(&eNB2UE[eNB_id][UE_id][0]->random_channel);
+	  reset_meas(&eNB2UE[eNB_id][UE_id][0]->interp_time);
+	  reset_meas(&eNB2UE[eNB_id][UE_id][0]->interp_freq);
+	  reset_meas(&eNB2UE[eNB_id][UE_id][0]->convolution);
+	  reset_meas(&UE2eNB[UE_id][eNB_id][0]->random_channel);
+	  reset_meas(&UE2eNB[UE_id][eNB_id][0]->interp_time);
+	  reset_meas(&UE2eNB[UE_id][eNB_id][0]->interp_freq);
+	  reset_meas(&UE2eNB[UE_id][eNB_id][0]->convolution);
+      }
+
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->phy_proc);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->phy_proc_rx);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->phy_proc_tx);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->rx_prach);
-    
+      
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->ofdm_mod_stats);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->dlsch_encoding_stats);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->dlsch_modulation_stats);
@@ -1283,7 +1297,7 @@ void reset_opp_meas(void){
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->dlsch_rate_matching_stats);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->dlsch_turbo_encoding_stats);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->dlsch_interleaving_stats);
-    
+      
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->ofdm_demod_stats);
       //reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats);
       //reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats);
@@ -1302,15 +1316,7 @@ void reset_opp_meas(void){
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_ext_stats);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_intl1_stats);
       reset_meas(&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_intl2_stats);
-    
-      reset_meas(&eNB2UE[eNB_id][UE_id][0]->random_channel);
-      reset_meas(&eNB2UE[eNB_id][UE_id][0]->interp_time);
-      reset_meas(&eNB2UE[eNB_id][UE_id][0]->interp_freq);
-      reset_meas(&eNB2UE[eNB_id][UE_id][0]->convolution);
-      reset_meas(&UE2eNB[UE_id][eNB_id][0]->random_channel);
-      reset_meas(&UE2eNB[UE_id][eNB_id][0]->interp_time);
-      reset_meas(&UE2eNB[UE_id][eNB_id][0]->interp_freq);
-      reset_meas(&UE2eNB[UE_id][eNB_id][0]->convolution);
+      
       /* 
        * L2 functions 
        */
@@ -1324,7 +1330,7 @@ void reset_opp_meas(void){
       reset_meas(&eNB_mac_inst[eNB_id].schedule_dlsch); // include rlc_data_req + MAC header gen + pre-processor
       reset_meas(&eNB_mac_inst[eNB_id].schedule_mch); // only embms 
       reset_meas(&eNB_mac_inst[eNB_id].rx_ulsch_sdu); // include rlc_data_ind + mac header parser
-     
+      
       reset_meas(&eNB_pdcp_stats[eNB_id].pdcp_run);
       reset_meas(&eNB_pdcp_stats[eNB_id].data_req);
       reset_meas(&eNB_pdcp_stats[eNB_id].data_ind);
@@ -1333,11 +1339,11 @@ void reset_opp_meas(void){
       reset_meas(&eNB_pdcp_stats[eNB_id].pdcp_ip);
       reset_meas(&eNB_pdcp_stats[eNB_id].ip_pdcp);
       
-    }
   }
 }
 
 void print_opp_meas(void){
+  
   uint8_t eNB_id=0,UE_id=0;
 
   print_meas(&oaisim_stats,"[OAI][total_exec_time]", &oaisim_stats,&oaisim_stats);

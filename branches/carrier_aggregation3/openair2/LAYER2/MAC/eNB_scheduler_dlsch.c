@@ -52,9 +52,6 @@
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -74,27 +71,27 @@ extern inline unsigned int taus(void);
 
 void add_ue_dlsch_info(module_id_t module_idP, int CC_id, int UE_id, sub_frame_t subframeP, UE_DLSCH_STATUS status){
 
-  eNB_dlsch_info[module_idP][UE_id].rnti             = UE_RNTI(module_idP,UE_id);
-  //  eNB_dlsch_info[module_idP][ue_mod_idP].weight           = weight;
-  eNB_dlsch_info[module_idP][UE_id].subframe         = subframeP;
-  eNB_dlsch_info[module_idP][UE_id].status           = status;
+  eNB_dlsch_info[module_idP][CC_id][UE_id].rnti             = UE_RNTI(module_idP,UE_id);
+  //  eNB_dlsch_info[module_idP][CC_id][ue_mod_idP].weight           = weight;
+  eNB_dlsch_info[module_idP][CC_id][UE_id].subframe         = subframeP;
+  eNB_dlsch_info[module_idP][CC_id][UE_id].status           = status;
 
-  eNB_dlsch_info[module_idP][UE_id].serving_num++;
+  eNB_dlsch_info[module_idP][CC_id][UE_id].serving_num++;
 
 }
 
-int schedule_next_dlue(module_id_t module_idP, sub_frame_t subframeP){
+int schedule_next_dlue(module_id_t module_idP, int CC_id, sub_frame_t subframeP){
 
   int next_ue;
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
 
   for (next_ue=UE_list->head; next_ue>=0; next_ue=UE_list->next[next_ue] ){
-    if  (eNB_dlsch_info[module_idP][next_ue].status == S_DL_WAITING)
+    if  (eNB_dlsch_info[module_idP][CC_id][next_ue].status == S_DL_WAITING)
       return next_ue;
   }
   for (next_ue=UE_list->head; next_ue>=0; next_ue=UE_list->next[next_ue] ){
-    if  (eNB_dlsch_info[module_idP][next_ue].status == S_DL_BUFFERED) {
-      eNB_dlsch_info[module_idP][next_ue].status = S_DL_WAITING;
+    if  (eNB_dlsch_info[module_idP][CC_id][next_ue].status == S_DL_BUFFERED) {
+      eNB_dlsch_info[module_idP][CC_id][next_ue].status = S_DL_WAITING;
     }
   }
 
@@ -395,7 +392,7 @@ void schedule_ue_spec(module_id_t   module_idP,
   uint8_t               dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   unsigned char         rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX];
   uint16_t              pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  int                   mcs;
+  int                   mcs,mcs2;
   uint16_t              min_rb_unit[MAX_NUM_CCs];
   short                 ta_update        = 0;
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[module_idP];
@@ -445,6 +442,7 @@ void schedule_ue_spec(module_id_t   module_idP,
  
 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n",CC_id);
     if (mbsfn_flag[CC_id]>0)
       continue;
     for (UE_id=UE_list->head;UE_id>=0;UE_id=UE_list->next[UE_id]) {
@@ -1083,25 +1081,141 @@ void schedule_ue_spec(module_id_t   module_idP,
 		  break;
 		}
 	      }
-	      break;
-	    case 4:
-	      //  if (nb_rb>10) {
-	      ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
-	      ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	      ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1;
-	      ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->rv1 = round&3;
-	      ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+	    break;
+	  case 3:
+	    if (frame_parms[CC_id]->frame_type == TDD) {
+	      switch (frame_parms[CC_id]->N_RB_DL) {
+	      case 6:
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rv1 = 0;
 
-	      //}
-	      /* else {
-		 ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
-		 ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-		 ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
-		 ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
-		 ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
-		 ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
-		 }*/
-	      break;
+		// deactivate TB2
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rv2 = 1;
+
+		((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->dai      = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+		break;
+	      case 25:
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rv1 = 0;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->dai      = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+
+		// deactivate TB2
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rv2 = 1;
+
+		LOG_D(MAC,"Format1 DCI: harq_pid %d, ndi %d\n",harq_pid,((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->ndi1);
+		break;
+	      case 50:
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->rv1 = 0;
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->dai      = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+
+		// deactivate TB2
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      case 100:
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->rv1 = 0;
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->dai      = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+
+		// deactivate TB2
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      default:
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rv1 = 0;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->dai      = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+
+		// deactivate TB2
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      }
+	    }
+	    else {
+	      switch (frame_parms[CC_id]->N_RB_DL) {
+	      case 6:
+		((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rv1 = 0;
+
+		// deactivate TB2
+		((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      case 25:
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rv1 = 0;
+
+		// deactivate TB2
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      case 50:
+		((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->rv1 = 0;
+		// deactivate TB2
+		((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      case 100:
+		((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->rv1 = 0;
+		// deactivate TB2
+		((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      default:
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->mcs1 = mcs;
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->ndi1 = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rv1 = 0;
+
+		// deactivate TB2
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->mcs2 = 0;
+		((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rv2 = 1;
+		break;
+	      }
+	    }
+	    break;
+	  case 4:
+	    //  if (nb_rb>10) {
+	    ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->mcs1 = mcs;
+	    ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	    ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->ndi1 = 1;
+	    ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->rv1 = round&3;
+	    ((DCI2_5MHz_2A_TDD_t*)DLSCH_dci)->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+
+	    //}
+	    /* else {
+	       ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
+	       ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	       ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
+	       ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
+	       ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
+	       ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+	       }*/
+	    break;
 	    case 5:
 
 	      ((DCI1E_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs = mcs;
@@ -1133,18 +1247,20 @@ void schedule_ue_spec(module_id_t   module_idP,
 	  else {  // There is no data from RLC or MAC header, so don't schedule
 
 	  }
-	}
+	      }
 	set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP,frame_parms);
+	    }
+	}
       }
     }
-  }
   //printf("MAC nCCE : %d\n",*nCCE_used);
   
   
   stop_meas(&eNB->schedule_dlsch); 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_OUT);
-  
+  }
 }
+
 
 void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,uint32_t *RBallocP,uint8_t RA_scheduledP,int *mbsfn_flagP) {
 
@@ -1173,6 +1289,7 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP
   start_meas(&eNB->fill_DLSCH_dci);
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI,VCD_FUNCTION_IN);
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    LOG_D(MAC,"Doing fill DCI for CC_id %d\n",CC_id);
 
     if (mbsfn_flagP[CC_id]>0)
       continue;
@@ -1837,16 +1954,16 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP
       } // RA is scheduled in this subframeP
 
 
-      // UE specific DCIs
-      for (UE_id=UE_list->head;UE_id>=0;UE_id=UE_list->next[UE_id]) {
-	//      printf("UE_id: %d => status %d\n",UE_id,eNB_dlsch_info[module_idP][UE_id].status);
-	if (eNB_dlsch_info[module_idP][UE_id].status == S_DL_SCHEDULED) {
+    // UE specific DCIs
+    for (UE_id=UE_list->head;UE_id>=0;UE_id=UE_list->next[UE_id]) {
+      LOG_D(MAC,"CC_id %d, UE_id: %d => status %d\n",CC_id,UE_id,eNB_dlsch_info[module_idP][CC_id][UE_id].status);
+      if (eNB_dlsch_info[module_idP][CC_id][UE_id].status == S_DL_SCHEDULED) {
 
-	  // clear scheduling flag
-	  eNB_dlsch_info[module_idP][UE_id].status = S_DL_WAITING;
-	  rnti = UE_RNTI(module_idP,UE_id);
-	  mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
-	  nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+	// clear scheduling flag
+	eNB_dlsch_info[module_idP][CC_id][UE_id].status = S_DL_WAITING;
+	rnti = UE_RNTI(module_idP,UE_id);
+	mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
+	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
 	  DLSCH_dci = (void *)UE_list->UE_template[CC_id][UE_id].DLSCH_DCI[harq_pid];
 
@@ -1946,8 +2063,93 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP
 			    format1,
 			    0);
 
-	    break;
-	  case 4:
+	  break;
+
+	case 3:
+	  LOG_D(MAC,"[eNB %d] Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",module_idP, UE_id, nb_rb,rballoc);
+	  if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
+	    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+	    case 6:
+	      ((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes = sizeof(DCI2A_1_5MHz_2A_TDD_t);
+	      size_bits  = sizeof_DCI2A_1_5MHz_2A_TDD_t;
+	      break;
+	    case 25:
+	      ((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes = sizeof(DCI2A_5MHz_2A_TDD_t);
+	      size_bits  = sizeof_DCI2A_5MHz_2A_TDD_t;
+	      break;
+	    case 50:
+	      ((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_10MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes = sizeof(DCI2A_10MHz_2A_TDD_t);
+	      size_bits  = sizeof_DCI2A_10MHz_2A_TDD_t;
+	      break;
+	    case 100:
+	      ((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_20MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes = sizeof(DCI2A_20MHz_2A_TDD_t);
+	      size_bits  = sizeof_DCI2A_20MHz_2A_TDD_t;
+	      break;
+	    default:
+	      ((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_5MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes = sizeof(DCI2A_5MHz_2A_TDD_t);
+	      size_bits  = sizeof_DCI2A_5MHz_2A_TDD_t;
+	      break;
+	    }
+
+
+	  }
+	  else {
+	    switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+	    case 6:
+	      ((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes=sizeof(DCI2A_1_5MHz_2A_FDD_t);
+	      size_bits=sizeof_DCI2A_1_5MHz_2A_FDD_t;
+	      break;
+	    case 25:
+	      ((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes=sizeof(DCI2A_5MHz_2A_FDD_t);
+	      size_bits=sizeof_DCI2A_5MHz_2A_FDD_t;
+	      break;
+	    case 50:
+	      ((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_10MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes=sizeof(DCI2A_10MHz_2A_FDD_t);
+	      size_bits=sizeof_DCI2A_10MHz_2A_FDD_t;
+	      break;
+	    case 100:
+	      ((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_20MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes=sizeof(DCI2A_20MHz_2A_FDD_t);
+	      size_bits=sizeof_DCI2A_20MHz_2A_FDD_t;
+	      break;
+	    default:
+	      ((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
+	      ((DCI2A_5MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
+	      size_bytes=sizeof(DCI2A_5MHz_2A_FDD_t);
+	      size_bits=sizeof_DCI2A_5MHz_2A_FDD_t;
+	      break;
+	    }
+	  }
+
+	  add_ue_spec_dci(DCI_pdu,
+			  DLSCH_dci,
+			  rnti,
+			  size_bytes,
+			  process_ue_cqi (module_idP,UE_id),//aggregation,
+			  size_bits,
+			  format2A,
+			  0);
+
+	  break;
+
+	case 4:
 
 	    //if (nb_rb>10) {
 	    // DCI format 2_2A

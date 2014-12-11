@@ -106,6 +106,8 @@ int errno;
 # endif
 #endif
 
+//#define XER_PRINT
+
 typedef struct xer_sprint_string_s
 {
     char *string;
@@ -561,38 +563,163 @@ uint8_t do_SIB23(eNB_RRC_INST *eNB,
   (*sib2)->ac_BarringForCSFB_r10 = NULL;
 #endif
 
+#if defined(ENABLE_ITTI)
 
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles                         = configuration->rach_numberOfRA_Preambles[0];
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig                        = NULL;
+  if (configuration->rach_preamblesGroupAConfig[0]) {
+    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig                        
+              = CALLOC(1,sizeof(struct RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig));
+    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA 
+              = configuration->rach_sizeOfRA_PreamblesGroupA[0];
+    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->messageSizeGroupA 
+              = configuration->rach_messageSizeGroupA[0];
+    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig->messagePowerOffsetGroupB
+              = configuration->rach_messagePowerOffsetGroupB[0];
+  }
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep                   = configuration->rach_powerRampingStep[0];
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower = configuration->rach_preambleInitialReceivedTargetPower[0];
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax                       = configuration->rach_preambleTransMax[0];
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize                  = configuration->rach_raResponseWindowSize[0];
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer          = configuration->rach_macContentionResolutionTimer[0];
+  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx                                            = configuration->rach_maxHARQ_Msg3Tx[0];
+
+  // BCCH-Config
+  (*sib2)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff 
+          = configuration->bcch_modificationPeriodCoeff[0];
+
+  // PCCH-Config
+  (*sib2)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle 
+          = configuration->pcch_defaultPagingCycle[0];
+  (*sib2)->radioResourceConfigCommon.pcch_Config.nB                 
+          = configuration->pcch_nB[0];
+
+  // PRACH-Config
+  (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex 
+          = configuration->prach_root[0];
+  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_ConfigIndex 
+          = configuration->prach_config_index[0];
+  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.highSpeedFlag 
+          = configuration->prach_high_speed[0];
+  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig 
+          = configuration->prach_zero_correlation[0];
+  (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset 
+          = configuration->prach_freq_offset[0];
+
+  // PDSCH-Config
+  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower
+          = configuration->pdsch_referenceSignalPower[0];  
+  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b
+          = configuration->pdsch_p_b[0];  
+
+  // PUSCH-Config
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB 
+          = configuration->pusch_n_SB[0];  
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode
+          = configuration->pusch_hoppingMode[0];
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset
+          = configuration->pusch_hoppingOffset[0];
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM
+          = configuration->pusch_enable64QAM[0];
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled
+          = configuration->pusch_groupHoppingEnabled[0];
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH
+          = configuration->pusch_groupAssignment[0];
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled
+          = configuration->pusch_sequenceHoppingEnabled[0];
+  (*sib2)->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift
+          = configuration->pusch_nDMRS1[0];
+
+  // PUCCH-Config
+
+  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift
+          = configuration->pucch_delta_shift[0];
+  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI 
+          = configuration->pucch_nRB_CQI[0];
+  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN 
+          = configuration->pucch_nCS_AN[0];
+#ifndef Rel10
+  (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN 
+          = configuration->pucch_n1_AN[0];
+#endif
+
+  // SRS Config
+  if (configuration->srs_enable[0]) {
+    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
+          = SoundingRS_UL_ConfigCommon_PR_setup;
+    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig
+          = configuration->srs_BandwidthConfig[0]; 
+    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig
+          = configuration->srs_SubframeConfig[0]; 
+    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission
+          = configuration->srs_ackNackST[0]; 
+    if (configuration->srs_MaxUpPts[0]) {
+      (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts
+	  = CALLOC(1,sizeof(long));
+      *(*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts=1;
+    }
+    else {
+      (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts = NULL;
+    }
+  }
+  else {
+    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present=SoundingRS_UL_ConfigCommon_PR_release;
+    (*sib2)->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.release=0;
+  }
+
+  // uplinkPowerControlCommon
+
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH 
+          = configuration->pusch_p0_Nominal[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH 
+          = configuration->pucch_p0_Nominal[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha 
+          = configuration->pusch_alpha[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1
+          = configuration->pucch_deltaF_Format1[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b
+          = configuration->pucch_deltaF_Format1b[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2
+          = configuration->pucch_deltaF_Format2[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a
+          = configuration->pucch_deltaF_Format2a[0];    
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b
+          = configuration->pucch_deltaF_Format2b[0];
+  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3
+          = configuration->msg3_delta_Preamble[0];
+  (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength
+          = configuration->ul_CyclicPrefixLength[0];
+
+  // UE Timers and Constants
+
+  (*sib2)->ue_TimersAndConstants.t300
+          = configuration->ue_TimersAndConstants_t300[0];
+  (*sib2)->ue_TimersAndConstants.t301
+          = configuration->ue_TimersAndConstants_t301[0];
+  (*sib2)->ue_TimersAndConstants.t310
+          = configuration->ue_TimersAndConstants_t310[0];
+  (*sib2)->ue_TimersAndConstants.n310
+          = configuration->ue_TimersAndConstants_n310[0];
+  (*sib2)->ue_TimersAndConstants.t311
+          = configuration->ue_TimersAndConstants_t311[0];
+  (*sib2)->ue_TimersAndConstants.n311
+          = configuration->ue_TimersAndConstants_n311[0];
+
+#else
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles=RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep=RACH_ConfigCommon__powerRampingParameters__powerRampingStep_dB2;
-
-#ifdef EXMIMO
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_100;
-#else
-  (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower=RACH_ConfigCommon__powerRampingParameters__preambleInitialReceivedTargetPower_dBm_108;
-#endif
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax=RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
-
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize=RACH_ConfigCommon__ra_SupervisionInfo__ra_ResponseWindowSize_sf10;
-
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer=RACH_ConfigCommon__ra_SupervisionInfo__mac_ContentionResolutionTimer_sf48;
-
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx = 4;
 
   // BCCH-Config
-
   (*sib2)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff=BCCH_Config__modificationPeriodCoeff_n2;
 
   // PCCH-Config
-
-  (*sib2)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle =
-#if defined(ENABLE_ITTI)
-          configuration->pcch_defaultPagingCycle[0];
-#else
-          PCCH_Config__defaultPagingCycle_rf128;
-#endif
-
-
+  (*sib2)->radioResourceConfigCommon.pcch_Config.defaultPagingCycle = PCCH_Config__defaultPagingCycle_rf128;
   (*sib2)->radioResourceConfigCommon.pcch_Config.nB=PCCH_Config__nB_oneT;
 
   // PRACH-Config
@@ -603,11 +730,8 @@ uint8_t do_SIB23(eNB_RRC_INST *eNB,
   (*sib2)->radioResourceConfigCommon.prach_Config.prach_ConfigInfo.prach_FreqOffset = 2;
 
   // PDSCH-Config
-#ifdef EXMIMO  // This corresponds to raw output of ExpressMIMO2 v2
-  (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=-24;
-#else
   (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.referenceSignalPower=0;  // corresponds to 24.7 dBm 5 MHz/ 27.7 10 MHz/ 30.7 20 MHz
-#endif
+
   if (frame_parms->mode1_flag==1)
     (*sib2)->radioResourceConfigCommon.pdsch_ConfigCommon.p_b=0;
   else
@@ -637,13 +761,8 @@ uint8_t do_SIB23(eNB_RRC_INST *eNB,
 
   // uplinkPowerControlCommon
 
-#ifdef EXMIMO
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH =-98;//-90; 
-  (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -98;//-96;
-#else
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH = -108;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH = -108;
-#endif
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.alpha=UplinkPowerControlCommon__alpha_al1;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1=DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
   (*sib2)->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b=DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
@@ -669,6 +788,8 @@ uint8_t do_SIB23(eNB_RRC_INST *eNB,
   (*sib2)->ue_TimersAndConstants.t311=UE_TimersAndConstants__t311_ms10000;
 
   (*sib2)->ue_TimersAndConstants.n311=UE_TimersAndConstants__n311_n1;
+
+#endif
 
   (*sib2)->freqInfo.additionalSpectrumEmission = 1;
   (*sib2)->freqInfo.ul_CarrierFreq = NULL;
@@ -1227,7 +1348,7 @@ uint8_t do_RRCConnectionSetup(eNB_RRC_INST *eNB,
   //assign_enum(&physicalConfigDedicated2->uplinkPowerControlDedicated->deltaMCS_Enabled,
   // UplinkPowerControlDedicated__deltaMCS_Enabled_en1);
   physicalConfigDedicated2->uplinkPowerControlDedicated->deltaMCS_Enabled= UplinkPowerControlDedicated__deltaMCS_Enabled_en1;
-  physicalConfigDedicated2->uplinkPowerControlDedicated->accumulationEnabled = 1;  // FALSE
+  physicalConfigDedicated2->uplinkPowerControlDedicated->accumulationEnabled = 1;  // TRUE
   physicalConfigDedicated2->uplinkPowerControlDedicated->p0_UE_PUCCH = 0; // 0 dB
   physicalConfigDedicated2->uplinkPowerControlDedicated->pSRS_Offset = 0; // 0 dB
   physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient));
@@ -1304,8 +1425,19 @@ uint8_t do_RRCConnectionSetup(eNB_RRC_INST *eNB,
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
     break;
   case 2:
-  case 4:
     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
+    break;
+  case 3:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm3;
+    break;
+  case 4:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm4;
+    break;
+  case 5:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm5;
+    break;
+  case 6:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm6;
     break;
   }
 
@@ -1363,6 +1495,9 @@ uint8_t do_RRCConnectionSetup(eNB_RRC_INST *eNB,
 #endif
 
 
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
+#endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
                                    (void*)&dl_ccch_msg,
                                    buffer,
@@ -1384,7 +1519,7 @@ uint8_t do_RRCConnectionSetup(eNB_RRC_INST *eNB,
       msg_p->ittiMsg.rrc_dl_ccch.size = message_string_size;
       memcpy(&msg_p->ittiMsg.rrc_dl_ccch.text, message_string, message_string_size);
 
-      itti_send_msg_to_task(TASK_UNKNOWN, Mod_id, msg_p);
+      itti_send_msg_to_task(TASK_UNKNOWN, eNB->mod_id, msg_p);
     }
   }
 # endif
@@ -1685,7 +1820,43 @@ uint16_t do_RRCConnectionReconfiguration(uint8_t                             Mod
   return((enc_rval.encoded+7)/8);
 }
 
+uint8_t do_RRCConnectionRelease(uint8_t                             Mod_id,
+				uint8_t                            *buffer,
+				uint8_t                             Transaction_id) {
+
+  asn_enc_rval_t enc_rval;
+  
+  DL_DCCH_Message_t dl_dcch_msg;
+  RRCConnectionRelease_t *rrcConnectionRelease;
+
+  
+  memset(&dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+
+  dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionRelease;
+  rrcConnectionRelease                  = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionRelease;
+
+  // RRCConnectionRelease
+  rrcConnectionRelease->rrc_TransactionIdentifier = Transaction_id;
+  rrcConnectionRelease->criticalExtensions.present = RRCConnectionRelease__criticalExtensions_PR_c1;
+  rrcConnectionRelease->criticalExtensions.choice.c1.present =RRCConnectionRelease__criticalExtensions__c1_PR_rrcConnectionRelease_r8 ;
+
+  rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.releaseCause = ReleaseCause_other;
+  rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.redirectedCarrierInfo = NULL;
+  rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.idleModeMobilityControlInfo = NULL;
+
+  rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.nonCriticalExtension=CALLOC(1,sizeof(*rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.nonCriticalExtension));
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+                                   (void*)&dl_dcch_msg,
+                                   buffer,
+                                   RRC_BUF_SIZE); 
+
+  return((enc_rval.encoded+7)/8);
+}
+
 uint8_t TMGI[5] = {4,3,2,1,0};//TMGI is a string of octet, ref. TS 24.008 fig. 10.5.4a
+
 
 #ifdef Rel10
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,

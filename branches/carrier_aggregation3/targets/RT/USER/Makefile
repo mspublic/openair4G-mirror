@@ -2,9 +2,8 @@
 include $(OPENAIR_TARGETS)/Makerules
 
 default: lte-softmodem
-all: lte-softmodem lte-enb
+all: lte-softmodem rrh
 
-include $(OPENAIR_TARGETS)/Makedirectives
 include $(OPENAIR_TARGETS)/Makefile.common
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
@@ -18,23 +17,44 @@ ifeq "$(GCCVERSION)" "4.6.1"
     CFLAGS += -Wno-packed-bitfield-compat
 endif
 
+KERNEL_VERSION=$(shell echo `uname -r | cut -d. -f-2`)
+KERNEL_TYPE=$(shell echo `uname -r | cut -d. -f-3 | cut -d- -f3`)
+LOWLATENCY_KERNEL=$(shell if [ $(KERNEL_TYPE) = "lowlatency" ]; then echo "1" ; else echo "0" ; fi)
+
+#ifdef LOWLATENCY # this ifdef is to be removed after the debugging
+ifeq ($(LOWLATENCY_KERNEL),1)
+CFLAGS+=-DLOWLATENCY
+endif 
+#endif 
+
 ifndef USRP
 USRP=0
 endif
 
 CFLAGS += -O2 
-CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/COMMON 
+CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/COMMON  -I.
 
-CFLAGS += -DMAX_NUM_CCs=1
+ifndef OPENAIR2
+OPENAIR2=1
+endif
 
-ifeq ($(USRP),0)
+ifdef DEBUG
+DISABLE_XER_PRINT=0
+MSG_PRINT=1
+endif
+
+ifeq ($(EXMIMO),1)
   CFLAGS += -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
+endif
+
+ifeq ($(ETHERNET),1)
+  CFLAGS += -I$(OPENAIR_TARGETS)/ARCH/ETHERNET/USERSPACE/LIB/ -DETHERNET
 endif
 
 ifeq ($(DEBUG),1)	
 CFLAGS += -g -ggdb
-CFLAGS += -DRRC_MSG_PRINT
-CFLAGS += -DPDCP_MSG_PRINT
+#CFLAGS += -DRRC_MSG_PRINT
+#CFLAGS += -DPDCP_MSG_PRINT
 endif
 
 ifdef ($(MSG_PRINT),1)
@@ -42,7 +62,7 @@ CFLAGS += -DRRC_MSG_PRINT
 CFLAGS += -DPDCP_MSG_PRINT
 endif
 
-SRC = synctest.c condtest.c #lte-softmodem.c
+SRC = synctest.c condtest.c 
 
 ifndef RTAI
 RTAI=1
@@ -59,7 +79,7 @@ endif
 
 OBJ += $(OPENAIR1_DIR)/SIMULATION/TOOLS/taus.o $(OPENAIR_TARGETS)/SIMU/USER/init_lte.o 
 
-ifeq ($(USRP),0)
+ifeq ($(EXMIMO),1)
 OBJ += $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.o $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/gain_control.o
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS 
 endif
@@ -93,6 +113,11 @@ CFLAGS += -DUSRP
 #LDFLAGS += -L/opt/lib -luhd -lpthread -lstdc++ 
 endif
 
+ifeq ($(ETHERNET),1)
+include $(OPENAIR_TARGETS)/ARCH/ETHERNET/USERSPACE/LIB/Makefile.inc
+LDFLAGS += -lpthread
+endif
+
 OBJ +=  $(ENB_APP_OBJS)
 
 ifeq ($(RTAI),1)
@@ -108,7 +133,7 @@ OBJ += $(LOG_OBJS)
 
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
-OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS)  $(OSA_OBJS)  
+OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS)  $(OSA_OBJS) $(OPT_OBJS) 
 OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
 #OBJ += $(PDCP_DIR)/pdcp_thread.o
 CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
@@ -154,7 +179,7 @@ CFLAGS += -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
 
 
-ifeq ($(USRP),0)
+ifeq ($(EXMIMO),1)
 CFLAGS += -DEXMIMO
 #CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=138 #this is for ExpressMIMO 1
 #CFLAGS += -DEXMIMO -DTIMING_ADVANCE_HW=45 #this is for ExpressMIMO 2
@@ -195,7 +220,7 @@ SHARED_DEPENDENCIES 	+= $(LFDS_LIB)
 -include $(ASN1_MSG_OBJS1:.o=.d)
 -include $(RTAI_OBJ:.o=.d)
 -include lte-softmodem.d
--include lte-enb.d
+-include rrh.d
 
 $(LFDS_LIB):
 	@if [ ! -d $(LFDS_OBJ_DIR)/bin ]; then mkdir -p $(LFDS_OBJ_DIR)/bin; fi;
@@ -206,6 +231,12 @@ ifeq ($(USRP),1)
 $(USRP_OBJ):$(USRP_FILE_OBJ)
 	@echo Compiling $<
 	@$(CXX) -c  $(USRP_CFLAGS) $(USRP_FILE_OBJ) -o $(USRP_OBJ)
+endif
+
+ifeq ($(ETHERNET),1)
+$(ETHERNET_OBJ):$(ETHERNET_FILE_OBJ)
+	@echo Compiling $<
+	@$(CC) -c -g -ggdb $(ETHERNET_CFLAGS) $(ETHERNET_FILE_OBJ) -o $(ETHERNET_OBJ)
 endif
 
 ifeq ($(RTAI),1)
@@ -232,6 +263,8 @@ else
 $(OBJ) $(ASN1_MSG_OBJS1) lte-softmodem.o: %.o : %.c
 endif
 
+rrh.o: %.o : %.c
+
 	@echo Compiling $< ...
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
 	@$(CC) -MM $(CFLAGS) $(EXTRA_CFLAGS) $< > $*.d
@@ -255,9 +288,12 @@ synctest: $(OBJ_SYNC) $(SHARED_DEPENDENCIES) synctest.c
 sleeptest: rt_wrapper.o sleeptest.c
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(RTAI_CFLAGS) rt_wrapper.o -o sleeptest sleeptest.c $(LDFLAGS) 
 
-lte-softmodem: $(OBJ) $(USRP_OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) lte-softmodem.o $(SHARED_DEPENDENCIES)
+lte-softmodem: $(OBJ) $(USRP_OBJ) $(ETHERNET_OBJ) $(ASN1_MSG_OBJS1) $(RTAI_OBJ) lte-softmodem.o $(SHARED_DEPENDENCIES)
 	@echo Linking $@
-	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(USRP_OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) lte-softmodem.o -o lte-softmodem $(LDFLAGS) $(LIBS)
+	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(USRP_OBJ) $(ETHERNET_OBJ) $(RTAI_OBJ) $(ASN1_MSG_OBJS1) lte-softmodem.o -o lte-softmodem $(LDFLAGS) $(LIBS)
+
+rrh: rrh.o
+	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) rrh.o -o rrh -lpthread
 
 emos-raw: $(SHARED_DEPENDENCIES) $(OBJ_EMOS) emos-raw.c
 	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(RTAI_CFLAGS) $(OBJ_EMOS) -o emos-raw emos-raw.c $(LDFLAGS) $(LIBS)
@@ -347,8 +383,8 @@ cleanmodem:
 	@$(RM_F_V) $(OBJ) $(RTAI_OBJ) $(OBJ_EMOS) $(OBJ_SYNC) $(USRP_OBJ)
 	@$(RM_F_V) $(OBJ:.o=.d) $(RTAI_OBJ:.o=.d) $(OBJ_EMOS:.o=.d) $(OBJ_SYNC:.o=.d)
 	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1_msg.o $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1_msg.d
-	@$(RM_F_V) lte-enb.o lte-enb.d lte-softmodem.o lte-softmodem.d
-	@$(RM_F_V) lte-enb.o lte-softmodem.o
+	@$(RM_F_V) rrh.o rrh.d lte-softmodem.o lte-softmodem.d
+	@$(RM_F_V) rrh.o lte-softmodem.o
 
 cleanasn1:
 	rm -f $(ASN1_MSG_OBJS1)
@@ -368,11 +404,11 @@ cleancell:
 
 cleanalmostall: cleanmodem 
 	rm -f $(ASN1_MSG_OBJS1)
-	rm -rf condtest synctest lte-softmodem
+	rm -rf condtest synctest lte-softmodem rrh
 	rm -rf synctest_eNB synctest_UE
 
 cleanall: common-cleanall clean cleanasn1
-	rm -rf condtest synctest lte-softmodem lte-softmodem-usrp
+	rm -rf condtest synctest lte-softmodem rrh
 	rm -rf synctest_eNB synctest_UE
 
 show:
@@ -380,10 +416,13 @@ show:
 	@echo $(EXTRA_CFLAGS)
 	@echo $(OBJ) $(RTAI_OBJ) 
 	@echo $(USRP_OBJ)
+	@echo $(ETHERNET_OBJ)
+	@echo $(ETHERNET_FILE_OBJ)
 	@echo IS_REL8 is $(IS_REL8)
 	@echo IS_REL10 is $(IS_REL10)
 	@echo openssl $(OPENSSL_FOUND) 
 	@echo nettle $(NETTLE_FOUND)
+	@echo lowlatency kernel: $(LOWLATENCY_KERNEL)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)

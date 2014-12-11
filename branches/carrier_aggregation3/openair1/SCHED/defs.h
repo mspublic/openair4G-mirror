@@ -428,12 +428,12 @@ int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag);
 
-void process_timing_advance(uint8_t Mod_id,uint8_t CC_id,int16_t timing_advance);
+void process_timing_advance(module_id_t Mod_id,uint8_t CC_id,int16_t timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,uint16_t timing_advance);
 
 unsigned int get_tx_amp(int gain_dBm, int gain_max_dBm);
 
-void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
 /** \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in 
 subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For
@@ -523,13 +523,15 @@ LTE_eNB_UE_stats* get_eNB_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 
 LTE_DL_FRAME_PARMS *get_lte_frame_parms(module_id_t Mod_id, uint8_t CC_id);
 
-MU_MIMO_mode* get_mu_mimo_mode (module_id_t Mod_id, uint8_t CC_id);
+MU_MIMO_mode* get_mu_mimo_mode (module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
 
 int16_t get_hundred_times_delta_IF(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t harq_pid);
 
 int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id,uint8_t harq_pid);
 
 int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid);
+
+int16_t get_target_ul_rx_power(module_id_t module_idP, uint8_t CC_id);
 
 int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame, uint8_t subframe,uint8_t *harq_pid,uint8_t *round,uint8_t ul_flag);
 
