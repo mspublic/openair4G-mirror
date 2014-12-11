@@ -553,7 +553,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(eNB_RRC_INST *eNBP,
 #if defined(ENABLE_USE_MME)
   if (EPC_MODE_ENABLED == 1) {
     // Forward message to S1AP layer
-    rrc_eNB_send_S1AP_NAS_FIRST_REQ(eNBP->mod_id, UE_idP, rrcConnectionSetupComplete);
+    rrc_eNB_send_S1AP_NAS_FIRST_REQ(eNBP, UE_idP, rrcConnectionSetupComplete);
   } else
 #endif
     {
@@ -602,7 +602,7 @@ void rrc_eNB_generate_UECapabilityEnquiry(eNB_RRC_INST *eNBP,
   uint8_t                             buffer[100];
   uint8_t                             size;
 
-  size = do_UECapabilityEnquiry(eNBP, buffer, UE_idP, rrc_eNB_get_next_transaction_identifier(eNBP));
+  size = do_UECapabilityEnquiry(eNBP->mod_id, buffer, UE_idP, rrc_eNB_get_next_transaction_identifier(eNBP));
 
   LOG_I(RRC,
 	"[eNB %d] CC_id %d Frame %d, Logical Channel DL-DCCH, Generate UECapabilityEnquiry (bytes %d, UE id %d)\n",
@@ -616,6 +616,28 @@ void rrc_eNB_generate_UECapabilityEnquiry(eNB_RRC_INST *eNBP,
 
 }
 
+void rrc_eNB_generate_RRCConnectionRelease(eNB_RRC_INST *eNBP,
+					   frame_t frameP,
+					   ue_id_t ue_idP) {
+
+    uint8_t                             buffer[RRC_BUF_SIZE];
+    uint16_t                            size;
+
+    memset(buffer, 0, RRC_BUF_SIZE);
+
+    size = do_RRCConnectionRelease(eNBP->mod_id, buffer,rrc_eNB_get_next_transaction_identifier(eNBP));
+
+    LOG_I(RRC,
+          "[eNB %d] Frame %d Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d, UE id %d)\n",
+          eNBP->mod_id, frameP, size, ue_idP);
+
+    LOG_D(RRC,
+          "[FRAME %05d][RRC_eNB][MOD %u/%u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease to UE %d MUI %d) --->][PDCP][MOD %u/%u][RB %u]\n",
+          frameP, eNBP->mod_id, ue_idP, size, ue_idP, rrc_eNB_mui, eNBP->mod_id, ue_idP, DCCH);
+    //rrc_rlc_data_req(enb_mod_idP,frameP, 1,(ue_idP*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
+    pdcp_rrc_data_req(eNBP->mod_id, ue_idP, frameP, 1, DCCH, rrc_eNB_mui++, 0, size, buffer, 1);
+}
+						  
 /*------------------------------------------------------------------------------*/
 static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(eNB_RRC_INST *eNBP,
 								 frame_t     frameP,
@@ -770,7 +792,7 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(eNB_RRC_INST *e
   DRB_rlc_config->present = RLC_Config_PR_um_Bi_Directional;
   DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
-  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = T_Reordering_ms5;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = T_Reordering_ms25;
 #endif
 
   DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
@@ -1190,7 +1212,7 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(eNB_RRC_INST *e
 
 
 
-int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frame, uint32_t dl_CarrierFreq_r10) {
+int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(eNB_RRC_INST *eNB, module_id_t ue_mod_idP, frame_t frame, uint32_t dl_CarrierFreq_r10) {
 
   uint8_t size;
   uint8_t buffer[100];
@@ -1200,18 +1222,18 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(module_id_t enb_mod_idP,
 //   uint8_t sCellIndexToAdd;
 //   sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
 //  if (eNB_rrc_inst[enb_mod_idP].sCell_config[ue_mod_idP][sCellIndexToAdd] ) {
-  if (eNB_rrc_inst[enb_mod_idP].sCell_config != NULL) {
-    eNB_rrc_inst[enb_mod_idP].sCell_config[ue_mod_idP][sCellIndexToAdd].cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
-  }
+  if (eNB->sCell_config[ue_mod_idP][sCellIndexToAdd].cellIdentification_r10 != NULL) {
+    eNB->sCell_config[ue_mod_idP][sCellIndexToAdd].cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
+  }      
   else {
     LOG_E(RRC,"Scell not configured!\n");
     return(-1);
   }  
 #endif
-  size = do_RRCConnectionReconfiguration(enb_mod_idP,
+  size = do_RRCConnectionReconfiguration(eNB,
                                          buffer,
                                          ue_mod_idP,
-                                         rrc_eNB_get_next_transaction_identifier(enb_mod_idP),//Transaction_id,
+                                         rrc_eNB_get_next_transaction_identifier(eNB),//Transaction_id,
                                          (SRB_ToAddModList_t*)NULL,
                                          (DRB_ToAddModList_t*)NULL,
                                          (DRB_ToReleaseList_t*)NULL,
@@ -1230,18 +1252,18 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_SCell(module_id_t enb_mod_idP,
                                          (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL
 
 #ifdef Rel10
-					 , eNB_rrc_inst[enb_mod_idP].sCell_config
+					 , &eNB->sCell_config[ue_mod_idP][sCellIndexToAdd]
 #endif
 					 ); 
 
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %d)\n",
-        enb_mod_idP,frame, size, ue_mod_idP);
+        eNB->mod_id,frame, size, ue_mod_idP);
 
   LOG_D(RRC, "[MSC_MSG][FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
-        frame, enb_mod_idP, size, ue_mod_idP, rrc_eNB_mui, enb_mod_idP, /*(ue_mod_idP*MAX_NUM_RB)+*/DCCH);
+        frame, eNB->mod_id, size, ue_mod_idP, rrc_eNB_mui, eNB->mod_id, /*(ue_mod_idP*MAX_NUM_RB)+*/DCCH);
   //rrc_rlc_data_req(Mod_id,frame, 1,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
 //   pdcp_data_req(enb_mod_idP, ue_mod_idP, frame, 1, /*(UE_index * MAX_NUM_RB) + */DCCH, rrc_eNB_mui++, 0, size, (char*)buffer, 1);
-    pdcp_rrc_data_req(enb_mod_idP, ue_mod_idP, frame, 1, DCCH, rrc_eNB_mui++, 0, size, buffer, 1);
+    pdcp_rrc_data_req(eNB->mod_id, ue_mod_idP, frame, 1, DCCH, rrc_eNB_mui++, 0, size, buffer, 1);
 
   return(0);
 }
@@ -1358,7 +1380,7 @@ void rrc_eNB_generate_HandoverPreparationInformation(eNB_RRC_INST *eNBP,
       memcpy((void *)&eNB_rrc_inst[mod_id_target][0].handover_info[UE_id_target]->as_config,
 	     (void *)&eNBP->handover_info[UE_idP]->as_config, sizeof(AS_Config_t));
 
-      eNB_rrc_inst[mod_id_target][0].handover_info[UE_id_target]->ho_prepare = 0xFF;
+      eNB_rrc_inst[mod_id_target][0].handover_info[UE_id_target]->ho_prepare = 0x00; //0xFF;
       eNB_rrc_inst[mod_id_target][0].handover_info[UE_id_target]->ho_complete = 0;
 
       eNBP->handover_info[UE_idP]->modid_t = mod_id_target;
@@ -3298,35 +3320,42 @@ void                               *rrc_enb_task(
 	break;
 	
 #   if defined(ENABLE_USE_MME)
-                /* Messages from S1AP */
-            case S1AP_DOWNLINK_NAS:
-                rrc_eNB_process_S1AP_DOWNLINK_NAS(msg_p, msg_name_p, instance, &rrc_eNB_mui);
-                break;
+	/* Messages from S1AP */
+      case S1AP_DOWNLINK_NAS:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	rrc_eNB_process_S1AP_DOWNLINK_NAS(msg_p, msg_name_p, eNB, &rrc_eNB_mui);
+	break;
+	
+      case S1AP_INITIAL_CONTEXT_SETUP_REQ:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p, msg_name_p, eNB);
+	break;
+	
+      case S1AP_UE_CTXT_MODIFICATION_REQ:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(msg_p, msg_name_p, eNB);
+	break;
+	
+      case S1AP_PAGING_IND:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	LOG_E(RRC, "[eNB %d] Received not yet implemented message %s\n", eNB, msg_name_p);
+	break;
 
-            case S1AP_INITIAL_CONTEXT_SETUP_REQ:
-                rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p, msg_name_p, instance);
-                break;
+      case S1AP_UE_CONTEXT_RELEASE_REQ:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ(msg_p, msg_name_p, eNB);
+	break;
 
-            case S1AP_UE_CTXT_MODIFICATION_REQ:
-                rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(msg_p, msg_name_p, instance);
-                break;
-
-            case S1AP_PAGING_IND:
-                LOG_E(RRC, "[eNB %d] Received not yet implemented message %s\n", instance, msg_name_p);
-                break;
-
-            case S1AP_UE_CONTEXT_RELEASE_REQ:
-                rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ(msg_p, msg_name_p, instance);
-                break;
-
-            case S1AP_UE_CONTEXT_RELEASE_COMMAND:
-                rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
-                break;
-
-            case GTPV1U_ENB_CREATE_TUNNEL_RESP:
-              rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(msg_p, msg_name_p, instance);
-              break;
-
+      case S1AP_UE_CONTEXT_RELEASE_COMMAND:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, eNB);
+	break;
+	
+      case GTPV1U_ENB_CREATE_TUNNEL_RESP:
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
+	rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(msg_p, msg_name_p, eNB);
+	break;
+	
 #   endif
 	
 	/* Messages from eNB app */
@@ -3345,10 +3374,11 @@ void                               *rrc_enb_task(
 	//                 ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
 	LOG_I(RRC, "[eNB %d] Send RRC_RAL_CONNECTION_RECONFIGURATION_REQ to UE %s\n", instance, msg_name_p);
 	//Method RRC connection reconfiguration command with Second cell configuration
+	eNB = &eNB_rrc_inst[instance][pcc_ids[RRC_DCCH_DATA_IND(msg_p).ue_index]];	
 #   ifdef ENABLE_RAL
-	rrc_eNB_generate_RRCConnectionReconfiguration_SCell(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, 36126);
+	rrc_eNB_generate_RRCConnectionReconfiguration_SCell(eNB, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, 36126);
 #   else
-	rrc_eNB_generate_defaultRRCConnectionReconfiguration(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, eNB->HO_flag);
+	rrc_eNB_generate_defaultRRCConnectionReconfiguration(eNB, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, eNB->HO_flag);
 #   endif
 	break;
 

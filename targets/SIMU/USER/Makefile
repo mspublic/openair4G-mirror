@@ -3,7 +3,6 @@ include $(OPENAIR_TARGETS)/Makerules
 
 default: oaisim
 
-include $(OPENAIR_TARGETS)/Makedirectives
 include $(OPENAIR_TARGETS)/Makefile.common
 
 TOP_DIR               = $(OPENAIR1_DIR)
@@ -24,6 +23,7 @@ CFLAGS += -g -ggdb -DDEBUG_PHY -DDEBUG_MEAS
 CFLAGS += -DRRC_MSG_PRINT
 CFLAGS += -DPDCP_MSG_PRINT
 #CFLAGS += -DTRACE_RLC_UM_PDU
+#CFLAGS += -DTRACE_RLC_AM_PDU
 endif 
 
 ifeq ($(MSG_PRINT),1)
@@ -47,6 +47,15 @@ CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION #-DPHY_ABSTRACTION_U
 CFLAGS += -DNEW_FFT
 #CFLAGS += -DLLR8
 CFLAGS += -DPACKAGE_NAME='"oaisim"'
+
+ifndef OPENAIR2
+OPENAIR2=1
+endif
+
+ifdef DEBUG
+DISABLE_XER_PRINT=0
+MSG_PRINT=1
+endif
 
 ifndef OPENAIR_EMU
 export OPENAIR_EMU=1
@@ -112,17 +121,17 @@ endif
 ifdef CBA
 CFLAGS += -DRel10
 CFLAGS += -DCBA
-@echo "Rel10=1 CBA=1"
+$(info "Rel10=1 CBA=1")
 
 else ifdef Rel10
 CFLAGS += -DRel10
-@echo "Rel10=1"
+$(info "Rel10=1")
 else # default is rel 8
-@echo "Rel8=1"
+$(info "Rel8=1")
 CFLAGS += -DRel8
 endif
 
-CFLAGS += -DMAX_NUM_CCs=1
+#CFLAGS += -DMAX_NUM_CCs=1
 
 ifeq ($(RLC_STOP_ON_LOST_PDU), 1)
 CFLAGS += -DRLC_STOP_ON_LOST_PDU
@@ -175,11 +184,11 @@ endif
 
 ifdef SECU
 ifeq ($(NETTLE_FOUND), 0)
-@echo "Nettle library >= 2.5 is not installed on your system, nettle-dev lib needed, continuing with security disabled"
+$(warning "Nettle library >= 2.5 is not installed on your system, nettle-dev lib needed, continuing with security disabled")
 SECU=0
 else
 ifeq ($(OPENSSL_FOUND), 0)
-@echo "openssl library is not installed on your system, openssl lib needed, continuing with security disabled"
+$(warning "openssl library is not installed on your system, openssl lib needed, continuing with security disabled")
 SECU=0
 else
 CFLAGS += -DENABLE_SECURITY
@@ -443,6 +452,7 @@ print:
 	@echo "OCG_FLAG are "		$(OCG_FLAG)
 	@echo "CFLAGS are "			$(CFLAGS)
 	@echo "EXTRA_CFLAGS are"	$(EXTRA_CFLAGS)
+	@echo "COMMON_CFLAGS are"	$(COMMON_CFLAGS)
 	@echo "L2 includes are"		$(L2_incl)
 	@echo "INCLUDES are"		$(INCLUDES)
 	@echo "S1AP Includes are"	$(S1AP_Incl)

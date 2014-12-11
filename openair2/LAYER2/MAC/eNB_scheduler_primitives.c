@@ -53,9 +53,6 @@
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -72,27 +69,29 @@
 
 
 void init_ue_sched_info(void){
-  module_id_t i,j;
+  module_id_t i,j,k;
   for (i=0;i<NUMBER_OF_eNB_MAX;i++){
+    for (k=0;i<MAX_NUM_CCs;i++){
       for (j=0;j<NUMBER_OF_UE_MAX;j++){
           // init DL
-          eNB_dlsch_info[i][j].weight           = 0;
-          eNB_dlsch_info[i][j].subframe         = 0;
-          eNB_dlsch_info[i][j].serving_num      = 0;
-          eNB_dlsch_info[i][j].status           = S_DL_NONE;
+          eNB_dlsch_info[i][k][j].weight           = 0;
+          eNB_dlsch_info[i][k][j].subframe         = 0;
+          eNB_dlsch_info[i][k][j].serving_num      = 0;
+          eNB_dlsch_info[i][k][j].status           = S_DL_NONE;
           // init UL
-          eNB_ulsch_info[i][j].subframe         = 0;
-          eNB_ulsch_info[i][j].serving_num      = 0;
-          eNB_ulsch_info[i][j].status           = S_UL_NONE;
+          eNB_ulsch_info[i][k][j].subframe         = 0;
+          eNB_ulsch_info[i][k][j].serving_num      = 0;
+          eNB_ulsch_info[i][k][j].status           = S_UL_NONE;
       }
+    }
   }
 }
 
 
 
-unsigned char get_ue_weight(module_id_t module_idP, int ue_idP){
+unsigned char get_ue_weight(module_id_t module_idP, int CC_id, int ue_idP){
 
-  return(eNB_dlsch_info[module_idP][ue_idP].weight);
+  return(eNB_dlsch_info[module_idP][CC_id][ue_idP].weight);
 
 }
 
@@ -253,10 +252,8 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP) {
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0 
       UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j==harq_pidP)?0:1; // 1st transmission is with Msg3;
     }
-    UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[harq_pidP] = 1; // 1 because first transmission is with RAR (Msg3)
-
-    eNB_ulsch_info[mod_idP][UE_id].status = S_UL_WAITING;
-    eNB_dlsch_info[mod_idP][UE_id].status = S_UL_WAITING;
+    eNB_ulsch_info[mod_idP][cc_idP][UE_id].status = S_UL_WAITING;
+    eNB_dlsch_info[mod_idP][cc_idP][UE_id].status = S_UL_WAITING;
     LOG_D(MAC,"[eNB %d] Add UE_id %d on Primary CC_id %d: rnti %x\n",mod_idP,UE_id,cc_idP,rntiP);
     dump_ue_list(UE_list,0);
     return(UE_id);
@@ -286,10 +283,10 @@ int mac_remove_ue(module_id_t mod_idP, int ue_idP) {
   UE_list->UE_template[pCC_id][ue_idP].ul_SR             = 0;
   UE_list->UE_template[pCC_id][ue_idP].rnti              = 0;
   UE_list->UE_template[pCC_id][ue_idP].ul_active         = FALSE;
-  eNB_ulsch_info[mod_idP][ue_idP].rnti                        = 0;
-  eNB_ulsch_info[mod_idP][ue_idP].status                      = S_UL_NONE;
-  eNB_dlsch_info[mod_idP][ue_idP].rnti                        = 0;
-  eNB_dlsch_info[mod_idP][ue_idP].status                      = S_DL_NONE;
+  eNB_ulsch_info[mod_idP][pCC_id][ue_idP].rnti                        = 0;
+  eNB_ulsch_info[mod_idP][pCC_id][ue_idP].status                      = S_UL_NONE;
+  eNB_dlsch_info[mod_idP][pCC_id][ue_idP].rnti                        = 0;
+  eNB_dlsch_info[mod_idP][pCC_id][ue_idP].status                      = S_DL_NONE;
 
   rrc_eNB_free_UE_index(mod_idP,pCC_id,ue_idP);
 
@@ -731,12 +728,13 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc) {
   LOG_T(MAC,"*****Check1RBALLOC****: %d%d%d%d (nb_rb %d,N_RBG %d)\n",
       rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->lte_frame_parms->N_RBG);
   while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBG)){
-      //printf("rballoc[%d] %d\n",check,rballoc[check]);
+    //printf("rballoc[%d] %d\n",check,rballoc[check]);
       if(rballoc[check] == 1){
           rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBG-1)-check));
           switch (mac_xface->lte_frame_parms->N_RB_DL) {
           case 6:
             nb_rb--;
+	    break;
           case 25:
             if ((check == mac_xface->lte_frame_parms->N_RBG-1))
               nb_rb--;
@@ -754,7 +752,7 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc) {
             break;
           }
       }
-      //printf("rb_alloc %x\n",rballoc_dci);
+      //      printf("rb_alloc %x\n",rballoc_dci);
       check = check+1;
       //    check1 = check1+2;
   }

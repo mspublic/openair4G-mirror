@@ -47,6 +47,7 @@
 //:::::::::::::::::::::::::::::::::::::::;;
 //#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #ifdef NAS_DRIVER_TYPE_ETHERNET
@@ -116,12 +117,6 @@ int nasrg_open(struct net_device *dev){
     return -EBUSY;
   }
 #endif //NETLINK
-
-// next lines prevent compilation of the driver with kernel version under 2.6.29
-// ATTENTION !!!!!! NASRG is not usable with these versions
-#ifndef  KERNEL_VERSION_GREATER_THAN_2629
-  kernel_version_under_2629_not supported_by_nasrg = 0;
-#endif
 
   if(!netif_queue_stopped(dev))
     netif_start_queue(dev);
@@ -438,7 +433,11 @@ int init_module (void) {
 
   // Allocate device structure 
   sprintf(devicename,"oai%d",inst);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
   gdev = alloc_netdev(sizeof(struct nas_priv), devicename, nasrg_init);
+#else
+  gdev = alloc_netdev(sizeof(struct nas_priv), devicename, NET_NAME_PREDICTABLE, nasrg_init);
+#endif
   printk("nasrg_init_module: after alloc_netdev \n");
   priv = netdev_priv(gdev);
 ////

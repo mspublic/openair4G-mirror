@@ -38,10 +38,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+
 
 #include <pthread.h>
 
@@ -54,9 +57,10 @@
 #define UDP_DEBUG(x, args...) do { fprintf(stdout, "[UDP] [D]"x, ##args); } while(0)
 #define UDP_ERROR(x, args...) do { fprintf(stderr, "[UDP] [E]"x, ##args); } while(0)
 
-void *udp_receiver_thread(void *args_p);
+//void *udp_receiver_thread(void *args_p);
 
 struct udp_socket_desc_s {
+    uint8_t   buffer[4096];
     int       sd;              /* Socket descriptor to use */
 
     pthread_t listener_thread; /* Thread affected to recv */
@@ -72,10 +76,75 @@ struct udp_socket_desc_s {
 static STAILQ_HEAD(udp_socket_list_s, udp_socket_desc_s) udp_socket_list;
 static pthread_mutex_t udp_socket_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+//-----------------------------------------------------------------------------
+void udp_print_hex_octets(unsigned char* dataP, unsigned long sizeP)
+//-----------------------------------------------------------------------------
+{
+  unsigned long octet_index = 0;
+  unsigned long buffer_marker = 0;
+  unsigned char aindex;
+#define UDP_2_PRINT_BUFFER_LEN 8000
+  char udp_2_print_buffer[UDP_2_PRINT_BUFFER_LEN];
+  struct timeval tv;
+  struct timezone tz;
+  char timeofday[64];
+
+  unsigned int h,m,s;
+  if (dataP == NULL) {
+    return;
+  }
+
+  gettimeofday(&tv, &tz);
+  h = tv.tv_sec/3600/24;
+  m = (tv.tv_sec / 60) % 60;
+  s = tv.tv_sec % 60;
+  snprintf(timeofday, 64, "%02d:%02d:%02d.%06d", h,m,s,tv.tv_usec);
+
+  UDP_DEBUG("%s------+-------------------------------------------------|\n",timeofday);
+  UDP_DEBUG("%s      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n",timeofday);
+  UDP_DEBUG("%s------+-------------------------------------------------|\n",timeofday);
+  for (octet_index = 0; octet_index < sizeP; octet_index++) {
+    if (UDP_2_PRINT_BUFFER_LEN < (buffer_marker + 32))  {
+        buffer_marker+=snprintf(&udp_2_print_buffer[buffer_marker], UDP_2_PRINT_BUFFER_LEN - buffer_marker,
+                "... (print buffer overflow)");
+        UDP_DEBUG("%s%s",timeofday,udp_2_print_buffer);
+        return;
+    }
+    if ((octet_index % 16) == 0){
+      if (octet_index != 0) {
+          buffer_marker+=snprintf(&udp_2_print_buffer[buffer_marker], UDP_2_PRINT_BUFFER_LEN - buffer_marker, " |\n");
+          UDP_DEBUG("%s%s",timeofday, udp_2_print_buffer);
+          buffer_marker = 0;
+      }
+      buffer_marker+=snprintf(&udp_2_print_buffer[buffer_marker], UDP_2_PRINT_BUFFER_LEN - buffer_marker, " %04ld |", octet_index);
+    }
+    /*
+     * Print every single octet in hexadecimal form
+     */
+    buffer_marker+=snprintf(&udp_2_print_buffer[buffer_marker], UDP_2_PRINT_BUFFER_LEN - buffer_marker, " %02x", dataP[octet_index]);
+    /*
+     * Align newline and pipes according to the octets in groups of 2
+     */
+  }
+
+  /*
+   * Append enough spaces and put final pipe
+   */
+  for (aindex = octet_index; aindex < 16; ++aindex)
+    buffer_marker+=snprintf(&udp_2_print_buffer[buffer_marker], UDP_2_PRINT_BUFFER_LEN - buffer_marker, "   ");
+    //GTPU_DEBUG("   ");
+  buffer_marker+=snprintf(&udp_2_print_buffer[buffer_marker], UDP_2_PRINT_BUFFER_LEN - buffer_marker, " |\n");
+  UDP_DEBUG("%s%s",timeofday,udp_2_print_buffer);
+}
+
+
+static void udp_server_receive_and_process(struct udp_socket_desc_s *udp_sock_pP);
+
+
 /* @brief Retrieve the descriptor associated with the task_id
  */
 static
-struct udp_socket_desc_s *udp_get_socket_desc(task_id_t task_id)
+struct udp_socket_desc_s *udp_server_get_socket_desc(task_id_t task_id)
 {
     struct udp_socket_desc_s *udp_sock_p = NULL;
 
@@ -89,14 +158,29 @@ struct udp_socket_desc_s *udp_get_socket_desc(task_id_t task_id)
     }
     return udp_sock_p;
 }
+static
+struct udp_socket_desc_s *udp_server_get_socket_desc_by_sd(int sdP)
+{
+    struct udp_socket_desc_s *udp_sock_p = NULL;
+
+    UDP_DEBUG("Looking for sd %d\n", sdP);
+
+    STAILQ_FOREACH(udp_sock_p, &udp_socket_list, entries) {
+        if (udp_sock_p->sd == sdP) {
+            UDP_DEBUG("Found matching task desc\n");
+            break;
+        }
+    }
+    return udp_sock_p;
+}
 
 static
-int udp_create_socket(int port, char *address, task_id_t task_id)
+int udp_server_create_socket(int port, char *address, task_id_t task_id)
 {
     struct sockaddr_in addr;
     int                sd;
 
-    struct udp_socket_desc_s *thread_arg = NULL;
+    struct udp_socket_desc_s *socket_desc_p = NULL;
 
     UDP_DEBUG("Creating new listen socket on address "IPV4_ADDR" and port %u\n",
               IPV4_ADDR_FORMAT(inet_addr(address)), port);
@@ -120,54 +204,84 @@ int udp_create_socket(int port, char *address, task_id_t task_id)
         return -1;
     }
 
-    thread_arg = calloc(1, sizeof(struct udp_socket_desc_s));
-
-    DevAssert(thread_arg != NULL);
-
-    thread_arg->sd            = sd;
-    thread_arg->local_address = address;
-    thread_arg->local_port    = port;
-    thread_arg->task_id       = task_id;
-
-    if (pthread_create(&thread_arg->listener_thread, NULL,
-        &udp_receiver_thread, (void *)thread_arg) < 0) {
-        UDP_ERROR("Pthred_create failed (%s)\n", strerror(errno));
+    /* Add the socket to list of fd monitored by ITTI */
+    /* Mark the socket as non-blocking */
+    if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
+        UDP_ERROR("fcntl F_SETFL O_NONBLOCK failed: %s\n",
+                   strerror(errno));
+        close(sd);
         return -1;
     }
+
+    socket_desc_p = calloc(1, sizeof(struct udp_socket_desc_s));
+    DevAssert(socket_desc_p != NULL);
+    socket_desc_p->sd            = sd;
+    socket_desc_p->local_address = address;
+    socket_desc_p->local_port    = port;
+    socket_desc_p->task_id       = task_id;
+    UDP_DEBUG("Inserting new descriptor for task %d, sd %d\n",
+            socket_desc_p->task_id, socket_desc_p->sd);
+    pthread_mutex_lock(&udp_socket_list_mutex);
+    STAILQ_INSERT_TAIL(&udp_socket_list, socket_desc_p, entries);
+    pthread_mutex_unlock(&udp_socket_list_mutex);
+
+    itti_subscribe_event_fd(TASK_UDP, sd);
+
     return sd;
 }
 
-void *udp_receiver_thread(void *arg_p)
+static void udp_server_flush_sockets(struct epoll_event *events, int nb_events)
 {
-    uint8_t buffer[2048];
+    int event;
+    struct udp_socket_desc_s *udp_sock_p = NULL;
 
-    struct udp_socket_desc_s *udp_sock_p = (struct udp_socket_desc_s *)arg_p;
+    UDP_DEBUG("Received %d events\n", nb_events);
 
+    for (event = 0; event < nb_events; event++) {
+        if (events[event].events != 0) {
+        /* If the event has not been yet been processed (not an itti message) */
+            pthread_mutex_lock(&udp_socket_list_mutex);
+            udp_sock_p = udp_server_get_socket_desc_by_sd(events[event].data.fd);
+
+            if (udp_sock_p != NULL) {
+                udp_server_receive_and_process(udp_sock_p);
+            } else {
+                UDP_ERROR("Failed to retrieve the udp socket descriptor %d",
+                        events[event].data.fd);
+            }
+          pthread_mutex_unlock(&udp_socket_list_mutex);
+        }
+    }
+}
+
+static void udp_server_receive_and_process(struct udp_socket_desc_s *udp_sock_pP)
+{
     UDP_DEBUG("Inserting new descriptor for task %d, sd %d\n",
-              udp_sock_p->task_id, udp_sock_p->sd);
-    pthread_mutex_lock(&udp_socket_list_mutex);
-    STAILQ_INSERT_TAIL(&udp_socket_list, udp_sock_p, entries);
-    pthread_mutex_unlock(&udp_socket_list_mutex);
+            udp_sock_pP->task_id, udp_sock_pP->sd);
 
-    while (1) {
-        int                n;
+    {
+        int                bytes_received = 0;
         socklen_t          from_len;
         struct sockaddr_in addr;
 
         from_len = (socklen_t)sizeof(struct sockaddr_in);
 
-        if ((n = recvfrom(udp_sock_p->sd, buffer, sizeof(buffer), 0,
-                          (struct sockaddr *)&addr, &from_len)) < 0) {
+        if ((bytes_received = recvfrom(udp_sock_pP->sd, udp_sock_pP->buffer, sizeof(udp_sock_pP->buffer), 0,
+                          (struct sockaddr *)&addr, &from_len)) <= 0) {
             UDP_ERROR("Recvfrom failed %s\n", strerror(errno));
-            break;
+            //break;
         } else {
             MessageDef     *message_p = NULL;
             udp_data_ind_t *udp_data_ind_p;
             uint8_t *forwarded_buffer = NULL;
 
-            forwarded_buffer = calloc(n, sizeof(uint8_t));
+            AssertFatal(sizeof(udp_sock_pP->buffer) >= bytes_received, "UDP BUFFER OVERFLOW");
 
-            memcpy(forwarded_buffer, buffer, n);
+            forwarded_buffer = itti_malloc(TASK_UDP, udp_sock_pP->task_id, bytes_received);
+
+            DevAssert(forwarded_buffer != NULL);
+
+            memcpy(forwarded_buffer, udp_sock_pP->buffer, bytes_received);
 
             message_p = itti_alloc_new_message(TASK_UDP, UDP_DATA_IND);
 
@@ -176,110 +290,131 @@ void *udp_receiver_thread(void *arg_p)
             udp_data_ind_p = &message_p->ittiMsg.udp_data_ind;
 
             udp_data_ind_p->buffer        = forwarded_buffer;
-            udp_data_ind_p->buffer_length = n;
+            udp_data_ind_p->buffer_length = bytes_received;
             udp_data_ind_p->peer_port     = htons(addr.sin_port);
             udp_data_ind_p->peer_address  = addr.sin_addr.s_addr;
 
             UDP_DEBUG("Msg of length %d received from %s:%u\n",
-                      n, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-            if (itti_send_msg_to_task(udp_sock_p->task_id, INSTANCE_DEFAULT, message_p) < 0) {
+                    bytes_received, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+            if (itti_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
                 UDP_DEBUG("Failed to send message %d to task %d\n",
-                          UDP_DATA_IND, udp_sock_p->task_id);
-                break;
+                          UDP_DATA_IND, udp_sock_pP->task_id);
+                //break;
             }
         }
     }
-    close(udp_sock_p->sd);
-    udp_sock_p->sd = -1;
+    //close(udp_sock_pP->sd);
+    //udp_sock_pP->sd = -1;
 
-    pthread_mutex_lock(&udp_socket_list_mutex);
-    STAILQ_REMOVE(&udp_socket_list, udp_sock_p, udp_socket_desc_s, entries);
-    pthread_mutex_unlock(&udp_socket_list_mutex);
+    //pthread_mutex_lock(&udp_socket_list_mutex);
+    //STAILQ_REMOVE(&udp_socket_list, udp_sock_pP, udp_socket_desc_s, entries);
+    //pthread_mutex_unlock(&udp_socket_list_mutex);
 
-    return NULL;
+    //return NULL;
 }
+
 
 static void *udp_intertask_interface(void *args_p)
 {
+    int                 rc        = 0;
+    int                 nb_events = 0;
+    struct epoll_event *events    = NULL;
+
     itti_mark_task_ready(TASK_UDP);
     while(1) {
         MessageDef *received_message_p = NULL;
         itti_receive_msg(TASK_UDP, &received_message_p);
-        DevAssert(received_message_p != NULL);
 
-        switch (ITTI_MSG_ID(received_message_p))
-        {
-            case UDP_INIT: {
-                udp_init_t *udp_init_p;
-                udp_init_p = &received_message_p->ittiMsg.udp_init;
-                udp_create_socket(
-                    udp_init_p->port,
-                    udp_init_p->address,
-                    ITTI_MSG_ORIGIN_ID(received_message_p));
-            } break;
+        if (received_message_p != NULL) {
+#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
+            switch (ITTI_MSG_ID(received_message_p))
+            {
+                case UDP_INIT: {
+                    udp_init_t *udp_init_p;
+                    udp_init_p = &received_message_p->ittiMsg.udp_init;
+                    rc = udp_server_create_socket(
+                            udp_init_p->port,
+                            udp_init_p->address,
+                            ITTI_MSG_ORIGIN_ID(received_message_p));
+                } break;
 
-            case UDP_DATA_REQ: {
-                int     udp_sd = -1;
-                ssize_t bytes_written;
+                case UDP_DATA_REQ: {
+                    int     udp_sd = -1;
+                    ssize_t bytes_written;
 
-                struct udp_socket_desc_s *udp_sock_p = NULL;
-                udp_data_req_t           *udp_data_req_p;
-                struct sockaddr_in        peer_addr;
+                    struct udp_socket_desc_s *udp_sock_p = NULL;
+                    udp_data_req_t           *udp_data_req_p;
+                    struct sockaddr_in        peer_addr;
 
-                udp_data_req_p = &received_message_p->ittiMsg.udp_data_req;
+                    udp_data_req_p = &received_message_p->ittiMsg.udp_data_req;
 
-                memset(&peer_addr, 0, sizeof(struct sockaddr_in));
+                    //UDP_DEBUG("-- UDP_DATA_REQ -----------------------------------------------------\n%s :\n",
+                    //        __FUNCTION__);
+                    //udp_print_hex_octets(&udp_data_req_p->buffer[udp_data_req_p->buffer_offset],
+                    //        udp_data_req_p->buffer_length);
 
-                peer_addr.sin_family       = AF_INET;
-                peer_addr.sin_port         = htons(udp_data_req_p->peer_port);
-                peer_addr.sin_addr.s_addr  = udp_data_req_p->peer_address;
+                    memset(&peer_addr, 0, sizeof(struct sockaddr_in));
 
-                pthread_mutex_lock(&udp_socket_list_mutex);
-                udp_sock_p = udp_get_socket_desc(ITTI_MSG_ORIGIN_ID(received_message_p));
+                    peer_addr.sin_family       = AF_INET;
+                    peer_addr.sin_port         = htons(udp_data_req_p->peer_port);
+                    peer_addr.sin_addr.s_addr  = udp_data_req_p->peer_address;
 
-                if (udp_sock_p == NULL) {
-                    UDP_ERROR("Failed to retrieve the udp socket descriptor "
-                    "associated with task %d\n", ITTI_MSG_ORIGIN_ID(received_message_p));
-                    pthread_mutex_unlock(&udp_socket_list_mutex);
-                    if (udp_data_req_p->buffer) {
-                        free(udp_data_req_p->buffer);
+                    pthread_mutex_lock(&udp_socket_list_mutex);
+                    udp_sock_p = udp_server_get_socket_desc(ITTI_MSG_ORIGIN_ID(received_message_p));
+
+                    if (udp_sock_p == NULL) {
+                        UDP_ERROR("Failed to retrieve the udp socket descriptor "
+                                "associated with task %d\n", ITTI_MSG_ORIGIN_ID(received_message_p));
+                        pthread_mutex_unlock(&udp_socket_list_mutex);
+                        if (udp_data_req_p->buffer) {
+                            itti_free(ITTI_MSG_ORIGIN_ID(received_message_p),udp_data_req_p->buffer);
+                        }
+                        goto on_error;
                     }
-                    goto on_error;
-                }
-                udp_sd = udp_sock_p->sd;
-                pthread_mutex_unlock(&udp_socket_list_mutex);
+                    udp_sd = udp_sock_p->sd;
+                    pthread_mutex_unlock(&udp_socket_list_mutex);
 
-                UDP_DEBUG("[%d] Sending message of size %u to "IPV4_ADDR" and port %u\n",
-                          udp_sd, udp_data_req_p->buffer_length,
-                          IPV4_ADDR_FORMAT(udp_data_req_p->peer_address),
-                          udp_data_req_p->peer_port);
+                    UDP_DEBUG("[%d] Sending message of size %u to "IPV4_ADDR" and port %u\n",
+                            udp_sd, udp_data_req_p->buffer_length,
+                            IPV4_ADDR_FORMAT(udp_data_req_p->peer_address),
+                            udp_data_req_p->peer_port);
 
-                bytes_written = sendto(udp_sd, udp_data_req_p->buffer,
+                    bytes_written = sendto(udp_sd, &udp_data_req_p->buffer[udp_data_req_p->buffer_offset],
                                        udp_data_req_p->buffer_length, 0,
                                        (struct sockaddr *)&peer_addr,
                                        sizeof(struct sockaddr_in));
 
-                if (bytes_written != udp_data_req_p->buffer_length) {
-                    UDP_ERROR("There was an error while writing to socket "
-                    "(%d:%s)\n", errno, strerror(errno));
-                }
-            } break;
+                    itti_free(ITTI_MSG_ORIGIN_ID(received_message_p),udp_data_req_p->buffer);
 
-            case TERMINATE_MESSAGE: {
-                itti_exit_task();
-            } break;
+                    if (bytes_written != udp_data_req_p->buffer_length) {
+                        UDP_ERROR("There was an error while writing to socket "
+                                "(%d:%s)\n", errno, strerror(errno));
+                    }
+                } break;
 
-            case MESSAGE_TEST: {
-            } break;
+                case TERMINATE_MESSAGE: {
+                    itti_exit_task();
+                } break;
 
-            default: {
-                UDP_DEBUG("Unkwnon message ID %d:%s\n",
-                          ITTI_MSG_ID(received_message_p), ITTI_MSG_NAME(received_message_p));
-            } break;
-        }
+                case MESSAGE_TEST: {
+                } break;
+
+                default: {
+                    UDP_DEBUG("Unkwnon message ID %d:%s\n",
+                            ITTI_MSG_ID(received_message_p), ITTI_MSG_NAME(received_message_p));
+                } break;
+            }
+#endif
 on_error:
-        itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), received_message_p);
-        received_message_p = NULL;
+            rc = itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), received_message_p);
+            AssertFatal(rc == EXIT_SUCCESS, "Failed to free memory (%d)!\n", rc);
+            received_message_p = NULL;
+        }
+        nb_events = itti_get_events(TASK_UDP, &events);
+        if ((nb_events > 0) && (events != NULL)) {
+            /* Now handle notifications for other sockets */
+            udp_server_flush_sockets(events, nb_events);
+        }
     }
     return NULL;
 }

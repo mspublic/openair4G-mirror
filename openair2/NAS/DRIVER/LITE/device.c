@@ -50,6 +50,7 @@
 
 //#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/moduleparam.h>
@@ -314,7 +315,6 @@ void oai_nw_drv_tx_timeout(struct net_device *dev){
   printk("[OAI_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev->name);
 }
 
-#ifdef  KERNEL_VERSION_GREATER_THAN_2629
 static const struct net_device_ops nasmesh_netdev_ops = {
     .ndo_open               = oai_nw_drv_open,
     .ndo_stop               = oai_nw_drv_stop,
@@ -328,7 +328,6 @@ static const struct net_device_ops nasmesh_netdev_ops = {
     .ndo_tx_timeout         = oai_nw_drv_tx_timeout,
     .ndo_change_rx_flags    = oai_nw_drv_change_rx_flags,
 };
-#endif
     /*.ndo_set_multicast_list = NULL,*/
 
 //---------------------------------------------------------------------------
@@ -366,11 +365,6 @@ void oai_nw_drv_init(struct net_device *dev){
     set_bit(__LINK_STATE_PRESENT, &dev->state);
 
     //
-#ifdef KERNEL_VERSION_GREATER_THAN_2629
-    printk("[OAI_IP_DRV][%s] KERNEL_VERSION_GREATER_THAN_2629\n", __FUNCTION__);
-    #ifdef  KERNEL_VERSION_GREATER_THAN_32
-    printk("[OAI_IP_DRV][%s] KERNEL_VERSION_GREATER_THAN_32\n", __FUNCTION__);
-    #endif
     dev->netdev_ops = &nasmesh_netdev_ops;
     #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
     printk("[OAI_IP_DRV][%s] Driver type ETHERNET\n", __FUNCTION__);
@@ -390,22 +384,6 @@ void oai_nw_drv_init(struct net_device *dev){
     //346 }
     ether_setup(dev);
     #endif
-#else
-    printk("[OAI_IP_DRV][%s] KERNEL_VERSION_LOWER_THAN_2629\n", __FUNCTION__);
-    dev->open            = oai_nw_drv_open;
-    dev->stop            = oai_nw_drv_stop;
-    dev->set_config      = oai_nw_drv_set_config;
-    dev->hard_start_xmit = oai_nw_drv_hard_start_xmit;
-    dev->do_ioctl        = oai_nw_drv_CTL_ioctl;
-    dev->get_stats       = oai_nw_drv_get_stats;
-    //  dev->rebuild_header = NULL;
-    //  dev->hard_header = NULL;
-    dev->change_mtu      = oai_nw_drv_change_mtu;
-    //  dev->hard_header_cache = NULL;
-    //  dev->header_cache_update = NULL;
-    dev->tx_timeout      = oai_nw_drv_tx_timeout;
-    dev->change_rx_flags = oai_nw_drv_change_rx_flags;
-#endif
     //
     // Initialize private structure
     priv->rx_flags                 = OAI_NW_DRV_RESET_RX_FLAGS;
@@ -530,7 +508,11 @@ int init_module (void) {
 
     sprintf(devicename,"oai%d",inst);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     oai_nw_drv_dev[inst]  = alloc_netdev(sizeof(struct oai_nw_drv_priv),devicename, oai_nw_drv_init);
+#else 
+    oai_nw_drv_dev[inst]  = alloc_netdev(sizeof(struct oai_nw_drv_priv),devicename, NET_NAME_PREDICTABLE, oai_nw_drv_init);
+#endif
     //netif_stop_queue(oai_nw_drv_dev[inst]);
 
     if (oai_nw_drv_dev[inst] == NULL) {
@@ -627,5 +609,4 @@ MODULE_PARM_DESC(oai_nw_drv_is_clusterhead,"The Clusterhead Indicator");
 //MODULE_DESCRIPTION(DRV_DESCRIPTION);
 //MODULE_LICENSE("GPL");
 //MODULE_VERSION(DRV_VERSION);
-/*#endif*/
 

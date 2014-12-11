@@ -107,20 +107,20 @@ int s6a_init(const mme_config_t *mme_config_p)
 
     memset(&s6a_fd_cnf, 0, sizeof(s6a_fd_cnf_t));
 
-    if (strcmp(fd_core_version(), FREE_DIAMETER_MINIMUM_VERSION) != 0) {
-        S6A_ERROR("Freediameter version %s fount, expecting %s\n", fd_core_version(),
+    /*if (strcmp(fd_core_version(), FREE_DIAMETER_MINIMUM_VERSION) != 0) {
+        S6A_ERROR("Freediameter version %s found, expecting %s\n", fd_core_version(),
                   FREE_DIAMETER_MINIMUM_VERSION);
         return -1;
     } else {
         S6A_DEBUG("Freediameter version %s\n", fd_core_version());
-    }
+    }*/
 
 
     /* Initializing freeDiameter core */
     S6A_DEBUG("Initializing freeDiameter core...\n");
     ret = fd_core_initialize();
     if (ret != 0) {
-        S6A_ERROR("An error occurred during freeDiameter core library initialization\n");
+        S6A_ERROR("An error occurred during freeDiameter core library initialization: %d\n",ret);
         return ret;
     } else {
         S6A_DEBUG("Initializing freeDiameter core done\n");

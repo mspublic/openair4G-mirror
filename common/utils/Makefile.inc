@@ -1,3 +1,7 @@
+export KERNEL_DIR=/lib/modules/$(shell uname -r)/
+CC=gcc
+CCC=gcc
+
 ITTI_DIR = $(COMMON_UTILS_DIR)/itti
 
 ITTI_OBJS =  $(ITTI_DIR)/intertask_interface.o

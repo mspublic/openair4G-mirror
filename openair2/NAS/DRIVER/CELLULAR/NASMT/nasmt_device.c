@@ -47,6 +47,7 @@
 //:::::::::::::::::::::::::::::::::::::::;;
 //#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/moduleparam.h>
@@ -127,9 +128,6 @@ int nasmt_open(struct net_device *dev){
 
 // next lines prevent compilation of the driver with kernel version under 2.6.29
 // ATTENTION !!!!!! NASMT is not usable with these versions
-#ifndef  KERNEL_VERSION_GREATER_THAN_2629
-  kernel_version_under_2629_not supported_by_nasmt = 0;
-#endif
 
   if(!netif_queue_stopped(dev))
     netif_start_queue(dev);
@@ -453,7 +451,11 @@ int init_module (void) {
 
   // Allocate device structure 
   sprintf(devicename,"oai%d",inst);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
   gdev = alloc_netdev(sizeof(struct nas_priv), devicename, nasmt_init);
+#else
+  gdev = alloc_netdev(sizeof(struct nas_priv), devicename, NET_NAME_PREDICTABLE, nasmt_init);
+#endif
   priv = netdev_priv(gdev);
 ////
   #ifndef NAS_NETLINK

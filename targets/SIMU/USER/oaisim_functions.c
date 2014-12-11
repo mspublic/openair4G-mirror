@@ -51,7 +51,6 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "PHY_INTERFACE/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "SCHED/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OCG/OCG_extern.h"
@@ -93,6 +92,7 @@ uint16_t           Nid_cell              = 0; //needed by init_lte_vars
 int           nb_antennas_rx        = 2; // //
 uint8_t            target_dl_mcs         = 16; // max mcs used by MAC scheduler
 uint8_t            rate_adaptation_flag  = 0;
+uint8_t 		   set_snr				 = 0;
 uint8_t            set_sinr              = 0;
 double             snr_dB=0, sinr_dB=0;
 uint8_t            set_seed              = 0;
@@ -600,7 +600,7 @@ void get_simulation_options(int argc, char *argv[]) {
 
       case 'x':
         oai_emulation.info.transmission_mode[0] = atoi (optarg);
-        if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6)) {
+        if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3) && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6)) {
             printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
             exit(-1);
         }
@@ -815,6 +815,20 @@ void init_openair1(void) {
   int list_index;
 #endif
   // change the nb_connected_eNB
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    init_lte_vars (&frame_parms[CC_id], 
+		   oai_emulation.info.frame_type[CC_id], 
+		   oai_emulation.info.tdd_config[CC_id], 
+		   oai_emulation.info.tdd_config_S[CC_id],
+		   oai_emulation.info.extended_prefix_flag[CC_id],
+		   oai_emulation.info.N_RB_DL[CC_id], 
+		   Nid_cell, 
+		   cooperation_flag, 
+		   oai_emulation.info.transmission_mode[CC_id], 
+		   abstraction_flag,
+		   nb_antennas_rx, 
+		   oai_emulation.info.eMBMS_active_state);
+  }
 
   init_lte_vars (frame_parms, 
 		 oai_emulation.info.frame_type, 
@@ -843,10 +857,11 @@ void init_openair1(void) {
       }
   }
 
-  printf ("AFTER init: Nid_cell %d\n", PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell);
-  printf ("AFTER init: frame_type %d,tdd_config %d\n",
-      PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
-      PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
+   printf ("AFTER init: MAX_NUM_CCs %d, Nid_cell %d frame_type %d,tdd_config %d\n",
+	  MAX_NUM_CCs,
+	  PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell,
+	  PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
+	  PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
 
   number_of_cards = 1;
 

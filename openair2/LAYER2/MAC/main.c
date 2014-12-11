@@ -432,7 +432,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, uint8_t cba_group_
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
-  mac_xface->get_SB_size               = Get_SB_size;
+//  mac_xface->get_SB_size               = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->Msg1_transmitted          = Msg1_tx;
@@ -498,6 +498,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, uint8_t cba_group_
   mac_xface->get_mu_mimo_mode           = get_mu_mimo_mode;
 
   mac_xface->get_hundred_times_delta_TF = get_hundred_times_delta_IF_mac;
+  mac_xface->get_target_ul_rx_power     = get_target_ul_rx_power;
 
 #ifdef Rel10
   mac_xface->get_mch_sdu                 = get_mch_sdu;

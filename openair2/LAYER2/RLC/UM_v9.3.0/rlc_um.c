@@ -47,7 +47,7 @@
 
 #include "rlc_um_very_simple_test.h"
 
-#define DEBUG_RLC_UM_TX_STATUS 1
+//#define DEBUG_RLC_UM_TX_STATUS 1
 
 
 #ifdef TRACE_RLC_UM_PDU
@@ -169,11 +169,12 @@ rlc_um_get_pdus (void *argP, frame_t frameP)
         break;
 
       default:
-        LOG_E(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_DATA_REQ UNKNOWN PROTOCOL STATE %02X hex\n",
+        LOG_E(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] MAC_DATA_REQ UNKNOWN PROTOCOL STATE %02X hex\n",
                 frameP,
                 (rlc_p->is_enb) ? "eNB" : "UE",
                 rlc_p->enb_module_id,
                 rlc_p->ue_module_id,
+                (rlc_p->is_data_plane) ? "DRB" : "SRB",
                 rlc_p->rb_id,
                 rlc_p->protocol_state);
   }
@@ -256,11 +257,12 @@ rlc_um_rx (void *argP, frame_t frameP, eNB_flag_t eNB_flagP, struct mac_data_ind
 
 #ifdef TRACE_RLC_UM_PDU
         if (data_indP.data.nb_elements > 0) {
-            LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_DATA_IND %d TBs\n",
+            LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] MAC_DATA_IND %d TBs\n",
                     frameP,
                     (l_rlc_p->is_enb) ? "eNB" : "UE",
                     l_rlc_p->enb_module_id,
                     l_rlc_p->ue_module_id,
+                    (l_rlc_p->is_data_plane) ? "DRB" : "SRB",
                     l_rlc_p->rb_id,
                     data_indP.data.nb_elements);
 
@@ -351,11 +353,12 @@ rlc_um_rx (void *argP, frame_t frameP, eNB_flag_t eNB_flagP, struct mac_data_ind
         // - stays in the LOCAL_SUSPEND state;
         // - modifies only the protocol parameters and timers as indicated by
         //   upper layers.
-        LOG_N(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] RLC_LOCAL_SUSPEND_STATE\n",
+        LOG_N(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] RLC_LOCAL_SUSPEND_STATE\n",
                 frameP,
                 (l_rlc_p->is_enb) ? "eNB" : "UE",
                 l_rlc_p->enb_module_id,
                 l_rlc_p->ue_module_id,
+                (l_rlc_p->is_data_plane) ? "DRB" : "SRB",
                 l_rlc_p->rb_id);
         /*if (data_indP.data.nb_elements > 0) {
             LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_DATA_IND %d TBs\n", l_rlc_p->module_id, l_rlc_p->rb_id, frameP, data_indP.data.nb_elements);
@@ -386,11 +389,12 @@ rlc_um_rx (void *argP, frame_t frameP, eNB_flag_t eNB_flagP, struct mac_data_ind
         break;
 
       default:
-        LOG_E(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] TX UNKNOWN PROTOCOL STATE %02X hex\n",
+        LOG_E(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] TX UNKNOWN PROTOCOL STATE %02X hex\n",
                 frameP,
                 (l_rlc_p->is_enb) ? "eNB" : "UE",
                 l_rlc_p->enb_module_id,
                 l_rlc_p->ue_module_id,
+                (l_rlc_p->is_data_plane) ? "DRB" : "SRB",
                 l_rlc_p->rb_id,
                 l_rlc_p->protocol_state);
   }
@@ -406,6 +410,7 @@ rlc_um_mac_status_indication (void *rlc_pP, frame_t frameP, eNB_flag_t eNB_flagP
   uint16_t  sdu_remaining_size = 0;
   int32_t diff_time=0;
   rlc_um_entity_t   *rlc_p = NULL;
+  mem_block_t       *mb_p = NULL;
 
   status_resp.buffer_occupancy_in_pdus         = 0;
   status_resp.buffer_occupancy_in_bytes        = 0;
@@ -421,25 +426,25 @@ rlc_um_mac_status_indication (void *rlc_pP, frame_t frameP, eNB_flag_t eNB_flagP
       rlc_p->nb_bytes_requested_by_mac = tbs_sizeP;
 
       status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (rlc_p);
-      if (status_resp.buffer_occupancy_in_bytes > 0) {
+      if ((status_resp.buffer_occupancy_in_bytes > 0) && ((mb_p = list_get_head(&rlc_p->input_sdus)) != NULL)) {
 
-	  status_resp.buffer_occupancy_in_bytes += rlc_p->tx_header_min_length_in_bytes;
-	  status_resp.buffer_occupancy_in_pdus = rlc_p->nb_sdu;
+          status_resp.buffer_occupancy_in_bytes += rlc_p->tx_header_min_length_in_bytes;
+          status_resp.buffer_occupancy_in_pdus = rlc_p->input_sdus.nb_elements;
 
-	  diff_time =   frameP - ((struct rlc_um_tx_sdu_management *) (rlc_p->input_sdus[rlc_p->current_sdu_index])->data)->sdu_creation_time;
-	  status_resp.head_sdu_creation_time = (diff_time > 0 ) ? (uint32_t) diff_time :  (uint32_t)(0xffffffff - diff_time + frameP) ;
-	  //msg("rlc_p status for frameP %d diff time %d resp %d\n", frameP, diff_time,status_resp.head_sdu_creation_time) ;
+          diff_time =   frameP - ((struct rlc_um_tx_sdu_management *)mb_p->data)->sdu_creation_time;
+          status_resp.head_sdu_creation_time = (diff_time > 0 ) ? (uint32_t) diff_time :  (uint32_t)(0xffffffff - diff_time + frameP) ;
+          //msg("rlc_p status for frameP %d diff time %d resp %d\n", frameP, diff_time,status_resp.head_sdu_creation_time) ;
 
-	  sdu_size            = ((struct rlc_um_tx_sdu_management *) (rlc_p->input_sdus[rlc_p->current_sdu_index])->data)->sdu_size;
-	  sdu_remaining_size  = ((struct rlc_um_tx_sdu_management *) (rlc_p->input_sdus[rlc_p->current_sdu_index])->data)->sdu_remaining_size;
+          sdu_size            = ((struct rlc_um_tx_sdu_management *) mb_p->data)->sdu_size;
+          sdu_remaining_size  = ((struct rlc_um_tx_sdu_management *) mb_p->data)->sdu_remaining_size;
 
-	  status_resp.head_sdu_remaining_size_to_send = sdu_remaining_size;
-	  if (sdu_size == sdu_remaining_size)  {
+          status_resp.head_sdu_remaining_size_to_send = sdu_remaining_size;
+          if (sdu_size == sdu_remaining_size)  {
            status_resp.head_sdu_is_segmented = 0;
-	  }
-	  else {
-	   status_resp.head_sdu_is_segmented = 1;
-	  }
+          }
+          else {
+              status_resp.head_sdu_is_segmented = 1;
+          }
 
       } else {
       }
@@ -448,37 +453,40 @@ rlc_um_mac_status_indication (void *rlc_pP, frame_t frameP, eNB_flag_t eNB_flagP
       status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlc_pP)->protocol_state;
       #ifdef DEBUG_RLC_UM_TX_STATUS
       if ((((rlc_um_entity_t *) rlc_pP)->rb_id > 0) && (status_resp.buffer_occupancy_in_bytes > 0)) {
-          LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_STATUS_INDICATION (DATA) %d bytes -> %d bytes\n",
+          LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] MAC_STATUS_INDICATION (DATA) %d bytes requested -> %d bytes available\n",
                   frameP,
                   (rlc_p->is_enb) ? "eNB" : "UE",
                   rlc_p->enb_module_id,
                   rlc_p->ue_module_id,
+                  (rlc_p->is_data_plane) ? "DRB" : "SRB",
                   rlc_p->rb_id,
                   tbs_sizeP,
                   status_resp.buffer_occupancy_in_bytes);
 
           if ((tx_statusP.tx_status == MAC_TX_STATUS_SUCCESSFUL) && (tx_statusP.no_pdu)) {
-              LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n",
+              LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n",
                       frameP,
                       (rlc_p->is_enb) ? "eNB" : "UE",
                       rlc_p->enb_module_id,
                       rlc_p->ue_module_id,
+                      (rlc_p->is_data_plane) ? "DRB" : "SRB",
                       rlc_p->rb_id,
                       tx_statusP.no_pdu);
           }
           if ((tx_statusP.tx_status == MAC_TX_STATUS_UNSUCCESSFUL) && (tx_statusP.no_pdu)) {
-              LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_STATUS_INDICATION  TX STATUS UNSUCCESSFUL %d PDUs\n",
+              LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] MAC_STATUS_INDICATION  TX STATUS UNSUCCESSFUL %d PDUs\n",
                       frameP,
                       (rlc_p->is_enb) ? "eNB" : "UE",
                       rlc_p->enb_module_id,
                       rlc_p->ue_module_id,
+                      (rlc_p->is_data_plane) ? "DRB" : "SRB",
                       rlc_p->rb_id,
                       tx_statusP.no_pdu);
           }
       }
       #endif
   } else {
-     LOG_E(RLC, "[RLC] RLCp not defined!!!\n");
+     LOG_E(RLC, "[RLC] rlc_um_mac_status_indication RLC NULL!!!\n");
   }
   return status_resp;
 }
@@ -517,11 +525,12 @@ rlc_um_mac_data_request (void *rlc_pP,frame_t frameP)
         while (tb_p != NULL) {
             tb_size_in_bytes   = ((struct mac_tb_req *) (tb_p->data))->tb_size;
 
-            LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_DATA_REQUEST  TB SIZE %u\n",
+            LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] MAC_DATA_REQUEST  TB SIZE %u\n",
                     frameP,
                     (l_rlc_p->is_enb) ? "eNB" : "UE",
                     l_rlc_p->enb_module_id,
                     l_rlc_p->ue_module_id,
+                    (l_rlc_p->is_data_plane) ? "DRB" : "SRB",
                     l_rlc_p->rb_id,
                     ((struct mac_tb_req *) (tb_p->data))->tb_size);
             l_rlc_p->stat_tx_data_pdu   += 1;
@@ -624,42 +633,31 @@ rlc_um_data_req (void *rlc_pP, frame_t frameP, mem_block_t *sdu_pP)
   uint16_t             data_size;
 #endif
 
-  LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
+  LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][%s %02d] RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d\n",
      frameP,
      (rlc_p->is_enb) ? "eNB" : "UE",
      rlc_p->enb_module_id,
      rlc_p->ue_module_id,
+     (rlc_p->is_data_plane) ? "DRB" : "SRB",
      rlc_p->rb_id,
      ((struct rlc_um_data_req *) (sdu_pP->data))->data_size,
      rlc_p->buffer_occupancy,
-     rlc_p->nb_sdu,
-     rlc_p->current_sdu_index,
-     rlc_p->next_sdu_index);
-  rlc_util_print_hex_octets(
+     rlc_p->input_sdus.nb_elements);
+
+  /*rlc_util_print_hex_octets(
       RLC,
       (uint8_t*)&sdu_pP->data[sizeof (struct rlc_um_data_req_alloc)],
-      ((struct rlc_um_data_req *) (sdu_pP->data))->data_size);
+      ((struct rlc_um_data_req *) (sdu_pP->data))->data_size);*/
 
-  /*#ifndef USER_MODE
-  rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
-  sec = (rlc_um_time_us/ 1000000);
-  min = (sec / 60) % 60;
-  sec = sec % 60;
-  usec =  rlc_um_time_us % 1000000;
-  msg ("[RLC_UM_LITE][RB  %d] at time %2d:%2d.%6d\n", rlc_p->rb_id, min, sec , usec);
-#endif*/
-  if (rlc_p->input_sdus[rlc_p->next_sdu_index] == NULL) {
-    rlc_p->input_sdus[rlc_p->next_sdu_index] = sdu_pP;
     // IMPORTANT : do not change order of affectations
     ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size = ((struct rlc_um_data_req *) (sdu_pP->data))->data_size;
-    rlc_p->buffer_occupancy += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
-    rlc_p->nb_sdu += 1;
+    //rlc_p->nb_sdu += 1;
     ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->first_byte = (uint8_t*)&sdu_pP->data[sizeof (struct rlc_um_data_req_alloc)];
     ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_remaining_size = ((struct rlc_um_tx_sdu_management *)
                                                                               (sdu_pP->data))->sdu_size;
     ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_segmented_size = 0;
     ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_creation_time = frameP;
-    rlc_p->next_sdu_index = (rlc_p->next_sdu_index + 1) % rlc_p->size_input_sdus_buffer;
+    //rlc_p->next_sdu_index = (rlc_p->next_sdu_index + 1) % rlc_p->size_input_sdus_buffer;
 
     rlc_p->stat_tx_pdcp_sdu   += 1;
     rlc_p->stat_tx_pdcp_bytes += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
@@ -710,8 +708,12 @@ rlc_um_data_req (void *rlc_pP, frame_t frameP, mem_block_t *sdu_pP)
       LOG_T(RLC, "%s", message_string);
 #endif 
 #   endif
+      pthread_mutex_lock(&rlc_p->lock_input_sdus);
+      rlc_p->buffer_occupancy += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
+      list_add_tail_eurecom(sdu_pP, &rlc_p->input_sdus);
+      pthread_mutex_unlock(&rlc_p->lock_input_sdus);
 
-  } else {
+  /*} else {
     LOG_W(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] RLC-UM_DATA_REQ input buffer full SDU garbaged\n",
           frameP,
           (rlc_p->is_enb) ? "eNB" : "UE",
@@ -731,5 +733,5 @@ rlc_um_data_req (void *rlc_pP, frame_t frameP, mem_block_t *sdu_pP)
           rlc_p->ue_module_id,
           rlc_p->rb_id);
 #endif
-  }
+  }*/
 }

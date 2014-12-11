@@ -43,6 +43,8 @@
 #include "log_extern.h"
 #include "assertions.h"
 #include "enb_config.h"
+#include "UTIL/OTG/otg.h"
+#include "UTIL/OTG/otg_externs.h"
 #if defined(OAI_EMU)
 # include "OCG.h"
 # include "OCG_extern.h"
@@ -83,6 +85,8 @@
 #define ENB_CONFIG_STRING_CELL_MBSFN	                                "Nid_cell_mbsfn" 
 #define ENB_CONFIG_STRING_NB_ANT_TX	                                "nb_antennas_tx"   
 #define ENB_CONFIG_STRING_NB_ANT_RX	                                "nb_antennas_rx"   
+#define ENB_CONFIG_STRING_TX_GAIN                                       "tx_gain"   
+#define ENB_CONFIG_STRING_RX_GAIN                                       "rx_gain"   
 #define ENB_CONFIG_STRING_PRACH_ROOT	                                "prach_root"   
 #define ENB_CONFIG_STRING_PRACH_CONFIG_INDEX	                        "prach_config_index" 
 #define ENB_CONFIG_STRING_PRACH_HIGH_SPEED	                        "prach_high_speed" 
@@ -152,6 +156,7 @@
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME   "ENB_IPV4_ADDRESS_FOR_S1_MME"
 #define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U    "ENB_INTERFACE_NAME_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
+#define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
 
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY                      "Asn1_verbosity"
@@ -159,13 +164,18 @@
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING             "annoying"
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO                 "info"
 
+// OTG config per ENB-UE DL 
+#define ENB_CONF_STRING_OTG_CONFIG                          "otg_config"
+#define ENB_CONF_STRING_OTG_UE_ID                           "ue_id"
+#define ENB_CONF_STRING_OTG_APP_TYPE                        "app_type"
+#define ENB_CONF_STRING_OTG_BG_TRAFFIC                      "bg_traffic"
 
 // per eNB configuration 
 #define ENB_CONFIG_STRING_LOG_CONFIG                       "log_config"
 #define ENB_CONFIG_STRING_GLOBAL_LOG_LEVEL                 "global_log_level"
-#define ENB_CONFIG_STRING_GLOBAL_LOG_VERBOSITY              "global_log_verbosity"
-#define ENB_CONFIG_STRING_HW_LOG_LEVEL                    "hw_log_level"
-#define ENB_CONFIG_STRING_HW_LOG_VERBOSITY                "hw_log_verbosity"
+#define ENB_CONFIG_STRING_GLOBAL_LOG_VERBOSITY             "global_log_verbosity"
+#define ENB_CONFIG_STRING_HW_LOG_LEVEL                     "hw_log_level"
+#define ENB_CONFIG_STRING_HW_LOG_VERBOSITY                 "hw_log_verbosity"
 #define ENB_CONFIG_STRING_PHY_LOG_LEVEL                    "phy_log_level"
 #define ENB_CONFIG_STRING_PHY_LOG_VERBOSITY                "phy_log_verbosity"
 #define ENB_CONFIG_STRING_MAC_LOG_LEVEL                    "mac_log_level"
@@ -176,8 +186,12 @@
 #define ENB_CONFIG_STRING_PDCP_LOG_VERBOSITY               "pdcp_log_verbosity"
 #define ENB_CONFIG_STRING_RRC_LOG_LEVEL                    "rrc_log_level"
 #define ENB_CONFIG_STRING_RRC_LOG_VERBOSITY                "rrc_log_verbosity"
-
-
+#define ENB_CONFIG_STRING_GTPU_LOG_LEVEL                   "gtpu_log_level"
+#define ENB_CONFIG_STRING_GTPU_LOG_VERBOSITY               "gtpu_log_verbosity"
+#define ENB_CONFIG_STRING_UDP_LOG_LEVEL                    "udp_log_level"
+#define ENB_CONFIG_STRING_UDP_LOG_VERBOSITY                "udp_log_verbosity"
+#define ENB_CONFIG_STRING_OSA_LOG_LEVEL                    "osa_log_level"
+#define ENB_CONFIG_STRING_OSA_LOG_VERBOSITY                "osa_log_verbosity"
 
 
 #define KHz (1000UL)
@@ -253,8 +267,97 @@ static void enb_config_display(void) {
 
             printf( "\n\tCell ID for CC %d:\t%d:\n",j,enb_properties.properties[i]->Nid_cell[j]);
             printf( "\tN_RB_DL for CC %d:\t%d:\n",j,enb_properties.properties[i]->N_RB_DL[j]);
-        }
 
+      // RACH-Config
+	    printf( "\trach_numberOfRA_Preambles for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_numberOfRA_Preambles[j]);
+	    printf( "\trach_preamblesGroupAConfig for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_preamblesGroupAConfig[j]);
+	    if (enb_properties.properties[i]->rach_preamblesGroupAConfig[j]) {
+	      printf( "\trach_sizeOfRA_PreamblesGroupA for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_sizeOfRA_PreamblesGroupA[j]);
+	      printf( "\trach_messageSizeGroupA for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_messageSizeGroupA[j]); 
+	      printf( "\trach_messagePowerOffsetGroupB for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_messagePowerOffsetGroupB[j]);
+	    }
+	    printf( "\trach_powerRampingStep for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_powerRampingStep[j]);
+	    printf( "\trach_preambleInitialReceivedTargetPower for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_preambleInitialReceivedTargetPower[j]);
+	    printf( "\trach_preambleTransMax for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_preambleTransMax[j]);
+	    printf( "\trach_raResponseWindowSize for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_raResponseWindowSize[j]);
+	    printf( "\trach_macContentionResolutionTimer for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_macContentionResolutionTimer[j]);
+	    printf( "\trach_maxHARQ_Msg3Tx for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_maxHARQ_Msg3Tx[j]);
+	    
+	    // BCCH-Config
+	    printf( "\tbcch_modificationPeriodCoeff for CC %d:\t%d:\n",j,enb_properties.properties[i]->bcch_modificationPeriodCoeff[j]);
+	    
+	    // PCCH-Config
+	    printf( "\tpcch_defaultPagingCycle for CC %d:\t%d:\n",j,enb_properties.properties[i]->pcch_defaultPagingCycle[j]);
+	    printf( "\tpcch_nB for CC %d:\t%d:\n",j,enb_properties.properties[i]->pcch_nB[j]);
+	    
+	    // PRACH-Config
+	    printf( "\tprach_root for CC %d:\t%d:\n",j,enb_properties.properties[i]->prach_root[j]);
+	    printf( "\tprach_config_index for CC %d:\t%d:\n",j,enb_properties.properties[i]->prach_config_index[j]);
+	    printf( "\tprach_high_speed for CC %d:\t%d:\n",j,enb_properties.properties[i]->prach_high_speed[j]);
+	    printf( "\tprach_zero_correlation for CC %d:\t%d:\n",j,enb_properties.properties[i]->prach_zero_correlation[j]);
+	    printf( "\tprach_freq_offset for CC %d:\t%d:\n",j,enb_properties.properties[i]->prach_freq_offset[j]);
+	    
+	    // PDSCH-Config
+	    printf( "\tpdsch_referenceSignalPower for CC %d:\t%d:\n",j,enb_properties.properties[i]->pdsch_referenceSignalPower[j]);  
+	    printf( "\tpdsch_p_b for CC %d:\t%d:\n",j,enb_properties.properties[i]->pdsch_p_b[j]);  
+	    
+	    // PUSCH-Config
+	    printf( "\tpusch_n_SB for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_n_SB[j]);  
+	    printf( "\tpusch_hoppingMode for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_hoppingMode[j]);
+	    printf( "\tpusch_hoppingOffset for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_hoppingOffset[j]);
+	    printf( "\tpusch_enable64QAM for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_enable64QAM[j]);
+	    printf( "\tpusch_groupHoppingEnabled for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_groupHoppingEnabled[j]);
+	    printf( "\tpusch_groupAssignment for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_groupAssignment[j]);
+	    printf( "\tpusch_sequenceHoppingEnabled for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_sequenceHoppingEnabled[j]);
+	    printf( "\tpusch_nDMRS1 for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_nDMRS1[j]);
+	    
+	    // PUCCH-Config
+	    
+	    printf( "\tpucch_delta_shift for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_delta_shift[j]);
+	    printf( "\tpucch_nRB_CQI for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_nRB_CQI[j]);
+	    printf( "\tpucch_nCS_AN for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_nCS_AN[j]);
+#ifndef Rel10
+	    printf( "\tpucch_n1_AN for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_n1_AN[j]);
+#endif
+	    
+	    // SRS Config
+	    printf( "\tsrs_enable for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_enable[j]);
+	    if (enb_properties.properties[i]->srs_enable[j]) {
+	      printf( "\tsrs_BandwidthConfig for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_BandwidthConfig[j]);
+	      printf( "\tsrs_BandwidthConfig for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_SubframeConfig[j]);
+	      printf( "\tsrs_ackNackST for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_ackNackST[j]); 
+	      printf( "\tsrs_MaxUpPts for CC %d:\t%d:\n",j,enb_properties.properties[i]->srs_MaxUpPts[j]);
+	    }
+    
+	    // uplinkPowerControlCommon
+	    
+	    printf( "\tpusch_p0_Nominal for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_p0_Nominal[j]);
+	    printf( "\tpucch_p0_Nominal for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_p0_Nominal[j]);
+	    printf( "\tpusch_alpha for CC %d:\t%d:\n",j,enb_properties.properties[i]->pusch_alpha[j]);
+	    printf( "\tpucch_deltaF_Format1 for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_deltaF_Format1[j]);
+	    printf( "\tpucch_deltaF_Format1b for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_deltaF_Format1b[j]);
+	    printf( "\tpucch_deltaF_Format2 for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_deltaF_Format2[j]);
+	    printf( "\tpucch_deltaF_Format2a for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_deltaF_Format2a[j]);    
+	    printf( "\tpucch_deltaF_Format2b for CC %d:\t%d:\n",j,enb_properties.properties[i]->pucch_deltaF_Format2b[j]);
+	    printf( "\tmsg3_delta_Preamble for CC %d:\t%d:\n",j,enb_properties.properties[i]->msg3_delta_Preamble[j]);
+	    printf( "\tul_CyclicPrefixLength for CC %d:\t%d:\n",j,enb_properties.properties[i]->ul_CyclicPrefixLength[j]);
+	    
+	    // UE Timers and Constants
+	    
+	    printf( "\tue_TimersAndConstants_t300 for CC %d:\t%d:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t300[j]);
+	    printf( "\tue_TimersAndConstants_t301 for CC %d:\t%d:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t301[j]);
+	    printf( "\tue_TimersAndConstants_t310 for CC %d:\t%d:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t310[j]);
+	    printf( "\tue_TimersAndConstants_n310 for CC %d:\t%d:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n310[j]);
+	    printf( "\tue_TimersAndConstants_t311 for CC %d:\t%d:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t311[j]);
+	    printf( "\tue_TimersAndConstants_n311 for CC %d:\t%d:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n311[j]);
+ 
+        }
+	for (j=0; j < enb_properties.properties[i]->num_otg_elements; j++){
+	  printf( "\n\tOTG Destination UE ID:  \t%d", enb_properties.properties[i]->otg_ue_id[j]);
+	  printf( "\n\tOTG App Type:  \t%d", enb_properties.properties[i]->otg_app_type[j]);
+	  printf( "\n\tOTG Background Traffic:  \t%s\n", (enb_properties.properties[i]->otg_bg_traffic[j]==1) ? "Enabled" : "Disabled");
+	}
+	
         printf( "\n\tGlobal log level:  \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->glog_level));
         printf( "\tHW log level:      \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->hw_log_level));
         printf( "\tPHY log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->phy_log_level));
@@ -262,6 +365,9 @@ static void enb_config_display(void) {
         printf( "\tRLC log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->rlc_log_level));
         printf( "\tPDCP log level:    \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->pdcp_log_level));
         printf( "\tRRC log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->rrc_log_level));
+	printf( "\tUDP log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->udp_log_level));
+	printf( "\tGTP log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->gtpu_log_level));
+	printf( "\tOSA log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->osa_log_level));
 
         printf( "\n--------------------------------------------------------\n");
     }
@@ -329,10 +435,13 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
     config_setting_t *setting_mme_addresses         = NULL;
     config_setting_t *setting_mme_address           = NULL;
     config_setting_t *setting_enb                   = NULL;
+    config_setting_t *setting_otg                   = NULL;
+    config_setting_t *subsetting_otg                   = NULL;
     int               num_enb_properties            = 0;
     int               enb_properties_index          = 0;
     int               num_enbs;
     int               num_mme_address;
+    int               num_otg_elements              =0;
     int               num_component_carriers        =0;
     int               i;
     int               j;
@@ -346,18 +455,20 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
     const char*       frame_type;
     libconfig_int          tdd_config;
     libconfig_int          tdd_config_s;
-    const char*       prefix_type;
+    const char*            prefix_type;
     libconfig_int          eutra_band;
-    int64_t     downlink_frequency;
+    int64_t                downlink_frequency;
     libconfig_int          uplink_frequency_offset;
     libconfig_int          Nid_cell;
     libconfig_int          Nid_cell_mbsfn;
     libconfig_int          N_RB_DL;
-    libconfig_int	    nb_antennas_tx;
+    libconfig_int	   nb_antennas_tx;
     libconfig_int          nb_antennas_rx;
+    libconfig_int          tx_gain;
+    libconfig_int          rx_gain;
     libconfig_int          prach_root;
     libconfig_int          prach_config_index;
-    const char*          prach_high_speed;
+    const char*            prach_high_speed;
     libconfig_int          prach_zero_correlation;
     libconfig_int          prach_freq_offset;
     libconfig_int          pucch_delta_shift;
@@ -424,25 +535,35 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
     const char*       active_enb[MAX_ENB];
     char*             enb_interface_name_for_S1U    = NULL;
     char*             enb_ipv4_address_for_S1U      = NULL;
+    libconfig_int     enb_port_for_S1U              = 0;
     char*             enb_interface_name_for_S1_MME = NULL;
     char*             enb_ipv4_address_for_S1_MME   = NULL;
     char             *address                       = NULL;
     char             *cidr                          = NULL;
     char             *astring                       = NULL;
-    char*          glog_level                   = NULL;
-    char*          glog_verbosity               = NULL;
-    char*          hw_log_level                = NULL;
-    char*          hw_log_verbosity            = NULL;
-    char*          phy_log_level                = NULL;
-    char*          phy_log_verbosity            = NULL;
-    char*          mac_log_level                = NULL;
-    char*          mac_log_verbosity            = NULL;
-    char*          rlc_log_level                = NULL;
-    char*          rlc_log_verbosity            = NULL;
-    char*          pdcp_log_level               = NULL;
-    char*          pdcp_log_verbosity           = NULL;
-    char*          rrc_log_level                = NULL;
-    char*          rrc_log_verbosity            = NULL;
+    libconfig_int     otg_ue_id                     = 0;
+    char*             otg_app_type                  = NULL;
+    char*             otg_bg_traffic                = NULL;
+    char*             glog_level                    = NULL;
+    char*             glog_verbosity                = NULL;
+    char*             hw_log_level                  = NULL;
+    char*             hw_log_verbosity              = NULL;
+    char*             phy_log_level                 = NULL;
+    char*             phy_log_verbosity             = NULL;
+    char*             mac_log_level                 = NULL;
+    char*             mac_log_verbosity             = NULL;
+    char*             rlc_log_level                 = NULL;
+    char*             rlc_log_verbosity             = NULL;
+    char*             pdcp_log_level                = NULL;
+    char*             pdcp_log_verbosity            = NULL;
+    char*             rrc_log_level                 = NULL;
+    char*             rrc_log_verbosity             = NULL;
+    char*             gtpu_log_level                = NULL;
+    char*             gtpu_log_verbosity            = NULL;
+    char*             udp_log_level                 = NULL;
+    char*             udp_log_verbosity             = NULL;
+    char*             osa_log_level                 = NULL;
+    char*             osa_log_verbosity             = NULL;
 
     memset((char*) (enb_properties.properties), 0 , MAX_ENB * sizeof(Enb_properties_t *));
     memset((char*)active_enb,     0 , MAX_ENB * sizeof(char*));
@@ -584,6 +705,8 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                     && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_CELL_MBSFN, &Nid_cell_mbsfn)
                                     && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_NB_ANT_TX, &nb_antennas_tx)
                                     && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_NB_ANT_RX, &nb_antennas_rx)
+                                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TX_GAIN, &tx_gain)
+                                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_RX_GAIN, &rx_gain)
                                     && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PRACH_ROOT, &prach_root)
                                     && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_PRACH_CONFIG_INDEX, &prach_config_index)
                                     && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_PRACH_HIGH_SPEED, &prach_high_speed)
@@ -747,6 +870,18 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_rx choice: 1..4 !\n",
                                         lib_config_file_name_pP, i, nb_antennas_rx);
 
+                            enb_properties.properties[enb_properties_index]->tx_gain[j] = tx_gain;
+                            if ((tx_gain <0) || (nb_antennas_tx > 127))
+                                AssertError (0, parse_errors ++,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for tx_gain choice: 0..127 !\n",
+                                        lib_config_file_name_pP, i, tx_gain);
+
+                            enb_properties.properties[enb_properties_index]->rx_gain[j] = rx_gain;
+                            if ((rx_gain <0) || (rx_gain > 160))
+                                AssertError (0, parse_errors ++,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rx_gain choice: 0..160 !\n",
+                                        lib_config_file_name_pP, i, rx_gain);
+
                             enb_properties.properties[enb_properties_index]->prach_root[j] =  prach_root;
                             if ((prach_root <0) || (prach_root > 1023))
                                 AssertError (0, parse_errors ++,
@@ -822,9 +957,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_n_SB choice: 1..4!\n",
                                         lib_config_file_name_pP, i, pusch_n_SB);
                             if (strcmp(pusch_hoppingMode,"interSubFrame")==0)
-                                enb_properties.properties[enb_properties_index]->pusch_n_SB[j] = PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
+                                enb_properties.properties[enb_properties_index]->pusch_hoppingMode[j] = PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
                             else if (strcmp(pusch_hoppingMode,"intraAndInterSubFrame")==0)
-                                enb_properties.properties[enb_properties_index]->pusch_n_SB[j] = PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
+                                enb_properties.properties[enb_properties_index]->pusch_hoppingMode[j] = PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
                             else
                                 AssertError (0, parse_errors ++,
                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_hoppingMode choice: interSubframe,intraAndInterSubframe!\n",
@@ -862,7 +997,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                         lib_config_file_name_pP, i, pusch_groupAssignment);
 
                             if (strcmp(pusch_sequenceHoppingEnabled, "ENABLE") == 0)
-                                enb_properties.properties[enb_properties_index]->pusch_groupHoppingEnabled[j] = TRUE;
+                                enb_properties.properties[enb_properties_index]->pusch_sequenceHoppingEnabled[j] = TRUE;
                             else if (strcmp(pusch_sequenceHoppingEnabled, "DISABLE") == 0)
                                 enb_properties.properties[enb_properties_index]->pusch_sequenceHoppingEnabled[j] = FALSE;
                             else
@@ -951,21 +1086,21 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
                                         lib_config_file_name_pP, i, pusch_p0_Nominal);
 
-                            if (strcmp(pusch_alpha,"AL0"))
+                            if (strcmp(pusch_alpha,"AL0")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al0;
-                            else if (strcmp(pusch_alpha,"AL04"))
+                            else if (strcmp(pusch_alpha,"AL04")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al04;
-                            else if (strcmp(pusch_alpha,"AL05"))
+                            else if (strcmp(pusch_alpha,"AL05")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al05;
-                            else if (strcmp(pusch_alpha,"AL06"))
+                            else if (strcmp(pusch_alpha,"AL06")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al06;
-                            else if (strcmp(pusch_alpha,"AL07"))
+                            else if (strcmp(pusch_alpha,"AL07")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al07;
-                            else if (strcmp(pusch_alpha,"AL08"))
+                            else if (strcmp(pusch_alpha,"AL08")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al08;
-                            else if (strcmp(pusch_alpha,"AL09"))
+                            else if (strcmp(pusch_alpha,"AL09")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al09;
-                            else if (strcmp(pusch_alpha,"AL1"))
+                            else if (strcmp(pusch_alpha,"AL1")==0)
                                 enb_properties.properties[enb_properties_index]->pusch_alpha[j] = UplinkPowerControlCommon__alpha_al1;
                             else
                                 AssertError (0, parse_errors ++,
@@ -1000,7 +1135,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format1b[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF1;
                             else if (strcmp(pucch_deltaF_Format1b,"deltaF3")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format1b[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
-                            else if (strcmp(pucch_deltaF_Format1b,"deltaF5"))
+                            else if (strcmp(pucch_deltaF_Format1b,"deltaF5")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format1b[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
                             else
                                 AssertError (0, parse_errors ++,
@@ -1012,9 +1147,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF_2;
                             else if (strcmp(pucch_deltaF_Format2,"deltaF0")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
-                            else if (strcmp(pucch_deltaF_Format2,"deltaF1"))
+                            else if (strcmp(pucch_deltaF_Format2,"deltaF1")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF1;
-                            else if (strcmp(pucch_deltaF_Format2,"deltaF2"))
+                            else if (strcmp(pucch_deltaF_Format2,"deltaF2")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
                             else
                                 AssertError (0, parse_errors ++,
@@ -1026,7 +1161,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2a[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF_2;
                             else if (strcmp(pucch_deltaF_Format2a,"deltaF0")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2a[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
-                            else if (strcmp(pucch_deltaF_Format2a,"deltaF2"))
+                            else if (strcmp(pucch_deltaF_Format2a,"deltaF2")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2a[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
                             else
                                 AssertError (0, parse_errors ++,
@@ -1037,7 +1172,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2b[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF_2;
                             else if (strcmp(pucch_deltaF_Format2b,"deltaF0")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2b[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
-                            else if (strcmp(pucch_deltaF_Format2b,"deltaF2"))
+                            else if (strcmp(pucch_deltaF_Format2b,"deltaF2")==0)
                                 enb_properties.properties[enb_properties_index]->pucch_deltaF_Format2b[j] = DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
                             else
                                 AssertError (0, parse_errors ++,
@@ -1498,10 +1633,12 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                                         (const char **)&enb_interface_name_for_S1_MME)
                                         && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,
                                                 (const char **)&enb_ipv4_address_for_S1_MME)
-                                                && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,
-                                                        (const char **)&enb_interface_name_for_S1U)
-                                                        && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,
-                                                                (const char **)&enb_ipv4_address_for_S1U)
+                                                        && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,
+                                                                (const char **)&enb_interface_name_for_S1U)
+                                                                && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,
+                                                                        (const char **)&enb_ipv4_address_for_S1U)
+                                                                        && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,
+                                                                                                                               &enb_port_for_S1U)
                         )
                         ){
                             enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
@@ -1510,6 +1647,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                             if (address) {
                                 IPV4_STR_ADDR_TO_INT_NWBO ( address, enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1U, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
                             }
+                            enb_properties.properties[enb_properties_index]->enb_port_for_S1U = enb_port_for_S1U;
 
                             enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
                             cidr = enb_ipv4_address_for_S1_MME;
@@ -1519,6 +1657,41 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                             }
                         }
                     }
+
+		    // OTG _CONFIG
+		    setting_otg = config_setting_get_member (setting_enb, ENB_CONF_STRING_OTG_CONFIG);
+                    if(setting_otg != NULL) {	  
+		      num_otg_elements  = config_setting_length(setting_otg);
+		      printf("num otg elements %d \n", num_otg_elements);
+		      enb_properties.properties[enb_properties_index]->num_otg_elements = 0;
+		      for (j = 0; j < num_otg_elements; j++) {
+			subsetting_otg=config_setting_get_elem(setting_otg, j);
+			
+			if(config_setting_lookup_int(subsetting_otg, ENB_CONF_STRING_OTG_UE_ID, &otg_ue_id))
+			  enb_properties.properties[enb_properties_index]->otg_ue_id[j] = otg_ue_id;
+			else 
+			  enb_properties.properties[enb_properties_index]->otg_ue_id[j] = 1;
+			
+			if(config_setting_lookup_string(subsetting_otg, ENB_CONF_STRING_OTG_APP_TYPE, (const char **)&otg_app_type)){
+			  if ((enb_properties.properties[enb_properties_index]->otg_app_type[j] = map_str_to_int(otg_app_type_names,otg_app_type))== -1) 
+			    enb_properties.properties[enb_properties_index]->otg_app_type[j] = BCBR;
+			}else 
+			  enb_properties.properties[enb_properties_index]->otg_app_type[j] = NO_PREDEFINED_TRAFFIC; // 0
+			
+			if(config_setting_lookup_string(subsetting_otg, ENB_CONF_STRING_OTG_BG_TRAFFIC, (const char **)&otg_bg_traffic)){
+			 
+			  if ((enb_properties.properties[enb_properties_index]->otg_bg_traffic[j] = map_str_to_int(switch_names,otg_bg_traffic)) == -1){
+			    enb_properties.properties[enb_properties_index]->otg_bg_traffic[j]=0;
+	
+			  }
+			}else{ 
+			  enb_properties.properties[enb_properties_index]->otg_bg_traffic[j] = 0;
+			  printf("otg bg %s\n", otg_bg_traffic);
+			}
+			enb_properties.properties[enb_properties_index]->num_otg_elements+=1;
+			
+		      }
+		    }
                     // log_config
                     subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_LOG_CONFIG);
                     if(subsetting != NULL) {
@@ -1626,22 +1799,71 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP) {
                         } else {
                             enb_properties.properties[enb_properties_index]->rrc_log_verbosity = LOG_MED;
                         }
+                        if(config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_GTPU_LOG_LEVEL, (const char **)&gtpu_log_level)) {
+                            if ((enb_properties.properties[enb_properties_index]->gtpu_log_level = map_str_to_int(log_level_names,gtpu_log_level)) == -1 )
+                                enb_properties.properties[enb_properties_index]->gtpu_log_level = LOG_INFO;
+                            //printf( "\tGTPU log level :\t%s->%d\n",gtpu_log_level,enb_properties.properties[enb_properties_index]->gtpu_log_level);
+                        } else {
+                            enb_properties.properties[enb_properties_index]->gtpu_log_level = LOG_INFO;
+                        }
+                        if(config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_GTPU_LOG_VERBOSITY, (const char **)&gtpu_log_verbosity)) {
+                            if ((enb_properties.properties[enb_properties_index]->gtpu_log_verbosity = map_str_to_int(log_verbosity_names,gtpu_log_verbosity)) == -1)
+                                enb_properties.properties[enb_properties_index]->gtpu_log_verbosity = LOG_MED;
+                            //printf( "\tGTPU log verbosity:\t%s->%d\n",gtpu_log_verbosity,enb_properties.properties[enb_properties_index]->gtpu_log_verbosity);
+                        } else {
+                            enb_properties.properties[enb_properties_index]->gtpu_log_verbosity = LOG_MED;
+                        }
+                        if(config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_UDP_LOG_LEVEL, (const char **)&udp_log_level)) {
+                            if ((enb_properties.properties[enb_properties_index]->udp_log_level = map_str_to_int(log_level_names,udp_log_level)) == -1 )
+                                enb_properties.properties[enb_properties_index]->udp_log_level = LOG_INFO;
+                            //printf( "\tUDP log level :\t%s->%d\n",udp_log_level,enb_properties.properties[enb_properties_index]->udp_log_level);
+                        } else {
+                            enb_properties.properties[enb_properties_index]->udp_log_level = LOG_INFO;
+                        }
+                        if(config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_UDP_LOG_VERBOSITY, (const char **)&udp_log_verbosity)) {
+                            if ((enb_properties.properties[enb_properties_index]->udp_log_verbosity = map_str_to_int(log_verbosity_names,udp_log_verbosity)) == -1)
+                                enb_properties.properties[enb_properties_index]->udp_log_verbosity = LOG_MED;
+                            //printf( "\tUDP log verbosity:\t%s->%d\n",udp_log_verbosity,enb_properties.properties[enb_properties_index]->gtpu_log_verbosity);
+                        } else {
+                            enb_properties.properties[enb_properties_index]->udp_log_verbosity = LOG_MED;
+                        }
+
+			if(config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_OSA_LOG_LEVEL, (const char **)&osa_log_level)) {
+                            if ((enb_properties.properties[enb_properties_index]->osa_log_level = map_str_to_int(log_level_names,osa_log_level)) == -1 )
+                                enb_properties.properties[enb_properties_index]->osa_log_level = LOG_INFO;
+                            //printf( "\tOSA log level :\t%s->%d\n",osa_log_level,enb_properties.properties[enb_properties_index]->osa_log_level);
+                        } else {
+                            enb_properties.properties[enb_properties_index]->osa_log_level = LOG_INFO;
+                        }
+                        if(config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_OSA_LOG_VERBOSITY, (const char **)&osa_log_verbosity)) {
+                            if ((enb_properties.properties[enb_properties_index]->osa_log_verbosity = map_str_to_int(log_verbosity_names,osa_log_verbosity)) == -1)
+                                enb_properties.properties[enb_properties_index]->osa_log_verbosity = LOG_MED;
+                            //printf( "\tOSA log verbosity:\t%s->%d\n",osa_log_verbosity,enb_properties.properties[enb_properties_index]->gosa_log_verbosity);
+                        } else {
+                            enb_properties.properties[enb_properties_index]->osa_log_verbosity = LOG_MED;
+                        }
 
                     } else { // not configuration is given
-                        enb_properties.properties[enb_properties_index]->glog_level = LOG_INFO;
-                        enb_properties.properties[enb_properties_index]->glog_verbosity = LOG_MED;
-                        enb_properties.properties[enb_properties_index]->hw_log_level = LOG_INFO;
-                        enb_properties.properties[enb_properties_index]->hw_log_verbosity = LOG_MED;
-                        enb_properties.properties[enb_properties_index]->phy_log_level = LOG_INFO;
-                        enb_properties.properties[enb_properties_index]->phy_log_verbosity = LOG_MED;
-                        enb_properties.properties[enb_properties_index]->mac_log_level = LOG_INFO;
-                        enb_properties.properties[enb_properties_index]->mac_log_verbosity = LOG_MED;
-                        enb_properties.properties[enb_properties_index]->rlc_log_level = LOG_INFO;
-                        enb_properties.properties[enb_properties_index]->rlc_log_verbosity = LOG_MED;
-                        enb_properties.properties[enb_properties_index]->pdcp_log_level = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->glog_level         = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->glog_verbosity     = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->hw_log_level       = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->hw_log_verbosity   = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->phy_log_level      = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->phy_log_verbosity  = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->mac_log_level      = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->mac_log_verbosity  = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->rlc_log_level      = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->rlc_log_verbosity  = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->pdcp_log_level     = LOG_INFO;
                         enb_properties.properties[enb_properties_index]->pdcp_log_verbosity = LOG_MED;
-                        enb_properties.properties[enb_properties_index]->rrc_log_level = LOG_INFO;
-                        enb_properties.properties[enb_properties_index]->rrc_log_verbosity = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->rrc_log_level      = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->rrc_log_verbosity  = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->gtpu_log_level     = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->gtpu_log_verbosity = LOG_MED;
+                        enb_properties.properties[enb_properties_index]->udp_log_level      = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->udp_log_verbosity  = LOG_MED;
+			enb_properties.properties[enb_properties_index]->osa_log_level      = LOG_INFO;
+                        enb_properties.properties[enb_properties_index]->osa_log_verbosity  = LOG_MED;
                     }
 
                     enb_properties_index += 1;

@@ -48,7 +48,7 @@
  *\param msg_name Message name.
  *\param instance Message instance.
  *\return 0 when successful, -1 if the UE index can not be retrieved. */
-int rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *msg_name_pP, instance_t instanceP);
+int rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *msg_name_pP, eNB_RRC_INST *eNB);
 
 #   endif
 # endif /* defined(ENABLE_USE_MME) */
