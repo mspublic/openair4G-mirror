@@ -1,5 +1,6 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
 TOP_DIR = $(OPENAIR1_DIR)
+
+CC = gcc
 
 bin_PROGRAMS = emos_gui
 
@@ -14,7 +15,9 @@ $(TOP_DIR)/PHY/CONFIG/openair_configure.o $(TOP_DIR)/PHY/CONFIG/openair_readconf
 INCLUDES = -I$(TOP_DIR) -I/usr/realtime/include -I/usr/include/X11 
 
 # the library search path.
-CFLAGS += -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DEMOS -DNODE_RG -DCBMIMO1 -DPHY_CONTEXT -DOPENAIR_LTE
+CFLAGS = -g -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing\
+	 -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DEMOS -DNODE_RG -DCBMIMO1 -DPHY_CONTEXT -DOPENAIR_LTE\
+	 -mmmx -msse -msse2 -mssse3
 emos_gui_LDADD = -L/usr/lib -L/usr/local/lib -L/usr/realtime/lib -L/usr/X11R6/lib -lm -lforms -llxrt -lpthread -lX11 -lXpm -lgps
 
 all: emos_gui

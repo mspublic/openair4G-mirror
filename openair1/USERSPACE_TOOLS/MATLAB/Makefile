@@ -1,5 +1,10 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
 #include $(OPENAIR1_DIR)/SIMULATION/LTE_PHY/Makefile
+
+SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
+SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
+CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
+#CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
+#CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
 COMMON_UTILS_DIR = $(OPENAIR_HOME)/common/utils
 TOP_DIR = $(OPENAIR1_DIR)
@@ -7,7 +12,7 @@ OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS += -DMAX_NUM_CCs=1 -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -DMALLOC_CHECK_=1 -DENABLE_VCD_FIFO 
+CFLAGS = -g -ggdb -Wno-strict-aliasing -rdynamic -DMAX_NUM_CCs=1 -Wall -DPHYSIM -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 $(CPUFLAGS) -DMALLOC_CHECK_=1 -DENABLE_VCD_FIFO # -Wno-packed-bitfield-compat
 
 CFLAGS += -DOPENAIR_LTE -DNO_RRM -DOPENAIR1 #-DPHY_ABSTRACTION #-DOPENAIR2
 
@@ -26,7 +31,7 @@ ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR2_DIR) -I$(OPENAIR3) $(UTIL_incl) $(UTILS_incl)
 
-CFLAGS += -DMEX -fPIC 
+CFLAGS += -DMEX -fPIC -g
 CFLAGS += -I/opt/MATLAB/R2014a/extern/include/
 
 # Set mex extension, can be determined with mexext function in Matlab

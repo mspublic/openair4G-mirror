@@ -1,4 +1,3 @@
-#! /usr/bin/python
 #******************************************************************************
 
 #  Eurecom OpenAirInterface
@@ -54,6 +53,7 @@ import case05
 from  openair import *
 
 debug = 0
+prompt2 = '$'
 pw =''
 i = 0
 dlsim=0
@@ -77,24 +77,6 @@ for arg in sys.argv:
         sys.exit()
     i= i + 1     
 
-try:  
-   os.environ["OPENAIR1_DIR"]
-except KeyError: 
-   print "Please set the environment variable OPENAIR1_DIR in the .bashrc"
-   sys.exit(1)
-
-try:  
-   os.environ["OPENAIR2_DIR"]
-except KeyError: 
-   print "Please set the environment variable OPENAIR2_DIR in the .bashrc"
-   sys.exit(1)
-
-try:  
-   os.environ["OPENAIR_TARGETS"]
-except KeyError: 
-   print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
-   sys.exit(1)
-
 # get the oai object
 host = os.uname()[1]
 oai = openair('localdomain','localhost')
@@ -104,14 +86,22 @@ try:
     print '\n******* Note that the user <'+user+'> should be a sudoer *******\n'
     print '******* Connecting to the localhost to perform the test *******\n'
    
+   
     if not pw :
         print "username: " + user 
         pw = getpass.getpass() 
     else :
         print "username: " + user 
         #print "password: " + pw 
-
-    oai.connect(user,pw)
+    
+    try:
+        prompt = os.getenv("PS1")[-2]
+    except : 
+        #prompt = input('set your shell prompt: ') 
+        prompt = '$'
+    print "your prompt is:   " + prompt
+    
+    oai.connect(user,pw,prompt)
     #oai.get_shell()
 except :
     print 'Fail to connect to the local host'

@@ -3,6 +3,7 @@ include $(OPENAIR_TARGETS)/Makerules
 
 default: oaisim
 
+include $(OPENAIR_TARGETS)/Makedirectives
 include $(OPENAIR_TARGETS)/Makefile.common
 
 TOP_DIR               = $(OPENAIR1_DIR)
@@ -10,6 +11,13 @@ OPENAIR1_TOP          = $(OPENAIR1_DIR)
 OPENAIR2_TOP          = $(OPENAIR2_DIR)
 OPENAIR3_TOP          = $(OPENAIR3_DIR)
 OPENAIR3              = $(OPENAIR3_DIR)
+
+CPUFLAGS = -mmmx -msse -msse2 -msse4.1 -march=native
+# FORCE ssse3 for compilation of openair on User Mode Linux
+CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ; else if grep --silent User\ Mode\ Linux /proc/cpuinfo ; then echo "-mssse3" ; else echo ""; fi; fi)
+CPUFLAGS += $(shell if grep --silent -w sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
+linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
+CFLAGS += -O2	
 
 ifeq ($(DEBUG),1)	
 CFLAGS += -g -ggdb -DDEBUG_PHY -DDEBUG_MEAS
@@ -24,8 +32,14 @@ CFLAGS += -DRRC_MSG_PRINT
 CFLAGS += -DPDCP_MSG_PRINT
 endif
 
-CFLAGS += -Wpointer-sign
+CFLAGS += -Wstrict-prototypes -Wpointer-sign
 CFLAGS += -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+
+# Check if GCC version is greater or equal to 4.4
+GCCVERSIONGTEQ44 := $(shell expr `gcc -dumpversion | cut -f1,2 -d. --output-delimiter=""` \>= 44)
+ifeq "$(GCCVERSIONGTEQ44)" "1"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
@@ -34,15 +48,6 @@ CFLAGS += -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -DPHY_ABSTRACTION #-DPHY_ABSTRACTION_U
 CFLAGS += -DNEW_FFT
 #CFLAGS += -DLLR8
 CFLAGS += -DPACKAGE_NAME='"oaisim"'
-
-ifndef OPENAIR2
-OPENAIR2=1
-endif
-
-ifdef DEBUG
-DISABLE_XER_PRINT=0
-MSG_PRINT=1
-endif
 
 ifndef OPENAIR_EMU
 export OPENAIR_EMU=1
@@ -161,6 +166,8 @@ endif
 ifdef OAI_NW_DRIVER_TYPE_ETHERNET
 CFLAGS+=-DOAI_NW_DRIVER_TYPE_ETHERNET
 endif
+
+CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 CFLAGS += -DENABLE_FXP -DOAI_EMU -DENABLE_USE_CPU_EXECUTION_TIME
 ifndef DISABLE_XER_PRINT
@@ -416,7 +423,8 @@ cleanasn1:
 	$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; rm -f $(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS) *.o *.d)
 	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.am.sample
 	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
-	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel*
+	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
+	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
 
 cleancell:
 	@$(RM_F_V) $(OPENAIR2_DIR)/RRC/CELLULAR/*.o

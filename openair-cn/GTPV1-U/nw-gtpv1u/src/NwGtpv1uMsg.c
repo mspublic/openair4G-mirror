@@ -143,11 +143,9 @@ nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
         pMsg->msgBuf       = tpdu;
         pMsg->msgBufLen    = tpduLength + msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE;
         pMsg->msgBufOffset = tpduOffset - (msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE);
-#if defined(LOG_GTPU) && LOG_GTPU > 0
         GTPU_DEBUG("MSG length %u, offset %u -> length %u offset %u\n",
                 tpduLength, tpduOffset,
                 pMsg->msgBufLen, pMsg->msgBufOffset);
-#endif
 
         // Version field: This field is used to determine the version of the GTP-U protocol.
         // The version number shall be set to '1'.
@@ -273,10 +271,8 @@ nwGtpv1uMsgFromBufferNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
         pMsg->msgBufOffset = (NwU32T)(pBuf - pMsg->msgBuf);
         pMsg->msgBufLen = bufLen - pMsg->msgBufOffset;
         pMsg->msgLen    = bufLen;
-#if defined(LOG_GTPU) && LOG_GTPU > 0
         GTPU_DEBUG("nwGtpv1uMsgFromBufferNew() msgLen %u msgBufLen %u msgBufOffset %u ",
                 pMsg->msgLen, pMsg->msgBufLen, pMsg->msgBufOffset);
-#endif
         *phMsg = (NwGtpv1uMsgHandleT) pMsg;
         return NW_GTPV1U_OK;
     }
@@ -304,9 +300,7 @@ nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T teid)
 {
     NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
     thiz->teid = teid;
-#if defined(LOG_GTPU) && LOG_GTPU > 0
     GTPU_DEBUG("nwGtpv1uMsgSetTeid() teid %u", teid);
-#endif
     return NW_GTPV1U_OK;
 }
 

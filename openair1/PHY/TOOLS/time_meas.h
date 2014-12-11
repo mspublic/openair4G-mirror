@@ -30,7 +30,6 @@
 #include <omp.h>
 #endif
 #include <unistd.h>
-#include <math.h>
 // global var to enable openair performance profiler 
 extern int opp_enabled;
 
@@ -38,8 +37,6 @@ typedef struct {
 
   long long in;
   long long diff;
-  long long p_time; /*!< \brief absolute process duration */
-  long long diff_square; /*!< \brief process duration square */
   long long max;
   int trials;
 } time_stats_t;
@@ -95,9 +92,6 @@ static inline void stop_meas(time_stats_t *ts) {
 #endif
       {
 	ts->diff += (out-ts->in);
-        /// process duration is the difference between two clock points
-        ts->p_time = (out-ts->in);
-        ts->diff_square += pow((out-ts->in),2);        
 	if ((out-ts->in) > ts->max)
 	  ts->max = out-ts->in;
 	
@@ -110,8 +104,6 @@ static inline void reset_meas(time_stats_t *ts) {
   if (opp_enabled){
     ts->trials=0;
     ts->diff=0;
-    ts->p_time=0;
-    ts->diff_square=0;    
     ts->max=0;
   }
 }

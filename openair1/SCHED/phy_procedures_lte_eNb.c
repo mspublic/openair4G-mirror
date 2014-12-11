@@ -219,7 +219,7 @@ int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame,
   //  int subframe = PHY_vars_eNB_g[Mod_id][CC_id]->proc[sched_subframe].subframe_tx;
 
   if (UE_id==-1) {
-    LOG_E(PHY,"Cannot find UE with rnti %x\n",rnti);
+    LOG_D(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
     *round=0;
     return(-1);
   }
@@ -1789,8 +1789,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 		       0,
 		       phy_vars_eNB->dlsch_eNB_SI,
 		       get_G(&phy_vars_eNB->lte_frame_parms,
-			     phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->nb_rb,
-			     phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->rb_alloc,
+			     phy_vars_eNB->dlsch_eNB_SI->nb_rb,
+			     phy_vars_eNB->dlsch_eNB_SI->rb_alloc,
 			     get_Qm(phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->mcs),
 			     1,
 			     num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
@@ -1805,8 +1805,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 				      subframe,
 				      &phy_vars_eNB->lte_frame_parms,
 				      num_pdcch_symbols,
-				      phy_vars_eNB->dlsch_eNB_SI,
-				      (LTE_eNB_DLSCH_t *)NULL);
+				      phy_vars_eNB->dlsch_eNB_SI);
       stop_meas(&phy_vars_eNB->dlsch_modulation_stats);	      
     } 
 #ifdef PHY_ABSTRACTION
@@ -1918,8 +1917,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 			 0,
 			 phy_vars_eNB->dlsch_eNB_ra,
 			 get_G(&phy_vars_eNB->lte_frame_parms,
-			       phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->nb_rb,
-			       phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->rb_alloc,
+			       phy_vars_eNB->dlsch_eNB_ra->nb_rb,
+			       phy_vars_eNB->dlsch_eNB_ra->rb_alloc,
 			       get_Qm(phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->mcs),
 			       1,
 			       num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
@@ -1931,8 +1930,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 					subframe,
 					&phy_vars_eNB->lte_frame_parms,
 					num_pdcch_symbols,
-					phy_vars_eNB->dlsch_eNB_ra,
-					(LTE_eNB_DLSCH_t *)NULL);
+					phy_vars_eNB->dlsch_eNB_ra);
       }
 #ifdef PHY_ABSTRACTION
       else {
@@ -1969,14 +1967,14 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 	    phy_vars_eNB->Mod_id, phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti,harq_pid,
 	    phy_vars_eNB->proc[sched_subframe].frame_tx, subframe, input_buffer_length,
 	    get_G(&phy_vars_eNB->lte_frame_parms,
-		  phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->nb_rb,
-		  phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rb_alloc,
+		  phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nb_rb,
+		  phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rb_alloc,
 		  get_Qm(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs),
 		  phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->Nl,
 		  num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
-	    phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->nb_rb,
+	    phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nb_rb,
 	    phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs,
-	    pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->pmi_alloc),
+	    pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->pmi_alloc),
 	    phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rvidx,
 	    phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->round);
 #endif
@@ -2044,8 +2042,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 			 0,
 			 phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0],
 			 get_G(&phy_vars_eNB->lte_frame_parms,
-			       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->nb_rb,
-			       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rb_alloc,
+			       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nb_rb,
+			       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rb_alloc,
 			       get_Qm(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs),
 			       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->Nl,
 			       num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
@@ -2068,8 +2066,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 					subframe,
 					&phy_vars_eNB->lte_frame_parms,
 					num_pdcch_symbols,
-					phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0],
-					phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][1]);
+					phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]);
       
 	stop_meas(&phy_vars_eNB->dlsch_modulation_stats);	      
       }
@@ -2627,7 +2624,7 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t 
 	preamble_delay_list[preamble_max]);
 #endif
 
-  if (preamble_energy_list[preamble_max] > 580) {
+  if (preamble_energy_list[preamble_max] > 600) {
     /*
     write_output("prach_ifft0.m","prach_t0",prach_ifft[0],2048,1,1);
     write_output("prach_rx0.m","prach_rx0",&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],6144+792,1,1);
@@ -3095,10 +3092,10 @@ void phy_procedures_eNB_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 	  // If we've dropped the UE, go back to PRACH mode for this UE
 	  //#if !defined(EXMIMO_IOT)
 	  if (phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors == ULSCH_max_consecutive_errors) {
-	    LOG_I(PHY,"[eNB %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, removing UE\n",
-		  phy_vars_eNB->Mod_id,frame,subframe, i, phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors);
+	    LOG_I(PHY,"[eNB %d, CC %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, removing UE\n",
+		  phy_vars_eNB->Mod_id,phy_vars_eNB->CC_id,frame,subframe, i, phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors);
 
-	    //	    mac_xface->macphy_exit("Consecutive error count reached");
+	    mac_xface->macphy_exit("Consecutive error count reached");
 
 	    phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
 #ifdef OPENAIR2

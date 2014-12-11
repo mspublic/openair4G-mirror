@@ -1,4 +1,11 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+CC = gcc
+
+SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`)
+SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`)
+CPUFLAGS = -mmmx -msse -msse2 -m32  -mssse3 #-msse4
+CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
+CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
+cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; else echo "0" ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -8,7 +15,7 @@ OPENAIR3     = $(OPENAIR3_DIR)
 
 EXE_FILE_NAME = test_pdcp
 
-CFLAGS += -m32 -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -I/usr/include/X11 
+CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
@@ -26,6 +33,7 @@ CFLAGS += -DNAS_NETLINK -DLINUX -DDEBUG_CONTROL
 endif
 
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
+CFLAGS += $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "-DCYGWIN" ; fi)
 
 #include $(OPENAIR1_DIR)/PHY/Makefile.inc
 #include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -87,6 +95,7 @@ $(L2_OBJS) : %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 build_test_pdcp : $(OBJ) $(L2_OBJS) test_pdcp.c
+	echo CYGWIN variable is $(cygwin)
 	$(CC) test_pdcp.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $(EXE_FILE_NAME) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lcurses
 
 clean:

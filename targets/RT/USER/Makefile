@@ -4,34 +4,26 @@ include $(OPENAIR_TARGETS)/Makerules
 default: lte-softmodem
 all: lte-softmodem rrh
 
+include $(OPENAIR_TARGETS)/Makedirectives
 include $(OPENAIR_TARGETS)/Makefile.common
 
-KERNEL_VERSION:=$(shell echo `uname -r | cut -d. -f-2`)
-KERNEL_TYPE:=$(shell echo `uname -r | cut -d. -f-3 | cut -d- -f3`)
-LOWLATENCY_KERNEL:=$(shell if [ $(KERNEL_TYPE) = "lowlatency" ]; then echo "1" ; else echo "0" ; fi)
-
-include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
-
-#ifdef LOWLATENCY # this ifdef is to be removed after the debugging
-ifeq ($(LOWLATENCY_KERNEL),1)
-CFLAGS+=-DLOWLATENCY
-endif 
-#endif 
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)"  "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.5.2"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
+ifeq "$(GCCVERSION)" "4.6.1"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 ifndef USRP
 USRP=0
 endif
 
+CFLAGS += -O2 
 CFLAGS += -DDRIVER2013 -I$(OPENAIR_TARGETS)/ARCH/COMMON  -I.
-
-ifndef OPENAIR2
-OPENAIR2=1
-endif
-
-ifdef DEBUG
-DISABLE_XER_PRINT=0
-MSG_PRINT=1
-endif
 
 ifeq ($(EXMIMO),1)
   CFLAGS += -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/LIB/ -I$(OPENAIR_TARGETS)/ARCH/EXMIMO/DEFS -DENABLE_VCD_FIFO
@@ -117,12 +109,13 @@ RTAI_OBJ+=$(LOG_DIR)/vcd_signal_dumper.o
 RTAI_OBJ+=$(LOG_DIR)/log.o
 endif
 
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 OBJ += $(LOG_OBJS) 
 
 ifeq ($(OPENAIR2),1)
 ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
-OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS)  $(OSA_OBJS) $(OPT_OBJS) 
+OBJ += $(L2_OBJS) $(LIST_OBJ) $(TIMER_OBJ) $(MEM_OBJ) $(OTG_OBJS) $(MATH_OBJS)  $(OSA_OBJS)  
 OBJ += $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o
 #OBJ += $(PDCP_DIR)/pdcp_thread.o
 CFLAGS += -DOPENAIR2 -DNO_RRM -DPUCCH -DMAC_CONTEXT=1
@@ -161,7 +154,10 @@ ifdef SMBV
 CFLAGS += -DSMBV
 endif
 
-CFLAGS += -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 
+#CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4.1
+CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4.1
+#CFLAGS += -fno-common -mpreferred-stack-boundary=4  
+CFLAGS += -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -rdynamic $(CPUFLAGS) # -Wno-packed-bitfield-compat
 CFLAGS += -DOPENAIR_LTE -DENABLE_FXP -DOPENAIR1 -DDLSCH_THREAD #-DULSCH_THREAD
 
 
@@ -216,7 +212,7 @@ $(LFDS_LIB):
 ifeq ($(USRP),1)
 $(USRP_OBJ):$(USRP_FILE_OBJ)
 	@echo Compiling $<
-	@$(CXX) -c  -g -ggdb $(USRP_CFLAGS) $(USRP_FILE_OBJ) -o $(USRP_OBJ)
+	@$(CXX) -c  $(USRP_CFLAGS) $(USRP_FILE_OBJ) -o $(USRP_OBJ)
 endif
 
 ifeq ($(ETHERNET),1)
@@ -377,7 +373,8 @@ cleanasn1:
 	$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; rm -f $(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS) *.o *.d )
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.am.sample
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
-	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel*
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel8
+	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/asn1c/ASN1_files/.lock-rel10
 
 cleancell:
 	rm -f $(OPENAIR2_DIR)/RRC/CELLULAR/*.o
@@ -407,7 +404,6 @@ show:
 	@echo IS_REL10 is $(IS_REL10)
 	@echo openssl $(OPENSSL_FOUND) 
 	@echo nettle $(NETTLE_FOUND)
-	@echo lowlatency kernel: $(LOWLATENCY_KERNEL)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)

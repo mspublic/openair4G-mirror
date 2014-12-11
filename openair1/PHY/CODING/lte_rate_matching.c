@@ -661,8 +661,7 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
   int nulled=0;
 #endif
   if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
-    msg("lte_rate_matching.c: invalid parameters (Kmimo %d, Mdlharq %d, C %d, Qm %d, Nl %d\n",
-	Kmimo,Mdlharq,C,Qm,Nl);
+    msg("lte_rate_matching.c: invalid paramters\n");
     return(-1);
   }
 

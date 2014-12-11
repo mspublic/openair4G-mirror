@@ -15,7 +15,7 @@ fs = 7680e3;
 fref = fc+fs/4;
 
 power_dBm      = [-70 -80 -90]+20;
-cables_loss_dB = 12;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
+cables_loss_dB = 1;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 
 dual_tx = 0;
 tdd = 1;
@@ -26,7 +26,7 @@ rf_mode = (RXEN+0+TXLPFNORM+TXLPFEN+TXLPF25+RXLPFNORM+RXLPFEN+RXLPF25+LNA1ON+LNA
 freq_rx = fc*[1 1 1 1];
 freq_tx = freq_rx;
 tx_gain = 25*[1 1 1 1];
-rx_gain = 15*[1 1 1 1];
+rx_gain = 30*[1 1 1 1];
 %rf_local= [8254744   8255063   8257340   8257340]; %rf_local*[1 1 1 1];
 rf_local = [8254813 8255016 8254813 8254813]; %exmimo2_2
 %rf_rxdc = rf_rxdc*[1 1 1 1];
@@ -55,9 +55,11 @@ system(sprintf('%s %s ''FREQ %ldHz''',command,smbv_ip_addr,fref));
 for card=1:oarf_get_num_detected_cards
 oarf_config_exmimo(card-1,freq_rx,freq_tx,tdd_config,syncmode(card),rx_gain,tx_gain,eNBflag,rf_mode,rf_rxdc,rf_local,rf_vcocal,rffe_rxg_low,rffe_rxg_final,rffe_band,autocal,resampling_factor);
 end
+
 autocal = [0 0 0 0];
 
-ALL_rxrfmode = [LNAByp LNAMed LNAMax];
+%ALL_rxrfmode = [LNAByp LNAMed LNAMax];
+ALL_rxrfmode = [LNAMax];
 ALL_gain     = 0:5:30;           
 
 num_chains = 4*oarf_get_num_detected_cards;
@@ -70,9 +72,9 @@ S0 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
 S0_lin = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
 %S1 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
 G0 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
-%G1 = zeros(length(ALL_rxrfmode),length(ALL_gain));
+G1 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
 NF0 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
-%NF1 = zeros(length(ALL_rxrfmode),length(ALL_gain));
+NF1 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
 SNR0 = zeros(length(ALL_rxrfmode),length(ALL_gain),num_chains);
 %SNR1 = zeros(length(ALL_rxrfmode),length(ALL_gain));
 
@@ -102,12 +104,27 @@ end
        s=oarf_get_frame(0);   
        sleep(.5);
 
-SpN0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
+       SpN0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
        %SpN1(idx_power,idx_gain) = mean(abs(s(:,2)).^2) - abs(mean(s(:,2))).^2;
+
+       sf = fftshift(fft(s))/sqrt(length(s));
+       f1 = (7.68*(0:length(s(:,2))-1)/(length(s(:,2))))-3.84;
+       nidx = find(f1>=0.5 & f1<=1.5); %1MHz 
+       sidx = find(f1>=1.87 & f1<=1.97); %100kHz
+       np = 10*log10(sum(abs(sf(nidx,:)).^2));
+sp = 10*log10(sum(abs(sf(sidx,:)).^2));
+snr = sp+10-np; %10dB for difference in bandwidth
+snr_real = power_dBm(mode_idx) - (-174 + 10*log10(1e6));
+%       G1(idx_power,idx_gain,:) =  sp - power_dBm(mode_idx);
+NF1(idx_power,idx_gain,:) = snr_real - snr;
 
        figure(1);
        hold off
-       plot(20*log10(abs(fft(s(:,end)))),'r'); %,20*log10(abs(fft(s(:,2)))),'b')
+       plot(f1,20*log10(abs((sf(:,1)))),'r'); %,20*log10(abs(fft(s(:,2)))),'b')
+hold on
+plot(f1(nidx),20*log10(abs(sf(nidx,1))),'b');
+plot(f1(sidx),20*log10(abs(sf(sidx,1))),'g');
+
        title("Signal");
        ylim([0 200]);
  
@@ -118,12 +135,12 @@ SpN0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
        s=oarf_get_frame(0);   %oarf_get_frame
        sleep(.5);
 
-N0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
+       N0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
        %N1(idx_power,idx_gain) = mean(abs(s(:,2)).^2) - abs(mean(s(:,2))).^2;
 
        figure(2);
        hold off
-       plot(20*log10(abs(fft(s(:,end)))),'r'); %,20*log10(abs(fft(s(:,2)))),'b')
+       plot(f1,20*log10(abs((sf(:,1)))),'r'); %,20*log10(abs(fft(s(:,2)))),'b')
        title("Noise");
        ylim([0 200]);
 
@@ -157,7 +174,7 @@ N0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
 
        figure(3)
        hold off
-       plot(ALL_gain,G0(:,:,1),'o-','markersize',10)
+       plot(ALL_gain,G1(:,:,1),'o-','markersize',10)
        hold on
        plot(ALL_gain,G0(:,:,2),'x-','markersize',10)
        plot(ALL_gain,G0(:,:,3),'s-','markersize',10)
@@ -167,7 +184,7 @@ N0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
        
        figure(4)
        hold off
-       plot(ALL_gain,NF0(:,:,1),'o-','markersize',10)
+       plot(ALL_gain,NF1(:,:,1),'o-','markersize',10)
        hold on
        plot(ALL_gain,NF0(:,:,2),'x-','markersize',10)
        plot(ALL_gain,NF0(:,:,3),'s-','markersize',10)

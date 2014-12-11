@@ -94,7 +94,7 @@
 #   include "rrc_eNB_ral.h"
 #endif
 
-//#define XER_PRINT
+#define XER_PRINT
 
 #ifdef PHY_EMUL
 extern EMULATION_VARS              *Emul_vars;
@@ -742,7 +742,7 @@ static void rrc_eNB_generate_defaultRRCConnectionReconfiguration(
     SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU = PollPDU_p8;
     SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte = PollByte_kB1000;
     SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t32;
-    SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms50;
+    SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms35;
     SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms10;
 
     SRB2_lchan_config = CALLOC(1, sizeof(*SRB2_lchan_config));
@@ -1541,7 +1541,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU = PollPDU_p8;
     SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte = PollByte_kB1000;
     SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t16;
-    SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms50;
+    SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms35;
     SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms10;
 
     SRB1_lchan_config = CALLOC(1, sizeof(*SRB1_lchan_config));
@@ -1765,7 +1765,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU = PollPDU_p8;
     SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte = PollByte_kB1000;
     SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t32;
-    SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms50;
+    SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms35;
     SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms10;
 
     SRB2_lchan_config = CALLOC(1, sizeof(*SRB2_lchan_config));
@@ -1805,7 +1805,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     DRB_rlc_config->present = RLC_Config_PR_um_Bi_Directional;
     DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
     DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
-    DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = T_Reordering_ms5;
+    DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = T_Reordering_ms35;
 
     DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
     DRB_config->pdcp_Config = DRB_pdcp_config;
@@ -2577,7 +2577,7 @@ void rrc_eNB_generate_RRCConnectionSetup(
     eNB_rrc_inst[enb_mod_idP].Srb0.Tx_buffer.payload_size =
         do_RRCConnectionSetup(enb_mod_idP,
                               (uint8_t *) eNB_rrc_inst[enb_mod_idP].Srb0.Tx_buffer.Payload,
-			      (mac_xface->lte_frame_parms->nb_antennas_tx==2)?3:1,
+			      (mac_xface->lte_frame_parms->nb_antennas_tx==2)?2:1,
 			      ue_mod_idP,
                               rrc_eNB_get_next_transaction_identifier(enb_mod_idP),
                               mac_xface->lte_frame_parms,
@@ -3368,11 +3368,6 @@ void                               *rrc_enb_task(
 
             case GTPV1U_ENB_CREATE_TUNNEL_RESP:
               rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(msg_p, msg_name_p, instance);
-              break;
-
-            case GTPV1U_ENB_DELETE_TUNNEL_RESP:
-                LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
-                    instance, msg_name_p);
               break;
 
 #   endif

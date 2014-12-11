@@ -1,6 +1,5 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
 OBJS = rf.o ../../PHY/TOOLS/file_output.o ../TOOLS/rangen_double.o
-CFLAGS += -DRF_MAIN -DUSER_MODE -DDEBUG_PHY 
+CFLAGS = -DRF_MAIN -DUSER_MODE -DDEBUG_PHY -g -msse2 -mmmx -msse
 
 all: $(OBJS)
 	gcc -o rf $(OBJS) -lm 
